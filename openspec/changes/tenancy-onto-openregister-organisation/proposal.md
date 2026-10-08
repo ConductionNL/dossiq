@@ -2,11 +2,11 @@
 
 ## Summary
 
-dossiq stops keeping a second tenant store beside OpenRegister's `Organisation`: the satellites point at the organisation, the local `tenant` schema and its admin store retire, and the migration that moves the data runs dry and is read by a person before anything is deleted.
+dossiq stops keeping a second tenant store beside OpenRegister's `Organisation`: the satellites point at the organisation, the local tenant admin store retires, the migration runs on upgrade for one release and reports what is left, and the tenant objects stay read-only as the anchor of their audit history.
 
-- Gate 23 (`or-abstraction-anti-patterns`): this change works on rule 4 (`consume-or-tenant-fleet-wide`, any `Tenant*.php`) and rule 7 (`or-capability:tenant-boundary`). Finishing it does NOT clear either on its own. The 2026-10-08 amend at the end of this proposal names which files it removes, which go with `dossiq/tenant-isolation-names-the-control-that-runs`, and which still wait on a decision.
-- Dependencies: `dossiq/tenant-isolation-names-the-control-that-runs` (https://github.com/ConductionNL/dossiq/issues/3465) removes the search_path pipeline and is built first. `dossiq/remove-casetask` task 7.1 owns `tenantOnboardingTask`. Tasks 6.2 and 6.3 are held for a person.
-- Open, and not chosen here: Q1 when `TenantMigrationService` retires, Q2 the token path (`TenantJwtService`, `TenantAuthenticationService`, the claim middleware), Q3 whether the active tenant is OpenRegister's active organisation (`TenantMiddleware`, `TenantContextMiddleware`, `TenantController`), Q4 where tenant audit entries anchor once the `tenant` schema goes (blocks task 6.5). Until they are answered gate 23 stays red on rule 4 and on the rule 7 name hits.
+- Gate 23 (`or-abstraction-anti-patterns`): this change works on rule 4 (`consume-or-tenant-fleet-wide`, any `Tenant*.php`). It deletes `TenantSaasService` and `TenantSaasController`, and brings `TenantOrganisationResolver` and, for one release, `TenantMigrationService` under ADR-004. Rule 7 is cleared by `dossiq/tenant-isolation-names-the-control-that-runs` and `dossiq/tenancy-onto-openregister-organisation-active-organisation`. The table at the end of this proposal gives each of the 18 files its owner.
+- Dependencies: `dossiq/tenant-isolation-names-the-control-that-runs` (https://github.com/ConductionNL/dossiq/issues/3465) removes the search_path pipeline and is built first. `dossiq/remove-casetask` task 7.1 owns `tenantOnboardingTask`. Task 6.3 is held for a person, and task 6.4 for the release after.
+- Decided 2026-10-08 by Ruben: Q1 the migration runs as a repair step for one release and reports what is left, Q2 the token path is deleted, Q3 the active tenant is OpenRegister's active organisation, Q4 tenant objects stay read-only as the audit anchor and are never deleted. Q2 and Q3 are built in `dossiq/tenancy-onto-openregister-organisation-active-organisation`. Still open: the onboarding `skipped` mapping (`remove-casetask` 7.1) and `TenantController`'s four remaining endpoints, which keep gate 23 rule 4 red.
 - Decisions: Ruben 2026-09-11 (2a to 2h and step 3, recorded in tasks.md); Ruben 2026-10-08 (gate 23 work is built before the Woo changes).
 - Debt programme: dossiq#2460. ADR: `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`.
 - Build rules: openspec/woo-build-rules.md
@@ -200,48 +200,64 @@ behaviour; ADR-004 refuses that, and so does this amend.
 
 ### Where each of the 18 files goes
 
+Updated 2026-10-08 after Ruben answered Q1 to Q4.
+
 | File | Goes by | State |
 | --- | --- | --- |
-| `TenantIsolationMiddleware`, `TenantSchemaProvisioner`, `TenantProvisioningService`, `TenantSeedService`, `TenantWelcomeMailer` | `tenant-isolation-names-the-control-that-runs` (dossiq#2470) | specified; deletes the inert schema-per-tenant pipeline and clears the content rule |
-| `TenantSaasService`, `TenantSaasController` | this amend, tasks 6.7 to 6.9 | specified; retire with the local store |
-| `TenantOrganisationResolver` | this amend, tasks 6.6 and 6.11 | specified; once its legacy fallback is gone it reads only OpenRegister's `OrganisationMapper`, which is the "already consuming OpenRegister" case ADR-004 already covers for `TenantService` |
-| `TenantMigrationService` | open decision Q1 | it must outlive the real migration run on every install, and nobody has said how that run is confirmed |
-| `TenantOnboardingService`, `TenantOnboardingController` | `remove-casetask` task 7.1 | waits on the `skipped` status mapping that task names as undecided |
-| `TenantJwtService`, `TenantAuthenticationService`, `TenantClaimValidationMiddleware`, `TenantClaimMismatchException` | open decision Q2 | ADR-004 says their end state is undecided |
-| `TenantMiddleware`, `TenantContextMiddleware`, `TenantController` | open decision Q3 | they also carry rule 7 by name, so re-pointing them keeps that finding |
+| `TenantIsolationMiddleware`, `TenantSchemaProvisioner`, `TenantProvisioningService`, `TenantSeedService`, `TenantWelcomeMailer` | `tenant-isolation-names-the-control-that-runs` (dossiq#2470) | deleted |
+| `TenantJwtService`, `TenantClaimValidationMiddleware`, `TenantClaimMismatchException` | `tenancy-onto-openregister-organisation-active-organisation`, decision Q2 | deleted |
+| `TenantMiddleware`, `TenantContextMiddleware` | `tenancy-onto-openregister-organisation-active-organisation`, decision Q3 | deleted |
+| `TenantAuthenticationService` | `tenancy-onto-openregister-organisation-active-organisation`, decision Q2 | kept under ADR-004 for rule 4, until its membership, role and mandate lookups move to OpenRegister |
+| `TenantSaasService`, `TenantSaasController` | this change, tasks 6.7 to 6.9 | deleted |
+| `TenantOrganisationResolver` | this change, tasks 6.6 and 6.11 | kept under ADR-004 for rule 4: once its fallback is gone it reads only OpenRegister's `OrganisationMapper`, the case ADR-004 already covers for `TenantService` |
+| `TenantMigrationService` | this change, decision Q1, tasks 6.2 and 6.4 | runs as a repair step for one release, covered by ADR-004 for rule 4 with that release as its limit; deleted in the release after, once no tenant is left unmigrated |
+| `TenantController` | partly decided | `switchTenant` goes with Q3. `current`, `memberships`, `provision` and `usage` stay, and nobody has decided their end state, so the file stays counted |
+| `TenantOnboardingService`, `TenantOnboardingController` | `remove-casetask` task 7.1 | open: the `skipped` status mapping is undecided, so both stay counted |
 
-### Open decisions this amend does not make
+### Decided by Ruben on 2026-10-08
 
-These are the items that keep gate 23 red after every specified task here is built. They are
-written down rather than chosen, because each one changes who may act or what an install loses.
+- **Q1. `TenantMigrationService` runs as a repair step for one release.** The same migration that
+  `occ dossiq:migrate-tenants` runs also runs on upgrade, and it reports how many tenants are left
+  unmigrated. The class retires in the release after, once that count is zero. This is the pattern
+  decision D12 used for Woo requests. A cloud session cannot see other installs, so the count is
+  what tells a person the class may go.
+- **Q2. The token path is deleted.** `TenantJwtService`, `TenantClaimValidationMiddleware` and
+  `TenantClaimMismatchException` go: the session leads (step 3), so no claim binds a tenant. The
+  membership, role and mandate lookups in `TenantAuthenticationService` stay, covered by ADR-004
+  until they move to OpenRegister. The `jwt_signing_secret` app config key stays, because
+  `PortalAssertionVerifier` reads it too.
+- **Q3. The active tenant is OpenRegister's active organisation.** dossiq reads
+  `OrganisationService::getActiveOrganisation()`. `TenantMiddleware`, `TenantContextMiddleware`, the
+  `switchTenant` route in `TenantController` and the session store in `TenantSessionService` (its own
+  session key, `switchTo()` and `clear()`) go. Switching is OpenRegister's
+  `POST /api/organisations/{uuid}/set-active`. The one check `TenantMiddleware` made that OpenRegister
+  does not make on dossiq's routes, refusing a request when the organisation is not `active`, moves
+  into `MandateValidationMiddleware`, so no request is let through that was refused before.
+- **Q4. Tenant objects are not deleted.** They stay, read-only, as the anchor of every tenant audit
+  entry, so existing and new entries for those tenants keep resolving and nothing historic is lost.
+  The `tenant` schema stays declared for that reason. No code writes or deletes a tenant object once
+  `TenantSaasService` is gone. Step 5 and task 6.5 are rewritten to match, and no task deletes tenant
+  objects.
 
-- **Q1. When does `TenantMigrationService` retire?** It moves stored `tenant` rows onto
-  Organisations. Removing it before an install has run it strands that install's tenants. A cloud
-  session cannot see other installs. Either a person confirms the run per install and the class
-  retires afterwards, or the migration also runs as a repair step for one release, or the class
-  stays under ADR-004 until the sunset.
-- **Q2. What happens to the token path?** The session leads (step 3), so the `tenant_id` claim no
-  longer binds. `TenantJwtService` only validates tokens minted by an external broker, and
-  `TenantClaimValidationMiddleware` then checks a claim nobody trusts. `TenantAuthenticationService`
-  also holds the membership, role and mandate lookups over the `tenantUser` and `tenantMandate`
-  satellites that decision 2b keeps. Delete the token path and keep the lookups under ADR-004, or
-  keep both, is a decision.
-- **Q3. Is the active tenant OpenRegister's active organisation?** OpenRegister's
-  `OrganisationService` already keeps an active organisation per session and checks membership on
-  `setActiveOrganisation()`. If that is dossiq's active tenant, `TenantContextMiddleware`,
-  `TenantMiddleware`, the `switchTenant` route in `TenantController` and part of
-  `TenantSessionService` duplicate it and can go. If dossiq keeps its own session choice, the two
-  middlewares stay and rule 7 needs an ADR-004 entry with a reason.
-- **Q4. Where do tenant audit entries anchor once the `tenant` schema retires?**
-  `TenantAuditTrailService` writes every entry through `AuditTrailMapper::createAuditTrailEntry()`
-  against the tenant's `ObjectEntity`. `nc-organisation` is a virtual schema served by
-  OpenRegister's `OrganisationObjectSourceProvider`, so there may be no `ObjectEntity` to anchor to.
-  Existing entries point at tenant objects that step 5 deletes, and OpenRegister's
-  `ReadableAuditTrailLister` drops a row whose object no longer resolves. Task 6.5 does not start
-  until this is answered.
+### Still open
+
+- The onboarding `skipped` status mapping, owned by `remove-casetask` task 7.1.
+- The end state of `TenantController`'s four remaining endpoints.
+- A tenant created as an Organisation after this change has no tenant object, so its audit entries
+  have no anchor. `TenantAuditTrailService::emit()` already fails closed there: it writes no row,
+  logs at error and answers `persisted: false`. Where such entries should anchor is not decided.
+
+### The chain
+
+The decided work is more than 20 tasks, so it is split. This change keeps the migration, the
+schema, the resolver and the SaaS store. `tenancy-onto-openregister-organisation-active-organisation`
+carries Q2 and Q3. It depends on `tenant-isolation-names-the-control-that-runs` and not on this
+change, so it does not wait for the release that retires the migration.
 
 ### What a build session does, in order
 
-1. Build task 6.1 (a dry run of the migration). It writes nothing.
-2. Stop. Tasks 6.2 and 6.3 are for a person. Leave them unticked.
-3. After a person ticks 6.3 and Q4 is answered, build 6.4 to 6.11, then step 5.
+1. Build tasks 6.1 and 6.2: the dry run and the repair step. Neither deletes anything.
+2. Stop at 6.3, which is for a person: a dry run on the dev instance, pasted in the issue.
+3. After 6.3 is ticked, build 6.5 to 6.11, then step 5.
+4. Task 6.4 belongs to the release after. It is held until a person records that the repair step
+   reports zero unmigrated tenants.
