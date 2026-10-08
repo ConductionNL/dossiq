@@ -11503,7 +11503,8 @@
 					"board": [
 						"DqZaak",
 						"DqTeamwachtrij",
-						"DqAanMijToegewezen"
+						"DqAanMijToegewezen",
+						"DqMijnTeam"
 					]
 				}
 			},
@@ -12164,8 +12165,8 @@
 				"readOn": "2026-09-26",
 				"owner": "ConductionNL/portaliq",
 				"screen": {
-					"board": null,
-					"reason": "no dossiq screen: the change proposal queue is portaliq's"
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "PtVoorstelBeoordelen"
 				}
 			},
 			"evidence": {
@@ -13380,7 +13381,8 @@
 					"board": [
 						"DqUwWachtrij",
 						"DqAanMijToegewezen",
-						"DqTeamwachtrij"
+						"DqTeamwachtrij",
+						"DqMijnTeam"
 					]
 				},
 				"readOn": "2026-10-07",
