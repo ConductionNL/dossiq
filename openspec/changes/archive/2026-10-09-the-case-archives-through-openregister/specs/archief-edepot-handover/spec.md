@@ -174,3 +174,29 @@ the reviewer's recorded decision, read back on the case as
 - **WHEN** the dossier export is offered on a case
 - **THEN** its label SHALL describe a download
 - **AND** it SHALL NOT use the words archive or transfer
+
+### Requirement: The case names its selectielijst category (REQ-ARCH-17)
+
+The case schema SHALL declare `x-openregister-archival.categoryProperty` naming
+the case field `selectionListClass`, so openregister reads a case's selectielijst
+category from the case itself. When a case's result is set, by the in-app
+closing transition or through the ZGW API, the case SHALL take the result type's
+`selectionListClass`. A result type without a class SHALL leave the case's value
+alone. The schema SHALL declare no schema-wide `category`, because the class
+differs per result type.
+
+#### Scenario: a closing case carries its result type's class
+@e2e exclude Closing a case with a classed result needs a selectielijst register on the e2e instance, or OpenRegister refuses the save. Covered by `ArchivalNominationDeriverTest::testTheResultTypesSelectionListClassIsCopiedOntoTheCase` and `CaseArchivalCategoryDeclaredTest::testTheArchivalBlockNamesTheCategoryProperty`.
+
+- **GIVEN** a result type whose `selectionListClass` is a selectielijst resultaat URL
+- **WHEN** a case closes with that result
+- **THEN** the case SHALL carry the same URL in `selectionListClass`
+- **AND** the case schema SHALL name `selectionListClass` as its `categoryProperty`
+
+#### Scenario: a result type without a class leaves the case alone
+@e2e exclude A merge rule with no browser surface. Covered by `ArchivalNominationDeriverTest::testAResultTypeWithoutAClassLeavesTheCasesClassAlone`.
+
+- **GIVEN** a case whose `selectionListClass` an administrator set by hand
+- **WHEN** it closes with a result type that declares no class
+- **THEN** the case SHALL keep the class the administrator set
+

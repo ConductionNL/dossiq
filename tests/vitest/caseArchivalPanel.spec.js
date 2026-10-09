@@ -15,7 +15,7 @@
  * The recompute guard is here too. openregister answers 400 without a reason,
  * so the panel has to collect it before it sends rather than relay the refusal.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

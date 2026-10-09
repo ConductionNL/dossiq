@@ -66,10 +66,18 @@ class UuidAnsweringRegister {
 	 * @param string               $register Ignored.
 	 * @param string               $schema   The schema.
 	 * @param array<string, mixed> $filters  Filters.
+	 * @param bool                 $_rbac          Ignored: the store is not scoped.
+	 * @param bool                 $_multitenancy  Ignored: the store is not scoped.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+	public function searchObjectsBySlug(
+		string $register,
+		string $schema,
+		array $filters = [],
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): array {
 		return $this->store->searchObjectsBySlug($register, $schema, $filters);
 	}//end searchObjectsBySlug()
 
