@@ -22,8 +22,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineFollower;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WOODeadlineService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\Notification\IManager as INotificationManager;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
@@ -59,10 +67,63 @@ interface WOODeadlineObjectServiceStub {
 }//end interface
 
 /**
+ * A store that drops every case key the real case schema does not declare,
+ * as OpenRegister does.
+ */
+class UndeclaredCaseKeyDroppingStore extends FakeTermijnStore {
+	/**
+	 * @param array<string, mixed> $caseSchema The real case schema.
+	 */
+	public function __construct(private array $caseSchema) {
+	}
+
+	/**
+	 * Save, dropping undeclared case keys.
+	 *
+	 * @param array<string, mixed> $object   The object.
+	 * @param array|null           $extend   Ignored.
+	 * @param string|int|null      $register Register.
+	 * @param string|int|null      $schema   Schema.
+	 * @param string|null          $uuid     Uuid.
+	 *
+	 * @return FakeStoredObject The stored object.
+	 */
+	public function saveObject(
+		array $object,
+		?array $extend = [],
+		string|int|null $register = null,
+		string|int|null $schema = null,
+		?string $uuid = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+		bool $silent = false,
+		bool $_validation = true,
+	): FakeStoredObject {
+		if ((string)$schema === 'case') {
+			$object = array_intersect_key($object, ($this->caseSchema['properties'] ?? []) + ['id' => true]);
+		}
+
+		return parent::saveObject($object, $extend, $register, $schema, $uuid);
+	}
+}
+
+/**
  * Unit tests for WOODeadlineService.
  *
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\DeadlineExtensionService
+ * @uses \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineFollower
+ * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class WOODeadlineServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -147,32 +208,154 @@ class WOODeadlineServiceTest extends TestCase {
 	}//end testCalculateRefusesADayMonthYearValue()
 
 	/**
-	 * ExtendDeadline throws when extension already applied.
+	 * A Woo service over the real term engine: TermijnService on a store, the
+	 * real extension service on the statutory fallback calendar, and the case
+	 * deadline follower. The store holds one Woo case, its statutory term
+	 * (end 2026-11-02, no extensions) and the seeded Woo definition.
 	 *
-	 * Acceptance criterion: second extension attempt returns error.
+	 * @param FakeTermijnStore   $store  The store.
+	 * @param CaseDeadlineMirror $mirror The mirror the follower fills.
+	 *
+	 * @return WOODeadlineService The service.
+	 */
+	private function wooOverTheEngine(FakeTermijnStore $store, CaseDeadlineMirror $mirror): WOODeadlineService {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'termijn_definitie_schema' => 'deadlineDefinition',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
+				default => '',
+			}
+		);
+
+		$seed = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/termijnbewaking_seed_data.json'), true);
+		foreach ($seed['termijnDefinities'] as $definition) {
+			if ($definition['caseType'] === 'woo-verzoek') {
+				$store->seed('deadlineDefinition', $definition);
+			}
+		}
+
+		$store->seed('case', ['id' => 'case-woo', 'title' => 'Woo-verzoek over de ringweg', 'deadline' => '2026-11-02']);
+		$store->seed('deadlineInstance', [
+			'id' => 'ti-woo',
+			'case' => 'case-woo',
+			'kind' => 'statutory',
+			'deadlineDefinition' => 'td-woo-verzoek',
+			'startDate' => '2026-10-05T09:00:00+02:00',
+			'endDateCalculated' => '2026-11-02',
+			'endDateCurrent' => '2026-11-02',
+			'status' => 'lopend',
+			'countExtensions' => 0,
+		]);
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$timer = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
+		$terms = new TermijnService(
+			$settings,
+			$logger,
+			follower: new CaseDeadlineFollower($settings, $mirror, $logger),
+		);
+
+		return new WOODeadlineService(
+			$settings,
+			$this->notificationManager,
+			$logger,
+			$this->caseDates(),
+			$timer,
+			$terms,
+			new DeadlineExtensionService(termService: $terms, dates: $this->caseDates(), timerService: $timer),
+		);
+	}//end wooOverTheEngine()
+
+	/**
+	 * REQ-WTR-003, "One extension, rolled": the term instance moves by two
+	 * weeks, the case follows it, and the reason is the verleng rationale.
 	 *
 	 * @return void
 	 */
-	public function testExtendDeadlineThrowsOnSecondExtension(): void {
-		$objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
-		// Return a case that already has deadlineVerlengd = 1.
-		$objectServiceMock->method('find')->willReturn([
-			'id' => 'case-uuid-001',
-			'expectedResolution' => '2026-05-29',
-			'deadlineVerlengd' => 1,
-		]);
+	public function testTheExtensionMovesTheTermInstanceAndTheCase(): void {
+		$store = new FakeTermijnStore();
+		$mirror = new CaseDeadlineMirror();
 
-		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'dossiq'],
-			['case_schema', '', 'case'],
-		]);
+		$result = $this->wooOverTheEngine($store, $mirror)->extendDeadline('case-woo', 'Zienswijzen van derden');
 
-		$this->expectException(\InvalidArgumentException::class);
-		$this->expectExceptionMessageMatches('/Only one deadline extension/i');
+		$this->assertSame(
+			[
+				'caseId' => 'case-woo',
+				'previousDeadline' => '2026-11-02',
+				'deadline' => '2026-11-16',
+				'extensionReason' => 'Zienswijzen van derden',
+				'countExtensions' => 1,
+			],
+			$result
+		);
+
+		$instance = $store->get('deadlineInstance', 'ti-woo');
+		$this->assertSame('2026-11-16', $instance['endDateCurrent']);
+		$this->assertSame(1, $instance['countExtensions']);
+
+		$events = array_values(array_filter(
+			$store->findObjects('dossiq', 'termijnGebeurtenis'),
+			static fn (array $row): bool => ($row['type'] ?? '') === 'verleng'
+		));
+		$this->assertCount(1, $events);
+		$this->assertSame('Zienswijzen van derden', $events[0]['rationale'] ?? null);
+
+		// The case was saved to follow the term; the listener writes this date.
+		$this->assertSame('2026-11-16', $mirror->take('case-woo')['deadline'] ?? null);
+		$this->assertArrayNotHasKey('expectedResolution', (array)$store->get('case', 'case-woo'));
+	}//end testTheExtensionMovesTheTermInstanceAndTheCase()
+
+	/**
+	 * REQ-WTR-003, "The cap holds when the case schema drops undeclared keys":
+	 * the store drops every case key the real case schema does not declare,
+	 * and the second extension is still refused, because the cap is read from
+	 * the term instance.
+	 *
+	 * @return void
+	 */
+	public function testTheCapHoldsWhenTheCaseDropsUndeclaredKeys(): void {
+		$store = new UndeclaredCaseKeyDroppingStore((new RealSchemaValidator())->schemas['case']);
+		$service = $this->wooOverTheEngine($store, new CaseDeadlineMirror());
+
+		$service->extendDeadline('case-woo', 'Zienswijzen van derden');
+
+		try {
+			$service->extendDeadline('case-woo', 'Nog meer tijd nodig');
+			$this->fail('A second Woo extension has to be refused.');
+		} catch (RefusedException $refusal) {
+			$this->assertSame('woo-one-extension', $refusal->getRule());
+			$this->assertSame(RefusedException::STATUS_REFUSED, $refusal->getStatus());
+			$this->assertStringContainsString('Woo art. 4.4 lid 2', $refusal->getSentence());
+		}
+
+		$this->assertSame('2026-11-16', $store->get('deadlineInstance', 'ti-woo')['endDateCurrent'], 'unchanged after the refusal');
+		foreach (['expectedResolution', 'deadlineVerlengd', 'verdagingReden'] as $undeclared) {
+			$this->assertArrayNotHasKey($undeclared, (array)$store->get('case', 'case-woo'));
+		}
+	}//end testTheCapHoldsWhenTheCaseDropsUndeclaredKeys()
+
+	/**
+	 * Without the term engine an extension is refused, not written onto the case.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheTermEngineTheExtensionIsRefused(): void {
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessageMatches('/term engine is not available/');
 
 		$this->service->extendDeadline('case-uuid-001', 'Complex request');
-	}//end testExtendDeadlineThrowsOnSecondExtension()
+	}//end testWithoutTheTermEngineTheExtensionIsRefused()
 
 	/**
 	 * ExtendDeadline throws when reason is empty.
@@ -209,7 +392,8 @@ class WOODeadlineServiceTest extends TestCase {
 		$objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
 		$objectServiceMock->method('find')->willReturn([
 			'id' => 'case-uuid-001',
-			'expectedResolution' => '2099-12-31',
+			// The one declared deadline; the undeclared `expectedResolution` is no longer read.
+			'deadline' => '2099-12-31',
 		]);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);

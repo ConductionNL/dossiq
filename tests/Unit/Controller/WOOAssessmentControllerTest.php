@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WOOAssessmentController;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
@@ -310,6 +311,33 @@ class WOOAssessmentControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 	}//end testExtendDeadlineReturns400ForEmptyReason()
+
+	/**
+	 * REQ-WTR-003: a second Woo extension answers 409 with the rule and the
+	 * Woo sentence, not a 500.
+	 *
+	 * @return void
+	 */
+	public function testASecondWooExtensionAnswers409(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['reason', '', 'Nog meer tijd nodig']]);
+
+		$this->deadlineService->method('extendDeadline')->willThrowException(
+			new RefusedException(
+				rule: 'woo-one-extension',
+				sentence: 'This term was already extended. Woo art. 4.4 lid 2 allows one extension of at most two weeks.',
+			)
+		);
+
+		$response = $this->controller->extendDeadline('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('woo-one-extension', $response->getData()['error']);
+		$this->assertStringContainsString('Woo art. 4.4 lid 2', $response->getData()['message']);
+	}//end testASecondWooExtensionAnswers409()
 
 	/**
 	 * CreateDecision returns 422 when outstanding documents exist.

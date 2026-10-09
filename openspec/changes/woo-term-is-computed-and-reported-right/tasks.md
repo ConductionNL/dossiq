@@ -66,7 +66,7 @@ from `today`.
 
 ## 3. The Woo extension goes through termijn#verleng
 
-- [ ] 3.1 Rewrite `WOODeadlineService::extendDeadline(caseId, reason)`. It resolves the case's Woo
+- [x] 3.1 Rewrite `WOODeadlineService::extendDeadline(caseId, reason)`. It resolves the case's Woo
   term instance (`TermijnService::getTermijnInstanceForZaak()`), computes
   `endDateCurrent + extensionPeriod` (read from the case type, P14D), and calls
   `DeadlineExtensionService::requestExtension(instanceId, reason, newEnd)`. It returns
@@ -80,6 +80,12 @@ from `today`.
     (`tests/Support/RealSchemaValidator`).
   - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
     `testASecondWooExtensionAnswers409`.
+  - Done: the statutory instance is picked from `instancesForCase()` (the latest instance can be
+    another kind); the period comes from `TermDeclarationReader` (P14D, 14 when undeclared). The
+    ceiling refusal is `ExtensionCeilingReachedException` (a `RuntimeException`, same message), which
+    the Woo service turns into `RefusedException` `woo-one-extension` (409). No term engine: refused,
+    nothing written. Tests run over the real `TermijnService`, `DeadlineExtensionService` and the
+    seeded Woo definition.
 - [x] 3.2 Make sure the seeded Woo term definition caps extensions at one. Check
   `register.d/81-woo-verzoek.json` and the `TermijnDefinitie` the Woo case type binds. Replace
   `resolveMaxExtensions()`'s reflection on `definitieCache` with a real read of the definition. A
@@ -90,8 +96,13 @@ from `today`.
     the seed). The reflection is gone: `TermijnService::getTermijnDefinitieById()` reads the row
     through `TermDefinitions::byId()`; a missing definition counts as one
     (`testAMissingDefinitionCountsAsOne`).
-- [ ] 3.3 Search `src/` and `lib/` for readers of `expectedResolution`, `deadlineVerlengd` and
+- [x] 3.3 Search `src/` and `lib/` for readers of `expectedResolution`, `deadlineVerlengd` and
   `verdagingReden`, and move each one to `deadline` or the term instance. List them in the PR body.
+  - Done. Readers found: `WOODeadlineService::resolveWarningDeadline()` (now reads `deadline`) and
+    `extendDeadline()` itself. Nothing in `src/`. Left as is: `calculate()` returns an
+    `expectedResolution` key (a return value, no caller in `lib/`), and the Woo case type's
+    `verdagingReden` property definition (`register.d/81-woo-verzoek.json`), a handler-entered case
+    property, not a key this route wrote.
 
 ## 4. The report groups by the real case type
 

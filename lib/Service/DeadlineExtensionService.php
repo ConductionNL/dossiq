@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Exception\ExtensionCeilingReachedException;
 use OCA\Dossiq\Exception\RefusedException;
 use RuntimeException;
 
@@ -252,7 +253,8 @@ class DeadlineExtensionService {
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException When the deadline does not move forward or the ceiling is exhausted.
+	 * @throws RuntimeException When the deadline does not move forward.
+	 * @throws ExtensionCeilingReachedException When the ceiling is exhausted.
 	 */
 	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode, array $definitie): void {
 		$current = (string)($instance['endDateCurrent'] ?? '');
@@ -263,7 +265,7 @@ class DeadlineExtensionService {
 		$consumed = (int)($instance['countExtensions'] ?? 0);
 		$maxExt = $this->resolveMaxExtensions(definitie: $definitie);
 		if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
-			throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
+			throw new ExtensionCeilingReachedException(message: 'AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
 		}
 	}//end assertExtensionPermitted()
 
