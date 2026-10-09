@@ -202,7 +202,7 @@ export default {
 
 		/** CSS modifier class for the urgency chip; '' when no chip should render. */
 		urgencyChipClassName() {
-			return urgencyChipClass(this.urgencyEntry && this.urgencyEntry.tier)
+			return urgencyChipClass(this.urgencyEntry && this.urgencyEntry.deadlineTier)
 		},
 
 		/**
@@ -213,7 +213,7 @@ export default {
 		 * @spec openspec/specs/my-work/spec.md#requirement-card-display-mvp
 		 */
 		urgencyChipLabel() {
-			const tier = this.urgencyEntry && this.urgencyEntry.tier
+			const tier = this.urgencyEntry && this.urgencyEntry.deadlineTier
 			switch (tier) {
 				case 'overdue':
 					return t('dossiq', 'Overdue')

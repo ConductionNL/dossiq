@@ -76,7 +76,7 @@
 						:key="item.id"
 						class="personal-queue__item"
 						:class="{
-							'personal-queue__item--late': item.tier === 'overdue',
+							'personal-queue__item--late': item.deadlineTier === 'overdue',
 						}"
 						:data-testid="`queue-item-${item.id}`">
 						<a

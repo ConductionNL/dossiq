@@ -60,6 +60,8 @@ use OCA\Dossiq\Service\Queue\QueueOrdering;
 use OCA\Dossiq\Service\Queue\QueueSource;
 use OCA\Dossiq\Service\Queue\QueueSourceCatalogue;
 use OCA\Dossiq\Service\Queue\QueueViewPreferences;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\WorkQueueService;
@@ -394,6 +396,8 @@ class QueueItemLifecycleIsConsultedTest extends TestCase {
 			engineTasks: $this->createMock(originalClassName: EngineTaskInbox::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dates: $this->caseDates(),
+			urgencySettings: new QueueUrgencySettings(settings: $this->createMock(originalClassName: SettingsService::class)),
+			journal: $this->createMock(originalClassName: CaseJournal::class),
 		);
 	}//end scorer()
 

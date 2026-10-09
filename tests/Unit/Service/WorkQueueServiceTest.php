@@ -29,16 +29,25 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
+use OCA\Dossiq\Service\Queue\UrgencyProfile;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ *
+ * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
  */
 class WorkQueueServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -49,6 +58,13 @@ class WorkQueueServiceTest extends TestCase {
 	private WorkQueueService $service;
 
 	/**
+	 * App config the settings double answers, per test.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $config = [];
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -57,16 +73,15 @@ class WorkQueueServiceTest extends TestCase {
 		$this->objects = new FakeWorkQueueStore();
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
+		$this->config = [
+			'register' => 'dossiq',
+			'case_schema' => 'case',
+			'case_type_schema' => 'caseType',
+			'task_schema' => 'caseTask',
+			'termijn_instance_schema' => 'deadlineInstance',
+		];
 		$settings->method('getConfigValue')->willReturnCallback(
-			static function (string $key): string {
-				return match ($key) {
-					'register' => 'dossiq',
-					'case_schema' => 'case',
-					'task_schema' => 'caseTask',
-					'termijn_instance_schema' => 'deadlineInstance',
-					default => '',
-				};
-			}
+			fn (string $key): string => ($this->config[$key] ?? '')
 		);
 
 		// The engine's inbox, over the tasks this test seeds. The work queue
@@ -107,8 +122,48 @@ class WorkQueueServiceTest extends TestCase {
 			engineTasks: $engineTasks,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dates: $this->caseDates(),
+			urgencySettings: new QueueUrgencySettings(settings: $settings),
+			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
 		);
 	}//end setUp()
+
+	/**
+	 * A profile with the given numbers, through the same normalisation the
+	 * settings use.
+	 *
+	 * @param mixed $critical Critical threshold.
+	 * @param mixed $warning  Warning threshold.
+	 * @param mixed $priority Priority weight.
+	 * @param mixed $idle     Idle weight.
+	 *
+	 * @return UrgencyProfile The profile.
+	 */
+	private function profile(mixed $critical = 3, mixed $warning = 7, mixed $priority = 10, mixed $idle = 0.5): UrgencyProfile {
+		return UrgencyProfile::normalised(criticalDays: $critical, warningDays: $warning, priorityWeight: $priority, idleWeight: $idle);
+	}//end profile()
+
+	/**
+	 * An open case assigned to jan, as the My Work filters see it.
+	 *
+	 * @param array<string, mixed> $fields Fields on top of the defaults.
+	 *
+	 * @return void
+	 */
+	private function seedOpenCase(array $fields): void {
+		$this->objects->saveObject(
+			'case',
+			array_merge(
+				[
+					'assignee' => 'jan',
+					'endDate' => '',
+					'priority' => 'normal',
+					'statusHiddenInLists' => false,
+					'isDraft' => false,
+				],
+				$fields
+			)
+		);
+	}//end seedOpenCase()
 
 	// ── Pure scoreItem() tests ──────────────────────────────────────────
 
@@ -118,7 +173,7 @@ class WorkQueueServiceTest extends TestCase {
 	public function testNoDeadlineScoresNormalTierWithNullDays(): void {
 		$result = $this->service->scoreItem(null, 'normal', null, new DateTimeImmutable('2026-07-13'));
 
-		self::assertSame('normal', $result['tier']);
+		self::assertSame('normal', $result['deadlineTier']);
 		self::assertNull($result['daysUntilDeadline']);
 	}//end testNoDeadlineScoresNormalTierWithNullDays()
 
@@ -129,7 +184,7 @@ class WorkQueueServiceTest extends TestCase {
 		// 2026-07-13 is a Monday; 2 business days before is 2026-07-09 (Thu).
 		$result = $this->service->scoreItem('2026-07-09', 'normal', null, new DateTimeImmutable('2026-07-13'));
 
-		self::assertSame('overdue', $result['tier']);
+		self::assertSame('overdue', $result['deadlineTier']);
 		self::assertLessThan(0, $result['daysUntilDeadline']);
 	}//end testOverdueDeadlineScoresOverdueTier()
 
@@ -141,7 +196,7 @@ class WorkQueueServiceTest extends TestCase {
 		$result = $this->service->scoreItem('2026-07-13', 'normal', null, new DateTimeImmutable('2026-07-13'));
 
 		self::assertSame(0, $result['daysUntilDeadline']);
-		self::assertSame('critical', $result['tier']);
+		self::assertSame('critical', $result['deadlineTier']);
 	}//end testCriticalTierAtZeroBusinessDays()
 
 	/**
@@ -152,7 +207,7 @@ class WorkQueueServiceTest extends TestCase {
 		$result = $this->service->scoreItem('2026-07-16', 'normal', null, new DateTimeImmutable('2026-07-13'));
 
 		self::assertSame(3, $result['daysUntilDeadline']);
-		self::assertSame('critical', $result['tier']);
+		self::assertSame('critical', $result['deadlineTier']);
 	}//end testCriticalTierAtThreeBusinessDaysBoundary()
 
 	/**
@@ -163,7 +218,7 @@ class WorkQueueServiceTest extends TestCase {
 		$result = $this->service->scoreItem('2026-07-17', 'normal', null, new DateTimeImmutable('2026-07-13'));
 
 		self::assertSame(4, $result['daysUntilDeadline']);
-		self::assertSame('warning', $result['tier']);
+		self::assertSame('warning', $result['deadlineTier']);
 	}//end testWarningTierAtFourBusinessDaysBoundary()
 
 	/**
@@ -174,7 +229,7 @@ class WorkQueueServiceTest extends TestCase {
 		$result = $this->service->scoreItem('2026-07-22', 'normal', null, new DateTimeImmutable('2026-07-13'));
 
 		self::assertSame(7, $result['daysUntilDeadline']);
-		self::assertSame('warning', $result['tier']);
+		self::assertSame('warning', $result['deadlineTier']);
 	}//end testWarningTierAtSevenBusinessDaysBoundary()
 
 	/**
@@ -185,7 +240,7 @@ class WorkQueueServiceTest extends TestCase {
 		$result = $this->service->scoreItem('2026-07-23', 'normal', null, new DateTimeImmutable('2026-07-13'));
 
 		self::assertSame(8, $result['daysUntilDeadline']);
-		self::assertSame('normal', $result['tier']);
+		self::assertSame('normal', $result['deadlineTier']);
 	}//end testNormalTierAtEightBusinessDaysBoundary()
 
 	/**
@@ -197,7 +252,7 @@ class WorkQueueServiceTest extends TestCase {
 		$urgent = $this->service->scoreItem('2026-07-22', 'urgent', null, $now);
 		$low = $this->service->scoreItem('2026-07-22', 'low', null, $now);
 
-		self::assertSame($urgent['tier'], $low['tier']);
+		self::assertSame($urgent['deadlineTier'], $low['deadlineTier']);
 		self::assertGreaterThan($low['score'], $urgent['score']);
 	}//end testHigherPriorityScoresHigherWithinSameTier()
 
@@ -216,25 +271,108 @@ class WorkQueueServiceTest extends TestCase {
 	/**
 	 * @return void
 	 */
-	public function testOlderReferenceDateIncreasesAgeComponent(): void {
+	public function testOlderLastActivityIncreasesIdleComponent(): void {
 		$now = new DateTimeImmutable('2026-07-13');
 
 		$old = $this->service->scoreItem(null, 'normal', '2026-05-01', $now);
 		$fresh = $this->service->scoreItem(null, 'normal', '2026-07-12', $now);
 
-		self::assertGreaterThan($fresh['scoreBreakdown']['age'], $old['scoreBreakdown']['age']);
-	}//end testOlderReferenceDateIncreasesAgeComponent()
+		self::assertGreaterThan($fresh['scoreBreakdown']['idle'], $old['scoreBreakdown']['idle']);
+		self::assertSame(1, $fresh['idleDays']);
+	}//end testOlderLastActivityIncreasesIdleComponent()
 
 	/**
 	 * @return void
 	 */
-	public function testFutureReferenceDateDoesNotProduceNegativeAge(): void {
+	public function testFutureLastActivityCountsAsToday(): void {
 		$now = new DateTimeImmutable('2026-07-13');
 
 		$result = $this->service->scoreItem(null, 'normal', '2026-12-01', $now);
 
-		self::assertSame(0.0, $result['scoreBreakdown']['age']);
-	}//end testFutureReferenceDateDoesNotProduceNegativeAge()
+		self::assertSame(0.0, $result['scoreBreakdown']['idle']);
+		self::assertSame(0, $result['idleDays']);
+	}//end testFutureLastActivityCountsAsToday()
+
+	/**
+	 * The default weights keep today's priority points.
+	 *
+	 * @return void
+	 */
+	public function testDefaultWeightsKeepTodaysPriorityPoints(): void {
+		$now = new DateTimeImmutable('2026-07-13');
+		$parts = [];
+		foreach (['urgent', 'high', 'normal', 'low'] as $priority) {
+			$parts[] = $this->service->scoreItem(null, $priority, null, $now)['scoreBreakdown']['priority'];
+		}
+
+		self::assertSame([30.0, 20.0, 10.0, 0.0], $parts);
+	}//end testDefaultWeightsKeepTodaysPriorityPoints()
+
+	/**
+	 * Configured thresholds move the tier boundaries.
+	 *
+	 * @return void
+	 */
+	public function testConfiguredThresholdsMoveTheBoundaries(): void {
+		// Monday 2026-07-13. 5 working days on: Mon 07-20; 6: Tue 07-21;
+		// 10: Mon 07-27; 11: Tue 07-28.
+		$now = new DateTimeImmutable('2026-07-13');
+		$profile = $this->profile(critical: 5, warning: 10);
+
+		$tiers = [];
+		foreach (['2026-07-20', '2026-07-21', '2026-07-27', '2026-07-28'] as $deadline) {
+			$tiers[] = $this->service->scoreItem($deadline, 'normal', null, $now, $profile)['deadlineTier'];
+		}
+
+		self::assertSame(['critical', 'warning', 'warning', 'normal'], $tiers);
+	}//end testConfiguredThresholdsMoveTheBoundaries()
+
+	/**
+	 * A warning threshold below the critical one leaves no almost-due band.
+	 *
+	 * @return void
+	 */
+	public function testWarningBelowCriticalClosesTheSoonBand(): void {
+		$now = new DateTimeImmutable('2026-07-13');
+		$profile = $this->profile(critical: 5, warning: 2);
+
+		self::assertSame('critical', $this->service->scoreItem('2026-07-20', 'normal', null, $now, $profile)['deadlineTier']);
+		self::assertSame('normal', $this->service->scoreItem('2026-07-21', 'normal', null, $now, $profile)['deadlineTier']);
+	}//end testWarningBelowCriticalClosesTheSoonBand()
+
+	/**
+	 * Weights of zero switch their parts off.
+	 *
+	 * @return void
+	 */
+	public function testZeroWeightsSwitchTheirPartsOff(): void {
+		$now = new DateTimeImmutable('2026-07-13');
+		$profile = $this->profile(priority: 0, idle: 0);
+
+		$urgentIdle = $this->service->scoreItem('2026-07-22', 'urgent', '2026-05-01', $now, $profile);
+		$lowFresh = $this->service->scoreItem('2026-07-22', 'low', '2026-07-13', $now, $profile);
+
+		self::assertSame($lowFresh['score'], $urgentIdle['score']);
+	}//end testZeroWeightsSwitchTheirPartsOff()
+
+	/**
+	 * The tier outranks the heaviest weights.
+	 *
+	 * @return void
+	 */
+	public function testTheTierAlwaysOutranksTheWeights(): void {
+		$now = new DateTimeImmutable('2026-07-13');
+		$profile = $this->profile(critical: 3, warning: 7, priority: 1000, idle: 1000);
+
+		// Warning tier (4 working days), urgent, idle for 90 days.
+		$warning = $this->service->scoreItem('2026-07-17', 'urgent', '2026-04-14', $now, $profile);
+		// Critical tier (3 working days), low, touched today.
+		$critical = $this->service->scoreItem('2026-07-16', 'low', '2026-07-13', $now, $profile);
+
+		self::assertSame('warning', $warning['deadlineTier']);
+		self::assertSame('critical', $critical['deadlineTier']);
+		self::assertGreaterThan($warning['score'], $critical['score']);
+	}//end testTheTierAlwaysOutranksTheWeights()
 
 	// ── computeQueue() ───────────────────────────────────────────────────
 
@@ -247,6 +385,8 @@ class WorkQueueServiceTest extends TestCase {
 			'title' => 'Jan open case',
 			'assignee' => 'jan',
 			'endDate' => '',
+			'statusHiddenInLists' => false,
+			'isDraft' => false,
 			'deadline' => '2026-07-16',
 			'priority' => 'normal',
 		]);
@@ -256,6 +396,8 @@ class WorkQueueServiceTest extends TestCase {
 			'assignee' => 'jan',
 			'endDate' => '2026-06-01',
 			'deadline' => '2026-06-05',
+			'statusHiddenInLists' => false,
+			'isDraft' => false,
 			'priority' => 'normal',
 		]);
 		$this->objects->saveObject('case', [
@@ -283,6 +425,8 @@ class WorkQueueServiceTest extends TestCase {
 			'title' => 'Case with termijn',
 			'assignee' => 'jan',
 			'endDate' => '',
+			'statusHiddenInLists' => false,
+			'isDraft' => false,
 			'deadline' => '2026-08-01',
 			'priority' => 'normal',
 		]);
@@ -307,6 +451,8 @@ class WorkQueueServiceTest extends TestCase {
 			'title' => 'Distant case',
 			'assignee' => 'jan',
 			'endDate' => '',
+			'statusHiddenInLists' => false,
+			'isDraft' => false,
 			'deadline' => '2026-08-01',
 			'priority' => 'normal',
 		]);
@@ -332,7 +478,7 @@ class WorkQueueServiceTest extends TestCase {
 		self::assertCount(2, $items);
 		// Overdue task must sort first (highest score).
 		self::assertSame('task-1', $items[0]['id']);
-		self::assertSame('overdue', $items[0]['tier']);
+		self::assertSame('overdue', $items[0]['deadlineTier']);
 		self::assertSame('case-1', $items[1]['id']);
 	}//end testComputeQueueExcludesTerminalTasksAndSortsByScore()
 
@@ -344,6 +490,8 @@ class WorkQueueServiceTest extends TestCase {
 			'id' => 'case-1',
 			'assignee' => 'jan',
 			'endDate' => '',
+			'statusHiddenInLists' => false,
+			'isDraft' => false,
 			'priority' => 'normal',
 		]);
 
@@ -351,6 +499,147 @@ class WorkQueueServiceTest extends TestCase {
 
 		self::assertSame([], $items);
 	}//end testComputeQueueReturnsEmptyForUnknownUser()
+
+	/**
+	 * The case search names its limit and the list's filters.
+	 *
+	 * @return void
+	 */
+	public function testCaseSearchNamesItsLimitAndTheListsFilters(): void {
+		$this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame(
+			['assignee' => 'jan', 'statusHiddenInLists' => false, 'isDraft' => false, '_limit' => 1000],
+			$this->objects->searches['case'][0]
+		);
+	}//end testCaseSearchNamesItsLimitAndTheListsFilters()
+
+	/**
+	 * A case item carries its row, its deadline tier and its idle days.
+	 *
+	 * @return void
+	 */
+	public function testCaseItemCarriesItsRowAndDeadlineTier(): void {
+		$this->seedOpenCase(['id' => 'case-1', 'title' => 'One', 'startDate' => '2026-07-01']);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame('case-1', $items[0]['case']['id']);
+		self::assertSame('normal', $items[0]['deadlineTier']);
+		self::assertSame(12, $items[0]['idleDays']);
+		self::assertArrayNotHasKey('tier', $items[0]);
+	}//end testCaseItemCarriesItsRowAndDeadlineTier()
+
+	/**
+	 * A recent save resets the idle days.
+	 *
+	 * @return void
+	 */
+	public function testARecentEditResetsTheIdleDays(): void {
+		$this->seedOpenCase([
+			'id' => 'case-1',
+			'startDate' => '2026-06-03',
+			'@self' => ['updated' => '2026-07-11T14:00:00+00:00'],
+		]);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame(2, $items[0]['idleDays']);
+	}//end testARecentEditResetsTheIdleDays()
+
+	/**
+	 * A journal entry newer than the last save counts.
+	 *
+	 * @return void
+	 */
+	public function testAJournalEntryNewerThanTheSaveCounts(): void {
+		$this->seedOpenCase([
+			'id' => 'case-1',
+			'@self' => ['updated' => '2026-07-04T09:00:00+00:00'],
+			'activity' => json_encode([['type' => 'resumed', 'at' => '2026-07-09T10:00:00+00:00']]),
+		]);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame(4, $items[0]['idleDays']);
+	}//end testAJournalEntryNewerThanTheSaveCounts()
+
+	/**
+	 * With no activity the idle days count from the start.
+	 *
+	 * @return void
+	 */
+	public function testNoActivityCountsFromTheStart(): void {
+		$this->seedOpenCase(['id' => 'case-1', 'startDate' => '2026-07-01']);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame(12, $items[0]['idleDays']);
+	}//end testNoActivityCountsFromTheStart()
+
+	/**
+	 * The admin settings reach the queue.
+	 *
+	 * @return void
+	 */
+	public function testTheAdminThresholdsReachTheQueue(): void {
+		$this->config['queue_critical_days'] = '10';
+		// Monday 2026-07-13; 8 working days on is Thursday 07-23.
+		$this->seedOpenCase(['id' => 'case-1', 'deadline' => '2026-07-23']);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame('critical', $items[0]['deadlineTier']);
+	}//end testTheAdminThresholdsReachTheQueue()
+
+	/**
+	 * The case type's own threshold wins over the admin default.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseTypesOwnThresholdWins(): void {
+		$this->objects->saveObject('caseType', ['id' => 'woo', 'queueCriticalDays' => 10]);
+		$this->seedOpenCase(['id' => 'case-1', 'caseType' => 'woo', 'deadline' => '2026-07-23']);
+		$this->seedOpenCase(['id' => 'case-2', 'caseType' => 'other', 'deadline' => '2026-07-23']);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+		$byId = array_column($items, 'deadlineTier', 'id');
+
+		self::assertSame('critical', $byId['case-1']);
+		self::assertSame('normal', $byId['case-2']);
+	}//end testTheCaseTypesOwnThresholdWins()
+
+	/**
+	 * An empty override falls back to the admin default on its own.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyOverrideFallsBack(): void {
+		$this->objects->saveObject('caseType', ['id' => 'melding', 'queueWarningDays' => 12, 'queueCriticalDays' => null]);
+		// 3 working days on is Thursday 07-16; 12 working days on is Wednesday 07-29.
+		$this->seedOpenCase(['id' => 'case-1', 'caseType' => 'melding', 'deadline' => '2026-07-16']);
+		$this->seedOpenCase(['id' => 'case-2', 'caseType' => 'melding', 'deadline' => '2026-07-29']);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+		$byId = array_column($items, 'deadlineTier', 'id');
+
+		self::assertSame('critical', $byId['case-1']);
+		self::assertSame('warning', $byId['case-2']);
+	}//end testAnEmptyOverrideFallsBack()
+
+	/**
+	 * The warning-days fields of a term do not steer the deadline tier.
+	 *
+	 * @return void
+	 */
+	public function testTheTermWarningFieldsDoNotSteerTheTier(): void {
+		$this->objects->saveObject('caseType', ['id' => 'bezwaar', 'statutoryWarningDays' => 20, 'plannedWarningDays' => 20]);
+		$this->seedOpenCase(['id' => 'case-1', 'caseType' => 'bezwaar', 'deadline' => '2026-07-29']);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame('normal', $items[0]['deadlineTier']);
+	}//end testTheTermWarningFieldsDoNotSteerTheTier()
 
 	// ── computeWorkload() ────────────────────────────────────────────────
 
@@ -394,6 +683,26 @@ class FakeWorkQueueStore {
 	public array $store = [];
 
 	/**
+	 * Every search's filters, keyed by schema slug, in order.
+	 *
+	 * @var array<string, array<int, array<string, mixed>>>
+	 */
+	public array $searches = [];
+
+	/**
+	 * Single-object read, mirroring ObjectService::find(); null when absent.
+	 *
+	 * @param string          $id       Object id.
+	 * @param int|string|null $register Register (unused).
+	 * @param int|string|null $schema   Schema slug.
+	 *
+	 * @return array<string, mixed>|null The object, or null.
+	 */
+	public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+		return ($this->store[(string)$schema][$id] ?? null);
+	}//end find()
+
+	/**
 	 * Persist (insert or update) an object by id.
 	 *
 	 * @param string $schema Schema slug.
@@ -417,6 +726,7 @@ class FakeWorkQueueStore {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+		$this->searches[$schemaSlug][] = $filters;
 		$rows = array_values($this->store[$schemaSlug] ?? []);
 
 		$fieldFilters = array_filter(

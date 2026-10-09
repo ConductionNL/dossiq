@@ -90,21 +90,21 @@ describe('buildUrgencyMap', () => {
 			{
 				itemType: 'case',
 				id: 'case-1',
-				tier: 'overdue',
+				deadlineTier: 'overdue',
 				score: 1005,
 				daysUntilDeadline: -2,
 			},
 			{
 				itemType: 'case',
 				id: 'case-2',
-				tier: 'normal',
+				deadlineTier: 'normal',
 				score: 260,
 				daysUntilDeadline: 30,
 			},
 		]
 		expect(buildUrgencyMap(items)).toEqual({
-			'case-1': { tier: 'overdue', score: 1005, daysUntilDeadline: -2 },
-			'case-2': { tier: 'normal', score: 260, daysUntilDeadline: 30 },
+			'case-1': { deadlineTier: 'overdue', score: 1005, daysUntilDeadline: -2 },
+			'case-2': { deadlineTier: 'normal', score: 260, daysUntilDeadline: 30 },
 		})
 	})
 
@@ -113,14 +113,14 @@ describe('buildUrgencyMap', () => {
 			{
 				itemType: 'task',
 				id: 'task-1',
-				tier: 'overdue',
+				deadlineTier: 'overdue',
 				score: 1005,
 				daysUntilDeadline: -2,
 			},
 			{
 				itemType: 'case',
 				id: 'case-1',
-				tier: 'warning',
+				deadlineTier: 'warning',
 				score: 493,
 				daysUntilDeadline: 7,
 			},
@@ -131,8 +131,8 @@ describe('buildUrgencyMap', () => {
 
 	it('skips items missing an id', () => {
 		const items = [
-			{ itemType: 'case', id: '', tier: 'overdue', score: 1005 },
-			{ itemType: 'case', tier: 'overdue', score: 1005 },
+			{ itemType: 'case', id: '', deadlineTier: 'overdue', score: 1005 },
+			{ itemType: 'case', deadlineTier: 'overdue', score: 1005 },
 		]
 		expect(buildUrgencyMap(items)).toEqual({})
 	})

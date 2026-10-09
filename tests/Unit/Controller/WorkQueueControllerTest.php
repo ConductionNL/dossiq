@@ -118,7 +118,7 @@ class WorkQueueControllerTest extends TestCase {
 		$user = $this->mockUser('jan');
 		$this->userSession->method('getUser')->willReturn($user);
 
-		$fixture = [['id' => 'case-1', 'itemType' => 'case', 'tier' => 'overdue', 'score' => 1005.0]];
+		$fixture = [['id' => 'case-1', 'itemType' => 'case', 'deadlineTier' => 'overdue', 'score' => 1005.0]];
 		$this->workQueueService->expects($this->once())
 			->method('computeQueue')
 			->with('jan')

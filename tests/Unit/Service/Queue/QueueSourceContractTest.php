@@ -38,6 +38,8 @@ use OCA\Dossiq\Service\Queue\QueueSource;
 use OCA\Dossiq\Service\Queue\QueueSourceCatalogue;
 use OCA\Dossiq\Service\Queue\QueueViewPreferences;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -230,7 +232,9 @@ class QueueSourceContractTest extends TestCase {
 			settingsService: $this->createMock(SettingsService::class),
 			engineTasks: $this->createMock(EngineTaskInbox::class),
 			logger: $this->createMock(LoggerInterface::class),
-			dates: $this->caseDates()
+			dates: $this->caseDates(),
+			urgencySettings: new QueueUrgencySettings(settings: $this->createMock(SettingsService::class)),
+			journal: $this->createMock(CaseJournal::class)
 		);
 	}
 
@@ -366,7 +370,7 @@ class QueueSourceContractTest extends TestCase {
 			['tasks:case:late', 'assigned-cases:case:later', 'assigned-cases:case:undated'],
 			array_column($queue['items'], 'id')
 		);
-		self::assertSame('overdue', $queue['items'][0]['tier']);
+		self::assertSame('overdue', $queue['items'][0]['deadlineTier']);
 	}
 
 	/**
