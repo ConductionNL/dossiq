@@ -26,6 +26,9 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IConfig;
+use OCP\IGroupManager;
+use OCP\IUser;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -69,10 +72,11 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 * @param array<int, array<string, mixed>> $rows The case type rows.
 	 * @param string $stored The stored user value.
 	 * @param IConfig|null $config A config mock to use instead of the default.
+	 * @param array<int, string> $groups The Nextcloud groups user `u` is in.
 	 *
 	 * @return MenuCaseTypesService
 	 */
-	private function service(array $rows, string $stored='', ?IConfig $config=null): MenuCaseTypesService {
+	private function service(array $rows, string $stored='', ?IConfig $config=null, array $groups=[]): MenuCaseTypesService {
 		$objectService = new FakeMenuCaseTypeObjectService();
 		$objectService->rows = $rows;
 
@@ -93,7 +97,20 @@ class MenuCaseTypesServiceTest extends TestCase {
 			$config->method('getUserValue')->willReturn($stored);
 		}
 
-		return new MenuCaseTypesService(settingsService: $settings, config: $config);
+		$user = $this->createMock(IUser::class);
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('get')->willReturnCallback(
+			static fn (string $uid): ?IUser => ($uid === 'u' ? $user : null)
+		);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('getUserGroupIds')->with($user)->willReturn($groups);
+
+		return new MenuCaseTypesService(
+			settingsService: $settings,
+			config: $config,
+			groupManager: $groupManager,
+			userManager: $userManager,
+		);
 	}//end service()
 
 	/**
@@ -120,6 +137,89 @@ class MenuCaseTypesServiceTest extends TestCase {
 			$service->visibleCaseTypes()
 		);
 	}//end testVisibleCaseTypesSkipsSupersededVersionsAndSorts()
+
+	/**
+	 * The rows of the board scenario: three visible case types, two handled by `vergunningen`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function teamRows(): array {
+		return [
+			['id' => self::WOO, 'title' => 'Woo-verzoek', 'handling' => ['defaultGroup' => 'woo']],
+			['id' => 'omv', 'title' => 'Omgevingsvergunning', 'handling' => ['defaultGroup' => 'vergunningen']],
+			['id' => 'mor', 'title' => 'Melding openbare ruimte', 'handling' => ['defaultGroup' => 'buitenruimte', 'teams' => ['vergunningen']]],
+		];
+	}//end teamRows()
+
+	/**
+	 * Offered: the case types a team the user is in handles, default group or extra team.
+	 *
+	 * @return void
+	 */
+	public function testOfferedAreTheCaseTypesTheUsersTeamHandles(): void {
+		$service = $this->service(rows: $this->teamRows(), groups: ['vergunningen', 'everyone']);
+
+		$this->assertSame(
+			[
+				['id' => 'mor', 'title' => 'Melding openbare ruimte'],
+				['id' => 'omv', 'title' => 'Omgevingsvergunning'],
+			],
+			$service->offeredCaseTypes('u')
+		);
+	}//end testOfferedAreTheCaseTypesTheUsersTeamHandles()
+
+	/**
+	 * Offered: a user in no handling team gets every case type they may see.
+	 *
+	 * @return void
+	 */
+	public function testOfferedFallsBackToVisibleWhenTheUserIsInNoHandlingTeam(): void {
+		$service = $this->service(rows: $this->teamRows(), groups: ['everyone']);
+
+		$this->assertSame($service->visibleCaseTypes(), $service->offeredCaseTypes('u'));
+		$this->assertCount(3, $service->offeredCaseTypes('u'));
+	}//end testOfferedFallsBackToVisibleWhenTheUserIsInNoHandlingTeam()
+
+	/**
+	 * Offered: an unknown user is in no team and falls back the same way.
+	 *
+	 * @return void
+	 */
+	public function testOfferedForAnUnknownUserFallsBackToVisible(): void {
+		$service = $this->service(rows: $this->teamRows(), groups: ['vergunningen']);
+
+		$this->assertCount(3, $service->offeredCaseTypes('nobody'));
+	}//end testOfferedForAnUnknownUserFallsBackToVisible()
+
+	/**
+	 * A user who left the team loses its case types from the menu on the next read.
+	 *
+	 * @return void
+	 */
+	public function testAChosenCaseTypeNoLongerHandledDropsOut(): void {
+		$service = $this->service(rows: $this->teamRows(), stored: '["omv","' . self::WOO . '"]', groups: ['woo']);
+
+		$this->assertSame(
+			[['id' => self::WOO, 'title' => 'Woo-verzoek']],
+			$service->chosen('u', $service->offeredCaseTypes('u'))
+		);
+	}//end testAChosenCaseTypeNoLongerHandledDropsOut()
+
+	/**
+	 * Save keeps only offered ids: a case type the team does not handle is not stored.
+	 *
+	 * @return void
+	 */
+	public function testSaveKeepsOnlyOfferedCaseTypes(): void {
+		$config = $this->createMock(IConfig::class);
+		$config->expects($this->once())
+			->method('setUserValue')
+			->with('u', 'dossiq', 'menu_case_types', '["omv"]');
+
+		$service = $this->service(rows: $this->teamRows(), config: $config, groups: ['vergunningen']);
+
+		$service->save('u', [self::WOO, 'omv'], $service->offeredCaseTypes('u'));
+	}//end testSaveKeepsOnlyOfferedCaseTypes()
 
 	/**
 	 * A user who never chose gets the Woo request case type when they may see it.

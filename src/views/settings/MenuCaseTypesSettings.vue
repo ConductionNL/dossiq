@@ -77,7 +77,7 @@ variant="tertiary"
 			data-testid="menu-case-types-add"
 			@update:modelValue="add" />
 		<p class="menu-case-types__hint">
-			{{ t('dossiq', 'You see the case types you have access to. A case type you add goes to the bottom of the list.') }}
+			{{ t('dossiq', 'You see the case types your team handles cases in. A case type you add goes to the bottom of the list.') }}
 		</p>
 
 		<p class="hidden-visually" aria-live="polite" data-testid="menu-case-types-status">
