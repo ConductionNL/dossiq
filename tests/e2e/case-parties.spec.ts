@@ -41,6 +41,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { chooseLens } from './helpers/lens.ts'
 import {
 	clickHeaderAction,
 	dismissSupportDialog,
@@ -1085,7 +1086,7 @@ test.describe('Case detail — the Parties tab', () => {
 
 			const chips = page.locator('.cn-quick-filter-bar')
 			await expect(chips).toBeVisible({ timeout: 20_000 })
-			await chips.getByRole('tab', { name: /Mine|Van mij/ }).click()
+			await chooseLens(page, /^(Mine|Van mij)$/)
 
 			await expect(colleague).toHaveCount(0, { timeout: 30_000 })
 			await expect(mine).toHaveCount(1)
