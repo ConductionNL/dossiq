@@ -1132,7 +1132,7 @@
 					},
 					{
 						"key": "caseType",
-						"label": "Case type",
+						"label": "Type",
 						"formatter": "caseTypeName"
 					},
 					{
@@ -1171,7 +1171,21 @@
 				],
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
-				"showViewToggle": false,
+				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
+				"footerNote": "click a column header to sort",
+				"bulkHint": "See what changes first, then carry it out.",
+				"headerButtons": [
+					{
+						"action": "export"
+					},
+					{
+						"action": "actions-menu"
+					},
+					{
+						"action": "add"
+					}
+				],
+				"showViewToggle": true,
 				"headerFilters": false
 			},
 			"configPatch": {
