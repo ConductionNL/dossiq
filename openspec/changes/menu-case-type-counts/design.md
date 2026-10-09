@@ -28,7 +28,9 @@ for the reason that constant gives.
 
 ## D-4. Unknown is not zero
 
-When OpenRegister is missing, the facet throws, or the answer has no
+When OpenRegister or the case schema is missing, or the answer has no
 `caseType` facet, every `openCases` is `null` and the picker shows no number.
-A case type with no open cases in a facet that did answer is 0, and shows
-"0 open cases".
+A facet query that throws is not caught in `lib/Service` (the
+catch-and-return-null ratchet only goes down): `MenuCaseTypesController`
+catches it, logs a warning and answers every `openCases` as `null`. A case type
+with no open cases in a facet that did answer is 0, and shows "0 open cases".

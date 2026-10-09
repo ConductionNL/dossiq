@@ -450,21 +450,13 @@ class MenuCaseTypesServiceTest extends TestCase {
 	}//end testASupersededCycleEnds()
 
 	/**
-	 * An unreadable count is null, never 0.
+	 * An unknown count is null, never 0, and a failing facet is passed on.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function testAnUnreadableCountIsNullNotZero(): void {
-		$throwing = new FakeMenuCaseTypeObjectService();
-		$throwing->facetAnswer = null;
-		$service = $this->service(rows: [['id' => 'w', 'title' => 'Woo-verzoek']], objectService: $throwing);
-		$this->assertSame(
-			[['id' => 'w', 'title' => 'Woo-verzoek', 'openCases' => null]],
-			$service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes())
-		);
-
 		$noFacet = new FakeMenuCaseTypeObjectService();
 		$noFacet->facetAnswer = ['facets' => []];
 		$service = $this->service(rows: [['id' => 'w', 'title' => 'Woo-verzoek']], objectService: $noFacet);
@@ -472,5 +464,15 @@ class MenuCaseTypesServiceTest extends TestCase {
 			$service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes())[0]['openCases'],
 			'An answer without the caseType facet is not an answer of zero.'
 		);
+		$this->assertSame(
+			[['id' => 'w', 'title' => 'Woo-verzoek', 'openCases' => null]],
+			$service->withUnknownOpenCaseCounts(caseTypes: [['id' => 'w', 'title' => 'Woo-verzoek']])
+		);
+
+		$throwing = new FakeMenuCaseTypeObjectService();
+		$throwing->facetAnswer = null;
+		$service = $this->service(rows: [['id' => 'w', 'title' => 'Woo-verzoek']], objectService: $throwing);
+		$this->expectException(\RuntimeException::class);
+		$service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes());
 	}//end testAnUnreadableCountIsNullNotZero()
 }//end class

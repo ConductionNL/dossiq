@@ -223,8 +223,10 @@ class MenuCaseTypesService {
 	 * ONE aggregate query, never a count per case type: a terms facet on the
 	 * case's `caseType` over the open cases, under the user's own RBAC. A case
 	 * opened under an older version of a case type counts for the version the
-	 * list holds. When the facet cannot be read every `openCases` is null, so
-	 * the picker shows no number rather than a 0 nobody counted.
+	 * list holds. When the counts are unknown (no OpenRegister, no case
+	 * schema, no `caseType` facet in the answer) every `openCases` is null, so
+	 * the picker shows no number rather than a 0 nobody counted. A facet query
+	 * that throws is passed on to the caller.
 	 *
 	 * Call it after offeredCaseTypes() or visibleCaseTypes(): those read the
 	 * case type versions this folds by.
@@ -232,6 +234,8 @@ class MenuCaseTypesService {
 	 * @param array<int, array{id: string, title: string}> $caseTypes The case types to count.
 	 *
 	 * @return array<int, array{id: string, title: string, openCases: int|null}> The case types with their counts.
+	 *
+	 * @throws \Throwable When OpenRegister's facet query fails.
 	 *
 	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
@@ -252,6 +256,29 @@ class MenuCaseTypesService {
 			$caseTypes
 		);
 	}//end withOpenCaseCounts()
+
+	/**
+	 * The same case types, each saying its count is unknown.
+	 *
+	 * What the controller answers when the count query failed: no number on
+	 * screen, never a 0 nobody counted.
+	 *
+	 * @param array<int, array{id: string, title: string}> $caseTypes The case types.
+	 *
+	 * @return array<int, array{id: string, title: string, openCases: null}> The case types, count unknown.
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	public function withUnknownOpenCaseCounts(array $caseTypes): array {
+		return array_map(
+			static function (array $caseType): array {
+				$caseType['openCases'] = null;
+
+				return $caseType;
+			},
+			$caseTypes
+		);
+	}//end withUnknownOpenCaseCounts()
 
 	/**
 	 * The user's chosen case types, in their order, limited to what they may see.

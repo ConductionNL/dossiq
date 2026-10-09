@@ -13,8 +13,10 @@
  * lists the version in use. So each bucket is added to the version its
  * `supersededBy` chain ends at.
  *
- * Unknown is not zero: when the facet cannot be read the answer is null, and
- * the picker shows no number.
+ * Unknown is not zero: when OpenRegister or the case schema is missing, or the
+ * answer carries no `caseType` facet, the answer is null and the picker shows
+ * no number. A facet that throws is not caught here; the controller turns it
+ * into the same empty place and logs it.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\CaseType
@@ -38,7 +40,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\Service\SettingsService;
-use Throwable;
 
 /**
  * Counts open cases per current case type in one facet query.
@@ -84,6 +85,8 @@ class OpenCaseCounts {
 	 *
 	 * @return array<string, int>|null Counts keyed by the uuid of the version in use, or null when unknown.
 	 *
+	 * @throws \Throwable When OpenRegister's facet query fails; the caller decides what the reader sees.
+	 *
 	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	public function byCaseType(array $supersededBy): ?array {
@@ -123,11 +126,10 @@ class OpenCaseCounts {
 		$query['@self'] = ['register' => $this->idOrSlug(value: $register), 'schema' => $this->idOrSlug(value: $schema)];
 		$query['_facets'] = ['caseType' => ['type' => 'terms']];
 
-		try {
-			$answer = $objectService->getFacetsForObjects($query);
-		} catch (Throwable) {
-			return null;
-		}
+		// No catch here: a facet that throws is the caller's to translate
+		// (MenuCaseTypesController shows no numbers and logs why), and a
+		// swallowing catch in lib/Service would hide it from everyone else.
+		$answer = $objectService->getFacetsForObjects($query);
 
 		$facet = ($answer['facets']['caseType'] ?? null);
 		if (is_array($facet) === false) {
