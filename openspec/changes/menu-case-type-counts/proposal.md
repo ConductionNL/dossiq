@@ -33,6 +33,7 @@ in the menu. It is also the board.
 
 ## Impact
 
-- `lib/Service/MenuCaseTypesService.php`, `lib/Controller/MenuCaseTypesController.php`
+- `lib/Service/CaseType/OpenCaseCounts.php` (new), `lib/Service/MenuCaseTypesService.php`,
+  `lib/Controller/MenuCaseTypesController.php`
 - `src/views/settings/MenuCaseTypesSettings.vue`, `l10n/`
 - Spec `case-type-navigation`: REQ-CTN-006 added.
