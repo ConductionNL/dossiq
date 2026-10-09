@@ -407,6 +407,12 @@ export default {
 	gap: 16px;
 }
 
+/* The picker's floating label ("Show the settings as they apply to") is longer
+   than NcSelect's default width, so it was cut off and the value squeezed. */
+.notification-routing__scope :deep(.v-select.select) {
+	min-width: min(100%, 360px);
+}
+
 .notification-routing__explainer {
 	color: var(--color-text-maxcontrast);
 	margin: 4px 0 0;
