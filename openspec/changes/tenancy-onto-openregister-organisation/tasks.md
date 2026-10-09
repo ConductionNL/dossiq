@@ -465,7 +465,7 @@ and seen red; note the failure line in the PR body.
 
 ### The migration, for one release
 
-- [ ] 6.1 Add `--dry-run` to `dossiq:migrate-tenants`
+- [x] 6.1 Add `--dry-run` to `dossiq:migrate-tenants`
   (`lib/Command/MigrateTenantsCommand.php`). It reads every tenant and prints
   the same summary, mappings, collisions and orphan report as the real run,
   plus the `unmigrated` count of 6.2, and writes nothing: no

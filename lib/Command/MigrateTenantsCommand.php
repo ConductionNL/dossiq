@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\SatelliteOrphanScanner;
 use OCA\Dossiq\Service\TenantMigrationService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -68,7 +69,12 @@ class MigrateTenantsCommand extends Command {
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:migrate-tenants')
-			->setDescription('Migrate legacy dossiq tenant objects to OpenRegister Organisations (idempotent).');
+			->setDescription('Migrate legacy dossiq tenant objects to OpenRegister Organisations (idempotent).')
+			->addOption(
+				name: 'dry-run',
+				mode: InputOption::VALUE_NONE,
+				description: 'Read and report everything a real run would do, and write nothing.'
+			);
 	}//end configure()
 
 	/**
@@ -84,20 +90,29 @@ class MigrateTenantsCommand extends Command {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
+		$dryRun = ($input->getOption('dry-run') === true);
+
 		try {
-			$summary = $this->migrationService->migrate();
+			$summary = $this->migrationService->migrate(dryRun: $dryRun);
 		} catch (\Throwable $e) {
 			$output->writeln('<error>Tenant migration failed: ' . $e->getMessage() . '</error>');
 			return Command::FAILURE;
 		}
 
-		$output->writeln('<info>dossiq:migrate-tenants done</info>');
+		$headline = 'dossiq:migrate-tenants done';
+		if ($dryRun === true) {
+			$headline = 'dossiq:migrate-tenants --dry-run: nothing was written';
+		}
+
+		$output->writeln('<info>'.$headline.'</info>');
+
 		$output->writeln('  total    = ' . $summary['total']);
 		$output->writeln('  migrated = ' . $summary['migrated']);
 		$output->writeln('  repaired = ' . $summary['repaired']);
 		$output->writeln('  skipped  = ' . $summary['skipped']);
 		$output->writeln('  refused  = ' . $summary['refused']);
 		$output->writeln('  failed   = ' . $summary['failed']);
+		$output->writeln('  unmigrated = ' . (int)($summary['unmigrated'] ?? 0) . ' (stored tenants with no Organisation of the same uuid)');
 
 		foreach ($summary['mappings'] as $mapping) {
 			$output->writeln('  ' . $mapping['tenant'] . ' -> ' . $mapping['organisation']);

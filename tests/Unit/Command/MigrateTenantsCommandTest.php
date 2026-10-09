@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Command;
 use OCA\Dossiq\Command\MigrateTenantsCommand;
 use OCA\Dossiq\Service\SatelliteOrphanScanner;
 use OCA\Dossiq\Service\TenantMigrationService;
+use OCA\Dossiq\Tests\Support\MakesTenantMigration;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -38,6 +39,8 @@ use Symfony\Component\Console\Output\BufferedOutput;
  * @covers \OCA\Dossiq\Command\MigrateTenantsCommand
  */
 class MigrateTenantsCommandTest extends TestCase {
+	use MakesTenantMigration;
+
 	/**
 	 * A migration summary with the given fields over the empty default.
 	 *
@@ -244,4 +247,72 @@ class MigrateTenantsCommandTest extends TestCase {
 		$this->assertSame(Command::FAILURE, $code);
 		$this->assertStringContainsString('the store is down', $text);
 	}
-}//end class
+
+	/**
+	 * The dry run reads everything and writes nothing (REQ-TOO-001).
+	 *
+	 * Driven through execute(), with TenantMigrationService real and only the
+	 * two OpenRegister seams doubled. One tenant is new, and one already has
+	 * an Organisation the June mapping left archived, which a real run would
+	 * repair.
+	 *
+	 * @return void
+	 */
+	public function testTheDryRunWritesNothing(): void {
+		$archived = $this->storedOrganisation(uuid: 't-2', slug: 'gemeente-eemnes', status: 'archived');
+		$this->startOrganisations(existing: [$archived]);
+		$migration = $this->realMigration(tenants: [
+			['id' => 't-1', 'slug' => 'gemeente-baarn', 'status' => 'active', 'displayName' => 'Gemeente Baarn'],
+			['id' => 't-2', 'slug' => 'gemeente-eemnes', 'status' => 'terminated', 'displayName' => 'Gemeente Eemnes'],
+		]);
+
+		[$code, $text] = $this->runRealCommand(migration: $migration, arguments: ['--dry-run' => true]);
+
+		$this->assertSame([], $this->organisations->inserted, 'a dry run must insert no Organisation');
+		$this->assertSame([], $this->organisations->updated, 'a dry run must update no Organisation');
+		$this->assertSame('archived', $archived->getStatus(), 'a dry run must not even change the entity in memory');
+		$this->assertSame(Command::SUCCESS, $code);
+		$this->assertStringContainsString('nothing was written', $text);
+		$this->assertStringContainsString('t-1 -> t-1', $text, 'the dry run must print the mapping a real run would make');
+		$this->assertStringContainsString('repaired = 1', $text);
+		$this->assertStringContainsString('unmigrated = 1', $text, 't-1 has no Organisation yet');
+	}
+
+	/**
+	 * The dry run reports the collisions a real run would refuse (REQ-TOO-001).
+	 *
+	 * @return void
+	 */
+	public function testTheDryRunReportsTheCollisionsTheRealRunWouldRefuse(): void {
+		$this->startOrganisations(existing: [$this->storedOrganisation(uuid: 'org-else', slug: 'gemeente-baarn')]);
+		$migration = $this->realMigration(tenants: [
+			['id' => 't-3', 'slug' => 'gemeente-baarn', 'status' => 'active', 'displayName' => 'Gemeente Baarn'],
+		]);
+
+		[$code, $text] = $this->runRealCommand(migration: $migration, arguments: ['--dry-run' => true]);
+
+		$this->assertSame(Command::FAILURE, $code, 'a dry run exits as the real run would');
+		$this->assertStringContainsString('REFUSED t-3', $text);
+		$this->assertStringContainsString('org-else', $text);
+		$this->assertStringContainsString('unmigrated = 1', $text);
+		$this->assertSame([], $this->organisations->inserted);
+	}
+
+	/**
+	 * Run the command over the real migration.
+	 *
+	 * @param TenantMigrationService $migration The migration.
+	 * @param array<string, mixed>   $arguments The command line.
+	 *
+	 * @return array{0: int, 1: string} Exit code and output.
+	 */
+	private function runRealCommand(TenantMigrationService $migration, array $arguments): array {
+		$scanner = $this->createMock(SatelliteOrphanScanner::class);
+		$scanner->method('reportOrphans')->willReturn($this->report());
+
+		$output = new BufferedOutput();
+		$code = (new MigrateTenantsCommand($migration, $scanner))->run(new ArrayInput($arguments), $output);
+
+		return [$code, $output->fetch()];
+	}
+}
