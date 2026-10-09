@@ -6,8 +6,8 @@
  * REST API for SaaS tenant CRUD + lifecycle transitions, backed by the
  * `tenant` register schema declared in chain member 01.
  *
- * Separate from `TenantController` (which owns the older OR-Organisation
- * shape and current-tenant resolution). All endpoints here are admin-only
+ * The current tenant and the user's organisations are OpenRegister's
+ * organisation endpoints since Q5 (2026-10-08). All endpoints here are admin-only
  * (Nextcloud SecurityMiddleware default — no `@NoAdminRequired`).
  *
  * @category Controller
