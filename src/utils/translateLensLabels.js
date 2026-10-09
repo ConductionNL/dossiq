@@ -23,11 +23,11 @@ export function translateLensLabels(manifest, translate) {
 		if (!Array.isArray(lenses)) {
 			continue
 		}
-		page.config.quickFilters = lenses.map((lens) => (
+		page.config.quickFilters = lenses.map((lens) =>
 			lens && typeof lens.label === 'string'
 				? { ...lens, label: translate(lens.label) }
-				: lens
-		))
+				: lens,
+		)
 	}
 	return manifest
 }
