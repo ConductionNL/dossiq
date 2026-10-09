@@ -1,5 +1,5 @@
 {
-  "ceiling": 265,
+  "ceiling": 259,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -24,7 +24,10 @@
     "2026-09-19: the ceiling went 271 -> 270. `Email/NextcloudMailGateway::unpackSynchronisation` no longer has a catch of its own: its three reads of the Mail event go through the class's existing `call()` helper, which already carries the `method_exists` guard and the throw handling, and the method now logs at warning when the event cannot be read at all rather than only when a getter threw.",
     "2026-09-21, merging feature/bug-fixes: the ceiling went 270 -> 269. `Besluitvorming/TemplateBundleSeeder::findByIdentifier` throws instead of answering null, so a failed lookup is no longer read as an absent case type (fix(seed): a seed step sees the case types it created).",
     "2026-09-28, refactor/flow-drop-schedule-reminder-and-set-status: the ceiling went 269 -> 268. `Actions/ScheduleReminderHandler::computeFireTime` left with its class: the reminder action queued a job class that never existed, so it was removed rather than fixed.",
-    "2026-09-28, openspec/changes/flow-nodes-to-their-owners: the ceiling went 268 -> 265. Four sites left with the handlers whose work moved to the app that owns it (`Actions/CreateDocumentHandler::resolveDossierService`, `Actions/MergeTemplateHandler::resolveObjectService` and `::resolveZaakdossierService`, `Actions/SendEmailHandler::resolveEmailService`), and one arrived: `Flow/RetiredActionRunner::registry`, a degradation of OpenRegister being absent that logs at warning and records the action as failed."
+    "2026-09-28, openspec/changes/flow-nodes-to-their-owners: the ceiling went 268 -> 265. Four sites left with the handlers whose work moved to the app that owns it (`Actions/CreateDocumentHandler::resolveDossierService`, `Actions/MergeTemplateHandler::resolveObjectService` and `::resolveZaakdossierService`, `Actions/SendEmailHandler::resolveEmailService`), and one arrived: `Flow/RetiredActionRunner::registry`, a degradation of OpenRegister being absent that logs at warning and records the action as failed.",
+    "2026-10-08, openspec/changes/tenant-isolation-names-the-control-that-runs: TenantSchemaProvisioner was deleted with the schema-per-tenant pipeline (dossiq#2470), and its two sites (listApplicationTables, shardTableMarkers) left with it. The ceiling went 265 to 263.",
+    "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation: the active tenant became OpenRegister's active organisation. TenantSessionService::activeTenantId became activeTenant (same site, same answer), and TenantOrganisationResolver::readActiveOrganisation arrived. The ceiling went 263 to 264 here; the TenantService sites that leave later in the same change bring it down.",
+    "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation task 3.2: TenantService keeps only isPlatformAdmin(). Its five sites (findOrganisationsByUserId, getOrganisationMapper, getTenantByGroupId, getTenantLifecycleService, getTenantStatus) left with the methods TenantController and TenantMiddleware called. The ceiling went 264 to 259."
   ],
   "classes": {
     "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -1391,6 +1394,13 @@
       "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: could not resolve OrganisationMapper for tenant resolution\") and the caller carries on without it."
     },
     {
+      "file": "lib/Service/TenantOrganisationResolver.php",
+      "method": "readActiveOrganisation",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`readActiveOrganisation()` answers `return null` when OpenRegister's OrganisationService cannot be resolved or throws; the catch logs at error (\"Dossiq: could not read the active organisation from OpenRegister; no tenant\"), and the request then has no tenant."
+    },
+    {
       "file": "lib/Service/TenantQuotaService.php",
       "method": "getObjectService",
       "occurrence": 1,
@@ -1426,60 +1436,11 @@
       "reason": "`listActive()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: TenantSaasService::listActive failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/TenantSchemaProvisioner.php",
-      "method": "listApplicationTables",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`listApplicationTables()` answers `return []` when its collaborator is absent or unresolvable; the catch logs at info (\"Dossiq: listApplicationTables failed\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/TenantSchemaProvisioner.php",
-      "method": "shardTableMarkers",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`shardTableMarkers()` answers `return []` when the read fails; the catch logs at info (\"Dossiq: could not resolve register ids\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantService.php",
-      "method": "findOrganisationsByUserId",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findOrganisationsByUserId()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantService.php",
-      "method": "getOrganisationMapper",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getOrganisationMapper()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get OrganisationMapper\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/TenantService.php",
-      "method": "getTenantByGroupId",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getTenantByGroupId()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: getTenantByGroupId failed against OR\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantService.php",
-      "method": "getTenantLifecycleService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`getTenantLifecycleService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not get TenantLifecycleService\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/TenantService.php",
-      "method": "getTenantStatus",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getTenantStatus()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/TenantSessionService.php",
-      "method": "activeTenantId",
+      "method": "activeTenant",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`activeTenantId()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: membership lookup failed while resolving the session tenant\"), so a failed read and an absent record are the same answer."
+      "reason": "`activeTenant()` answers `return null` when the membership lookup fails; the catch logs at error (\"Dossiq: membership lookup failed while resolving the session tenant\"), so a failed lookup and no membership are the same answer: no tenant."
     },
     {
       "file": "lib/Service/Term/FirstResponseOutcome.php",

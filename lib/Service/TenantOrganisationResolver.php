@@ -33,12 +33,12 @@ use Throwable;
 /**
  * Resolves a tenant id to an OpenRegister Organisation.
  *
- * WHY THIS EXISTS. Four of the five tenant middlewares do not resolve a tenant
- * at all: `TenantClaimValidationMiddleware` and `TenantIsolationMiddleware`
- * both read the already-bound `TenantContext`, and `MandateValidationMiddleware`
- * reads the same id back out of it. The chain has exactly one resolution point,
- * `TenantContextMiddleware`, and it used to read dossiq's own `tenant` schema
- * through `TenantSaasService::getById()`. That single read is what moves here.
+ * WHY THIS EXISTS. The mandate middleware does not resolve a tenant at all:
+ * `MandateValidationMiddleware` reads it out of `TenantContext`. The chain
+ * has exactly one resolution point, `resolveActive()`, which `TenantContext`
+ * reaches through `TenantSessionService`. It reads OpenRegister's active
+ * organisation (Q3, Ruben 2026-10-08). `resolve()` is the lookup by id that
+ * used to read dossiq's own `tenant` schema through `TenantSaasService::getById()`.
  *
  * The Organisation is preferred and the legacy `tenant` row is the fallback,
  * in that order, for the length of the reversible half. An instance that has
@@ -89,14 +89,77 @@ class TenantOrganisationResolver {
 	}//end resolve()
 
 	/**
-	 * Read an Organisation as the tenant-shaped array the context binds.
+	 * The signed-in user's active OpenRegister organisation, tenant-shaped.
 	 *
-	 * `TenantContext::bind()` reads `uuid` or `id` and `slug`; `TenantMiddleware`
-	 * reads `status`. Both `uuid` and `id` are set to the same value so a caller
+	 * Which organisation is active is OpenRegister's answer,
+	 * `OrganisationService::getActiveOrganisation()` (Q3, Ruben 2026-10-08).
+	 * Its slug and status come from the stored row, read through the mapper,
+	 * not from that answer. OpenRegister serves the active organisation from a
+	 * session cache that keeps neither, and an Organisation rebuilt from it
+	 * reads `status` as its default, `active`. A suspended organisation would
+	 * then pass as active for as long as the cache lives.
+	 *
+	 * Null when OpenRegister is absent, answers null, throws, or the stored
+	 * row cannot be read. No legacy fallback: the active organisation is
+	 * OpenRegister's by definition.
+	 *
+	 * @return array<string, mixed>|null The tenant, or null.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	public function resolveActive(): ?array {
+		$active = $this->readActiveOrganisation();
+		if ($active === null) {
+			return null;
+		}
+
+		$uuid = (string)($active->getUuid() ?? '');
+		if ($uuid === '') {
+			return null;
+		}
+
+		$organisation = $this->findOrganisation(uuid: $uuid);
+		if ($organisation === null) {
+			$this->logger->warning(
+				'Dossiq: the active organisation has no readable stored row; no tenant',
+				['organisation' => $uuid],
+			);
+			return null;
+		}
+
+		return $this->project(organisation: $organisation);
+	}//end resolveActive()
+
+	/**
+	 * Ask OpenRegister for the signed-in user's active organisation.
+	 *
+	 * @return object|null The Organisation entity, or null when there is none or OpenRegister cannot answer.
+	 */
+	private function readActiveOrganisation(): ?object {
+		$installed = (array)$this->appManager->getInstalledApps();
+		if (in_array('openregister', $installed, true) === false) {
+			return null;
+		}
+
+		try {
+			return $this->container->get('OCA\\OpenRegister\\Service\\OrganisationService')->getActiveOrganisation();
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: could not read the active organisation from OpenRegister; no tenant',
+				['exception' => $e->getMessage()],
+			);
+			return null;
+		}
+	}//end readActiveOrganisation()
+
+	/**
+	 * Read an Organisation as the tenant-shaped array the context carries.
+	 *
+	 * `TenantContext` reads `uuid` or `id`, `slug` and `status`. Both `uuid` and `id` are set to the same value so a caller
 	 * reading either sees the Organisation, never half of one.
 	 *
 	 * The status is the Organisation's own, unmapped, and that is deliberate.
-	 * `active` is the only status the middleware lets through, so `retained`
+	 * `active` is the only status `MandateValidationMiddleware` lets through, so `retained`
 	 * blocks like `suspended` does, and an onboarding tenant is `active` with
 	 * dossiq's onboarding progress kept beside it rather than in the lifecycle.
 	 *

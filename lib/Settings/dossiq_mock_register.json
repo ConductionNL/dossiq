@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.0",
+    "version": "1.3.2",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -13675,9 +13675,9 @@
       "tenant": {
         "slug": "tenant",
         "icon": "OfficeBuildingOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
         "deprecated": true,
-        "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantService + TenantMiddleware consume them directly. Run `occ dossiq:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
+        "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantContext and MandateValidationMiddleware consume them directly. Run `occ dossiq:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
         "x-schema-org": "schema:Organization",
         "title": "Tenant",
         "description": "DEPRECATED (migrate-tenant-to-or-tenant): legacy SaaS tenant record. Tenant identity now lives on OpenRegister's Organisation entity; this schema is retained only so pre-migration rows remain readable until sunset. Originally: a single municipality / customer of the dossiq platform, carrying lifecycle status, tier, and isolation mode.",
@@ -13721,7 +13721,7 @@
               "suspended",
               "terminated"
             ],
-            "description": "Lifecycle status: drives access enforcement in TenantMiddleware",
+            "description": "Lifecycle status of the legacy tenant row. Access is enforced on the OpenRegister Organisation's own status, by MandateValidationMiddleware",
             "title": "Status"
           },
           "tier": {
@@ -14110,7 +14110,7 @@
           },
           "role": {
             "type": "string",
-            "description": "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the three roles TenantProvisioningService creates and the only three the mandate matrix recognises; a member holding any other value is refused on every write.",
+            "description": "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the only three roles the mandate matrix recognises; a member holding any other value is refused on every write.",
             "title": "Role"
           },
           "joinedAt": {

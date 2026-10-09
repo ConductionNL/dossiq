@@ -51,6 +51,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -384,6 +385,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 			userSession: $this->session(),
 			context: $this->createMock(originalClassName: TenantContext::class),
 			authService: $auth,
+			tenantService: $this->createMock(originalClassName: TenantService::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end mandateMiddleware()
