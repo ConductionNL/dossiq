@@ -1472,6 +1472,32 @@
 				],
 				"footerNote": "click a column header to sort"
 			}
+		},
+		{
+			"id": "Queue",
+			"title": "Team queue",
+			"config": {
+				"showTitle": true,
+				"countText": "{shown} of {total} open cases without a handler, oldest first",
+				"footerNote": "a case leaves the queue as soon as someone picks it up",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "New case",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				]
+			}
 		}
 	]
 }
