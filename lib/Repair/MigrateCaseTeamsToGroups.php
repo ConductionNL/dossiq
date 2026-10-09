@@ -3,7 +3,7 @@
 /**
  * Move existing cases from an organisation role to the Nextcloud group it names.
  *
- * one-team-model: `case.assignedGroup` is a Nextcloud group id. This runs
+ * Since one-team-model `case.assignedGroup` is a Nextcloud group id. This runs
  * {@see CaseTeamMigration} on upgrade, after the register import (so the case
  * schema already accepts a group id) and before `BackfillCaseCustody` (so a
  * holding it opens records the group, not the role).

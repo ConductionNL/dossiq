@@ -3,7 +3,7 @@
 /**
  * Move every case from an organisation role to the Nextcloud group that role names.
  *
- * one-team-model: a case's team is a Nextcloud group id. Until it shipped,
+ * Since one-team-model a case's team is a Nextcloud group id. Until it shipped,
  * `case.assignedGroup` was a `$ref` to `organisatieRol`, so a case picked on
  * the case page holds a role uuid while a case that was handed over already
  * holds a group id. This service turns the first kind into the second.
