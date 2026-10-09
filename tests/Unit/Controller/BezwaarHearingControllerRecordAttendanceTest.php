@@ -45,6 +45,11 @@ use RuntimeException;
  * Unit tests for BezwaarHearingController::recordAttendance().
  *
  * @covers \OCA\Dossiq\Controller\BezwaarHearingController
+ * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
+ * @uses \OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder
+ * @uses \OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner
+ * @uses \OCA\Dossiq\Service\Bezwaar\HearingService
  */
 final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 	use MakesBezwaarAuditTrail;
