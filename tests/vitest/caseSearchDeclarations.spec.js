@@ -89,6 +89,7 @@ const SILENT = [
 	'publications',
 	'relatedCases',
 	'riskAssessment',
+	'selectionListClass',
 	'skippedPhases',
 	'splitMovedItems',
 	'statusDwellTotals',

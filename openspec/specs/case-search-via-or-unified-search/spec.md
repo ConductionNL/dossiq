@@ -120,3 +120,15 @@ visible in the search itself.
 - **THEN** each SHALL correspond to a page route, with `{uuid}` standing where the route has `:id`
 
 @e2e exclude Declarative cross-file consistency asserted by unit test (vitest) on the manifest.
+
+### Requirement: REQ-CSD-06 A boolean a register fragment adds declares its control
+
+Every boolean property a register fragment adds to the case schema SHALL
+declare `inputControl: boolean` and SHALL NOT declare a `matchType`, the
+same as the booleans of the case schema itself.
+
+#### Scenario: The DSO overdue flag is filterable
+
+- GIVEN the DSO fragment adds the boolean `deadlineOverdue` to the case
+- WHEN the case's search declarations are read
+- THEN `deadlineOverdue` declares `inputControl: boolean` and no `matchType`

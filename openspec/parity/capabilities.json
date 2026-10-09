@@ -15251,7 +15251,7 @@
 			"feature": "archief-edepot-handover",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
+				"state": "built",
 				"change": "the-case-archives-through-openregister",
 				"prs": [
 					{
@@ -15262,7 +15262,7 @@
 					}
 				],
 				"evidence": "src/manifest.json:3363; dossiq#3078 8babeadf",
-				"note": "OpenSpec pass 2026-09-27: the zip export has its surface (document-acts-reach-a-surface, dossiq#3078). XML, SIP and TMLO or MDTO are openregister's e-Depot handover; dossiq's consumer half is the open change the-case-archives-through-openregister.",
+				"note": "Built 2026-10-09 (build/openspecs-3): the consumer half of openregister's archiving process is archived as the-case-archives-through-openregister. The case carries its result type's selectielijst class as OpenRegister's categoryProperty (decision 127); XML, SIP and TMLO or MDTO stay openregister's e-Depot handover.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
@@ -15685,7 +15685,7 @@
 			"feature": "parties-and-contacts",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
+				"state": "built",
 				"change": "gemachtigde-role-on-every-case-type",
 				"prs": [
 					{
@@ -15695,8 +15695,8 @@
 						"mergedAt": "2026-09-18T10:40:00Z"
 					}
 				],
-				"evidence": "lib/Settings/bezwaar_seed_data.json; dossiq#2918 d1ab0af9",
-				"note": "OpenSpec pass 2026-09-27: the missing half, the generic Gemachtigde role type and its Represented by column, is open task 3.7 of gemachtigde-role-on-every-case-type.",
+				"evidence": "lib/Service/People/GemachtigdeRoleTypeSeeder.php; src/services/roleTypeOptions.js; dossiq#2918 d1ab0af9",
+				"note": "Built 2026-10-09: the generic Gemachtigde role type (GemachtigdeRoleTypeSeeder, repair step SeedGemachtigdeRoleType) and Represented by (role.representedParty) are on development; task 3.7 was a stale note and the change is archived.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",

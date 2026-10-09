@@ -11,7 +11,8 @@
       "substitution": {
         "slug": "substitution",
         "icon": "AccountSwitchOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Substitution",
         "description": "Vervanging/waarneming registration: who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
         "type": "object",

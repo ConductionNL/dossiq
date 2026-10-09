@@ -115,3 +115,33 @@ describe('CaseDetail — the case file leaves as one download (REQ-ZAK-022)', ()
 		expect(exportAction().visibleWhen).toBeUndefined()
 	})
 })
+
+describe('CaseDetail — the dossier zip is a download, not a transfer (REQ-ARCH-15)', () => {
+	/**
+	 * The words that would present the zip as archiving. The transfer to an
+	 * e-depot is a reviewer's recorded decision, read back on the case as
+	 * `outcome.transferListUuid`; a button that says "archive" over a zip
+	 * tells a handler the case has gone somewhere it has not.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	const CLAIMS =
+		/\b(archiv\w*|archief\w*|transfer\w*|overdr\w*|overbreng\w*|e-?depot)\b/i
+	const nl = JSON.parse(
+		fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8'),
+	).translations
+
+	it('asks for the response as a file the browser keeps', () => {
+		expect(exportAction().download).toBe(true)
+		expect(exportAction().filename).toMatch(/\.zip$/)
+	})
+
+	it('names neither archiving nor a transfer, in English or in Dutch', () => {
+		const label = exportAction().label
+		expect(label, `"${label}" claims to archive the case`).not.toMatch(CLAIMS)
+		expect(nl[label], `no Dutch entry for "${label}"`).toBeTruthy()
+		expect(nl[label], `"${nl[label]}" claims to archive the case`).not.toMatch(
+			CLAIMS,
+		)
+	})
+})

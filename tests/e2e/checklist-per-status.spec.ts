@@ -305,8 +305,7 @@ async function cancelEngineTasks(): Promise<void> {
  *
  * The transition strip is gone: Ruben ruled on 2026-09-12 that clicking a
  * status in the timeline sets that status, so the moves are stages of the
- * configured `stages` widget and the status badge is the library's own pill
- * inside a configured `stat` tile.
+ * configured `stages` widget, which also marks the current status.
  *
  * @param page The Playwright page.
  * @param id   The case to open.
@@ -317,9 +316,8 @@ async function openCase(page: Page, id: string): Promise<void> {
 	await expect(page.getByTestId('cn-stages-widget')).toBeVisible({
 		timeout: 30_000,
 	})
-	await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
-		timeout: 30_000,
-	})
+	// No status pill to wait for: 353a31777 removed the identity row's
+	// Status tile, and the stages widget above carries the current status.
 }
 
 /**

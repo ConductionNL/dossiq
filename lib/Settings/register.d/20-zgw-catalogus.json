@@ -11,7 +11,8 @@
             "zgwCatalogus": {
                 "slug": "zgwCatalogus",
                 "icon": "FolderMultipleOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:Collection",
                 "x-zgw-equivalent": "Catalogus",
                 "title": "Catalogus",

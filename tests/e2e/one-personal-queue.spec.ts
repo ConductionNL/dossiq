@@ -87,7 +87,7 @@ test.describe('One personal queue', () => {
 	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-caseworker-opens-one-page-not-six
 	test('One page holds the work every mechanism put there', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 
 		await expect(
 			page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`),
@@ -107,7 +107,7 @@ test.describe('One personal queue', () => {
 
 	// @e2e openspec/changes/one-personal-queue/specs/add-work-queue/spec.md#a-new-mechanism-reaches-the-queue-by-declaring-itself
 	test('Each group says what takes its items off the queue', async ({ page }) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 
 		const group = page.getByTestId('queue-group-tasks')
 		await expect(group).toBeVisible(PAGE_LOAD)
@@ -122,7 +122,7 @@ test.describe('One personal queue', () => {
 		playwright,
 		baseURL,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await expect(
 			page.getByTestId(`queue-item-tasks:task:${tasks.closing}`),
 		).toBeVisible(PAGE_LOAD)
@@ -133,7 +133,7 @@ test.describe('One personal queue', () => {
 		await invokeFlowTask(api, token, tasks.closing, 'complete')
 		await api.dispose()
 
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await expect(
 			page.getByTestId(`queue-item-tasks:task:${tasks.closing}`),
 		).toHaveCount(0)
@@ -148,7 +148,7 @@ test.describe('One personal queue', () => {
 	test('Live work cannot be dismissed, and the group can be hidden instead', async ({
 		page,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		const item = page.getByTestId(`queue-item-assigned-cases:case:${cases.live}`)
 		await expect(item).toBeVisible(PAGE_LOAD)
 
@@ -176,7 +176,7 @@ test.describe('One personal queue', () => {
 	test('A digest is composed when work is waiting, and not when none is', async ({
 		page,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await expect(
 			page.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
@@ -187,12 +187,14 @@ test.describe('One personal queue', () => {
 		// about whether anything was said at all.
 		const queue = await page.request.get(
 			'/index.php/apps/dossiq/api/personal-queue',
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(queue.status()).toBe(200)
 		expect((await queue.json()).total).toBeGreaterThan(0)
 
 		const settings = await page.request.get(
 			'/index.php/apps/dossiq/api/personal-queue/digest',
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(settings.status()).toBe(200)
 		expect((await settings.json()).enabled).toBe(true)
@@ -203,14 +205,14 @@ test.describe('One personal queue', () => {
 		// Open the case first: "touched" is the register's per-reader read
 		// state, so a case nobody opened must NOT appear, and this is the
 		// gesture that makes it appear.
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await page
 			.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link')
 			.click()
 		await page.waitForLoadState('domcontentloaded')
 
-		await navToRoute(page, 'EndOfDay')
+		await navToRoute(page, '/end-of-day')
 		await expect(
 			page.getByTestId(`end-of-day-item-assigned-cases:case:${cases.mine}`),
 		).toBeVisible(PAGE_LOAD)
@@ -220,14 +222,14 @@ test.describe('One personal queue', () => {
 	test('An update written on the end-of-day screen lands on the case', async ({
 		page,
 	}) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await page
 			.getByTestId(`queue-item-assigned-cases:case:${cases.mine}`)
 			.getByRole('link')
 			.click()
 		await page.waitForLoadState('domcontentloaded')
 
-		await navToRoute(page, 'EndOfDay')
+		await navToRoute(page, '/end-of-day')
 		const field = page.getByTestId(
 			`end-of-day-update-assigned-cases:case:${cases.mine}`,
 		)
@@ -261,7 +263,7 @@ test.describe('One personal queue', () => {
 
 	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-planned-item-with-no-case
 	test('A planned item reaches the queue and is not a case', async ({ page }) => {
-		await navToRoute(page, 'PersonalQueue')
+		await navToRoute(page, '/my-queue')
 		await page
 			.getByRole('button', { name: /plan an item|plan iets in/i })
 			.click()

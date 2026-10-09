@@ -143,8 +143,6 @@ class TermNoticeSender {
 	 *
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-mailed-after-integriq-allows-it-req-term-070
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-sent-once-per-deadline-req-term-071
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Each argument is one fact about the notice.
 	 */
 	public function send(
 		string $template,

@@ -74,7 +74,7 @@ export default {
 		 * still an OpenRegister object, so both stores are in play here.
 		 *
 		 * @return {object} The engine task store.
-		 * @spec openspec/changes/remove-casetask/tasks.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		engineTasks() {
 			return useEngineTaskStore()

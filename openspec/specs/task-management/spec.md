@@ -20,7 +20,7 @@ Tasks represent work items within a case. They follow CMMN 1.1 HumanTask concept
 **Primary feature tier**: MVP
 **Extended features**: V1 (kanban, checklists, dependencies, templates), Enterprise (automation)
 
-**Competitive context**: Flowable provides the most comprehensive task management with a unified task service across BPMN and CMMN engines, supporting a 5-state lifecycle (created/claimed/in-progress/suspended/completed) with delegation and sub-tasks. Dimpact ZAC uses Flowable-backed tasks with WebSocket-based real-time updates and configurable worklists. xxllnc Zaken implements phase-bound tasks that become read-only when the case progresses past their phase. ArkCase uses Activiti-backed tasks with queue-based routing via Drools rules. Dossiq takes an OpenRegister-first approach where tasks are JSON objects with CMMN-compliant lifecycle states, avoiding the complexity of an embedded workflow engine.
+**Competitive context**: Flowable provides the most comprehensive task management with a unified task service across BPMN and CMMN engines, supporting a 5-state lifecycle (created/claimed/in-progress/suspended/completed) with delegation and sub-tasks. Dimpact ZAC uses Flowable-backed tasks with WebSocket-based real-time updates and configurable worklists. xxllnc Zaken implements phase-bound tasks that become read-only when the case progresses past their phase. ArkCase uses Activiti-backed tasks with queue-based routing via Drools rules. Dossiq keeps no task table of its own: a task is a row of OpenRegister's flow engine, so the inbox, the due list and the close event are the engine's, and dossiq adds the case context around them.
 
 ---
 

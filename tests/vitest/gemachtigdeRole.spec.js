@@ -20,7 +20,7 @@
  * alone for a case whose type could not be read would say this instance
  * declares no roles, on exactly the case where somebody is trying to add one.
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 import { describe, expect, it, vi } from 'vitest'
 

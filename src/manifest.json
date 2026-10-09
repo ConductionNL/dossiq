@@ -1,6 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"version": "1.2.0",
+	"look": "board",
 	"dependencies": ["openregister"],
 	"setup": {
 		"enabled": true,
@@ -350,6 +351,15 @@
 			"route": "WmsLayers",
 			"section": "settings",
 			"order": 97,
+			"permission": "admin"
+		},
+		{
+			"id": "WooRefusalGroundsMenu",
+			"label": "Woo refusal grounds",
+			"icon": "ScaleBalance",
+			"route": "WooRefusalGrounds",
+			"section": "settings",
+			"order": 92,
 			"permission": "admin"
 		},
 		{
@@ -3686,6 +3696,29 @@
 						}
 					},
 					{
+						"id": "message-applicant",
+						"type": "open-modal",
+						"target": "PortalMessageDialog",
+						"label": "Message the applicant",
+						"icon": "MessageTextOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "portalSubject",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
 						"id": "export-dossier",
 						"type": "api-call",
 						"label": "Export dossier",
@@ -5185,6 +5218,107 @@
 							"label": "Version history",
 							"icon": "FileCompare",
 							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "WooRefusalGrounds",
+			"route": "/settings/woo-refusal-grounds",
+			"type": "index",
+			"title": "Woo refusal grounds",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "wooRefusalGround",
+				"_note": "woo-refusal-grounds-list REQ-WRG-003. The settled grounds of design D-2 (decision 133). Sorted by code with the broader ground beside each, so the list reads as the tree: 5.1, then 5.1.1 and its letters, then 5.1.2 and its letters. Add creates a narrower ground under a parent code; editing the status to retired is how a ground is retired, because WooRefusalGroundDeleteGuard refuses a delete while anything cites it. No board on identity.conduction.nl/screens draws this page.",
+				"columns": [
+					{
+						"key": "code"
+					},
+					{
+						"key": "label"
+					},
+					{
+						"key": "parent"
+					},
+					{
+						"key": "kind"
+					},
+					{
+						"key": "citable"
+					},
+					{
+						"key": "status"
+					}
+				],
+				"defaultSort": "code",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "WooRefusalGroundDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "WooRefusalGroundDetail",
+			"route": "/settings/woo-refusal-grounds/:id",
+			"type": "detail",
+			"title": "Woo refusal ground",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "wooRefusalGround",
+				"_note": "woo-refusal-grounds-list REQ-WRG-003 and REQ-WRG-004. One ground with its law text and source. The History tab is OpenRegister's audit trail for the object, so every add, edit and retirement shows who, when and the values before and after.",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "woo-refusal-ground-data",
+						"type": "data",
+						"title": "Woo refusal ground",
+						"icon": "ScaleBalance",
+						"content": {
+							"title": "Woo refusal ground",
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "woo-refusal-ground-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 7,
+						"showTitle": false
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
 						}
 					]
 				}
@@ -6899,6 +7033,13 @@
 							],
 							"hideEmpty": false
 						}
+					},
+					{
+						"id": "case-type-portal",
+						"type": "custom",
+						"title": "Portal",
+						"icon": "AccountArrowRightOutline",
+						"_note": "portal-citizen-writes-on-the-case design D3: what the applicant may still do on their own case in the portal (portalWritable, the amendment and document windows, portalWithdrawal). Custom for the reason case-type-blueprint is: every picker offers the type's OWN statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers, and a declared form would offer a free text field for a status uuid. The save goes through OpenRegister's object API, where CaseTypePortalWithdrawalListener refuses a withdrawal the workflow cannot write; the widget shows that sentence. Same LAYOUT placement and same reason as case-type-blueprint above."
 					}
 				],
 				"layout": [
@@ -6972,6 +7113,15 @@
 						"gridY": 23,
 						"gridWidth": 12,
 						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "9",
+						"widgetId": "case-type-portal",
+						"gridX": 0,
+						"gridY": 27,
+						"gridWidth": 12,
+						"gridHeight": 7,
 						"showTitle": true
 					}
 				],
@@ -7061,7 +7211,8 @@
 			},
 			"slots": {
 				"widget-case-type-blueprint": "CaseTypeBlueprintWidget",
-				"widget-case-type-translations": "CaseTypeTranslationsWidget"
+				"widget-case-type-translations": "CaseTypeTranslationsWidget",
+				"widget-case-type-portal": "CaseTypePortalWidget"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},
@@ -7957,6 +8108,72 @@
 			"schemaSlug": "kvkCompany",
 			"urlTemplate": "/apps/dossiq/organisations/{uuid}",
 			"displayName": "Organisation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "bezwaarDecision",
+			"urlTemplate": "/apps/dossiq/bezwaar-decisions/{uuid}",
+			"displayName": "Decision on objection"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "adviesAanvraag",
+			"urlTemplate": "/apps/dossiq/advice/{uuid}",
+			"displayName": "Advice request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "wmsLayer",
+			"urlTemplate": "/apps/dossiq/settings/wms-layers/{uuid}",
+			"displayName": "Map layer"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "tenant",
+			"urlTemplate": "/apps/dossiq/settings/tenants/{uuid}",
+			"displayName": "Tenant"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "casetransfer",
+			"urlTemplate": "/apps/dossiq/transfers/{uuid}",
+			"displayName": "Case transfer"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "workflowTemplate",
+			"urlTemplate": "/apps/dossiq/settings/workflow-definitions/{uuid}",
+			"displayName": "Workflow definition"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "statusRecord",
+			"urlTemplate": "/apps/dossiq/settings/status-records/{uuid}",
+			"displayName": "Status record"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "lhsRecommendation",
+			"urlTemplate": "/apps/dossiq/settings/lhs-recommendations/{uuid}",
+			"displayName": "Enforcement recommendation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "bezwaaradviescommissie",
+			"urlTemplate": "/apps/dossiq/settings/bezwaar-committees/{uuid}",
+			"displayName": "Objection advisory committee"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "bacAdviceRequest",
+			"urlTemplate": "/apps/dossiq/bezwaar-advice-requests/{uuid}",
+			"displayName": "Committee advice request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseType",
+			"urlTemplate": "/apps/dossiq/settings/case-types/{uuid}",
+			"displayName": "Case type"
 		}
 	]
 }

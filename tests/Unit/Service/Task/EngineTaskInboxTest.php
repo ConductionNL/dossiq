@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/remove-casetask/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 
 declare(strict_types=1);

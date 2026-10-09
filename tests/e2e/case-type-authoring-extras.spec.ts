@@ -49,6 +49,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { chooseLens } from './helpers/lens.ts'
 import { clickHeaderAction, dismissSupportDialog } from './helpers/nav.ts'
 
 let api: APIRequestContext
@@ -375,7 +376,7 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 			).toHaveCount(0)
 		}
 
-		await page.getByRole('tab', { name: /^(Closed|Gesloten)$/ }).click()
+		await chooseLens(page, /^(Closed|Gesloten)$/)
 		await expect(
 			page.getByText(`${RUN_PREFIX} Afgehandelde zaak 1`, { exact: true }),
 		).toBeVisible({ timeout: 30_000 })

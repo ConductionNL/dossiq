@@ -12,7 +12,8 @@
       "milestoneDefinition": {
         "slug": "milestoneDefinition",
         "icon": "FlagOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Milestone Definition",
         "description": "Business-friendly progress marker configured per zaaktype. Translates a technical workflow/status step into a human-readable checkpoint shown to case workers, managers and citizens.",
         "type": "object",

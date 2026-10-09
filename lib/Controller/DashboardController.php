@@ -201,7 +201,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return string The installed version, or '' when none is recorded.
 	 *
-	 * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+	 * @spec openspec/specs/notification-labels/spec.md
 	 */
 	private function installedVersion(): string {
 		return $this->appConfig->getValueString(

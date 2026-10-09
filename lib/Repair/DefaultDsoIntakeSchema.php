@@ -42,7 +42,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+ * @spec openspec/specs/vth-dso-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -64,7 +64,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+ * @spec openspec/specs/vth-dso-integration/spec.md
  */
 class DefaultDsoIntakeSchema implements IRepairStep {
 
@@ -110,7 +110,7 @@ class DefaultDsoIntakeSchema implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function getName(): string {
 		return 'Point DSO intake at integriq\'s dso_verzoek schema when it was never set';
@@ -123,7 +123,7 @@ class DefaultDsoIntakeSchema implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->appConfig->hasKey(app: Application::APP_ID, key: self::KEY, lazy: null) === true) {

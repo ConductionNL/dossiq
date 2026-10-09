@@ -32,7 +32,7 @@ use Throwable;
  * also enforced inside OpenRegister, at the same two acts, so this reader is
  * the sentence a handler sees rather than the only thing standing in the way.
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
  */
 class PartyIndicatorReader {
 
@@ -70,7 +70,7 @@ class PartyIndicatorReader {
 	 *
 	 * @return array<int, array<string, mixed>> The indicators, each with `party`, `role`, `key`, `label`, `effect`.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function indicatorsOn(string $caseId): array {
 		$guard = $this->guard();
@@ -103,7 +103,7 @@ class PartyIndicatorReader {
 	 *
 	 * @return array<string, mixed>|null The refusing indicator.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function publicationRefusal(string $caseId): ?array {
 		foreach ($this->indicatorsOn(caseId: $caseId) as $indicator) {
@@ -126,7 +126,7 @@ class PartyIndicatorReader {
 	 *
 	 * @return string|null The refusing indicator's label.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function sendRefusalFor(string $partyUuid): ?string {
 		if (trim($partyUuid) === '') {
@@ -167,7 +167,7 @@ class PartyIndicatorReader {
 	 *
 	 * @return string The party uuid.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function partyUuidOf(array $link): string {
 		return trim((string)($link['partyUuid'] ?? ''));

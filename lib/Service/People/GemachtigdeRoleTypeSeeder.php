@@ -57,7 +57,7 @@ use Throwable;
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
 class GemachtigdeRoleTypeSeeder {
 
@@ -106,7 +106,7 @@ class GemachtigdeRoleTypeSeeder {
 	 * @return array{available: bool, created: int, adopted: int, kept: int, refused: string|null}
 	 *                                                                                            What the seed did.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function seed(): array {
 		$nothing = [
