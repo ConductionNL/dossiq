@@ -30,6 +30,7 @@ use OCA\Dossiq\Repair\CopyEmbeddedBezwaarAuditTrail;
 use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -80,9 +81,13 @@ class CopyEmbeddedBezwaarAuditTrailTest extends TestCase {
 			$this->warnings[] = $message;
 		});
 
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->with('OCA\\OpenRegister\\Db\\AuditTrailMapper')->willReturn($this->trail);
+
 		(new CopyEmbeddedBezwaarAuditTrail(
 			settingsService: $this->bezwaarSettings(),
 			auditTrail: $this->bezwaarAuditTrail(uid: null),
+			container: $container,
 			logger: $this->createMock(LoggerInterface::class),
 		))->run($output);
 	}

@@ -384,38 +384,6 @@ class BezwaarAuditTrail {
 	}//end recordRefusal()
 
 	/**
-	 * The `migratedIndex` of every entry already copied onto a record's trail.
-	 *
-	 * Reads the record's `dossiq.bezwaar.*` rows through OpenRegister's
-	 * `AuditTrailMapper::findAll()`, so the copy of the old embedded array can
-	 * run twice and write nothing the second time. A read that fails throws:
-	 * answering "nothing copied" would copy everything again.
-	 *
-	 * @param string $objectUuid The record.
-	 *
-	 * @return array<int, int> The copied indexes.
-	 *
-	 * @throws Throwable When the trail cannot be read.
-	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
-	 */
-	public function copiedIndexes(string $objectUuid): array {
-		$rows = $this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')->findAll(
-			filters: ['object_uuid' => $objectUuid, 'action' => self::ACTION_PREFIX.'*']
-		);
-
-		$indexes = [];
-		foreach ($rows as $row) {
-			$context = (array)$row->getChanged();
-			if (($context['migratedFrom'] ?? '') === 'auditTrail' && isset($context['migratedIndex']) === true) {
-				$indexes[] = (int)$context['migratedIndex'];
-			}
-		}
-
-		return $indexes;
-	}//end copiedIndexes()
-
-	/**
 	 * Resolve the acting user UID from IUserSession.
 	 *
 	 * Identity is never taken from caller-supplied data; a session-less

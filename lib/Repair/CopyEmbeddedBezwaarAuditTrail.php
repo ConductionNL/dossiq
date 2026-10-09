@@ -18,8 +18,9 @@
  * actor is `system`, because the system wrote it.
  *
  * Idempotent: an index already copied is skipped, so a second run writes
- * nothing. A record whose entries cannot be written is reported by uuid and
- * the run goes on with the next one.
+ * nothing; it reads what it already copied with OpenRegister's
+ * `AuditTrailMapper::findAll()`. A record whose entries cannot be written is
+ * reported by uuid and the run goes on with the next one.
  *
  * @category Repair
  * @package  OCA\Dossiq\Repair
@@ -43,6 +44,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use Psr\Container\ContainerInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -75,13 +77,15 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService Register and schema configuration, and the ObjectService.
-	 * @param BezwaarAuditTrail $auditTrail      Writes and reads the bezwaar rows.
-	 * @param LoggerInterface   $logger          Logger.
+	 * @param SettingsService    $settingsService Register and schema configuration, and the ObjectService.
+	 * @param BezwaarAuditTrail  $auditTrail      Writes the copied rows.
+	 * @param ContainerInterface $container       Resolves OpenRegister's AuditTrailMapper, to read what was already copied.
+	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly BezwaarAuditTrail $auditTrail,
+		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -186,7 +190,7 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	 * @throws RuntimeException When an entry names no event or cannot be written.
 	 */
 	private function copyRecord(string $register, string $schema, string $uuid, array $entries): int {
-		$done = $this->auditTrail->copiedIndexes(objectUuid: $uuid);
+		$done = $this->copiedIndexes(objectUuid: $uuid);
 		$copied = 0;
 		foreach ($entries as $index => $entry) {
 			if (in_array($index, $done, true) === true) {
@@ -215,4 +219,34 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 
 		return $copied;
 	}//end copyRecord()
+
+	/**
+	 * The `migratedIndex` of every entry already copied onto a record's trail.
+	 *
+	 * Reads the record's `dossiq.bezwaar.*` rows with OpenRegister's
+	 * `AuditTrailMapper::findAll()`, so the copy can run twice and write
+	 * nothing the second time. A read that fails throws: answering "nothing
+	 * copied" would copy everything again.
+	 *
+	 * @param string $objectUuid The record.
+	 *
+	 * @return array<int, int> The copied indexes.
+	 *
+	 * @throws Throwable When the trail cannot be read.
+	 */
+	private function copiedIndexes(string $objectUuid): array {
+		$rows = $this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')->findAll(
+			filters: ['object_uuid' => $objectUuid, 'action' => BezwaarAuditTrail::ACTION_PREFIX.'*']
+		);
+
+		$indexes = [];
+		foreach ($rows as $row) {
+			$context = (array)$row->getChanged();
+			if (($context['migratedFrom'] ?? '') === 'auditTrail' && isset($context['migratedIndex']) === true) {
+				$indexes[] = (int)$context['migratedIndex'];
+			}
+		}
+
+		return $indexes;
+	}//end copiedIndexes()
 }//end class
