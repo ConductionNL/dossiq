@@ -1567,7 +1567,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.36.0",
+                "version": "1.37.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1591,6 +1591,8 @@
                             }
                         ]
                     }
+                ,
+                    "categoryProperty": "selectionListClass"
                 },
                 "x-openregister-quality": {
                     "field": "qualityScore",
@@ -3350,6 +3352,12 @@
                         "format": "date",
                         "description": "Date when the archive action should be executed",
                         "title": "Archive action date"
+                    },
+                    "selectionListClass": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The selectielijst class this case is archived under, copied from its result type's selectionListClass when the result is set. OpenRegister reads it as the case's archival category through `x-openregister-archival.categoryProperty`, so it must match a row of the instance's selectielijst register.",
+                        "title": "Selection list class"
                     },
                     "lawfulPurposeEndDate": {
                         "type": "string",
@@ -10409,7 +10417,7 @@
             "supplier": {
                 "slug": "supplier",
                 "icon": "Factory",
-                "version": "1.1.1",
+                "version": "1.2.0",
                 "searchable": false,
                 "x-schema-org": "schema:Organization",
                 "x-openregister-quality": {
@@ -10504,6 +10512,12 @@
                         "type": "string",
                         "description": "Primary contact person",
                         "title": "Contact Person"
+                    },
+                    "contactEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "The address supplier notices are mailed to: a new message, a contract that expires, an invoice that falls due, a published tender. OpenRegister reads it through a message's supplierRef.",
+                        "title": "Contact e-mail"
                     },
                     "iban": {
                         "type": "string",
