@@ -327,7 +327,11 @@ class TermijnTimerService {
 	private function anchorFor(DateTimeImmutable $start): DateTimeImmutable {
 		$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');
 
-		return $startDay->add(new \DateInterval('P1D'));
+		return $startDay->setDate(
+			(int)$startDay->format('Y'),
+			(int)$startDay->format('n'),
+			((int)$startDay->format('j') + 1)
+		);
 	}//end anchorFor()
 
 	/**

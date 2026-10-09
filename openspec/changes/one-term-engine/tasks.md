@@ -40,17 +40,17 @@ group lands on `development` as its own PR.
 
 ## 3. Late means the day after (PR 3)
 
-- [ ] 3.1 `TermijnTimerService::armBeslistermijn()` anchors at the start of the
+- [x] 3.1 `TermijnTimerService::armBeslistermijn()` anchors at the start of the
   day after the start day, so it breaches the day after the end day (D-6,
   REQ-OTE-05).
   - `tests/Unit/Service/TermijnTimerServiceTest.php`
-- [ ] 3.2 Repair step part two: re-arm running beslistermijn timers once, mark
+- [x] 3.2 Repair step part two (its own step, `RearmBeslistermijnTimers`, after the reconcile): re-arm running beslistermijn timers once, mark
   `timerBreachesAfterLastDay` (D-9, REQ-OTE-08).
-- [ ] 3.3 One front-end helper (`src/utils/deadlineCountdown.js`), used by
+- [x] 3.3 One front-end helper (`src/utils/deadlineCountdown.js`), used by
   `caseHelpers`, `caseTerms`, `dashboardHelpers`, `WooDeadlinePanel` and
   `MyWorkCaseCard` (D-7, REQ-OTE-07).
   - `tests/vitest/deadlineCountdown.spec.js`
-- [ ] 3.4 Simple structure: list column, board `dueRule` and week strip
+- [x] 3.4 Simple structure: list column, board `dueRule` and week strip
   `lateWhen` read `lt 0` as late (D-6, REQ-OTE-05).
   - `tests/vitest/simpleListAndDashboard.spec.js`
 
