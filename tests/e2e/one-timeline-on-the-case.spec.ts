@@ -464,7 +464,7 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
  * @return Resolves once the tab has rendered.
  */
 async function openTimelineTab(page: Page, id: string): Promise<void> {
-	await page.goto(`/apps/dossiq/#/cases/${id}`, PAGE_LOAD)
+	await page.goto(`/apps/dossiq/cases/${id}`, PAGE_LOAD)
 	await page.getByRole('tab', { name: 'Timeline' }).click()
 	await expect(page.getByTestId('case-timeline')).toBeVisible(PAGE_LOAD)
 }

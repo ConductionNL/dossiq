@@ -132,7 +132,7 @@ test.describe('Inspect, on a case page', () => {
 	test('an admin opens the raw data, and reads the case as it is stored', async ({
 		page,
 	}) => {
-		await page.goto(`/index.php/apps/dossiq/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 		await openHeaderActionsMenu(page)
 
 		const entry = page.getByTestId('cn-action-case-inspect-raw')
@@ -163,7 +163,7 @@ test.describe('Inspect, on a case page', () => {
 
 	// @e2e openspec/changes/admin-inspect-entry/specs/case-management/spec.md#scenario-raw-data-shows-the-stored-case
 	test('an admin can reach the flow runs for this case', async ({ page }) => {
-		await page.goto(`/index.php/apps/dossiq/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 		await openHeaderActionsMenu(page)
 
 		const entry = page.getByTestId('cn-action-case-inspect-runs')
@@ -207,7 +207,7 @@ test.describe('Inspect, on a case page', () => {
 		const page = await context.newPage()
 
 		try {
-			await page.goto(`/index.php/apps/dossiq/#/cases/${caseId}`, PAGE_LOAD)
+			await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 
 			// The menu has to OPEN, or an absent entry proves only that the
 			// page never rendered its header. This is the control for the two

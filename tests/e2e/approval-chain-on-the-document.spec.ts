@@ -93,7 +93,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 			'decidiq answers on this instance, so the absent path is not the one under test',
 		)
 
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Files' }).click()
 		await page
@@ -188,7 +188,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 			'no decidiq on this instance, so there is no chain to render',
 		)
 
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Files' }).click()
 		await page

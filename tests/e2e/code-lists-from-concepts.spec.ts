@@ -23,6 +23,8 @@
  * them targetable at all.
  */
 
+import type { Locator } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
@@ -33,6 +35,19 @@ import {
 	RUN_PREFIX,
 	trackCreatedObject,
 } from './helpers/fixtures.ts'
+
+/**
+ * The Name input of the Add property definition form.
+ *
+ * Found by its label. The `.NcTextField` class this used to match is not a
+ * class @nextcloud/vue 9 renders (its root is `.input-field`), so the old
+ * locator matched nothing and every fill timed out.
+ *
+ * @param tab The Properties tab.
+ */
+function nameField(tab: Locator): Locator {
+	return tab.locator('.pd-fields').getByLabel('Name', { exact: true })
+}
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Wijkmelding`
@@ -89,7 +104,7 @@ test.describe('code lists from concepts', () => {
 	 * @param fill What to do with the form before saving.
 	 */
 	async function addDefinition(tab, name: string, fill: () => Promise<void>) {
-		await tab.locator('.pd-fields .NcTextField').first().fill(name)
+		await nameField(tab).fill(name)
 		await fill()
 		await tab.getByRole('button', { name: /^Add$/ }).click()
 		await expect(tab.locator('.property-row', { hasText: name })).toBeVisible({
@@ -153,10 +168,7 @@ test.describe('code lists from concepts', () => {
 	// @e2e openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md#options-come-from-the-scheme
 	test('a field carrying both is told which one wins', async ({ page }) => {
 		const tab = await openProperties(page)
-		await tab
-			.locator('.pd-fields .NcTextField')
-			.first()
-			.fill(`${RUN_PREFIX} Reden`)
+		await nameField(tab).fill(`${RUN_PREFIX} Reden`)
 		await tab.getByText('Limit answers to a list').click()
 		await tab.locator('#pd-add-enum').fill('Te laat')
 		await tab.locator('#pd-add-concept-scheme').fill('redenen')

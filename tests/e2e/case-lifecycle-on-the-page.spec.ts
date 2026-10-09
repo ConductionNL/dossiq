@@ -296,11 +296,11 @@ test.describe('Case lifecycle on the case page', () => {
 		await expect(page.getByTestId('cn-stages-widget')).toBeVisible({
 			timeout: 30_000,
 		})
-		// The status pill in the identity row. It is the library's own badge
-		// inside a configured `stat` tile, so it carries the library testid.
-		await expect(page.getByTestId('cn-stat-widget-badge')).toBeVisible({
-			timeout: 30_000,
-		})
+		// NO STATUS PILL TO WAIT FOR. The identity row's Status tile (the
+		// library `stat` tile in badge mode) was removed in 353a31777, which
+		// left the case number, the case type and the deadline in the KPI row
+		// and moved the status onto the stages widget awaited above. Waiting
+		// for `cn-stat-widget-badge` timed out on every case this file opens.
 	}
 
 	/**

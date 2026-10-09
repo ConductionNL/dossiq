@@ -288,7 +288,7 @@ test.describe('Ontvangstbevestiging (Awb 4:3a)', () => {
 		await api.dispose()
 
 		const errors = trackDossiqErrors(page)
-		await page.goto(`/index.php/apps/dossiq/#/cases/${objectId(row)}`, PAGE_LOAD)
+		await page.goto(`/index.php/apps/dossiq/cases/${objectId(row)}`, PAGE_LOAD)
 
 		await expect(
 			page.getByRole('tab', { name: /Communication|Communicatie/i }),
