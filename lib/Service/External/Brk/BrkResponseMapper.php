@@ -43,9 +43,6 @@ namespace OCA\Dossiq\Service\External\Brk;
  * Normalizes Kadaster BRK Bevragen v2 kadastraalOnroerendeZaak fragments
  * into the Dossiq-internal DTO shape.
  *
- * @SuppressWarnings(PHPMD.LongVariable) — kadastrale-aanduiding local names
- * are the canonical BRK domain terms (see interface).
- *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 final class BrkResponseMapper {
@@ -75,22 +72,22 @@ final class BrkResponseMapper {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
-		$kadastraleAanduidingRaw = ($raw['kadastraleAanduiding'] ?? []);
-		if (is_array($kadastraleAanduidingRaw) === false) {
-			$kadastraleAanduidingRaw = [];
+		$aanduidingRaw = ($raw['kadastraleAanduiding'] ?? []);
+		if (is_array($aanduidingRaw) === false) {
+			$aanduidingRaw = [];
 		}
 
-		$municipalityNameRaw = ($kadastraleAanduidingRaw['kadastraleGemeente']['value'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
-		$municipalityCodeRaw = ($kadastraleAanduidingRaw['kadastraleGemeentecode']['value'] ?? $raw['kadastraleGemeenteCode'] ?? null);
-		$sequenceNumberRaw = ($kadastraleAanduidingRaw['appartementsrechtvolgnummer'] ?? $raw['appartementsrechtVolgnummer'] ?? null);
+		$municipalityNameRaw = ($aanduidingRaw['kadastraleGemeente']['value'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
+		$municipalityCodeRaw = ($aanduidingRaw['kadastraleGemeentecode']['value'] ?? $raw['kadastraleGemeenteCode'] ?? null);
+		$sequenceNumberRaw = ($aanduidingRaw['appartementsrechtvolgnummer'] ?? $raw['appartementsrechtVolgnummer'] ?? null);
 		$grootteRaw = ($raw['kadastraleGrootte']['value'] ?? $raw['kadastraleGrootte'] ?? null);
 		$gerechtigdenRaw = ($raw['zakelijkGerechtigdheid'] ?? $raw['zakelijkGerechtigden'] ?? []);
 
 		return [
 			'kadastraleGemeente' => $this->stringOrNull(value: $municipalityNameRaw),
 			'kadastraleGemeenteCode' => $this->stringOrNull(value: $municipalityCodeRaw),
-			'sectie' => $this->stringOrNull(value: $kadastraleAanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
-			'perceelnummer' => $this->intOrNull(value: $kadastraleAanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
+			'sectie' => $this->stringOrNull(value: $aanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
+			'perceelnummer' => $this->intOrNull(value: $aanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
 			'appartementsrechtVolgnummer' => $this->stringOrNull(value: $sequenceNumberRaw),
 			'kadastraleAanduiding' => $this->stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
 			'oppervlakte' => $this->intOrNull(value: $grootteRaw),
