@@ -26,4 +26,4 @@ dossiq#3152.
 
 ## 4. Validation
 
-- [ ] 4.1 `openspec validate portal-citizen-writes-on-the-case --strict`, `npm run lint`, `composer check:strict` once before push.
+- [x] 4.1 (2026-10-09 on build/openspecs-1: validate valid, `npm run lint` 0, check:strict green after its two findings were fixed, see the PR) `openspec validate portal-citizen-writes-on-the-case --strict`, `npm run lint`, `composer check:strict` once before push.
