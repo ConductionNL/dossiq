@@ -44,7 +44,9 @@ test.describe('The simple structure', () => {
 			baseURL,
 			storageState: 'tests/e2e/.auth/user.json',
 		})
-		const current = await api.get(SETTINGS_API)
+		const current = await api.get(SETTINGS_API, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(current.status(), 'GET /api/settings').toBe(200)
 		const body = await current.json()
 		before = String((body.config ?? body).menu_structure ?? '')

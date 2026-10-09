@@ -149,6 +149,7 @@ test.describe('A coordinator rebinds a running case to the right case type', () 
 
 		const response = await api.get(
 			`/index.php/apps/dossiq/api/case/${runningCase}/rebind?target=${omgevingsvergunning}`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(response.ok(), await response.text()).toBeTruthy()
 

@@ -168,7 +168,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		const api = controllerApi as APIRequestContext
 
 		for (const url of GATED) {
-			const response = await api.get(url)
+			const response = await api.get(url, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 			expect(
 				response.status(),
 				`${url} must answer a member of ${READING_GROUP}; got ${response.status()}. `
@@ -181,7 +183,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		const api = handlerApi as APIRequestContext
 
 		for (const url of GATED) {
-			const response = await api.get(url)
+			const response = await api.get(url, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 			expect(response.status(), `${url} must refuse a case handler`).toBe(403)
 
 			// And the refusal says why, so an operator adds the account to the

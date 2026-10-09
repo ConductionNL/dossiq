@@ -179,7 +179,9 @@ test.describe('The task as a first-class record', () => {
 	}) => {
 		const api = await playwright.request.newContext({ baseURL })
 
-		const res = await api.get(`/index.php/apps/dossiq/api/case/${caseId}/acts`)
+		const res = await api.get(`/index.php/apps/dossiq/api/case/${caseId}/acts`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(res.ok(), `acts -> ${res.status()} ${await res.text()}`).toBeTruthy()
 		const body = await res.json()
 
@@ -211,6 +213,7 @@ test.describe('The task as a first-class record', () => {
 		// handover reconstructable months later.
 		const audit = await api.get(
 			`/index.php/apps/openregister/api/flow-tasks/${taskId}/audit`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(audit.ok()).toBeTruthy()
 		const entries = await audit.json()

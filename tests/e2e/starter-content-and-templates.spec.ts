@@ -74,7 +74,9 @@ const EXTRA_SCHEMAS = [
  * @param path  The path under /api/starter.
  */
 async function starterGet(api: APIRequestContext, path: string) {
-	return api.get(`${APP_BASE}/api/starter${path}`)
+	return api.get(`${APP_BASE}/api/starter${path}`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
 }
 
 test.afterAll(async ({ request }) => {
