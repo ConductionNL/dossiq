@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.36.0",
-        "digest": "31ec883f164fd23cc32a1a99ae8cae5b1daf67d3cef664735d57852b31743616"
+        "version": "1.37.0",
+        "digest": "472bbb131ffe2b3a1553c077c861fb939d5156b391d5dae1535f3bc75e0ce607"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -696,7 +696,7 @@
         "digest": "513d4cb9be3384e17a9dab23a4f38d89aa5dacf7c545b28f3d0f11fb07032e6e"
     },
     "lib/Settings/dossiq_register.json::decision": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "327f4726c3cf622426f22770b25f6b412b9f238ee3e5dc62aac1c92271b7218c"
     },
     "lib/Settings/dossiq_register.json::decisionDocument": {
@@ -832,7 +832,7 @@
         "digest": "492dbf8f98d388c911a28b704cfcf0cb5c272bcf8f958b7547ac92435440a039"
     },
     "lib/Settings/dossiq_register.json::supplier": {
-        "version": "1.1.1",
+        "version": "1.2.0",
         "digest": "1dbc527f338ac010810218e73a62c6d93fcc07dc79311cc58a7e039aa091c897"
     },
     "lib/Settings/dossiq_register.json::supplierContract": {
@@ -1420,8 +1420,12 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/83-woo-document-assessment.json::wooDocumentAssessment": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "1d0a9ca7042939efab4202f938d992bff7ed8a4692b277aca418c42bcaacde6a"
+    },
+    "lib/Settings/register.d/84-woo-refusal-grounds.json::wooRefusalGround": {
+        "version": "1.0.0",
+        "digest": "c6717a0258ebeb74fddf9f8e85ed3be6efa1ed0a0c8ccbf9207140e469125593"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",

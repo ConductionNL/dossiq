@@ -86,6 +86,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
 		'CopyEmbeddedBezwaarAuditTrail' => 'copies embedded bezwaar audit entries; a fresh install has none',
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
+		'MapWooRefusalGroundCodes' => 'rewrites refusal ground codes on existing Woo assessments and decisions; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
 		// INHERITED from the family-plan lane, which shipped this step with no

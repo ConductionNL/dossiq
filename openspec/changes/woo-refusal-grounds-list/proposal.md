@@ -66,7 +66,7 @@ name the wrong article. `design.md` sets the four lists side by side.
    the new entries. It maps only where the mapping is unambiguous and reports the rest. It never
    guesses.
 6. **Other apps read it through one named method**:
-   `OCA\Dossiq\Woo\WooRefusalGrounds::list(bool $includeRetired = false): array`, resolved by
+   `OCA\Dossiq\Woo\WooRefusalGrounds::list(): array` (active grounds; `listWithRetired()` adds the retired ones), resolved by
    consumers through their fleet-id helper. The return shape is fixed below and tested on both
    sides.
 7. **A release-time snapshot** of the active list ships with dossiq as

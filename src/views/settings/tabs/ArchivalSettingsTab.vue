@@ -12,7 +12,7 @@
   The value is checked before it is sent, so a typo reads as a refused field
   rather than as a server error, and an empty box never silently writes nothing.
 
-  @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+  @spec openspec/specs/archief-edepot-handover/spec.md
 -->
 <template>
 	<div class="archival-settings" data-testid="archival-settings">
@@ -85,12 +85,12 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		invalid() {
 			return isIsoDuration(this.frequency) === false
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		canSave() {
 			return this.busy === false && this.invalid === false
 		},
@@ -100,7 +100,7 @@ export default {
 	 * Read openregister's archival settings once the tab is on the page.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -111,7 +111,7 @@ export default {
 		 * Read the frequency openregister holds.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -131,7 +131,7 @@ export default {
 		 * Write the frequency to openregister.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		async save() {
 			if (this.canSave === false) {

@@ -11,6 +11,11 @@
   `manifest.d/60-leverancier.json`) once Portaliq renders the contribution; keep
   the API + facades.
 
-- [ ] **T3** (not run: needs Ruben, Q-dossiq-2: OpenRegister's email channel mails a Nextcloud user id, and a supplierMessage names no supplier user or address): Wire `x-openregister-notifications` on `supplierMessage` (and the
+- [ ] **T3** (half built 2026-10-09, decision 128: `supplier.contactEmail` is on the schema
+  (supplier 1.2.0, `tests/Unit/Settings/SupplierContactEmailTest.php`). Not run: the four
+  rules wait on openregister's `email` recipient kind that reads an address through a
+  reference (`supplierRef.contactEmail`), filed as a sibling ask. Declaring that kind today
+  would fail OpenRegister's NotificationAnnotationValidator, which refuses an unknown recipient
+  kind and so the whole supplierMessage schema at import.) Wire `x-openregister-notifications` on `supplierMessage` (and the
   contractExpiring / invoiceDue / tenderPublished rules) to email the supplier via
   OpenRegister's notification engine (email channel + `field` recipient kind).

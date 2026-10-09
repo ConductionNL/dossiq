@@ -1,0 +1,255 @@
+{
+  "_source": "openspec/changes/woo-refusal-grounds-list/design.md D-2, section 2 (decision 133, approved by Ruben 9 Oct 2026). Copied by hand from the table; the seed test compares the register fragment against this file.",
+  "grounds": [
+    {
+      "code": "5.1",
+      "article": "5.1",
+      "paragraph": "",
+      "letter": "",
+      "label": "Uitzonderingen",
+      "kind": null,
+      "parent": null,
+      "citable": false
+    },
+    {
+      "code": "5.1.1",
+      "article": "5.1",
+      "paragraph": "1",
+      "letter": "",
+      "label": "Absolute uitzonderingsgronden",
+      "kind": "absolute",
+      "parent": "5.1",
+      "citable": false
+    },
+    {
+      "code": "5.1.2",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "",
+      "label": "Relatieve uitzonderingsgronden",
+      "kind": "relative",
+      "parent": "5.1",
+      "citable": false
+    },
+    {
+      "code": "5.2",
+      "article": "5.2",
+      "paragraph": "",
+      "letter": "",
+      "label": "Persoonlijke beleidsopvattingen",
+      "kind": null,
+      "parent": null,
+      "citable": false
+    },
+    {
+      "code": "5.1.1.a",
+      "article": "5.1",
+      "paragraph": "1",
+      "letter": "a",
+      "label": "Eenheid van de Kroon",
+      "kind": "absolute",
+      "parent": "5.1.1",
+      "citable": true
+    },
+    {
+      "code": "5.1.1.b",
+      "article": "5.1",
+      "paragraph": "1",
+      "letter": "b",
+      "label": "Veiligheid van de Staat",
+      "kind": "absolute",
+      "parent": "5.1.1",
+      "citable": true
+    },
+    {
+      "code": "5.1.1.c",
+      "article": "5.1",
+      "paragraph": "1",
+      "letter": "c",
+      "label": "Vertrouwelijk meegedeelde bedrijfs- en fabricagegegevens",
+      "kind": "absolute",
+      "parent": "5.1.1",
+      "citable": true
+    },
+    {
+      "code": "5.1.1.d",
+      "article": "5.1",
+      "paragraph": "1",
+      "letter": "d",
+      "label": "Bijzondere en strafrechtelijke persoonsgegevens",
+      "kind": "absolute",
+      "parent": "5.1.1",
+      "citable": true
+    },
+    {
+      "code": "5.1.1.e",
+      "article": "5.1",
+      "paragraph": "1",
+      "letter": "e",
+      "label": "Identificatienummers",
+      "kind": "absolute",
+      "parent": "5.1.1",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.a",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "a",
+      "label": "Internationale betrekkingen",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.b",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "b",
+      "label": "Economische of financiële belangen van de Staat, andere publiekrechtelijke lichamen of bestuursorganen",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.c",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "c",
+      "label": "Opsporing en vervolging van strafbare feiten",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.d",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "d",
+      "label": "Inspectie, controle en toezicht",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.e",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "e",
+      "label": "Eerbiediging van de persoonlijke levenssfeer",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.f",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "f",
+      "label": "Concurrentiegevoelige bedrijfs- en fabricagegegevens",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.g",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "g",
+      "label": "Bescherming van het milieu",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.h",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "h",
+      "label": "Beveiliging van personen en bedrijven",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.2.i",
+      "article": "5.1",
+      "paragraph": "2",
+      "letter": "i",
+      "label": "Goed functioneren van de Staat, andere publiekrechtelijke lichamen of bestuursorganen",
+      "kind": "relative",
+      "parent": "5.1.2",
+      "citable": true
+    },
+    {
+      "code": "5.1.4",
+      "article": "5.1",
+      "paragraph": "4",
+      "letter": "",
+      "label": "Geadresseerde neemt eerst kennis",
+      "kind": "temporary",
+      "parent": "5.1",
+      "citable": true
+    },
+    {
+      "code": "5.1.5",
+      "article": "5.1",
+      "paragraph": "5",
+      "letter": "",
+      "label": "Onevenredige benadeling",
+      "kind": "relative",
+      "parent": "5.1",
+      "citable": true
+    },
+    {
+      "code": "5.1.6",
+      "article": "5.1",
+      "paragraph": "6",
+      "letter": "",
+      "label": "Milieu-informatie, ernstige schade aan bedrijfsgegevens",
+      "kind": "relative",
+      "parent": "5.1",
+      "citable": true
+    },
+    {
+      "code": "5.2.1",
+      "article": "5.2",
+      "paragraph": "1",
+      "letter": "",
+      "label": "Persoonlijke beleidsopvattingen in stukken voor intern beraad",
+      "kind": "absolute",
+      "parent": "5.2",
+      "citable": true
+    },
+    {
+      "code": "5.2.2",
+      "article": "5.2",
+      "paragraph": "2",
+      "letter": "",
+      "label": "Tot personen herleidbare beleidsopvattingen",
+      "kind": "relative",
+      "parent": "5.2",
+      "citable": true
+    },
+    {
+      "code": "5.4",
+      "article": "5.4",
+      "paragraph": "",
+      "letter": "",
+      "label": "Informatie bij de formateur of informateur",
+      "kind": "temporary",
+      "parent": null,
+      "citable": true
+    },
+    {
+      "code": "5.4a.1",
+      "article": "5.4a",
+      "paragraph": "1",
+      "letter": "",
+      "label": "Ondersteuning van individuele volksvertegenwoordigers",
+      "kind": "absolute",
+      "parent": null,
+      "citable": true
+    }
+  ]
+}

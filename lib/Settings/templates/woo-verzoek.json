@@ -201,17 +201,5 @@
       "name": "Juridisch adviseur",
       "description": "Juridisch medewerker die adviseert over weigeringsgronden"
     }
-  ],
-  "weigeringsgronden": [
-    { "code": "5.1.1", "label": "Eenheid van de Kroon" },
-    { "code": "5.1.2", "label": "Veiligheid van de Staat" },
-    { "code": "5.1.3", "label": "Vertrouwelijk verstrekte bedrijfs- en fabricagegegevens" },
-    { "code": "5.1.4", "label": "Persoonlijke beleidsopvattingen" },
-    { "code": "5.1.5", "label": "Persoonlijke levenssfeer" },
-    { "code": "5.2.1", "label": "Economische of financiele belangen van de Staat" },
-    { "code": "5.2.2", "label": "Opsporing en vervolging van strafbare feiten" },
-    { "code": "5.2.3", "label": "Inspectie, controle en toezicht door bestuursorganen" },
-    { "code": "5.2.4", "label": "Vertrouwelijkheid van beraadslaging" },
-    { "code": "5.2.5", "label": "Het goed functioneren van de Staat" }
   ]
 }

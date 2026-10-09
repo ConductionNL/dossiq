@@ -26,7 +26,7 @@
  * What unblocks it: a dynamic `final`, or a finality predicate on
  * `LifecycleActionProviderInterface`, where a provider-mode state machine
  * already lives. See
- * openspec/changes/the-case-archives-through-openregister/design.md, D-1.
+ * openspec/changes/archive/2026-10-09-the-case-archives-through-openregister/design.md, D-1.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Archival
