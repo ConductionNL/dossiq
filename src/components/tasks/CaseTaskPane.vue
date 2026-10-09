@@ -327,7 +327,7 @@ export default {
 		 * duplicated authorization this migration exists to remove.
 		 *
 		 * @return {Array<{name: string, label: string, primary: boolean}>} The verbs.
-		 * @spec openspec/changes/remove-casetask/tasks.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		verbs() {
 			return [
@@ -672,7 +672,7 @@ export default {
 		 * @param {{name: string}} verb The verb.
 		 * @param {object} [task] The task to act on; the current one by default.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/remove-casetask/tasks.md
+		 * @spec openspec/specs/task-management/spec.md
 		 * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
 		 */
 		async invoke(verb, task = null) {

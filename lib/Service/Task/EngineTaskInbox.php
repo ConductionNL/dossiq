@@ -91,7 +91,7 @@ class EngineTaskInbox {
      *
      * @return array<int, array<string, mixed>> The tasks.
      *
-     * @spec openspec/changes/remove-casetask/tasks.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function openForAssignee(string $actor, int $limit = 200): array {
         if (trim($actor) === '') {
@@ -280,7 +280,7 @@ class EngineTaskInbox {
      *
      * @return array<string, mixed> The task, or [] when unusable.
      *
-     * @spec openspec/changes/remove-casetask/tasks.md
+     * @spec openspec/specs/task-management/spec.md
      */
     private function asArray(mixed $row): array {
         $get = static function (mixed $r, string $key, string $method): string {
