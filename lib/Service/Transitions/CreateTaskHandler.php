@@ -125,8 +125,9 @@ class CreateTaskHandler implements ActionHandlerInterface {
 			// checklist task on somebody's queue when no person resolves.
 			//
 			// Read through the resolver, never a (string) cast: `assignedGroup`
-			// is a $ref, so an expanded read casts to the literal "Array" and
-			// writes a team that resolves to nothing.
+			// is a Nextcloud group id (one-team-model), but an expanded read of
+			// the old $ref casts to the literal "Array" and writes a team that
+			// resolves to nothing.
 			$team = $this->assignees->resolveTeam(case: $case);
 			if ($team !== '') {
 				$task['assigneeGroup'] = $team;

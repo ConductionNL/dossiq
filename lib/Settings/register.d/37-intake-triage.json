@@ -131,7 +131,8 @@
                 "department": {
                   "type": "string",
                   "title": "Department",
-                  "description": "The department the opened case belongs to."
+                  "referenceType": "nextcloud-group",
+                  "description": "The team the opened case belongs to, as a Nextcloud group id. It is written to the case's team as is."
                 },
                 "enabled": {
                   "type": "boolean",
