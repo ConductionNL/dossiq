@@ -162,6 +162,16 @@ describe('the two lists a handler wants are offered by name', () => {
 		}
 	})
 
+	it('narrows the team queue to the reader\'s own teams, unclaimed', () => {
+		// my-teams-queue: a team is a Nextcloud group and `@myGroups` is the
+		// reader's group ids, an IN filter. While they load, or for a reader
+		// in no group, the list waits and shows its prompt.
+		const queue = presets.find((p) => p.id === 'your-teams-queue').widget.content
+		expect(queue.filter.assignedGroup).toBe('@myGroups')
+		expect(queue.filter.assignee).toBe('IS NULL')
+		expect(queue.prompt).toBeTruthy()
+	})
+
 	it('asks the reader for neither a register nor a schema', () => {
 		for (const preset of presets) {
 			const content = preset.widget.content
