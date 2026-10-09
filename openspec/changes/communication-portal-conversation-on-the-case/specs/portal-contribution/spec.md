@@ -13,6 +13,8 @@ Marking a message read MUST record when the resident read it.
 - **THEN** they MUST see the subject, the text, the date and the attachment
 - **AND** opening the attachment MUST download it
 
+@e2e exclude Rendered by portaliq's inbox, a sibling repo; dossiq's declarations are pinned by tests/Unit/Portal/PortalConversationTest.php and PortalContributionProviderTest.php.
+
 ### Requirement: A reply carries its case without the resident typing it (REQ-PORTAL-006)
 The `berichten` collection MUST declare a reply through `replyToMessage` that
 carries `caseId` from the message answered. `replyToMessage` MUST offer the
@@ -25,6 +27,8 @@ attachments.
 - **THEN** the reply MUST be stored on that case with the photo attached
 - **AND** the resident MUST NOT have been asked for a case number
 
+@e2e exclude Rendered by portaliq's reply form, a sibling repo; the reply, carry and case choice are pinned by tests/Unit/Portal/PortalConversationTest.php.
+
 ### Requirement: A resident asks a question from the case and finds the answer there (REQ-PORTAL-007)
 The `mijnZaken` detail MUST offer "Ask a question about this case", which
 creates a message on that case, and MUST list the messages about that case in
@@ -36,6 +40,8 @@ only the resident's own messages.
 - **WHEN** they ask "When will I hear back?"
 - **THEN** the message MUST be stored on that case
 - **AND** the handler's answer MUST appear under Berichten on the same case page
+
+@e2e exclude Rendered by portaliq's case page, a sibling repo; the question and the caseMessages provider are pinned by tests/Unit/Portal/PortalConversationTest.php and PortalCaseMessagesTest.php.
 
 ### Requirement: The handler sees a resident's message on the case and answers from it (REQ-PORTAL-008)
 A message a resident sends about a case MUST appear on that case's timeline as

@@ -86,6 +86,7 @@ export default {
 		NcTextArea,
 		NcTextField,
 	},
+
 	props: {
 		/**
 		 * The case the message is about. May arrive as the unresolved
@@ -98,6 +99,7 @@ export default {
 		/** The subject of the message being answered, or '' for a new message. */
 		subject: { type: String, default: '' },
 	},
+
 	emits: ['close', 'sent'],
 	data() {
 		return {
@@ -105,11 +107,13 @@ export default {
 				subject: this.subject ? `Re: ${this.subject}` : '',
 				content: '',
 			},
+
 			kase: null,
 			sending: false,
 			error: '',
 		}
 	},
+
 	computed: {
 		/**
 		 * The case id, from the prop or else from the route.
@@ -123,6 +127,7 @@ export default {
 			}
 			return this.$route?.params?.id || ''
 		},
+
 		/**
 		 * Whether the dialog is on screen.
 		 *
@@ -132,6 +137,7 @@ export default {
 			return this.open === true
 		},
 	},
+
 	watch: {
 		isOpen: {
 			immediate: true,
@@ -148,6 +154,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		t,
 		/**
@@ -171,6 +178,7 @@ export default {
 				this.kase = null
 			}
 		},
+
 		/**
 		 * Write the message to the applicant's inbox.
 		 *
@@ -207,7 +215,9 @@ export default {
 			this.sending = true
 			try {
 				const { data } = await axios.post(
-					generateUrl('/apps/openregister/api/objects/dossiq/portaalBericht'),
+					generateUrl(
+						'/apps/openregister/api/objects/dossiq/portaalBericht',
+					),
 					payload,
 				)
 				this.$emit('sent', data)

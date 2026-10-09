@@ -65,11 +65,17 @@ Tier: V1. Kind: code. Rows: portaliq `cmp-act-ask-question-case`,
     The entry is a new kind `portaalbericht-inkomend` (follow-up on), not
     `portaalbericht`: a follow-up is declared per kind, and the outbound
     `portaalbericht` must not open one. `PortalMessageTimelineListenerTest`.
-- [ ] 5.2 `senderType` gains `medewerker`; `PortalMessageDialog.vue` and the
+- [x] 5.2 `senderType` gains `medewerker`; `PortalMessageDialog.vue` and the
   header action "Message the applicant"; Reply on the timeline entry; sending
   closes the follow-up.
   - vitest: the dialog writes `handler_to_citizen` with `recipientRef` equal to
     the case's `portalSubject`
   - `npm run check:manifest` and `npm run lint` exit 0
-- [ ] 5.3 `tests/e2e/portal-conversation-on-the-case.spec.ts`: a handler
+  - `src/dialogs/PortalMessageDialog.vue`, the `message-applicant` header action
+    (visible on a case with a `portalSubject`), Reply on a
+    `portaalbericht-inkomend` entry in `CaseTimelineTab.vue`; the listener
+    records the handler's message as a public `portaalbericht` entry.
+    `tests/vitest/portalMessageDialog.spec.js` validates the payload against
+    the real `portaalBericht` fragment.
+- [ ] 5.3 `tests/e2e/portal-conversation-on-the-case.spec.ts` (written, not run: needs a live instance): a handler
   answers a resident's message from the case; citing the scenarios below.

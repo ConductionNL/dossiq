@@ -54,7 +54,16 @@ vi.mock('@nextcloud/auth', () => ({
 function control(name) {
 	return defineComponent({
 		name,
-		props: ['modelValue', 'label', 'error', 'disabled', 'variant', 'type', 'size', 'name'],
+		props: [
+			'modelValue',
+			'label',
+			'error',
+			'disabled',
+			'variant',
+			'type',
+			'size',
+			'name',
+		],
 		emits: ['update:modelValue', 'close', 'click'],
 		render() {
 			return h(
@@ -167,7 +176,9 @@ describe('PortalMessageDialog', () => {
 		})
 		await flushPromises()
 
-		expect(mockGet.mock.calls[0][0]).toBe('/apps/openregister/api/objects/dossiq/case/case-1')
+		expect(mockGet.mock.calls[0][0]).toBe(
+			'/apps/openregister/api/objects/dossiq/case/case-1',
+		)
 		expect(wrapper.vm.resolvedCaseId).toBe('case-1')
 	})
 
@@ -210,13 +221,18 @@ describe('PortalMessageDialog', () => {
 
 describe('the Message the applicant header action', () => {
 	const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
-	const action = caseDetail.config.headerActions.find((a) => a.id === 'message-applicant')
+	const action = caseDetail.config.headerActions.find(
+		(a) => a.id === 'message-applicant',
+	)
 
 	it('opens the dialog from the case page, only for a case with a portal subject', () => {
 		expect(action.type).toBe('open-modal')
 		expect(action.target).toBe('PortalMessageDialog')
 		expect(action.props).toEqual({ caseId: '@objectId', open: true })
-		expect(action.visibleWhen.all).toContainEqual({ field: 'portalSubject', op: 'notEmpty' })
+		expect(action.visibleWhen.all).toContainEqual({
+			field: 'portalSubject',
+			op: 'notEmpty',
+		})
 	})
 
 	it('is a registered modal', () => {
@@ -226,9 +242,21 @@ describe('the Message the applicant header action', () => {
 
 describe('Reply on a resident message in the timeline', () => {
 	it('offers Reply on a resident message only, and closes its follow-up once the answer is sent', async () => {
-		vi.doMock('@nextcloud/l10n', () => ({ translate: (a, s) => s, translatePlural: (a, s) => s }))
-		for (const name of ['NcButton', 'NcCheckboxRadioSwitch', 'NcEmptyContent', 'NcLoadingIcon', 'NcNoteCard', 'NcSelect']) {
-			vi.doMock(`@nextcloud/vue/components/${name}`, () => ({ default: control(name) }))
+		vi.doMock('@nextcloud/l10n', () => ({
+			translate: (a, s) => s,
+			translatePlural: (a, s) => s,
+		}))
+		for (const name of [
+			'NcButton',
+			'NcCheckboxRadioSwitch',
+			'NcEmptyContent',
+			'NcLoadingIcon',
+			'NcNoteCard',
+			'NcSelect',
+		]) {
+			vi.doMock(`@nextcloud/vue/components/${name}`, () => ({
+				default: control(name),
+			}))
 		}
 		const { default: CaseTimelineTab } =
 			await import('../../src/views/cases/components/CaseTimelineTab.vue')
@@ -238,7 +266,11 @@ describe('Reply on a resident message in the timeline', () => {
 		expect(isResidentMessage({ kind: 'portaalbericht' })).toBe(false)
 		expect(isResidentMessage({ kind: 'mail-inkomend' })).toBe(false)
 
-		const question = { id: 'e-1', kind: 'portaalbericht-inkomend', followUp: 'open' }
+		const question = {
+			id: 'e-1',
+			kind: 'portaalbericht-inkomend',
+			followUp: 'open',
+		}
 		const ctx = {
 			replyTo: question,
 			closeFollowUp: vi.fn().mockResolvedValue(),

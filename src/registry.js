@@ -116,7 +116,6 @@ import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
-import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
@@ -147,6 +146,7 @@ import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 import RemindDialog from './dialogs/RemindDialog.vue'
