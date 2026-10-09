@@ -27,7 +27,7 @@
  * Identity is ALWAYS derived from IUserSession. Per the per-app
  * convention every mutation goes through OpenRegister via the manifest
  * renderer; this service composes those calls and writes the
- * append-only `auditTrail` entries tagged with the applicable Awb
+ * entries on OpenRegister's audit trail of the session, tagged with the applicable Awb
  * article so that beroep dossier export can demonstrate compliance.
  *
  * @category Service
@@ -95,7 +95,7 @@ class HearingService {
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge
 	 * @param LoggerInterface $logger Logger
-	 * @param BezwaarAuditTrail $auditTrail Shared append-only audit writer
+	 * @param BezwaarAuditTrail $auditTrail Writes each entry onto OpenRegister's audit trail
 	 * @param HearingSchedulePlanner $planner Awb art. 7:4 date arithmetic
 	 * @param HearingMinutesRecorder $minutes Awb art. 7:7 verslag assembly + consent gate
 	 * @param OwningCaseResolver $owningCase Resolves a session's parent bezwaar case
@@ -198,8 +198,22 @@ class HearingService {
 			]
 		);
 
-		$record['auditTrail'] = $this->auditTrail->append(
-			existing: [],
+		try {
+			$saved = ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq hearing: failed to schedule hearing: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not schedule hearing');
+		}
+
+		// Awb art. 7:2. The entry is a row on the session's own OpenRegister
+		// trail; a hearing whose entry cannot be written is deleted again.
+		$this->auditTrail->recordForNewRecord(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			objectUuid: $this->idOf(record: $saved),
 			event: 'hearing-scheduled',
 			payload: [
 				'case' => $caseId,
@@ -209,14 +223,7 @@ class HearingService {
 			tag: self::TAG_SCHEDULED,
 		);
 
-		try {
-			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq hearing: failed to schedule hearing: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not schedule hearing');
-		}
+		return $saved;
 	}//end schedule()
 
 	/**
@@ -278,8 +285,21 @@ class HearingService {
 			]
 		);
 
-		$record['auditTrail'] = $this->auditTrail->append(
-			existing: [],
+		try {
+			$saved = ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq hearing: failed to record waiver: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not record waiver');
+		}
+
+		// Awb art. 7:3. A waiver whose entry cannot be written is deleted again.
+		$this->auditTrail->recordForNewRecord(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			objectUuid: $this->idOf(record: $saved),
 			event: 'hearing-waived',
 			payload: [
 				'case' => $caseId,
@@ -288,14 +308,7 @@ class HearingService {
 			tag: self::TAG_WAIVER,
 		);
 
-		try {
-			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $record) ?? $record);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq hearing: failed to record waiver: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not record waiver');
-		}
+		return $saved;
 	}//end waive()
 
 	/**
@@ -380,26 +393,70 @@ class HearingService {
 		);
 		$isFrozen = $now > $freezeAt;
 
-		$existing = (array)($current['attendance'] ?? []);
-		$merged = $existing;
-		$audit = (array)($current['auditTrail'] ?? []);
-
+		$merged = (array)($current['attendance'] ?? []);
+		$corrections = [];
 		foreach ($entries as $entry) {
 			if ($isFrozen === true) {
-				$audit = $this->minutes->appendLateCorrectionAudit(
-					audit: $audit,
-					entry: $entry,
-				);
+				// Validates every reason before anything is written.
+				$corrections[] = $this->minutes->lateCorrectionPayload(entry: $entry);
 			}
 
 			$merged[] = $entry;
-		}//end foreach
+		}
 
-		$update = [
-			'attendance' => $merged,
-			'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
-			'auditTrail' => $audit,
-		];
+		return $this->writeAttendance(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			sessionId: $sessionId,
+			current: $current,
+			update: [
+				'attendance' => $merged,
+				'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
+			],
+			corrections: $corrections,
+		);
+	}//end recordAttendance()
+
+	/**
+	 * Record each late correction, then write the attendance.
+	 *
+	 * Awb art. 7:7. Each late correction is recorded before the attendance
+	 * changes; a correction whose entry cannot be written changes nothing. A
+	 * patch that fails after the entries leaves an
+	 * `attendance-late-correction-not-applied` row per correction (REQ-BAT-003).
+	 *
+	 * @param object                           $objectService OpenRegister object service.
+	 * @param string                           $register      The register.
+	 * @param string                           $schema        The hearingSession schema.
+	 * @param string                           $sessionId     The session.
+	 * @param array<string, mixed>             $current       The stored session.
+	 * @param array<string, mixed>             $update        The attendance patch.
+	 * @param array<int, array<string, mixed>> $corrections   The late corrections' payloads.
+	 *
+	 * @return array<string, mixed> The updated session.
+	 *
+	 * @throws RuntimeException When an entry or the patch fails.
+	 */
+	private function writeAttendance(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $sessionId,
+		array $current,
+		array $update,
+		array $corrections,
+	): array {
+		foreach ($corrections as $correction) {
+			$this->auditTrail->record(
+				register: $register,
+				schema: $schema,
+				objectUuid: $sessionId,
+				event: 'attendance-late-correction',
+				payload: $correction,
+				tag: self::TAG_VERSLAG,
+			);
+		}
 
 		try {
 			return ($this->patchObjectAsArray(
@@ -410,12 +467,23 @@ class HearingService {
 				changes: $update
 			) ?? array_merge($current, $update));
 		} catch (\Throwable $e) {
+			foreach ($corrections as $correction) {
+				$this->auditTrail->recordRefusal(
+					register: $register,
+					schema: $schema,
+					objectUuid: $sessionId,
+					event: 'attendance-late-correction-not-applied',
+					payload: $correction + ['error' => $e->getMessage()],
+					tag: self::TAG_VERSLAG,
+				);
+			}
+
 			$this->logger->error(
 				'Dossiq hearing: failed to record attendance: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not record attendance');
-		}
-	}//end recordAttendance()
+		}//end try
+	}//end writeAttendance()
 
 	/**
 	 * Attach minutes (verslag) to a hearingSession and promote it to
@@ -470,15 +538,11 @@ class HearingService {
 			);
 		}
 
-		$audit = (array)($current['auditTrail'] ?? []);
-
-		// Audio recording handling: gated by explicit consent.
-		$audit = $this->minutes->guardRecordingConsent(
-			objectService: $objectService,
+		// Audio recording handling: gated by explicit consent (AVG art. 6).
+		$this->minutes->guardRecordingConsent(
 			sessionId: $sessionId,
 			payload: $payload,
 			current: $current,
-			audit: $audit,
 			register: $register,
 			schema: $schema,
 		);
@@ -489,31 +553,44 @@ class HearingService {
 			document: $document,
 		);
 
-		$update['auditTrail'] = $this->auditTrail->append(
-			existing: $audit,
-			event: 'verslag-recorded',
-			payload: [
-				'hasSummary' => trim($summary) !== '',
-				'hasDocument' => trim($document) !== '',
-			],
-			tag: self::TAG_VERSLAG,
-		);
-
+		// Awb art. 7:7. The verslag is recorded before the session changes.
 		try {
-			return ($this->patchObjectAsArray(
-				objectService: $objectService,
+			return $this->auditTrail->recordThenApply(
 				register: $register,
 				schema: $schema,
-				id: (string)$sessionId,
-				changes: $update
-			) ?? array_merge($current, $update));
+				objectUuid: $sessionId,
+				event: 'verslag-recorded',
+				payload: [
+					'hasSummary' => trim($summary) !== '',
+					'hasDocument' => trim($document) !== '',
+				],
+				tag: self::TAG_VERSLAG,
+				apply: fn (): array => ($this->patchObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					id: (string)$sessionId,
+					changes: $update
+				) ?? array_merge($current, $update)),
+			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to add minutes: ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not add minutes');
-		}
+		}//end try
 	}//end addMinutes()
+
+	/**
+	 * The uuid of a saved record, as OpenRegister serialises it.
+	 *
+	 * @param array<string, mixed> $record The saved record.
+	 *
+	 * @return string The uuid, or '' when it carries none.
+	 */
+	private function idOf(array $record): string {
+		return (string)($record['@self']['id'] ?? ($record['id'] ?? ($record['uuid'] ?? '')));
+	}//end idOf()
 
 	/**
 	 * Listener entry-point: seed a default hearing session for a bezwaar
