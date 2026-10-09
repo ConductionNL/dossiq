@@ -11,7 +11,7 @@ import { translate as t } from '@nextcloud/l10n'
  * `/api/notification-preferences`: the rules declared under
  * `x-openregister-notifications` in `lib/Settings/dossiq_register.json` and
  * `lib/Settings/register.d/`. CnAppRoot hands the map to the library's
- * notification pane (`notificationLabels`, in @conduction/nextcloud-vue after 2.71.0).
+ * notification pane (`notificationLabels`, in @conduction/nextcloud-vue 2.73 and later).
  * A rule missing here still reads as words ("Case assigned"), never as its
  * key, so a new rule never shows "caseAssigned" again; it just reads plainer
  * until it gets a label here.
