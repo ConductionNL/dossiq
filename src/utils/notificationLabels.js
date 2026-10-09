@@ -20,7 +20,7 @@ import { translate as t } from '@nextcloud/l10n'
  * page was loaded in.
  *
  * @return {{[key: string]: string}} Labels keyed `<schema>.<key>` or `<key>`.
- * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+ * @spec openspec/specs/notification-labels/spec.md
  */
 export function notificationLabels() {
 	return {

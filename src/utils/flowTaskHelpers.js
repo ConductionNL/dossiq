@@ -54,7 +54,7 @@ export function waitingCaseIdFrom(task) {
  *
  * @param {object} task The task row.
  * @return {string|object|null} The case reference.
- * @spec openspec/changes/remove-casetask/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function taskCaseRef(task) {
 	if (!task || typeof task !== 'object') {

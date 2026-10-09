@@ -236,7 +236,7 @@ class CaseRoleVocabularyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
 	 */
 	public function testAGenericRoleIsNotListedTwice(): void {
 		$this->objects->answers['roleType'] = [
@@ -259,7 +259,7 @@ class CaseRoleVocabularyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
 	 */
 	public function testTheCaseDeclaresTheKindsOfPartyItTakes(): void {
 		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];

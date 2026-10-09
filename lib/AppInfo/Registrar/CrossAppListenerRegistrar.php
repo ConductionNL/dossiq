@@ -239,5 +239,13 @@ class CrossAppListenerRegistrar {
 			\OCA\Dossiq\Listener\PortalClientWithdrawalListener::EVENT,
 			\OCA\Dossiq\Listener\PortalClientWithdrawalListener::class
 		);
+
+		// A case that just closed is handed to pipelinq's satisfaction loop
+		// (REQ-PLQ-07), after the save so it can never block the close. Here
+		// beside the other cross-app seams; FQN strings for the reason above.
+		$context->registerEventListener(
+			'OCA\\OpenRegister\\Event\\ObjectUpdatedEvent',
+			'OCA\\Dossiq\\Listener\\CaseCompletedSatisfactionListener'
+		);
 	}//end registerPortalListeners()
 }//end class

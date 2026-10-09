@@ -28,7 +28,7 @@
  *
  * @link https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/background-jobs-decisions/specs/background-jobs/spec.md
+ * @spec openspec/specs/background-jobs/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\Migration\IRepairStep;
 /**
  * Takes the parked and removed jobs off the instance's job list.
  *
- * @spec openspec/changes/background-jobs-decisions/specs/background-jobs/spec.md
+ * @spec openspec/specs/background-jobs/spec.md
  */
 class RetireUnscheduledBackgroundJobs implements IRepairStep {
 
@@ -72,7 +72,7 @@ class RetireUnscheduledBackgroundJobs implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/background-jobs-decisions/specs/background-jobs/spec.md
+	 * @spec openspec/specs/background-jobs/spec.md
 	 */
 	public function getName(): string {
 		return 'Remove the Dossiq background jobs that no longer run';
@@ -85,7 +85,7 @@ class RetireUnscheduledBackgroundJobs implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/background-jobs-decisions/specs/background-jobs/spec.md
+	 * @spec openspec/specs/background-jobs/spec.md
 	 */
 	public function run(IOutput $output): void {
 		foreach (self::RETIRED as $class) {

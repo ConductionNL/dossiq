@@ -4,7 +4,7 @@ Tier: V1. Kind: code. Size M. Consumer half of openregister's
 `archiving-as-a-process-with-sign-off`, merged as openregister#3736 and
 openregister#3747. Decision D7. Ledger rows 4.20, 13.31, 13.32.
 
-- [ ] 1.1 Declare the case schema's archival classification so openregister has
+- [ ] 1.1 (not run: needs Ruben, Q-dossiq-1: which value is the case's selectielijst category) Declare the case schema's archival classification so openregister has
   a selectielijst category to look up, beside the `x-openregister-archival`
   retention block that is already there (D-1).
 - [x] 1.2 An architecture test that fails when `ArchivalNominationDeriver` or
@@ -32,8 +32,11 @@ openregister#3747. Decision D7. Ledger rows 4.20, 13.31, 13.32.
 - [x] 4.2 The Archiving tab reads openregister's `@self.archived` marker
   (openregister#3772) and reports a disagreement with `case.archiveStatus`
   rather than choosing between them (REQ-ARCH-16).
-- [ ] 5.1 Leave `DossierZipExporter` alone and check its label describes a
+- [x] 5.1 Leave `DossierZipExporter` alone and check its label describes a
   download (D-5).
+  - `tests/vitest/exportDossierManifest.spec.js` (REQ-ARCH-15): the label and its
+    Dutch entry name no archiving or transfer, and the action downloads a zip.
+    Red with the label set to "Archive dossier", green on "Export dossier".
 - [x] 6.1 `tests/e2e/the-case-archives-through-openregister.spec.ts` covering the
   tagged scenarios. Written and tagged, not run locally.
 

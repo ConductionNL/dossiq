@@ -407,7 +407,7 @@ export default {
 		 *
 		 * @param {object} result A unified initiator result.
 		 * @return {Promise<object>} The result, pointed at the existing party when there is one.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		async deduplicated(result) {
 			if (!result || result.objectId) {
