@@ -33,7 +33,7 @@ needs the whole set, and an administrator needs one place to say it.
 - The case type form (Settings, Case types, General) gains a field
   "Handling teams", a multi-select of Nextcloud groups, the way the board
   `DqZaaktype` draws it in the case type's details card
-  (design-system PR, see below).
+  (design-system#177).
 - The picker rule (amended in `case-types-in-my-menu`, REQ-CTN-004): offer
   the current case types the user may see whose handling teams include a
   group the user is in. A user in no handling team is offered every case type
@@ -61,6 +61,6 @@ needs the whole set, and an administrator needs one place to say it.
 - `lib/Service/CaseType/CaseTypeHandling.php`, `lib/Service/MenuCaseTypesService.php`,
   `lib/Controller/MenuCaseTypesController.php`, `lib/Controller/ManifestController.php`
 - `src/views/settings/tabs/GeneralTab.vue`, `src/services/nextcloudGroupsApi.js` (new), `l10n/`
-- design-system: board `DqZaaktype` gains "Behandelende teams" in its details card.
+- design-system#177: board `DqZaaktype` gains "Behandelende teams" in its details card.
 - Spec `case-types`: REQ-CT-44 added. Change `case-types-in-my-menu`:
   REQ-CTN-004 amended.

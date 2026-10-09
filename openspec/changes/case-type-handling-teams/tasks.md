@@ -2,7 +2,7 @@
 
 Kind: code. Stacks on `case-types-in-my-menu` (dossiq#3530). Board canon:
 `DqPersoonlijkeInstellingen` (design-system#152) and `DqZaaktype`
-(design-system PR of this change).
+(design-system#177).
 
 ## 1. Backend
 
@@ -30,4 +30,4 @@ Kind: code. Stacks on `case-types-in-my-menu` (dossiq#3530). Board canon:
 ## 3. Specs and board
 
 - [x] 3.1 Amend `case-types-in-my-menu` REQ-CTN-004, proposal and design.
-- [x] 3.2 design-system: `DqZaaktype` details card gains "Behandelende teams".
+- [x] 3.2 design-system#177: `DqZaaktype` details card gains "Behandelende teams".
