@@ -363,20 +363,7 @@ class TermijnService {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	private function followCase(?array $instance): void {
-		if ($this->mirror === null || $instance === null) {
-			return;
-		}
-
-		if (TermKind::ofInstance($instance) !== TermKind::STATUTORY) {
-			return;
-		}
-
-		$caseId = trim((string)($instance['case'] ?? ''));
-		if ($caseId === '') {
-			return;
-		}
-
-		$this->mirror->follow(caseId: $caseId);
+		$this->mirror?->followInstance(instance: $instance);
 	}//end followCase()
 
 	/**

@@ -89,7 +89,7 @@ can be told a third.
   rolled API end dates, Woo extension through the engine) move here. Task 4
   (the quarterly report) stays there.
 - `termijnbewaking-op-engine-timers`: unchanged; this change only moves the
-  timer's anchor to the start of the start day.
+  timer's anchor to the start of the day after the start day.
 - Another lane changes the work-queue urgency tiers in `WorkQueueService` at
   the same time. This change touches only `businessDaysBetween()` and the
   instance query there.

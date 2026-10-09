@@ -39,7 +39,6 @@ use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
-use OCA\Dossiq\Service\TermKind;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -189,7 +188,7 @@ class ReconcileCaseDeadlinesWithTerms implements IRepairStep {
 		$caseIds = [];
 		foreach ($rows as $row) {
 			$caseId = trim((string)($row['case'] ?? ''));
-			if ($caseId === '' || TermKind::ofInstance($row) !== TermKind::STATUTORY) {
+			if ($caseId === '' || $this->mirror->isStatutory(instance: $row) === false) {
 				continue;
 			}
 

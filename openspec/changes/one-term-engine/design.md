@@ -94,9 +94,10 @@ end day, and only while its clock runs. Three places broke it:
 - **The beslistermijn timer.** It was anchored at the start moment (say 14:00)
   with an SLA spanning to the end date, so it breached at 14:00 on the last
   day and the fired listener set `exceeded` then. It is now anchored at the
-  start of the start day, with the SLA one day longer, so the breach lands at
-  the start of the day after the end day (the next working day for a
-  working-day term). The repair step re-arms the beslistermijn timer of every
+  start of the day after the start day, which is where the Algemene
+  termijnenwet counts a term from, with the SLA value unchanged, so the breach
+  lands at the start of the day after the end day. The ladder's shares are
+  computed from the same value and do not move. The repair step re-arms the beslistermijn timer of every
   running (`lopend`, `verlengd`) instance once, marked by
   `timerBreachesAfterLastDay`.
 - **The simple structure's manifest.** The list column, the board's `dueRule`

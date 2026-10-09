@@ -30,7 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
@@ -162,11 +161,17 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			]
 		);
 
-		$start = $this->termStart(payload: $payload);
-
 		try {
-			$this->termService->createTermijnInstance($caseId, $caseType, $start, $resolution);
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, start: $start);
+			// The term counts from receipt, not from the moment this row was
+			// written (REQ-OTE-02). Null only when no intake reader is wired,
+			// which is the old behaviour: the term starts now.
+			$this->termService->createTermijnInstance(
+				$caseId,
+				$caseType,
+				$this->intake?->termStartFor(case: $payload),
+				$resolution
+			);
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
 		} catch (NoTermijnDefinitieException $e) {
 			// NOT debug. A case that matched no definition at all has no
 			// statutory clock running, which is exactly the state that hid a
@@ -183,7 +188,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			// has no TermijnDefinitie and a refusal here is the ordinary path
 			// rather than the broken one. The other clocks still bind, and the
 			// fixed date still becomes the statutory term.
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, start: $start);
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $e->getMessage(),
@@ -202,8 +207,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *
 	 * @param string $caseId The case UUID.
 	 * @param string $caseTypeRef The case type as the case carries it.
-	 * @param array<string, mixed> $payload The created case.
-	 * @param DateTimeImmutable|null $start When the clocks start: the same moment the
+	 * @param array<string, mixed> $payload The created case. Its clocks start where the
 	 *        statutory term starts, so the three clocks of one case count from one day.
 	 *
 	 * @return void
@@ -211,12 +215,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 */
-	private function bindTheOtherClocks(
-		string $caseId,
-		string $caseTypeRef,
-		array $payload,
-		?DateTimeImmutable $start = null,
-	): void {
+	private function bindTheOtherClocks(string $caseId, string $caseTypeRef, array $payload): void {
 		if ($this->caseTerms === null) {
 			return;
 		}
@@ -225,7 +224,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			$this->caseTerms->bindForCase(
 				caseId: $caseId,
 				caseTypeId: $caseTypeRef,
-				start: $start,
+				start: $this->intake?->termStartFor(case: $payload),
 				plannedStart: trim((string)($payload['plannedStartDate'] ?? '')),
 			);
 		} catch (\Throwable $e) {
@@ -235,56 +234,6 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			);
 		}
 	}//end bindTheOtherClocks()
-
-	/**
-	 * The moment the case's clocks start: its `termStartsAt`.
-	 *
-	 * THE STAMP IS NOT YET ON THE PAYLOAD, as a rule. `IntakeTermStartListener`
-	 * stamps the case on the same create event and runs after this one, so
-	 * reading the stamp back would find nothing on every new case. The same
-	 * calendar call is made here instead, from the same arrival moment, which
-	 * is what keeps the two equal: one calendar, asked the same question.
-	 *
-	 * When no calendar answers, the arrival moment itself, never "now": a
-	 * case registered on Tuesday for a request received on Sunday is owed the
-	 * days since Sunday.
-	 *
-	 * @param array<string, mixed> $payload The created case.
-	 *
-	 * @return DateTimeImmutable|null The start, or null when no intake reader is wired.
-	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
-	 */
-	private function termStart(array $payload): ?DateTimeImmutable {
-		if ($this->intake === null) {
-			return null;
-		}
-
-		$stamped = trim((string)($payload[IntakeTermStart::TERM_STARTS_AT] ?? ''));
-		if ($stamped !== '') {
-			try {
-				return new DateTimeImmutable($stamped);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Dossiq termijn: a case carries a term start that does not read as a date',
-					['termStartsAt' => $stamped, 'error' => $e->getMessage()]
-				);
-			}
-		}
-
-		$arrival = $this->intake->arrivalOf(case: $payload);
-		$stamp = $this->intake->stampFor(receivedAt: $arrival);
-		$startsAt = trim((string)($stamp[IntakeTermStart::TERM_STARTS_AT] ?? ''));
-		if ($startsAt === '') {
-			return $arrival;
-		}
-
-		try {
-			return new DateTimeImmutable($startsAt);
-		} catch (\Throwable $e) {
-			return $arrival;
-		}
-	}//end termStart()
 
 	/**
 	 * Extract OR object array from an event.

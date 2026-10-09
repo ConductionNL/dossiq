@@ -140,16 +140,17 @@ The rule of REQ-TERM-DAY-001 SHALL hold on every surface: the term instance's
 status, the engine timer's breach, the case list column, the board card, the
 week strip and the My Work card. On its last day a term SHALL read as due
 today, never as late. The beslistermijn timer SHALL be anchored at the start of
-the term's start day and SHALL breach at the start of the day after the end
-day (for a working-day term, the next working day).
+the day after the term's start day, where the Algemene termijnenwet counts a
+term from, with the term's own length as its SLA, so it breaches at the start of
+the day after the end day.
 
 #### Scenario: The timer does not mark a term exceeded on its last day
 @e2e exclude an engine timer configuration; covered by tests/Unit/Service/TermijnTimerServiceTest.php
 
 - **GIVEN** a statutory term starting 2026-10-01 at 14:00 and ending 2026-10-29
 - **WHEN** its beslistermijn timer is armed
-- **THEN** the timer SHALL be anchored at 2026-10-01 00:00
-- **AND** it SHALL breach at 2026-10-30 00:00
+- **THEN** the timer SHALL be anchored at 2026-10-02 00:00 with an SLA of 28 calendar days
+- **AND** it SHALL breach at 2026-10-30 00:00, the day after the end day
 
 #### Scenario: The last day is not red in the list, on the board or in the week strip
 @e2e exclude a manifest rule; the rule values are asserted in tests/vitest/manifestDueRules.spec.js

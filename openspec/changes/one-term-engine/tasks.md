@@ -41,7 +41,8 @@ group lands on `development` as its own PR.
 ## 3. Late means the day after (PR 3)
 
 - [ ] 3.1 `TermijnTimerService::armBeslistermijn()` anchors at the start of the
-  start day and breaches the day after the end day (D-6, REQ-OTE-05).
+  day after the start day, so it breaches the day after the end day (D-6,
+  REQ-OTE-05).
   - `tests/Unit/Service/TermijnTimerServiceTest.php`
 - [ ] 3.2 Repair step part two: re-arm running beslistermijn timers once, mark
   `timerBreachesAfterLastDay` (D-9, REQ-OTE-08).

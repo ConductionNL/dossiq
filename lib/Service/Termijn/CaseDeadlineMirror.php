@@ -46,6 +46,10 @@ use Throwable;
  * Which statutory term decides a case's deadline, and the write that applies it.
  *
  * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
+ * constants and four pure predicates over an array, with no state, no I/O and
+ * nothing to inject. The same reasoning, word for word, as on CaseTermsService.
  */
 class CaseDeadlineMirror {
 
@@ -111,6 +115,39 @@ class CaseDeadlineMirror {
 
 		return $newest;
 	}//end decidingInstance()
+
+	/**
+	 * Whether an instance is the kind that decides a case's deadline.
+	 *
+	 * @param array<string, mixed> $instance The instance.
+	 *
+	 * @return bool True for a statutory term, including one written before kinds existed.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function isStatutory(array $instance): bool {
+		return TermKind::ofInstance($instance) === TermKind::STATUTORY;
+	}//end isStatutory()
+
+	/**
+	 * Bring the case in line after this instance was saved, when it is statutory.
+	 *
+	 * The term engine's one call: a planned, internal or phase term never
+	 * decides the case's deadline, so it costs nothing.
+	 *
+	 * @param array<string, mixed>|null $instance The instance as stored, or null when the store refused.
+	 *
+	 * @return bool True when the case was written.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function followInstance(?array $instance): bool {
+		if ($instance === null || $this->isStatutory(instance: $instance) === false) {
+			return false;
+		}
+
+		return $this->follow(caseId: trim((string)($instance['case'] ?? '')));
+	}//end followInstance()
 
 	/**
 	 * The end date of an instance as `Y-m-d`, or the empty string.
@@ -181,30 +218,65 @@ class CaseDeadlineMirror {
 			return false;
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$case = $this->storedCase(caseId: $caseId);
+		if ($case === null) {
 			return false;
 		}
 
+		$stored = substr(trim((string)($case['deadline'] ?? '')), 0, 10);
+		$mirrored = substr(trim((string)($case[self::FIELD] ?? '')), 0, 10);
+		if ($stored === $deadline && $mirrored === $deadline) {
+			return false;
+		}
+
+		return $this->write(caseId: $caseId, deadline: $deadline);
+	}//end follow()
+
+	/**
+	 * The stored case, or null when it is not there or cannot be read.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, mixed>|null The case.
+	 */
+	private function storedCase(string $caseId): ?array {
+		[$objectService, $register, $schema] = $this->caseStore();
+		if ($objectService === null) {
+			return null;
+		}
+
 		try {
-			$case = $this->findObjectAsArray(
+			return $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
 				id: $caseId
 			);
-			if ($case === null) {
-				return false;
-			}
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq termijn: the case could not be read to follow its statutory term',
+				['case' => $caseId, 'error' => $e->getMessage()]
+			);
 
-			$stored = substr(trim((string)($case['deadline'] ?? '')), 0, 10);
-			$mirrored = substr(trim((string)($case[self::FIELD] ?? '')), 0, 10);
-			if ($stored === $deadline && $mirrored === $deadline) {
-				return false;
-			}
+			return null;
+		}
+	}//end storedCase()
 
+	/**
+	 * Write the statutory end date onto the case.
+	 *
+	 * @param string $caseId   The case uuid.
+	 * @param string $deadline The `Y-m-d` date.
+	 *
+	 * @return bool True when the write went through.
+	 */
+	private function write(string $caseId, string $deadline): bool {
+		[$objectService, $register, $schema] = $this->caseStore();
+		if ($objectService === null) {
+			return false;
+		}
+
+		try {
 			$this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
@@ -223,8 +295,24 @@ class CaseDeadlineMirror {
 			);
 
 			return false;
-		}//end try
+		}
 
 		return true;
-	}//end follow()
+	}//end write()
+
+	/**
+	 * The object service, register and case schema, or a null service when unconfigured.
+	 *
+	 * @return array{0: object|null, 1: string, 2: string} The three.
+	 */
+	private function caseStore(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($register === '' || $schema === '') {
+			$objectService = null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseStore()
 }//end class
