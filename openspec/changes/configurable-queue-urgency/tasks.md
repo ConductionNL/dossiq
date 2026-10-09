@@ -7,22 +7,22 @@ method is edited here.
 
 ## 1. Backend
 
-- [ ] 1.1 `lib/Service/Queue/QueueUrgencySettings.php`: read and normalise the
+- [x] 1.1 `lib/Service/Queue/QueueUrgencySettings.php`: read and normalise the
   four IAppConfig keys (D-1, D-2); register the keys in
   `lib/Service/Settings/ConfigKeys.php`.
   - `tests/Unit/Service/Queue/QueueUrgencySettingsTest.php`
-- [ ] 1.2 `lib/Settings/dossiq_register.json`: `caseType.queueCriticalDays` and
+- [x] 1.2 `lib/Settings/dossiq_register.json`: `caseType.queueCriticalDays` and
   `caseType.queueWarningDays` (D-2).
   - `tests/Unit/Settings/QueueThresholdSchemaTest.php`
-- [ ] 1.3 `WorkQueueService::scoreItem()`: thresholds and weights as inputs,
+- [x] 1.3 `WorkQueueService::scoreItem()`: thresholds and weights as inputs,
   idle part instead of age, `deadlineTier` instead of `tier` (D-1, D-3, D-5).
-- [ ] 1.4 `WorkQueueService::queueCaseItems()`: the list's filters plus
+- [x] 1.4 `WorkQueueService::queueCaseItems()`: the list's filters plus
   `_limit` 1000, per-case-type thresholds looked up once per type, idle days
   from `@self.updated` and the journal, the case row on each item (D-3, D-4).
   - `tests/Unit/Service/WorkQueueServiceTest.php`
-- [ ] 1.5 Rename the wire key for every reader: `Queue\PersonalQueueService`,
+- [x] 1.5 Rename the wire key for every reader: `Queue\PersonalQueueService`,
   `Queue\DailyDigestComposer`, `Queue\QueueOrdering`.
-- [ ] 1.6 `lib/Settings/AdminSettings.php`: initial state
+- [x] 1.6 `lib/Settings/AdminSettings.php`: initial state
   `queueUrgencySettings`.
 
 ## 2. Frontend
