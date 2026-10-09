@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * The simple structure, in a browser: nine entries under three captions, and
- * the pages that left the menu one link away.
+ * The simple structure, in a browser: nine entries, the first group bare and
+ * two under a caption, and the pages that left the menu one link away.
  *
  * The CI instance runs on the full structure (tests/e2e/ci-seed.sh sets it),
  * so this spec turns the setting to `simple` through the same endpoint the
@@ -79,18 +79,27 @@ test.describe('The simple structure', () => {
 	})
 
 	// @e2e openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#a-case-handler-opens-dossiq-on-a-new-instance
-	test('the menu shows nine entries under three captions', async ({ page }) => {
+	// Two captions since d5252bdbd: the first group (Dashboard, My work, Team
+	// queue) has no caption, as on DqZijbalk, and Cases and Relations keep
+	// theirs. The StartCaption this asserted is the one that commit removed.
+	test('the menu shows nine entries, the first group bare and two under a caption', async ({
+		page,
+	}) => {
 		await page.goto('/apps/dossiq/')
 
 		const nav = page.locator('#app-navigation-vue, .app-navigation').first()
 		await expect(nav).toBeVisible({ timeout: 60_000 })
 
-		for (const id of ['StartCaption', 'CasesCaption', 'RelationsCaption']) {
+		for (const id of ['CasesCaption', 'RelationsCaption']) {
 			await expect(
 				nav.getByTestId(`cn-nav-caption-${id}`),
 				`the caption ${id} must be in the menu`,
 			).toBeVisible({ timeout: 30_000 })
 		}
+		await expect(
+			nav.getByTestId('cn-nav-caption-StartCaption'),
+			'the first group carries no caption',
+		).toHaveCount(0)
 
 		// The main list only: the footer and the settings foldout are separate
 		// regions and keep their own entries.
