@@ -139,15 +139,15 @@ from `today`.
 
 ## 6. Verify and deliver
 
-- [ ] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it.
-- [ ] 6.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter`
+- [x] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it.
+- [x] 6.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter`
   on the touched classes and judge by the `Tests:` line. `TermijnService` and
   `DeadlineExtensionService` are central, so run the full unit suite once before push.
-- [ ] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
+- [x] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
   `npm run lint`, `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg that `code-quality.yml` requires. Then run hydra's
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
+- [x] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured. (not projectable: no coverage driver here, and `development`'s last green push run, 35823727270 on 23 Sep, published no clover artifact. The PR body lists the test class that pins each added class instead.)
 - [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means
   merged on `development` with CI green. Rows 10.9 and 16.2 then read `yes` (build), and
   `production` only with a store release.
