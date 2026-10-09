@@ -353,6 +353,15 @@
 			"permission": "admin"
 		},
 		{
+			"id": "WooRefusalGroundsMenu",
+			"label": "Woo refusal grounds",
+			"icon": "ScaleBalance",
+			"route": "WooRefusalGrounds",
+			"section": "settings",
+			"order": 98,
+			"permission": "admin"
+		},
+		{
 			"id": "CaseTypesMenu",
 			"label": "Case types",
 			"icon": "FormatListBulletedType",
@@ -5208,6 +5217,107 @@
 							"label": "Version history",
 							"icon": "FileCompare",
 							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "WooRefusalGrounds",
+			"route": "/settings/woo-refusal-grounds",
+			"type": "index",
+			"title": "Woo refusal grounds",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "wooRefusalGround",
+				"_note": "woo-refusal-grounds-list REQ-WRG-003. The settled grounds of design D-2 (decision 133). Sorted by code with the broader ground beside each, so the list reads as the tree: 5.1, then 5.1.1 and its letters, then 5.1.2 and its letters. Add creates a narrower ground under a parent code; editing the status to retired is how a ground is retired, because WooRefusalGroundDeleteGuard refuses a delete while anything cites it. No board on identity.conduction.nl/screens draws this page.",
+				"columns": [
+					{
+						"key": "code"
+					},
+					{
+						"key": "label"
+					},
+					{
+						"key": "parent"
+					},
+					{
+						"key": "kind"
+					},
+					{
+						"key": "citable"
+					},
+					{
+						"key": "status"
+					}
+				],
+				"defaultSort": "code",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "WooRefusalGroundDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "WooRefusalGroundDetail",
+			"route": "/settings/woo-refusal-grounds/:id",
+			"type": "detail",
+			"title": "Woo refusal ground",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "wooRefusalGround",
+				"_note": "woo-refusal-grounds-list REQ-WRG-003 and REQ-WRG-004. One ground with its law text and source. The History tab is OpenRegister's audit trail for the object, so every add, edit and retirement shows who, when and the values before and after.",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "woo-refusal-ground-data",
+						"type": "data",
+						"title": "Woo refusal ground",
+						"icon": "ScaleBalance",
+						"content": {
+							"title": "Woo refusal ground",
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "woo-refusal-ground-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 7,
+						"showTitle": false
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
 						}
 					]
 				}

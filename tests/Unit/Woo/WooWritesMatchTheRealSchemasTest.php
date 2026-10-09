@@ -55,6 +55,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
  * @uses   \OCA\Dossiq\Woo\WooWrittenCase
  * @uses   \OCA\Dossiq\Woo\WooCaseLedger
@@ -175,8 +176,14 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAssessmentRowFitsItsSchema(): void {
+		foreach ($this->real->objects as $index => $object) {
+			if (($object['@self']['schema'] ?? '') === 'wooRefusalGround') {
+				$this->store->seed(schema: 'wooRefusalGround', uuid: 'ground-' . $index, row: $object);
+			}
+		}
+
 		$service = new WOODocumentAssessmentService($this->settings, $this->createMock(IUserSession::class), $this->createMock(LoggerInterface::class));
-		$service->bulkUpsert(caseId: self::CASE, assessments: [['documentRef' => 'io-1', 'classification' => 'deels_openbaar', 'weigeringsgronden' => ['5.1.5']]]);
+		$service->bulkUpsert(caseId: self::CASE, assessments: [['documentRef' => 'io-1', 'classification' => 'deels_openbaar', 'weigeringsgronden' => ['5.1.2.e']]]);
 
 		$rows = $this->store->all(schema: 'wooDocumentAssessment');
 		self::assertCount(1, $rows);

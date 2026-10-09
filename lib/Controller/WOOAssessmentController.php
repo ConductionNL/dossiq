@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
@@ -103,6 +104,7 @@ class WOOAssessmentController extends Controller {
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	#[NoAdminRequired]
 	public function bulkAssess(string $id): JSONResponse {
@@ -123,10 +125,21 @@ class WOOAssessmentController extends Controller {
 				caseId: $id,
 				assessments: $assessments,
 			);
-			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getMessage()], $e->getStatus());
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
+
+		// An assessment that cites a ground the settled list refuses was not
+		// stored. Answering 200 would read as success to a caller that only
+		// checks the status (woo-refusal-grounds-list, REQ-WRG-005).
+		$status = Http::STATUS_OK;
+		if (empty($result['errors']) === false) {
+			$status = Http::STATUS_UNPROCESSABLE_ENTITY;
+		}
+
+		return new JSONResponse($result, $status);
 	}//end bulkAssess()
 
 	/**

@@ -696,7 +696,7 @@
         "digest": "513d4cb9be3384e17a9dab23a4f38d89aa5dacf7c545b28f3d0f11fb07032e6e"
     },
     "lib/Settings/dossiq_register.json::decision": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "327f4726c3cf622426f22770b25f6b412b9f238ee3e5dc62aac1c92271b7218c"
     },
     "lib/Settings/dossiq_register.json::decisionDocument": {
@@ -1420,8 +1420,12 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/83-woo-document-assessment.json::wooDocumentAssessment": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "1d0a9ca7042939efab4202f938d992bff7ed8a4692b277aca418c42bcaacde6a"
+    },
+    "lib/Settings/register.d/84-woo-refusal-grounds.json::wooRefusalGround": {
+        "version": "1.0.0",
+        "digest": "c6717a0258ebeb74fddf9f8e85ed3be6efa1ed0a0c8ccbf9207140e469125593"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",

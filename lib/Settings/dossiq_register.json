@@ -4124,7 +4124,7 @@
             "decision": {
                 "slug": "decision",
                 "icon": "Gavel",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "Besluit",
                 "title": "Decision",
@@ -4273,6 +4273,20 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "groundsListVersion": {
+                        "type": "string",
+                        "title": "Grounds list version",
+                        "description": "The version of the settled Woo refusal grounds the grounds on this record follow. Records written before it are mapped once by a repair step.",
+                        "visible": false
+                    },
+                    "groundsUnmapped": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Unmapped grounds",
+                        "description": "Stored grounds the repair step could not map onto the settled list. A person settles them."
                     },
                     "assessmentCount": {
                         "type": "integer",
