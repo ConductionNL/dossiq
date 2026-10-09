@@ -83,6 +83,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
 		'BackfillInformatieobjectMetadata' => 'backfill over existing documents',
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
+		'CopyEmbeddedBezwaarAuditTrail' => 'copies embedded bezwaar audit entries; a fresh install has none',
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',

@@ -563,6 +563,16 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\BackfillAdviceRequestObjection</step>
             <!--
+                The bezwaar procedure's Awb and AVG entries are rows on
+                OpenRegister's audit trail of their hearingSession or
+                bacAdviceRequest now, and that trail is what the History tab
+                reads. The entries already in the old embedded auditTrail arrays
+                are copied across once, in order, actor system, with their
+                original time and actor in the context. The arrays are left as
+                written. Idempotent: a copied index is skipped.
+            -->
+            <step>OCA\Dossiq\Repair\CopyEmbeddedBezwaarAuditTrail</step>
+            <!--
                 The chain of custody starts the day it ships, so every case that
                 already exists would have a chain with a hole at the front, and
                 a chain with a hole reads as an answer. This opens one holding
@@ -724,6 +734,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
+              CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
