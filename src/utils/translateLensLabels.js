@@ -40,6 +40,9 @@ export function translateLensLabels(manifest, translate) {
 	return manifest
 }
 
+/** The widget copy keys nextcloud-vue draws as written. */
+const WIDGET_TEXT_KEYS = ['caption', 'viewAllLabel', 'emptyText']
+
 /** The banner copy keys nextcloud-vue draws as written. */
 const BANNER_TEXT_KEYS = ['kicker', 'title', 'reason', 'text']
 
@@ -60,7 +63,17 @@ const BANNER_TEXT_KEYS = ['kicker', 'title', 'reason', 'text']
 export function translateBannerCopy(manifest, translate) {
 	const banner = (widget) => {
 		const content = widget?.content
-		if (widget?.type !== 'banner' || !content) {
+		if (!content) {
+			return
+		}
+		// Stat captions ("+{newToday} today") and table link texts are drawn as
+		// written as well; placeholders stay in the text, the widget fills them.
+		for (const key of WIDGET_TEXT_KEYS) {
+			if (typeof content[key] === 'string') {
+				content[key] = translate(content[key])
+			}
+		}
+		if (widget?.type !== 'banner') {
 			return
 		}
 		for (const key of BANNER_TEXT_KEYS) {
