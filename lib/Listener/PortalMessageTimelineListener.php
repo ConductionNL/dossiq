@@ -16,9 +16,13 @@
  * inbound mail does, so the case surfaces in the handler's queue until someone
  * answers.
  *
- * ONLY THE CREATE, ONLY THE RESIDENT'S DIRECTION. A message the handler sent
- * (`handler_to_citizen`) is recorded by whoever sent it; an update (portaliq's
- * mark-read) is not a new message.
+ * THE HANDLER'S ANSWER IS PUBLIC. A message the handler sent
+ * (`handler_to_citizen`) is a `portaalbericht` entry the resident may read in
+ * the portal's case history (one-timeline-on-the-case D5): they have received
+ * it, and a history that says nothing about a letter somebody holds is worse
+ * than none. It opens no follow-up.
+ *
+ * ONLY THE CREATE. An update (portaliq's mark-read) is not a new message.
  *
  * IT NEVER THROWS. {@see CaseTimeline} softens its own failures; a payload this
  * listener cannot read is a message with no entry, not a save that comes undone.
@@ -52,7 +56,8 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 
 /**
- * Records one internal timeline entry per message a resident sends about a case.
+ * Records one timeline entry per portal message on a case: internal with a
+ * follow-up from the resident, public from the handler.
  *
  * @implements IEventListener<Event>
  *
@@ -75,11 +80,25 @@ class PortalMessageTimelineListener implements IEventListener {
 	public const FROM_RESIDENT = 'citizen_to_handler';
 
 	/**
+	 * The direction of a message the handler sent.
+	 *
+	 * @var string
+	 */
+	public const TO_RESIDENT = 'handler_to_citizen';
+
+	/**
 	 * What the entry reads when the resident left the subject empty.
 	 *
 	 * @var string
 	 */
 	public const FALLBACK_MESSAGE = 'Bericht van de indiener';
+
+	/**
+	 * What the entry reads when the handler left the subject empty.
+	 *
+	 * @var string
+	 */
+	public const SENT_MESSAGE = 'Bericht aan de indiener';
 
 	/**
 	 * Constructor.
@@ -108,7 +127,8 @@ class PortalMessageTimelineListener implements IEventListener {
 		}
 
 		$payload = $this->payload(event: $event);
-		if ($payload === null || ($payload['direction'] ?? '') !== self::FROM_RESIDENT) {
+		$direction = (string)($payload['direction'] ?? '');
+		if ($payload === null || in_array($direction, [self::FROM_RESIDENT, self::TO_RESIDENT], true) === false) {
 			return;
 		}
 
@@ -121,10 +141,48 @@ class PortalMessageTimelineListener implements IEventListener {
 			return;
 		}
 
-		$subject = trim((string)($payload['subject'] ?? ''));
-		if ($subject === '') {
-			$subject = self::FALLBACK_MESSAGE;
+		if ($direction === self::TO_RESIDENT) {
+			$this->recordAnswer(caseId: $caseId, payload: $payload);
+			return;
 		}
+
+		$this->recordQuestion(caseId: $caseId, payload: $payload);
+	}//end handle()
+
+	/**
+	 * The handler's message: public, no follow-up.
+	 *
+	 * @param string               $caseId  The case.
+	 * @param array<string, mixed> $payload The stored record.
+	 *
+	 * @return void
+	 */
+	private function recordAnswer(string $caseId, array $payload): void {
+		$subject = $this->subject(payload: $payload, fallback: self::SENT_MESSAGE);
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::PORTAL_MESSAGE,
+			message: $subject,
+			fields: [
+				'subject' => $subject,
+				'messageId' => $this->identifier(payload: $payload),
+				'status' => 'sent',
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
+		);
+	}//end recordAnswer()
+
+	/**
+	 * The resident's message: internal, open until answered.
+	 *
+	 * @param string               $caseId  The case.
+	 * @param array<string, mixed> $payload The stored record.
+	 *
+	 * @return void
+	 */
+	private function recordQuestion(string $caseId, array $payload): void {
+		$subject = $this->subject(payload: $payload, fallback: self::FALLBACK_MESSAGE);
 
 		$this->timeline->record(
 			caseId: $caseId,
@@ -138,7 +196,24 @@ class PortalMessageTimelineListener implements IEventListener {
 			],
 			visibility: CaseTimeline::INTERNAL,
 		);
-	}//end handle()
+	}//end recordQuestion()
+
+	/**
+	 * The message's subject, or the fallback sentence when it has none.
+	 *
+	 * @param array<string, mixed> $payload  The stored record.
+	 * @param string               $fallback What the entry reads without one.
+	 *
+	 * @return string
+	 */
+	private function subject(array $payload, string $fallback): string {
+		$subject = trim((string)($payload['subject'] ?? ''));
+		if ($subject === '') {
+			return $fallback;
+		}
+
+		return $subject;
+	}//end subject()
 
 	/**
 	 * The message's own id, so the handler's Reply can open it.

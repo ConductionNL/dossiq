@@ -134,24 +134,54 @@ class PortalMessageTimelineListenerTest extends TestCase {
 	}//end testAMessageWithoutASubjectReadsAsAQuestion()
 
 	/**
-	 * The handler's own message, another schema, a message without a case and
-	 * an update write nothing.
+	 * The handler's message is a public entry of the outbound kind: the
+	 * resident has received it, and the portal's case history says so. No
+	 * follow-up opens.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
 	 */
-	public function testOnlyAResidentsNewMessageOnACaseIsRecorded(): void {
-		$this->listener->handle($this->created(['caseId' => 'case-1', 'direction' => 'handler_to_citizen', 'subject' => 'Answer']));
+	public function testTheHandlersMessageIsAPublicOutboundEntry(): void {
+		$this->listener->handle($this->created([
+			'caseId' => 'case-1',
+			'direction' => 'handler_to_citizen',
+			'subject' => 'Re: Termijn',
+			'recipientRef' => 'subject-resident',
+		]));
+
+		$this->assertCount(1, $this->written);
+		$entry = $this->written[0];
+		$this->assertSame(TimelineKinds::PORTAL_MESSAGE, $entry['kind']);
+		$this->assertSame('public', $entry['visibility']);
+		$this->assertSame(['subject' => 'Re: Termijn', 'messageId' => 'msg-1', 'status' => 'sent'], $entry['fields']);
+
+		$declared = array_column(TimelineKinds::DECLARATIONS, null, 'slug')[TimelineKinds::PORTAL_MESSAGE];
+		$this->assertFalse($declared['followUp']);
+		foreach (array_keys($entry['fields']) as $field) {
+			$this->assertArrayHasKey($field, $declared['properties'], "OpenRegister drops an undeclared field: {$field}");
+		}
+	}//end testTheHandlersMessageIsAPublicOutboundEntry()
+
+	/**
+	 * Another schema, a message without a direction or a case, and an update
+	 * write nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	 */
+	public function testOnlyANewMessageOnACaseIsRecorded(): void {
 		$this->listener->handle($this->created(['caseId' => 'case-1', 'direction' => 'citizen_to_handler'], 'contactmoment'));
 		$this->listener->handle($this->created(['caseId' => '', 'direction' => 'citizen_to_handler']));
+		$this->listener->handle($this->created(['caseId' => 'case-1']));
 
 		$entity = $this->createMock(ObjectEntity::class);
 		$entity->method('jsonSerialize')->willReturn(['@self' => ['id' => 'msg-1', 'schema' => 'portaalBericht'], 'caseId' => 'case-1', 'direction' => 'citizen_to_handler']);
 		$this->listener->handle(new ObjectUpdatedEvent($entity));
 
 		$this->assertSame([], $this->written);
-	}//end testOnlyAResidentsNewMessageOnACaseIsRecorded()
+	}//end testOnlyANewMessageOnACaseIsRecorded()
 
 	/**
 	 * A created-object event for one record.
