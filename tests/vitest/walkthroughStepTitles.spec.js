@@ -9,7 +9,7 @@
  * after the colon (cloud check, 8 October 2026). Steps 3 and 6 had the same
  * gap.
  *
- * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+ * @spec openspec/specs/notification-labels/spec.md
  */
 
 import fs from 'fs'

@@ -33,7 +33,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -53,7 +53,7 @@ import { CASE_REGISTER, CASE_SCHEMA } from './caseAccessApi.js'
  * carry.
  *
  * @return {object} Role key to translated label.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function genericRoleLabels() {
 	return {
@@ -72,7 +72,7 @@ export function genericRoleLabels() {
  * @param {string} key The role key, a generic party role or a role type uuid.
  * @param {Array<object>} roles The `roles` vocabulary the listing carried.
  * @return {string} The label, the key itself when nothing names it.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function roleLabel(key, roles) {
 	const generic = genericRoleLabels()[key]
@@ -91,7 +91,7 @@ export function roleLabel(key, roles) {
  *
  * @param {string} caseId The case uuid.
  * @return {Promise<object|null>} The listing, or null when it could not be read.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export async function fetchCaseParties(caseId) {
 	if (!caseId) {
@@ -114,7 +114,7 @@ export async function fetchCaseParties(caseId) {
  *
  * @param {string} partyUuid The party uuid.
  * @return {Promise<object|null>} The party, or null when it could not be read.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export async function fetchParty(partyUuid) {
 	if (!partyUuid) {
@@ -143,7 +143,7 @@ export async function fetchParty(partyUuid) {
  *
  * @param {string} address An email address, or any address a party may hold.
  * @return {Promise<object|null>} The party holding it, or null.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export async function resolvePartyByAddress(address) {
 	const value = String(address || '').trim()
@@ -178,7 +178,7 @@ export async function resolvePartyByAddress(address) {
  *
  * @param {object|null} listing The parties listing.
  * @return {Array<object>} `{key, label, parties}` per role, primary role first.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function rolesInOrder(listing) {
 	if (!listing || typeof listing !== 'object') {
@@ -209,7 +209,7 @@ export function rolesInOrder(listing) {
  * @param {Array<object>} parties The links in that role.
  * @param {string|null} primary The primary party's uuid.
  * @return {Array<object>} The links, primary first.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function partiesInOrder(parties, primary) {
 	const rows = Array.isArray(parties) ? parties.filter(Boolean) : []
@@ -231,7 +231,7 @@ export function partiesInOrder(parties, primary) {
  *
  * @param {object} indicator The indicator, `{key, label, effect, note}`.
  * @return {object} `{effect, severity, verdict, label}`.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function indicatorVerdict(indicator) {
 	const effect = String(indicator?.effect || '').trim()
@@ -267,7 +267,7 @@ export function indicatorVerdict(indicator) {
  *
  * @param {Array<object>} parties The party records, as `fetchParty` answers them.
  * @return {Array<object>} `{party, partyName, key, label, effect}` entries.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function indicatorsOf(parties) {
 	const found = []
@@ -295,7 +295,7 @@ export function indicatorsOf(parties) {
  *
  * @param {Array<object>} indicators The indicators, as `indicatorsOf` answers them.
  * @return {object|null} The refusing indicator, or null.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function publicationRefusal(indicators) {
 	return (
@@ -314,7 +314,7 @@ export function publicationRefusal(indicators) {
  *
  * @param {string} caseId The case uuid.
  * @return {Promise<Array<object>|null>} The rows, or null when they could not be read.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
  */
 export async function fetchCaseRoles(caseId) {
 	if (!caseId) {
@@ -346,7 +346,7 @@ export async function fetchCaseRoles(caseId) {
  *
  * @param {Array<object>} rows The `role` rows of the case.
  * @return {object} Participant reference to the represented party's uuid.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
  */
 export function representedByMap(rows) {
 	const map = {}

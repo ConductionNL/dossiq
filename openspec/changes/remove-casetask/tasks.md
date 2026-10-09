@@ -601,7 +601,7 @@ them is a refactor with no functional change and is out of scope here.
 Found 2026-09-11, while checking what archiving would cost. This is a blocker
 on the archive, not on the work.
 
-- [ ] 7.0 Repoint the 14 `@spec` citations that name
+- [x] 7.0 (done 2026-10-09: all 14 now cite `openspec/specs/task-management/spec.md`, and the competitive-context sentence describes the engine; `git grep -c 'openspec/changes/remove-casetask' -- lib src tests` is 0) Repoint the 14 `@spec` citations that name
       `openspec/changes/remove-casetask/tasks.md`. Measured:
 
           git grep -c 'openspec/changes/remove-casetask' -- lib src tests   # 14

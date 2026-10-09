@@ -15685,7 +15685,7 @@
 			"feature": "parties-and-contacts",
 			"featureConfidence": "high",
 			"built": {
-				"state": "specified",
+				"state": "built",
 				"change": "gemachtigde-role-on-every-case-type",
 				"prs": [
 					{
@@ -15695,8 +15695,8 @@
 						"mergedAt": "2026-09-18T10:40:00Z"
 					}
 				],
-				"evidence": "lib/Settings/bezwaar_seed_data.json; dossiq#2918 d1ab0af9",
-				"note": "OpenSpec pass 2026-09-27: the missing half, the generic Gemachtigde role type and its Represented by column, is open task 3.7 of gemachtigde-role-on-every-case-type.",
+				"evidence": "lib/Service/People/GemachtigdeRoleTypeSeeder.php; src/services/roleTypeOptions.js; dossiq#2918 d1ab0af9",
+				"note": "Built 2026-10-09: the generic Gemachtigde role type (GemachtigdeRoleTypeSeeder, repair step SeedGemachtigdeRoleType) and Represented by (role.representedParty) are on development; task 3.7 was a stale note and the change is archived.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",

@@ -105,7 +105,7 @@ export default {
 		 * something went wrong.
 		 *
 		 * @return {string} The sentence, '' when nothing refuses it.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		refusalMessage() {
 			if (!this.refusal) {
@@ -129,7 +129,7 @@ export default {
 			 * Read what the parties of this case refuse.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+			 * @spec openspec/specs/roles-decisions/spec.md
 			 */
 			handler() {
 				this.readRefusal()
@@ -149,7 +149,7 @@ export default {
 		 * the only thing standing in the way.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		async readRefusal() {
 			this.refusal = null
@@ -172,7 +172,7 @@ export default {
 		 * Trigger (retry) the DROP/LVBB publication.
 		 *
 		 * @spec openspec/specs/besluitvorming-workflow/spec.md
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		async retry() {
 			// The refusal is checked HERE, at the act, and not only drawn

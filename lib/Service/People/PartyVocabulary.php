@@ -37,7 +37,7 @@ use OCP\IL10N;
  * because an address is where the case is, never who represents the
  * applicant, and that refusal is the one worth having.
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
  */
 class PartyVocabulary {
 
@@ -71,7 +71,7 @@ class PartyVocabulary {
 	 *
 	 * @return array<int, array<string, mixed>> The `partyKinds` entries.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
 	 */
 	public function kinds(): array {
 		return [
@@ -103,7 +103,7 @@ class PartyVocabulary {
 	 *
 	 * @return array<int, array<string, string>> The `linkRoles` entries.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
 	 */
 	public function roles(): array {
 		return [

@@ -6899,6 +6899,13 @@
 							],
 							"hideEmpty": false
 						}
+					},
+					{
+						"id": "case-type-portal",
+						"type": "custom",
+						"title": "Portal",
+						"icon": "AccountArrowRightOutline",
+						"_note": "portal-citizen-writes-on-the-case design D3: what the applicant may still do on their own case in the portal (portalWritable, the amendment and document windows, portalWithdrawal). Custom for the reason case-type-blueprint is: every picker offers the type's OWN statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers, and a declared form would offer a free text field for a status uuid. The save goes through OpenRegister's object API, where CaseTypePortalWithdrawalListener refuses a withdrawal the workflow cannot write; the widget shows that sentence. Same LAYOUT placement and same reason as case-type-blueprint above."
 					}
 				],
 				"layout": [
@@ -6972,6 +6979,15 @@
 						"gridY": 23,
 						"gridWidth": 12,
 						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "9",
+						"widgetId": "case-type-portal",
+						"gridX": 0,
+						"gridY": 27,
+						"gridWidth": 12,
+						"gridHeight": 7,
 						"showTitle": true
 					}
 				],
@@ -7061,7 +7077,8 @@
 			},
 			"slots": {
 				"widget-case-type-blueprint": "CaseTypeBlueprintWidget",
-				"widget-case-type-translations": "CaseTypeTranslationsWidget"
+				"widget-case-type-translations": "CaseTypeTranslationsWidget",
+				"widget-case-type-portal": "CaseTypePortalWidget"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},

@@ -203,7 +203,7 @@ export default {
 		 *
 		 * @param {object} party One entry of the parties listing.
 		 * @return {string} The reason, in words.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		reasonFor(party) {
 			if (party.sendRefusal) {
