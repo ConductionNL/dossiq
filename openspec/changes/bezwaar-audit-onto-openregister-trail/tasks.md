@@ -118,11 +118,11 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 6. Verify and deliver
 
-- [ ] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
+- [x] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
   only the unit tests of touched classes with
   `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter '<Class>'` and judge by the
   `Tests:` line, because a green suite exits 1 without a coverage driver.
-- [ ] 6.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
+- [x] 6.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
   and any other leg `code-quality.yml` requires. Then
   `scripts/run-hydra-gates.sh --base origin/development`, count the gates that ran, and paste gate
   23's output: rule 2 prints `BezwaarAuditTrail.php` as compliant. The coverage guard needs tests for
