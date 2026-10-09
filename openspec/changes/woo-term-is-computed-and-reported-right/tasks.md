@@ -106,18 +106,25 @@ from `today`.
 
 ## 4. The report groups by the real case type
 
-- [ ] 4.1 `DeadlineReportingService::aggregateByType()` resolves the case type through
+- [x] 4.1 `DeadlineReportingService::aggregateByType()` resolves the case type through
   `deadlineInstance.case`, then the definition, and otherwise uses `unresolved` with the ids
   listed. Do the case lookup in one batched search, not one search per row (REQ-WTR-004).
   - **fails today**: `tests/Unit/Service/DeadlineReportingServiceTest.php`
     `testWooTermsAreGroupedUnderTheWooCaseType` and `testNoTermIsReportedUnderUnknown`.
   - Through the caller: `tests/Unit/Controller/DeadlineReportingControllerTest.php`
     `testTheQuarterlyRouteGroupsByCaseType`.
-- [ ] 4.2 Add `received`, `met`, `missed`, `running`, `suspended` and `metShare` per type.
+  - Done: `caseTypesOf()` reads cases, case types and definitions in three `_ids`-restricted
+    searches; keys are the case type identifier (what a definition names), with `title` beside it;
+    `metadata.unresolvedInstances` lists the rest. The through-the-caller test lives in
+    `DeadlineReportingControllerContractTest` (the controller's test class). The old fixture gave
+    each instance an undeclared `caseType`; it now reads through real case rows.
+- [x] 4.2 Add `received`, `met`, `missed`, `running`, `suspended` and `metShare` per type.
   Existing keys keep their meaning (REQ-WTR-005).
   - unit: `testMetMissedRunningAndSuspendedAreCounted` with the four-term fixture of the scenario.
   - If the dashboard widget reading `/api/termijn/reports/kwartaal` shows per-type rows, it shows
     the case type title. Test this with vitest only if the widget changes.
+  - Done: the six keys per type; `TdQuarterlyWidget.vue` shows `row.title` (falls back to the key),
+    `tests/vitest/tdQuarterlyWidgetCaseTypeTitle.spec.js`.
 
 ## 5. End to end and live
 

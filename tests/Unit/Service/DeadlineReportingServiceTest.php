@@ -42,6 +42,9 @@ class DeadlineReportingServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'dossiq',
 					'termijn_instance_schema' => 'deadlineInstance',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					'case_schema' => 'case',
+					'case_type_schema' => 'caseType',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -50,12 +53,16 @@ class DeadlineReportingServiceTest extends TestCase {
 
 		$this->service = new DeadlineReportingService($settings);
 
-		// Seed 5 instances spread across Q2-2026 for one zaaktype.
+		$this->objects->seed('caseType', ['id' => 'ct-omv', 'identifier' => 'omgevingsvergunning-regulier', 'title' => 'Omgevingsvergunning (regulier)']);
+		$this->objects->seed('caseType', ['id' => 'ct-woo', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek']);
+
+		// Seed 5 instances spread across Q2-2026 for one zaaktype. A term
+		// instance has no caseType of its own: it is read through its case.
 		for ($i = 1; $i <= 5; $i++) {
+			$this->objects->seed('case', ['id' => 'case-q2-' . $i, 'caseType' => 'ct-omv']);
 			$this->objects->seed('deadlineInstance', [
 				'id' => 'ti-q2-' . $i,
-				'caseType' => 'omgevingsvergunning-regulier',
-				'case' => 'Z/2026/' . (400 + $i),
+				'case' => 'case-q2-' . $i,
 				'startDate' => '2026-05-0' . $i . 'T10:00:00+00:00',
 				'endDateCurrent' => '2026-07-0' . $i,
 				'status' => ($i <= 3 ? 'completed' : ($i === 4 ? 'exceeded' : 'lopend')),
@@ -78,6 +85,92 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(1, $row['overschrijdingen']);
 		self::assertSame(1, $row['verlengingen']);
 	}
+
+	/**
+	 * Seed a term in 2026 Q4 on a new case of the given case type.
+	 *
+	 * @param string               $id         The instance id.
+	 * @param string|null          $caseType   The case's case type id, or null for no case.
+	 * @param array<string, mixed> $overrides  Instance fields.
+	 *
+	 * @return void
+	 */
+	private function q4Term(string $id, ?string $caseType, array $overrides = []): void {
+		if ($caseType !== null) {
+			$this->objects->seed('case', ['id' => 'case-' . $id, 'caseType' => $caseType]);
+		}
+
+		$this->objects->seed('deadlineInstance', array_merge([
+			'id' => $id,
+			'case' => 'case-' . $id,
+			'startDate' => '2026-10-05T09:00:00+02:00',
+			'endDateCurrent' => '2026-11-02',
+			'status' => 'lopend',
+		], $overrides));
+	}//end q4Term()
+
+	/**
+	 * REQ-WTR-004: Woo terms are reported under the Woo case type.
+	 *
+	 * @return void
+	 */
+	public function testWooTermsAreGroupedUnderTheWooCaseType(): void {
+		foreach (['w1', 'w2', 'w3'] as $id) {
+			$this->q4Term($id, 'ct-woo');
+		}
+
+		foreach (['o1', 'o2'] as $id) {
+			$this->q4Term($id, 'ct-omv');
+		}
+
+		$report = $this->service->generateQuarterlyReport('2026-Q4');
+
+		self::assertSame(3, $report['perType']['woo-verzoek']['totaal']);
+		self::assertSame('Woo-verzoek', $report['perType']['woo-verzoek']['title']);
+		self::assertSame(2, $report['perType']['omgevingsvergunning-regulier']['totaal']);
+	}//end testWooTermsAreGroupedUnderTheWooCaseType()
+
+	/**
+	 * REQ-WTR-004: nothing lands under `unknown`; a term with neither a case
+	 * nor a definition case type is `unresolved` and named; a deleted case
+	 * falls back to the definition.
+	 *
+	 * @return void
+	 */
+	public function testNoTermIsReportedUnderUnknown(): void {
+		$this->objects->seed('deadlineDefinition', ['id' => 'td-woo', 'caseType' => 'woo-verzoek']);
+		$this->q4Term('deleted-case-with-definition', null, ['deadlineDefinition' => 'td-woo']);
+		$this->q4Term('orphan', null);
+
+		$report = $this->service->generateQuarterlyReport('2026-Q4');
+
+		self::assertArrayNotHasKey('unknown', $report['perType']);
+		self::assertSame(1, $report['perType']['woo-verzoek']['totaal']);
+		self::assertSame(1, $report['perType']['unresolved']['totaal']);
+		self::assertSame(['orphan'], $report['metadata']['unresolvedInstances']);
+	}//end testNoTermIsReportedUnderUnknown()
+
+	/**
+	 * REQ-WTR-005: one met, one two days late, one running, one suspended.
+	 *
+	 * @return void
+	 */
+	public function testMetMissedRunningAndSuspendedAreCounted(): void {
+		$this->q4Term('on-time', 'ct-woo', ['status' => 'completed', 'voltooiDatum' => '2026-10-30']);
+		$this->q4Term('late', 'ct-woo', ['status' => 'completed', 'voltooiDatum' => '2026-11-04']);
+		$this->q4Term('running', 'ct-woo');
+		$this->q4Term('suspended', 'ct-woo', ['status' => 'paused']);
+
+		$woo = $this->service->generateQuarterlyReport('2026-Q4')['perType']['woo-verzoek'];
+
+		self::assertSame(4, $woo['received']);
+		self::assertSame(1, $woo['met']);
+		self::assertSame(1, $woo['missed']);
+		self::assertSame(1, $woo['running']);
+		self::assertSame(1, $woo['suspended']);
+		self::assertSame(50.0, $woo['metShare']);
+		self::assertSame(4, $woo['totaal'], 'the existing keys keep their meaning');
+	}//end testMetMissedRunningAndSuspendedAreCounted()
 
 	/**
 	 * @return void
