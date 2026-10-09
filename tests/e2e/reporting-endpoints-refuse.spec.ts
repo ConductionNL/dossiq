@@ -168,7 +168,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		const api = controllerApi as APIRequestContext
 
 		for (const url of GATED) {
-			const response = await api.get(url)
+			const response = await api.get(url, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 			expect(
 				response.status(),
 				`${url} must answer a member of ${READING_GROUP}; got ${response.status()}. `
@@ -181,7 +183,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		const api = handlerApi as APIRequestContext
 
 		for (const url of GATED) {
-			const response = await api.get(url)
+			const response = await api.get(url, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 			expect(response.status(), `${url} must refuse a case handler`).toBe(403)
 
 			// And the refusal says why, so an operator adds the account to the
@@ -194,7 +198,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		// The one that matters most, asserted on the BODY as well as the status:
 		// a 403 whose body still carried the payload would be the same leak with
 		// a different number on it.
-		const response = await (handlerApi as APIRequestContext).get(GATED[0])
+		const response = await (handlerApi as APIRequestContext).get(GATED[0], {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 
 		expect(response.status()).toBe(403)
 		const body = await response.text()

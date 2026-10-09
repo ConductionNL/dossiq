@@ -45,7 +45,9 @@ const APP_BASE = '/index.php/apps/dossiq'
  * @return The readiness items and the broken tour steps.
  */
 async function status(api: APIRequestContext): Promise<any> {
-	const res = await api.get(`${APP_BASE}/api/setup/status`)
+	const res = await api.get(`${APP_BASE}/api/setup/status`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
 	expect(
 		res.ok(),
 		`the setup status is missing: ${res.status()} ${await res.text()}`,
@@ -191,6 +193,7 @@ test.describe('the first run names the minimum', () => {
 	}) => {
 		const res = await request.get(
 			`${APP_BASE}/api/preferences/walkthrough_completed_version`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(
 			res.ok(),

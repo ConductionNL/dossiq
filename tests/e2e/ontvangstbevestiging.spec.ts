@@ -106,7 +106,9 @@ test.describe('Ontvangstbevestiging (Awb 4:3a)', () => {
 			const id = objectId(row)
 
 			// The listener queues; the duty answers what the case now carries.
-			const res = await api.get(DUTY(id))
+			const res = await api.get(DUTY(id), {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 			expect(res.ok(), `duty read for ${name} -> ${res.status()}`).toBeTruthy()
 			const { duty } = await res.json()
 
@@ -211,7 +213,9 @@ test.describe('Ontvangstbevestiging (Awb 4:3a)', () => {
 			},
 		})
 
-		const before = await api.get(DUTY(id))
+		const before = await api.get(DUTY(id), {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect((await before.json()).duty.status).toBe('unmet')
 
 		const met = await api.post(RECORD_MET(id), {
