@@ -19,10 +19,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -171,4 +173,32 @@ class DeadlineExtensionLimitTest extends TestCase {
 
 		self::assertSame('2026-12-31', $moved['endDateCurrent']);
 	}//end testNoDeclaredPeriodMeansNoCeiling()
+	/**
+	 * A Sunday sent to termijn#verleng lands on Monday, and the Sunday is kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
+	 */
+	public function testASundayEndDateIsRolledToMonday(): void {
+		$this->declarations->method('forCase')->willReturn(
+			$this->declared(['extensionPeriodDays' => 42])
+		);
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnCallback(
+			static fn (DateTimeImmutable $date): DateTimeImmutable => ($date->format('N') === '7' ? $date->modify('+1 day') : $date)
+		);
+		$service = new DeadlineExtensionService(
+			termService: $this->termService,
+			dates: $this->caseDates(),
+			timerService: $timers,
+			declarations: $this->declarations,
+		);
+
+		$moved = $service->requestExtension('t1', 'Zienswijzen van derden', '2026-09-13');
+
+		self::assertSame('2026-09-14', $moved['endDateCurrent'], 'Sunday 13 September moves to Monday.');
+		self::assertSame('2026-09-13', $moved['endDateBeforeRoll'], 'The day as asked is kept beside it.');
+	}//end testASundayEndDateIsRolledToMonday()
+
 }//end class

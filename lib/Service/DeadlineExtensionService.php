@@ -157,6 +157,7 @@ class DeadlineExtensionService {
 	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
 	 */
 	private function applyExtension(
 		string $termInstanceId,
@@ -166,6 +167,14 @@ class DeadlineExtensionService {
 		string $mode,
 	): array {
 		$this->assertExtensionInput(rationale: $rationale, newEndDate: $newEndDate);
+
+		// ROLLED BEFORE IT IS CHECKED OR STORED (REQ-OTE-03). An end date a
+		// caller sends is a term end like any other, so the Algemene
+		// termijnenwet decides the day it lands on; the ceiling and the days
+		// impact are then measured to the day the term actually ends. The date
+		// as asked is kept beside it, so a reader can see the roll happened.
+		$requestedEndDate = $newEndDate;
+		$newEndDate = $this->rolledEndDate(endDate: $newEndDate);
 
 		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
@@ -184,6 +193,7 @@ class DeadlineExtensionService {
 			$termInstanceId,
 			[
 				'endDateCurrent' => $newEndDate,
+				'endDateBeforeRoll' => $requestedEndDate,
 				'status' => 'verlengd',
 				'countExtensions' => ($consumed + 1),
 			]
@@ -214,6 +224,28 @@ class DeadlineExtensionService {
 
 		return $updated ?? $instance;
 	}//end applyExtension()
+
+	/**
+	 * The requested end date, rolled off a day the Awt does not let a term end on.
+	 *
+	 * Without a timer service there is no calendar to ask, and the date stays
+	 * as requested, which is what this service did before.
+	 *
+	 * @param string $endDate The requested end date (YYYY-MM-DD).
+	 *
+	 * @return string The end date the term actually gets (YYYY-MM-DD).
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
+	 */
+	private function rolledEndDate(string $endDate): string {
+		if ($this->timerService === null) {
+			return $endDate;
+		}
+
+		$date = $this->dates->parse($endDate, 'newEinddatum');
+
+		return $this->dates->formatCalendarDate($this->timerService->rollTermEndFor(date: $date));
+	}//end rolledEndDate()
 
 	/**
 	 * Validate the raw verlenging input before any lookup is performed.
