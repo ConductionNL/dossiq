@@ -48,9 +48,6 @@ use Throwable;
 /**
  * Resolves a configured service account and runs operations as it.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Config, users, groups, the session and
- *  the refusal are the minimal set an acting identity needs; splitting them hides the check.
- *
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 abstract class ServiceAccount {

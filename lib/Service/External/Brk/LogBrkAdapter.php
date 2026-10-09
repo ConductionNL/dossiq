@@ -35,9 +35,6 @@ use Psr\Log\LoggerInterface;
 /**
  * Dormant log-backed Dossiq BRK adapter.
  *
- * @SuppressWarnings(PHPMD.LongVariable) — kadastrale-aanduiding parameter
- * names are the canonical BRK domain terms (see interface).
- *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 class LogBrkAdapter implements BrkAdapterInterface {
@@ -58,11 +55,11 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 * not a person), so it is logged as-is, matching the
 	 * `LogBagAdapter` precedent (postcode/huisnummer logged verbatim).
 	 *
-	 * @param string $kadastraleMunicipalityCode Kadastrale gemeentecode.
+	 * @param string $municipalityCode Kadastrale gemeentecode.
 	 * @param string $section Sectie.
 	 * @param string $perceelnummer Perceelnummer.
-	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
-	 *                                                     volgnummer.
+	 * @param string|null $sequenceNumber Optional appartementsrecht
+	 *                                    volgnummer.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return BrkLookupResult The dispatch outcome.
@@ -70,19 +67,19 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
-		string $kadastraleMunicipalityCode,
+		string $municipalityCode,
 		string $section,
 		string $perceelnummer,
-		?string $appartementsrechtSequenceNumber = null,
+		?string $sequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult {
 		$this->logger->info(
 			'Dossiq BRK lookup deferred (no outbound connector bound)',
 			[
-				'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
+				'kadastraleGemeenteCode' => $municipalityCode,
 				'sectie' => $section,
 				'perceelnummer' => $perceelnummer,
-				'appartementsrechtVolgnummer' => $appartementsrechtSequenceNumber,
+				'appartementsrechtVolgnummer' => $sequenceNumber,
 				'context' => $context,
 			]
 		);

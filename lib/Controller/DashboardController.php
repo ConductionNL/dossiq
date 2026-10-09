@@ -186,9 +186,30 @@ class DashboardController extends Controller {
 			$this->prefersOpenRegisterCasePlan()
 		);
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
+		$this->initialState->provideInitialState('version', $this->installedVersion());
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
+
+	/**
+	 * The dossiq version Nextcloud has installed.
+	 *
+	 * The settings dialog footer prints it. The bundle cannot know it: the
+	 * release writes its version into info.xml after the bundle is built, so a
+	 * build-time value read "dossiq 0.4.47-unstable" on 0.4.48-beta. The
+	 * bundle's `appVersion` reads this initial state in the browser.
+	 *
+	 * @return string The installed version, or '' when none is recorded.
+	 *
+	 * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+	 */
+	private function installedVersion(): string {
+		return $this->appConfig->getValueString(
+			app: Application::APP_ID,
+			key: 'installed_version',
+			default: ''
+		);
+	}//end installedVersion()
 
 	/**
 	 * Put Nextcloud's own Viewer on every dossiq page.
