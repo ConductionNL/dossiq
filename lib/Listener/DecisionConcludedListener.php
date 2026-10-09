@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -188,8 +189,8 @@ class DecisionConcludedListener implements IEventListener {
 			// Awb art. 7:13 lid 7: a besluit op bezwaar that departs from the
 			// BAC advice must carry a documented motivation. The besluit is
 			// FINAL at this point, so this is where the deviation becomes a
-			// fact worth mirroring onto the advice request's own append-only
-			// audit trail.
+			// fact worth recording on the advice request's OpenRegister audit
+			// trail.
 			$this->recordCouncilDeviation(
 				decision: $decisionRecord,
 				decisionId: $besluitId,
@@ -406,13 +407,13 @@ class DecisionConcludedListener implements IEventListener {
 	 * and leaves `deviationRationale` empty, so by the time decidesk
 	 * concludes, a deviating decision is guaranteed to carry its motivation.
 	 * This method only records that fact on the advice request's own
-	 * append-only audit trail so the beroep dossier export can demonstrate
+	 * OpenRegister audit trail so the beroep dossier export can demonstrate
 	 * compliance from either side of the referral.
 	 *
 	 * A decision that follows the advice, or that was never referred to a
-	 * committee, is a no-op. The write itself is swallow-and-log inside
-	 * {@see AdvisoryCommitteeService::recordCouncilDeviation()}, so a
-	 * failure here never blocks besluit materialisation.
+	 * committee, is a no-op. An entry that cannot be written is logged here at
+	 * error level with the full entry, so a failure never blocks besluit
+	 * materialisation and is never swallowed silently.
 	 *
 	 * @param array<string,mixed>|null $decision The bezwaarDecision record, when one matched.
 	 * @param string $decisionId The materialised ZGW Besluit ref, when known.
@@ -450,11 +451,20 @@ class DecisionConcludedListener implements IEventListener {
 			$reference = (string)($decision['@self']['id'] ?? ($decision['id'] ?? $subjectId));
 		}
 
-		$this->bacService->recordCouncilDeviation(
-			requestId: $requestId,
-			decisionId: $reference,
-			rationaleRef: $rationale
-		);
+		try {
+			$this->bacService->recordCouncilDeviation(
+				requestId: $requestId,
+				decisionId: $reference,
+				rationaleRef: $rationale
+			);
+		} catch (BezwaarEntryNotWrittenException $notWritten) {
+			// The besluit stands; the Awb art. 7:13 record of the deviation did
+			// not land. Log the whole entry so it is not lost silently.
+			$this->logger->error(
+				'Dossiq DecisionConcludedListener: council deviation entry not written',
+				$notWritten->logContext()
+			);
+		}
 	}//end recordCouncilDeviation()
 
 	/**

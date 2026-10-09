@@ -4,14 +4,20 @@ Tier: V1. Kind: code. Size M. Consumer half of openregister's
 `archiving-as-a-process-with-sign-off`, merged as openregister#3736 and
 openregister#3747. Decision D7. Ledger rows 4.20, 13.31, 13.32.
 
-- [ ] 1.1 (not run: needs Ruben, Q-dossiq-1: which value is the case's selectielijst category) Declare the case schema's archival classification so openregister has
+- [x] 1.1 Declare the case schema's archival classification so openregister has
   a selectielijst category to look up, beside the `x-openregister-archival`
-  retention block that is already there (D-1).
+  retention block that is already there (D-1). Decision 127 (Q-dossiq-1): the
+  case field `selectionListClass` is copied from the result type when the
+  result is set and named as `categoryProperty`. Every instance then needs a
+  selectielijst register (docs/admin/archief-edepot.md).
+  - `lib/Settings/dossiq_register.json` (case 1.37.0), `ArchivalNominationDeriver::derive()`
+  - `tests/Unit/Settings/CaseArchivalCategoryDeclaredTest.php`,
+    `tests/Unit/Service/Archival/ArchivalNominationDeriverTest.php`
 - [x] 1.2 An architecture test that fails when `ArchivalNominationDeriver` or
   `ArchivalBaseDateResolver` loses the note naming what blocks its removal, and
   fails again if a third class starts doing archiefactiedatum arithmetic (D-1).
   - `tests/Unit/Architecture/StandingArchivalDerivationIsDeclaredTest.php`
-  - `@spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md`
+  - `@spec openspec/specs/archief-edepot-handover/spec.md`
 - [x] 2.1 An Archiving tab on the case page rendering `@self._retention`: the
   appraisal, the disposal date, the retention period, the selectielijst row, the
   nomination with its rule and moment, and the outcome (D-2).

@@ -28,8 +28,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\Dossiq\Woo\WooRefusalGroundsUnavailable;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -63,20 +66,11 @@ class WOODocumentAssessmentService {
 	];
 
 	/**
-	 * Valid WOO Art. 5.1/5.2 weigeringsgrond codes.
+	 * The settled list of Woo refusal grounds.
+	 *
+	 * @var WooRefusalGrounds
 	 */
-	private const VALID_WEIGERINGSGRONDEN = [
-		'5.1.1',
-		'5.1.2',
-		'5.1.3',
-		'5.1.4',
-		'5.1.5',
-		'5.2.1',
-		'5.2.2',
-		'5.2.3',
-		'5.2.4',
-		'5.2.5',
-	];
+	private readonly WooRefusalGrounds $refusalGrounds;
 
 	/**
 	 * Constructor.
@@ -85,13 +79,18 @@ class WOODocumentAssessmentService {
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
 	 * @param WooCaseDocuments|null $caseDocuments Where a case's documents are: its informatieobjecten.
+	 * @param WooRefusalGrounds|null $refusalGrounds The settled list a cited ground is checked against.
+	 *        Built over the same settings and logger when left out, because those are its only
+	 *        collaborators and a default built from them is the instance the container wires.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
+		?WooRefusalGrounds $refusalGrounds = null,
 	) {
+		$this->refusalGrounds = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
 
 	/**
@@ -142,6 +141,7 @@ class WOODocumentAssessmentService {
 			}
 
 			$assessment['caseRef'] = $caseId;
+			$assessment['groundsListVersion'] = WooRefusalGrounds::LIST_VERSION;
 			$assessment['assessedBy'] = $userId;
 			$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
 
@@ -197,6 +197,7 @@ class WOODocumentAssessmentService {
 	 * @return array<string, string> Validation errors keyed by field name; empty if valid
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	public function validate(array $assessment): array {
 		$errors = [];
@@ -219,16 +220,59 @@ class WOODocumentAssessmentService {
 				return $errors;
 			}
 
-			foreach ($grounds as $code) {
-				if (in_array($code, self::VALID_WEIGERINGSGRONDEN, true) === false) {
-					$errors['weigeringsgronden'] = 'Invalid weigeringsgrond code: ' . $code;
-					break;
-				}
+			$refusal = $this->refusalOfGrounds(grounds: (array)$grounds);
+			if ($refusal !== null) {
+				$errors['weigeringsgronden'] = $refusal;
 			}
 		}
 
 		return $errors;
 	}//end validate()
+
+	/**
+	 * Why the cited grounds cannot stand, or null when every one can.
+	 *
+	 * Each code must be an active, citable entry of the settled list
+	 * (woo-refusal-grounds-list, decision 133). An unreadable list refuses
+	 * the assessment rather than accepting any value or falling back to a
+	 * constant.
+	 *
+	 * @param array<int, mixed> $grounds The cited codes.
+	 *
+	 * @return string|null The refusal sentence, or null.
+	 *
+	 * @throws RefusedException With 503 when the list cannot be read.
+	 *
+	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 */
+	private function refusalOfGrounds(array $grounds): ?string {
+		foreach ($grounds as $code) {
+			$code = trim((string)$code);
+			try {
+				$ground = $this->refusalGrounds->byCode(code: $code);
+			} catch (WooRefusalGroundsUnavailable $e) {
+				throw new RefusedException(
+					rule: 'woo-refusal-grounds-unavailable',
+					sentence: 'The list of Woo refusal grounds cannot be read, so the assessment is not stored. Try again later.',
+					status: RefusedException::STATUS_INDETERMINATE,
+				);
+			}
+
+			if ($ground === null) {
+				return 'Unknown weigeringsgrond: ' . $code;
+			}
+
+			if ($ground['citable'] !== true) {
+				return 'Weigeringsgrond ' . $code . ' groups other grounds and cannot be cited. Pick one of the grounds under it.';
+			}
+
+			if ($ground['status'] !== 'active') {
+				return 'Weigeringsgrond ' . $code . ' is retired and cannot be cited on a new assessment.';
+			}
+		}//end foreach
+
+		return null;
+	}//end refusalOfGrounds()
 
 	/**
 	 * Get documents without a completed assessment for a case.

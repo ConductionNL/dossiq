@@ -22,7 +22,7 @@
   nobody's problem. They look the same from an absent appraisal, so they are
   given different words on purpose.
 
-  @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+  @spec openspec/specs/archief-edepot-handover/spec.md
 -->
 <template>
 	<div class="case-archival" data-testid="case-archival">
@@ -190,27 +190,27 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		caseId() {
 			return String(this.objectId || this.$route?.params?.id || '')
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		nomination() {
 			return this.retention?.nomination ?? null
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		isUnnominatable() {
 			return this.nomination?.status === 'unnominatable'
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		hasNoNomination() {
 			return this.nomination === null
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		unnominatableReason() {
 			return String(this.nomination?.unnominatableReason ?? '')
 		},
@@ -224,13 +224,13 @@ export default {
 		 * describing an event is not the same as the event.
 		 *
 		 * @return {boolean} True when openregister holds the marker.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		isArchived() {
 			return this.archived !== null && this.archived !== undefined
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		archivedSentence() {
 			const a = this.archived ?? {}
 
@@ -251,7 +251,7 @@ export default {
 		 * would hide exactly the case somebody has to look at.
 		 *
 		 * @return {boolean} True when one says archived and the other does not.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		archiveStateDisagrees() {
 			const saysArchived = this.archiveStatus.startsWith('archived')
@@ -259,7 +259,7 @@ export default {
 			return saysArchived !== this.isArchived
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		outcome() {
 			return this.retention?.outcome ?? null
 		},
@@ -268,7 +268,7 @@ export default {
 		 * The stored facts, in the order a records manager reads them.
 		 *
 		 * @return {Array<object>} Label, value and a test key per fact.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		facts() {
 			const r = this.retention ?? {}
@@ -312,7 +312,7 @@ export default {
 			)
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		outcomeSentence() {
 			const o = this.outcome ?? {}
 
@@ -331,7 +331,7 @@ export default {
 		 * than hidden: a hidden control teaches nobody which role they need.
 		 *
 		 * @return {boolean} True for an archivist or an administrator.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		mayRecompute() {
 			const user = getCurrentUser()
@@ -344,12 +344,12 @@ export default {
 			return Array.isArray(groups) && groups.includes('archivaris')
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		canRecompute() {
 			return this.busy === false && String(this.reason).trim() !== ''
 		},
 
-		/** @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md */
+		/** @spec openspec/specs/archief-edepot-handover/spec.md */
 		attribution() {
 			return this.t('dossiq', 'This is recorded against {user}.', {
 				user: String(getCurrentUser()?.uid ?? ''),
@@ -361,7 +361,7 @@ export default {
 	 * Read the archival facts once the panel is on the page.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -372,7 +372,7 @@ export default {
 		 * Read `@self._retention` off the case.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -394,7 +394,7 @@ export default {
 		 * Ask openregister to derive this case's nomination again.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		async recompute() {
 			if (this.canRecompute === false) {

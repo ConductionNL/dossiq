@@ -11,7 +11,8 @@
       "caseModel": {
         "slug": "caseModel",
         "icon": "SitemapOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:HowTo",
         "x-cmmn-equivalent": "CasePlanModel",
         "title": "Case Model",

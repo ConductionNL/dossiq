@@ -11,7 +11,7 @@
     },
     "schemas": {
       "milestoneDefinition": {
-        "version": "1.1.0",
+        "version": "1.1.1",
         "properties": {
           "ownerRole": {
             "type": "string",
@@ -25,7 +25,8 @@
       "plannedActionType": {
         "slug": "plannedActionType",
         "icon": "CalendarArrowRight",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Planned action type",
         "description": "A kind of work that is planned on a case, and what follows it",

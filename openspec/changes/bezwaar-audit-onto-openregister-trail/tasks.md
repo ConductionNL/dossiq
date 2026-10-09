@@ -14,7 +14,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 1. The writer
 
-- [ ] 1.1 Rewrite `lib/Service/Bezwaar/BezwaarAuditTrail.php` as a writer onto OpenRegister.
+- [x] 1.1 Rewrite `lib/Service/Bezwaar/BezwaarAuditTrail.php` as a writer onto OpenRegister.
   `record(string $register, string $schema, string $objectUuid, string $event, array $payload, string $tag = ''): void`
   resolves the `ObjectEntity` through `ObjectService::find()` and calls
   `createAuditTrailEntry(object: ..., action: 'dossiq.bezwaar.' . $event, context: {event, tag?, actor, at, payload})`.
@@ -25,14 +25,14 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `testTheActorComesFromTheSessionNeverThePayload` and `testRecordThrowsWhenOpenRegisterIsAbsent`.
   - Gate check: gate 23 prints `BezwaarAuditTrail.php` under "writes through OpenRegister's
     AuditTrailMapper, compliant, not counted".
-- [ ] 1.2 Remove `append()`. No code under `lib/` writes the `auditTrail` key of a `hearingSession` or
+- [x] 1.2 Remove `append()`. No code under `lib/` writes the `auditTrail` key of a `hearingSession` or
   `bacAdviceRequest` again, and the five `$current['auditTrail']` reads go (REQ-BAT-001).
   - **fails today**: `tests/Unit/Architecture/NoEmbeddedBezwaarAuditWriteTest.php`
     `testNoBezwaarServiceWritesTheAuditTrailProperty`.
 
 ## 2. Hearings (call sites 1 to 11)
 
-- [ ] 2.1 `schedule()` (site 2): save, then record `hearing-scheduled` with awb-art-7:2 on the saved
+- [x] 2.1 `schedule()` (site 2): save, then record `hearing-scheduled` with awb-art-7:2 on the saved
   session; on a failed entry delete the saved session and throw (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller:
     `tests/Unit/Listener/BezwaarHearingScheduledListenerTest.php`
@@ -40,36 +40,36 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `BezwaarAuditTrail` with only the OpenRegister seams doubled.
   - **fails today**: `tests/Unit/Service/HearingServiceTest.php`
     `testAHearingWhoseEntryCannotBeWrittenIsDeletedAndRefused`.
-- [ ] 2.2 `waive()` (site 3): the same shape for `hearing-waived` with awb-art-7:3. No caller in
+- [x] 2.2 `waive()` (site 3): the same shape for `hearing-waived` with awb-art-7:3. No caller in
   `lib/` today, so the test drives the method (REQ-BAT-001, REQ-BAT-003).
   - **fails today**: `HearingServiceTest` `testAWaiverWritesAnAwb73RowWithItsReason`.
-- [ ] 2.3 `recordAttendance()` and `HearingMinutesRecorder::appendLateCorrectionAudit()` (sites 4,
+- [x] 2.3 `recordAttendance()` and `HearingMinutesRecorder::appendLateCorrectionAudit()` (sites 4,
   10, 11): record each late correction with awb-art-7:7 before the attendance patch; a failed patch
   writes `attendance-late-correction-not-applied` and throws (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller:
     `tests/Unit/Controller/BezwaarHearingControllerRecordAttendanceTest.php`
     `testALateCorrectionWritesAnAwb77RowWithItsReason`.
-- [ ] 2.4 `addMinutes()` and `guardRecordingConsent()` (sites 5, 6, 8, 9): `audio-upload-denied`
+- [x] 2.4 `addMinutes()` and `guardRecordingConsent()` (sites 5, 6, 8, 9): `audio-upload-denied`
   with avg-art-6 is recorded and the upload refused even when the entry fails (logged at error with
   the full entry); `verslag-recorded` with awb-art-7:7 is recorded before the minutes patch
   (REQ-BAT-001, REQ-BAT-003).
   - **fails today**: `HearingServiceTest` `testARefusedAudioUploadIsRecordedUnderAvgArt6` and
     `testMinutesAreRecordedBeforeThePatch`.
-- [ ] 2.5 Sites 1 and 7: the constructors keep `BezwaarAuditTrail`; `HearingMinutesRecorder` no
+- [x] 2.5 Sites 1 and 7: the constructors keep `BezwaarAuditTrail`; `HearingMinutesRecorder` no
   longer returns an array for the caller to save (REQ-BAT-001).
   - **fails today**: `tests/Unit/Service/Bezwaar/HearingMinutesRecorderTest.php`
     `testTheRecorderReturnsNoAuditArray`.
 
 ## 3. The advisory committee (call sites 12 to 17)
 
-- [ ] 3.1 `assignToCommittee()` (site 13): save, then record `panel-member-added` on the saved
+- [x] 3.1 `assignToCommittee()` (site 13): save, then record `panel-member-added` on the saved
   request; on a failed entry delete it and throw. `autoAssignDefaultCommittee()` keeps answering
   `null` on a throw, so no unrecorded request survives (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller:
     `tests/Unit/Listener/BezwaarAdviceRequestedListenerTest.php`
     `testAnAutoAssignedRequestCarriesItsPanelRowOnItsOwnTrail` and
     `testAnAssignmentWhoseEntryFailsLeavesNoRequest`.
-- [ ] 3.2 `transitionAdviceStatus()` (sites 14, 16, 17): `independence-check-failed` is recorded and
+- [x] 3.2 `transitionAdviceStatus()` (sites 14, 16, 17): `independence-check-failed` is recorded and
   the transition refused even when the entry fails; `advice-signed-by-chair` is recorded before the
   status patch, with the chair from `resolveActor()`; a failed patch writes
   `advice-signed-by-chair-not-applied` and throws. No caller in `lib/` today (REQ-BAT-001,
@@ -78,7 +78,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `testASignedAdviceIsRecordedBeforeTheStatusMoves`,
     `testAFailedStatusWriteLeavesANotAppliedRow` and
     `testAFailedIndependenceCheckIsRecordedAndRefused`.
-- [ ] 3.3 `recordCouncilDeviation()` (site 15): record `council-deviation-recorded`; a failed entry is
+- [x] 3.3 `recordCouncilDeviation()` (site 15): record `council-deviation-recorded`; a failed entry is
   reported to `DecisionConcludedListener`, which logs it at error level with the full entry
   (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller: `tests/Unit/Listener/DecisionConcludedListenerTest.php`
@@ -87,7 +87,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 4. The entries already stored
 
-- [ ] 4.1 Add `lib/Repair/CopyEmbeddedBezwaarAuditTrail.php` and register it under
+- [x] 4.1 Add `lib/Repair/CopyEmbeddedBezwaarAuditTrail.php` and register it under
   `<post-migration>` in `appinfo/info.xml`. It copies every entry of every `hearingSession` and
   `bacAdviceRequest` `auditTrail` in order, actor `system`, context with the original keys plus
   `migratedFrom: auditTrail` and `migratedIndex`. It finds rows it already wrote with
@@ -99,7 +99,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `testTheArrayIsNotChanged` and `testAnObjectThatCannotBeWrittenIsReportedAndTheRunGoesOn`.
   - Through the caller: a test that reads `appinfo/info.xml` and finds the step under
     `<post-migration>`, `testTheCopyStepIsRegistered`.
-- [ ] 4.2 In both `lib/Settings/dossiq_register.json` and `lib/Settings/dossiq_mock_register.json`,
+- [x] 4.2 In both `lib/Settings/dossiq_register.json` and `lib/Settings/dossiq_mock_register.json`,
   describe `auditTrail` on `hearingSession` and `bacAdviceRequest` as the frozen record written before
   this change and copied to OpenRegister's audit trail; bump the register `info.version`
   (REQ-BAT-004).
@@ -118,11 +118,11 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 6. Verify and deliver
 
-- [ ] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
+- [x] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
   only the unit tests of touched classes with
   `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter '<Class>'` and judge by the
   `Tests:` line, because a green suite exits 1 without a coverage driver.
-- [ ] 6.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
+- [x] 6.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
   and any other leg `code-quality.yml` requires. Then
   `scripts/run-hydra-gates.sh --base origin/development`, count the gates that ran, and paste gate
   23's output: rule 2 prints `BezwaarAuditTrail.php` as compliant. The coverage guard needs tests for

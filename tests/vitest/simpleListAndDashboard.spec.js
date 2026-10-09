@@ -228,9 +228,9 @@ describe('the cases list', () => {
 		expect(before.countSubtitle).toBeUndefined()
 	})
 
-	it('draws the table without the view switch and the column filters, which the design has none of', () => {
+	it('draws the view switch as the board does and drops the column filters, which the design has none of', () => {
 		// The filters stay in the filter panel; the full list keeps both.
-		expect(simple.showViewToggle).toBe(false)
+		expect(simple.showViewToggle).toBe(true)
 		expect(simple.headerFilters).toBe(false)
 		expect(before.showViewToggle).toBeUndefined()
 		expect(before.headerFilters).toBeUndefined()
@@ -244,6 +244,10 @@ describe('the cases list', () => {
 			folderSidebar,
 			showTitle,
 			countSubtitle,
+			countText,
+			footerNote,
+			bulkHint,
+			headerButtons,
 			showViewToggle,
 			headerFilters,
 			...others
@@ -442,8 +446,30 @@ describe('the landing page', () => {
 	it('gives the dashboard back its full-structure widgets', () => {
 		const dashboard = page(builtSimple, 'Dashboard')
 		const before = original('Dashboard')
-		expect(dashboard.config.widgets).toEqual(before.config.widgets)
-		expect(dashboard.config.layout).toEqual(before.config.layout)
+		// The two charts draw as the board's horizontal bars; every other
+		// widget is the full structure's, and the five KPI tiles leave the
+		// grid for the KPI row above it.
+		const sameButBars = (list) =>
+			list.map((item) =>
+				item.type === 'chart'
+					? { ...item, content: { ...item.content, horizontal: true } }
+					: item,
+			)
+		expect(dashboard.config.widgets).toEqual(sameButBars(before.config.widgets))
+		expect(dashboard.config.kpiRow).toEqual([
+			'kpi-open-cases',
+			'kpi-overdue',
+			'kpi-completed',
+			'kpi-my-tasks',
+			'kpi-sla-compliance',
+		])
+		expect(dashboard.config.layout.map((entry) => entry.widgetId)).toEqual([
+			'cases-by-status',
+			'cases-by-type',
+			'stalled-cases',
+			'favourite-cases',
+			'recent-cases',
+		])
 		expect(dashboard.config.showHeader).toBeUndefined()
 		expect(dashboard.slots).toEqual(before.slots)
 		expect(dashboard.config.headerActions.map((action) => action.id)).toContain(

@@ -223,6 +223,8 @@ class SchemaSlugMap {
 		'zaakinformatieobject' => 'dossier_zaakinformatieobject_schema',
 		// The Woo document assessment. NOT 'wooAssessment': opencatalogi owns that slug.
 		'wooDocumentAssessment' => 'woo_assessment_schema',
+		// The settled Woo refusal grounds (woo-refusal-grounds-list).
+		'wooRefusalGround' => 'woo_refusal_ground_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

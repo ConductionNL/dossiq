@@ -43,6 +43,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
+ * @uses   \OCA\Dossiq\Portal\PortalConversation
  */
 class PortalMessageBoxRecipientTest extends TestCase {
 	private const BSN = '999993653';

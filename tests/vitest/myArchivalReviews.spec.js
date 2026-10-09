@@ -12,7 +12,7 @@
  * is sent when it would be refused after: openregister answers 400 without a
  * reason, and without a new date on a retention.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

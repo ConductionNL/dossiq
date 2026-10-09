@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -133,6 +134,7 @@ class WOODecisionService {
 				),
 				'wooSummary' => $summary,
 				'weigeringsgronden' => $weigeringsgronden,
+				'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
 				'assessmentCount' => count($assessments),
 				'decidedBy' => $userId,
 			],

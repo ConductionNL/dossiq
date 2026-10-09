@@ -854,6 +854,7 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::MAIL_IN,
 			TimelineKinds::MAIL_OUT,
 			TimelineKinds::PORTAL_MESSAGE,
+			TimelineKinds::PORTAL_MESSAGE_IN,
 			TimelineKinds::ACKNOWLEDGEMENT,
 			TimelineKinds::STATUS_CHANGE,
 			TimelineKinds::TERM_EVENT,
@@ -881,8 +882,8 @@ class CaseTimelineTest extends TestCase {
 	}//end testEveryDeclaredKindIsWellFormed()
 
 	/**
-	 * Only what the applicant sent carries a follow-up: inbound mail and the
-	 * applicant's own portal acts. `carriesFollowUp` opens one on EVERY entry
+	 * Only what the applicant sent carries a follow-up: inbound mail, the
+	 * applicant's portal messages and their own portal acts. `carriesFollowUp` opens one on EVERY entry
 	 * of a kind, so any other kind declaring it would open a task on every
 	 * logged call and every status move.
 	 *
@@ -898,7 +899,7 @@ class CaseTimelineTest extends TestCase {
 			}
 		}
 
-		$this->assertSame([TimelineKinds::MAIL_IN, TimelineKinds::APPLICANT_RESPONSE], $carrying);
+		$this->assertSame([TimelineKinds::MAIL_IN, TimelineKinds::PORTAL_MESSAGE_IN, TimelineKinds::APPLICANT_RESPONSE], $carrying);
 	}//end testOnlyInboundMailCarriesAFollowUp()
 
 	/**
