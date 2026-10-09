@@ -54,6 +54,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
+import { chooseLens } from './helpers/lens.ts'
 import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
@@ -198,7 +199,7 @@ test.describe('handing a case over', () => {
 		await dismissSupportDialog(page)
 		const errors = trackDossiqErrors(page)
 
-		await page.getByRole('button', { name: 'Handed on' }).click()
+		await chooseLens(page, /^(Handed on|Overgedragen)$/)
 		await expect(page.getByText(`${RUN_PREFIX} outstanding`)).toBeVisible()
 		// The case a run accepted must NOT be on this lens, which is what
 		// separates "the chip filters" from "the chip shows everything".
