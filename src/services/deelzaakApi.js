@@ -147,7 +147,7 @@ export async function createSubCase({ parentCaseUuid, childCaseTypeId, object })
  *
  * @param {string} parentCaseUuid Parent UUID.
  * @return {Promise<{unlinked: number, failed: number, total: number, complete: boolean}>} The unlink outcome.
- * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-deletion-protection
+ * @spec openspec/specs/case-management/spec.md#requirement-a-held-case-cannot-be-deleted-and-you-are-told-why-req-cm-35
  */
 export async function unlinkSubCases(parentCaseUuid) {
 	const { data } = await axios.post(

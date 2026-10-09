@@ -118,6 +118,52 @@ Rule 2 is not covered here either. The gate clears `TenantAuditTrailService`
 under rule 2 because it writes through OpenRegister's `AuditTrailMapper`. If it
 ever stops doing that, rule 2 should fire, and this ADR will not stop it.
 
+## Decided by Ruben on 2026-10-08
+
+Ruben answered the four questions the gate 23 amend of `tenancy-onto-openregister-organisation`
+left open. This section records the decisions. It names classes, not paths, on purpose: it covers
+nothing yet. Each build change adds its own path lines when the code it describes is merged, so the
+exception never runs ahead of the work.
+
+- **Q1, the migration.** `TenantMigrationService` also runs as a repair step for one release and
+  reports how many tenants are left unmigrated. It is covered for rule 4 for that release only,
+  added by task 6.11 of `tenancy-onto-openregister-organisation`, and deleted in the release after,
+  once the count is zero (task 6.4). Same pattern as decision D12 for Woo requests.
+- **Q2, the token path.** `TenantJwtService`, `TenantClaimValidationMiddleware` and
+  `TenantClaimMismatchException` are deleted, not exempted
+  (`tenancy-onto-openregister-organisation-active-organisation`). The membership, role and mandate
+  lookups in `TenantAuthenticationService` stay in dossiq, covered for rule 4 until they move to
+  OpenRegister. That change adds its path line.
+- **Q3, the active tenant.** It is OpenRegister's active organisation, read through
+  `OrganisationService::getActiveOrganisation()`. `TenantMiddleware`, `TenantContextMiddleware`, the
+  `switchTenant` route of `TenantController` and the session store of `TenantSessionService` are
+  deleted, not exempted. `TenantSessionService` stays in the session-led section above with what
+  is left of it. The refusal of a non-active organisation moves into `MandateValidationMiddleware`.
+- **Q4, the audit anchor.** Tenant objects are never deleted. They stay read-only as the anchor of
+  every tenant audit entry `TenantAuditTrailService` writes, so existing and new entries for those
+  tenants keep resolving. The `tenant` schema stays declared for that reason.
+
+Ruben answered the three points left after that, later the same day:
+
+- **Q5, `TenantController`.** Its `current`, `memberships`, `provision` and `usage` endpoints move
+  to OpenRegister's organisation endpoints (`getActive`, `index`, `activate`, and `usage` with
+  `show`), and the controller is deleted, not exempted
+  (`tenancy-onto-openregister-organisation-active-organisation`).
+- **Q6, the anchor of a new tenant.** When dossiq onboarding is initialised for an Organisation,
+  dossiq creates a read-only tenant object for it, once, so every tenant, old and new, has one place
+  its audit history lives. Creating that anchor is the only write left on the `tenant` schema;
+  nothing updates or deletes one. `TenantAuditTrailService` still writes no row when an anchor is
+  missing.
+- **Q7, the migration cover.** The one-release cover of `TenantMigrationService` under Q1 stays,
+  with its reason and a sunset of the next dossiq release, stated beside its path line when task
+  6.11 adds it. The gate reads only the ADR-wide date, so 2027-03-31 remains the backstop. Task 6.4
+  deletes the class and the line.
+
+Still counted after all of it, and correctly: `TenantOnboardingService` and
+`TenantOnboardingController`. The onboarding `skipped` status mapping in `remove-casetask` task 7.1
+is the only gate 23 decision left. The paragraph "What this exception does not cover" above
+predates these decisions; where it and this section differ, this section is the newer one.
+
 ## Sunset
 
 **2027-03-31.** On that date the gate stops honouring this ADR and dossiq goes

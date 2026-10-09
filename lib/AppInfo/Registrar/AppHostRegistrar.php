@@ -109,6 +109,8 @@ class AppHostRegistrar {
 		// dependency on ordering (public IAppManager + a PSR-4 loader; the
 		// private OC_App::registerAutoloading() is gone in Nextcloud 35). It is
 		// idempotent, so on the current ordering this costs nothing.
+		// apphost-prelude exclude OpenRegisterAutoloader::register() below is the prelude.
+		// Gate-64 only recognises OC_App::registerAutoloading(), which Nextcloud 35 removed.
 		OpenRegisterAutoloader::register();
 
 		if (class_exists(Bootstrap::class) === false) {

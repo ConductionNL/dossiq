@@ -684,9 +684,10 @@ $extra = [
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
     ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
 
-        // ── VTH Module: DSO intake, checklist results, advice, LHS lookup ─
-        // @spec openspec/changes/vth-module/tasks.md#task-3
-    ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        // ── VTH Module: checklist results, advice, LHS lookup ─
+        // A DSO verzoek has no route here: integriq receives it and
+        // VergunningaanvraagCreatedListener makes the case (one path).
+        // @spec openspec/changes/dso-single-intake-path/specs/vth-dso-integration/spec.md
         // @spec openspec/changes/vth-module/tasks.md#task-8
     ['name' => 'lhs#lookup',          'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
 

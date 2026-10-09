@@ -2,7 +2,7 @@ const webpackConfig = require('@nextcloud/webpack-vue-config')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const webpack = require('webpack')
-const { readAppVersion } = require('./scripts/appVersion.js')
+const { appVersionDefinition } = require('./scripts/appVersion.js')
 
 const buildMode = process.env.NODE_ENV
 const isDev = buildMode === 'development'
@@ -170,11 +170,13 @@ webpackConfig.module = {
 webpackConfig.plugins = [
 	new VueLoaderPlugin(),
 	new webpack.DefinePlugin({ appName: JSON.stringify(appId) }),
-	// The version Nextcloud installs, from appinfo/info.xml. package.json's
-	// version is 0.1.0 and never bumped, and @nextcloud/vue prints this global
-	// in the settings dialog footer, which read "dossiq 0.1.0" on a 0.3.x install.
+	// The version Nextcloud installed, read in the browser from the page's
+	// `version` initial state, with appinfo/info.xml as the fallback.
+	// @nextcloud/vue prints this global in the settings dialog footer. A build
+	// time literal read "dossiq 0.1.0" (package.json) and later
+	// "dossiq 0.4.47-unstable" on 0.4.48-beta (info.xml before the release bump).
 	new webpack.DefinePlugin({
-		appVersion: JSON.stringify(readAppVersion()),
+		appVersion: appVersionDefinition(appId),
 	}),
 ]
 

@@ -95,6 +95,8 @@ class Application extends App implements IBootstrap {
 		// The background jobs write as an account an admin picks, never as
 		// Anonymous and never with RBAC off; the overview says when none is set.
 		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\BackgroundServiceAccountCheck::class);
+		// Says when no DSO verzoek becomes a case.
+		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\DsoIntakeCheck::class);
 
 		// Storage seam for the Dutch-to-English value migration. The repair step
 		// depends on the interface so its own logic can be exercised against a

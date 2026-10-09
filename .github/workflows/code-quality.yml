@@ -350,7 +350,14 @@ jobs:
       # own 25 minute globalTimeout. See
       # tests/e2e/playwright.config.ts for both, and for why the
       # instance-mutating specs become a teardown that runs on every shard.
-      e2e-shards: 3
+      #
+      # EIGHT SHARDS since 2026-10-08. At three, every nightly since 09-17
+      # stopped each shard at its globalTimeout with about 560 tests never run
+      # (run 37722353743: 155, 250 and 155 unrun), so the suite had no verdict
+      # on most of itself. Eight is the shared workflow's maximum; each leg is
+      # its own Nextcloud and Postgres, so the shared-memory ceiling above does
+      # not move. A CI-minutes cost Ruben accepted for a full nightly verdict.
+      e2e-shards: 8
       # Left OFF deliberately. Turning it on adds a hard threshold gate to a job
       # that has never run here; enable it in a follow-up once this job has a
       # measured baseline. The threshold below is inert while this is false.
