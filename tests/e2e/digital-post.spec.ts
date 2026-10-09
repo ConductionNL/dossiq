@@ -34,6 +34,7 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureCaseType,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
@@ -71,8 +72,12 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		// `initiatorType: person` is what the header action's `visibleWhen`
 		// tests. A case without it renders no button at all, and the absence
 		// would read as a broken action rather than as the gate working.
+		// `case` requires `caseType` (dossiq_register.json), so a case filed
+		// without one is refused in this hook and no test in the file runs.
+		const caseType = await ensureCaseType(request, token)
 		const created = await createObject(request, token, 'case', {
 			title: CASE_TITLE,
+			caseType: caseType.id,
 			description: 'Digital post run',
 			initiatorType: 'person',
 			initiatorDisplayName: 'A. Burger',

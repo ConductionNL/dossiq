@@ -28,6 +28,7 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureCaseType,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
@@ -43,8 +44,12 @@ test.describe('document acts reach a surface', () => {
 
 	test.beforeAll(async ({ request }) => {
 		const token = await getRequestToken(request)
+		// `case` requires `caseType` (dossiq_register.json), so a case filed
+		// without one is refused in this hook and no test in the file runs.
+		const caseType = await ensureCaseType(request, token)
 		const created = await createObject(request, token, 'case', {
 			title: CASE_TITLE,
+			caseType: caseType.id,
 			description: 'Document acts run',
 		})
 		caseId = objectId(created)

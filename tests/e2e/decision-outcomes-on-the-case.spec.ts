@@ -162,7 +162,9 @@ test.describe('decision outcomes on the case', () => {
 		const token = await getRequestToken(request)
 		const { caseId } = await gatedCase(request, token)
 
-		const acts = await request.get(`${DOSSIQ_API}/case/${caseId}/acts`)
+		const acts = await request.get(`${DOSSIQ_API}/case/${caseId}/acts`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(acts.status()).toBe(200)
 		const waiting = (await acts.json()).awaitingApproval ?? []
 		expect(waiting).toHaveLength(1)
@@ -187,7 +189,9 @@ test.describe('decision outcomes on the case', () => {
 		expect(link.decisionRef).toBeTruthy()
 
 		const again = await (
-			await request.get(`${DOSSIQ_API}/case/${caseId}/acts`)
+			await request.get(`${DOSSIQ_API}/case/${caseId}/acts`, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 		).json()
 		const row = (again.awaitingApproval ?? []).find((w: any) => w.act === 't1')
 		expect(row?.decisionRef).toBe(link.decisionRef)
@@ -458,7 +462,9 @@ test.describe('decision outcomes on the case', () => {
 		expect(sent.status(), await sent.text()).toBe(200)
 
 		const terms = await (
-			await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`)
+			await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 		).json()
 		const remedy = (terms.terms ?? terms ?? []).find(
 			(t: any) => t.kind === 'remedy',
@@ -497,7 +503,9 @@ test.describe('decision outcomes on the case', () => {
 		serverMade.push(['deadlineInstance', objectId(term)])
 
 		const terms = await (
-			await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`)
+			await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`, {
+				headers: { 'OCS-APIRequest': 'true' },
+			})
 		).json()
 		const remedy = (terms.terms ?? terms ?? []).find(
 			(t: any) => t.kind === 'remedy',

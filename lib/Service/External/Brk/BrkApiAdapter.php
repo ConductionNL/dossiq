@@ -51,9 +51,6 @@ use Throwable;
 /**
  * Live Kadaster Haal Centraal BRK Bevragen API v2 adapter (test / live tiers).
  *
- * @SuppressWarnings(PHPMD.LongVariable) — kadastrale-aanduiding parameter
- * names are the canonical BRK domain terms (see interface).
- *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 class BrkApiAdapter implements BrkAdapterInterface {
@@ -98,11 +95,11 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 * Look up a parcel by kadastrale aanduiding against the configured
 	 * tier.
 	 *
-	 * @param string $kadastraleMunicipalityCode Kadastrale gemeentecode.
+	 * @param string $municipalityCode Kadastrale gemeentecode.
 	 * @param string $section Sectie (1-2 uppercase letters).
 	 * @param string $perceelnummer Perceelnummer (1-5 digits).
-	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
-	 *                                                     volgnummer.
+	 * @param string|null $sequenceNumber Optional appartementsrecht
+	 *                                    volgnummer.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return BrkLookupResult
@@ -110,30 +107,30 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
-		string $kadastraleMunicipalityCode,
+		string $municipalityCode,
 		string $section,
 		string $perceelnummer,
-		?string $appartementsrechtSequenceNumber = null,
+		?string $sequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult {
 		$normalizedSection = strtoupper($section);
 		$invalidInput = $this->validateKadastraleAanduidingInput(
-			municipalityCode: $kadastraleMunicipalityCode,
+			municipalityCode: $municipalityCode,
 			section: $normalizedSection,
 			perceelnummer: $perceelnummer,
-			sequenceNumber: $appartementsrechtSequenceNumber
+			sequenceNumber: $sequenceNumber
 		);
 		if ($invalidInput !== null) {
 			return $invalidInput;
 		}
 
 		$query = [
-			'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
+			'kadastraleGemeenteCode' => $municipalityCode,
 			'sectie' => $normalizedSection,
 			'perceelnummer' => $perceelnummer,
 		];
-		if ($appartementsrechtSequenceNumber !== null && $appartementsrechtSequenceNumber !== '') {
-			$query['appartementsrechtVolgnummer'] = strtoupper($appartementsrechtSequenceNumber);
+		if ($sequenceNumber !== null && $sequenceNumber !== '') {
+			$query['appartementsrechtVolgnummer'] = strtoupper($sequenceNumber);
 		}
 
 		$baseUrl = $this->mode->setting(integration: 'brk', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
@@ -163,7 +160,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 			$this->logger->warning(
 				'Dossiq BRK kadastrale-aanduiding lookup failed',
 				[
-					'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
+					'kadastraleGemeenteCode' => $municipalityCode,
 					'sectie' => $normalizedSection,
 					'perceelnummer' => $perceelnummer,
 					'error' => $e->getMessage(),

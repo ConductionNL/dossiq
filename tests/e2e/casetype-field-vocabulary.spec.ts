@@ -19,6 +19,8 @@
  * `PropertyDefinitionFields.vue`, which is what makes them targetable at all.
  */
 
+import type { Locator } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
@@ -29,6 +31,19 @@ import {
 	RUN_PREFIX,
 	trackCreatedObject,
 } from './helpers/fixtures.ts'
+
+/**
+ * The Name input of the Add property definition form.
+ *
+ * Found by its label. The `.NcTextField` class this used to match is not a
+ * class @nextcloud/vue 9 renders (its root is `.input-field`), so the old
+ * locator matched nothing and every fill timed out.
+ *
+ * @param tab The Properties tab.
+ */
+function nameField(tab: Locator): Locator {
+	return tab.locator('.pd-fields').getByLabel('Name', { exact: true })
+}
 
 const ADMIN_SETTINGS_URL = '/settings/admin/dossiq'
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Vergunning`
@@ -84,7 +99,7 @@ test.describe('case type field vocabulary', () => {
 	 * @param fill What to do with the form before saving.
 	 */
 	async function addDefinition(tab, name: string, fill: () => Promise<void>) {
-		await tab.locator('.pd-fields .NcTextField').first().fill(name)
+		await nameField(tab).fill(name)
 		await fill()
 		await tab.getByRole('button', { name: /^Add$/ }).click()
 		await expect(tab.locator('.property-row', { hasText: name })).toBeVisible({
@@ -182,7 +197,7 @@ test.describe('case type field vocabulary', () => {
 		const name = `${RUN_PREFIX} Cadans`
 
 		// An empty list is refused before anything is saved.
-		await tab.locator('.pd-fields .NcTextField').first().fill(name)
+		await nameField(tab).fill(name)
 		await tab.locator('.NcCheckboxRadioSwitch').first().click()
 		await tab.getByRole('button', { name: /^Add$/ }).click()
 		await expect(tab.locator('.field-error')).toContainText(
@@ -246,9 +261,8 @@ test.describe('case type field vocabulary', () => {
 		await addDefinition(tab, name, async () => {
 			await tab.locator('.pd-fields__more summary').click()
 			await tab
-				.locator('.pd-fields__more .NcTextField')
-				.filter({ hasText: '' })
-				.last()
+				.locator('.pd-fields__more')
+				.getByLabel('Values from a register', { exact: true })
 				.fill('bag')
 		})
 

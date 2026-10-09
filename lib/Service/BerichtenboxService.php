@@ -41,9 +41,6 @@ use Psr\Log\LoggerInterface;
  * Service for sending messages to Mijn Overheid Berichtenbox.
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The class over the limit is the background
- *   service account's refusal: a letter with nobody signed in is recorded as that account or not sent.
  */
 class BerichtenboxService {
 	/**
@@ -300,8 +297,6 @@ class BerichtenboxService {
 	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
 	 *
 	 * @return bool True when a stored message was updated.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$simulated` is data written onto the message, see recordDeliveryStatus().
 	 */
 	private function recordStatus(
 		string $externalMessageId,
