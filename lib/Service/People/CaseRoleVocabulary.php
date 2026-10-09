@@ -64,7 +64,7 @@ class CaseRoleVocabulary {
 	 * @return int How many roles the vocabulary now holds, -1 when it could not be written.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-002-the-case-schema-shall-declare-the-instances-role-types-as-its-link-vocabulary
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
 	 */
 	public function sync(): int {
 		try {
@@ -176,7 +176,7 @@ class CaseRoleVocabulary {
 	 *
 	 * @return array<int, array<string, string>> The entries.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
 	 */
 	public function vocabulary(): array {
 		$entries = $this->roleEntries();

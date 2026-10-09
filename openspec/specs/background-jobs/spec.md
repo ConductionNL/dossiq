@@ -1,7 +1,7 @@
 # background-jobs Specification
 
 ## Purpose
-TBD - created by archiving change background-jobs-decisions. Update Purpose after archive.
+Which background jobs dossiq schedules, and what happens on upgrade to a job it no longer schedules: a parked or removed job leaves the job list instead of running against code that is gone.
 
 ## Requirements
 

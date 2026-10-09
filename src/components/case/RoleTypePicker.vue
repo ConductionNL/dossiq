@@ -17,7 +17,7 @@
 	own accessible name from that prop, and a manual label leaves the combobox
 	unnamed for a screen reader (WCAG 2.2 AA, 1.3.1 and 4.1.2).
 
-	@spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	@spec openspec/specs/roles-decisions/spec.md
 -->
 <template>
 	<div class="role-type-picker" data-testid="role-type-picker">
@@ -92,7 +92,7 @@ export default {
 		 * The option the current value names.
 		 *
 		 * @return {object|null} The option, null when nothing is chosen yet.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		selected() {
 			const id = String(this.value?.id || this.value || '')
@@ -104,7 +104,7 @@ export default {
 	 * Read the roles this case offers.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	 * @spec openspec/specs/roles-decisions/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -117,7 +117,7 @@ export default {
 		 * Ask for the role types and the case's own type, then order them.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+		 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 		 */
 		async load() {
 			this.loading = true
@@ -140,7 +140,7 @@ export default {
 		 *
 		 * @param {object|null} option The chosen option.
 		 * @return {void}
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		pick(option) {
 			this.$emit('select', option ? option.id : null)

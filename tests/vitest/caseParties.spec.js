@@ -19,7 +19,7 @@
  * AN UNKNOWN INDICATOR EFFECT must warn rather than vanish. A chip nobody can
  * read is still a chip somebody asks about. A dropped one is not.
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

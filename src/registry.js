@@ -55,7 +55,7 @@ import CaseFollowStrip from './components/case/CaseFollowStrip.vue'
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
 // Who is on the case and in which role, over OpenRegister's party model.
-// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+// @spec openspec/specs/roles-decisions/spec.md
 import CasePartiesWidget from './components/case/CasePartiesWidget.vue'
 // The case's own state on the case page is no longer a registry component at
 // all: the identity band is four configured library tiles (stat + countdown)
@@ -713,7 +713,7 @@ const registry = {
 	},
 
 	// --- Which role a party takes on the case (gemachtigde-role-on-every-case-type). ---
-	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	// @spec openspec/specs/roles-decisions/spec.md
 	RoleTypePicker: {
 		kind: 'form-field',
 		component: RoleTypePicker,
@@ -1125,7 +1125,7 @@ const registry = {
 	// `case-unread` records: a tab child renders through CnTabsWidget, which
 	// resolves `cnRegistry[widget.type]` and renders nothing at all when no key
 	// answers.
-	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	// @spec openspec/specs/roles-decisions/spec.md
 	'case-party-roles': {
 		// @custom-widget-ratchet exclude a party link is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/parties`, which answers contact-link rows grouped by role together with the schema's own kinds and roles, and the indicators come from `/api/parties/{uuid}`. There is no `integration` id that resolves the party model either; `contacts` renders the person links beside this and cannot see a party with no account. Deleted the day nextcloud-vue ships a parties widget type over that listing
 		kind: 'widget',

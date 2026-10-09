@@ -565,7 +565,7 @@ test.describe('Case detail — the Parties tab', () => {
 	// rather than fails: the route 404s there, and a red on an older
 	// OpenRegister would say this app is broken when it is not.
 
-	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e openspec/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
 	// @e2e roles-decisions::a-representative-on-a-permit-case
 	//
 	// BREAKS IF: `CaseRoleVocabulary::sync()` stops appending the generic
@@ -599,7 +599,7 @@ test.describe('Case detail — the Parties tab', () => {
 		)
 	})
 
-	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#the-primary-party-is-first
+	// @e2e openspec/specs/roles-decisions/spec.md#the-primary-party-is-first
 	// @e2e roles-decisions::the-primary-party-is-first
 	//
 	// BREAKS IF: the Roles section stops rendering, or `rolesInOrder` stops
@@ -646,7 +646,7 @@ test.describe('Case detail — the Parties tab', () => {
 	// no Playwright runner on the build host. Each one names what would break
 	// it, so the citation can be checked the first time the suite runs.
 
-	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e openspec/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
 	// @e2e roles-decisions::a-representative-on-a-permit-case
 	//
 	// BREAKS IF: SeedGemachtigdeRoleType stops writing the row, or writes it
@@ -684,7 +684,7 @@ test.describe('Case detail — the Parties tab', () => {
 		).toBe(false)
 	})
 
-	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#bezwaar-keeps-one-gemachtigde
+	// @e2e openspec/specs/roles-decisions/spec.md#bezwaar-keeps-one-gemachtigde
 	// @e2e roles-decisions::bezwaar-keeps-one-gemachtigde
 	//
 	// BREAKS IF: `offeredRoleTypes` stops skipping a generic row whose key the
@@ -733,7 +733,7 @@ test.describe('Case detail — the Parties tab', () => {
 		expect(objectId(representatives[0])).toBe(objectId(own))
 	})
 
-	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#represented-party-is-visible
+	// @e2e openspec/specs/roles-decisions/spec.md#represented-party-is-visible
 	// @e2e roles-decisions::represented-party-is-visible
 	//
 	// BREAKS IF: `role.representedParty` stops being stored (the schema version
