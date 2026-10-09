@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -96,7 +97,18 @@ class CaseDeadlineFollowsTermListener implements IEventListener {
 			return;
 		}
 
-		$deadline = $this->mirror->deadlineFor(caseId: $caseId);
+		try {
+			$deadline = $this->mirror->deadlineFor(caseId: $caseId);
+		} catch (RefusedException $e) {
+			// The save goes on with what it carried; it is not refused for a
+			// read of the terms that failed. The next save puts it right.
+			$this->logger->warning(
+				'Dossiq termijn: the terms of a case could not be read, so its deadline was left as the save carried it',
+				['case' => $caseId, 'error' => $e->getSentence()]
+			);
+			return;
+		}
+
 		if ($deadline === null || $deadline === '') {
 			// No statutory term: the calculated fallback stands (REQ-TERM-001).
 			return;

@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermKind;
@@ -166,13 +167,14 @@ class CaseDeadlineMirror {
 	/**
 	 * The deadline a case's statutory term decides, or null.
 	 *
-	 * Null means "leave the case as it is": there is no statutory term, or
-	 * the terms could not be read. The second is not turned into the first
-	 * silently; it is logged, and the save goes on with what it carried.
+	 * Null means there is no statutory term, and the case keeps its
+	 * fallback. Terms that could not be read are a refusal, not a null.
 	 *
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return string|null The `Y-m-d` deadline, or null.
+	 *
+	 * @throws RefusedException When the terms of the case could not be read.
 	 *
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
@@ -181,18 +183,10 @@ class CaseDeadlineMirror {
 			return null;
 		}
 
-		try {
-			$instances = $this->store->allForCase(caseId: $caseId);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq termijn: the terms of a case could not be read, so its deadline was left as it was',
-				['case' => $caseId, 'error' => $e->getMessage()]
-			);
-
-			return null;
-		}
-
-		$deciding = self::decidingInstance(instances: $instances);
+		// An unreadable store REFUSES (TermInstanceStore::allForCase()); it is
+		// not read as "no statutory term". The caller decides what a refusal
+		// means for the save it is in.
+		$deciding = self::decidingInstance(instances: $this->store->allForCase(caseId: $caseId));
 		if ($deciding === null) {
 			return null;
 		}
@@ -213,13 +207,21 @@ class CaseDeadlineMirror {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function follow(string $caseId): bool {
-		$deadline = $this->deadlineFor(caseId: $caseId);
-		if ($deadline === null || $deadline === '') {
+		try {
+			$deadline = $this->deadlineFor(caseId: $caseId);
+			$case = $this->storedCase(caseId: $caseId);
+		} catch (Throwable $e) {
+			// The term itself is saved, and it is the source. A case whose copy
+			// lags is put right by its next save and by the repair step.
+			$this->logger->warning(
+				'Dossiq termijn: the case or its terms could not be read to follow its statutory term',
+				['case' => $caseId, 'error' => $e->getMessage()]
+			);
+
 			return false;
 		}
 
-		$case = $this->storedCase(caseId: $caseId);
-		if ($case === null) {
+		if ($deadline === null || $deadline === '' || $case === null) {
 			return false;
 		}
 
@@ -233,7 +235,7 @@ class CaseDeadlineMirror {
 	}//end follow()
 
 	/**
-	 * The stored case, or null when it is not there or cannot be read.
+	 * The stored case, or null when it is not there. A failed read throws.
 	 *
 	 * @param string $caseId The case uuid.
 	 *
@@ -245,21 +247,12 @@ class CaseDeadlineMirror {
 			return null;
 		}
 
-		try {
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq termijn: the case could not be read to follow its statutory term',
-				['case' => $caseId, 'error' => $e->getMessage()]
-			);
-
-			return null;
-		}
+		return $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $caseId
+		);
 	}//end storedCase()
 
 	/**
