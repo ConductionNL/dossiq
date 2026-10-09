@@ -74,6 +74,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateArchivalToOpenRegister' => 'one-way migration of existing archival rows',
 		'MoveDocumentsIntoCaseFolders' => 'moves existing document files into their case folders; a fresh install has none',
 		'MigratePartnersToOrganisations' => 'moves existing ketenpartner rows onto Organisation',
+		'MigrateTenantsToOrganisations' => 'moves existing legacy tenant rows onto Organisation; a fresh install has none',
 		'MigrateSubsidieRegelingToCaseType' => 'moves existing subsidieRegeling rows onto case types',
 		'MigrateAiOversightToHermiq' => 'replays existing audit history into hermiq',
 		'MigrateCommitteesToDecidiq' => 'raises existing committees; a fresh install seeds none',
@@ -85,6 +86,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
 		'CopyEmbeddedBezwaarAuditTrail' => 'copies embedded bezwaar audit entries; a fresh install has none',
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
+		'MapWooRefusalGroundCodes' => 'rewrites refusal ground codes on existing Woo assessments and decisions; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
 		// INHERITED from the family-plan lane, which shipped this step with no

@@ -116,7 +116,7 @@ SHALL be idempotent.
 
 ### Requirement: Other apps read the list through one named method (REQ-WRG-007)
 
-dossiq SHALL expose `OCA\Dossiq\Woo\WooRefusalGrounds::list(bool $includeRetired = false)` and
+dossiq SHALL expose `OCA\Dossiq\Woo\WooRefusalGrounds::list()` (active grounds), `listWithRetired()` and
 `byCode(string $code)`, returning the keys `id, code, article, paragraph, letter, label,
 description, parent, status, legalSource, kind, citable`. The read SHALL run as the system. When the register
 cannot be read, the method SHALL throw `WooRefusalGroundsUnavailable` and SHALL NOT answer an
@@ -127,7 +127,7 @@ empty list.
 - **GIVEN** the seeded list and one retired ground
 - **WHEN** `list()` is called from a background job with no user
 - **THEN** it SHALL answer every active ground, in code order, with all twelve keys
-- **AND** the retired ground SHALL be absent unless `includeRetired` is true
+- **AND** the retired ground SHALL be absent from `list()` and present in `listWithRetired()`
 
 #### Scenario: An unreadable register is not an empty list
 @e2e exclude Needs OpenRegister to fail on demand. Covered by `WooRefusalGroundsTest::testAFailedReadThrowsAndNeverAnswersEmpty`.

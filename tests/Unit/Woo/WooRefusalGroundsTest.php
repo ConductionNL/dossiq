@@ -89,7 +89,7 @@ class WooRefusalGroundsTest extends TestCase {
 		$grounds = $this->grounds(store: $store);
 
 		$this->assertNotContains('5.1.6', array_column($grounds->list(), 'code'));
-		$this->assertContains('5.1.6', array_column($grounds->list(includeRetired: true), 'code'));
+		$this->assertContains('5.1.6', array_column($grounds->listWithRetired(), 'code'));
 		$this->assertSame('retired', $grounds->byCode(code: '5.1.6')['status']);
 		$this->assertNull($grounds->byCode(code: '5.2.5'));
 	}//end testRetiredGroundsOnlyOnRequest()

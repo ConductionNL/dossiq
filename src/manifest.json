@@ -1,6 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"version": "1.2.0",
+	"look": "board",
 	"dependencies": ["openregister"],
 	"setup": {
 		"enabled": true,
@@ -358,7 +359,7 @@
 			"icon": "ScaleBalance",
 			"route": "WooRefusalGrounds",
 			"section": "settings",
-			"order": 98,
+			"order": 92,
 			"permission": "admin"
 		},
 		{

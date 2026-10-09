@@ -405,7 +405,10 @@ final class WooRefusalGrounds {
      *   status: 'active'|'retired', legalSource: string,
      *   kind: 'absolute'|'relative'|'temporary'|null, citable: bool}>
      */
-    public function list(bool $includeRetired = false): array;
+    public function list(): array;
+
+    /** Same shape as list(), retired grounds included. */
+    public function listWithRetired(): array;
 
     /** @return array{...same keys...}|null */
     public function byCode(string $code): ?array;
