@@ -98,6 +98,10 @@
             "matchType": "range",
             "inputControl": "date-range"
           },
+          "deadlineBeforeRoll": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
           "confidentiality": {
             "matchType": "exact",
             "inputControl": "select"
