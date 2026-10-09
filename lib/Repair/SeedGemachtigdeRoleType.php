@@ -33,7 +33,7 @@ use Psr\Log\LoggerInterface;
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
 class SeedGemachtigdeRoleType implements IRepairStep {
 
@@ -67,7 +67,7 @@ class SeedGemachtigdeRoleType implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
 	 */
 	public function run(IOutput $output): void {
 		$result = $this->seeder->seed();

@@ -108,7 +108,7 @@ class WidgetRoles {
 	 *
 	 * @return array<int, array<string, mixed>> The definitions.
 	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
-	 * @spec openspec/changes/beta-quality-report-green/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function definitionsOn(array $page): array {
 		$candidates = array_merge(
@@ -139,7 +139,7 @@ class WidgetRoles {
 	 *
 	 * @return array<int|string, mixed> The list.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	private function listAt(mixed $value): array {
 		if (is_array($value) === true) {

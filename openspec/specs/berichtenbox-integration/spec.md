@@ -13,7 +13,7 @@ Send a citizen a message in their Mijn Overheid Berichtenbox, list the messages 
 
 ### Requirement: REQ-001: Berichtenbox send / list / poll REST endpoints
 
-The system SHALL expose three `@NoAdminRequired` JSON endpoints on `BerichtenboxController` — `send`, `messages`, and `poll` — that route to `BerichtenboxService` for message dispatch, case-scoped message listing, and per-message read-status polling respectively.
+The system SHALL expose two `@NoAdminRequired` JSON endpoints on `BerichtenboxController`, `send` and `messages`, that route to `BerichtenboxService` for message dispatch and case-scoped message listing. There SHALL be no read-status endpoint: Logius Berichtenbox has no read status (integriq spec `berichtenbox-client`).
 
 #### Scenario: Send a message
 @e2e exclude a REST endpoint with no gesture of its own; asserted in tests/Unit/Controller/BerichtenboxControllerContractTest.php, testSendReturns200WithTheDispatchedMessageRecord
@@ -29,16 +29,16 @@ The system SHALL expose three `@NoAdminRequired` JSON endpoints on `Berichtenbox
 - THEN the controller SHALL return `{success: true, messages: [...]}` containing every Berichtenbox message stored in OpenRegister for that case
 
 #### Scenario: Poll read status
-@e2e exclude a REST endpoint with no gesture of its own; asserted in tests/Unit/Controller/BerichtenboxControllerContractTest.php, testPollReturnsTheReadStatusForAnAuthorizedCaller
+@e2e tests/e2e/digital-post.spec.ts
 
-- WHEN a caller issues `GET /api/berichtenbox/messages/{messageId}`, the route named `berichtenbox#poll`
-- THEN the controller SHALL return `{success: true, message: <updated record>}` reflecting the current read status
-- AND the browser SHALL NOT call it: `src/services/berichtenboxApi.js` exposes `sendMessage` and `listMessages` only, because read status reaches the record by event through `DigitalPostDeliveredListener` rather than by a poll a handler triggers
+- WHEN a caller asks `/api/berichtenbox/messages/{messageId}` or `/api/berichtenbox/poll/{messageId}` for a read status
+- THEN no Berichtenbox controller SHALL answer
+- AND delivery status SHALL reach the record by event, through `DigitalPostDeliveredListener`
 
 #### Notes
 
-- All three endpoints are `@NoAdminRequired` — they rely on case-level access checks performed downstream.
-- The poll scenario used to read `poll/{messageId}`, which was never a route. When #627 routed the controller it chose `GET /api/berichtenbox/messages/{messageId}`, and the wording here was left behind. `src/services/berichtenboxApi.js` had been written from the old wording and posted to the path that did not exist. Corrected 2026-09-19, with `tests/vitest/berichtenboxApiRoutes.spec.js` reading the client against `appinfo/routes.php` so the same drift cannot go unseen again.
+- Both endpoints are `@NoAdminRequired`; they rely on case-level access checks performed downstream.
+- The poll endpoint (`berichtenbox#poll`, `GET /api/berichtenbox/messages/{messageId}`) was removed on 2026-10-08 together with the read-status job. The client had already stopped calling it on 2026-09-19, and `tests/vitest/berichtenboxApiRoutes.spec.js` reads the client against `appinfo/routes.php`.
 
 ### Requirement: REQ-002: BSN 11-proef + plain-text message validation
 
@@ -69,12 +69,12 @@ The system SHALL validate every outbound Berichtenbox message before dispatch: B
 
 ### Requirement: REQ-003: Pluggable Berichtenbox adapter contract
 
-The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `sendMessage(bsn, subject, body, typeCode, ?attachment): array` returning at minimum `{messageId, status}`, and `getReadStatus(messageId): array` returning at minimum `{read: bool, readAt: ?datetime}` — so that production Berichtenbox API adapters can be swapped in without touching `BerichtenboxService`.
+The system SHALL define a `BerichtenboxAdapterInterface` with one method, `sendMessage(bsn, subject, body, typeCode, ?attachment): array` returning at minimum `{messageId, status}`, so that production Berichtenbox API adapters can be swapped in without touching `BerichtenboxService`. The seam SHALL NOT ask for a read status, because the Berichtenbox has none.
 
 #### Scenario: The adapter is injected, not built inside the service
 @e2e exclude a container binding read at boot; covered by tests/Unit/AppInfo/AdapterHonestyTest.php, testTheRegistrarBindsBothSeams
 
-- WHEN `BerichtenboxService::sendMessage` or `pollReadStatus` needs to talk to Berichtenbox
+- WHEN `BerichtenboxService::sendMessage` needs to talk to Berichtenbox
 - THEN it SHALL use the `BerichtenboxAdapterInterface` its constructor was given
 - AND the binding SHALL come from `SubstitutableAdapterRegistrar`, which reads the `berichtenbox_adapter` app-config key
 - AND an integrator SHALL be able to substitute a real adapter WITHOUT editing dossiq
@@ -90,7 +90,7 @@ The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `s
 @e2e exclude the same container binding; covered by AdapterHonestyTest and ConnectionsDeclarationTest
 
 - WHEN `berichtenbox_adapter` names `mock` or `MockAdapter`
-- THEN the seam SHALL bind `MockAdapter`, which generates a `mock-<hex>` message id, logs a redacted BSN, and reports messages as read 1h after send
+- THEN the seam SHALL bind `MockAdapter`, which generates a `mock-<hex>` message id and logs a redacted BSN
 - AND the registrar SHALL log a translated warning saying messages are simulated and nothing reaches Mijn Overheid
 - AND the Integrations page SHALL carry a Berichtenbox card reading Simulated
 
@@ -105,56 +105,7 @@ The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `s
 
 - Dossiq ships NO Berichtenbox transport and should not. The Berichtenbox is a per-customer contract with Logius, and outbound delivery is integriq's (ADR-041, `dossiq-delivers-nothing`). Dossiq owns composing the message and recording what happened to it.
 - The defect this requirement was rewritten to close was NOT the missing transport. `getAdapter()` built `MockAdapter` inline behind the comment "For MVP, always use mock adapter": no registration, no config switch, and everything around it real. A send returned a message id and nothing left the instance.
-- `MockAdapter::sendMessage` logs only the first 4 BSN digits, masking the rest with `*****` — PII handling pattern future production adapters should preserve.
-
-### Requirement: REQ-004: Read-status polling with 7-day unread-flagging
-
-When `pollReadStatus(messageId)` is called, the system SHALL look up the stored Berichtenbox message in OpenRegister, call the adapter's `getReadStatus` with the stored `externalMessageId`, update local status to `read` (with `readAt`) when the adapter reports read, and otherwise stamp `readPolledAt` and re-flag status as `unread_flagged` when the message has been unread for 7 or more days.
-
-#### Scenario: Mark message as read
-@e2e exclude a polling path the cron drives, with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
-
-- GIVEN a stored message with a non-empty `externalMessageId`
-- WHEN `pollReadStatus` runs and the adapter returns `{read: true, readAt: <iso8601>}`
-- THEN the service SHALL update the stored object with `status='read'`, `readAt=<adapter value>`, and `readPolledAt=<now>` and persist via `saveObject`
-
-#### Scenario: Flag long-unread message
-@e2e exclude a polling path the cron drives, with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
-
-- GIVEN a stored message with `sentAt` 7+ days ago and adapter `read=false`
-- WHEN `pollReadStatus` runs
-- THEN the service SHALL set `status='unread_flagged'`, stamp `readPolledAt`, and persist; for `< 7` days the status SHALL be left untouched while `readPolledAt` is stamped
-
-#### Scenario: Skip when not yet dispatched
-@e2e exclude a polling path the cron drives, with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
-
-- WHEN the stored message has an empty `externalMessageId`
-- THEN the service SHALL return the record unchanged without contacting the adapter
-
-#### Notes
-
-- The 7-day threshold is hardcoded; making it configurable is a known follow-up.
-- When OpenRegister is unavailable the service SHORT-CIRCUITS with `{error: 'OpenRegister not available'}` — Berichtenbox messages are not persisted anywhere else.
-
-### Requirement: REQ-005: Daily background polling job
-
-The system SHALL register a `BerichtenboxReadStatusJob` extending `TimedJob` with an interval of `86400` seconds (daily) that the Nextcloud cron picks up and runs server-side.
-
-#### Scenario: Job interval
-@e2e exclude a TimedJob interval constant with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
-
-- WHEN `BerichtenboxReadStatusJob` is constructed
-- THEN its parent `TimedJob` interval SHALL be set to `86400` seconds (24h)
-
-#### Scenario: Run iterates unread messages
-@e2e exclude a cron run with no browser gesture; covered by tests/Unit/BackgroundJob/BerichtenboxReadStatusJobTest.php, testEveryPendingMessageIsPolledByItsUuid
-
-- WHEN the cron triggers `run($argument)`
-- THEN the job SHALL log `'Dossiq: Running Berichtenbox read status poll'` and (future) iterate unread messages calling `BerichtenboxService::pollReadStatus` on each
-
-#### Notes
-
-- The current `run()` body is a logging-only scaffold — the per-message iteration is observed-but-stubbed. A real production rollout must implement the iteration or risk silently failing to update read status.
+- `getReadStatus` was removed on 2026-10-08: the Berichtenbox has no read status to report.
 
 ### Requirement: The Berichtenbox adapter reaches integriq (REQ-BB-20)
 

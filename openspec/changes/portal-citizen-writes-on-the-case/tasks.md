@@ -13,10 +13,12 @@ dossiq#3152.
 
 - [x] 2.1 (with `withdrawnAt` and `withdrawalReason`, which portaliq's withdrawal writes; none of them `readOnly`, because OpenRegister refuses an update that changes a readOnly property) `portalWrites` and `portalDocuments` on `case`; `portalWritable`, `portalAmendmentWindow`, `portalDocumentWindow` and `portalWithdrawal` on `caseType`, in `lib/Settings/register.d/76-portal-citizen-writes.json` with Dutch and English labels (design D2, D3).
   - unit: a schema test asserts the shapes against portaliq's `portalCaseType`; `npm run check:schema-l10n`
-- [ ] 2.2 The "Portal" section of the case type editor (design D3).
+- [x] 2.2 The "Portal" section of the case type editor (design D3).
   - vitest: the section saves a writable field, both windows and a withdrawal
-- [ ] 2.3 The pre-save guard on `caseType` for the withdrawal target (design D4).
+  - `src/components/caseType/CaseTypePortalWidget.vue` (custom widget `case-type-portal` on #CaseTypeDetail, status pickers over the blueprint), `src/services/caseTypePortalSettings.js`; `tests/vitest/caseTypePortalSettings.spec.js` sends the save through the real function and validates the body against the 76-portal-citizen-writes fragment. Not rendered in a browser (no live instance on this lane).
+- [x] 2.3 The pre-save guard on `caseType` for the withdrawal target (design D4).
   - unit: an unreachable target is refused with its sentence; a reachable one saves
+  - `lib/Service/CaseType/PortalWithdrawalTarget.php` (the rule: a move straight from each open status to the target; a type without a workflow only needs the target to be its own status), `lib/Listener/CaseTypePortalWithdrawalListener.php` on ObjectCreating/UpdatingEvent through `CaseTypeListenerRegistrar`; `tests/Unit/Listener/CaseTypePortalWithdrawalListenerTest.php` over the real resolver and store (3 red with the rule disabled). A type whose statuses are not stored yet (same import) is not judged.
 
 ## 3. Live check
 
@@ -24,4 +26,4 @@ dossiq#3152.
 
 ## 4. Validation
 
-- [ ] 4.1 `openspec validate portal-citizen-writes-on-the-case --strict`, `npm run lint`, `composer check:strict` once before push.
+- [x] 4.1 (2026-10-09 on build/openspecs-1: validate valid, `npm run lint` 0, check:strict green after its two findings were fixed, see the PR) `openspec validate portal-citizen-writes-on-the-case --strict`, `npm run lint`, `composer check:strict` once before push.

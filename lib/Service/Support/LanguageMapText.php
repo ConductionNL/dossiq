@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Dossiq\Service\Support;
 /**
  * Resolves a language map to one string.
  *
- * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class LanguageMapText {
 	/**
@@ -50,7 +50,7 @@ class LanguageMapText {
 	 *
 	 * @return string The text, trimmed, or '' when there is none.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function textOf(mixed $value, string $language = ''): string {
 		if (is_string($value) === true) {

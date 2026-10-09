@@ -9,7 +9,7 @@
  * per rule; this pins that every rule the register declares has one, keyed the
  * way OpenRegister lists it (`<schema slug>.<rule key>`), with a Dutch entry.
  *
- * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+ * @spec openspec/specs/notification-labels/spec.md
  */
 
 import fs from 'fs'

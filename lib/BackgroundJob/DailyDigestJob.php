@@ -213,7 +213,7 @@ class DailyDigestJob extends TimedJob {
 	 *
 	 * @return array<string, mixed>|null The digest, or null when nothing waits.
 	 *
-	 * @spec openspec/changes/background-jobs-decisions/specs/my-work/spec.md
+	 * @spec openspec/specs/my-work/spec.md
 	 */
 	private function composeAs(IUser $user, DateTimeImmutable $now): ?array {
 		$previous = $this->userSession->getUser();

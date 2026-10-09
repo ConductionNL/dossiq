@@ -184,7 +184,7 @@ export default {
 		 * "caseAssigned".
 		 *
 		 * @return {{[key: string]: string}} Labels keyed `<schema>.<key>`.
-		 * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+		 * @spec openspec/specs/notification-labels/spec.md
 		 */
 		notificationLabels() {
 			return notificationLabels()

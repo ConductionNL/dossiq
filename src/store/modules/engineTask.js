@@ -104,7 +104,7 @@ export function isTerminal(task) {
  *
  * @param {object|null|undefined} task The engine row.
  * @return {number|null} Days left, negative when overdue, null with no deadline.
- * @spec openspec/changes/remove-casetask/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function signedDaysUntilDue(task) {
 	if (!task || typeof task !== 'object') {
@@ -144,7 +144,7 @@ export function signedDaysUntilDue(task) {
  *
  * @param {object} row The engine row.
  * @return {object} The row, plus the register's names for the same values.
- * @spec openspec/changes/remove-casetask/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function asTaskRow(row) {
 	if (!row || typeof row !== 'object') {
@@ -317,7 +317,7 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 		 *
 		 * @param {object} task The task, in the dossiq shape.
 		 * @return {Promise<object|null>} The created task, or null.
-		 * @spec openspec/changes/remove-casetask/tasks.md
+		 * @spec openspec/specs/task-management/spec.md
 		 */
 		async create(task = {}) {
 			const state = String(task.status ?? '').trim()

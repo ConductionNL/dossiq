@@ -101,7 +101,7 @@ roles this change was already about.
 - [x] 3.6 `InitiatorPicker` asks `/api/parties/resolve` before a second
   record for the same address is created.
   - unit: `tests/vitest/initiatorPicker.spec.js`
-- [ ] 3.7 Tasks 1.1 to 1.3 above are NOT done by this pass: the generic
+- [x] 3.7 (superseded 2026-10-09: tasks 1.1 to 1.3 are built since dossiq#2918, `lib/Service/People/GemachtigdeRoleTypeSeeder.php`, `src/services/roleTypeOptions.js`, `role.representedParty`; seeder test 5/5 green) Tasks 1.1 to 1.3 above are NOT done by this pass: the generic
   Gemachtigde ROLE TYPE and its Represented by column stay open. The role is
   offered as a party role on every case type, which is what row 5.8 asked
   for; a `role` row naming `delegateFrom` is the seat half and needs the

@@ -55,7 +55,7 @@ import CaseFollowStrip from './components/case/CaseFollowStrip.vue'
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
 // Who is on the case and in which role, over OpenRegister's party model.
-// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+// @spec openspec/specs/roles-decisions/spec.md
 import CasePartiesWidget from './components/case/CasePartiesWidget.vue'
 // The case's own state on the case page is no longer a registry component at
 // all: the identity band is four configured library tiles (stat + countdown)
@@ -87,6 +87,7 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
@@ -471,6 +472,15 @@ const registry = {
 		...PANEL_WIDGET_META,
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
 	},
+	// --- What a case type opens to its applicant (portal-citizen-writes-on-the-case D3). ---
+	// @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	CaseTypePortalWidget: {
+		// @custom-widget-ratchet exclude every picker offers the case type's own statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers; a declared form would offer a free text field for a status uuid
+		kind: 'widget',
+		component: CaseTypePortalWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail: the Portal section. Reads the case type and its blueprint statuses, writes portalWritable, both windows and portalWithdrawal in one PATCH, and shows the sentence CaseTypePortalWithdrawalListener refuses an unreachable withdrawal with.',
+	},
 	// @spec openspec/specs/zaaktype-versioning/spec.md
 	CaseTypePublishDialog: {
 		kind: 'modal',
@@ -713,7 +723,7 @@ const registry = {
 	},
 
 	// --- Which role a party takes on the case (gemachtigde-role-on-every-case-type). ---
-	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	// @spec openspec/specs/roles-decisions/spec.md
 	RoleTypePicker: {
 		kind: 'form-field',
 		component: RoleTypePicker,
@@ -1125,7 +1135,7 @@ const registry = {
 	// `case-unread` records: a tab child renders through CnTabsWidget, which
 	// resolves `cnRegistry[widget.type]` and renders nothing at all when no key
 	// answers.
-	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	// @spec openspec/specs/roles-decisions/spec.md
 	'case-party-roles': {
 		// @custom-widget-ratchet exclude a party link is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/parties`, which answers contact-link rows grouped by role together with the schema's own kinds and roles, and the indicators come from `/api/parties/{uuid}`. There is no `integration` id that resolves the party model either; `contacts` renders the person links beside this and cannot see a party with no account. Deleted the day nextcloud-vue ships a parties widget type over that listing
 		kind: 'widget',

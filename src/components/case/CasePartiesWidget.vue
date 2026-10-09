@@ -30,7 +30,7 @@
 	answer, and drawing it as an empty list would tell a handler the
 	gemachtigde they added this morning is gone.
 
-	@spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	@spec openspec/specs/roles-decisions/spec.md
 -->
 <template>
 	<div class="case-parties" data-testid="case-parties">
@@ -186,7 +186,7 @@ export default {
 		 * The case this widget is about.
 		 *
 		 * @return {string} The case uuid, or the empty string.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		caseId() {
 			return String(this.objectId || this.$route?.params?.id || '')
@@ -196,7 +196,7 @@ export default {
 		 * The roles on the case, the primary party's role first.
 		 *
 		 * @return {Array<object>} `{key, label, parties}` per role.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		groups() {
 			return rolesInOrder(this.listing)
@@ -206,7 +206,7 @@ export default {
 		 * The uuid of the party the case is filed against.
 		 *
 		 * @return {string|null} The primary party's uuid.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		primary() {
 			return this.listing?.primary || null
@@ -216,7 +216,7 @@ export default {
 		 * The kinds the case schema accepts, keyed for labelling a party.
 		 *
 		 * @return {object} Kind key to label.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		kindLabels() {
 			const labels = {}
@@ -234,7 +234,7 @@ export default {
 		 * plain warning is shown beside its own party and not repeated.
 		 *
 		 * @return {Array<object>} The blocking verdicts.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		verdicts() {
 			return indicatorsOf(Object.values(this.partyRecords))
@@ -255,7 +255,7 @@ export default {
 			 * Read the parties of the case this widget was given.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+			 * @spec openspec/specs/roles-decisions/spec.md
 			 */
 			handler() {
 				this.load()
@@ -275,7 +275,7 @@ export default {
 		 * makes no extra call at all.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		async load() {
 			if (this.caseId === '') {
@@ -326,7 +326,7 @@ export default {
 		 *
 		 * @param {object} party The link row.
 		 * @return {string} The represented party's name, '' when they act for nobody.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
+		 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
 		 */
 		representedBy(party) {
 			const key = party.partyUuid || party.contactUid || ''
@@ -352,7 +352,7 @@ export default {
 		 *
 		 * @param {object} party The link row.
 		 * @return {string} The name, its uid when it has none.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		nameOf(party) {
 			return (
@@ -369,7 +369,7 @@ export default {
 		 *
 		 * @param {object} party The link row.
 		 * @return {string} The kind's label, '' when the link names no kind.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		kindOf(party) {
 			if (!party.partyKind) {
@@ -454,7 +454,7 @@ export default {
 		 *
 		 * @param {object} party The link row.
 		 * @return {Array<object>} The verdicts.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		indicatorsFor(party) {
 			const record = this.partyRecords[party.partyUuid]
@@ -472,7 +472,7 @@ export default {
 		 *
 		 * @param {object} indicator The indicator, stamped with its party.
 		 * @return {string} What it refuses, and for whom.
-		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		sentenceFor(indicator) {
 			const verdict = indicatorVerdict(indicator)
