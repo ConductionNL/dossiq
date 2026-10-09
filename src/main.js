@@ -48,7 +48,10 @@ import {
 	STRUCTURE_FULL,
 	STRUCTURE_SETTING,
 } from './utils/structureProfile.js'
-import { translateLensLabels } from './utils/translateLensLabels.js'
+import {
+	translateBannerCopy,
+	translateLensLabels,
+} from './utils/translateLensLabels.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
@@ -228,7 +231,10 @@ const profiledManifest = {
 	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
 }
 const builtManifest = markRaw(
-	translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+	translateBannerCopy(
+		translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+		(label) => t('dossiq', label),
+	),
 )
 
 // Case-type navigation now lives on the Cases index page itself: a folder
