@@ -56,46 +56,42 @@ function readAppVersion(appRoot = path.resolve(__dirname, '..')) {
 }
 
 /**
- * Load `@conduction/nextcloud-vue/webpack`, or null when it is not installed.
- *
- * @return {object|null} The build-helper module.
- */
-function loadLibraryWebpackHelpers() {
-	try {
-		return require('@conduction/nextcloud-vue/webpack')
-	} catch {
-		return null
-	}
-}
-
-/**
  * The `appVersion` define for webpack.
  *
  * A build cannot know the version it will be installed as: the release
  * workflow writes the release into `appinfo/info.xml` after the bundle is
  * built, so dossiq 0.4.48-beta still said "dossiq 0.4.47-unstable" in the
- * settings footer. The library's `appVersionDefine()` returns an expression
- * that reads the installed version from the page's `version` initial state
- * (provided by DashboardController) in the browser, with the info.xml version
- * as fallback. A library without that helper gets the info.xml literal, as
- * before.
+ * settings footer. The library's `appVersionDefine()` (in
+ * @conduction/nextcloud-vue 2.73 and later) returns an expression that reads
+ * the installed version from the page's `version` initial state (provided by
+ * DashboardController) in the browser, with the info.xml version only as the
+ * fallback for a page that does not provide it.
+ *
+ * There is no build-time fallback: a library without the helper stops the
+ * build, because a quiet fallback is how the wrong version shipped.
  *
  * @param {string} appId The app id.
  * @param {object} [options] Options.
  * @param {string} [options.appRoot] The app checkout root.
- * @param {object|null} [options.library] The library's webpack helpers; read
+ * @param {object} [options.library] The library's webpack helpers; read
  *   from node_modules when omitted.
  * @return {string} The code webpack pastes in for `appVersion`.
- * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+ * @throws {Error} When the library has no `appVersionDefine()`.
+ * @spec openspec/changes/nextcloud-vue-2-73-runtime-version/specs/notification-labels/spec.md
  */
 function appVersionDefinition(appId, options = {}) {
 	const buildVersion = readAppVersion(options.appRoot)
 	const library =
-		options.library === undefined ? loadLibraryWebpackHelpers() : options.library
-	if (library && typeof library.appVersionDefine === 'function') {
-		return library.appVersionDefine(appId, buildVersion)
+		options.library === undefined
+			? require('@conduction/nextcloud-vue/webpack')
+			: options.library
+	if (!library || typeof library.appVersionDefine !== 'function') {
+		throw new Error(
+			'[appVersion] @conduction/nextcloud-vue/webpack has no appVersionDefine(); '
+				+ 'dossiq needs @conduction/nextcloud-vue 2.73 or later to show the installed version',
+		)
 	}
-	return JSON.stringify(buildVersion)
+	return library.appVersionDefine(appId, buildVersion)
 }
 
 module.exports = { appVersionDefinition, readAppVersion, versionFromInfoXml }

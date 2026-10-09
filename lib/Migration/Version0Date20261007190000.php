@@ -51,8 +51,6 @@ class Version0Date20261007190000 extends SimpleMigrationStep {
 	 * @return ISchemaWrapper|null The changed schema, or null for no change.
 	 *
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-sent-once-per-deadline-req-term-071
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The signature is SimpleMigrationStep's.
 	 */
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
 		$schema = $schemaClosure();
