@@ -3686,6 +3686,29 @@
 						}
 					},
 					{
+						"id": "message-applicant",
+						"type": "open-modal",
+						"target": "PortalMessageDialog",
+						"label": "Message the applicant",
+						"icon": "MessageTextOutline",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"all": [
+								{
+									"field": "portalSubject",
+									"op": "notEmpty"
+								},
+								{
+									"field": "@self.archived",
+									"op": "empty"
+								}
+							]
+						}
+					},
+					{
 						"id": "export-dossier",
 						"type": "api-call",
 						"label": "Export dossier",

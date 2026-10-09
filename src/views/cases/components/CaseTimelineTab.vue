@@ -165,6 +165,13 @@
 						}}
 					</NcButton>
 					<NcButton
+						v-if="isResidentMessage(entry)"
+						variant="tertiary"
+						:data-testid="'case-timeline-reply-' + entry.id"
+						@click="replyTo = entry">
+						{{ t('dossiq', 'Reply') }}
+					</NcButton>
+					<NcButton
 						v-if="entry.followUp === 'open'"
 						variant="tertiary"
 						:data-testid="'case-timeline-followup-' + entry.id"
@@ -174,6 +181,14 @@
 				</div>
 			</li>
 		</ul>
+
+		<PortalMessageDialog
+			v-if="replyTo"
+			:open="true"
+			:caseId="objectId"
+			:subject="(replyTo.fields && replyTo.fields.subject) || ''"
+			@sent="onReplySent"
+			@close="replyTo = null" />
 	</div>
 </template>
 
@@ -187,6 +202,13 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
+import PortalMessageDialog from '../../../dialogs/PortalMessageDialog.vue'
+
+/**
+ * The timeline kind of a message the applicant sent through the portal
+ * (TimelineKinds::PORTAL_MESSAGE_IN). Its entries offer Reply.
+ */
+const RESIDENT_MESSAGE_KIND = 'portaalbericht-inkomend'
 
 export default {
 	name: 'CaseTimelineTab',
@@ -198,6 +220,7 @@ export default {
 		NcLoadingIcon,
 		NcNoteCard,
 		NcSelect,
+		PortalMessageDialog,
 	},
 
 	props: {
@@ -240,6 +263,7 @@ export default {
 			draft: '',
 			draftIsPublic: false,
 			saving: false,
+			replyTo: null,
 		}
 	},
 
@@ -553,6 +577,35 @@ export default {
 		 */
 		async closeFollowUp(entry) {
 			await this.patch(entry, { followUp: 'done' })
+		},
+
+		/**
+		 * Whether an entry is a message the applicant sent through the portal.
+		 *
+		 * @param {object} entry The entry.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+		 */
+		isResidentMessage(entry) {
+			return entry.kind === RESIDENT_MESSAGE_KIND
+		},
+
+		/**
+		 * The answer went out: the applicant's question is answered.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+		 */
+		async onReplySent() {
+			const entry = this.replyTo
+			this.replyTo = null
+			if (entry && entry.followUp === 'open') {
+				await this.closeFollowUp(entry)
+				return
+			}
+			await this.load()
 		},
 
 		/**

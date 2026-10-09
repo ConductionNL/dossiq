@@ -28,7 +28,7 @@
                     "senderType": {
                         "title": "Sender Type",
                         "type": "string",
-                        "enum": ["burger", "bedrijf", "authorisedRepresentative"],
+                        "enum": ["burger", "bedrijf", "authorisedRepresentative", "medewerker"],
                         "description": "Type of the authenticated sender."
                     },
                     "senderRef": {
