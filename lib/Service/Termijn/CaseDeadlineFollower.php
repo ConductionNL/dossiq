@@ -52,17 +52,27 @@ class CaseDeadlineFollower {
 	use SearchesObjects;
 
 	/**
+	 * Which kind a term instance is.
+	 *
+	 * @var TermKindClassifier
+	 */
+	private readonly TermKindClassifier $kinds;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService Register and schema ids, and the object service.
-	 * @param CaseDeadlineMirror $mirror          Where the date waits for the case save.
-	 * @param LoggerInterface    $logger          Logger.
+	 * @param SettingsService         $settingsService Register and schema ids, and the object service.
+	 * @param CaseDeadlineMirror      $mirror          Where the date waits for the case save.
+	 * @param LoggerInterface         $logger          Logger.
+	 * @param TermKindClassifier|null $kinds           Which kind a term is; the rule's own class when absent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDeadlineMirror $mirror,
 		private readonly LoggerInterface $logger,
+		?TermKindClassifier $kinds = null,
 	) {
+		$this->kinds = ($kinds ?? new TermKindClassifier());
 	}//end __construct()
 
 	/**
@@ -77,12 +87,9 @@ class CaseDeadlineFollower {
 	 * @return bool True when the case was saved to follow the term.
 	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) TermKind::ofInstance() is a pure
-	 * classifier over the instance array, with no state to inject.
 	 */
 	public function follow(array $instance): bool {
-		if (TermKind::ofInstance(instance: $instance) !== TermKind::STATUTORY) {
+		if ($this->kinds->ofInstance(instance: $instance) !== TermKind::STATUTORY) {
 			return false;
 		}
 

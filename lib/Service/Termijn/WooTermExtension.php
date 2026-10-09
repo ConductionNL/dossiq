@@ -51,6 +51,13 @@ class WooTermExtension {
 	private const EXTENSION_PERIOD_DAYS = 14;
 
 	/**
+	 * Which kind a term instance is.
+	 *
+	 * @var TermKindClassifier
+	 */
+	private readonly TermKindClassifier $kinds;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param TermijnService             $termService  The case's term instances.
@@ -58,13 +65,16 @@ class WooTermExtension {
 	 *        the date and holds the ceiling (REQ-WTR-003).
 	 * @param LoggerInterface            $logger       Logger.
 	 * @param TermDeclarationReader|null $declarations The case type's `extensionPeriod`.
+	 * @param TermKindClassifier|null    $kinds        Which kind a term is; the rule's own class when absent.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly DeadlineExtensionService $extension,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermDeclarationReader $declarations = null,
+		?TermKindClassifier $kinds = null,
 	) {
+		$this->kinds = ($kinds ?? new TermKindClassifier());
 	}//end __construct()
 
 	/**
@@ -147,13 +157,10 @@ class WooTermExtension {
 	 * @param string $caseId The case UUID
 	 *
 	 * @return array<string, mixed>|null The instance, or null when the case has none.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) TermKind::ofInstance() is a pure
-	 * classifier over the instance array, with no state to inject.
 	 */
 	private function statutoryInstance(string $caseId): ?array {
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $instance) {
-			if (is_array($instance) === true && TermKind::ofInstance(instance: $instance) === TermKind::STATUTORY) {
+			if (is_array($instance) === true && $this->kinds->ofInstance(instance: $instance) === TermKind::STATUTORY) {
 				return $instance;
 			}
 		}
