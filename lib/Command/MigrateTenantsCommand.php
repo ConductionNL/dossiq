@@ -93,11 +93,12 @@ class MigrateTenantsCommand extends Command {
 		$dryRun = ($input->getOption('dry-run') === true);
 
 		try {
+			$mode = TenantMigrationService::MODE_APPLY;
 			if ($dryRun === true) {
-				$summary = $this->migrationService->preview();
-			} else {
-				$summary = $this->migrationService->migrate();
+				$mode = TenantMigrationService::MODE_PREVIEW;
 			}
+
+			$summary = $this->migrationService->migrate(mode: $mode);
 		} catch (\Throwable $e) {
 			$output->writeln('<error>Tenant migration failed: ' . $e->getMessage() . '</error>');
 			return Command::FAILURE;

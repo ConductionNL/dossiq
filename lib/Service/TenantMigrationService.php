@@ -57,6 +57,16 @@ class TenantMigrationService {
 	use SearchesObjects;
 
 	/**
+	 * The migration writes.
+	 */
+	public const MODE_APPLY = 'apply';
+
+	/**
+	 * The migration decides and reports, and writes nothing.
+	 */
+	public const MODE_PREVIEW = 'preview';
+
+	/**
 	 * Register slug holding this app's schemas.
 	 */
 	// The OpenRegister register SLUG, not this app's id. It moves with the app
@@ -197,6 +207,9 @@ class TenantMigrationService {
 	 * The repair step reports the same number, so the release that deletes
 	 * this class can wait for it to read zero (decision Q1).
 	 *
+	 * @param string $mode MODE_APPLY writes, MODE_PREVIEW writes nothing. A mode, not a
+	 *                     flag, so the walk stays one method and the two cannot drift apart.
+	 *
 	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
 	 *               unmigrated:int, dryRun:bool,
 	 *               mappings:array<int,array{tenant:string, organisation:string}>,
@@ -205,36 +218,8 @@ class TenantMigrationService {
 	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	public function migrate(): array {
-		return $this->walk(dryRun: false);
-	}
-
-	/**
-	 * The same walk as migrate(), with the writes left out.
-	 *
-	 * One private walk serves both entry points, so the dry run reports exactly
-	 * what the real run would do and the two cannot drift apart (REQ-TOO-001).
-	 *
-	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
-	 *               unmigrated:int, dryRun:bool,
-	 *               mappings:array<int,array{tenant:string, organisation:string}>,
-	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
-	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
-	 */
-	public function preview(): array {
-		return $this->walk(dryRun: true);
-	}
-
-	/**
-	 * @param bool $dryRun When true, write nothing.
-	 *
-	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
-	 *               unmigrated:int, dryRun:bool,
-	 *               mappings:array<int,array{tenant:string, organisation:string}>,
-	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
-	 */
-	private function walk(bool $dryRun): array {
+	public function migrate(string $mode = self::MODE_APPLY): array {
+		$dryRun = ($mode === self::MODE_PREVIEW);
 		$summary = [
 			'migrated' => 0,
 			'repaired' => 0,
