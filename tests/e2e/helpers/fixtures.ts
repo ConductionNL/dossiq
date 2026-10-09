@@ -699,6 +699,35 @@ export async function seedDocument(
 }
 
 /**
+ * A published case type of this run that allows its term to be suspended.
+ *
+ * A pause on a term is refused unless the case's type sets
+ * `suspensionAllowed: true` (CaseLifecycleService::suspend since 0f0d36c61,
+ * DeadlinePauseService::assertSuspensionAllowed since 78ea5bbf8). A spec that
+ * pauses a term on whatever `ensureCaseType` adopts gets
+ * `suspension_not_allowed` whenever the adopted type does not allow it, which
+ * is most shipped types, so the pause is the spec's own fixture to make.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @return The case type id.
+ */
+export async function seedSuspendableCaseType(
+	api: APIRequestContext,
+	token: string,
+): Promise<string> {
+	const suffix = nextFixtureSuffix()
+	const caseType = await createObject(api, token, 'caseType', {
+		title: `${RUN_PREFIX} Opschortbaar ${suffix}`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-opschortbaar-${suffix}`,
+		description: 'Throwaway caseType whose term may be suspended.',
+		isDraft: false,
+		suspensionAllowed: true,
+	})
+	return objectId(caseType)
+}
+
+/**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with

@@ -50,6 +50,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 	seedStateMachine,
+	seedSuspendableCaseType,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
 
@@ -529,7 +530,7 @@ test.describe('REQ-TL-16 every term event records itself on the timeline', () =>
 	test('a suspended term writes the event, the new due date and the instance', async ({
 		request,
 	}) => {
-		const caseTypeId = (await ensureCaseType(request, token)).id
+		const caseTypeId = await seedSuspendableCaseType(request, token)
 		const seeded = await seedCase(request, token, {
 			title: `${RUN_PREFIX} term on the timeline`,
 			caseType: caseTypeId,

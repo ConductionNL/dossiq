@@ -36,6 +36,7 @@ import {
 	seedCase,
 	seedDocument,
 	showObject,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
@@ -61,14 +62,18 @@ let caseTypeId = ''
  * @param recordedAt When it was written up.
  */
 async function recordIncident(key: string, eventDate: string, recordedAt: string) {
-	return await createObject(api, token, 'caseIncident', {
-		case: caseId,
-		description: `${RUN_PREFIX} ${key}`,
-		eventDate,
-		recordedAt,
-		reporter: 'melder',
-		state: 'open',
-	})
+	// The id, not the created object: the callers use it in a URL and as a
+	// reference, where an object reads as `[object Object]`.
+	return objectId(
+		await createObject(api, token, 'caseIncident', {
+			case: caseId,
+			description: `${RUN_PREFIX} ${key}`,
+			eventDate,
+			recordedAt,
+			reporter: 'melder',
+			state: 'open',
+		}),
+	)
 }
 
 test.beforeAll(async ({ playwright, baseURL }) => {
@@ -193,13 +198,10 @@ test.describe('a split moves rather than duplicates', () => {
 			}),
 		)
 
-		await api.put(
-			`/index.php/apps/openregister/api/objects/dossiq/caseDocument/${link}`,
-			{
-				headers: { requesttoken: token },
-				data: { case: other },
-			},
-		)
+		// The move writes the whole row with only `case` changed. A PUT of
+		// `{ case }` alone replaces the row and is refused for the `document`
+		// it then lacks, so the link would never have moved at all.
+		await updateObject(api, token, 'caseDocument', link, { case: other })
 
 		const moved = await showObject(api, 'caseDocument', link)
 
