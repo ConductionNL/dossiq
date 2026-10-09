@@ -20,6 +20,11 @@ import SubstitutionSettings from './views/settings/SubstitutionSettings.vue'
 import WorkDigestSettings from './views/settings/WorkDigestSettings.vue'
 import pinia from './pinia.js'
 
+// Library CSS: this bundle mounts library components outside the app page, so
+// it needs the stylesheet main.js imports. Without it every component here
+// rendered unstyled (r4-tour-menu-labels-and-settings-styles).
+import '@conduction/nextcloud-vue/css/index.css'
+
 const app = createApp(SubstitutionSettings)
 app.use(pinia)
 app.config.globalProperties.t = t
