@@ -109,10 +109,10 @@ class BrkController extends Controller {
 
 		try {
 			$result = $this->brkAdapter->lookupByKadastraleAanduiding(
-				kadastraleMunicipalityCode: $municipalityCode,
+				municipalityCode: $municipalityCode,
 				section: $section,
 				perceelnummer: $perceelnummer,
-				appartementsrechtSequenceNumber: $sequenceNumber,
+				sequenceNumber: $sequenceNumber,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq BRK parcel lookup failed: ' . $e->getMessage());

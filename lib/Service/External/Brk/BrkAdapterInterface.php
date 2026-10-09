@@ -60,10 +60,6 @@ namespace OCA\Dossiq\Service\External\Brk;
  *  3. `Application::register()` already binds `BrkApiAdapter` once the
  *     mode resolves to a non-`log` tier — no further code change needed.
  *
- * @SuppressWarnings(PHPMD.LongVariable) — kadastrale-aanduiding parameter
- * names (kadastraleGemeenteCode, appartementsrechtVolgnummer) are the
- * canonical BRK domain terms; shortening them would obscure the koppelvlak.
- *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 interface BrkAdapterInterface {
@@ -72,11 +68,11 @@ interface BrkAdapterInterface {
 	 * aanduiding (gemeentecode + sectie + perceelnummer, optionally an
 	 * appartementsrecht volgnummer).
 	 *
-	 * @param string $kadastraleMunicipalityCode Kadastrale gemeentecode.
+	 * @param string $municipalityCode Kadastrale gemeentecode.
 	 * @param string $section Sectie (1-2 uppercase letters).
 	 * @param string $perceelnummer Perceelnummer (1-5 digits).
-	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
-	 *                                                     volgnummer (`A` + 1-4 digits).
+	 * @param string|null $sequenceNumber Optional appartementsrecht
+	 *                                    volgnummer (`A` + 1-4 digits).
 	 * @param array<string,mixed> $context Optional context —
 	 *                                     caseId, lookupReason,
 	 *                                     correlationId.
@@ -87,10 +83,10 @@ interface BrkAdapterInterface {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
-		string $kadastraleMunicipalityCode,
+		string $municipalityCode,
 		string $section,
 		string $perceelnummer,
-		?string $appartementsrechtSequenceNumber = null,
+		?string $sequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult;
 

@@ -291,9 +291,6 @@ class PdokBagService {
 	 * @return string Raw response body.
 	 *
 	 * @throws \RuntimeException On non-2xx or network failure.
-	 *
-	 * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
-	 * out-parameter, which PHPMD does not model.
 	 */
 	private function callDirect(string $url): string {
 		$streamOptions = [
@@ -349,6 +346,7 @@ class PdokBagService {
 		}
 
 		$statusCode = 0;
+		$matches    = [];
 		foreach ($response['headers'] as $header) {
 			if (preg_match(pattern: '#^HTTP/\S+\s+(\d{3})#', subject: $header, matches: $matches) === 1) {
 				$statusCode = (int)$matches[1];
