@@ -102,6 +102,7 @@ class NotAnAdapter {
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter
  * @uses \OCA\Dossiq\AppInfo\Registrar\ConfiguredAdapter
+ * @uses \OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice
  */
 class AdapterHonestyTest extends TestCase {
 

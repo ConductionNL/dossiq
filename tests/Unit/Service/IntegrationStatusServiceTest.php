@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Integriq\Event\ConnectionRefreshRequestedEvent;
 use OCA\Integriq\Event\ConnectionStatusReportedEvent;
@@ -49,7 +50,7 @@ use RuntimeException;
  * design D6 of the hydra change connection-registry.
  *
  * @covers \OCA\Dossiq\Service\IntegrationStatusService
- * @uses   \OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar
+ * @uses   \OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice
  * @uses   \OCA\Dossiq\Support\FleetAppId
  */
 class IntegrationStatusServiceTest extends TestCase {
@@ -349,7 +350,7 @@ class IntegrationStatusServiceTest extends TestCase {
 		return new IntegrationStatusService(
 			eventDispatcher: $this->dispatcher,
 			logger: $this->logger,
-			appManager: $appManager,
+			templateChoice: new TemplateAdapterChoice(appManager: $appManager),
 			appConfig: $appConfig,
 		);
 	}//end serviceForTemplates()

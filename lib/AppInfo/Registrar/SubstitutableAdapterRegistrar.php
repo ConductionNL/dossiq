@@ -47,6 +47,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter;
@@ -200,45 +201,16 @@ class SubstitutableAdapterRegistrar {
 	/**
 	 * The template adapter an empty `beschikking_template_adapter` binds on this instance.
 	 *
-	 * ONE RULE FOR THE SEAM AND THE CARD. filinq's adapter when filinq is
-	 * enabled, the mock otherwise. {@see IntegrationStatusService} reports the
-	 * Document templates card through {@see self::templateAdapterFor()}, the
-	 * same rule, so the card cannot read Live while the seam binds the mock.
+	 * The rule is {@see TemplateAdapterChoice}'s, which the Document templates
+	 * card asks too.
 	 *
 	 * @param ContainerInterface $container The DI container.
 	 *
-	 * @return class-string<TemplateEngineAdapterInterface> The adapter class.
+	 * @return string The adapter class.
 	 *
 	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
 	 */
 	public static function defaultTemplateAdapter(ContainerInterface $container): string {
-		return self::templateAdapterFor(appManager: $container->get(IAppManager::class), named: '');
+		return (new TemplateAdapterChoice(appManager: $container->get(IAppManager::class)))->adapterFor(named: '');
 	}//end defaultTemplateAdapter()
-
-	/**
-	 * The template adapter that answers for a configured value.
-	 *
-	 * A named class is what the admin chose; an empty value follows what is
-	 * installed. The probe goes through FleetAppId, never a literal app id:
-	 * filinq renamed from docudesk and both names are in the field.
-	 *
-	 * @param IAppManager $appManager The app manager.
-	 * @param string      $named      The value of `beschikking_template_adapter`.
-	 *
-	 * @return string The adapter class that answers.
-	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
-	 */
-	public static function templateAdapterFor(IAppManager $appManager, string $named): string {
-		$named = trim($named);
-		if ($named !== '') {
-			return $named;
-		}
-
-		if (FleetAppId::isEnabledForUser(appManager: $appManager, canonical: 'filinq') === true) {
-			return FilinqTemplateEngineAdapter::class;
-		}
-
-		return MockTemplateEngineAdapter::class;
-	}//end templateAdapterFor()
 }//end class
