@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
+use OCA\Dossiq\Listener\CaseDeadlineListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
@@ -86,7 +86,7 @@ class CaseTypeListenerRegistrar {
 			);
 			$context->registerEventListener(
 				event: $event,
-				listener: CaseInheritedDeadlineListener::class,
+				listener: CaseDeadlineListener::class,
 				priority: self::INHERITED_DEADLINE_PRIORITY
 			);
 		}

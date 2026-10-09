@@ -8,14 +8,21 @@ from `today`.
 
 ## 1. The case deadline is rolled
 
-- [ ] 1.1 Stop the case `deadline` coming from the unrolled calculation. Remove
+- [x] 1.1 Stop the case `deadline` coming from the unrolled calculation. Remove
   `x-openregister-calculations.deadline` from `components.schemas.case` in
   `lib/Settings/dossiq_register.json`. Declare `deadlineBeforeRoll` (date, readOnly) on the case
   and bump the register version. First establish, against the real OpenRegister on
   `origin/development`, whether a materialised calculation runs before or after
   `ObjectCreatingEvent` listeners. If it runs after, removing it is required, not optional. Write
   the answer in the PR body (REQ-WTR-001).
-- [ ] 1.2 Generalise `CaseInheritedDeadlineListener` (or add `CaseDeadlineListener` beside it) so
+  - Done. Answer (openregister `development`, `CalculationOnSaveListener`): the calculation is a
+    listener on `ObjectCreatingEvent`/`ObjectUpdatingEvent` at the default priority 0, so it runs
+    BEFORE dossiq's listener at -100, and dossiq's `setModifiedData` is merged after both and after
+    `enforceReadOnlyOnUpdate`. The listener would win on a save, but the calculation still writes
+    the unrolled date on `occ openregister:rematerialise-calculations` and on every update without
+    the listener, so it is removed. Case schema 1.38.0, register 0.20.21, `deadlineBeforeRoll`
+    declared, digests recorded.
+- [x] 1.2 Generalise `CaseInheritedDeadlineListener` (or add `CaseDeadlineListener` beside it) so
   every case whose effective case type declares `processingDeadline` gets
   `deadline = rollTermEndFor(startDate + term, definitie)` and `deadlineBeforeRoll`. It keeps the
   `rollToWorkingDay: false` switch (REQ-WTR-001).
@@ -25,6 +32,11 @@ from `today`.
     the real `ObjectCreatingEvent` and `ObjectEntity` classes, or with an environment-aware double
     that has their real signatures (`getObject()`, `setModifiedData()`). Do not use an
     anonymous stub.
+  - Done: renamed to `lib/Listener/CaseDeadlineListener.php`, covering every case type with an
+    effective term; an update keeps a stored deadline unless the start date or case type moved.
+    `tests/Unit/Listener/CaseDeadlineListenerTest.php` (15 tests, real events, real timer on the
+    statutory fallback calendar). Fails today: the class does not exist on `origin/development`,
+    and the old listener left a Woo case (own term) to the unrolled calculation (2026-12-25).
 - [ ] 1.3 Mirror the term instance onto the case. When a Woo case's statutory term instance's
   `endDateCurrent` changes (extension, pause, resume), the case `deadline` is written to match.
   Wire it at `TermijnService::saveTermInstance()` / `updateTermijnInstance()`, the one write path
