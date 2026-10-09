@@ -66,11 +66,32 @@ class MenuCaseTypesService {
 	public const DEFAULT_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001';
 
 	/**
+	 * What an open case is, the same population the dashboard counts.
+	 *
+	 * Not at a final status, not at a status hidden from lists, not a draft:
+	 * `KpiAggregationService::OPEN_WORK`. 0 and not `false`, for the reason
+	 * that constant gives: a PHP bool does not compare against stored JSON.
+	 *
+	 * @var array<string, int>
+	 */
+	public const OPEN_WORK = ['isFinalStatus' => 0, 'statusHiddenInLists' => 0, 'isDraft' => 0];
+
+	/**
 	 * The longest list a user may keep.
 	 *
 	 * @var int
 	 */
 	public const MAX_ENTRIES = 30;
+
+	/**
+	 * Each superseded case type version, pointing at the version that replaced it.
+	 *
+	 * Filled by the last read of the case types, so a count can fold a case
+	 * opened under an old version into the version the menu lists.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $supersededBy = [];
 
 	/**
 	 * Constructor.
@@ -176,8 +197,14 @@ class MenuCaseTypesService {
 		$handling = new CaseTypeHandling();
 
 		$caseTypes = [];
+		$this->supersededBy = [];
 		foreach ($rows as $row) {
 			if (empty($row['supersededBy']) === false) {
+				$old = $this->resolveUuid(object: $row);
+				if ($old !== null && is_string($row['supersededBy']) === true) {
+					$this->supersededBy[$old] = $row['supersededBy'];
+				}
+
 				continue;
 			}
 
@@ -203,6 +230,124 @@ class MenuCaseTypesService {
 
 		return $list;
 	}//end currentCaseTypes()
+
+	/**
+	 * The same case types, each with the number of open cases of that type the user may see.
+	 *
+	 * ONE aggregate query, never a count per case type: a terms facet on the
+	 * case's `caseType` over the open cases, under the user's own RBAC. A case
+	 * opened under an older version of a case type counts for the version the
+	 * list holds. When the facet cannot be read every `openCases` is null, so
+	 * the picker shows no number rather than a 0 nobody counted.
+	 *
+	 * Call it after offeredCaseTypes() or visibleCaseTypes(): those read the
+	 * case type versions this folds by.
+	 *
+	 * @param array<int, array{id: string, title: string}> $caseTypes The case types to count.
+	 *
+	 * @return array<int, array{id: string, title: string, openCases: int|null}> The case types with their counts.
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	public function withOpenCaseCounts(array $caseTypes): array {
+		$counts = $this->openCaseCounts();
+
+		return array_map(
+			static function (array $caseType) use ($counts): array {
+				$caseType['openCases'] = null;
+				if ($counts !== null) {
+					$caseType['openCases'] = ($counts[$caseType['id']] ?? 0);
+				}
+
+				return $caseType;
+			},
+			$caseTypes
+		);
+	}//end withOpenCaseCounts()
+
+	/**
+	 * Open cases per current case type, from one terms facet.
+	 *
+	 * @return array<string, int>|null Counts keyed by the current version's uuid, or null when unknown.
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	private function openCaseCounts(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === ''
+			|| method_exists($objectService, 'getFacetsForObjects') === false
+		) {
+			return null;
+		}
+
+		$query = self::OPEN_WORK;
+		$query['@self'] = [
+			'register' => $this->idOrSlug(value: $register),
+			'schema' => $this->idOrSlug(value: $schema),
+		];
+		$query['_facets'] = ['caseType' => ['type' => 'terms']];
+
+		try {
+			$answer = $objectService->getFacetsForObjects($query);
+		} catch (\Throwable) {
+			return null;
+		}
+
+		$facet = ($answer['facets']['caseType'] ?? null);
+		if (is_array($facet) === false) {
+			return null;
+		}
+
+		$buckets = ($facet['data']['buckets'] ?? ($facet['buckets'] ?? []));
+		$counts = [];
+		foreach ((array)$buckets as $bucket) {
+			$key = ($bucket['key'] ?? ($bucket['value'] ?? null));
+			if (is_string($key) === false || $key === '') {
+				continue;
+			}
+
+			$current = $this->currentVersionOf(uuid: $key);
+			$counts[$current] = (($counts[$current] ?? 0) + (int)($bucket['results'] ?? ($bucket['count'] ?? 0)));
+		}
+
+		return $counts;
+	}//end openCaseCounts()
+
+	/**
+	 * The version in use for a case type version, following `supersededBy`.
+	 *
+	 * Bounded, so a cycle in the data cannot hang the request.
+	 *
+	 * @param string $uuid A case type version uuid.
+	 *
+	 * @return string The uuid of the version that is not superseded.
+	 */
+	private function currentVersionOf(string $uuid): string {
+		$seen = [];
+		while (isset($this->supersededBy[$uuid]) === true && isset($seen[$uuid]) === false && count($seen) < 50) {
+			$seen[$uuid] = true;
+			$uuid = $this->supersededBy[$uuid];
+		}
+
+		return $uuid;
+	}//end currentVersionOf()
+
+	/**
+	 * A configured register or schema as OpenRegister's metadata filter wants it.
+	 *
+	 * @param string $value The configured id or slug.
+	 *
+	 * @return int|string The numeric id as an int, a slug as it is.
+	 */
+	private function idOrSlug(string $value): int|string {
+		if (ctype_digit($value) === true) {
+			return (int)$value;
+		}
+
+		return $value;
+	}//end idOrSlug()
 
 	/**
 	 * The user's chosen case types, in their order, limited to what they may see.

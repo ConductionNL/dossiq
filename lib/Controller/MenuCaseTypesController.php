@@ -57,9 +57,11 @@ class MenuCaseTypesController extends Controller {
 	/**
 	 * The chosen case types in order, and every case type the user may add.
 	 *
-	 * @return JSONResponse `{chosen: [{id, title}], available: [{id, title}]}`.
+	 * @return JSONResponse `{chosen: [{id, title, openCases}], available: [{id, title, openCases}]}`;
+	 *                      `openCases` is null when the count could not be read.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -70,7 +72,12 @@ class MenuCaseTypesController extends Controller {
 			return new JSONResponse(data: ['message' => 'Not logged in'], statusCode: Http::STATUS_UNAUTHORIZED);
 		}
 
-		$offered = $this->menuCaseTypes->offeredCaseTypes(userId: $user->getUID());
+		// The counts are read ONCE for the offered case types, and the chosen
+		// ones are a subset of those, so they take their count from the same
+		// answer (REQ-CTN-006: one aggregate query per load).
+		$offered = $this->menuCaseTypes->withOpenCaseCounts(
+			caseTypes: $this->menuCaseTypes->offeredCaseTypes(userId: $user->getUID())
+		);
 
 		return new JSONResponse(
 			data: [
