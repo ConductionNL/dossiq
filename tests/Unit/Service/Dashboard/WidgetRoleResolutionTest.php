@@ -111,7 +111,7 @@ class WidgetRoleResolutionTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/dashboard/spec.md
+	 * @spec openspec/specs/dashboard/spec.md
 	 */
 	public function testItReadsTheWidgetsDeclaredInsideAViewOfADashboardPage(): void {
 		$manifest = [

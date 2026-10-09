@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Integrates DSO (Digitaal Stelsel Omgevingswet) permit requests with VTH case handling by auto-creating cases from a DSO verzoek, mapping STAM 2.0 fields, and flagging cases for manual initiator linking when a BRP lookup fails. Dispatches status-change events on case transitions so OpenConnector can push status back to DSO-LV, and tracks DSO case deadlines daily with warnings before flagging overdue cases.
+
 ## Requirements
+
 ### Requirement: DSO verzoek intake and case creation
 
 The system SHALL auto-create a case from a DSO verzoek, mapping STAM 2.0 fields and resolving references, and flag the case for manual linking when a BRP lookup fails.
@@ -45,3 +47,23 @@ The system SHALL evaluate DSO case deadlines daily and warn at thresholds before
 - **WHEN** the daily deadline job evaluates DSO cases
 - **THEN** notifications SHALL fire at 6 weeks and 2 weeks before the deadline, and at the deadline the case SHALL be flagged "Overdue" with transitions blocked until escalation
 
+### Requirement: DSO intake is on by default with integriq
+
+When integriq is installed and `dso_vergunningaanvraag_schema` was never set, the system SHALL set it to the id of integriq's `dso_verzoek` schema on install and on upgrade, found through integriq's register by slug. A value an administrator set, an empty value included, SHALL NOT be overwritten. While the key is empty, the administration overview SHALL warn that DSO intake is off.
+
+@e2e exclude repair step and setup check; covered by PHPUnit and the live install run, no app page
+
+#### Scenario: Fresh install with integriq
+
+- **WHEN** dossiq is installed or upgraded, integriq is installed and the key is absent
+- **THEN** the key SHALL hold the id of integriq's `dso_verzoek` schema, and a mapped verzoek SHALL become a case
+
+#### Scenario: An administrator turned intake off
+
+- **WHEN** an administrator set the key to an empty value and dossiq is upgraded
+- **THEN** the key SHALL stay empty
+
+#### Scenario: integriq is not installed
+
+- **WHEN** dossiq is installed without integriq
+- **THEN** the key SHALL stay absent, and the setup check SHALL warn that DSO intake is off

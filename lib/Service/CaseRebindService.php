@@ -98,7 +98,7 @@ class CaseRebindService {
 	 * @param LoggerInterface    $logger          The logger.
 	 * @param TranslatedText     $text            Translatable titles and names in the reader's language.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,

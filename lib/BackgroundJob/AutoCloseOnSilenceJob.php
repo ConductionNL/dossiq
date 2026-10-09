@@ -120,7 +120,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/background-jobs-decisions/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private function sweep(): void {
 		$cases = $this->openCases();
