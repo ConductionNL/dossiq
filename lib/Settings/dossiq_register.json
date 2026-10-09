@@ -711,7 +711,8 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.7.0",
+                "version": "1.7.1",
+                "searchable": false,
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status type",
@@ -1011,7 +1012,8 @@
             "resultType": {
                 "slug": "resultType",
                 "icon": "FlagOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "ResultaatType",
                 "title": "Result type",
@@ -1080,7 +1082,8 @@
             "roleType": {
                 "slug": "roleType",
                 "icon": "BadgeAccountOutline",
-                "version": "1.3.0",
+                "version": "1.3.1",
+                "searchable": false,
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "RolType",
                 "title": "Role type",
@@ -1139,7 +1142,8 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.5.0",
+                "version": "1.5.1",
+                "searchable": false,
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
                 "title": "Property definition",
@@ -1293,7 +1297,8 @@
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
                 "title": "Document type",
@@ -1384,7 +1389,8 @@
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
                 "title": "Decision type",
@@ -4275,7 +4281,8 @@
             "document": {
                 "slug": "document",
                 "icon": "FileDocumentOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "EnkelvoudigInformatieObject",
                 "title": "Document",
@@ -4449,7 +4456,8 @@
             "documentLink": {
                 "slug": "documentLink",
                 "icon": "LinkVariant",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "ObjectInformatieObject",
                 "title": "Document Link",
@@ -4487,7 +4495,8 @@
             "notificationChannel": {
                 "slug": "notificationChannel",
                 "icon": "BellRingOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:BroadcastChannel",
                 "x-zgw-equivalent": "Kanaal",
                 "title": "Notification Channel",
@@ -4519,7 +4528,8 @@
             "abonnement": {
                 "slug": "abonnement",
                 "icon": "BellPlusOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:SubscribeAction",
                 "x-zgw-equivalent": "Abonnement",
                 "title": "Notification Subscription",
@@ -4552,7 +4562,8 @@
             "zaaktypeInformatieobjecttype": {
                 "slug": "zaaktypeInformatieobjecttype",
                 "icon": "LinkVariant",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "ZaakTypeInformatieObjectType",
                 "title": "Zaaktype-Informatieobjecttype Relation",
@@ -4887,7 +4898,8 @@
             "decisionDocument": {
                 "slug": "decisionDocument",
                 "icon": "LinkVariant",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-zgw-equivalent": "BesluitInformatieObject",
                 "title": "Decision Document Link",
                 "description": "Links a document to a decision",
@@ -4976,7 +4988,8 @@
             "usageRights": {
                 "slug": "usageRights",
                 "icon": "ShieldKeyOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "GebruiksRechten",
                 "title": "Usage Rights",
@@ -5108,7 +5121,8 @@
             "automaticAction": {
                 "slug": "automaticAction",
                 "icon": "RobotOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:Action",
                 "title": "Automatic Action",
                 "description": "Declarative automatic action. HISTORICAL: this description used to say the slug was referenced from transitions[].automaticActions[].ref and resolved at dispatch time: it never was. SideEffectDispatcher runs a separate vocabulary keyed on an inline `type`, and nothing has ever read these objects at run time. They are migrated to OpenRegister flows by `occ dossiq:actions:migrate-to-flows`, where each becomes a flow around the matching dossiq.action.* node; the flow is what executes. Kept for the migration and for reading historical configuration.",
@@ -6466,7 +6480,8 @@
             "mapLayer": {
                 "slug": "mapLayer",
                 "icon": "LayersOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Map Layer",
                 "description": "GIS map layer configuration for case maps: defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
                 "type": "object",
@@ -7130,7 +7145,8 @@
             "adviceResponse": {
                 "slug": "adviceResponse",
                 "icon": "CheckboxMarkedOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Advice Response",
                 "description": "Formal advice response linked to a consultation, with structured conclusion and optional conditions",
                 "type": "object",
@@ -7223,7 +7239,8 @@
             "advisoryBody": {
                 "slug": "advisoryBody",
                 "icon": "OfficeBuildingOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Advisory body",
                 "description": "Registry of departments and external advisory bodies that can receive consultations",
                 "type": "object",
@@ -7518,7 +7535,8 @@
             "lhsMatrix": {
                 "slug": "lhsMatrix",
                 "icon": "TableLarge",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:Intangible",
                 "title": "LHS Matrix",
                 "description": "Versioned 3-dimensional Landelijke Handhavingsstrategie matrix (ernst x gedrag x actorType). Immutable per version; edits create new versions.",
@@ -7795,7 +7813,8 @@
             "inspectieChecklist": {
                 "slug": "inspectieChecklist",
                 "icon": "ClipboardCheckOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:HowTo",
                 "title": "Inspection Checklist",
                 "description": "Configurable inspection checklist template linked to a case type, with versioning support",
@@ -8052,7 +8071,8 @@
             "inspectionChecklistTemplate": {
                 "slug": "inspectionChecklistTemplate",
                 "icon": "ClipboardListOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:HowTo",
                 "title": "Inspection Checklist Template",
                 "description": "Long-lived configuration template for an inspection checklist. Owns sections, items, response-type rules and follow-up action defaults. Publishing an edit creates a new version and retires the previous one.",
@@ -8574,7 +8594,8 @@
             "aiAuditEntry": {
                 "slug": "aiAuditEntry",
                 "icon": "RobotOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "title": "AI Audit Entry",
                 "description": "Immutable audit log entry for AI-assisted processing interactions",
@@ -8967,7 +8988,8 @@
             "partnerOrganization": {
                 "slug": "partnerOrganization",
                 "icon": "AccountGroup",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:Organization",
                 "x-openregister-quality": {
                     "field": "qualityScore",
@@ -9573,7 +9595,8 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
                 "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
@@ -9836,7 +9859,8 @@
             "hearing": {
                 "slug": "hearing",
                 "icon": "AccountVoice",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Hearing",
                 "description": "Hoorgesprek (hearing) linked to a complaint: captures scheduling, participants, outcome, and video/calendar integration.",
                 "type": "object",
@@ -9922,7 +9946,8 @@
             "complaintDisposition": {
                 "slug": "complaintDisposition",
                 "icon": "ClipboardCheckOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Complaint Disposition",
                 "description": "Formal disposition (oordeel) recording how a complaint was resolved per Awb chapter 9.",
                 "type": "object",
@@ -10008,7 +10033,8 @@
             "complaintCategory": {
                 "slug": "complaintCategory",
                 "icon": "TagOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Complaint Category",
                 "description": "Configurable complaint category per tenant: defines default handler, SLA override, and routing for complaints.",
                 "type": "object",
@@ -10052,7 +10078,8 @@
             "tenantConfiguration": {
                 "slug": "tenantConfiguration",
                 "icon": "Cog",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Tenant Configuration",
                 "description": "Per-tenant configuration: branding, locale, and feature flags. 1:1 with Tenant.",
                 "type": "object",
@@ -10141,7 +10168,8 @@
             "tenantQuota": {
                 "slug": "tenantQuota",
                 "icon": "GaugeFull",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Tenant Quota",
                 "description": "Per-tenant quota: one row per quota type. Tracks limit, current usage, and enforcement policy.",
                 "type": "object",
@@ -10207,7 +10235,8 @@
             "tenantUser": {
                 "slug": "tenantUser",
                 "icon": "AccountOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Tenant User",
                 "description": "Per-tenant user membership: maps a Nextcloud user to a tenant with role + eHerkenning level.",
                 "type": "object",
@@ -10266,7 +10295,8 @@
             "tenantMandate": {
                 "slug": "tenantMandate",
                 "icon": "FileSign",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Tenant Mandate",
                 "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority: backs ketenmachtiging (chain-mandate) flows.",
                 "type": "object",
@@ -10313,7 +10343,8 @@
             "tenantBillingEvent": {
                 "slug": "tenantBillingEvent",
                 "icon": "CashRegister",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-insert-only": true,
                 "title": "Tenant Billing Event",
                 "description": "Insert-only billing event: every billable action emits one row. Consumed by shillinq for invoicing.",
@@ -10378,7 +10409,8 @@
             "supplier": {
                 "slug": "supplier",
                 "icon": "Factory",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:Organization",
                 "x-openregister-quality": {
                     "field": "qualityScore",
@@ -10524,7 +10556,8 @@
             "supplierUser": {
                 "slug": "supplierUser",
                 "icon": "AccountOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Supplier User",
                 "description": "Supplier-side portal user: eHerkenning-authenticated person acting on behalf of a supplier.",
                 "type": "object",
@@ -10763,7 +10796,8 @@
             "caseSupplierInvoice": {
                 "slug": "caseSupplierInvoice",
                 "icon": "Receipt",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Supplier Invoice",
                 "description": "Invoice submitted by a supplier.",
                 "type": "object",
@@ -10926,7 +10960,8 @@
             "supplierMessage": {
                 "slug": "supplierMessage",
                 "icon": "MessageText",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-insert-only": true,
                 "title": "Supplier Message",
                 "description": "Write-once message between municipality and supplier: immutable audit trail.",
@@ -11001,7 +11036,8 @@
             "supplierKpi": {
                 "slug": "supplierKpi",
                 "icon": "ChartLine",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Supplier KPI",
                 "description": "Per-period KPI snapshot for a supplier.",
                 "type": "object",
@@ -11057,7 +11093,8 @@
             "tenantOnboardingTask": {
                 "slug": "tenantOnboardingTask",
                 "icon": "CheckboxMarkedCircleOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Tenant Onboarding Task",
                 "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
                 "type": "object",
@@ -11120,7 +11157,8 @@
             "emailTemplate": {
                 "slug": "emailTemplate",
                 "icon": "EmailOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "x-equivalent": "schema:DigitalDocument",
                 "title": "Email template",
                 "description": "Per-zaaktype email template with placeholder variables; version-bumped on edit (case-email-integration spec).",
@@ -11259,7 +11297,8 @@
             "checklistItem": {
                 "slug": "checklistItem",
                 "icon": "CheckboxOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Checklist item",
                 "description": "A single question or observation point within an inspection checklist. Supports boolean, enum, text, and photo answer types.",
                 "type": "object",
@@ -11307,7 +11346,8 @@
             "inspectionChecklist": {
                 "slug": "inspectionChecklist",
                 "icon": "ClipboardCheckOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Inspection Checklist",
                 "description": "Reusable checklist template defining the inspection items for a given case type. A versioned master form that inspection runs are based on.",
                 "type": "object",
@@ -11427,7 +11467,8 @@
             "lhsMatrixCell": {
                 "slug": "lhsMatrixCell",
                 "icon": "TableLarge",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "LHS Matrix Cell",
                 "description": "A single cell in the Landelijk Handhavingsbeleid Stedenbouw (LHS) intervention matrix, mapping a behaviour row and consequence column to a recommended intervention step.",
                 "type": "object",
@@ -11467,7 +11508,8 @@
                 },
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
-                "version": "1.3.0",
+                "version": "1.3.1",
+                "searchable": false,
                 "title": "Integration",
                 "x-openregister-catalogue": true,
                 "x-openregister-demo-data": "The rows are a catalogue that register.d seeds, and ImportHandler upserts on register, schema and slug, so a generated demo row ships a second BRP and a second ZGW entry beside the real ones. MockRegisterHasNoSeededCatalogueTest refuses them for that reason. The schema is deprecated as well: nothing writes these rows any more, because the Integrations page reads integriq's app_connection.",

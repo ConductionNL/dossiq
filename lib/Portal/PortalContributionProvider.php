@@ -117,6 +117,10 @@ class PortalContributionProvider {
 			'direction',
 			'sentAt',
 			'readByRecipientAt',
+			// The resident's own case, so a reply can carry it
+			// (PortalConversation::inboxReply()): portaliq keeps a carried
+			// field only when the inbox projects it.
+			'caseId',
 		],
 		'messageFields' => [
 			'body' => 'content',
@@ -334,16 +338,21 @@ class PortalContributionProvider {
 	 * {@see self::messageBoxRecipient()} needs the recipient reader, optional
 	 * for the same reason.
 	 *
+	 * {@see self::caseMessages()} needs the messages reader, optional for the
+	 * same reason.
+	 *
 	 * @param CaseTimeline|null              $timeline   The one reader of the public feed, or null.
 	 * @param PortalCaseDocuments|null       $documents  The documents a resident may see on a case, or null.
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
+	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
 		private readonly ?PortalCaseDocuments $documents = null,
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
+		private readonly ?PortalCaseMessages $messages = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
@@ -391,6 +400,28 @@ class PortalContributionProvider {
 
 		return $this->documents->forCase(caseId: $caseId);
 	}//end caseDocuments()
+
+	/**
+	 * The resident's messages about one case, both directions, newest first
+	 * (communication-portal-conversation-on-the-case D-4).
+	 *
+	 * Portaliq calls this only after it proved the case is the resident's.
+	 * Which messages are the resident's is decided in
+	 * {@see PortalCaseMessages}, once.
+	 *
+	 * @param string $caseId The case the resident is looking at.
+	 *
+	 * @return array<int, array<string, mixed>> The messages, or [] without a reader.
+	 *
+	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 */
+	public function caseMessages(string $caseId): array {
+		if ($this->messages === null) {
+			return [];
+		}
+
+		return $this->messages->forCase(caseId: $caseId);
+	}//end caseMessages()
 
 	/**
 	 * Where the case stands, in the public steps of its own case type

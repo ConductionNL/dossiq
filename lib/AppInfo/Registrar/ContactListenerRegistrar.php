@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\ContactMomentTimelineListener;
+use OCA\Dossiq\Listener\PortalMessageTimelineListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -51,6 +52,14 @@ class ContactListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: ContactMomentTimelineListener::class
+		);
+
+		// A resident's portal message, written by portaliq straight into
+		// OpenRegister, crosses the same create event and nothing else of
+		// dossiq's (communication-portal-conversation-on-the-case D-5).
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: PortalMessageTimelineListener::class
 		);
 	}//end register()
 }//end class

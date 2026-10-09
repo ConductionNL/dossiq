@@ -88,7 +88,8 @@
             "routingRule": {
                 "slug": "routingRule",
                 "icon": "SignDirection",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Routing rule",
                 "description": "KCC keyword/context routing rule that assigns a contact moment to a team and domain.",
                 "type": "object",
@@ -151,7 +152,8 @@
             "kccAgent": {
                 "slug": "kccAgent",
                 "icon": "Headset",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "KCC Agent",
                 "description": "Availability, skills and workload of a KCC agent.",
                 "type": "object",
@@ -202,7 +204,8 @@
             "callbackRequest": {
                 "slug": "callbackRequest",
                 "icon": "PhoneReturn",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Callback Request",
                 "description": "A scheduled callback to a customer, tracked with retry and SLA logic.",
                 "type": "object",

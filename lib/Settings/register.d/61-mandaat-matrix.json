@@ -22,7 +22,8 @@
       "mandateDecision": {
         "slug": "mandateDecision",
         "icon": "Gavel",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:DigitalDocument",
         "title": "Mandate Decision",
         "description": "A mandate decision taken by the governing body: a collection of Mandate rows valid from effectiveFrom until expiryDate.",
@@ -42,7 +43,8 @@
       "mandate": {
         "slug": "mandate",
         "icon": "ScriptText",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Mandaat",
         "description": "Individual mandate granting authority to a role.",
         "type": "object",
@@ -75,7 +77,8 @@
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
-        "version": "1.2.0",
+        "version": "1.2.1",
+        "searchable": false,
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
         "type": "object",
@@ -97,7 +100,8 @@
       "medewerkerRolToewijzing": {
         "slug": "medewerkerRolToewijzing",
         "icon": "AccountArrowRight",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Medewerker Rol Toewijzing",
         "description": "Assignment of a user (Nextcloud user id) to an OrganisatieRol over a validity window.",
         "type": "object",
@@ -114,7 +118,8 @@
       "caseTypeGroup": {
         "slug": "caseTypeGroup",
         "icon": "FolderAccountOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Case Type Group",
         "description": "A group of case types granted as one. A gemeenschappelijke regeling has thirty case types belonging to one partner, and granting per type means thirty grants that drift apart. The group is the unit of the grant; a type inherits from its group, and the inheritance is OpenRegister's rbac-inherits-to-children rather than a rule dossiq re-applies.",
         "type": "object",
@@ -133,7 +138,8 @@
       "mandateUsage": {
         "slug": "mandateUsage",
         "icon": "ListBoxOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Mandaat Gebruik",
         "description": "Immutable audit log of a mandate use (when a user executed a decision under a mandate).",
         "type": "object",

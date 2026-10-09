@@ -212,7 +212,8 @@
       "stateMachineLog": {
         "slug": "stateMachineLog",
         "icon": "History",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "State Machine Log",
         "description": "Immutable record of a single beschikking state transition, including actor, trigger, and supporting evidence (mandaat reference or TSP rapport).",
@@ -255,7 +256,8 @@
       "bezwaarTrigger": {
         "slug": "bezwaarTrigger",
         "icon": "Alarm",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:Schedule",
         "title": "Bezwaar Trigger",
         "description": "Scheduling record created when a beschikking is verzonden. Drives the daily BezwaarTermijnJob: when the bezwaartermijn lapses without a bezwaarschrift, archival is triggered.",
@@ -300,7 +302,8 @@
       "mandateArrangement": {
         "slug": "mandateArrangement",
         "icon": "AccountTieOutline",
-        "version": "1.1.0",
+        "version": "1.1.1",
+        "searchable": false,
         "x-schema-org": "schema:Legislation",
         "title": "Mandate regulation",
         "description": "Defines which approval levels (niveau) may sign which decision types up to which bedrag (Awb 10:3-10:12). Point-in-time: the regeling-id + version is captured on the beschikking at akkoord.",

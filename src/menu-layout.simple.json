@@ -938,6 +938,9 @@
 					"add-party": {
 						"group": "Case"
 					},
+					"message-applicant": {
+						"group": "Case"
+					},
 					"link-object": {
 						"group": "Case"
 					},

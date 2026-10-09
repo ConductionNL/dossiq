@@ -42,6 +42,7 @@
  * follow-up on each would make the follow-up count mean nothing.
  * The applicant's own portal acts carry one for the reason mail does: each is
  * something the applicant sent, and it is open until a handler has seen it.
+ * So does a portal message from the applicant (`portaalbericht-inkomend`).
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Timeline
@@ -98,6 +99,18 @@ final class TimelineKinds {
 	 * @var string
 	 */
 	public const PORTAL_MESSAGE = 'portaalbericht';
+
+	/**
+	 * A message the applicant sent about this case through the portal.
+	 *
+	 * Its own kind beside {@see self::PORTAL_MESSAGE}, the way inbound mail
+	 * has its own beside outbound: a follow-up is declared per kind, and a
+	 * question from the applicant is open until a handler answers it, while a
+	 * message the handler sent is not.
+	 *
+	 * @var string
+	 */
+	public const PORTAL_MESSAGE_IN = 'portaalbericht-inkomend';
 
 	/**
 	 * The Awb 4:3a acknowledgement of receipt.
@@ -212,6 +225,19 @@ final class TimelineKinds {
 			],
 			'required' => ['subject'],
 			'followUp' => false,
+		],
+		[
+			'slug' => self::PORTAL_MESSAGE_IN,
+			'title' => 'Bericht van de indiener',
+			'description' => 'A message the applicant sent about this case through the portal. Open until a handler answers it.',
+			'properties' => [
+				'subject' => ['type' => 'string'],
+				'messageId' => ['type' => 'string'],
+				'sender' => ['type' => 'string'],
+				'sentAt' => ['type' => 'string'],
+			],
+			'required' => ['subject', 'messageId'],
+			'followUp' => true,
 		],
 		[
 			'slug' => self::ACKNOWLEDGEMENT,

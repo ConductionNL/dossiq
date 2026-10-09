@@ -148,7 +148,8 @@ class SociaalDomeinFragmentTest extends TestCase {
 		$schemas = $this->merged['components']['schemas'];
 
 		$canonical = $schemas['gdprClassification'];
-		unset($canonical['slug'], $canonical['icon'], $canonical['version']);
+		// `searchable` is how the SCHEMA is indexed, not part of the block's shape.
+		unset($canonical['slug'], $canonical['icon'], $canonical['version'], $canonical['searchable']);
 
 		foreach (['wmoZaak', 'jeugdwetZaak', 'participatiewetZaak'] as $caseType) {
 			$property = $schemas[$caseType]['properties']['gdprClassification'];

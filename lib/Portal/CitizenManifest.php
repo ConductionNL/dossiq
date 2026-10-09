@@ -186,6 +186,9 @@ class CitizenManifest {
 				'listable' => true,
 				'minTrust' => 'low',
 				...PortalContributionProvider::CITIZEN_INBOX,
+				// A reply carries the case of the message it answers, so the
+				// resident never types a case number (PortalConversation).
+				'reply' => (new PortalConversation())->inboxReply(),
 			],
 			[
 				'id' => 'verzoeken',
@@ -270,47 +273,13 @@ class CitizenManifest {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function actions(): array {
+		$conversation = new PortalConversation();
+
 		return [
 			$this->complaintAction(),
 			$this->objectionAction(),
-			[
-				'id' => 'replyToMessage',
-				'type' => 'create',
-				// WHICH FIELD THE OPEN CASE LANDS IN when a resident presses
-				// "Bericht sturen" on their case page: portaliq's cta with
-				// `withRecord: true` presets this one field to the record it
-				// was opened for (site-mijn-omgeving-components REQ-SMO-024).
-				// It is the field `crossRefs` below already guards, so the
-				// preset is checked like any typed value.
-				'recordField' => 'caseId',
-				'label' => 'Antwoorden',
-				'register' => PortalContributionProvider::REGISTER,
-				'schema' => 'portaalBericht',
-				// The citizen is the SENDER of a reply, so the reply is
-				// scoped by who sent it. The inbox above is scoped by who
-				// received it, which is the same person seen from the
-				// other end.
-				'scopeField' => 'senderRef',
-				'minTrust' => 'low',
-				'fields' => [
-					'subject',
-					'content',
-					'attachments',
-					'caseId',
-				],
-				'defaults' => [
-					'direction' => 'citizen_to_handler',
-					'senderType' => 'burger',
-				],
-				'crossRefs' => [
-					'caseId' => [
-						'register' => PortalContributionProvider::REGISTER,
-						'schema' => 'case',
-						'scopeField' => 'portalSubject',
-						'required' => true,
-					],
-				],
-			],
+			$conversation->replyAction(),
+			$conversation->askAction(),
 			$this->amendCaseAction(),
 			$this->startWooVerzoekAction(),
 			// THE SAME REQUEST WITHOUT A DOSSIER: what the home tile and the
@@ -498,6 +467,8 @@ class CitizenManifest {
 			'detail' => [
 				'layout' => 'card',
 				'fields' => PortalContributionProvider::CITIZEN_CASE_DETAIL_FIELDS,
+				// A question about THIS case, started from its detail.
+				'actions' => [PortalConversation::ASK_ACTION],
 			],
 			'fieldConfigs' => PortalContributionProvider::CITIZEN_CASE_DETAIL_LABELS,
 			// The case detail carries what has happened on it. The
@@ -515,6 +486,9 @@ class CitizenManifest {
 				'label' => 'Documenten',
 				'provider' => 'caseDocuments',
 			],
+			// The messages about the case, both ways, newest first. Read per
+			// case like the timeline, and only the resident's own.
+			'messages' => (new PortalConversation())->caseMessagesBlock(),
 			// WHERE THE CASE STANDS, in the public steps of its own case
 			// type. The method answers per case, as the timeline does
 			// (site-resident-portal-design D3).
