@@ -29,10 +29,11 @@
 				{{ substitutedMarker }}
 			</span>
 			<span
-				v-if="urgencyChipLabel"
-				class="mywork-card__chip mywork-card__urgency-chip"
-				:class="urgencyChipClassName">
-				{{ urgencyChipLabel }}
+				v-if="tierPillLabel"
+				class="mywork-card__chip mywork-card__tier-pill"
+				:class="tierPillClassName"
+				data-testid="deadline-tier-pill">
+				{{ tierPillLabel }}
 			</span>
 		</span>
 		<span
@@ -45,7 +46,10 @@
 </template>
 
 <script>
-import { urgencyChipClass } from '../utils/workQueueHelpers.js'
+import {
+	deadlineTierLabel,
+	deadlineTierPillClass,
+} from '../utils/workQueueHelpers.js'
 
 /**
  * Card for a single case on the My Work index. Renders the case with its
@@ -200,30 +204,27 @@ export default {
 			return id ? this.urgencyMap[id] || null : null
 		},
 
-		/** CSS modifier class for the urgency chip; '' when no chip should render. */
-		urgencyChipClassName() {
-			return urgencyChipClass(this.urgencyEntry && this.urgencyEntry.deadlineTier)
+		/**
+		 * CSS modifier class for the deadline tier pill.
+		 *
+		 * @return {string} The class, or '' when there is no pill.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		tierPillClassName() {
+			return deadlineTierPillClass(this.urgencyEntry && this.urgencyEntry.deadlineTier)
 		},
 
 		/**
-		 * Human label for the urgency chip; '' hides the chip (normal tier).
+		 * The pill label: Te laat, Kritiek, Bijna or Normaal. '' hides the pill,
+		 * which happens only when the work queue has no entry for this case.
 		 *
-		 * @return {string} The translated urgency label, or '' to hide the chip.
+		 * @return {string} The translated label, or ''.
 		 *
-		 * @spec openspec/specs/my-work/spec.md#requirement-card-display-mvp
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
-		urgencyChipLabel() {
-			const tier = this.urgencyEntry && this.urgencyEntry.deadlineTier
-			switch (tier) {
-				case 'overdue':
-					return t('dossiq', 'Overdue')
-				case 'critical':
-					return t('dossiq', 'Critical')
-				case 'warning':
-					return t('dossiq', 'Due soon')
-				default:
-					return ''
-			}
+		tierPillLabel() {
+			return deadlineTierLabel(this.urgencyEntry && this.urgencyEntry.deadlineTier)
 		},
 	},
 }
@@ -313,26 +314,26 @@ export default {
 	}
 }
 
-// Urgency chip — overdue uses the error colour, critical/warning use the
-// warning colour (critical solid, warning a softer outline), all via NC CSS
-// variables per the werkvoorraad-intelligent-queue spec's colour rule.
-.mywork-card__urgency-chip {
+// Deadline tier pill, as the board dossiq/DqAanMijToegewezen draws it:
+// Te laat and Kritiek in the error tint, Bijna in the warning tint, Normaal
+// neutral. Nextcloud CSS variables only.
+.mywork-card__tier-pill {
 	font-weight: 600;
 
-	&--overdue {
-		background: var(--color-error);
-		color: var(--color-primary-element-text, #fff);
-	}
-
+	&--overdue,
 	&--critical {
-		background: var(--color-warning);
-		color: var(--color-primary-element-text, #000);
+		background: var(--color-error-hover, var(--color-background-dark));
+		color: var(--color-error-text, var(--color-error));
 	}
 
 	&--warning {
-		color: var(--color-warning);
-		background: transparent;
-		border: 1px solid var(--color-warning);
+		background: var(--color-warning-hover, var(--color-background-dark));
+		color: var(--color-warning-text, var(--color-warning));
+	}
+
+	&--normal {
+		background: var(--color-background-dark);
+		color: var(--color-main-text);
 	}
 }
 </style>

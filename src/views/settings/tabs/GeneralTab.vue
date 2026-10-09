@@ -141,6 +141,26 @@
 			}}</span>
 		</div>
 
+		<!-- Queue thresholds: when a case of this type turns critical or almost due in the work queue -->
+		<div class="form-group" data-testid="case-type-queue-thresholds">
+			<NcTextField
+				:modelValue="thresholdText(form.queueCriticalDays)"
+				:label="t('dossiq', 'Critical from, working days left')"
+				:error="!!thresholdErrors.queueCriticalDays"
+				:helperText="thresholdErrors.queueCriticalDays || thresholdHint"
+				inputmode="numeric"
+				data-testid="case-type-queue-critical-days"
+				@update:modelValue="(v) => updateThreshold('queueCriticalDays', v, 60)" />
+			<NcTextField
+				:modelValue="thresholdText(form.queueWarningDays)"
+				:label="t('dossiq', 'Almost due from, working days left')"
+				:error="!!thresholdErrors.queueWarningDays"
+				:helperText="thresholdErrors.queueWarningDays || thresholdHint"
+				inputmode="numeric"
+				data-testid="case-type-queue-warning-days"
+				@update:modelValue="(v) => updateThreshold('queueWarningDays', v, 120)" />
+		</div>
+
 		<!-- Extension Allowed -->
 		<div class="form-group form-group--inline">
 			<NcCheckboxRadioSwitch
@@ -298,6 +318,7 @@ import {
 	getOriginOptions,
 } from '../../../utils/caseTypeValidation.js'
 import { formatDuration } from '../../../utils/durationHelpers.js'
+import { readThresholdOverride } from '../../../utils/queueUrgencySettings.js'
 
 export default {
 	name: 'GeneralTab',
@@ -326,10 +347,23 @@ export default {
 		return {
 			iv3Taakvelden: [],
 			iv3TaakveldenLoading: false,
+			/** Bounds messages for the two queue thresholds, per field. */
+			thresholdErrors: {},
 		}
 	},
 
 	computed: {
+		/**
+		 * The hint under both queue thresholds.
+		 *
+		 * @return {string} The translated hint.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+		 */
+		thresholdHint() {
+			return t('dossiq', 'Leave empty to use the default from the admin settings.')
+		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		originOptions() {
 			return getOriginOptions()
@@ -431,6 +465,39 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * A stored threshold as the field shows it.
+		 *
+		 * @param {unknown} value The stored value.
+		 * @return {string} The text, '' when none is stored.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+		 */
+		thresholdText(value) {
+			return value === undefined || value === null ? '' : String(value)
+		},
+
+		/**
+		 * Write one queue threshold to the form, or say why not.
+		 *
+		 * Empty sends undefined, so the field is left off the saved case type
+		 * and the instance default applies; null is not written because the
+		 * schema declares an integer.
+		 *
+		 * @param {string} field 'queueCriticalDays' or 'queueWarningDays'.
+		 * @param {string} raw What the person typed.
+		 * @param {number} max The upper bound.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+		 */
+		updateThreshold(field, raw, max) {
+			const { value, error } = readThresholdOverride(raw, max)
+			this.thresholdErrors = { ...this.thresholdErrors, [field]: error }
+			if (!error) {
+				this.$emit('update', field, value)
+			}
+		},
+
 		/**
 		 * Load the IV3 taakveld reference list once, for the picker's options.
 		 *
