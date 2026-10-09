@@ -30,6 +30,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
+use OCA\Dossiq\Listener\CaseCompletedSatisfactionListener;
 use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
@@ -151,6 +152,13 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatedEvent::class,
 			listener: CasePhaseTermListener::class
+		);
+
+		// A case that just closed is handed to pipelinq's satisfaction loop
+		// (REQ-PLQ-07). After the save, so it can never block the close.
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: CaseCompletedSatisfactionListener::class
 		);
 
 		// The case number is DECLARED on the schema, as an OpenRegister
