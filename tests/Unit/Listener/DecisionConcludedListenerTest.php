@@ -66,6 +66,7 @@ interface ConcludedObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Support\FlowDecisionSubject
  * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
  * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException
  */
 class DecisionConcludedListenerTest extends TestCase {
 	use MakesBezwaarAuditTrail;
