@@ -201,6 +201,37 @@ class TenantAuditTrailService {
 	}//end getAuditTrailMapper()
 
 	/**
+	 * Report whether OpenRegister's organisation row filter is on.
+	 *
+	 * Tenant isolation is OpenRegister's `MagicSearchHandler`, which adds a
+	 * WHERE on the organisation column when multitenancy is on. This asks
+	 * OpenRegister's `SettingsService::isMultiTenancyEnabled()` live. A false
+	 * answer, an exception, or an absent OpenRegister all read as false, so
+	 * the checklist fails closed to `unverified`.
+	 *
+	 * @return bool True only when OpenRegister says multitenancy is on.
+	 *
+	 * @spec openspec/changes/tenant-isolation-names-the-control-that-runs/specs/tenant-isolation/spec.md
+	 */
+	public function rowFilterEnabled(): bool {
+		$installed = (array)$this->appManager->getInstalledApps();
+		if (in_array('openregister', $installed, true) === false) {
+			return false;
+		}
+
+		try {
+			$settings = $this->container->get('OCA\\OpenRegister\\Service\\SettingsService');
+			return $settings->isMultiTenancyEnabled() === true;
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not probe OpenRegister multitenancy; tenant isolation reads unverified',
+				['exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end rowFilterEnabled()
+
+	/**
 	 * Resolve the tenant ObjectEntity an audit row anchors to.
 	 *
 	 * @param string $tenantId Tenant UUID.
@@ -258,6 +289,11 @@ class TenantAuditTrailService {
 	 * unreachable — previously it hardcoded a pass while `emit()` wrote nothing
 	 * but a log line.
 	 *
+	 * `tenant_scoped_queries` and `no_tenant_info_leak` cite OpenRegister's
+	 * organisation row filter, the control that actually runs, and pass only
+	 * when `rowFilterEnabled()` says multitenancy is on. They used to cite a
+	 * search_path middleware that isolated nothing (dossiq#2470).
+	 *
 	 * @return array<int, array{key:string, description:string, evidence:string, status:string}>
 	 *
 	 * @spec openspec/specs/tenant-compliance/spec.md
@@ -269,18 +305,20 @@ class TenantAuditTrailService {
 			$auditStatus = 'pass';
 		}
 
+		$isolationStatus = 'unverified';
+		if ($this->rowFilterEnabled() === true) {
+			$isolationStatus = 'pass';
+		}
+
+		$rowFilter = 'OpenRegister organisation row filter (MagicSearchHandler adds a WHERE on the organisation column '
+			. 'when multitenancy is on), probed live through SettingsService::isMultiTenancyEnabled()';
+
 		return [
 			[
 				'key' => 'tenant_scoped_queries',
-				'description' => 'Every query carries the request-scoped tenant filter',
-				'evidence' => 'TenantIsolationMiddleware sets the Postgres search_path; TenantContext carries the active tenant',
-				'status' => 'pass',
-			],
-			[
-				'key' => 'claim_validation',
-				'description' => 'JWT tenant_id claim is cross-checked against the request tenant',
-				'evidence' => 'TenantClaimValidationMiddleware',
-				'status' => 'pass',
+				'description' => 'Every object query is filtered to the active organisation',
+				'evidence' => $rowFilter,
+				'status' => $isolationStatus,
 			],
 			[
 				'key' => 'audit_logged_mutations',
@@ -293,14 +331,15 @@ class TenantAuditTrailService {
 			[
 				'key' => 'no_hardcoded_secrets',
 				'description' => 'JWT signing secret + Shillinq credentials resolved from app config',
-				'evidence' => 'Application.php registerService factory for TenantJwtService + ShillinqIntegrationService',
+				'evidence' => 'PortalAssertionVerifier reads jwt_signing_secret from app config; '
+					. 'SaasServiceRegistrar builds ShillinqIntegrationService from app config',
 				'status' => 'pass',
 			],
 			[
 				'key' => 'no_tenant_info_leak',
 				'description' => 'Cross-tenant queries return 404 (not 403) to prevent existence leak',
-				'evidence' => 'TenantIsolationMiddleware search_path scoping + controller-level 404 responses',
-				'status' => 'pass',
+				'evidence' => $rowFilter . '; another organisation\'s object finds no row, so the lookup answers 404',
+				'status' => $isolationStatus,
 			],
 			[
 				'key' => 'composer_audit',
@@ -310,7 +349,7 @@ class TenantAuditTrailService {
 			],
 			[
 				'key' => 'isolation_pen_test',
-				'description' => 'Cross-tenant pen-test asserts schema isolation under DDL + DQL',
+				'description' => 'Cross-tenant pen-test asserts that the organisation row filter returns no row of another organisation',
 				'evidence' => 'Deferred to a live-OR fixture; no automated pen-test executes today',
 				'status' => 'unverified',
 			],

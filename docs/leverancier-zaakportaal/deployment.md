@@ -92,6 +92,12 @@ URL) are configured.
   shard traffic.
 - **HTTP 401 on dashboard** — bearer JWT expired (2-hour TTL);
   call `POST /auth/refresh` or re-login.
-- **"Dossiq TENANT_SCHEMA_DELETED" log line** — emitted by
-  `TenantLifecycleControlService::archiveAndDelete()` after a
-  tenant is fully terminated.
+- **Ending a tenancy** is a status change, not a delete. Set the
+  tenant's status to `terminated` with
+  `PATCH /api/saas/tenants/{tenantId}`. The tenant row then carries
+  `status: terminated` and a `terminatedAt` timestamp, and its data
+  stays in place. Each status change writes one OpenRegister audit
+  entry with the action `procest.tenant.tenant.status_changed`, and
+  its resource reads `tenant:<id> <old>-><new>`. The same entry
+  appears in the Nextcloud log as a `Dossiq AUDIT` line. No log line
+  says that tenant data was deleted, because nothing deletes it.

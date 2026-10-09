@@ -354,33 +354,6 @@ class TenantSaasService {
 	}//end updateStatus()
 
 	/**
-	 * Delete a tenant (hard delete via OR's `deleteObject`).
-	 *
-	 * Caller must enforce the business rule that only `terminated` tenants can be
-	 * physically deleted; the state machine prevents direct delete of active rows.
-	 *
-	 * @param string $tenantId Tenant UUID.
-	 *
-	 * @return bool True when deletion succeeded.
-	 *
-	 * @spec openspec/specs/tenant-crud-lifecycle/spec.md#requirement-tenant-lifecycle-state-machine-req-001-a-lifecycle
-	 */
-	public function delete(string $tenantId): bool {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return false;
-		}
-
-		try {
-			$objectService->deleteObject(uuid: $tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
-			return true;
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: TenantSaasService::delete failed', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
-			return false;
-		}
-	}//end delete()
-
-	/**
 	 * Generate a URL-safe tenant slug from a human-readable name.
 	 *
 	 * Lowercased, non-alphanumerics collapsed to single hyphens, trimmed,

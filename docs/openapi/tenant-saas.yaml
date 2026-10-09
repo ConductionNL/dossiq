@@ -129,12 +129,6 @@ paths:
         '200': { description: OK }
         '404': { description: Tenant not found }
         '409': { description: Illegal lifecycle transition }
-    delete:
-      summary: Hard-delete a terminated tenant (admin)
-      responses:
-        '200': { description: Deleted }
-        '404': { description: Not found }
-        '409': { description: Tenant must be in 'terminated' status before deletion }
 
   /api/saas/tenants/{tenantId}/onboarding/progress:
     parameters:
@@ -207,11 +201,9 @@ paths:
         '200': { description: OK }
 
 # Standard cross-cutting error responses
-# - 401 Bearer JWT missing or invalid (TenantJwtService)
-# - 403 mandate denied (MandateValidationMiddleware) or cross-tenant
-#       JWT claim mismatch (TenantClaimValidationMiddleware) or tenant
-#       suspended/terminated (TenantMiddleware)
-# - 404 cross-tenant lookup (TenantIsolationMiddleware search_path)
+# - 403 mandate denied, or the active organisation is not active
+#       (both MandateValidationMiddleware)
+# - 404 cross-tenant lookup (OpenRegister organisation row filter returns no row)
 # - 429 request quota exceeded, answered by OpenRegister's TenantQuotaMiddleware
 #       on OpenRegister's own routes. Dossiq's routes carry no request quota:
 #       QuotaEnforcementMiddleware was retired when the request limit moved
