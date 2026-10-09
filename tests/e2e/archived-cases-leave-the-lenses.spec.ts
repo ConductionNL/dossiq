@@ -38,6 +38,7 @@ import {
 	seedStateMachine,
 	showObject,
 } from './helpers/fixtures.ts'
+import { chooseLens, expectLensActive } from './helpers/lens.ts'
 import {
 	dismissSupportDialog,
 	openHeaderActionsMenu,
@@ -71,20 +72,6 @@ const ARCHIVED_KEYS = ['Gearchiveerd A', 'Gearchiveerd B', 'Gearchiveerd C']
 
 /** The keys this spec leaves open. */
 const OPEN_KEYS = ['Open A', 'Open B', 'Open C', 'Open D']
-
-/**
- * One quick-filter chip, by its English or Dutch label.
- *
- * The instance may be Dutch, so every chip is matched in both languages: a
- * spec that asserted English labels fails on a Dutch instance for a reason
- * that has nothing to do with the archive.
- *
- * @param page The page.
- * @param label A pattern matching the chip's label in either language.
- */
-function chip(page: Page, label: RegExp) {
-	return page.getByRole('tab', { name: label })
-}
 
 const CHIPS = {
 	all: /^(All|Alle)$/,
@@ -323,7 +310,7 @@ test.describe('Archived cases leave the working lenses', () => {
 	test('the default lens shows the open cases and none of the archived ones', async ({
 		page,
 	}) => {
-		await expect(chip(page, CHIPS.all)).toHaveAttribute('aria-selected', 'true')
+		await expectLensActive(page, CHIPS.all)
 
 		// An absence asserted first would pass against a list that has not
 		// fetched yet, so a row that MUST be there is waited for.
@@ -344,7 +331,7 @@ test.describe('Archived cases leave the working lenses', () => {
 
 	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-the-archived-lens-finds-them
 	test('the Archived lens shows them and nothing else', async ({ page }) => {
-		await chip(page, CHIPS.archived).click()
+		await chooseLens(page, CHIPS.archived)
 
 		await expect(row(page, 'Gearchiveerd A').first()).toBeVisible({
 			timeout: 30_000,
@@ -391,7 +378,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		await expect(ownRows(page).first()).toBeVisible({ timeout: 30_000 })
 		const shown = await ownRows(page).count()
 
-		await chip(page, CHIPS.archived).click()
+		await chooseLens(page, CHIPS.archived)
 		await expect(row(page, 'Gearchiveerd A').first()).toBeVisible({
 			timeout: 30_000,
 		})

@@ -34,6 +34,7 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
+import { chooseLens } from './helpers/lens.ts'
 import { clickHeaderAction, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /** The uid Playwright signs in as, read once off the loaded page. */
@@ -182,11 +183,7 @@ test.describe('Claim and release a case', () => {
 
 		// And it is on Cases under Mine.
 		await page.goto(`/apps/${REGISTER}/cases`, PAGE_LOAD)
-		await page
-			.locator('[role="tab"], button')
-			.filter({ hasText: /^(Mine|Van mij)$/ })
-			.first()
-			.click()
+		await chooseLens(page, /^(Mine|Van mij)$/)
 		await expect(
 			page.locator('tbody tr').filter({ hasText: title }),
 		).toHaveCount(1, { timeout: 30_000 })

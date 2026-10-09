@@ -53,6 +53,11 @@ import {
 	updateObject,
 } from './helpers/fixtures.ts'
 import {
+	chooseLens,
+	expectLensActive,
+	expectOnlyLensActive,
+} from './helpers/lens.ts'
+import {
 	dateTokenPattern,
 	dismissSupportDialog,
 	PAGE_LOAD,
@@ -184,16 +189,6 @@ async function casesTable(page: Page): Promise<Locator> {
 	const table = page.getByRole('table')
 	await expect(table).toBeVisible({ timeout: 30_000 })
 	return table
-}
-
-/**
- * One quick-filter chip, by its English or Dutch label.
- *
- * @param page  The page.
- * @param label A pattern matching the chip's label in either language.
- */
-function chip(page: Page, label: RegExp): Locator {
-	return page.getByRole('tab', { name: label })
 }
 
 const CHIPS = {
@@ -576,11 +571,11 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		// The landing lens is All, not Mine. A default that narrowed to the
 		// signed-in user would make an empty result read as an empty
 		// register rather than as a filter (decision D-default, revised).
-		await expect(chip(page, CHIPS.all)).toHaveAttribute('aria-selected', 'true')
+		await expectLensActive(page, CHIPS.all)
 		await listSettled(page, 'other-open')
 		await expect(row(page, 'mine-open').first()).toBeVisible()
 
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		await listSettled(page, 'mine-open')
 		await expect(row(page, 'other-open')).toHaveCount(0)
 	})
@@ -593,7 +588,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await narrowToThisRun(page)
 
-		await chip(page, CHIPS.unclaimed).click()
+		await chooseLens(page, CHIPS.unclaimed)
 		await listSettled(page, 'unclaimed-open')
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 
@@ -615,7 +610,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await narrowToThisRun(page)
 
-		await chip(page, CHIPS.all).click()
+		await chooseLens(page, CHIPS.all)
 		await listSettled(page, 'other-open')
 		await expect(row(page, 'mine-closed').first()).toBeVisible({
 			timeout: 30_000,
@@ -630,17 +625,16 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await narrowToThisRun(page)
 
-		await chip(page, CHIPS.unclaimed).click()
+		await chooseLens(page, CHIPS.unclaimed)
 		await listSettled(page, 'unclaimed-open')
 
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		await listSettled(page, 'mine-open')
 
-		// Exactly one chip is active, and it is Mine.
-		await expect(chip(page, CHIPS.mine)).toHaveAttribute('aria-selected', 'true')
-		await expect(
-			page.getByRole('tab').and(page.locator('[aria-selected="true"]')),
-		).toHaveCount(1)
+		// Exactly one chip is active, and it is Mine. Mine sits behind the
+		// overflow chip since e66fa9d43, so "one selected tab" is no longer the
+		// shape of that fact; the helper reads it wherever the lens renders.
+		await expectOnlyLensActive(page, CHIPS.mine)
 		// And the unassigned case is gone, so the two filters did not stack
 		// into "mine OR unclaimed".
 		await expect(row(page, 'unclaimed-open')).toHaveCount(0)
@@ -655,7 +649,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
 
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		await listSettled(page, 'mine-open')
 		await expect(row(page, 'mine-closed')).toHaveCount(0)
 	})
@@ -665,7 +659,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
 
-		await chip(page, CHIPS.closed).click()
+		await chooseLens(page, CHIPS.closed)
 		await listSettled(page, 'mine-closed')
 		await expect(row(page, 'mine-open')).toHaveCount(0)
 	})
@@ -678,7 +672,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	test('the Deadline cell counts the days left', async ({ page }) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		await listSettled(page, 'mine-open')
 
 		const cell = row(page, 'mine-open')
@@ -694,7 +688,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		await listSettled(page, 'mine-overdue')
 
 		const cell = row(page, 'mine-overdue')
@@ -711,7 +705,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
 
-		await chip(page, CHIPS.overdue).click()
+		await chooseLens(page, CHIPS.overdue)
 		await listSettled(page, 'mine-overdue')
 		await expect(row(page, 'closed-overdue')).toHaveCount(0)
 		await expect(row(page, 'mine-open')).toHaveCount(0)
@@ -725,7 +719,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await casesTable(page)
 		await narrowToThisRun(page)
 
-		await chip(page, CHIPS.dueThisWeek).click()
+		await chooseLens(page, CHIPS.dueThisWeek)
 		await listSettled(page, 'mine-open')
 		// The window is half-open on both sides, and each neighbour proves
 		// one of them: `mine-far` is due in thirty days, past `@today+7d`,
@@ -778,10 +772,10 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
-		await expect(chip(page, CHIPS.all)).toHaveAttribute('aria-selected', 'true')
+		await expectLensActive(page, CHIPS.all)
 		await listSettled(page, 'task-other')
 
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		// Both halves. Mine is `scope=assigned&isTerminal=false`, and a lens
 		// that answered nothing at all would satisfy the absence on its own.
 		await listSettled(page, 'task-mine')
@@ -793,7 +787,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
-		await chip(page, CHIPS.unclaimed).click()
+		await chooseLens(page, CHIPS.unclaimed)
 		await listSettled(page, 'task-unclaimed')
 		// `scope=pooled` is "unassigned AND I am in its candidate pool", so a
 		// task somebody holds is out whoever that somebody is.
@@ -807,7 +801,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
-		await chip(page, CHIPS.all).click()
+		await chooseLens(page, CHIPS.all)
 		await listSettled(page, 'task-other')
 		// `scope=all` with no `isTerminal`, so a finished task is still here.
 		await expect(row(page, 'task-done').first()).toBeVisible({
@@ -822,7 +816,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
-		await chip(page, CHIPS.closed).click()
+		await chooseLens(page, CHIPS.closed)
 		await listSettled(page, 'task-done')
 		await expect(row(page, 'task-mine')).toHaveCount(0)
 	})
@@ -834,7 +828,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
-		await chip(page, CHIPS.overdue).click()
+		await chooseLens(page, CHIPS.overdue)
 		await listSettled(page, 'task-overdue')
 		// The boundary, and the reason this file seeds a task due at the end
 		// of today at all. The engine derives `overdue` as `dueAt < now` on
@@ -861,7 +855,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
 
-		await chip(page, CHIPS.dueThisWeek).click()
+		await chooseLens(page, CHIPS.dueThisWeek)
 		await listSettled(page, 'task-this-week')
 		// Today is inside the window and two days ago is not, which is the
 		// same boundary the Overdue test reads from the other side.
@@ -922,7 +916,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
-		await chip(page, CHIPS.dueThisWeek).click()
+		await chooseLens(page, CHIPS.dueThisWeek)
 
 		// 🔴 THE REQUEST FIRST, THE ROW AFTER. See the Overdue test below for
 		// what this ordering is for: a break to the lens widens the list past
@@ -1003,7 +997,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
 		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
-		await chip(page, CHIPS.overdue).click()
+		await chooseLens(page, CHIPS.overdue)
 
 		// 🔴 THE REQUEST IS READ BEFORE ANY ROW IS WAITED FOR, AND THE ORDER
 		// IS THE POINT. A mutation check on this test twice reddened
@@ -1074,7 +1068,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	): Promise<Locator> {
 		await visit(page, CASES_URL)
 		await casesTable(page)
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		await listSettled(page, keys[0])
 
 		for (const key of keys) {
@@ -1261,7 +1255,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}) => {
 		await visit(page, CASES_URL)
 		await casesTable(page)
-		await chip(page, CHIPS.mine).click()
+		await chooseLens(page, CHIPS.mine)
 		await listSettled(page, 'mine-far')
 		await tickCheckbox(row(page, 'mine-far').first().getByRole('checkbox'))
 

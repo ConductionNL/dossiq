@@ -42,6 +42,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
+import { chooseLens } from './helpers/lens.ts'
 import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
@@ -182,9 +183,7 @@ test.describe('the payment state is on the case and in the list', () => {
 
 		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await page
-			.getByRole('tab', { name: /^(Awaiting payment|Wacht op betaling)$/ })
-			.click()
+		await chooseLens(page, /^(Awaiting payment|Wacht op betaling)$/)
 		await expect(
 			page
 				.getByRole('row')
