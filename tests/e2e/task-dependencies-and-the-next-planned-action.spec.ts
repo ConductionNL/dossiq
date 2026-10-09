@@ -154,6 +154,7 @@ test.describe('The case says what happens next', () => {
 
 		const response = await api.get(
 			`${PLANNED_BASE}/${caseId}/planned-actions/next`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(
 			response.ok(),

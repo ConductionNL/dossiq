@@ -187,12 +187,14 @@ test.describe('One personal queue', () => {
 		// about whether anything was said at all.
 		const queue = await page.request.get(
 			'/index.php/apps/dossiq/api/personal-queue',
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(queue.status()).toBe(200)
 		expect((await queue.json()).total).toBeGreaterThan(0)
 
 		const settings = await page.request.get(
 			'/index.php/apps/dossiq/api/personal-queue/digest',
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(settings.status()).toBe(200)
 		expect((await settings.json()).enabled).toBe(true)

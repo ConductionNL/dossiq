@@ -102,7 +102,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 			`a case nothing holds must delete: ${JSON.stringify(deleted.body)}`,
 		).toBeLessThan(300)
 
-		const res = await api.get(`${DOSSIQ}/cases/deleted`)
+		const res = await api.get(`${DOSSIQ}/cases/deleted`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(res.status()).toBe(200)
 
 		const rows = ((await res.json()) as any).results ?? []
@@ -169,8 +171,13 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(refused.status).toBe(HOOK_STOPPED)
 
 		const rows =
-			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
-				.results ?? []
+			(
+				(await (
+					await api.get(`${DOSSIQ}/cases/deleted`, {
+						headers: { 'OCS-APIRequest': 'true' },
+					})
+				).json()) as any
+			).results ?? []
 		expect(
 			rows.some((r: any) => r.id === heldId),
 			'a refused delete must not put the case in the trash',
@@ -199,8 +206,13 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(((await restored.json()) as any).success).toBe(true)
 
 		const rows =
-			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
-				.results ?? []
+			(
+				(await (
+					await api.get(`${DOSSIQ}/cases/deleted`, {
+						headers: { 'OCS-APIRequest': 'true' },
+					})
+				).json()) as any
+			).results ?? []
 		expect(
 			rows.some((r: any) => r.id === caseId),
 			'a restored case must leave the trash',
@@ -208,6 +220,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 
 		const trail = await api.get(
 			`/index.php/apps/openregister/api/deleted/${encodeURIComponent(caseId)}/destruction`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(
 			trail.status(),
@@ -233,6 +246,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 
 		const preview = await api.get(
 			`${DOSSIQ}/case/${encodeURIComponent(caseId)}/destruction-preview`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(preview.status()).toBe(200)
 
@@ -269,8 +283,13 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(((await refused.json()) as any).code).toBe('recovery_window_open')
 
 		const rows =
-			((await (await api.get(`${DOSSIQ}/cases/deleted`)).json()) as any)
-				.results ?? []
+			(
+				(await (
+					await api.get(`${DOSSIQ}/cases/deleted`, {
+						headers: { 'OCS-APIRequest': 'true' },
+					})
+				).json()) as any
+			).results ?? []
 		expect(
 			rows.some((r: any) => r.id === caseId),
 			'a refused destruction must leave the case in the trash',
@@ -294,6 +313,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 
 		const res = await api.get(
 			`${DOSSIQ}/case/${encodeURIComponent(caseId)}/retention-clocks`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(res.status()).toBe(200)
 

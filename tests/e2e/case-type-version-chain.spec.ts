@@ -139,6 +139,7 @@ test.describe('A case type carries its versions, and a case can move along them'
 
 		const response = await api.get(
 			`/index.php/apps/dossiq/api/case-types/${versionOne}/chain`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(response.ok(), await response.text()).toBeTruthy()
 
@@ -166,6 +167,7 @@ test.describe('A case type carries its versions, and a case can move along them'
 		// only points the new row at its own initial status.
 		const statuses = await api.get(
 			`/index.php/apps/dossiq/api/case-types/${versionTwo}/blueprint`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		const ontvangen = (await statuses.json()).statusTypes.find(
 			(status: any) => status.name === 'Ontvangen',
@@ -219,6 +221,7 @@ test.describe('A case type carries its versions, and a case can move along them'
 
 		const response = await api.get(
 			`/index.php/apps/dossiq/api/case/${runningCase}/version-move?target=${versionTwo}`,
+			{ headers: { 'OCS-APIRequest': 'true' } },
 		)
 		expect(response.ok(), await response.text()).toBeTruthy()
 

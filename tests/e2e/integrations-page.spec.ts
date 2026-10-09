@@ -116,7 +116,9 @@ let token: string
  * @param request The authenticated request context.
  */
 async function listConnections(request: APIRequestContext): Promise<any[]> {
-	const res = await request.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`)
+	const res = await request.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`, {
+		headers: { 'OCS-APIRequest': 'true' },
+	})
 	expect(res.ok(), `list integriq/app_connection -> ${res.status()}`).toBeTruthy()
 	const body = await res.json()
 	return body.results ?? []
@@ -325,7 +327,9 @@ test.describe('Integrations', () => {
 		// Snapshot the one key this test writes. The row is integriq's now and
 		// follows the saved value, so putting the VALUE back is what leaves the
 		// next run a page that claims nothing it has not checked.
-		const before = await api.get(settingsApi)
+		const before = await api.get(settingsApi, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(before.ok(), `settings read -> ${before.status()}`).toBeTruthy()
 		const previous = String(
 			(await before.json())?.config?.identification_method ?? '',

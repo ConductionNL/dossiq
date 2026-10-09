@@ -145,6 +145,7 @@ async function signIn(
  */
 async function lookup(api: APIRequestContext) {
 	return api.get('/index.php/apps/dossiq/api/kcc/contactmomenten', {
+		headers: { 'OCS-APIRequest': 'true' },
 		params: { burgerId: SUBJECT },
 	})
 }

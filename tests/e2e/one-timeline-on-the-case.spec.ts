@@ -90,7 +90,7 @@ async function readTimeline(
 ): Promise<any> {
 	const search = new URLSearchParams(query).toString()
 	const url = `${OR}/objects/${REGISTER}/${SCHEMA}/${id}/timeline${search ? `?${search}` : ''}`
-	const response = await api.get(url)
+	const response = await api.get(url, { headers: { 'OCS-APIRequest': 'true' } })
 	expect(response.ok(), `GET ${url} answered ${response.status()}`).toBeTruthy()
 
 	return response.json()
@@ -164,7 +164,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 	test('every kind dossiq names is declared on the instance', async ({
 		request,
 	}) => {
-		const response = await request.get(`${OR}/timeline/kinds`)
+		const response = await request.get(`${OR}/timeline/kinds`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(response.ok()).toBeTruthy()
 
 		const declared = ((await response.json()).results || []).map(
@@ -330,7 +332,9 @@ test.describe('REQ-TL-13 one entry reaches every case it is about', () => {
 
 test.describe('REQ-TL-14 the standard notes are administered text', () => {
 	test('dossiq seeds its standard notes on the instance', async ({ request }) => {
-		const response = await request.get(`${OR}/timeline/text-blocks`)
+		const response = await request.get(`${OR}/timeline/text-blocks`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(response.ok()).toBeTruthy()
 
 		const slugs = ((await response.json()).results || []).map(
