@@ -22,7 +22,12 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\TermDeclarationReader;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -33,6 +38,9 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\DeadlineExtensionService
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class DeadlineExtensionLimitTest extends TestCase {
 	use BindsTermFixtures;
@@ -171,4 +179,87 @@ class DeadlineExtensionLimitTest extends TestCase {
 
 		self::assertSame('2026-12-31', $moved['endDateCurrent']);
 	}//end testNoDeclaredPeriodMeansNoCeiling()
+
+	/**
+	 * The service with the real timer on the statutory fallback calendar, over
+	 * one running term bound to a definition.
+	 *
+	 * @param array<string, mixed>|null $definitie The definition the store answers, or null.
+	 * @param int                       $consumed  Extensions already used.
+	 *
+	 * @return DeadlineExtensionService The service.
+	 */
+	private function rollingService(?array $definitie, int $consumed = 0): DeadlineExtensionService {
+		$store = $this->createMock(TermijnService::class);
+		$store->method('getTermijnInstance')->willReturn(
+			[
+				'id' => 't1',
+				'case' => 'c1',
+				'endDateCurrent' => '2026-11-02',
+				'countExtensions' => $consumed,
+				'deadlineDefinition' => 'td-woo-verzoek',
+			]
+		);
+		$store->method('getTermijnDefinitieById')->willReturn($definitie);
+		$store->method('updateTermijnInstance')->willReturnCallback(
+			static fn (string $id, array $patch): array => array_merge(['id' => $id], $patch)
+		);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn(null);
+
+		return new DeadlineExtensionService(
+			termService: $store,
+			dates: $this->caseDates(),
+			timerService: new TermijnTimerService(
+				settingsService: $settings,
+				logger: $this->createMock(LoggerInterface::class),
+				dates: $this->caseDates(),
+				fallbackCalendar: new WorkingDayCalculator(),
+			),
+		);
+	}//end rollingService()
+
+	/**
+	 * REQ-WTR-002: a Sunday sent as the new end lands on Monday, and the
+	 * supplied date is kept beside it.
+	 *
+	 * @return void
+	 */
+	public function testASundayEndDateIsRolledToMonday(): void {
+		$moved = $this->rollingService(['id' => 'td-woo-verzoek', 'countExtensions' => 1])
+			->requestExtension('t1', 'Zienswijzen van derden', '2026-11-15');
+
+		self::assertSame('2026-11-16', $moved['endDateCurrent']);
+		self::assertSame('2026-11-15', $moved['endDateBeforeRoll']);
+	}//end testASundayEndDateIsRolledToMonday()
+
+	/**
+	 * REQ-WTR-003: the seeded Woo definition allows one extension, read from
+	 * the definition itself, and a second is refused.
+	 *
+	 * @return void
+	 */
+	public function testTheWooDefinitionAllowsOneExtension(): void {
+		$seed = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/termijnbewaking_seed_data.json'), true);
+		$woo = array_values(array_filter($seed['termijnDefinities'], static fn (array $row): bool => $row['caseType'] === 'woo-verzoek'))[0];
+		self::assertSame(1, $woo['countExtensions'], 'the seeded Woo term allows exactly one extension');
+
+		$moved = $this->rollingService($woo)->requestExtension('t1', 'Zienswijzen van derden', '2026-11-16');
+		self::assertSame(1, $moved['countExtensions']);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('maximum aantal verlengingen');
+		$this->rollingService($woo, consumed: 1)->requestExtension('t1', 'Nog een keer', '2026-11-30');
+	}//end testTheWooDefinitionAllowsOneExtension()
+
+	/**
+	 * A definition that cannot be read counts as one extension, the safe value.
+	 *
+	 * @return void
+	 */
+	public function testAMissingDefinitionCountsAsOne(): void {
+		$this->expectException(RuntimeException::class);
+		$this->rollingService(null, consumed: 1)->requestExtension('t1', 'Nog een keer', '2026-11-30');
+	}//end testAMissingDefinitionCountsAsOne()
 }//end class

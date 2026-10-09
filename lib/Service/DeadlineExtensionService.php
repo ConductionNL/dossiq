@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
-use ReflectionClass;
 use RuntimeException;
 
 /**
@@ -172,7 +171,14 @@ class DeadlineExtensionService {
 			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
-		$this->assertExtensionPermitted(instance: $instance, newEndDate: $newEndDate, mode: $mode);
+		// Every end date accepted through the API obeys the Algemene
+		// termijnenwet (REQ-WTR-002): rolled before the ceiling check and
+		// before it is stored, with the supplied date kept beside it.
+		$definitie = $this->definitionOf(instance: $instance);
+		$suppliedEndDate = $newEndDate;
+		$newEndDate = $this->rolled(date: $newEndDate, definitie: $definitie);
+
+		$this->assertExtensionPermitted(instance: $instance, newEndDate: $newEndDate, mode: $mode, definitie: $definitie);
 
 		$current = (string)($instance['endDateCurrent'] ?? '');
 		$consumed = (int)($instance['countExtensions'] ?? 0);
@@ -184,6 +190,7 @@ class DeadlineExtensionService {
 			$termInstanceId,
 			[
 				'endDateCurrent' => $newEndDate,
+				'endDateBeforeRoll' => $suppliedEndDate,
 				'status' => 'verlengd',
 				'countExtensions' => ($consumed + 1),
 			]
@@ -241,19 +248,20 @@ class DeadlineExtensionService {
 	 * @param array<string, mixed> $instance Instance row.
 	 * @param string $newEndDate New deadline (YYYY-MM-DD).
 	 * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
+	 * @param array<string, mixed> $definitie The instance's TermijnDefinitie, or an empty array.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the deadline does not move forward or the ceiling is exhausted.
 	 */
-	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode): void {
+	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode, array $definitie): void {
 		$current = (string)($instance['endDateCurrent'] ?? '');
 		if ($current !== '' && $newEndDate <= $current) {
 			throw new RuntimeException('newEinddatum must be later than current einddatumActueel');
 		}
 
 		$consumed = (int)($instance['countExtensions'] ?? 0);
-		$maxExt = $this->resolveMaxExtensions(instance: $instance);
+		$maxExt = $this->resolveMaxExtensions(definitie: $definitie);
 		if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
 			throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
 		}
@@ -347,50 +355,58 @@ class DeadlineExtensionService {
 	}//end resolveExtensionContext()
 
 	/**
-	 * Resolve the maximum number of extensions allowed for this instance.
-	 *
-	 * Looks up the TermijnDefinitie via the instance reference and reads
-	 * aantalVerlengingen; falls back to 1 when missing (AWB default).
+	 * The TermijnDefinitie a term instance names, read by id.
 	 *
 	 * @param array<string, mixed> $instance Instance row.
 	 *
-	 * @return int
+	 * @return array<string, mixed> The definition, or an empty array when it cannot be read.
 	 */
-	private function resolveMaxExtensions(array $instance): int {
-		// Prefer to look up the definition by the linked id.
+	private function definitionOf(array $instance): array {
 		$defId = (string)($instance['deadlineDefinition'] ?? '');
 		if ($defId === '') {
+			return [];
+		}
+
+		return ($this->termService->getTermijnDefinitieById($defId) ?? []);
+	}//end definitionOf()
+
+	/**
+	 * A supplied end date, rolled by the Algemene termijnenwet when the term declares it.
+	 *
+	 * Without the engine bridge the date is answered as supplied, which is what
+	 * a build without a calendar always did.
+	 *
+	 * @param string               $date      The supplied end date (YYYY-MM-DD).
+	 * @param array<string, mixed> $definitie The instance's TermijnDefinitie.
+	 *
+	 * @return string The end date the term actually ends on (YYYY-MM-DD).
+	 */
+	private function rolled(string $date, array $definitie): string {
+		if ($this->timerService === null) {
+			return $date;
+		}
+
+		$parsed = $this->dates->parse($date, 'newEinddatum');
+
+		return $this->timerService->rollTermEndFor(date: $parsed, definitie: $definitie)->format('Y-m-d');
+	}//end rolled()
+
+	/**
+	 * The maximum number of standard extensions the definition allows.
+	 *
+	 * Read from the definition's `countExtensions` (the schema's "Maximum
+	 * Extensions"). A missing definition counts as one, the safe value: Woo
+	 * art. 4.4 lid 2 and Awb 4:14 allow one.
+	 *
+	 * @param array<string, mixed> $definitie The instance's TermijnDefinitie, or an empty array.
+	 *
+	 * @return int The ceiling.
+	 */
+	private function resolveMaxExtensions(array $definitie): int {
+		if ($definitie === [] || array_key_exists('countExtensions', $definitie) === false) {
 			return 1;
 		}
 
-		// Walk the TermijnService cache by zaaktype if available. As a
-		// safe fallback, return the default 1 — a real lookup would
-		// call SettingsService->getObjectService()->find($defId) here,
-		// but TermijnService already caches lookups by zaaktype which
-		// is the data we actually need.
-		$svcDef = null;
-		try {
-			$reflection = new ReflectionClass($this->termService);
-			if ($reflection->hasProperty('definitieCache') === true) {
-				$prop = $reflection->getProperty('definitieCache');
-				$cache = $prop->getValue($this->termService);
-				if (is_array($cache) === true) {
-					foreach ($cache as $row) {
-						if (is_array($row) === true && (string)($row['id'] ?? '') === $defId) {
-							$svcDef = $row;
-							break;
-						}
-					}
-				}
-			}
-		} catch (\Throwable $e) {
-			$svcDef = null;
-		}
-
-		if (is_array($svcDef) === true) {
-			return (int)($svcDef['countExtensions'] ?? 1);
-		}
-
-		return 1;
+		return max(0, (int)$definitie['countExtensions']);
 	}//end resolveMaxExtensions()
 }//end class

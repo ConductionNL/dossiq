@@ -276,6 +276,12 @@
             "title": "Effective End Date",
             "description": "Effective deadline after pauses and extensions"
           },
+          "endDateBeforeRoll": {
+            "type": "string",
+            "format": "date",
+            "title": "End date before the roll",
+            "description": "The end date a caller supplied, before the Algemene termijnenwet rolled it past a weekend or holiday. Equal to the effective end date when no roll was needed."
+          },
           "status": {
             "type": "string",
             "enum": [

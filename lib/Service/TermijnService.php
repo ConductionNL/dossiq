@@ -358,6 +358,19 @@ class TermijnService {
 	}//end getTermijnDefinitie()
 
 	/**
+	 * Read the TermijnDefinitie a term instance names, by id.
+	 *
+	 * @param string $definitionId The definition id (`deadlineInstance.deadlineDefinition`).
+	 *
+	 * @return array<string, mixed>|null The definition, or null when it cannot be read.
+	 *
+	 * @spec openspec/specs/woo-case-type/spec.md
+	 */
+	public function getTermijnDefinitieById(string $definitionId): ?array {
+		return $this->definitions->byId(id: $definitionId);
+	}//end getTermijnDefinitieById()
+
+	/**
 	 * EVERY active TermijnDefinitie for a zaaktype, newest validFrom first.
 	 *
 	 * {@see getTermijnDefinitie()} answers the ONE a case type falls back to.

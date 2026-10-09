@@ -102,6 +102,35 @@ class TermDefinitions {
 	}//end activeFor()
 
 	/**
+	 * Read one TermijnDefinitie by its id.
+	 *
+	 * A term instance names its definition by id, and the extension ceiling
+	 * lives on that row. A missing row answers null; the caller decides the
+	 * safe value.
+	 *
+	 * @param string $id The definition id.
+	 *
+	 * @return array<string, mixed>|null The definition, or null when it cannot be read.
+	 *
+	 * @spec openspec/specs/woo-case-type/spec.md
+	 */
+	public function byId(string $id): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
+		if ($id === '' || $objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		try {
+			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
+		} catch (\Throwable $e) {
+			$this->logger->warning('TermDefinitions.byId lookup failed', ['id' => $id, 'error' => $e->getMessage()]);
+			return null;
+		}
+	}//end byId()
+
+	/**
 	 * EVERY active TermijnDefinitie for a zaaktype, newest validFrom first.
 	 *
 	 * {@see self::activeFor()} answers the ONE a case type falls back to.

@@ -51,7 +51,7 @@ from `today`.
 
 ## 2. API end dates are rolled
 
-- [ ] 2.1 `DeadlineExtensionService::applyExtension()` rolls `newEndDate` with
+- [x] 2.1 `DeadlineExtensionService::applyExtension()` rolls `newEndDate` with
   `TermijnTimerService::rollTermEndFor()` and the instance's definition before the ceiling check
   and before it stores the date. It stores the supplied date as `endDateBeforeRoll`. Declare
   `endDateBeforeRoll` on `deadlineInstance` in `register.d/60-termijnbewaking.json` (REQ-WTR-002).
@@ -59,6 +59,10 @@ from `today`.
     `testASundayEndDateIsRolledToMonday`.
   - Through the caller: `tests/Unit/Controller/TermijnControllerTest.php`
     `testVerlengRollsTheEndDate`, with POST to `verleng` and a Sunday `newEinddatum`.
+  - Done: rolled in `applyExtension()` before the ceiling check and the days impact;
+    `endDateBeforeRoll` declared in `register.d/60-termijnbewaking.json`. Tests in
+    `DeadlineExtensionLimitTest` and, through the route, `TermijnControllerContractTest`
+    `testVerlengRollsTheEndDate` (the controller test class is the contract test).
 
 ## 3. The Woo extension goes through termijn#verleng
 
@@ -76,12 +80,16 @@ from `today`.
     (`tests/Support/RealSchemaValidator`).
   - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
     `testASecondWooExtensionAnswers409`.
-- [ ] 3.2 Make sure the seeded Woo term definition caps extensions at one. Check
+- [x] 3.2 Make sure the seeded Woo term definition caps extensions at one. Check
   `register.d/81-woo-verzoek.json` and the `TermijnDefinitie` the Woo case type binds. Replace
   `resolveMaxExtensions()`'s reflection on `definitieCache` with a real read of the definition. A
   missing definition counts as one, which is the safe value (REQ-WTR-003).
   - unit: `tests/Unit/Service/DeadlineExtensionLimitTest.php`
     `testTheWooDefinitionAllowsOneExtension`.
+  - Done: `termijnbewaking_seed_data.json` `td-woo-verzoek` has `countExtensions` 1 (the test reads
+    the seed). The reflection is gone: `TermijnService::getTermijnDefinitieById()` reads the row
+    through `TermDefinitions::byId()`; a missing definition counts as one
+    (`testAMissingDefinitionCountsAsOne`).
 - [ ] 3.3 Search `src/` and `lib/` for readers of `expectedResolution`, `deadlineVerlengd` and
   `verdagingReden`, and move each one to `deadline` or the term instance. List them in the PR body.
 
