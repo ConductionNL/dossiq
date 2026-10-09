@@ -12,7 +12,11 @@
 -->
 <template>
 	<CnIndexPage
-		:title="t('dossiq', 'My Work')"
+		:title="t('dossiq', 'Assigned to me')"
+		:showTitle="true"
+		:headerButtons="headerButtons"
+		:countText="t('dossiq', '{total} cases in your name, most urgent first')"
+		:footerNote="t('dossiq', 'Urgency follows from the deadline, the priority and how long a case has been idle.')"
 		register="dossiq"
 		schema="case"
 		:filter="filter"
@@ -171,6 +175,19 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The header buttons of the board: Download, Actions, New case.
+		 *
+		 * @return {Array<object>} CnIndexPage headerButtons.
+		 */
+		headerButtons() {
+			return [
+				{ action: 'export', label: this.t('dossiq', 'Download'), icon: 'TrayArrowDown' },
+				{ action: 'actions-menu', label: this.t('dossiq', 'Actions') },
+				{ action: 'add', label: this.t('dossiq', 'New case'), variant: 'primary', icon: 'Plus' },
+			]
+		},
+
 		/**
 		 * CnIndexPage sortKey/sortOrder for the active sort mode.
 		 *
