@@ -121,6 +121,9 @@ class WOODeadlineServiceTest extends TestCase {
 		$this->definitions->method('endDateFor')->willReturnCallback(
 			static fn (DateTimeImmutable $start, int $days): DateTimeImmutable => $start->modify('+' . $days . ' days')
 		);
+		$this->definitions->method('countedEndDateFor')->willReturnCallback(
+			static fn (DateTimeImmutable $start, int $days): DateTimeImmutable => $start->modify('+' . $days . ' days')
+		);
 		$this->extensions = $this->createMock(DeadlineExtensionService::class);
 
 		$this->service = new WOODeadlineService(
@@ -206,7 +209,7 @@ class WOODeadlineServiceTest extends TestCase {
 	 */
 	public function testExtendDeadlineExtendsTheStatutoryTerm(): void {
 		$this->extensions->expects(self::once())->method('extendStatutoryTermOfCase')
-			->with('case-uuid-001', 'Complex request', 14)
+			->with('case-uuid-001', 'Complex request', 14, self::isInstanceOf(\Closure::class))
 			->willReturn([
 				'previous' => '2026-05-29',
 				'instance' => ['id' => 'ti-1', 'status' => 'verlengd', 'endDateCurrent' => '2026-06-12', 'countExtensions' => 1],
@@ -218,6 +221,32 @@ class WOODeadlineServiceTest extends TestCase {
 		self::assertSame('2026-06-12', $result['deadline']);
 		self::assertSame(1, $result['countExtensions']);
 	}//end testExtendDeadlineExtendsTheStatutoryTerm()
+
+	/**
+	 * The two weeks count from the original end of the first four, unrolled.
+	 *
+	 * A request received on Saturday 2 May 2026 has its four weeks end on
+	 * Saturday 30 May, which the Algemene termijnenwet carries to Monday
+	 * 1 June. The extension counts from the Saturday (Ruben, 2026-10-09):
+	 * 13 June, which the engine then rolls in turn.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testTheExtensionCountsFromTheUnrolledOriginalEnd(): void {
+		$base = null;
+		$this->extensions->method('extendStatutoryTermOfCase')->willReturnCallback(
+			static function (string $caseId, string $rationale, int $days, \Closure $baseOf) use (&$base): array {
+				$base = $baseOf(['id' => 'ti-1', 'startDate' => '2026-05-02T10:00:00+02:00', 'endDateCurrent' => '2026-06-01']);
+				return ['previous' => '2026-06-01', 'instance' => ['endDateCurrent' => '2026-06-15', 'countExtensions' => 1]];
+			}
+		);
+
+		$this->service->extendDeadline('case-uuid-001', 'Veel documenten');
+
+		self::assertSame('2026-05-30', $base, 'From the Saturday the four weeks end on, not the Monday it rolled to.');
+	}//end testTheExtensionCountsFromTheUnrolledOriginalEnd()
 
 	/**
 	 * A second extension is refused with 409, not a 500.

@@ -116,13 +116,17 @@ class DeadlineExtensionService {
 	 * For a law that names its extension in days rather than as an end date
 	 * (Woo art. 4.4 lid 2: at most two weeks). The term is the one that
 	 * decides the case's deadline ({@see CaseDeadlineMirror::decidingInstance()});
-	 * the requested end is its current end plus the days, and from there it is
+	 * the requested end is a base day plus the days (by default the term's
+	 * current end; a caller can name another, such as the unrolled original
+	 * end Woo art. 4.4 counts from), and from there it is
 	 * the same extension as {@see requestExtension()}: rolled, checked against
 	 * the definition's ceiling, stored, and followed by the case's deadline.
 	 *
 	 * @param string $caseId    The case uuid.
 	 * @param string $rationale Why (the `verleng` event's rationale).
 	 * @param int    $days      How many days to add.
+	 * @param (\Closure(array<string, mixed>): string)|null $baseOf The day the days count
+	 *        from, as `Y-m-d`, given the term; null counts from its current end.
 	 *
 	 * @return array{previous: string, instance: array<string, mixed>} The end before, and the extended term.
 	 *
@@ -135,7 +139,7 @@ class DeadlineExtensionService {
 	 * `endOf()` are pure functions over an array: the one rule for which statutory term
 	 * decides a case, kept in one place.
 	 */
-	public function extendStatutoryTermOfCase(string $caseId, string $rationale, int $days): array {
+	public function extendStatutoryTermOfCase(string $caseId, string $rationale, int $days, ?\Closure $baseOf = null): array {
 		$term = CaseDeadlineMirror::decidingInstance(instances: $this->termService->instancesForCase(caseId: $caseId));
 		if ($term === null || (string)($term['status'] ?? '') === 'completed') {
 			throw new RefusedException(
@@ -146,8 +150,13 @@ class DeadlineExtensionService {
 		}
 
 		$previous = CaseDeadlineMirror::endOf(instance: $term);
+		$base = $previous;
+		if ($baseOf !== null) {
+			$base = $baseOf($term);
+		}
+
 		$requested = $this->dates->formatCalendarDate(
-			$this->dates->parse($previous, 'endDateCurrent')->modify('+' . max(0, $days) . ' days')
+			$this->dates->parse($base, 'endDateCurrent')->modify('+' . max(0, $days) . ' days')
 		);
 
 		try {

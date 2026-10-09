@@ -182,6 +182,47 @@ class DeadlineExtensionLimitTest extends TestCase {
 	}//end testTheStatutoryTermOfACaseIsExtendedByDays()
 
 	/**
+	 * A named base day replaces the current end, and the new end is still rolled.
+	 *
+	 * The term's four weeks ended on Saturday 30 May 2026 and rolled to Monday
+	 * 1 June; fourteen days from the Saturday ask for Saturday 13 June, which
+	 * the roll carries on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testTheDaysCountFromTheNamedBaseAndTheEndIsRolled(): void {
+		$termService = $this->createMock(TermijnService::class);
+		$termService->method('instancesForCase')->willReturn([
+			['id' => 't1', 'case' => 'c1', 'status' => 'lopend', 'endDateCurrent' => '2026-06-01'],
+		]);
+		$termService->method('getTermijnInstance')->willReturn(
+			['id' => 't1', 'case' => 'c1', 'endDateCurrent' => '2026-06-01', 'countExtensions' => 0, 'deadlineDefinition' => '']
+		);
+		$termService->method('updateTermijnInstance')->willReturnCallback(
+			static fn (string $id, array $patch): array => array_merge(['id' => $id], $patch)
+		);
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnCallback(
+			static fn (DateTimeImmutable $date): DateTimeImmutable => $date->format('N') === '6' ? $date->modify('+2 days') : $date
+		);
+		$this->declarations->method('forCase')->willReturn($this->declared(['extensionPeriodDays' => 14]));
+		$service = new DeadlineExtensionService(
+			termService: $termService,
+			dates: $this->caseDates(),
+			timerService: $timers,
+			declarations: $this->declarations,
+		);
+
+		$extended = $service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14, static fn (array $term): string => '2026-05-30');
+
+		self::assertSame('2026-06-01', $extended['previous']);
+		self::assertSame('2026-06-13', $extended['instance']['endDateBeforeRoll']);
+		self::assertSame('2026-06-15', $extended['instance']['endDateCurrent']);
+	}//end testTheDaysCountFromTheNamedBaseAndTheEndIsRolled()
+
+	/**
 	 * A second extension of a term that allows one is a 409.
 	 *
 	 * @return void

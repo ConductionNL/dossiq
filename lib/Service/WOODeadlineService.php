@@ -168,7 +168,8 @@ class WOODeadlineService {
 			);
 		}
 
-		$period = (int)($this->wooDefinition()['extensionCapacity'] ?? 0);
+		$definition = $this->wooDefinition();
+		$period = (int)($definition['extensionCapacity'] ?? 0);
 		if ($period <= 0 || $this->extensions === null) {
 			throw new RefusedException(
 				rule: 'woo-extension-unavailable',
@@ -179,7 +180,21 @@ class WOODeadlineService {
 
 		// The ceiling (one extension, Woo art. 4.4 lid 2) is the term engine's,
 		// and refuses with 409 and its own rule.
-		$extended = $this->extensions->extendStatutoryTermOfCase(caseId: $caseId, rationale: $reason, days: $period);
+		// FROM THE ORIGINAL END, UNROLLED (Ruben, 2026-10-09). The two weeks run
+		// from the last day of the first four, as counted, not from the day the
+		// Algemene termijnenwet moved it to; the new end is then rolled.
+		$extended = $this->extensions->extendStatutoryTermOfCase(
+			caseId: $caseId,
+			rationale: $reason,
+			days: $period,
+			baseOf: fn (array $term): string => $this->dates->formatCalendarDate(
+				$this->definitions->countedEndDateFor(
+					start: $this->dates->parse((string)($term['startDate'] ?? ''), 'startDate'),
+					days: (int)($definition['standardDurationDays'] ?? 0),
+					definitie: $definition
+				)
+			),
+		);
 
 		$term = $extended['instance'];
 		$deadline = (string)($term['endDateCurrent'] ?? '');

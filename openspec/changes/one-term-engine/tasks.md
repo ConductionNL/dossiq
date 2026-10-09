@@ -72,6 +72,6 @@ group lands on `development` as its own PR.
   changed JS, the touched unit tests; once before push
   `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict` with `TMPDIR` inside the
   clone, `npm run lint`, `npm run test:l10n`.
-- [ ] 5.2 Boards: DqMijnWerk's week strip draws the term ending today as late,
+- [x] 5.2 Boards (fixed in ConductionNL/design-system#172): DqMijnWerk's week strip draws the term ending today as late,
   and DqTermijnen's "Verlopen" tile says "Beslis vandaag of verdaag". Reported
-  to the design-system owner; not edited here.
+  to the design-system owner; not edited here. Done in design-system#172.
