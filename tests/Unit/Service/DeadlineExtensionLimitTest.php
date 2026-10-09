@@ -161,6 +161,67 @@ class DeadlineExtensionLimitTest extends TestCase {
 	}//end testTheRollDoesNotCountAgainstTheCeiling()
 
 	/**
+	 * A law that names its extension in days extends the case's statutory term.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testTheStatutoryTermOfACaseIsExtendedByDays(): void {
+		$this->termService->method('instancesForCase')->willReturn([
+			['id' => 't1', 'case' => 'c1', 'status' => 'lopend', 'endDateCurrent' => '2026-09-01'],
+		]);
+		$this->declarations->method('forCase')->willReturn(
+			$this->declared(['extensionPeriodDays' => 14])
+		);
+
+		$extended = $this->service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14);
+
+		self::assertSame('2026-09-01', $extended['previous']);
+		self::assertSame('2026-09-15', $extended['instance']['endDateCurrent']);
+	}//end testTheStatutoryTermOfACaseIsExtendedByDays()
+
+	/**
+	 * A second extension of a term that allows one is a 409.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testASecondExtensionOfACaseTermIsAConflict(): void {
+		$termService = $this->createMock(TermijnService::class);
+		$termService->method('instancesForCase')->willReturn([
+			['id' => 't1', 'case' => 'c1', 'status' => 'verlengd', 'endDateCurrent' => '2026-09-15'],
+		]);
+		$termService->method('getTermijnInstance')->willReturn(
+			['id' => 't1', 'case' => 'c1', 'endDateCurrent' => '2026-09-15', 'countExtensions' => 1, 'deadlineDefinition' => '']
+		);
+		$service = new DeadlineExtensionService(termService: $termService, dates: $this->caseDates());
+
+		try {
+			$service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14);
+			self::fail('A second extension must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('extension-ceiling-reached', $e->getRule());
+			self::assertSame(RefusedException::STATUS_REFUSED, $e->getStatus());
+		}
+	}//end testASecondExtensionOfACaseTermIsAConflict()
+
+	/**
+	 * A case without a running statutory term has nothing to extend.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testACaseWithoutARunningTermRefuses(): void {
+		$this->termService->method('instancesForCase')->willReturn([]);
+
+		$this->expectException(RefusedException::class);
+		$this->service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14);
+	}//end testACaseWithoutARunningTermRefuses()
+
+	/**
 	 * A case type that allows no extension refuses every one of them.
 	 *
 	 * @return void
