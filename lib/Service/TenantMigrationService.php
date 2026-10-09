@@ -197,22 +197,44 @@ class TenantMigrationService {
 	 * The repair step reports the same number, so the release that deletes
 	 * this class can wait for it to read zero (decision Q1).
 	 *
-	 * @param bool $dryRun When true, write nothing.
+	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
+	 *               unmigrated:int, dryRun:bool,
+	 *               mappings:array<int,array{tenant:string, organisation:string}>,
+	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
+	 *
+	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	public function migrate(): array {
+		return $this->walk(dryRun: false);
+	}
+
+	/**
+	 * The same walk as migrate(), with the writes left out.
+	 *
+	 * One private walk serves both entry points, so the dry run reports exactly
+	 * what the real run would do and the two cannot drift apart (REQ-TOO-001).
 	 *
 	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
 	 *               unmigrated:int, dryRun:bool,
 	 *               mappings:array<int,array{tenant:string, organisation:string}>,
 	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The dry run is the same
-	 * walk with the writes left out. Two methods would be two walks that can
-	 * drift apart, and the point of the dry run is that it reports exactly
-	 * what the real run would do.
-	 *
-	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	public function migrate(bool $dryRun = false): array {
+	public function preview(): array {
+		return $this->walk(dryRun: true);
+	}
+
+	/**
+	 * @param bool $dryRun When true, write nothing.
+	 *
+	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
+	 *               unmigrated:int, dryRun:bool,
+	 *               mappings:array<int,array{tenant:string, organisation:string}>,
+	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
+	 */
+	private function walk(bool $dryRun): array {
 		$summary = [
 			'migrated' => 0,
 			'repaired' => 0,
