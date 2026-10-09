@@ -613,20 +613,20 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {
@@ -1114,20 +1114,20 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {
@@ -7429,22 +7429,22 @@
 						"type": "open-form",
 						"label": "New case",
 						"icon": "FolderPlusOutline",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"register": "dossiq",
 						"schema": "case",
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {
@@ -7721,22 +7721,22 @@
 						"type": "open-form",
 						"label": "New case",
 						"icon": "FolderPlusOutline",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"register": "dossiq",
 						"schema": "case",
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {
