@@ -58,9 +58,13 @@ Tier: V1. Kind: code. Rows: portaliq `cmp-act-ask-question-case`,
 
 ## 5. The handler side
 
-- [ ] 5.1 Listener: a resident's `portaalBericht` records an internal
+- [x] 5.1 Listener: a resident's `portaalBericht` records an internal
   `portaalbericht` timeline entry with a follow-up (design D-5).
   - unit: entry kind, visibility, follow-up and the message id in `fields`
+  - `PortalMessageTimelineListener`, registered in `ContactListenerRegistrar`.
+    The entry is a new kind `portaalbericht-inkomend` (follow-up on), not
+    `portaalbericht`: a follow-up is declared per kind, and the outbound
+    `portaalbericht` must not open one. `PortalMessageTimelineListenerTest`.
 - [ ] 5.2 `senderType` gains `medewerker`; `PortalMessageDialog.vue` and the
   header action "Message the applicant"; Reply on the timeline entry; sending
   closes the follow-up.
