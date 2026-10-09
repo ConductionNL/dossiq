@@ -198,7 +198,9 @@ test.describe('a figure about every case is not for everyone', () => {
 		// The one that matters most, asserted on the BODY as well as the status:
 		// a 403 whose body still carried the payload would be the same leak with
 		// a different number on it.
-		const response = await (handlerApi as APIRequestContext).get(GATED[0])
+		const response = await (handlerApi as APIRequestContext).get(GATED[0], {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 
 		expect(response.status()).toBe(403)
 		const body = await response.text()
