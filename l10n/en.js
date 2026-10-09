@@ -1160,6 +1160,7 @@ OC.L10N.register(
         "Cases you coordinate": "Cases you coordinate",
         "Cases you follow": "Cases you follow",
         "Cases you open show up here": "Cases you open show up here",
+        "Cases you open show up here. This stays empty when your server does not log case views.": "Cases you open show up here. This stays empty when your server does not log case views.",
         "cases · avg {days} days": "cases · avg {days} days",
         "Cases, deadlines and your workload at a glance": "Cases, deadlines and your workload at a glance",
         "caseType or case UUIDs when scope is narrowed": "caseType or case UUIDs when scope is narrowed",

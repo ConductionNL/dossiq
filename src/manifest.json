@@ -904,7 +904,7 @@
 						"id": "recent-cases",
 						"type": "object-table",
 						"title": "Recently opened",
-						"_note": "case-number-and-favourites, row 2.19. What this reader opened last, over OpenRegister's `_recent` lens, which carries its own order (last view descending) and keeps the last hundred. Deliberately NO `order` of its own: an order declared here would override the one thing the lens is for and the tile would answer a different question from its chip. Deliberately no status filter either, for the reason the chip carries none: this answers 'what was I just looking at'.",
+						"_note": "case-number-and-favourites, row 2.19. What this reader opened last, over OpenRegister's `_recent` lens, which carries its own order (last view descending) and keeps the last hundred. Deliberately NO `order` of its own: an order declared here would override the one thing the lens is for and the tile would answer a different question from its chip. Deliberately no status filter either, for the reason the chip carries none: this answers 'what was I just looking at'. The muted date column reads `@self.viewedAt`, the ISO 8601 moment this reader last opened the case, which the `_recent` lens adds to the metadata envelope of each object it returns.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -922,6 +922,11 @@
 								{
 									"key": "title",
 									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "@self.viewedAt",
+									"formatter": "daysSince",
+									"cellClass": "cn-cell--muted cn-cell--end"
 								}
 							],
 							"rowRoute": "CaseDetail",
@@ -934,7 +939,7 @@
 							"viewAllLabel": "View all",
 							"hideHeader": true,
 							"borderless": true,
-							"emptyText": "Cases you open show up here"
+							"emptyText": "Cases you open show up here. This stays empty when your server does not log case views."
 						}
 					},
 					{

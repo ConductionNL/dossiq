@@ -1171,6 +1171,7 @@
         "Cases you coordinate": "Zaken die jij coördineert",
         "Cases you follow": "Zaken die je volgt",
         "Cases you open show up here": "Zaken die je opent staan hier",
+        "Cases you open show up here. This stays empty when your server does not log case views.": "Zaken die je opent staan hier. Dit blijft leeg als je server niet bijhoudt wie een zaak opent.",
         "cases · avg {days} days": "zaken · gem. {days} dagen",
         "Cases, deadlines and your workload at a glance": "Zaken, termijnen en je werklast in één oogopslag",
         "caseType or case UUIDs when scope is narrowed": "Uuid's van caseType of van zaken wanneer de reikwijdte is ingeperkt",

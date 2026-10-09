@@ -394,6 +394,45 @@ describe('the two lenses', () => {
 		}
 	})
 
+	/**
+	 * The Recently opened tile says WHEN the reader opened each case.
+	 *
+	 * The moment is `@self.viewedAt` on OpenRegister's metadata envelope, which
+	 * the `_recent` lens adds to every object it returns; it is not a case
+	 * property, so a column bound to `viewedAt` would render a dash in every row.
+	 * The formatter is the library's built-in `daysSince`, resolved the way
+	 * CnAppRoot resolves it, so a local formatter under that name would show here.
+	 *
+	 * @spec openspec/changes/recent-tile-shows-when-you-opened/specs/case-management/spec.md
+	 */
+	it('shows when you opened each case, as a relative date read off the envelope', async () => {
+		const recent = page('Dashboard').config.widgets.find(
+			(w) => w.id === 'recent-cases',
+		)
+		const keys = recent.content.columns.map((column) => column.key)
+		expect(keys).toEqual(['identifier', 'title', '@self.viewedAt'])
+
+		const when = recent.content.columns[2]
+		expect(when.formatter).toBe('daysSince')
+		expect(when.cellClass).toBe('cn-cell--muted cn-cell--end')
+		// The lens carries the order; the tile still declares none of its own.
+		expect(recent.content.source.order).toBeUndefined()
+
+		const { BUILT_IN_FORMATTERS } =
+			await import('@conduction/nextcloud-vue/src/utils/builtInFormatters.js')
+		const { default: formatters } =
+			await import('../../src/services/formatters.js')
+		const registry = { ...BUILT_IN_FORMATTERS, ...formatters }
+		expect(registry.daysSince).toBe(BUILT_IN_FORMATTERS.daysSince)
+		expect(registry.daysSince(new Date().toISOString())).toBe('Today')
+		// No read logged (the audit trail is off): an empty cell, never a guess.
+		expect(registry.daysSince(undefined)).toBe('')
+
+		expect(recent.content.emptyText).toBe(
+			'Cases you open show up here. This stays empty when your server does not log case views.',
+		)
+	})
+
 	it('fills its rows on both pages: no cell overlaps another', () => {
 		for (const id of ['CaseDetail', 'Dashboard']) {
 			const grid = new Map()
