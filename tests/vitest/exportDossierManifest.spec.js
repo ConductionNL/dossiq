@@ -123,7 +123,7 @@ describe('CaseDetail — the dossier zip is a download, not a transfer (REQ-ARCH
 	 * `outcome.transferListUuid`; a button that says "archive" over a zip
 	 * tells a handler the case has gone somewhere it has not.
 	 *
-	 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	const CLAIMS =
 		/\b(archiv\w*|archief\w*|transfer\w*|overdr\w*|overbreng\w*|e-?depot)\b/i

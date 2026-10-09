@@ -26,7 +26,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -48,7 +48,7 @@ export const ANSWERS = ['destroy', 'retain', 'transfer']
  * @return {Promise<Array<object>>} The caller's undecided entries.
  * @throws {Error} When openregister cannot be read.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 export async function pendingReviews() {
 	const { data } = await axios.get(generateUrl(`${API}/archival/reviews/pending`))
@@ -74,7 +74,7 @@ export async function pendingReviews() {
  * @return {Promise<object>} The recorded decision.
  * @throws {Error} When openregister refuses the answer.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 export async function decide({
 	listId,
@@ -106,7 +106,7 @@ export async function decide({
  * @return {Promise<object>} The nomination openregister wrote.
  * @throws {Error} When openregister refuses.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 export async function recomputeNomination(objectId, reason) {
 	const { data } = await axios.post(
@@ -123,7 +123,7 @@ export async function recomputeNomination(objectId, reason) {
  * @return {Promise<object>} The settings, including reviewReminderFrequency.
  * @throws {Error} When openregister cannot be read.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 export async function archivalSettings() {
 	const { data } = await axios.get(generateUrl(`${API}/settings/archival`))
@@ -141,7 +141,7 @@ export async function archivalSettings() {
  * @return {Promise<object>} The settings as openregister stored them.
  * @throws {Error} When openregister refuses the value.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 export async function saveReviewReminderFrequency(frequency) {
 	const { data } = await axios.post(generateUrl(`${API}/settings/archival`), {
@@ -160,7 +160,7 @@ export async function saveReviewReminderFrequency(frequency) {
  * @param {string} value The candidate.
  * @return {boolean} True when it is a duration.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 export function isIsoDuration(value) {
 	return /^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+S)?)?$/.test(
@@ -183,7 +183,7 @@ export function isIsoDuration(value) {
  * @return {Promise<object>} `retention`, `archived` and `archiveStatus`.
  * @throws {Error} When the case cannot be read.
  *
- * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 export async function caseRetention(caseId) {
 	const { data } = await axios.get(

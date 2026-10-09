@@ -1,6 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"version": "1.2.0",
+	"look": "board",
 	"dependencies": ["openregister"],
 	"setup": {
 		"enabled": true,
@@ -82,7 +83,7 @@
 						"placement": "right",
 						"title": "All your cases",
 						"body": "You work from this list: every case in the organisation, open and closed.",
-						"task": "Click Cases in the menu",
+						"task": "Click All cases in the menu",
 						"target": {
 							"kind": "nav-item",
 							"ref": "Cases"
@@ -121,7 +122,7 @@
 						"allowManualNext": true,
 						"title": "Where case types come from",
 						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
-						"task": "Open Case types in the menu",
+						"task": "Open Advanced, then Case types",
 						"target": {
 							"kind": "nav-item",
 							"ref": "CaseTypes"
@@ -139,7 +140,7 @@
 						"allowManualNext": true,
 						"title": "Where the automation lives",
 						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.",
-						"task": "Open Flows in the menu",
+						"task": "Open Advanced, then Flows",
 						"target": {
 							"kind": "nav-item",
 							"ref": "Flows"
@@ -350,6 +351,15 @@
 			"route": "WmsLayers",
 			"section": "settings",
 			"order": 97,
+			"permission": "admin"
+		},
+		{
+			"id": "WooRefusalGroundsMenu",
+			"label": "Woo refusal grounds",
+			"icon": "ScaleBalance",
+			"route": "WooRefusalGrounds",
+			"section": "settings",
+			"order": 92,
 			"permission": "admin"
 		},
 		{
@@ -5208,6 +5218,107 @@
 							"label": "Version history",
 							"icon": "FileCompare",
 							"component": "VersionHistoryLeafTab"
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "WooRefusalGrounds",
+			"route": "/settings/woo-refusal-grounds",
+			"type": "index",
+			"title": "Woo refusal grounds",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "wooRefusalGround",
+				"_note": "woo-refusal-grounds-list REQ-WRG-003. The settled grounds of design D-2 (decision 133). Sorted by code with the broader ground beside each, so the list reads as the tree: 5.1, then 5.1.1 and its letters, then 5.1.2 and its letters. Add creates a narrower ground under a parent code; editing the status to retired is how a ground is retired, because WooRefusalGroundDeleteGuard refuses a delete while anything cites it. No board on identity.conduction.nl/screens draws this page.",
+				"columns": [
+					{
+						"key": "code"
+					},
+					{
+						"key": "label"
+					},
+					{
+						"key": "parent"
+					},
+					{
+						"key": "kind"
+					},
+					{
+						"key": "citable"
+					},
+					{
+						"key": "status"
+					}
+				],
+				"defaultSort": "code",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "WooRefusalGroundDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "WooRefusalGroundDetail",
+			"route": "/settings/woo-refusal-grounds/:id",
+			"type": "detail",
+			"title": "Woo refusal ground",
+			"permission": "admin",
+			"config": {
+				"register": "dossiq",
+				"schema": "wooRefusalGround",
+				"_note": "woo-refusal-grounds-list REQ-WRG-003 and REQ-WRG-004. One ground with its law text and source. The History tab is OpenRegister's audit trail for the object, so every add, edit and retirement shows who, when and the values before and after.",
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"widgets": [
+					{
+						"id": "woo-refusal-ground-data",
+						"type": "data",
+						"title": "Woo refusal ground",
+						"icon": "ScaleBalance",
+						"content": {
+							"title": "Woo refusal ground",
+							"columns": 2
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "woo-refusal-ground-data",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 7,
+						"showTitle": false
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{
+							"id": "audit",
+							"label": "History",
+							"icon": "History",
+							"widgets": [
+								{
+									"type": "audit"
+								}
+							]
 						}
 					]
 				}

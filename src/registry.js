@@ -26,7 +26,7 @@
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
-// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+// @spec openspec/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
 // The line saying this case is in the archive, and what that means for the
 // reader (archived-cases-leave-the-lenses).
@@ -81,7 +81,7 @@ import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // @spec openspec/specs/case-knowledge-base/spec.md
 import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
-// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+// @spec openspec/specs/archief-edepot-handover/spec.md
 import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
 import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
@@ -630,7 +630,7 @@ const registry = {
 	// `@self._retention` and derives nothing. A second derivation in the browser
 	// would eventually disagree with the stored one, and a records manager reading
 	// a disposal date has no way to tell which of the two they are looking at.
-	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	// @spec openspec/specs/archief-edepot-handover/spec.md
 	// Keyed by TYPE, not by component name. A tab child resolves through
 	// `resolveRegistryRenderer`, which reads `cnRegistry[widget.type]` and
 	// nothing else: a page `slots` map is read by CnDashboardPage's grid and
@@ -675,7 +675,7 @@ const registry = {
 	// `/archival/reviews/pending` reads the session user id, so nothing is narrowed
 	// in the browser. A filter over a wider list would be a weaker thing wearing
 	// the same label.
-	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	// @spec openspec/specs/archief-edepot-handover/spec.md
 	MyArchivalReviews: {
 		// @custom-widget-ratchet exclude a destruction list entry is not a dossiq object: it lives on openregister's destruction list and no declarative widget reads that surface, and each of the three answers carries a reason, with retain also carrying a new date, collected before the post. Deleted the day the manifest vocabulary has a worklist widget over a leaf endpoint
 		kind: 'widget',
