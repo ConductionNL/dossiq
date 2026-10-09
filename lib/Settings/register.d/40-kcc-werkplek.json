@@ -59,7 +59,8 @@
             "kccQuickAction": {
                 "slug": "kccQuickAction",
                 "icon": "GestureTapButton",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "KCC Quick Action",
                 "description": "A configurable one-click action available to KCC-medewerkers in the werkplek.",
                 "type": "object",
@@ -78,7 +79,8 @@
             "belplan": {
                 "slug": "belplan",
                 "icon": "PhoneForward",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Call plan",
                 "description": "Routing rules for inbound telephony, datagedreven on keuzemenu, vaardigheid matching and wachtrij-overflow.",
                 "type": "object",
@@ -96,7 +98,8 @@
             "specialistBeschikbaarheid": {
                 "slug": "specialistBeschikbaarheid",
                 "icon": "AccountClock",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Specialist Beschikbaarheid",
                 "description": "Real-time availability of a back-office specialist for warm doorverbinden.",
                 "type": "object",
@@ -114,7 +117,8 @@
             "doorverbinding": {
                 "slug": "doorverbinding",
                 "icon": "PhoneForward",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Call transfer",
                 "description": "A warm transfer with immutable context-overdracht snapshot to a specialist.",
                 "type": "object",
@@ -136,7 +140,8 @@
             "klantSentiment": {
                 "slug": "klantSentiment",
                 "icon": "EmoticonSad",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Klant Sentiment",
                 "description": "Sentiment classification for a contactmoment with escalation recommendation.",
                 "type": "object",

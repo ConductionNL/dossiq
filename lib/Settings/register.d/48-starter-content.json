@@ -130,7 +130,8 @@
       "shippedOrigin": {
         "slug": "shippedOrigin",
         "icon": "PackageVariantClosed",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Shipped origin",
         "description": "One row per object dossiq seeded, naming the set it came from, that set's version and a fingerprint of what shipped. An administrator reads three answers off it: shipped and untouched, shipped and changed here, or ours. A seed that writes rows and forgets it did cannot answer any of them, which is why a gemeente that edits a shipped case type and then takes an upgrade cannot be told what moved.",
         "type": "object",
@@ -189,7 +190,8 @@
       "starterSetAdoption": {
         "slug": "starterSetAdoption",
         "icon": "HandshakeOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Starter set adoption",
         "description": "The record that an administrator took a shipped set into use, and who did it. Adoption is one act so it can be undone as one act, and it is undone only while nothing has been granted against what it brought in.",
         "type": "object",
@@ -245,7 +247,8 @@
       "reusableStep": {
         "slug": "reusableStep",
         "icon": "ShapeOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Reusable step",
         "description": "A process step designed once and used by several case types. The case types reference it, so changing its lead time reaches all of them at once. That reference is what separates it from a copy, and it is also why a step in use is not deleted.",
         "type": "object",
@@ -287,7 +290,8 @@
       "contentTemplate": {
         "slug": "contentTemplate",
         "icon": "FileDocumentMultipleOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Content template",
         "description": "One prepared piece of content, offered where that kind of thing is created. The kind says what it is: a task, a note, an approval, a result or a document. Mail keeps its own record in emailTemplate, and the template library reads both, so there is one library and no second mail store to keep in step.",
         "type": "object",

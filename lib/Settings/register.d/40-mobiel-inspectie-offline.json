@@ -110,7 +110,8 @@
       "checklistResult": {
         "slug": "checklistResult",
         "icon": "ClipboardCheckOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:Report",
         "title": "Checklist Result",
         "description": "Per-item answers captured offline for a single field inspection against a checklist template.",
@@ -171,7 +172,8 @@
       "fieldEvidence": {
         "slug": "fieldEvidence",
         "icon": "CameraOutline",
-        "version": "1.2.0",
+        "version": "1.2.1",
+        "searchable": false,
         "x-schema-org": "schema:MediaObject",
         "title": "Field evidence",
         "description": "A piece of evidence (photo, voice memo, document, or sketch) captured offline during a field inspection.",
@@ -306,7 +308,8 @@
       "syncQueue": {
         "slug": "syncQueue",
         "icon": "Sync",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Sync Queue Operation",
         "description": "A single mutation queued offline to be replayed against OpenRegister when the device reconnects.",
@@ -391,7 +394,8 @@
       "conflictRecord": {
         "slug": "conflictRecord",
         "icon": "AlertOctagonOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "x-schema-org": "schema:Action",
         "title": "Conflict Record",
         "description": "Records a concurrent-edit, deleted-remote, or permission-lost conflict detected while replaying a queued operation, plus its resolution for AVG audit.",

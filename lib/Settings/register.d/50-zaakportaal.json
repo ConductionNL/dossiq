@@ -4,7 +4,7 @@
             "portaalBericht": {
                 "slug": "portaalBericht",
                 "icon": "MessageOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Message",
                 "title": "Portaal Bericht",
                 "description": "A message sent by a citizen (burger/bedrijf/gemachtigde) to the case handler via the Mijn gemeente citizen portal, linked to a Dossiq case. Citizen identity (BSN/KvK) is a Nextcloud/DigiD session identity, never invented as a contact schema.",
@@ -29,7 +29,7 @@
                         "title": "Sender Type",
                         "type": "string",
                         "enum": ["burger", "bedrijf", "authorisedRepresentative", "medewerker"],
-                        "description": "Type of the authenticated sender."
+                        "description": "Type of the sender. medewerker is a handler writing from the case."
                     },
                     "senderRef": {
                         "title": "Sender Reference",
@@ -44,7 +44,7 @@
                     "recipientRef": {
                         "title": "Recipient Reference",
                         "type": "string",
-                        "description": "Handler/medewerker reference the message is routed to."
+                        "description": "Who the message is for. On a handler's message (handler_to_citizen) it is the case's portalSubject, never a user id: the resident's portal inbox is scoped on it. On a resident's message it names the handler, when known."
                     },
                     "subject": {
                         "title": "Subject",
@@ -85,7 +85,8 @@
             "portaalVerzoek": {
                 "slug": "portaalVerzoek",
                 "icon": "FileDocumentEditOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:Action",
                 "title": "Portal request",
                 "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Dossiq.",
@@ -218,7 +219,8 @@
             "portaalNotificatieVoorkeur": {
                 "slug": "portaalNotificatieVoorkeur",
                 "icon": "BellCogOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:Thing",
                 "title": "Portaal Notificatie Voorkeur",
                 "description": "A citizen's notification preferences for the Mijn gemeente portal. Berichtenbox is statutory and always remains active. One record per subject reference.",

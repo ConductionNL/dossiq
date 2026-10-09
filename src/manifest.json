@@ -7997,6 +7997,72 @@
 			"schemaSlug": "kvkCompany",
 			"urlTemplate": "/apps/dossiq/organisations/{uuid}",
 			"displayName": "Organisation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "bezwaarDecision",
+			"urlTemplate": "/apps/dossiq/bezwaar-decisions/{uuid}",
+			"displayName": "Decision on objection"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "adviesAanvraag",
+			"urlTemplate": "/apps/dossiq/advice/{uuid}",
+			"displayName": "Advice request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "wmsLayer",
+			"urlTemplate": "/apps/dossiq/settings/wms-layers/{uuid}",
+			"displayName": "Map layer"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "tenant",
+			"urlTemplate": "/apps/dossiq/settings/tenants/{uuid}",
+			"displayName": "Tenant"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "casetransfer",
+			"urlTemplate": "/apps/dossiq/transfers/{uuid}",
+			"displayName": "Case transfer"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "workflowTemplate",
+			"urlTemplate": "/apps/dossiq/settings/workflow-definitions/{uuid}",
+			"displayName": "Workflow definition"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "statusRecord",
+			"urlTemplate": "/apps/dossiq/settings/status-records/{uuid}",
+			"displayName": "Status record"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "lhsRecommendation",
+			"urlTemplate": "/apps/dossiq/settings/lhs-recommendations/{uuid}",
+			"displayName": "Enforcement recommendation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "bezwaaradviescommissie",
+			"urlTemplate": "/apps/dossiq/settings/bezwaar-committees/{uuid}",
+			"displayName": "Objection advisory committee"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "bacAdviceRequest",
+			"urlTemplate": "/apps/dossiq/bezwaar-advice-requests/{uuid}",
+			"displayName": "Committee advice request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseType",
+			"urlTemplate": "/apps/dossiq/settings/case-types/{uuid}",
+			"displayName": "Case type"
 		}
 	]
 }

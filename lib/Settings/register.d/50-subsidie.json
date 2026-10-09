@@ -4,7 +4,8 @@
             "subsidieRegeling": {
                 "slug": "subsidieRegeling",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "x-schema-org": "schema:GovernmentService",
                 "title": "Grant scheme",
                 "description": "DEPRECATED: superseded by caseType plus its propertyDefinition records (openspec/changes/subsidieregeling-is-a-casetype). Retained for ONE release so MigrateSubsidieRegelingToCaseType can still resolve and read these objects: a schema the register no longer carries returns zero rows, and a migration that reads nothing reports the same success as one that had nothing to do. Remove once the migration has run everywhere. Policy-level definition of a grant program (AWB titel 4.2 / VNG ASV).",
@@ -52,7 +53,8 @@
             "subsidieBeoordeling": {
                 "slug": "subsidieBeoordeling",
                 "icon": "ClipboardCheckOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Grant assessment",
                 "description": "Assessment record for a grant application.",
                 "type": "object",
@@ -72,7 +74,8 @@
             "subsidieBeschikking": {
                 "slug": "subsidieBeschikking",
                 "icon": "Gavel",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "x-schema-org": "schema:Permit",
                 "title": "Subsidiebeschikking",
                 "description": "Formal grant decision; pivot of the subsidy model.",
@@ -102,7 +105,8 @@
             "subsidieUitvoering": {
                 "slug": "subsidieUitvoering",
                 "icon": "ProgressClock",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Grant execution",
                 "description": "Ongoing execution phase of a grant.",
                 "type": "object",
@@ -119,7 +123,8 @@
             "interimReport": {
                 "slug": "interimReport",
                 "icon": "FileChartOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Tussenrapportage",
                 "description": "Interim report (typed sub-case) within a grant execution.",
                 "type": "object",
@@ -144,7 +149,8 @@
             "subsidieVaststelling": {
                 "slug": "subsidieVaststelling",
                 "icon": "FileCheckOutline",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Subsidievaststelling",
                 "description": "Final settlement of a grant (AWB 4:46).",
                 "type": "object",
@@ -165,7 +171,8 @@
             "terugvordering": {
                 "slug": "terugvordering",
                 "icon": "CashRefund",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Terugvordering",
                 "description": "Clawback case for over-disbursed advances (AWB 4:57).",
                 "type": "object",
@@ -188,7 +195,8 @@
             "bewijsstuk": {
                 "slug": "bewijsstuk",
                 "icon": "PaperclipCheck",
-                "version": "1.0.0",
+                "version": "1.0.1",
+                "searchable": false,
                 "title": "Bewijsstuk",
                 "description": "Polymorphic evidence document linked to a subsidy phase.",
                 "type": "object",
