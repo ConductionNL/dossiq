@@ -34,10 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * Assembles the verslag patch and guards recording consent + late corrections.
@@ -46,83 +43,65 @@ use Throwable;
  */
 class HearingMinutesRecorder {
 
-	use SearchesObjects;
-
 	/**
 	 * Constructor.
 	 *
-	 * @param BezwaarAuditTrail $auditTrail The shared append-only audit writer.
-	 * @param LoggerInterface $logger Logger.
+	 * @param BezwaarAuditTrail $auditTrail Writes the consent refusal onto the session's OpenRegister trail.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly BezwaarAuditTrail $auditTrail,
-		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
-	 * Guard the audio-recording upload behind explicit consent, logging
-	 * a denial to the session audit trail when consent is absent.
+	 * Guard the audio-recording upload behind explicit consent (AVG art. 6).
 	 *
-	 * @param object $objectService Resolved OR ObjectService.
+	 * A denial is recorded on the session's OpenRegister trail and the upload
+	 * is refused, whether or not that entry could be written. When it could
+	 * not, BezwaarAuditTrail logs the full entry at error level.
+	 *
 	 * @param string $sessionId UUID of the hearingSession.
 	 * @param array<string, mixed> $payload Minutes payload.
 	 * @param array<string, mixed> $current Current hearingSession record.
-	 * @param array<int, mixed> $audit Existing audit entries.
 	 * @param string $register The register id.
 	 * @param string $schema The hearingSession schema id.
 	 *
-	 * @return array<int, mixed> The (unchanged) audit entries.
+	 * @return void
 	 *
 	 * @throws RuntimeException When consent for the recording is absent.
 	 *
-	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function guardRecordingConsent(
-		object $objectService,
 		string $sessionId,
 		array $payload,
 		array $current,
-		array $audit,
 		string $register,
 		string $schema,
-	): array {
+	): void {
 		$hasAudio = isset($payload['audioRecording']) === true
 			&& (string)$payload['audioRecording'] !== '';
 		if ($hasAudio === false) {
-			return $audit;
+			return;
 		}
 
 		$consent = (string)(
 			$payload['recordingConsent'] ?? ($current['recordingConsent'] ?? 'not_requested')
 		);
 		if ($consent === 'granted') {
-			return $audit;
+			return;
 		}
 
-		$audit = $this->auditTrail->append(
-			existing: $audit,
+		$this->auditTrail->recordRefusal(
+			register: $register,
+			schema: $schema,
+			objectUuid: $sessionId,
 			event: 'audio-upload-denied',
 			payload: ['consent' => $consent],
 			tag: BezwaarAuditTrail::TAG_RECORDING_CONSENT,
 		);
-
-		try {
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: (string)$sessionId,
-				changes: ['auditTrail' => $audit]
-			);
-		} catch (Throwable $auditError) {
-			$this->logger->error(
-				'Dossiq hearing: failed to log audio-denial: '
-				. $auditError->getMessage()
-			);
-		}
 
 		throw new RuntimeException(
 			'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
@@ -171,19 +150,21 @@ class HearingMinutesRecorder {
 	}//end buildMinutesUpdate()
 
 	/**
-	 * Append an awb-art-7:7 audit entry for an attendance correction
-	 * made after the grace window closed.
+	 * The payload of an awb-art-7:7 entry for an attendance correction made
+	 * after the grace window closed.
 	 *
-	 * @param array<int, array<string, mixed>> $audit Existing audit entries.
+	 * HearingService records it on the session's trail before the attendance
+	 * changes. Nothing here writes, and nothing returns a trail to save.
+	 *
 	 * @param mixed $entry The attendance entry.
 	 *
-	 * @return array<int, array<string, mixed>> The trail with the correction recorded.
+	 * @return array<string, mixed> The entry's payload: invitee, presence and reason.
 	 *
 	 * @throws RuntimeException When the late correction lacks a reason.
 	 *
-	 * @spec openspec/specs/bezwaar-hearing/spec.md
+	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
 	 */
-	public function appendLateCorrectionAudit(array $audit, mixed $entry): array {
+	public function lateCorrectionPayload(mixed $entry): array {
 		$hasReason = isset($entry['correctionReason'])
 			&& trim((string)$entry['correctionReason']) !== '';
 		if ($hasReason === false) {
@@ -192,15 +173,10 @@ class HearingMinutesRecorder {
 			);
 		}
 
-		return $this->auditTrail->append(
-			existing: $audit,
-			event: 'attendance-late-correction',
-			payload: [
-				'invitee' => (string)($entry['invitee'] ?? ''),
-				'present' => (bool)($entry['present'] ?? false),
-				'correctionReason' => (string)$entry['correctionReason'],
-			],
-			tag: BezwaarAuditTrail::TAG_VERSLAG,
-		);
-	}//end appendLateCorrectionAudit()
+		return [
+			'invitee' => (string)($entry['invitee'] ?? ''),
+			'present' => (bool)($entry['present'] ?? false),
+			'correctionReason' => (string)$entry['correctionReason'],
+		];
+	}//end lateCorrectionPayload()
 }//end class

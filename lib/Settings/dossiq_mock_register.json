@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -995,7 +995,7 @@
                 }
               }
             },
-            "description": "Append-only audit trail for BAC-specific events (Archiefwet 1995). Complements the OpenRegister automatic per-save log.",
+            "description": "Audit entries written before the bezwaar entries moved to OpenRegister's audit trail of this record. They are kept as written and copied onto OpenRegister's audit trail once. Nothing writes this array any more.",
             "title": "Audit Trail"
           }
         }
@@ -6996,7 +6996,7 @@
             "items": {
               "type": "object"
             },
-            "description": "Append-only audit entries tagged with applicable Awb article (awb-art-7:2|7:3|7:4|7:6|7:7|7:13 or avg-art-6)",
+            "description": "Audit entries written before the bezwaar entries moved to OpenRegister's audit trail of this record. They are kept as written and copied onto OpenRegister's audit trail once. Nothing writes this array any more.",
             "title": "Audit Trail"
           }
         },
