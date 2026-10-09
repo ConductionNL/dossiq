@@ -35,25 +35,34 @@ class TenantContextTest extends TestCase {
 	public function testBindMakesContextReadable(): void {
 		$ctx = new TenantContext();
 		$ctx->bind(
-			tenant: ['uuid' => 'aaa', 'slug' => 'amsterdam', 'displayName' => 'Amsterdam'],
-			schemaName: 'tenant_aaa_amsterdam'
+			tenant: ['uuid' => 'aaa', 'slug' => 'amsterdam', 'displayName' => 'Amsterdam']
 		);
 
 		$this->assertTrue($ctx->isBound());
 		$this->assertSame('aaa', $ctx->getTenantId());
 		$this->assertSame('amsterdam', $ctx->getSlug());
-		$this->assertSame('tenant_aaa_amsterdam', $ctx->getSchemaName());
 		$this->assertSame('Amsterdam', $ctx->getTenant()['displayName']);
+	}
+
+	/**
+	 * The context carries the tenant and no schema name (REQ-TIS-004).
+	 *
+	 * @return void
+	 */
+	public function testBindTakesTheTenantOnly(): void {
+		$ctx = new TenantContext();
+		$ctx->bind(tenant: ['uuid' => 'aaa', 'slug' => 'amsterdam']);
+
+		$this->assertTrue($ctx->isBound());
+		$this->assertSame('aaa', $ctx->getTenantId());
+		$this->assertSame('amsterdam', $ctx->getSlug());
+		$this->assertSame(1, (new \ReflectionMethod(TenantContext::class, 'bind'))->getNumberOfParameters());
+		$this->assertFalse(method_exists($ctx, 'getSchemaName'), 'TenantContext must carry no schema name');
 	}
 
 	public function testGetTenantIdThrowsWhenUnbound(): void {
 		$this->expectException(RuntimeException::class);
 		(new TenantContext())->getTenantId();
-	}
-
-	public function testGetSchemaNameThrowsWhenUnbound(): void {
-		$this->expectException(RuntimeException::class);
-		(new TenantContext())->getSchemaName();
 	}
 
 	public function testGetTenantThrowsWhenUnbound(): void {
@@ -68,14 +77,14 @@ class TenantContextTest extends TestCase {
 
 	public function testResetClearsBoundContext(): void {
 		$ctx = new TenantContext();
-		$ctx->bind(['uuid' => 'aaa'], 'tenant_aaa');
+		$ctx->bind(['uuid' => 'aaa']);
 		$ctx->reset();
 		$this->assertFalse($ctx->isBound());
 	}
 
 	public function testFallsBackToIdWhenUuidMissing(): void {
 		$ctx = new TenantContext();
-		$ctx->bind(['id' => 'abc-123', 'slug' => 's'], 'tenant_abc123_s');
+		$ctx->bind(['id' => 'abc-123', 'slug' => 's']);
 		$this->assertSame('abc-123', $ctx->getTenantId());
 	}
 }

@@ -6,7 +6,8 @@
  * Resolves the requesting tenant from the SESSION and binds it onto the
  * request-scoped `TenantContext` service. Runs after the existing
  * `TenantMiddleware` (which does the older Organisation-shaped resolution) and
- * before `TenantIsolationMiddleware` (which sets the Postgres search_path).
+ * before the claim and mandate checks that read the bound tenant. It binds the
+ * tenant only: tenant isolation is OpenRegister's organisation row filter.
  *
  * Resolution: `TenantSessionService::activeTenantId()`, which re-verifies the
  * session's choice against the user's `tenantUser` memberships on every read.
@@ -41,13 +42,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Service\TenantContext;
-use OCA\Dossiq\Service\TenantProvisioningService;
 use OCA\Dossiq\Service\TenantOrganisationResolver;
 use OCA\Dossiq\Service\TenantSessionService;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Middleware that resolves the tenant and binds it to the TenantContext.
@@ -77,7 +76,6 @@ class TenantContextMiddleware extends Middleware {
 	 * @param IRequest $request Request.
 	 * @param TenantSessionService $tenantSession Session-held active tenant.
 	 * @param TenantOrganisationResolver $tenantResolver Resolves the tenant as an OpenRegister Organisation.
-	 * @param TenantProvisioningService $provisioning Provisioning service (schema-name builder).
 	 * @param TenantContext $context Request-scoped context.
 	 * @param LoggerInterface $logger Logger.
 	 */
@@ -85,7 +83,6 @@ class TenantContextMiddleware extends Middleware {
 		private readonly IRequest $request,
 		private readonly TenantSessionService $tenantSession,
 		private readonly TenantOrganisationResolver $tenantResolver,
-		private readonly TenantProvisioningService $provisioning,
 		private readonly TenantContext $context,
 		private readonly LoggerInterface $logger,
 	) {
@@ -124,20 +121,7 @@ class TenantContextMiddleware extends Middleware {
 			return;
 		}
 
-		try {
-			$schemaName = $this->provisioning->buildSchemaName(
-				uuid: (string)($tenant['uuid'] ?? $tenant['id'] ?? $tenantId),
-				slug: (string)($tenant['slug'] ?? '')
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: schema-name build failed in TenantContextMiddleware',
-				['tenantId' => $tenantId, 'exception' => $e->getMessage()]
-			);
-			return;
-		}
-
-		$this->context->bind($tenant, $schemaName);
+		$this->context->bind(tenant: $tenant);
 	}//end beforeController()
 
 	/**

@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -14110,7 +14110,7 @@
           },
           "role": {
             "type": "string",
-            "description": "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the three roles TenantProvisioningService creates and the only three the mandate matrix recognises; a member holding any other value is refused on every write.",
+            "description": "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the only three roles the mandate matrix recognises; a member holding any other value is refused on every write.",
             "title": "Role"
           },
           "joinedAt": {

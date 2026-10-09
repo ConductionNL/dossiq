@@ -4,9 +4,10 @@
  * Dossiq middleware-chain registrar.
  *
  * Owns the ordered SaaS middleware chain. Order is behaviour here, not style:
- * TenantContext must resolve the tenant binding before TenantIsolation sets the
- * Postgres search_path, and QuotaEnforcement must run last. Keeping the whole
- * chain in one class makes that ordering reviewable in a single screen.
+ * TenantContext must bind the tenant before the claim and mandate checks read
+ * it. Keeping the whole chain in one class makes that ordering reviewable in a
+ * single screen. Tenant isolation is OpenRegister's organisation row filter;
+ * no middleware here scopes the database.
  *
  * @category AppInfo
  * @package  OCA\Dossiq\AppInfo\Registrar
@@ -32,7 +33,6 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Middleware\MandateValidationMiddleware;
 use OCA\Dossiq\Middleware\TenantClaimValidationMiddleware;
 use OCA\Dossiq\Middleware\TenantContextMiddleware;
-use OCA\Dossiq\Middleware\TenantIsolationMiddleware;
 use OCA\Dossiq\Middleware\TenantMiddleware;
 use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -57,10 +57,9 @@ class MiddlewareRegistrar {
 	public function register(IRegistrationContext $context): void {
 		$context->registerMiddleware(class: ZgwAuthMiddleware::class);
 		$context->registerMiddleware(class: TenantMiddleware::class);
-		// SaaS chain (member 04): resolve tenant binding then set Postgres
-		// search_path. Order matters — Context runs before Isolation.
+		// SaaS chain (member 04): bind the session's tenant to the request
+		// context, before the claim and mandate checks below read it.
 		$context->registerMiddleware(class: TenantContextMiddleware::class);
-		$context->registerMiddleware(class: TenantIsolationMiddleware::class);
 		// SaaS chain (member 05): JWT tenant-claim validation against the
 		// request-bound tenant. Forged / cross-tenant JWT → 403.
 		$context->registerMiddleware(class: TenantClaimValidationMiddleware::class);

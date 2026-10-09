@@ -83,7 +83,7 @@ class TenantClaimValidationMiddlewareTest extends TestCase {
 			// bind() takes the tenant ROW and derives the id from uuid/id — the
 			// middleware compares against getTenantId(), so the row shape is
 			// part of what these tests pin.
-			$context->bind(['uuid' => $boundTenant, 'slug' => $boundTenant], 'tenant_' . $boundTenant);
+			$context->bind(['uuid' => $boundTenant, 'slug' => $boundTenant]);
 		}
 
 		$cacheFactory = $this->createMock(ICacheFactory::class);

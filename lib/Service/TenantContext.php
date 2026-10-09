@@ -3,8 +3,9 @@
 /**
  * Dossiq Tenant Context
  *
- * Request-scoped holder of the resolved tenant — UUID, slug, schema name,
- * full tenant row. Populated by `TenantContextMiddleware` early in the
+ * Request-scoped holder of the resolved tenant: UUID, slug and the full
+ * tenant row. It carries no database schema name; tenant isolation is
+ * OpenRegister's organisation row filter. Populated by `TenantContextMiddleware` early in the
  * request lifecycle and consumed by downstream services / controllers that
  * need to know which tenant they are operating on.
  *
@@ -55,13 +56,6 @@ class TenantContext {
 	private ?string $slug = null;
 
 	/**
-	 * Resolved Postgres schema name.
-	 *
-	 * @var string|null
-	 */
-	private ?string $schemaName = null;
-
-	/**
 	 * Full tenant row as resolved from OR.
 	 *
 	 * @var array<string,mixed>|null
@@ -72,17 +66,15 @@ class TenantContext {
 	 * Bind a resolved tenant to the current request.
 	 *
 	 * @param array<string,mixed> $tenant Tenant row.
-	 * @param string $schemaName Tenant schema name.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
+	 * @spec openspec/changes/tenant-isolation-names-the-control-that-runs/specs/tenant-isolation/spec.md
 	 */
-	public function bind(array $tenant, string $schemaName): void {
+	public function bind(array $tenant): void {
 		$this->tenant = $tenant;
 		$this->tenantId = (string)($tenant['uuid'] ?? $tenant['id'] ?? '');
 		$this->slug = (string)($tenant['slug'] ?? '');
-		$this->schemaName = $schemaName;
 	}//end bind()
 
 	/**
@@ -139,20 +131,6 @@ class TenantContext {
 	}//end getSlug()
 
 	/**
-	 * Get the resolved Postgres schema name.
-	 *
-	 * @return string
-	 *
-	 * @throws RuntimeException When no tenant is bound.
-	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-04-tenant-context-isolation/tasks.md
-	 */
-	public function getSchemaName(): string {
-		$this->assertBound();
-		return (string)$this->schemaName;
-	}//end getSchemaName()
-
-	/**
 	 * Reset the context. Used in tests + at the end of each request.
 	 *
 	 * @return void
@@ -163,7 +141,6 @@ class TenantContext {
 		$this->tenant = null;
 		$this->tenantId = null;
 		$this->slug = null;
-		$this->schemaName = null;
 	}//end reset()
 
 	/**
