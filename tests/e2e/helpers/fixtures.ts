@@ -838,6 +838,15 @@ export async function seedStateMachine(
 	const statusInProgress = add('statusType', p)
 	const statusDone = add('statusType', d)
 
+	// A case type names the status a new case starts in. Publishing refuses
+	// one that does not ("Pick the status a new case of this type starts in.",
+	// PublicationChecks::initialStatusIsOwn, a3be5d41a), so a machine seeded
+	// without it can never be published, and every spec that publishes this
+	// fixture failed in its setup rather than on its own assertion.
+	await updateObject(api, token, 'caseType', caseTypeId, {
+		initialStatus: statusReceived,
+	})
+
 	const transitions = [
 		{
 			id: 't1',
