@@ -74,10 +74,11 @@
               "allowedGroups": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "referenceType": "nextcloud-group"
                 },
                 "title": "Allowed teams",
-                "description": "The teams a case of this type may be assigned to. Empty means every team."
+                "description": "The teams a case of this type may be assigned to, as Nextcloud group ids. Empty means every team."
               },
               "allowedUsers": {
                 "type": "array",
