@@ -65,9 +65,38 @@ describe('appVersion', () => {
 		)
 	})
 
-	it('falls back to the info.xml literal on a library without the helper, which is the control', () => {
-		expect(appVersionDefinition('dossiq', { appRoot: ROOT, library: {} })).toBe(
-			JSON.stringify(readAppVersion(ROOT)),
-		)
+	it('stops the build on a library without the helper, which is the control', () => {
+		// The former fallback shipped the build-time info.xml literal without a
+		// word, which is how "dossiq 0.4.47-unstable" reached a 0.4.48-beta.
+		expect(() =>
+			appVersionDefinition('dossiq', { appRoot: ROOT, library: {} }),
+		).toThrow(/appVersionDefine/)
+		expect(() =>
+			appVersionDefinition('dossiq', { appRoot: ROOT, library: null }),
+		).toThrow(/appVersionDefine/)
+	})
+
+	it('uses the real library helper when webpack loads its config', () => {
+		// No injected library: this is the module webpack.config.js runs.
+		const helpers = require('@conduction/nextcloud-vue/webpack')
+		expect(typeof helpers.appVersionDefine).toBe('function')
+		const expected = readAppVersion(ROOT)
+		const code = appVersionDefinition('dossiq', { appRoot: ROOT })
+		expect(code).toBe(helpers.appVersionDefine('dossiq', expected))
+		expect(code).not.toBe(JSON.stringify(expected))
+		expect(code).toContain('initial-state-dossiq-version')
+	})
+
+	it('builds against a library that has the helper', () => {
+		const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+		const range = pkg.dependencies['@conduction/nextcloud-vue']
+		const [major, minor, patch] = range
+			.replace(/^[\^~]/, '')
+			.split('.')
+			.map(Number)
+		expect(major).toBe(2)
+		expect(minor * 1000 + patch).toBeGreaterThanOrEqual(73 * 1000 + 1)
+		const installed = require('@conduction/nextcloud-vue/package.json').version
+		expect(installed.split('.').map(Number)[1]).toBeGreaterThanOrEqual(73)
 	})
 })
