@@ -186,8 +186,15 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 		await provisioning.dispose()
 
 		await createObject(adminApi, adminToken, 'contactmoment', {
-			notificationChannel: 'telefoon',
+			// The channel vocabulary went English in 75f578d2b (`telefoon` is
+			// `phone`), and identificationMethod, kccEmployeeId and nature are
+			// required by 40-kcc-werkplek.json, so the bare contact moment was
+			// refused in this hook.
+			notificationChannel: 'phone',
 			direction: 'inbound',
+			identificationMethod: 'bsn_verificatie',
+			kccEmployeeId: 'admin',
+			nature: 'informatieverzoek',
 			startTime: new Date().toISOString(),
 			geidentificeerdeBurgerId: SUBJECT,
 			callerIdentification: '+31600000000',

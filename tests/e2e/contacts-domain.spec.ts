@@ -51,6 +51,7 @@ import {
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedDocument,
 } from './helpers/fixtures.ts'
 import { clickHeaderAction, dismissSupportDialog } from './helpers/nav.ts'
 
@@ -266,7 +267,7 @@ test.describe('Contacts', () => {
 		// one document, one party and one role, and the contact panel reads
 		// exactly that join, so a document with no dispatch is invisible to it
 		// by design and one with a dispatch is visible without a second write.
-		const letter = await createObject(api, token, 'informatieobject', {
+		const letter = await seedDocument(api, token, {
 			title: `${RUN_PREFIX} Besluit dakkapel`,
 			recipients: [personId],
 		})

@@ -30,10 +30,13 @@ import {
 	createObject,
 	ensureCaseType,
 	getRequestToken,
+	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedDocument,
 	showObject,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
@@ -59,25 +62,33 @@ let caseTypeId = ''
  * @param recordedAt When it was written up.
  */
 async function recordIncident(key: string, eventDate: string, recordedAt: string) {
-	return await createObject(api, token, 'caseIncident', {
-		case: caseId,
-		description: `${RUN_PREFIX} ${key}`,
-		eventDate,
-		recordedAt,
-		reporter: 'melder',
-		state: 'open',
-	})
+	// The id, not the created object: the callers use it in a URL and as a
+	// reference, where an object reads as `[object Object]`.
+	return objectId(
+		await createObject(api, token, 'caseIncident', {
+			case: caseId,
+			description: `${RUN_PREFIX} ${key}`,
+			eventDate,
+			recordedAt,
+			reporter: 'melder',
+			state: 'open',
+		}),
+	)
 }
 
 test.beforeAll(async ({ playwright, baseURL }) => {
 	api = await playwright.request.newContext({ baseURL })
 	token = await getRequestToken(api)
 	caseTypeId = (await ensureCaseType(api, token)).id
-	caseId = await seedCase(api, token, {
-		title: `${RUN_PREFIX} Adres met meldingen`,
-		caseType: caseTypeId,
-		assignee: 'admin',
-	})
+	// seedCase returns the created OBJECT, not its id; the id is what every
+	// reference below (`caseIncident.case`, the case URL) has to carry.
+	caseId = objectId(
+		await seedCase(api, token, {
+			title: `${RUN_PREFIX} Adres met meldingen`,
+			caseType: caseTypeId,
+			assignee: 'admin',
+		}),
+	)
 })
 
 test.afterAll(async () => {
@@ -168,22 +179,29 @@ test.describe('a split moves rather than duplicates', () => {
 		// The assertion the whole row turns on. A split that copied would pass
 		// "does the new case have it" and leave both cases claiming one
 		// document, which is the state this change exists to end.
-		const other = await seedCase(api, token, {
-			title: `${RUN_PREFIX} Tweede helft`,
-			caseType: caseTypeId,
-		})
-		const link = await createObject(api, token, 'caseDocument', {
-			case: caseId,
+		const other = objectId(
+			await seedCase(api, token, {
+				title: `${RUN_PREFIX} Tweede helft`,
+				caseType: caseTypeId,
+			}),
+		)
+		// `caseDocument` requires the document it links (dossiq_register.json),
+		// so the link names a real one.
+		const document = await seedDocument(api, token, {
 			title: `${RUN_PREFIX} Verhuisd stuk`,
 		})
-
-		await api.put(
-			`/index.php/apps/openregister/api/objects/dossiq/caseDocument/${link}`,
-			{
-				headers: { requesttoken: token },
-				data: { case: other },
-			},
+		const link = objectId(
+			await createObject(api, token, 'caseDocument', {
+				case: caseId,
+				document: document['@self']?.uri,
+				title: `${RUN_PREFIX} Verhuisd stuk`,
+			}),
 		)
+
+		// The move writes the whole row with only `case` changed. A PUT of
+		// `{ case }` alone replaces the row and is refused for the `document`
+		// it then lacks, so the link would never have moved at all.
+		await updateObject(api, token, 'caseDocument', link, { case: other })
 
 		const moved = await showObject(api, 'caseDocument', link)
 
@@ -197,10 +215,12 @@ test.describe('a case type bounds what a split may divide', () => {
 		// The bound is declared on the case type and read server-side; the
 		// picker that offers the allowed parts is the remaining half of this
 		// change, so the refusal is probed where it is enforced.
-		const caseType = await createObject(api, token, 'caseType', {
-			title: `${RUN_PREFIX} Ondeelbaar`,
-			splittableParts: ['parties', 'tasks'],
-		})
+		const caseType = objectId(
+			await createObject(api, token, 'caseType', {
+				title: `${RUN_PREFIX} Ondeelbaar`,
+				splittableParts: ['parties', 'tasks'],
+			}),
+		)
 
 		const stored = await showObject(api, 'caseType', caseType)
 

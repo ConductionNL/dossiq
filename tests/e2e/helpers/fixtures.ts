@@ -659,6 +659,74 @@ export async function ensureTeam(
 	return { id: objectId(team), name }
 }
 
+/** The informatieobjecttype this process files its documents under. */
+let documentTypeForRun = ''
+
+/**
+ * File an informatieobject that satisfies its schema.
+ *
+ * `informatieobject` requires title, fileName, vertrouwelijkheidaanduiding
+ * and informatieobjecttype (lib/Settings/register.d/70-document-zaakdossier.json,
+ * since 96aa93a23; `titel` became `title` in f3ca3f782). A spec that filed a
+ * bare `{ titel }` was refused in its setup and never reached the behaviour it
+ * was written for, so the required fields are supplied here once. The type is
+ * created on first use and tracked like every other fixture.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param fields The document fields the spec cares about, `title` included.
+ * @return The created informatieobject.
+ */
+export async function seedDocument(
+	api: APIRequestContext,
+	token: string,
+	fields: Record<string, unknown> & { title: string },
+): Promise<any> {
+	if (documentTypeForRun === '') {
+		const type = await createObject(api, token, 'informatieobjecttype', {
+			description: `${RUN_PREFIX} Document`,
+			informatieobjectcategorie: 'incoming',
+			vertrouwelijkheidaanduiding: 'openbaar',
+		})
+		documentTypeForRun = objectId(type)
+	}
+	return createObject(api, token, 'informatieobject', {
+		fileName: `${String(fields.title).replace(/[^\w-]+/g, '-')}.pdf`,
+		vertrouwelijkheidaanduiding: 'openbaar',
+		informatieobjecttype: documentTypeForRun,
+		...fields,
+	})
+}
+
+/**
+ * A published case type of this run that allows its term to be suspended.
+ *
+ * A pause on a term is refused unless the case's type sets
+ * `suspensionAllowed: true` (CaseLifecycleService::suspend since 0f0d36c61,
+ * DeadlinePauseService::assertSuspensionAllowed since 78ea5bbf8). A spec that
+ * pauses a term on whatever `ensureCaseType` adopts gets
+ * `suspension_not_allowed` whenever the adopted type does not allow it, which
+ * is most shipped types, so the pause is the spec's own fixture to make.
+ *
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ * @return The case type id.
+ */
+export async function seedSuspendableCaseType(
+	api: APIRequestContext,
+	token: string,
+): Promise<string> {
+	const suffix = nextFixtureSuffix()
+	const caseType = await createObject(api, token, 'caseType', {
+		title: `${RUN_PREFIX} Opschortbaar ${suffix}`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-opschortbaar-${suffix}`,
+		description: 'Throwaway caseType whose term may be suspended.',
+		isDraft: false,
+		suspensionAllowed: true,
+	})
+	return objectId(caseType)
+}
+
 /**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
@@ -837,6 +905,15 @@ export async function seedStateMachine(
 	const statusReceived = add('statusType', r)
 	const statusInProgress = add('statusType', p)
 	const statusDone = add('statusType', d)
+
+	// A case type names the status a new case starts in. Publishing refuses
+	// one that does not ("Pick the status a new case of this type starts in.",
+	// PublicationChecks::initialStatusIsOwn, a3be5d41a), so a machine seeded
+	// without it can never be published, and every spec that publishes this
+	// fixture failed in its setup rather than on its own assertion.
+	await updateObject(api, token, 'caseType', caseTypeId, {
+		initialStatus: statusReceived,
+	})
 
 	const transitions = [
 		{

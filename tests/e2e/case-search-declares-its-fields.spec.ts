@@ -40,6 +40,7 @@ import {
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
 
@@ -93,20 +94,30 @@ test.describe('The case declares how each of its fields is searched', () => {
 			}),
 		)
 
-		const result = objectId(
-			await createObject(api, token, 'result', {
-				title: `${RUN_PREFIX} Toegekend`,
-				description: 'Granted, seeded by the search declarations suite.',
-			}),
-		)
-
+		// A `result` row names its case and its resultType, both required
+		// (dossiq_register.json), so the case is filed first, the result
+		// written against it, and the case then pointed at that result.
 		closedWithResult = objectId(
 			await seedCase(api, token, {
 				title: `${RUN_PREFIX} afgehandeld met resultaat`,
 				caseType,
-				result,
 			}),
 		)
+		const resultType = objectId(
+			await createObject(api, token, 'resultType', {
+				name: `${RUN_PREFIX} Toegekend`,
+				caseType,
+			}),
+		)
+		const result = objectId(
+			await createObject(api, token, 'result', {
+				name: `${RUN_PREFIX} Toegekend`,
+				case: closedWithResult,
+				resultType,
+				description: 'Granted, seeded by the search declarations suite.',
+			}),
+		)
+		await updateObject(api, token, 'case', closedWithResult, { result })
 
 		closedWithoutResult = objectId(
 			await seedCase(api, token, {
