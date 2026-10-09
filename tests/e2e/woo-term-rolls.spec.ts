@@ -39,7 +39,10 @@ test.describe('A Woo term is computed by law', () => {
 	// @e2e openspec/changes/woo-term-is-computed-and-reported-right/specs/woo-case-type/spec.md#scenario-a-woo-term-that-ends-on-christmas-day-rolls-past-the-weekend
 	// @e2e openspec/changes/woo-term-is-computed-and-reported-right/specs/woo-case-type/spec.md#scenario-one-extension-rolled
 	// @e2e openspec/changes/woo-term-is-computed-and-reported-right/specs/woo-case-type/spec.md#scenario-a-second-extension-is-refused
-	test('The deadline rolls past Christmas, and the term extends once', async ({ playwright, baseURL }) => {
+	test('The deadline rolls past Christmas, and the term extends once', async ({
+		playwright,
+		baseURL,
+	}) => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
@@ -71,10 +74,14 @@ test.describe('A Woo term is computed by law', () => {
 		expect(String(stored.deadline).slice(0, 10)).toBe('2026-12-28')
 		expect(String(stored.deadlineBeforeRoll).slice(0, 10)).toBe('2026-12-25')
 
-		const extend = (reason: string) => api.post(`/index.php/apps/dossiq/api/cases/${caseId}/woo/extend-deadline`, {
-			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
-			data: { reason },
-		})
+		const extend = (reason: string) =>
+			api.post(
+				`/index.php/apps/dossiq/api/cases/${caseId}/woo/extend-deadline`,
+				{
+					headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+					data: { reason },
+				},
+			)
 
 		const first = await extend('Zienswijzen van derden')
 		expect(first.status(), await first.text()).toBe(200)

@@ -77,6 +77,9 @@ class CaseDeadlineFollower {
 	 * @return bool True when the case was saved to follow the term.
 	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) TermKind::ofInstance() is a pure
+	 * classifier over the instance array, with no state to inject.
 	 */
 	public function follow(array $instance): bool {
 		if (TermKind::ofInstance(instance: $instance) !== TermKind::STATUTORY) {
@@ -85,12 +88,12 @@ class CaseDeadlineFollower {
 
 		$caseId = $this->referenceId(value: ($instance['case'] ?? null));
 		$endDate = substr(trim((string)($instance['endDateCurrent'] ?? '')), 0, 10);
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_schema');
-		if ($caseId === '' || $endDate === '' || $objectService === null || $register === '' || $schema === '') {
+		$location = $this->caseLocation();
+		if ($caseId === '' || $endDate === '' || $location === null) {
 			return false;
 		}
+
+		[$objectService, $register, $schema] = $location;
 
 		try {
 			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
@@ -117,6 +120,22 @@ class CaseDeadlineFollower {
 
 		return true;
 	}//end follow()
+
+	/**
+	 * Where cases are stored: the object service, register and case schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null The three, or null when any is unconfigured.
+	 */
+	private function caseLocation(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('case_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end caseLocation()
 
 	/**
 	 * The id a reference carries, whether it arrived as a uuid or as a row.

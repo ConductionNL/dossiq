@@ -36,6 +36,8 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
+use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
 
 /**
@@ -52,16 +54,34 @@ class DeadlineReportingService {
 	 *
 	 * @var string
 	 */
-	public const UNRESOLVED = 'unresolved';
+	public const UNRESOLVED = TermCaseTypeResolver::UNRESOLVED;
+
+	/**
+	 * Resolves each term's case type for the quarterly report.
+	 *
+	 * @var TermCaseTypeResolver
+	 */
+	private readonly TermCaseTypeResolver $caseTypes;
+
+	/**
+	 * Classifies each term as met, missed, running or suspended.
+	 *
+	 * @var TermOutcome
+	 */
+	private readonly TermOutcome $outcomes;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Settings.
+	 * @param SettingsService           $settingsService Settings.
+	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		?TermCaseTypeResolver $caseTypes = null,
 	) {
+		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
+		$this->outcomes = new TermOutcome();
 	}//end __construct()
 
 	/**
@@ -78,7 +98,7 @@ class DeadlineReportingService {
 		$bounds = $this->resolveQuarter(period: $period);
 		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
 
-		$types = $this->caseTypesOf(rows: $rows);
+		$types = $this->caseTypes->resolve(rows: $rows);
 		$byType = $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']);
 
 		// Reduce per-type aggregates.
@@ -147,145 +167,6 @@ class DeadlineReportingService {
 	}//end aggregateByType()
 
 	/**
-	 * The case type each term belongs to, resolved in batched reads.
-	 *
-	 * Through the case the term names (`deadlineInstance.case` to
-	 * `case.caseType`), and otherwise through its definition's case type. A
-	 * term neither resolves is `unresolved`, and its id is listed. Three
-	 * searches at most, each restricted by `_ids`, never one per row.
-	 *
-	 * @param array<int, array<string, mixed>> $rows Instance rows.
-	 *
-	 * @return array{byRow: array<int, array{key: string, title: string}>, unresolved: array<int, string>}
-	 *
-	 * @spec openspec/specs/termijn-reporting/spec.md
-	 */
-	private function caseTypesOf(array $rows): array {
-		$cases = $this->batch(configKey: 'case_schema', ids: array_map(fn (array $row): string => $this->ref(value: ($row['case'] ?? null)), $rows));
-		$caseTypes = $this->batch(
-			configKey: 'case_type_schema',
-			ids: array_map(fn (array $case): string => $this->ref(value: ($case['caseType'] ?? null)), array_values($cases))
-		);
-		$definitions = $this->batch(
-			configKey: 'termijn_definitie_schema',
-			ids: array_map(fn (array $row): string => $this->ref(value: ($row['deadlineDefinition'] ?? null)), $rows)
-		);
-
-		$titlesBySlug = [];
-		foreach ($caseTypes as $caseType) {
-			$titlesBySlug[$this->caseTypeKey(caseType: $caseType)] = (string)($caseType['title'] ?? '');
-		}
-
-		$byRow = [];
-		$unresolved = [];
-		foreach ($rows as $index => $row) {
-			$case = ($cases[$this->ref(value: ($row['case'] ?? null))] ?? null);
-			$caseTypeId = $this->ref(value: ($case['caseType'] ?? null));
-			if ($caseTypeId !== '' && isset($caseTypes[$caseTypeId]) === true) {
-				$key = $this->caseTypeKey(caseType: $caseTypes[$caseTypeId]);
-				$byRow[$index] = ['key' => $key, 'title' => (string)($caseTypes[$caseTypeId]['title'] ?? '')];
-				continue;
-			}
-
-			$slug = trim((string)($definitions[$this->ref(value: ($row['deadlineDefinition'] ?? null))]['caseType'] ?? ''));
-			if ($slug !== '') {
-				$byRow[$index] = ['key' => $slug, 'title' => ($titlesBySlug[$slug] ?? '')];
-				continue;
-			}
-
-			$byRow[$index] = ['key' => self::UNRESOLVED, 'title' => ''];
-			$unresolved[] = (string)($row['id'] ?? '');
-		}//end foreach
-
-		return ['byRow' => $byRow, 'unresolved' => $unresolved];
-	}//end caseTypesOf()
-
-	/**
-	 * The key a case type is reported under: its identifier, then its slug, then its id.
-	 *
-	 * The identifier is what a term definition names as its `caseType`, so a
-	 * term resolved through its case and one resolved through its definition
-	 * land in the same bucket.
-	 *
-	 * @param array<string, mixed> $caseType The case type row.
-	 *
-	 * @return string The key.
-	 */
-	private function caseTypeKey(array $caseType): string {
-		$candidates = [
-			($caseType['identifier'] ?? null),
-			($caseType['@self']['slug'] ?? null),
-			($caseType['slug'] ?? null),
-			($caseType['id'] ?? null),
-		];
-		foreach ($candidates as $candidate) {
-			if (is_string($candidate) === true && trim($candidate) !== '') {
-				return trim($candidate);
-			}
-		}
-
-		return self::UNRESOLVED;
-	}//end caseTypeKey()
-
-	/**
-	 * Read the rows with these ids from one schema, in one search.
-	 *
-	 * @param string             $configKey The schema's config key.
-	 * @param array<int, string> $ids       The ids; empties and repeats are dropped.
-	 *
-	 * @return array<string, array<string, mixed>> The rows, keyed by id.
-	 */
-	private function batch(string $configKey, array $ids): array {
-		$ids = array_values(array_unique(array_filter($ids, static fn (string $id): bool => $id !== '')));
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($configKey);
-		if ($ids === [] || $objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['_ids' => $ids, '_limit' => count($ids)]
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
-
-		$keyed = [];
-		foreach ($rows as $row) {
-			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
-			if ($id !== '') {
-				$keyed[$id] = $row;
-			}
-		}
-
-		return $keyed;
-	}//end batch()
-
-	/**
-	 * The id a reference carries, whether it arrived as a uuid or as a row.
-	 *
-	 * @param mixed $value A uuid string, or an array carrying `id`/`uuid`.
-	 *
-	 * @return string The id, or the empty string.
-	 */
-	private function ref(mixed $value): string {
-		if (is_array($value) === true) {
-			$value = ($value['id'] ?? ($value['uuid'] ?? ''));
-		}
-
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return trim($value);
-	}//end ref()
-
-	/**
 	 * Fold a single instance row into its zaaktype bucket.
 	 *
 	 * @param array<string, mixed> $row Instance row.
@@ -308,7 +189,7 @@ class DeadlineReportingService {
 			$bucket['verlengingen']++;
 		}
 
-		$outcome = $this->outcomeOf(row: $row);
+		$outcome = $this->outcomes->classify(row: $row);
 		if ($outcome !== '') {
 			$bucket[$outcome]++;
 		}
@@ -321,33 +202,6 @@ class DeadlineReportingService {
 			$bucket['doorlooptijdenDagen'][] = (int)$startD->diff($endD)->days;
 		}
 	}//end accumulateRow()
-
-	/**
-	 * Whether a term was met, missed, is running or is suspended (REQ-WTR-005).
-	 *
-	 * Met: completed on or before `endDateCurrent` (a completion without a
-	 * recorded date counts as met, as `withinTerm` always did). Missed: status
-	 * `exceeded`, or completed after `endDateCurrent`. A withdrawn term is none
-	 * of the four.
-	 *
-	 * @param array<string, mixed> $row Instance row.
-	 *
-	 * @return string One of met, missed, running, suspended, or the empty string.
-	 */
-	private function outcomeOf(array $row): string {
-		$status = (string)($row['status'] ?? '');
-		$completedOn = substr((string)($row['voltooiDatum'] ?? ''), 0, 10);
-		$end = substr((string)($row['endDateCurrent'] ?? ''), 0, 10);
-
-		return match (true) {
-			$status === 'completed' && $completedOn !== '' && $end !== '' && $completedOn > $end => 'missed',
-			$status === 'completed' => 'met',
-			$status === 'exceeded' => 'missed',
-			$status === 'lopend', $status === 'verlengd' => 'running',
-			$status === 'paused' => 'suspended',
-			default => '',
-		};
-	}//end outcomeOf()
 
 	/**
 	 * Reduce the raw per-zaaktype tallies into the reported percentages and averages.

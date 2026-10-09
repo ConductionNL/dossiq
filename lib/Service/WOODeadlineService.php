@@ -42,6 +42,11 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The Woo deadline sits where
+ * the case, its term instance, the extension ceiling and the notification meet.
+ * The four exception and date types over the limit are value types, not
+ * collaborators; the extension itself goes through TermijnService.
+ *
  * @spec openspec/changes/woo-case-type/tasks.md#task-4
  */
 class WOODeadlineService {
@@ -201,6 +206,9 @@ class WOODeadlineService {
 	 * @param string $caseId The case UUID
 	 *
 	 * @return array<string, mixed>|null The instance, or null when the case has none.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) TermKind::ofInstance() is a pure
+	 * classifier over the instance array, with no state to inject.
 	 */
 	private function statutoryInstance(string $caseId): ?array {
 		foreach ((array)$this->termService?->instancesForCase(caseId: $caseId) as $instance) {

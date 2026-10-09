@@ -105,12 +105,14 @@ class TermDefinitions {
 	 * Read one TermijnDefinitie by its id.
 	 *
 	 * A term instance names its definition by id, and the extension ceiling
-	 * lives on that row. A missing row answers null; the caller decides the
-	 * safe value.
+	 * lives on that row. An unconfigured schema answers null; a read that
+	 * fails throws, so a verleng is refused instead of capped by a guess.
 	 *
 	 * @param string $id The definition id.
 	 *
-	 * @return array<string, mixed>|null The definition, or null when it cannot be read.
+	 * @return array<string, mixed>|null The definition, or null when the schema is not configured.
+	 *
+	 * @throws \Throwable When the read itself fails.
 	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
 	 */
@@ -122,12 +124,9 @@ class TermDefinitions {
 			return null;
 		}
 
-		try {
-			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
-		} catch (\Throwable $e) {
-			$this->logger->warning('TermDefinitions.byId lookup failed', ['id' => $id, 'error' => $e->getMessage()]);
-			return null;
-		}
+		// A failed read throws rather than answering null: null would let the
+		// caller fall back to a default extension ceiling the definition never set.
+		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
 	}//end byId()
 
 	/**

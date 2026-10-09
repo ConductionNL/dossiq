@@ -72,6 +72,11 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) It listens to two
+ * OpenRegister events and reads the case type, its parent chain and its term
+ * definition before rolling the date on the calendar; the types over the limit
+ * are those events and the date value types, not further collaborators.
+ *
  * @spec openspec/specs/woo-case-type/spec.md
  */
 class CaseDeadlineListener implements IEventListener {

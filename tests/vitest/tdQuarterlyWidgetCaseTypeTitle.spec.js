@@ -30,12 +30,16 @@ vi.mock('../../src/store/modules/termijnDashboard.js', () => ({
 	currentQuarter: () => '2026-Q4',
 }))
 
-const TdQuarterlyWidget = (await import('../../src/views/termijn/TdQuarterlyWidget.vue')).default
+const TdQuarterlyWidget = (
+	await import('../../src/views/termijn/TdQuarterlyWidget.vue')
+).default
 
 describe('TdQuarterlyWidget', () => {
 	it('shows the case type title, and the key when there is no title', () => {
 		const wrapper = shallowMount(TdQuarterlyWidget)
-		const firstCells = wrapper.findAll('tbody tr').map((row) => row.find('td').text())
+		const firstCells = wrapper
+			.findAll('tbody tr')
+			.map((row) => row.find('td').text())
 
 		expect(firstCells).toEqual(['Woo-verzoek', 'unresolved'])
 	})
