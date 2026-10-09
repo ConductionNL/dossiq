@@ -114,7 +114,10 @@ test.describe('@spec REQ-CUS-01 the chain of custody', () => {
 
 		const handed = await api.post(caseApi(caseId, 'handover'), {
 			headers: { requesttoken: token },
-			data: { team: teams.toezicht, reason: 'Dit is handhaving, geen vergunning' },
+			data: {
+				team: teams.toezicht,
+				reason: 'Dit is handhaving, geen vergunning',
+			},
 		})
 		expect(
 			handed.ok(),

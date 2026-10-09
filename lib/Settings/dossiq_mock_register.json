@@ -2940,7 +2940,7 @@
           "assignedGroup": {
             "type": "string",
             "referenceType": "nextcloud-group",
-            "description": "The team handling this case, as a Nextcloud group id. Assignment, not permission: a case can carry a team, a personal assignee, or both.",
+            "description": "The team handling this case, a Nextcloud group. A team is an assignment, not a permission. A case can have a team, a handler, or both.",
             "title": "Team",
             "facetable": true
           },
@@ -10714,7 +10714,7 @@
             "type": "string",
             "referenceType": "nextcloud-group",
             "title": "Nextcloud group",
-            "description": "The Nextcloud group this role belongs to. The one link between an organisation role and a team: a case's team is a Nextcloud group, and a case still holding this role is moved to this group by occ dossiq:teams:migrate.",
+            "description": "The Nextcloud group this role belongs to. Cases of this role move to this group. Leave it empty and nothing is guessed.",
             "maxLength": 255
           },
           "mandateLevel": {

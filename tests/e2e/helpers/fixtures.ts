@@ -652,7 +652,9 @@ export async function ensureTeam(
 	department: string,
 ): Promise<{ id: string; name: string }> {
 	void token
-	const id = `${RUN_PREFIX}-${department}`.toLowerCase().replace(/[^a-z0-9_.-]+/g, '-')
+	const id = `${RUN_PREFIX}-${department}`
+		.toLowerCase()
+		.replace(/[^a-z0-9_.-]+/g, '-')
 	const name = `${RUN_PREFIX} ${department}`
 	const created = await api.post('/ocs/v2.php/cloud/groups?format=json', {
 		headers: { 'OCS-APIRequest': 'true' },
@@ -663,7 +665,9 @@ export async function ensureTeam(
 	)
 	// 200 is created, 102 is "group exists", which a retry of beforeAll meets.
 	if (status !== 200 && status !== 102) {
-		throw new Error(`ensureTeam: creating group ${id} answered OCS status ${status}`)
+		throw new Error(
+			`ensureTeam: creating group ${id} answered OCS status ${status}`,
+		)
 	}
 	teamsCreated.push(id)
 
@@ -680,9 +684,12 @@ export async function removeTeams(api: APIRequestContext): Promise<void> {
 	while (teamsCreated.length > 0) {
 		const id = teamsCreated.pop() as string
 		await api
-			.delete(`/ocs/v2.php/cloud/groups/${encodeURIComponent(id)}?format=json`, {
-				headers: { 'OCS-APIRequest': 'true' },
-			})
+			.delete(
+				`/ocs/v2.php/cloud/groups/${encodeURIComponent(id)}?format=json`,
+				{
+					headers: { 'OCS-APIRequest': 'true' },
+				},
+			)
 			.catch(() => undefined)
 	}
 }

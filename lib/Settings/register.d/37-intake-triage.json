@@ -78,7 +78,7 @@
                   "referenceType": "nextcloud-group"
                 },
                 "title": "Allowed teams",
-                "description": "The teams a case of this type may be assigned to, as Nextcloud group ids. Empty means every team."
+                "description": "The teams a case of this type may go to, as Nextcloud groups. Empty means every team."
               },
               "allowedUsers": {
                 "type": "array",
@@ -132,7 +132,7 @@
                   "type": "string",
                   "title": "Department",
                   "referenceType": "nextcloud-group",
-                  "description": "The team the opened case belongs to, as a Nextcloud group id. It is written to the case's team as is."
+                  "description": "The team the opened case goes to, a Nextcloud group."
                 },
                 "enabled": {
                   "type": "boolean",
