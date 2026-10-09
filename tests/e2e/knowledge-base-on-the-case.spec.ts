@@ -84,13 +84,13 @@ test.afterAll(async () => {
 test.describe('the case type carries its work instruction', () => {
 	// @e2e openspec/specs/case-knowledge-base/spec.md#every-case-of-a-type-shows-its-instruction
 	test('the caseType schema on this instance declares knowledgeBasePage', async () => {
-		const res = await api.get(`${SCHEMAS}?_limit=200`, {
+		// Read by slug, not found in the first 200 of a list. This instance
+		// carries some 390 schemas once the sibling apps are installed, so
+		// `caseType` is not in the first page and the list said it was absent.
+		const res = await api.get(`${SCHEMAS}/caseType`, {
 			headers: { requesttoken: token },
 		})
-		expect(res.ok(), `the schema list answered ${res.status()}`).toBeTruthy()
-		const body = await res.json()
-		const rows = body.results ?? body.data ?? []
-		const caseType = rows.find((s: any) => (s.slug ?? s.title) === 'caseType')
+		const caseType = res.ok() ? await res.json() : undefined
 
 		expect(caseType, 'this instance has no caseType schema').toBeTruthy()
 		expect(
@@ -115,7 +115,10 @@ test.describe('the case type carries its work instruction', () => {
 	test('the case type page offers the field to the person who authors the type', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/#/case-types/${caseTypeId}`, PAGE_LOAD)
+		await page.goto(
+			`/apps/${REGISTER}/settings/case-types/${caseTypeId}`,
+			PAGE_LOAD,
+		)
 		await dismissSupportDialog(page)
 
 		await expect(page.getByText('Work instruction')).toBeVisible()
@@ -129,7 +132,7 @@ test.describe('the case type carries its work instruction', () => {
 			knowledgeBasePage: INSTRUCTION_URL,
 		})
 
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Knowledge' }).click()
 
@@ -152,7 +155,7 @@ test.describe('the case type carries its work instruction', () => {
 			knowledgeBasePage: '',
 		})
 
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Knowledge' }).click()
 
@@ -168,7 +171,7 @@ test.describe('the pages render through the leaf, or the tab is absent', () => {
 	test('the Knowledge tab is present exactly when Collectives is', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const tab = page.getByRole('tab', { name: 'Knowledge' })
@@ -206,7 +209,7 @@ test.describe('the pages render through the leaf, or the tab is absent', () => {
 			'no Collectives on this instance, so there is no leaf to read',
 		)
 
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Knowledge' }).click()
 
