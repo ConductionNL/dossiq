@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\CopyEmbeddedBezwaarAuditTrail;
 use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
+use OCP\App\IAppManager;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -81,6 +82,8 @@ class CopyEmbeddedBezwaarAuditTrailTest extends TestCase {
 			$this->warnings[] = $message;
 		});
 
+		$apps = $this->createMock(IAppManager::class);
+		$apps->method('isInstalled')->with('openregister')->willReturn(true);
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->with('OCA\\OpenRegister\\Db\\AuditTrailMapper')->willReturn($this->trail);
 
@@ -88,6 +91,7 @@ class CopyEmbeddedBezwaarAuditTrailTest extends TestCase {
 			settingsService: $this->bezwaarSettings(),
 			auditTrail: $this->bezwaarAuditTrail(uid: null),
 			container: $container,
+			appManager: $apps,
 			logger: $this->createMock(LoggerInterface::class),
 		))->run($output);
 	}

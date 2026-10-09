@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -80,12 +81,14 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	 * @param SettingsService    $settingsService Register and schema configuration, and the ObjectService.
 	 * @param BezwaarAuditTrail  $auditTrail      Writes the copied rows.
 	 * @param ContainerInterface $container       Resolves OpenRegister's AuditTrailMapper, to read what was already copied.
+	 * @param IAppManager        $appManager      OpenRegister availability check.
 	 * @param LoggerInterface    $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly BezwaarAuditTrail $auditTrail,
 		private readonly ContainerInterface $container,
+		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -235,6 +238,10 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	 * @throws Throwable When the trail cannot be read.
 	 */
 	private function copiedIndexes(string $objectUuid): array {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			throw new RuntimeException('OpenRegister is not available, so what was already copied cannot be read');
+		}
+
 		$rows = $this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper')->findAll(
 			filters: ['object_uuid' => $objectUuid, 'action' => BezwaarAuditTrail::ACTION_PREFIX.'*']
 		);
