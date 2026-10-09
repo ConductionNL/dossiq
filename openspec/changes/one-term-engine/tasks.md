@@ -29,12 +29,12 @@ group lands on `development` as its own PR.
 
 ## 2. Working days and the work queue (PR 2)
 
-- [ ] 2.1 `CaseTermsService::endAfter()` takes a mode; the planned end and the
+- [x] 2.1 `CaseTermsService::endAfter()` takes a mode; the planned end and the
   internal target count working days through `WorkingDayRoll` (D-5, REQ-OTE-04).
   - `tests/Unit/Service/CaseTermsServiceTest.php`
-- [ ] 2.2 `WorkQueueService::businessDaysBetween()` asks `WorkingDayRoll`,
+- [x] 2.2 `WorkQueueService::businessDaysBetween()` asks `WorkingDayRoll`,
   Monday to Friday only as the logged fallback (REQ-OTE-04).
-- [ ] 2.3 `WorkQueueService::nearestActiveTermDeadline()` reads `lopend`,
+- [x] 2.3 `WorkQueueService::nearestActiveTermDeadline()` reads `lopend`,
   `verlengd`, `paused` and `exceeded` (D-8, REQ-OTE-06).
   - `tests/Unit/Service/WorkQueueServiceTest.php`
 

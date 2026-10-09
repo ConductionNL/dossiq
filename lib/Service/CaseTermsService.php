@@ -42,6 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Termijn\TermMoveHistory;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
@@ -269,50 +270,24 @@ class CaseTermsService {
 	 * @return string The end date as `Y-m-d`.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function endAfter(
 		DateTimeImmutable $start,
 		int $days,
 		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
 	): string {
-		$raw = $this->counted(start: $start, days: max(0, $days), mode: $mode);
+		// WORKING DAYS ARE THE ADMINISTERED CALENDAR'S (REQ-OTE-04). The planned
+		// end and the internal target say "working days" in their schema and
+		// were counted in calendar days, which gave a ten working day target
+		// four days less than declared. When the calendar does not answer, the
+		// roll counts calendar days and says so in the log.
+		$days = max(0, $days);
+		$raw = $this->calendar?->endAfterOrCalendarDays(start: $start, days: $days, mode: $mode)
+			?? $start->add(new DateInterval('P' . $days . 'D'));
 
 		return $this->timers->rollTermEndFor(date: $raw)->format('Y-m-d');
 	}//end endAfter()
-
-	/**
-	 * The day N days after a start, counted in one mode, before the roll.
-	 *
-	 * WORKING DAYS ARE THE ADMINISTERED CALENDAR'S. The planned end and the
-	 * internal target say "working days" in their schema and were counted in
-	 * calendar days, which gave a ten working day target four days less than
-	 * it was declared. When no calendar answers, calendar days are counted and
-	 * the shortfall is said in the log, exactly as the statutory term does.
-	 *
-	 * @param DateTimeImmutable $start When the clock starts.
-	 * @param int               $days  How many days it runs.
-	 * @param string            $mode  `calendarDays` or `workingDays`.
-	 *
-	 * @return DateTimeImmutable The counted day.
-	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
-	 */
-	private function counted(DateTimeImmutable $start, int $days, string $mode): DateTimeImmutable {
-		if ($mode === WorkingDayRoll::MODE_WORKING_DAYS) {
-			$computed = $this->calendar?->endAfter(start: $start, days: $days, mode: $mode);
-			if ($computed !== null) {
-				return $computed;
-			}
-
-			$this->logger->warning(
-				'Dossiq termijn: a lead time declares working days and the organisation calendar did not answer, '
-				. 'so it was counted in calendar days and ends earlier than declared',
-				['days' => $days]
-			);
-		}
-
-		return $start->modify('+' . $days . ' days');
-	}//end counted()
 
 	/**
 	 * Every clock on a case, each naming its kind (REQ-TERM-060).

@@ -125,7 +125,7 @@ class InternalTargetTest extends TestCase {
 	 */
 	public function testTheInternalTargetCountsWorkingDays(): void {
 		$calendar = $this->createMock(WorkingDayRoll::class);
-		$calendar->expects(self::once())->method('endAfter')
+		$calendar->expects(self::once())->method('endAfterOrCalendarDays')
 			->with(self::anything(), 30, WorkingDayRoll::MODE_WORKING_DAYS)
 			->willReturn(new DateTimeImmutable('2026-10-13'));
 		$timers = $this->createMock(TermijnTimerService::class);
