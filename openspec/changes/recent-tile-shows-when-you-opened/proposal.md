@@ -21,8 +21,12 @@ tell this morning's case from last week's at a glance.
   (the OpenRegister read-history change). The column uses the library's
   built-in `daysSince` formatter and the muted, end-aligned cell the
   Stalled cases tile uses for `daysSinceActivity`.
-- The tile's empty text says why it can be empty: the server does not log
-  case views when the audit trail is off.
+- When OpenRegister reports that the `_recent` lens cannot answer
+  (`@self.lenses.recent.available: false`), the tile says why in dossiq's
+  words through `lensReasonTexts`: the server does not keep track of what
+  you open, you are not signed in, or the read history is not available
+  right now. The library's built-in copy says "items"; dossiq says "cases".
+  The empty text itself stays "Cases you open show up here".
 - REQ-FAV-02 gains two scenarios for both behaviours.
 - Capability row 2.19 links to its spec, `openspec/specs/case-management`.
 
@@ -34,4 +38,6 @@ tell this morning's case from last week's at a glance.
 ## Dependency
 
 Until the OpenRegister read-history change lands, `@self.viewedAt` is absent
-and the date column renders empty. Nothing else on the tile changes.
+and the date column renders empty. Until nextcloud-vue#1421 lands, the
+widget ignores `lensReasonTexts` and shows its empty text. Nothing else on
+the tile changes.

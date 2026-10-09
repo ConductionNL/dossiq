@@ -8,8 +8,11 @@ Kind: config. Size S. Product owner decision on the DqDashboard board,
   end-aligned. The tile still declares no `order` of its own.
   - `tests/vitest/caseFavourite.spec.js`
   - `@spec openspec/changes/recent-tile-shows-when-you-opened/specs/case-management/spec.md`
-- [x] 1.2 The tile's empty text explains that it stays empty when the server
-  does not log case views. English and Dutch in `l10n/`.
+- [x] 1.2 `lensReasonTexts` on the tile for `recent.audit-trail-disabled`,
+  `recent.anonymous` and `recent.read-history-unavailable`, English source
+  keys with Dutch in `l10n/`. `tests/l10n/check-l10n.js` now extracts the
+  values of a `lensReasonTexts` map, so a reason without a translation fails
+  `test:l10n`. Needs nextcloud-vue#1421.
 - [x] 1.3 `openspec/parity/capabilities.json`: row 2.19 `built.spec` points
   at `openspec/specs/case-management`.
 - [ ] 2.1 Live check once the OpenRegister read-history change is merged:

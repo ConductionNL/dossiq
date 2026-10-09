@@ -41,10 +41,12 @@ relative date read from OpenRegister's `@self.viewedAt`.
 - **THEN** each row of the Recently opened tile SHALL show the relative date of your last opening, read from `@self.viewedAt`
 - **AND** the case opened today SHALL read "Today"
 
-#### Scenario: The Recently opened tile explains why it is empty when reads are not logged
-@e2e exclude depends on the instance's audit trail setting; the empty text is asserted in tests/vitest/caseFavourite.spec.js
+#### Scenario: The Recently opened tile says why it is empty when reads are not logged
+@e2e exclude depends on the instance's audit trail setting and on nextcloud-vue#1421; the reason texts and their Dutch translations are asserted in tests/vitest/caseFavourite.spec.js
 
-- **GIVEN** an instance whose audit trail is off, so it does not log who opens a case
+- **GIVEN** an instance whose audit trail is off, so OpenRegister reports `@self.lenses.recent.available` false with reason `audit-trail-disabled`
 - **WHEN** you open the Dashboard
 - **THEN** the Recently opened tile SHALL hold no rows
-- **AND** it SHALL say that it stays empty when the server does not log case views
+- **AND** it SHALL say "This server does not keep track of which cases you open." in place of its empty text
+- **AND** for reason `anonymous` it SHALL say "Sign in to see the cases you opened recently."
+- **AND** for reason `read-history-unavailable` it SHALL say "Your recent cases are not available right now."

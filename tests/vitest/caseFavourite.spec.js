@@ -428,8 +428,46 @@ describe('the two lenses', () => {
 		// No read logged (the audit trail is off): an empty cell, never a guess.
 		expect(registry.daysSince(undefined)).toBe('')
 
-		expect(recent.content.emptyText).toBe(
-			'Cases you open show up here. This stays empty when your server does not log case views.',
+		expect(recent.content.emptyText).toBe('Cases you open show up here')
+	})
+
+	/**
+	 * When OpenRegister cannot answer the `_recent` lens it says why
+	 * (`@self.lenses.recent.available: false`), and CnDataTable shows the
+	 * matching `lensReasonTexts` entry in place of `emptyText`. The library's
+	 * own copy says "items"; dossiq says "cases", for all three reasons it
+	 * reports. Each value is an English source key with a Dutch translation,
+	 * because CnDataTable translates it through the app catalogue.
+	 *
+	 * @spec openspec/changes/recent-tile-shows-when-you-opened/specs/case-management/spec.md
+	 */
+	it('says in its own words why the recent tile is empty', () => {
+		const recent = page('Dashboard').config.widgets.find(
+			(w) => w.id === 'recent-cases',
+		)
+		const texts = recent.content.lensReasonTexts
+		expect(Object.keys(texts).sort()).toEqual([
+			'recent.anonymous',
+			'recent.audit-trail-disabled',
+			'recent.read-history-unavailable',
+		])
+		expect(texts['recent.audit-trail-disabled']).toBe(
+			'This server does not keep track of which cases you open.',
+		)
+
+		const catalogue = (locale) =>
+			JSON.parse(
+				fs.readFileSync(path.join(ROOT, 'l10n', `${locale}.json`), 'utf8'),
+			).translations
+		const nl = catalogue('nl')
+		expect(nl[texts['recent.audit-trail-disabled']]).toBe(
+			'Deze server houdt niet bij welke zaken je opent.',
+		)
+		expect(nl[texts['recent.anonymous']]).toBe(
+			'Log in om te zien welke zaken je onlangs opende.',
+		)
+		expect(nl[texts['recent.read-history-unavailable']]).toBe(
+			'Je recente zaken zijn nu niet beschikbaar.',
 		)
 	})
 
