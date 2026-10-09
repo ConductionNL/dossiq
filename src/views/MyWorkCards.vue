@@ -16,7 +16,12 @@
 		:showTitle="true"
 		:headerButtons="headerButtons"
 		:countText="t('dossiq', '{total} cases in your name, most urgent first')"
-		:footerNote="t('dossiq', 'Urgency follows from the deadline, the priority and how long a case has been idle.')"
+		:footerNote="
+			t(
+				'dossiq',
+				'Urgency follows from the deadline, the priority and how long a case has been idle.',
+			)
+		"
 		register="dossiq"
 		schema="case"
 		:filter="filter"
@@ -179,12 +184,23 @@ export default {
 		 * The header buttons of the board: Download, Actions, New case.
 		 *
 		 * @return {Array<object>} CnIndexPage headerButtons.
+		 *
+		 * @spec openspec/specs/my-work/spec.md
 		 */
 		headerButtons() {
 			return [
-				{ action: 'export', label: this.t('dossiq', 'Download'), icon: 'TrayArrowDown' },
+				{
+					action: 'export',
+					label: this.t('dossiq', 'Download'),
+					icon: 'TrayArrowDown',
+				},
 				{ action: 'actions-menu', label: this.t('dossiq', 'Actions') },
-				{ action: 'add', label: this.t('dossiq', 'New case'), variant: 'primary', icon: 'Plus' },
+				{
+					action: 'add',
+					label: this.t('dossiq', 'New case'),
+					variant: 'primary',
+					icon: 'Plus',
+				},
 			]
 		},
 
