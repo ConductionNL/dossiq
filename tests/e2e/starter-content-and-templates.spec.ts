@@ -276,6 +276,7 @@ test.describe('a case starts from a template', () => {
 		).toBeTruthy()
 
 		const offered = await request.get(`${APP_BASE}/api/case-templates`, {
+			headers: { 'OCS-APIRequest': 'true' },
 			params: { caseType: caseType.id },
 		})
 		expect([200, 503]).toContain(offered.status())
@@ -407,6 +408,7 @@ test.describe('a task template is offered where a task is created', () => {
 		})
 
 		const offered = await request.get(`${APP_BASE}/api/content-templates/task`, {
+			headers: { 'OCS-APIRequest': 'true' },
 			params: { caseType: caseType.id },
 		})
 
@@ -419,6 +421,7 @@ test.describe('a task template is offered where a task is created', () => {
 		const elsewhere = await request.get(
 			`${APP_BASE}/api/content-templates/task`,
 			{
+				headers: { 'OCS-APIRequest': 'true' },
 				params: { caseType: 'a-case-type-this-template-does-not-name' },
 			},
 		)
