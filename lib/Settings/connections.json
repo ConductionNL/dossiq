@@ -98,8 +98,8 @@
             "requiredConfig": ["beschikking_template_adapter"],
             "adapter": {
                 "configKey": "beschikking_template_adapter",
-                "simulatedValues": ["", "OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter"],
-                "simulatedMessage": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to OCA\\Dossiq\\Service\\Beschikking\\FilinqTemplateEngineAdapter to render through Filinq."
+                "simulatedValues": ["OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter"],
+                "simulatedMessage": "A mock adapter answers here. No template reaches Filinq. Install Filinq, or clear beschikking_template_adapter if it names the mock."
             }
         }
     ]

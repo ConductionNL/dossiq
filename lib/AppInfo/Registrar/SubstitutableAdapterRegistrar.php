@@ -148,12 +148,23 @@ class SubstitutableAdapterRegistrar {
 		$context->registerService(
 			TemplateEngineAdapterInterface::class,
 			static function (ContainerInterface $c): TemplateEngineAdapterInterface {
+				$l10n = $c->get(IL10N::class);
+
 				return ConfiguredAdapter::resolve(
 					container: $c,
 					configKey: self::TEMPLATE_CONFIG_KEY,
 					interface: TemplateEngineAdapterInterface::class,
 					mockClass: MockTemplateEngineAdapter::class,
-					fallbackReason: self::templateFallbackReason(container: $c),
+					fallbackReason: $l10n->t(
+						'Filinq is not installed, so every beschikking is rendered by a mock. '
+						. 'Install filinq to render through it.'
+					),
+					defaultClass: self::defaultTemplateAdapter(container: $c),
+					chosenMockReason: $l10n->t(
+						'beschikking_template_adapter names the mock, so every beschikking is rendered '
+						. 'by a mock although filinq is installed. Clear beschikking_template_adapter '
+						. 'to render through filinq.'
+					),
 				);
 			}
 		);
@@ -187,34 +198,47 @@ class SubstitutableAdapterRegistrar {
 	}//end resolveBerichtenboxAlias()
 
 	/**
-	 * Why the template mock is running, in the words the reader needs.
+	 * The template adapter an empty `beschikking_template_adapter` binds on this instance.
 	 *
-	 * Two different sentences, because they ask for two different things. An
-	 * instance without filinq needs to install it; an instance with filinq needs
-	 * to name its adapter. One message covering both would tell each reader half
-	 * of what they have to do.
+	 * ONE RULE FOR THE SEAM AND THE CARD. filinq's adapter when filinq is
+	 * enabled, the mock otherwise. {@see IntegrationStatusService} reports the
+	 * Document templates card through {@see self::templateAdapterFor()}, the
+	 * same rule, so the card cannot read Live while the seam binds the mock.
 	 *
 	 * @param ContainerInterface $container The DI container.
 	 *
-	 * @return string The translated sentence.
+	 * @return class-string<TemplateEngineAdapterInterface> The adapter class.
 	 *
-	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
 	 */
-	private static function templateFallbackReason(ContainerInterface $container): string {
-		$l10n = $container->get(IL10N::class);
-		if (FleetAppId::isEnabledForUser(appManager: $container->get(IAppManager::class), canonical: 'filinq') === true) {
-			return $l10n->t(
-				'Filinq is installed but no template adapter is configured, so every '
-				. 'beschikking is rendered by a mock. Set beschikking_template_adapter to '
-				. '%s to render through filinq.',
-				[FilinqTemplateEngineAdapter::class]
-			);
+	public static function defaultTemplateAdapter(ContainerInterface $container): string {
+		return self::templateAdapterFor(appManager: $container->get(IAppManager::class), named: '');
+	}//end defaultTemplateAdapter()
+
+	/**
+	 * The template adapter that answers for a configured value.
+	 *
+	 * A named class is what the admin chose; an empty value follows what is
+	 * installed. The probe goes through FleetAppId, never a literal app id:
+	 * filinq renamed from docudesk and both names are in the field.
+	 *
+	 * @param IAppManager $appManager The app manager.
+	 * @param string      $named      The value of `beschikking_template_adapter`.
+	 *
+	 * @return string The adapter class that answers.
+	 *
+	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
+	 */
+	public static function templateAdapterFor(IAppManager $appManager, string $named): string {
+		$named = trim($named);
+		if ($named !== '') {
+			return $named;
 		}
 
-		return $l10n->t(
-			'Filinq is not installed, so every beschikking is rendered by a mock. '
-			. 'Install filinq, then set beschikking_template_adapter to %s.',
-			[FilinqTemplateEngineAdapter::class]
-		);
-	}//end templateFallbackReason()
+		if (FleetAppId::isEnabledForUser(appManager: $appManager, canonical: 'filinq') === true) {
+			return FilinqTemplateEngineAdapter::class;
+		}
+
+		return MockTemplateEngineAdapter::class;
+	}//end templateAdapterFor()
 }//end class

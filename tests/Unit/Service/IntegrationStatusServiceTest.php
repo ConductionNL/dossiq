@@ -29,11 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Integriq\Event\ConnectionRefreshRequestedEvent;
 use OCA\Integriq\Event\ConnectionStatusReportedEvent;
 use OCP\EventDispatcher\Event;
+use OCP\App\IAppManager;
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
@@ -46,6 +49,8 @@ use RuntimeException;
  * design D6 of the hydra change connection-registry.
  *
  * @covers \OCA\Dossiq\Service\IntegrationStatusService
+ * @uses   \OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar
+ * @uses   \OCA\Dossiq\Support\FleetAppId
  */
 class IntegrationStatusServiceTest extends TestCase {
 
@@ -324,4 +329,64 @@ class IntegrationStatusServiceTest extends TestCase {
 		$this->assertArrayNotHasKey(key: 'mailbox', array: IntegrationStatusService::SAVE_REQUIRED_KEYS);
 		$this->assertArrayNotHasKey(key: 'store', array: IntegrationStatusService::SAVE_REQUIRED_KEYS);
 	}//end testProbedConnectionsAreNotDrivenBySaves()
+	/**
+	 * The service with the readers the templates card needs.
+	 *
+	 * @param bool   $filinq Whether filinq is installed and enabled.
+	 * @param string $named  The value of beschikking_template_adapter.
+	 *
+	 * @return IntegrationStatusService
+	 */
+	private function serviceForTemplates(bool $filinq, string $named): IntegrationStatusService {
+		$appManager = $this->createMock(originalClassName: IAppManager::class);
+		$appManager->method('isInstalled')->willReturnCallback(
+			static fn (string $id): bool => ($filinq === true && $id === 'filinq')
+		);
+		$appManager->method('isEnabledForUser')->willReturn($filinq);
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn($named);
+
+		return new IntegrationStatusService(
+			eventDispatcher: $this->dispatcher,
+			logger: $this->logger,
+			appManager: $appManager,
+			appConfig: $appConfig,
+		);
+	}//end serviceForTemplates()
+
+	/**
+	 * The templates card reads Live with filinq enabled and the key empty, and
+	 * Simulated with filinq disabled and the key still empty.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/specs/beschikking-generatie/spec.md#scenario-the-card-reads-what-the-seam-bound
+	 */
+	public function testTheTemplatesCardReadsWhatTheSeamBinds(): void {
+		$this->assertSame('configured', $this->serviceForTemplates(filinq: true, named: '')->templatesStatus()['status']);
+		$this->assertSame('simulated', $this->serviceForTemplates(filinq: false, named: '')->templatesStatus()['status']);
+		$this->assertSame(
+			'simulated',
+			$this->serviceForTemplates(filinq: true, named: MockTemplateEngineAdapter::class)->templatesStatus()['status']
+		);
+		$this->assertNull($this->service()->templatesStatus(), 'without the readers the service claims nothing');
+	}//end testTheTemplatesCardReadsWhatTheSeamBinds()
+
+	/**
+	 * Saving the template key also reports what the seam binds, because
+	 * integriq cannot see whether filinq is enabled.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 */
+	public function testSavingTheTemplateKeyReportsTheCard(): void {
+		$refreshed = $this->serviceForTemplates(filinq: true, named: '')->recordFromSave(['beschikking_template_adapter' => '']);
+
+		$this->assertSame(['templates'], $refreshed);
+		$reports = array_values(array_filter($this->sent, static fn (Event $event): bool => $event instanceof ConnectionStatusReportedEvent));
+		$this->assertCount(1, $reports);
+		$this->assertSame('templates', $reports[0]->key);
+		$this->assertSame('configured', $reports[0]->status);
+	}//end testSavingTheTemplateKeyReportsTheCard()
 }//end class

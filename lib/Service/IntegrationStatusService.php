@@ -31,8 +31,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\AppInfo\Registrar\SubstitutableAdapterRegistrar;
+use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCP\App\IAppManager;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -129,12 +134,73 @@ class IntegrationStatusService {
 	 *
 	 * @param IEventDispatcher $eventDispatcher Sends the integriq events (ADR-041).
 	 * @param LoggerInterface $logger Records what could not be sent.
+	 * @param IAppManager|null $appManager Tells whether filinq is enabled, for the templates card.
+	 * @param IAppConfig|null $appConfig Reads the template adapter key, for the templates card.
 	 */
 	public function __construct(
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
+		private readonly ?IAppManager $appManager = null,
+		private readonly ?IAppConfig $appConfig = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * What the Document templates card should read: Live or Simulated.
+	 *
+	 * THE CARD ASKS THE SEAM'S QUESTION. An empty `beschikking_template_adapter`
+	 * binds filinq's adapter when filinq is enabled and the mock otherwise
+	 * ({@see SubstitutableAdapterRegistrar::templateAdapterFor()}), so an empty
+	 * key no longer means a mock. integriq cannot see whether filinq is
+	 * enabled, so dossiq reports the answer rather than leaving it to the
+	 * declaration's `simulatedValues`.
+	 *
+	 * @return array{status: string, message: string}|null The status and its words, or null without the readers.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) templateAdapterFor() is the one stateless rule the seam
+	 *      and the card share; an instance of the registrar would carry nothing.
+	 *
+	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 */
+	public function templatesStatus(): ?array {
+		if ($this->appManager === null || $this->appConfig === null) {
+			return null;
+		}
+
+		$named = trim($this->appConfig->getValueString(Application::APP_ID, SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY, ''));
+		$adapter = SubstitutableAdapterRegistrar::templateAdapterFor(appManager: $this->appManager, named: $named);
+
+		if ($adapter === MockTemplateEngineAdapter::class) {
+			$message = 'Filinq is not installed. A mock adapter answers here and no template reaches Filinq.';
+			if ($named !== '') {
+				$message = 'beschikking_template_adapter names the mock. No template reaches Filinq. Clear it to render through Filinq.';
+			}
+
+			return ['status' => 'simulated', 'message' => $message];
+		}
+
+		if ($adapter === FilinqTemplateEngineAdapter::class) {
+			return ['status' => 'configured', 'message' => 'Filinq renders the templates.'];
+		}
+
+		return ['status' => 'configured', 'message' => $adapter . ' renders the templates.'];
+	}//end templatesStatus()
+
+	/**
+	 * Report the Document templates card to integriq.
+	 *
+	 * @return bool True when the report was sent.
+	 *
+	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 */
+	public function recordTemplates(): bool {
+		$status = $this->templatesStatus();
+		if ($status === null) {
+			return false;
+		}
+
+		return $this->record(key: 'templates', status: $status['status'], message: $status['message']);
+	}//end recordTemplates()
 
 	/**
 	 * Report a connection's status to integriq.
@@ -220,6 +286,13 @@ class IntegrationStatusService {
 			if ($sent === true) {
 				$refreshed[] = $key;
 			}
+		}
+
+		// The templates card is the one row integriq cannot resolve from the
+		// saved value alone: an empty key reads Live or Simulated depending on
+		// whether filinq is enabled. So the save also reports what the seam binds.
+		if (in_array('templates', $refreshed, true) === true) {
+			$this->recordTemplates();
 		}
 
 		return $refreshed;
