@@ -32,6 +32,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
+use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -69,6 +70,12 @@ class CaseTypeListenerRegistrar {
 			$context->registerEventListener(
 				event: $event,
 				listener: CaseTypeParentCycleListener::class
+			);
+			// A withdrawal the portal offers must be one the workflow can
+			// write, so the save that declares it is the one refused.
+			$context->registerEventListener(
+				event: $event,
+				listener: CaseTypePortalWithdrawalListener::class
 			);
 			// The same shape one level down: a milestone whose `dependsOn`
 			// closes a loop is refused by the edit that creates it, not by

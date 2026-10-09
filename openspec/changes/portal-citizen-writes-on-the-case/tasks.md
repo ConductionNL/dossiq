@@ -15,8 +15,9 @@ dossiq#3152.
   - unit: a schema test asserts the shapes against portaliq's `portalCaseType`; `npm run check:schema-l10n`
 - [ ] 2.2 The "Portal" section of the case type editor (design D3).
   - vitest: the section saves a writable field, both windows and a withdrawal
-- [ ] 2.3 The pre-save guard on `caseType` for the withdrawal target (design D4).
+- [x] 2.3 The pre-save guard on `caseType` for the withdrawal target (design D4).
   - unit: an unreachable target is refused with its sentence; a reachable one saves
+  - `lib/Service/CaseType/PortalWithdrawalTarget.php` (the rule: a move straight from each open status to the target; a type without a workflow only needs the target to be its own status), `lib/Listener/CaseTypePortalWithdrawalListener.php` on ObjectCreating/UpdatingEvent through `CaseTypeListenerRegistrar`; `tests/Unit/Listener/CaseTypePortalWithdrawalListenerTest.php` over the real resolver and store (3 red with the rule disabled). A type whose statuses are not stored yet (same import) is not judged.
 
 ## 3. Live check
 
