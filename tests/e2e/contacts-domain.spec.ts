@@ -272,9 +272,7 @@ test.describe('Contacts', () => {
 			recipients: [personId],
 		})
 		await createObject(api, token, 'dispatch', {
-			// `dispatch.document` is a uri (dossiq_register.json),
-			// so the letter is named by its object uri, not its bare id.
-			document: letter['@self']?.uri,
+			document: objectId(letter),
 			involvedParty: personId,
 			relationshipType: 'geadresseerde',
 			case: seededCaseId,
