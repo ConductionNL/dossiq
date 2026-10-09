@@ -18,6 +18,7 @@
  *
  * @spec openspec/specs/document-projection/spec.md
  * @spec openspec/specs/case-dashboard-view/spec.md
+ * @spec openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -327,6 +328,41 @@ test.describe('Documents live on the case', () => {
 				`[data-testid="cn-files-browser-row"][data-name="${FILE_NAME}"]`,
 			),
 		).toHaveCount(1)
+	})
+
+	// @e2e openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md#add-files-is-a-button
+	// @e2e openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md#dragging-files-over-the-list-shows-the-drop-state
+	test('Add files is a button, and a drag shows the drop state on the list', async ({ page }) => {
+		await page.goto(`/apps/${REGISTER}/cases/${caseA}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await strip.getByRole('tab', { name: /^(Files|Bestanden)$/ }).click()
+
+		const browser = page.getByTestId('cn-files-browser')
+		await expect(browser).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-files-browser-upload-button')).toHaveText(
+			/^\s*(Add files|Bestanden toevoegen)\s*$/,
+		)
+		await expect(page.getByTestId('cn-files-browser-drop-hint')).toHaveText(
+			/(Or drag files onto this list\.|Of sleep bestanden op deze lijst\.)/,
+		)
+
+		// A drag that carries a file, entering and leaving the browser. Nothing
+		// is dropped, so the case folder is left as the earlier tests made it.
+		const drag = await page.evaluateHandle(() => {
+			const data = new DataTransfer()
+			data.items.add(new File(['x'], 'drag.txt', { type: 'text/plain' }))
+			return data
+		})
+		await browser.dispatchEvent('dragenter', { dataTransfer: drag })
+		const overlay = page.getByTestId('cn-files-browser-drop-overlay')
+		await expect(overlay).toHaveText(/(Drop to add|Laat los om toe te voegen)/)
+		await expect(page.getByTestId('cn-files-browser-drop-status')).toHaveText(
+			/(Drop to add|Laat los om toe te voegen)/,
+		)
+		await browser.dispatchEvent('dragleave', { dataTransfer: drag })
+		await expect(overlay).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/document-projection/spec.md#case-b-sees-as-document-as-a-linked-row
