@@ -89,9 +89,7 @@ class WooRefusalGrounds {
 	}//end __construct()
 
 	/**
-	 * Every ground, in code order.
-	 *
-	 * @param bool $includeRetired Whether retired grounds are answered too.
+	 * Every active ground, in code order.
 	 *
 	 * @return list<array<string, mixed>> The grounds, each with every key of {@see KEYS}.
 	 *
@@ -99,15 +97,29 @@ class WooRefusalGrounds {
 	 *
 	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
 	 */
-	public function list(bool $includeRetired = false): array {
+	public function list(): array {
+		return array_values(
+			array_filter(
+				$this->listWithRetired(),
+				static fn (array $ground): bool => $ground['status'] === 'active'
+			)
+		);
+	}//end list()
+
+	/**
+	 * Every ground, retired ones included, in code order.
+	 *
+	 * @return list<array<string, mixed>> The grounds, each with every key of {@see KEYS}.
+	 *
+	 * @throws WooRefusalGroundsUnavailable When the register cannot be read or holds no grounds.
+	 *
+	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+	 */
+	public function listWithRetired(): array {
 		$grounds = [];
 		foreach ($this->readAll() as $row) {
 			$ground = $this->shape(row: $row);
 			if ($ground['code'] === '') {
-				continue;
-			}
-
-			if ($includeRetired === false && $ground['status'] !== 'active') {
 				continue;
 			}
 
@@ -120,7 +132,7 @@ class WooRefusalGrounds {
 		);
 
 		return $grounds;
-	}//end list()
+	}//end listWithRetired()
 
 	/**
 	 * One ground by its code, retired or not.
@@ -135,7 +147,7 @@ class WooRefusalGrounds {
 	 */
 	public function byCode(string $code): ?array {
 		$code = trim($code);
-		foreach ($this->list(includeRetired: true) as $ground) {
+		foreach ($this->listWithRetired() as $ground) {
 			if ($ground['code'] === $code) {
 				return $ground;
 			}

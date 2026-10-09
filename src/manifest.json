@@ -358,7 +358,7 @@
 			"icon": "ScaleBalance",
 			"route": "WooRefusalGrounds",
 			"section": "settings",
-			"order": 98,
+			"order": 92,
 			"permission": "admin"
 		},
 		{

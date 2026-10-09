@@ -746,6 +746,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
               CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
+              MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders

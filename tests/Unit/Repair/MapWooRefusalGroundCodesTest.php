@@ -39,6 +39,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class MapWooRefusalGroundCodesTest extends TestCase {
 

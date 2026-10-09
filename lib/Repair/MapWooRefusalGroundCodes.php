@@ -130,7 +130,7 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 		}
 
 		try {
-			$settled = array_column($this->grounds->list(includeRetired: true), 'code');
+			$settled = array_column($this->grounds->listWithRetired(), 'code');
 		} catch (Throwable $e) {
 			$output->info('Woo refusal ground mapping: the settled list cannot be read yet, skipped until the next upgrade.');
 			return;
