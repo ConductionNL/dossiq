@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\WooRefusalGroundDeleteGuard;
 use OCA\Dossiq\Listener\DependentTermListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
@@ -75,6 +76,10 @@ class ObjectListenerRegistrar {
 
 		$this->registerCacheInvalidationListeners(context: $context);
 		$this->registerCaseDeleteGuard(context: $context);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: WooRefusalGroundDeleteGuard::class
+		);
 		(new IntakeListenerRegistrar())->register(context: $context);
 		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);

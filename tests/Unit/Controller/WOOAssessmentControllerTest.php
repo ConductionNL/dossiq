@@ -30,6 +30,8 @@ use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Tests\Support\RefusalGroundStore;
+use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -45,6 +47,10 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
  *
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
+ * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class WOOAssessmentControllerTest extends TestCase {
 
@@ -200,6 +206,86 @@ class WOOAssessmentControllerTest extends TestCase {
 		$data = $response->getData();
 		$this->assertArrayHasKey('saved', $data);
 	}//end testBulkAssessReturnsResultWhenAuthenticated()
+
+	/**
+	 * The controller over the real assessment service and the seeded grounds.
+	 *
+	 * @param RefusalGroundStore $grounds The grounds store.
+	 *
+	 * @return WOOAssessmentController The controller, signed in as an admin.
+	 */
+	private function controllerOverTheRealList(RefusalGroundStore $grounds): WOOAssessmentController {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($grounds);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => (['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'][$key] ?? '')
+		);
+
+		$service = new WOODocumentAssessmentService(
+			$settings,
+			$this->userSession,
+			$this->logger,
+			null,
+			new WooRefusalGrounds(settingsService: $settings, logger: $this->logger),
+		);
+
+		return new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$service,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$this->untranslated(),
+		);
+	}//end controllerOverTheRealList()
+
+	/**
+	 * An assessment citing a ground the settled list does not carry answers 422.
+	 *
+	 * @return void
+	 */
+	public function testBulkAssessWithAnUnknownGroundAnswers422(): void {
+		$this->request->method('getParam')->willReturnMap([
+			['assessments', [], [
+				['documentRef' => 'doc-001', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.2.5']],
+			]],
+		]);
+
+		$response = $this->controllerOverTheRealList(grounds: RefusalGroundStore::seeded())->bulkAssess('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('Unknown weigeringsgrond: 5.2.5', $response->getData()['errors'][0]['errors']['weigeringsgronden']);
+	}//end testBulkAssessWithAnUnknownGroundAnswers422()
+
+	/**
+	 * An unreadable list refuses the whole call with 503 and the rule.
+	 *
+	 * @return void
+	 */
+	public function testBulkAssessWithAnUnreadableListAnswers503(): void {
+		$this->request->method('getParam')->willReturnMap([
+			['assessments', [], [
+				['documentRef' => 'doc-001', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.2.e']],
+			]],
+		]);
+		$grounds = RefusalGroundStore::seeded();
+		$grounds->fails = true;
+
+		$response = $this->controllerOverTheRealList(grounds: $grounds)->bulkAssess('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame('woo-refusal-grounds-unavailable', $response->getData()['error']);
+	}//end testBulkAssessWithAnUnreadableListAnswers503()
 
 	/**
 	 * ExtendDeadline returns 400 when reason is empty.

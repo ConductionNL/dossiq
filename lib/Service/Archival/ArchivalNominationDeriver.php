@@ -40,7 +40,7 @@
  * What unblocks it: a dynamic `final`, or a finality predicate on
  * `LifecycleActionProviderInterface`, where a provider-mode state machine
  * already lives. See
- * openspec/changes/the-case-archives-through-openregister/design.md, D-1.
+ * openspec/changes/archive/2026-10-09-the-case-archives-through-openregister/design.md, D-1.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Archival
@@ -137,9 +137,10 @@ class ArchivalNominationDeriver {
 	 * @param string $resultTypeId The chosen resultType UUID.
 	 * @param string $endDate The case's end date (Y-m-d), the zrc-021 einddatum.
 	 *
-	 * @return array<string, string|null> `archiveNomination` and/or `archiveActionDate`.
+	 * @return array<string, string|null> `archiveNomination`, `archiveActionDate` and/or `selectionListClass`.
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function derive(array $case, string $resultTypeId, string $endDate): array {
 		if ($resultTypeId === '' || $endDate === '') {
@@ -159,6 +160,15 @@ class ArchivalNominationDeriver {
 		$nomination = $this->nomination(resultType: $resultType);
 		if ($nomination !== null) {
 			$derived['archiveNomination'] = $nomination;
+		}
+
+		// Decision 127: the case carries its result type's selectielijst class,
+		// and the case schema names that field as OpenRegister's
+		// `categoryProperty`. A blank class writes no key, so a class set on
+		// the case by hand survives the caller's merge.
+		$class = trim((string)($resultType['selectionListClass'] ?? ($resultType['selectielijstklasse'] ?? '')));
+		if ($class !== '') {
+			$derived['selectionListClass'] = $class;
 		}
 
 		$brondatum = $this->sourceDateProcedure(resultType: $resultType);

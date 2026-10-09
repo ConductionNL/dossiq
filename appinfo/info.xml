@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261009130000</version>
+    <version>0.4.47-unstable.20261009150000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -619,6 +619,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  carry (#3259). Only exact matches, idempotent, non-fatal.
                  Post-migration only: a fresh install has no old decisions. -->
             <step>OCA\Dossiq\Repair\RewriteWooPublicationSummaries</step>
+            <!-- woo-refusal-grounds-list REQ-WRG-006: maps the grounds stored on
+                 Woo assessments and decisions onto the settled list of design D-2.
+                 Six old codes are also new codes, so each mapped row is marked
+                 with groundsListVersion and a marked row is skipped: a second run
+                 changes nothing. Unmapped codes are kept, listed on the row and in
+                 the output. Post-migration only: a fresh install has none. -->
+            <step>OCA\Dossiq\Repair\MapWooRefusalGroundCodes</step>
             <!-- simple-case-page: existing cases get `statusRole`, the role of
                  the status they sit in. OpenRegister computes it on save, so a
                  case saved before the field existed has none. Writes one field
@@ -747,6 +754,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
               CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
+              MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders

@@ -12,7 +12,7 @@
       "wooDocumentAssessment": {
         "slug": "wooDocumentAssessment",
         "icon": "FileEyeOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Woo document assessment",
         "description": "Per document of a Woo request case: may it be disclosed, and on which grounds is it withheld.",
         "type": "object",
@@ -51,7 +51,7 @@
               "type": "string"
             },
             "title": "Grounds for refusal",
-            "description": "The Woo articles (5.1 and 5.2) the document or its parts are withheld under."
+            "description": "The Woo refusal grounds the document or its parts are withheld under: codes of the settled list (wooRefusalGround)."
           },
           "redactedDocumentRef": {
             "type": "string",
@@ -73,6 +73,20 @@
             "type": "object",
             "title": "Redaction proposal",
             "description": "The proposed passages to redact, and the review of that proposal."
+          },
+          "groundsListVersion": {
+            "type": "string",
+            "title": "Grounds list version",
+            "description": "The version of the settled Woo refusal grounds the grounds on this record follow. Records written before it are mapped once by a repair step.",
+            "visible": false
+          },
+          "groundsUnmapped": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmapped grounds",
+            "description": "Stored grounds the repair step could not map onto the settled list. A person settles them."
           }
         }
       }

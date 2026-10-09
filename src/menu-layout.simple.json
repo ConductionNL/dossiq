@@ -52,6 +52,7 @@
 		{
 			"id": "WorkGroup",
 			"order": 12,
+			"counterVariant": "attention",
 			"count": {
 				"register": "dossiq",
 				"schema": "case",
@@ -67,6 +68,7 @@
 			"id": "Queue",
 			"label": "Team queue",
 			"order": 14,
+			"counterVariant": "attention",
 			"count": {
 				"register": "dossiq",
 				"schema": "case",
@@ -1108,6 +1110,122 @@
 		{
 			"id": "Dashboard",
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
+			"config": {
+				"kpiRow": [
+					"kpi-open-cases",
+					"kpi-overdue",
+					"kpi-completed",
+					"kpi-my-tasks",
+					"kpi-sla-compliance"
+				],
+				"showWidgetActions": false,
+				"gridFloat": false,
+				"layout": [
+					{
+						"id": "5",
+						"widgetId": "cases-by-status",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "6",
+						"widgetId": "cases-by-type",
+						"gridX": 6,
+						"gridY": 0,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "10",
+						"widgetId": "stalled-cases",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "14",
+						"widgetId": "favourite-cases",
+						"gridX": 4,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "15",
+						"widgetId": "recent-cases",
+						"gridX": 8,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					}
+				]
+			},
+			"configPatch": {
+				"widgets": {
+					"cases-by-status": {
+						"content": {
+							"chartKind": "bar",
+							"horizontal": true,
+							"dataSource": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
+								},
+								"aggregate": {
+									"groupBy": "status",
+									"metric": "count",
+									"labelResolve": {
+										"schema": "statusType",
+										"labelField": "name"
+									}
+								},
+								"drilldown": {
+									"route": "Cases",
+									"filterParam": "status"
+								}
+							}
+						}
+					},
+					"cases-by-type": {
+						"content": {
+							"chartKind": "bar",
+							"horizontal": true,
+							"dataSource": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
+								},
+								"aggregate": {
+									"groupBy": "caseType",
+									"metric": "count",
+									"labelResolve": {
+										"schema": "caseType",
+										"labelField": "title"
+									}
+								},
+								"drilldown": {
+									"route": "Cases",
+									"filterParam": "caseType"
+								}
+							}
+						}
+					}
+				}
+			},
 			"configAppend": {
 				"headerActions": [
 					{
@@ -1135,7 +1253,7 @@
 					},
 					{
 						"key": "caseType",
-						"label": "Case type",
+						"label": "Type",
 						"formatter": "caseTypeName"
 					},
 					{
@@ -1174,7 +1292,27 @@
 				],
 				"showTitle": true,
 				"countSubtitle": "{total} cases",
-				"showViewToggle": false,
+				"countText": "{shown} of {total} open cases in your teams, sorted by deadline",
+				"footerNote": "click a column header to sort",
+				"bulkHint": "See what changes first, then carry it out.",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "New case",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"showViewToggle": true,
 				"headerFilters": false
 			},
 			"configPatch": {
@@ -1237,6 +1375,102 @@
 					]
 				},
 				"showDashboardLink": false
+			}
+		},
+		{
+			"id": "Tasks",
+			"config": {
+				"showTitle": true,
+				"countText": "{shown} of {total} tasks, your tasks from every app in one place, sorted by deadline",
+				"footerNote": "a task you finish leaves the task page, with an outcome",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					}
+				],
+				"showViewToggle": true
+			},
+			"configPatch": {
+				"quickFilters": {
+					"Mine": {
+						"label": "My tasks"
+					},
+					"Unclaimed": {
+						"label": "Not claimed"
+					},
+					"Closed": {
+						"label": "Finished"
+					},
+					"Overdue": {
+						"label": "Late"
+					},
+					"Due this week": {
+						"label": "This week"
+					}
+				}
+			}
+		},
+		{
+			"id": "Contacts",
+			"config": {
+				"showTitle": true,
+				"countText": "{shown} of {total} residents from the BRP, organisations are under Organisations",
+				"footerNote": "only members of the sensitive data group see the citizen service number",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "Add person",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				]
+			},
+			"configPatch": {
+				"columns": {
+					"citizenServiceNumber": {
+						"label": "BSN"
+					}
+				}
+			}
+		},
+		{
+			"id": "Organisations",
+			"config": {
+				"showTitle": true,
+				"countText": "{shown} of {total} organisations in Zuiddrecht, sorted by name",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "Add organisation",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"footerNote": "click a column header to sort"
 			}
 		}
 	]
