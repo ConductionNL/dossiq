@@ -230,6 +230,7 @@ class TermijnTimerService {
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) `TermDefinitions::countingModeOf()` is a
 	 *  pure function of the array handed to it: no state, no collaborators, and
@@ -274,7 +275,7 @@ class TermijnTimerService {
 			'ladder' => self::LADDER_DEFAULT,
 			'extensionMax' => max(1, (int)($definitie['countExtensions'] ?? 1)),
 			'anchorEvent' => 'case_created',
-			'anchorEventAt' => $start,
+			'anchorEventAt' => $this->anchorFor(start: $start),
 			'metadata' => [
 				'source' => self::METADATA_SOURCE,
 				'kind' => self::KIND_BESLISTERMIJN,
@@ -302,6 +303,32 @@ class TermijnTimerService {
 
 		return $this->arm(config: $config, context: 'beslistermijn', instanceId: $instanceId);
 	}//end armBeslistermijn()
+
+	/**
+	 * Where a beslistermijn timer counts from: the start of the day after the
+	 * term's start day.
+	 *
+	 * 🔴 NOT THE START MOMENT. Anchored at the moment a request arrived (say
+	 * 14:00) with an SLA spanning to the end date, the timer breached at 14:00
+	 * on the term's LAST day, and the fired listener marked the term exceeded
+	 * while it still had ten hours to run (REQ-TERM-DAY-001 says a term is
+	 * late only from the day after its last day). The Algemene termijnenwet
+	 * counts a term from the day after the event that starts it, so anchoring
+	 * there with the term's own length breaches at the start of the day after
+	 * the end day, and the ladder's shares, computed from the same length, do
+	 * not move.
+	 *
+	 * @param DateTimeImmutable $start The term's start.
+	 *
+	 * @return DateTimeImmutable The anchor, at midnight in the administered zone.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-a-term-is-late-only-from-the-day-after-its-last-day-everywhere-req-ote-05
+	 */
+	private function anchorFor(DateTimeImmutable $start): DateTimeImmutable {
+		$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');
+
+		return $startDay->add(new \DateInterval('P1D'));
+	}//end anchorFor()
 
 	/**
 	 * Arm the advisory hersteltermijn helper timer for a paused instance.

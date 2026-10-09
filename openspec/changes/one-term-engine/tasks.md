@@ -52,7 +52,7 @@ group lands on `development` as its own PR.
   - `tests/vitest/deadlineCountdown.spec.js`
 - [ ] 3.4 Simple structure: list column, board `dueRule` and week strip
   `lateWhen` read `lt 0` as late (D-6, REQ-OTE-05).
-  - `tests/vitest/manifestDueRules.spec.js`
+  - `tests/vitest/simpleListAndDashboard.spec.js`
 
 ## 4. Woo on the generic engine (PR 4)
 

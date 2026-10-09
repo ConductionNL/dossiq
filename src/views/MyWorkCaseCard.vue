@@ -45,6 +45,7 @@
 </template>
 
 <script>
+import { isOverdue } from '../utils/deadlineCountdown.js'
 import { urgencyChipClass } from '../utils/workQueueHelpers.js'
 
 /**
@@ -161,11 +162,15 @@ export default {
 			})
 		},
 
+		/**
+		 * Late only from the day after the deadline, in the reader's own day.
+		 *
+		 * @return {boolean} Whether the card shows the overdue colour.
+		 *
+		 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+		 */
 		overdue() {
-			const raw = this.object.deadline
-			if (!raw) return false
-			const d = new Date(raw)
-			return !isNaN(d.getTime()) && d.getTime() < Date.now()
+			return isOverdue(this.object.deadline)
 		},
 
 		/**
