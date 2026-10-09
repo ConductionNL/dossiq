@@ -37,12 +37,17 @@ from `today`.
     `tests/Unit/Listener/CaseDeadlineListenerTest.php` (15 tests, real events, real timer on the
     statutory fallback calendar). Fails today: the class does not exist on `origin/development`,
     and the old listener left a Woo case (own term) to the unrolled calculation (2026-12-25).
-- [ ] 1.3 Mirror the term instance onto the case. When a Woo case's statutory term instance's
+- [x] 1.3 Mirror the term instance onto the case. When a Woo case's statutory term instance's
   `endDateCurrent` changes (extension, pause, resume), the case `deadline` is written to match.
   Wire it at `TermijnService::saveTermInstance()` / `updateTermijnInstance()`, the one write path
   (REQ-WTR-001).
   - unit `tests/Unit/Service/TermijnServiceTest.php`
     `testACaseDeadlineFollowsItsTermAfterAPause`.
+  - Done: `lib/Service/Termijn/CaseDeadlineFollower.php` called from `saveTermInstance()` and
+    `updateTermijnInstance()`. `deadline` is readOnly, so the follower records the date in
+    `CaseDeadlineMirror` and saves the case with its stored values; `CaseDeadlineListener` takes
+    the date on that save. Only a statutory instance moves the case
+    (`testAnInternalTargetDoesNotMoveTheCaseDeadline`).
 
 ## 2. API end dates are rolled
 

@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineFollower;
 use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
@@ -82,6 +83,9 @@ class TermijnService {
 	 *        built over the same settings and logger this service was given, because those are its
 	 *        only two dependencies and a default built from them is the same store the container
 	 *        wires: fifteen test builds keep working without naming a collaborator they never chose.
+	 * @param CaseDeadlineFollower|null $follower Makes the case `deadline` follow a statutory
+	 *        term instance after every write to it (REQ-WTR-001). Left out, the case is not
+	 *        touched, which is what every test build written before the mirror expects.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -90,6 +94,7 @@ class TermijnService {
 		private readonly ?TermEventEntry $termEntry = null,
 		?TermDefinitions $definitions = null,
 		?TermInstanceStore $store = null,
+		private readonly ?CaseDeadlineFollower $follower = null,
 	) {
 		$this->definitions = ($definitions ?? new TermDefinitions(
 			settingsService: $settingsService,
@@ -300,6 +305,10 @@ class TermijnService {
 		// no branch of its own.
 		$this->termEntry?->recordStart(instance: (array)$saved, requested: $instance);
 
+		if ($saved !== null) {
+			$this->follower?->follow(instance: $saved);
+		}
+
 		return $saved;
 	}//end saveTermInstance()
 
@@ -321,7 +330,15 @@ class TermijnService {
 
 		$merged = array_merge($current, $patch);
 		$merged['id'] = $termInstanceId;
-		return $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
+		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
+
+		// The case follows its statutory term: an extension, a pause and a
+		// resumption all move `endDateCurrent` through here (REQ-WTR-001).
+		if ($saved !== null) {
+			$this->follower?->follow(instance: $saved);
+		}
+
+		return $saved;
 	}//end updateTermijnInstance()
 
 	/**

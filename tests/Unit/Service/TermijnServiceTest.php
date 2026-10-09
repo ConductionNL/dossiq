@@ -26,8 +26,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Listener\CaseDeadlineListener;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineFollower;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -37,6 +44,12 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineFollower
+ * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
+ * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Listener\CaseDeadlineListener
+ * @uses \OCA\Dossiq\Service\CaseTypeResolver
+ * @uses \OCA\Dossiq\Service\CaseTypeStore
  */
 class TermijnServiceTest extends TestCase {
 
@@ -270,9 +283,90 @@ class TermijnServiceTest extends TestCase {
 		// 2026-04-01 + 70 days = 2026-06-10.
 		self::assertSame('2026-06-10', $fresh['endDateCalculated']);
 	}//end testExistingTermijnInstanceRetainsOriginalDefinitieAfterVersionBump()
-}//end class
+	/**
+	 * REQ-WTR-001: after a pause and a resumption move the statutory term's
+	 * end, the case's next save carries that end as its deadline. The case is
+	 * saved with its stored deadline (readOnly-safe), and the real listener
+	 * takes the mirrored date on that save's pre-persist event.
+	 *
+	 * @return void
+	 */
+	public function testACaseDeadlineFollowsItsTermAfterAPause(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'termijn_instance_schema' => 'deadlineInstance',
+				default => '',
+			}
+		);
+		$mirror = new CaseDeadlineMirror();
+		$service = new TermijnService(
+			$settings,
+			$this->createMock(LoggerInterface::class),
+			follower: new CaseDeadlineFollower($settings, $mirror, $this->createMock(LoggerInterface::class)),
+		);
 
-// `FakeTermijnStore` is now declared in tests/Unit/Fixtures/FakeTermijnStore.php
-// and loaded by tests/bootstrap.php so every termijnbewaking + archief-edepot
-// unit test file can resolve the class even when run standalone (e.g. via
-// `phpunit --filter Foo tests/Unit/Service/ArchivalServicesTest.php`).
+		$this->objects->seed('case', ['id' => 'case-1', 'title' => 'Woo', 'deadline' => '2026-12-28']);
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-1',
+			'case' => 'case-1',
+			'kind' => 'statutory',
+			'endDateCurrent' => '2026-12-28',
+			'status' => 'opgeschort',
+		]);
+
+		// Resumed after five days: the engine moved the end by five days.
+		$service->updateTermijnInstance('ti-1', ['endDateCurrent' => '2027-01-04', 'status' => 'lopend']);
+
+		$savedCase = $this->objects->get('case', 'case-1');
+		$this->assertSame('2026-12-28', $savedCase['deadline'] ?? null, 'the case save sends the stored readOnly value');
+
+		$entity = new ObjectEntity();
+		$entity->setObject((array)$savedCase);
+		$entity->setSchema('case');
+		$entity->setUuid('case-1');
+		$event = new ObjectUpdatingEvent($entity, null);
+		(new CaseDeadlineListener(
+			$settings,
+			new CaseTypeResolver(new CaseTypeStore($settings)),
+			$this->createMock(LoggerInterface::class),
+			null,
+			$mirror,
+		))->handle($event);
+
+		$this->assertSame('2027-01-04', $event->getModifiedData()['deadline'] ?? null);
+	}//end testACaseDeadlineFollowsItsTermAfterAPause()
+
+	/**
+	 * A term that is not the statutory one does not touch the case.
+	 *
+	 * @return void
+	 */
+	public function testAnInternalTargetDoesNotMoveTheCaseDeadline(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'termijn_instance_schema' => 'deadlineInstance',
+				default => '',
+			}
+		);
+		$mirror = new CaseDeadlineMirror();
+		$service = new TermijnService(
+			$settings,
+			$this->createMock(LoggerInterface::class),
+			follower: new CaseDeadlineFollower($settings, $mirror, $this->createMock(LoggerInterface::class)),
+		);
+		$this->objects->seed('case', ['id' => 'case-2', 'deadline' => '2026-12-28']);
+		$this->objects->seed('deadlineInstance', ['id' => 'ti-2', 'case' => 'case-2', 'kind' => 'internal', 'endDateCurrent' => '2026-12-01']);
+
+		$service->updateTermijnInstance('ti-2', ['endDateCurrent' => '2026-12-10']);
+
+		$this->assertNull($mirror->take('case-2'));
+	}//end testAnInternalTargetDoesNotMoveTheCaseDeadline()
+}//end class
