@@ -611,12 +611,12 @@ and seen red; note the failure line in the PR body.
   (REQ-TOO-005).
   - Evidence: `run-hydra-gates.sh --base origin/development` output for gate 23,
     pasted in the PR body.
-- [ ] 6.12 Verification while building: `TMPDIR` set to a sibling directory
+- [x] 6.12 Verification while building: `TMPDIR` set to a sibling directory
   beside the clone, never inside it. Run only the unit tests of touched
   classes with `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter '<Class>'`
   and judge by the `Tests:` line, because a green suite exits 1 without a
   coverage driver.
-- [ ] 6.13 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`,
+- [x] 6.13 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`,
   then `npm run lint`, `npm run format` and any other leg `code-quality.yml`
   requires (check `package.json`). Then
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates
