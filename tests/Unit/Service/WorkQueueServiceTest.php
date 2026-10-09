@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkQueueService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
@@ -143,6 +144,39 @@ class WorkQueueServiceTest extends TestCase {
 		self::assertSame(0, $result['daysUntilDeadline']);
 		self::assertSame('critical', $result['tier']);
 	}//end testCriticalTierAtZeroBusinessDays()
+
+	/**
+	 * The administered calendar decides the business days, not Monday to Friday.
+	 *
+	 * Friday 24 April to Monday 27 April 2026 is one working day by the walk;
+	 * the calendar knows Koningsdag (27 April) and answers zero. The bounds
+	 * passed are the days after today up to and including the target.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 */
+	public function testTheAdministeredCalendarCountsTheBusinessDays(): void {
+		$calendar = $this->createMock(WorkingDayRoll::class);
+		$calendar->expects(self::once())->method('daysBetween')
+			->with(
+				self::callback(static fn (DateTimeImmutable $d): bool => $d->format('Y-m-d H:i') === '2026-04-25 00:00'),
+				self::callback(static fn (DateTimeImmutable $d): bool => $d->format('Y-m-d H:i') === '2026-04-28 00:00'),
+				WorkingDayRoll::MODE_WORKING_DAYS
+			)
+			->willReturn(0);
+		$service = new WorkQueueService(
+			settingsService: $this->createMock(SettingsService::class),
+			engineTasks: $this->createMock(EngineTaskInbox::class),
+			logger: $this->createMock(LoggerInterface::class),
+			dates: $this->caseDates(),
+			calendar: $calendar,
+		);
+
+		$result = $service->scoreItem('2026-04-27', 'normal', null, new DateTimeImmutable('2026-04-24'));
+
+		self::assertSame(0, $result['daysUntilDeadline']);
+	}//end testTheAdministeredCalendarCountsTheBusinessDays()
 
 	/**
 	 * @return void
@@ -297,6 +331,40 @@ class WorkQueueServiceTest extends TestCase {
 
 		self::assertSame('2026-07-14', $items[0]['deadline']);
 	}//end testComputeQueuePrefersActiveTermijnDeadlineOverCaseField()
+
+	/**
+	 * A paused term's moved end still decides urgency (REQ-OTE-06).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
+	 */
+	public function testComputeQueueReadsAPausedTerm(): void {
+		$this->objects->saveObject('case', [
+			'id' => 'case-1',
+			'title' => 'Paused case',
+			'assignee' => 'jan',
+			'endDate' => '',
+			'deadline' => '2026-08-01',
+			'priority' => 'normal',
+		]);
+		$this->objects->saveObject('deadlineInstance', [
+			'id' => 'ti-1',
+			'case' => 'case-1',
+			'status' => 'paused',
+			'endDateCurrent' => '2026-07-20',
+		]);
+		$this->objects->saveObject('deadlineInstance', [
+			'id' => 'ti-2',
+			'case' => 'case-1',
+			'status' => 'completed',
+			'endDateCurrent' => '2026-07-14',
+		]);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame('2026-07-20', $items[0]['deadline'], 'A completed term is not open; the paused one decides.');
+	}//end testComputeQueueReadsAPausedTerm()
 
 	/**
 	 * @return void
