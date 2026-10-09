@@ -33,11 +33,11 @@ import {
 	cleanupRunObjects,
 	createObject,
 	deleteObject,
-	ensureCaseType,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
 	seedCase,
+	seedSuspendableCaseType,
 } from './helpers/fixtures.ts'
 
 /** The app's own API, which is the door a handler's action goes through. */
@@ -56,7 +56,7 @@ test.describe('Every statutory term lands on a working day', () => {
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
 		token = await getRequestToken(api)
-		caseTypeId = (await ensureCaseType(api, token)).id
+		caseTypeId = await seedSuspendableCaseType(api, token)
 	})
 
 	test.afterAll(async () => {
