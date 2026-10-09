@@ -139,7 +139,7 @@ class WorkQueueServiceTest extends TestCase {
 	 * @return UrgencyProfile The profile.
 	 */
 	private function profile(mixed $critical = 3, mixed $warning = 7, mixed $priority = 10, mixed $idle = 0.5): UrgencyProfile {
-		return UrgencyProfile::normalised(criticalDays: $critical, warningDays: $warning, priorityWeight: $priority, idleWeight: $idle);
+		return new UrgencyProfile(criticalDays: $critical, warningDays: $warning, priorityWeight: $priority, idleWeight: $idle);
 	}//end profile()
 
 	/**

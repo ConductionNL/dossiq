@@ -9,7 +9,7 @@
  * takes, so the scorer stays a pure function: it is handed the numbers, it
  * never reads them.
  *
- * Every bound lives here, and every way in goes through `normalised()`. The
+ * Every bound lives here, and every way in goes through the constructor. The
  * bounds are what keep the tier in charge of the order: the priority and idle
  * parts together can never reach the 250 points between two tier bases, so a
  * case is never lifted above a case one tier up by how it is weighted.
@@ -53,39 +53,36 @@ final class UrgencyProfile {
 	public const MAX_IDLE_WEIGHT = 1.5;
 
 	/**
-	 * Constructor. Use `normalised()` or `defaults()`; this one trusts its input.
+	 * The critical threshold, in working days left.
 	 *
-	 * @param int   $criticalDays   Working days left up to which a deadline is critical.
-	 * @param int   $warningDays    Working days left up to which a deadline is almost due.
-	 * @param float $priorityWeight Points per priority step.
-	 * @param float $idleWeight     Points per day lying still.
+	 * @var int
 	 */
-	private function __construct(
-		public readonly int $criticalDays,
-		public readonly int $warningDays,
-		public readonly float $priorityWeight,
-		public readonly float $idleWeight,
-	) {
-	}//end __construct()
+	public readonly int $criticalDays;
 
 	/**
-	 * The profile when nothing is configured: today's numbers.
+	 * The warning threshold, in working days left. Never below the critical one.
 	 *
-	 * @return self The default profile.
-	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @var int
 	 */
-	public static function defaults(): self {
-		return new self(
-			criticalDays: self::DEFAULT_CRITICAL_DAYS,
-			warningDays: self::DEFAULT_WARNING_DAYS,
-			priorityWeight: self::DEFAULT_PRIORITY_WEIGHT,
-			idleWeight: self::DEFAULT_IDLE_WEIGHT,
-		);
-	}//end defaults()
+	public readonly int $warningDays;
 
 	/**
-	 * Build a profile from raw values, each read leniently.
+	 * Points per priority step.
+	 *
+	 * @var float
+	 */
+	public readonly float $priorityWeight;
+
+	/**
+	 * Points per day lying still.
+	 *
+	 * @var float
+	 */
+	public readonly float $idleWeight;
+
+	/**
+	 * Build a profile from raw values, each read leniently. With no arguments
+	 * it is the default profile: today's numbers.
 	 *
 	 * A value that does not parse as a number reads as its default; a number
 	 * out of bounds is clamped. A warning threshold below the critical one
@@ -98,21 +95,22 @@ final class UrgencyProfile {
 	 * @param mixed $priorityWeight Raw priority weight.
 	 * @param mixed $idleWeight     Raw idle weight.
 	 *
-	 * @return self The normalised profile.
-	 *
 	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	public static function normalised(mixed $criticalDays, mixed $warningDays, mixed $priorityWeight, mixed $idleWeight): self {
+	public function __construct(
+		mixed $criticalDays = self::DEFAULT_CRITICAL_DAYS,
+		mixed $warningDays = self::DEFAULT_WARNING_DAYS,
+		mixed $priorityWeight = self::DEFAULT_PRIORITY_WEIGHT,
+		mixed $idleWeight = self::DEFAULT_IDLE_WEIGHT,
+	) {
 		$critical = (int)self::bounded(raw: $criticalDays, default: self::DEFAULT_CRITICAL_DAYS, max: self::MAX_CRITICAL_DAYS, whole: true);
 		$warning = (int)self::bounded(raw: $warningDays, default: self::DEFAULT_WARNING_DAYS, max: self::MAX_WARNING_DAYS, whole: true);
 
-		return new self(
-			criticalDays: $critical,
-			warningDays: max($warning, $critical),
-			priorityWeight: self::bounded(raw: $priorityWeight, default: self::DEFAULT_PRIORITY_WEIGHT, max: self::MAX_PRIORITY_WEIGHT, whole: false),
-			idleWeight: self::bounded(raw: $idleWeight, default: self::DEFAULT_IDLE_WEIGHT, max: self::MAX_IDLE_WEIGHT, whole: false),
-		);
-	}//end normalised()
+		$this->criticalDays = $critical;
+		$this->warningDays = max($warning, $critical);
+		$this->priorityWeight = self::bounded(raw: $priorityWeight, default: self::DEFAULT_PRIORITY_WEIGHT, max: self::MAX_PRIORITY_WEIGHT, whole: false);
+		$this->idleWeight = self::bounded(raw: $idleWeight, default: self::DEFAULT_IDLE_WEIGHT, max: self::MAX_IDLE_WEIGHT, whole: false);
+	}//end __construct()
 
 	/**
 	 * This profile with a case type's own thresholds, where it sets them.
@@ -138,7 +136,7 @@ final class UrgencyProfile {
 			$warning = $warningDays;
 		}
 
-		return self::normalised(
+		return new self(
 			criticalDays: $critical,
 			warningDays: $warning,
 			priorityWeight: $this->priorityWeight,

@@ -5,7 +5,7 @@
  *
  * Four keys an administrator sets on the dossiq admin settings page, saved
  * through the app's own admin-guarded settings write. This class only reads
- * them, and reads them leniently through `UrgencyProfile::normalised()`.
+ * them, and reads them leniently through UrgencyProfile's constructor.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Queue
@@ -60,7 +60,7 @@ class QueueUrgencySettings {
 	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function profile(): UrgencyProfile {
-		return UrgencyProfile::normalised(
+		return new UrgencyProfile(
 			criticalDays: $this->settings->getConfigValue(self::KEY_CRITICAL_DAYS, ''),
 			warningDays: $this->settings->getConfigValue(self::KEY_WARNING_DAYS, ''),
 			priorityWeight: $this->settings->getConfigValue(self::KEY_PRIORITY_WEIGHT, ''),

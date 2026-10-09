@@ -404,7 +404,7 @@ class WorkQueueService {
 		DateTimeImmutable $now,
 		?UrgencyProfile $profile = null,
 	): array {
-		$profile = ($profile ?? UrgencyProfile::defaults());
+		$profile = ($profile ?? new UrgencyProfile());
 		$today = new DateTimeImmutable($now->format('Y-m-d'));
 
 		$daysUntilDeadline = null;
@@ -561,18 +561,8 @@ class WorkQueueService {
 	 */
 	private function lastActivityOf(array $case): ?string {
 		$latest = null;
-		$candidates = [($case['@self']['updated'] ?? null)];
-		foreach ($this->journal->entries(case: $case) as $entry) {
-			$candidates[] = ($entry['at'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if (is_string($candidate) === false || $candidate === '') {
-				continue;
-			}
-
-			$moment = $this->dates->tryParse($candidate);
-			if ($moment !== null && ($latest === null || $moment > $latest)) {
+		foreach ($this->activityMoments(case: $case) as $moment) {
+			if ($latest === null || $moment > $latest) {
 				$latest = $moment;
 			}
 		}
@@ -588,6 +578,34 @@ class WorkQueueService {
 
 		return $startDate;
 	}//end lastActivityOf()
+
+	/**
+	 * Every moment a case records activity: its last save and each journal entry.
+	 *
+	 * @param array<string, mixed> $case The case row.
+	 *
+	 * @return array<int, DateTimeImmutable> The moments that parse.
+	 */
+	private function activityMoments(array $case): array {
+		$candidates = [($case['@self']['updated'] ?? null)];
+		foreach ($this->journal->entries(case: $case) as $entry) {
+			$candidates[] = ($entry['at'] ?? null);
+		}
+
+		$moments = [];
+		foreach ($candidates as $candidate) {
+			if (is_string($candidate) === false || $candidate === '') {
+				continue;
+			}
+
+			$moment = $this->dates->tryParse($candidate);
+			if ($moment !== null) {
+				$moments[] = $moment;
+			}
+		}
+
+		return $moments;
+	}//end activityMoments()
 
 	/**
 	 * The case type id a case row names, whether as a uuid or an object.
