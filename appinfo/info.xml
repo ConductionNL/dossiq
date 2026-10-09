@@ -457,6 +457,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 partner's own uuid, so re-running an upgrade adds nothing.
             -->
             <step>OCA\Dossiq\Repair\MigratePartnersToOrganisations</step>
+            <!--
+                Decision Q1 (2026-10-08): the tenant migration that
+                occ dossiq:migrate-tenants runs also runs here, for one
+                release, and reports how many stored tenants are left with no
+                Organisation of the same uuid. A refused collision stays
+                refused and is counted. The release after deletes the
+                migration once a person records that the count is zero.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateTenantsToOrganisations</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\BackfillInformatieobjectMetadata</step>
             <step>OCA\Dossiq\Repair\LinkInFlightContractDecisionsRepair</step>
@@ -726,6 +735,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               RealignLhsActorTypeVocabulary     repairs rows an earlier rename touched
               MigrateArchivalToOpenRegister     one-way migration
               MigratePartnersToOrganisations    moves existing ketenpartner rows
+              MigrateTenantsToOrganisations     moves existing legacy tenant rows
               MigrateSubsidieRegelingToCaseType moves existing subsidieRegeling rows
               MigrateAiOversightToHermiq        replays existing audit history
               MigrateCommitteesToDecidiq        raises existing committees; none are seeded

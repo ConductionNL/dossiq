@@ -57,6 +57,16 @@ class TenantMigrationService {
 	use SearchesObjects;
 
 	/**
+	 * The migration writes.
+	 */
+	public const MODE_APPLY = 'apply';
+
+	/**
+	 * The migration decides and reports, and writes nothing.
+	 */
+	public const MODE_PREVIEW = 'preview';
+
+	/**
 	 * Register slug holding this app's schemas.
 	 */
 	// The OpenRegister register SLUG, not this app's id. It moves with the app
@@ -186,13 +196,30 @@ class TenantMigrationService {
 	 * Reads all legacy `tenant` objects and inserts one OR Organisation per
 	 * tenant whose slug is not already present.
 	 *
+	 * A dry run reads and decides exactly as a real run does, and writes
+	 * nothing: no Organisation is inserted or updated. Its summary is the one
+	 * a real run would print, so a person can read the collisions and orphans
+	 * before anything moves (REQ-TOO-001).
+	 *
+	 * `unmigrated` counts the stored tenants that have no Organisation of the
+	 * same uuid once the run is over: refused collisions and failed rows
+	 * included, and in a dry run every tenant that would have been created.
+	 * The repair step reports the same number, so the release that deletes
+	 * this class can wait for it to read zero (decision Q1).
+	 *
+	 * @param string $mode MODE_APPLY writes, MODE_PREVIEW writes nothing. A mode, not a
+	 *                     flag, so the walk stays one method and the two cannot drift apart.
+	 *
 	 * @return array{migrated:int, repaired:int, skipped:int, refused:int, failed:int, total:int,
+	 *               unmigrated:int, dryRun:bool,
 	 *               mappings:array<int,array{tenant:string, organisation:string}>,
 	 *               collisions:array<int,array{tenant:string, slug:string, heldBy:string}>}
 	 *
 	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
-	public function migrate(): array {
+	public function migrate(string $mode = self::MODE_APPLY): array {
+		$dryRun = ($mode === self::MODE_PREVIEW);
 		$summary = [
 			'migrated' => 0,
 			'repaired' => 0,
@@ -200,6 +227,8 @@ class TenantMigrationService {
 			'refused' => 0,
 			'failed' => 0,
 			'total' => 0,
+			'unmigrated' => 0,
+			'dryRun' => $dryRun,
 			'mappings' => [],
 			'collisions' => [],
 		];
@@ -229,41 +258,7 @@ class TenantMigrationService {
 		$summary['total'] = count($rows);
 
 		foreach ($rows as $row) {
-			$result = $this->migrateOne(mapper: $mapper, row: $row);
-			if ($result === null) {
-				$summary['failed']++;
-				continue;
-			}
-
-			if ($result['refused'] === true) {
-				$summary['refused']++;
-				$summary['collisions'][] = [
-					'tenant' => $result['tenantUuid'],
-					'slug' => ($result['slug'] ?? ''),
-					'heldBy' => $result['organisationUuid'],
-				];
-				continue;
-			}
-
-			if ($result['created'] === false) {
-				// A repair is reported separately from a skip. Both leave the
-				// row count alone, but one of them CHANGED a tenant's
-				// lifecycle status and an operator must be able to see that in
-				// the summary rather than infer it from the log.
-				if (($result['repaired'] ?? false) === true) {
-					$summary['repaired']++;
-					continue;
-				}
-
-				$summary['skipped']++;
-				continue;
-			}
-
-			$summary['migrated']++;
-			$summary['mappings'][] = [
-				'tenant' => $result['tenantUuid'],
-				'organisation' => $result['organisationUuid'],
-			];
+			$this->tally(summary: $summary, result: $this->migrateOne(mapper: $mapper, row: $row, dryRun: $dryRun));
 		}
 
 		$this->logger->info(
@@ -275,6 +270,8 @@ class TenantMigrationService {
 				'skipped' => $summary['skipped'],
 				'refused' => $summary['refused'],
 				'failed' => $summary['failed'],
+				'unmigrated' => $summary['unmigrated'],
+				'dryRun' => $dryRun,
 			],
 		);
 
@@ -282,15 +279,66 @@ class TenantMigrationService {
 	}//end migrate()
 
 	/**
+	 * Count one row's result into the summary.
+	 *
+	 * @param array<string, mixed>      $summary The summary, updated in place.
+	 * @param array<string, mixed>|null $result  The row's result, or null when it failed.
+	 *
+	 * @return void
+	 */
+	private function tally(array &$summary, ?array $result): void {
+		if ($result === null) {
+			$summary['failed']++;
+			$summary['unmigrated']++;
+			return;
+		}
+
+		if ($result['hasOrganisation'] === false) {
+			$summary['unmigrated']++;
+		}
+
+		if ($result['refused'] === true) {
+			$summary['refused']++;
+			$summary['collisions'][] = [
+				'tenant' => $result['tenantUuid'],
+				'slug' => ($result['slug'] ?? ''),
+				'heldBy' => $result['organisationUuid'],
+			];
+			return;
+		}
+
+		if ($result['created'] === false) {
+			// A repair is reported separately from a skip. Both leave the
+			// row count alone, but one of them CHANGED a tenant's
+			// lifecycle status and an operator must be able to see that in
+			// the summary rather than infer it from the log.
+			if (($result['repaired'] ?? false) === true) {
+				$summary['repaired']++;
+				return;
+			}
+
+			$summary['skipped']++;
+			return;
+		}
+
+		$summary['migrated']++;
+		$summary['mappings'][] = [
+			'tenant' => $result['tenantUuid'],
+			'organisation' => $result['organisationUuid'],
+		];
+	}//end tally()
+
+	/**
 	 * Migrate one legacy tenant row to an OR Organisation.
 	 *
 	 * @param object $mapper OR OrganisationMapper.
 	 * @param array<string, mixed> $row Legacy tenant object.
+	 * @param bool $dryRun When true, decide and write nothing.
 	 *
-	 * @return array{created:bool, refused:bool, repaired:bool, tenantUuid:string, organisationUuid:string, slug?:string}|null
+	 * @return array{created:bool, refused:bool, repaired:bool, hasOrganisation:bool, tenantUuid:string, organisationUuid:string, slug?:string}|null
 	 *                                                                              Result, or null on failure.
 	 */
-	private function migrateOne(object $mapper, array $row): ?array {
+	private function migrateOne(object $mapper, array $row, bool $dryRun): ?array {
 		$tenantUuid = trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
 		$slug = trim((string)($row['slug'] ?? ''));
 		if ($tenantUuid === '') {
@@ -321,12 +369,13 @@ class TenantMigrationService {
 			// and what this migration preserves onto the Organisation.
 			$existing = $this->findOrganisationByUuid(mapper: $mapper, uuid: $tenantUuid);
 			if ($existing !== null) {
-				$repaired = $this->repairSupersededStatus(mapper: $mapper, organisation: $existing, row: $row, slug: $slug);
+				$repaired = $this->repairSupersededStatus(mapper: $mapper, organisation: $existing, row: $row, slug: $slug, dryRun: $dryRun);
 
 				return [
 					'created' => false,
 					'refused' => false,
 					'repaired' => $repaired,
+					'hasOrganisation' => true,
 					'tenantUuid' => $tenantUuid,
 					'organisationUuid' => (string)$existing->getUuid(),
 				];
@@ -352,6 +401,18 @@ class TenantMigrationService {
 			}
 
 			$organisation = $this->buildOrganisation(row: $row, slug: $slug, tenantUuid: $tenantUuid);
+			if ($dryRun === true) {
+				// The uuid a real run would give it: buildOrganisation() keeps the tenant's.
+				return [
+					'created' => true,
+					'refused' => false,
+					'repaired' => false,
+					'hasOrganisation' => false,
+					'tenantUuid' => $tenantUuid,
+					'organisationUuid' => (string)$organisation->getUuid(),
+				];
+			}
+
 			$saved = $mapper->insert($organisation);
 
 			$this->logger->info(
@@ -363,6 +424,7 @@ class TenantMigrationService {
 				'created' => true,
 				'refused' => false,
 				'repaired' => false,
+				'hasOrganisation' => true,
 				'tenantUuid' => $tenantUuid,
 				'organisationUuid' => (string)$saved->getUuid(),
 			];
@@ -385,7 +447,7 @@ class TenantMigrationService {
 	 * @param string $tenantUuid The tenant uuid.
 	 * @param string $slug       The contested slug.
 	 *
-	 * @return array{created:bool, refused:bool, repaired:bool, tenantUuid:string, organisationUuid:string, slug:string}
+	 * @return array{created:bool, refused:bool, repaired:bool, hasOrganisation:bool, tenantUuid:string, organisationUuid:string, slug:string}
 	 *         The refusal, for the summary to report.
 	 */
 	private function refuseCollision(object $collision, string $tenantUuid, string $slug): array {
@@ -402,6 +464,7 @@ class TenantMigrationService {
 			'created' => false,
 			'refused' => true,
 			'repaired' => false,
+			'hasOrganisation' => false,
 			'tenantUuid' => $tenantUuid,
 			'organisationUuid' => (string)$collision->getUuid(),
 			'slug' => $slug,
@@ -443,12 +506,13 @@ class TenantMigrationService {
 	 * @param object $organisation The existing Organisation.
 	 * @param array<string, mixed> $row Legacy tenant object.
 	 * @param string $slug Tenant slug, for logging.
+	 * @param bool $dryRun When true, report the repair and change nothing, not even the entity in memory.
 	 *
-	 * @return bool True when the organisation was repaired and saved.
+	 * @return bool True when the organisation was repaired and saved, or would be in a dry run.
 	 *
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
 	 */
-	private function repairSupersededStatus(object $mapper, object $organisation, array $row, string $slug): bool {
+	private function repairSupersededStatus(object $mapper, object $organisation, array $row, string $slug, bool $dryRun): bool {
 		$legacyStatus = (string)($row['status'] ?? '');
 		if (isset(self::SUPERSEDED_STATUS_REPAIRS[$legacyStatus]) === false) {
 			return false;
@@ -457,6 +521,10 @@ class TenantMigrationService {
 		[$supersededStatus, $correctStatus] = self::SUPERSEDED_STATUS_REPAIRS[$legacyStatus];
 		if ((string)$organisation->getStatus() !== $supersededStatus) {
 			return false;
+		}
+
+		if ($dryRun === true) {
+			return true;
 		}
 
 		$organisation->setStatus($correctStatus);
