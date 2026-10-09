@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case number the platform issues, and the star that is yours alone.
+ * The case number the platform issues, and the follow that replaced the star.
  *
  * Two halves of one change, and they share a file because they share every
  * fixture: both need seeded cases on a seeded case type and both are driven
@@ -16,13 +16,11 @@
  * imported 2026-0120 is not below it, and the refused update leaves the
  * number it started with.
  *
- * 🔴 THE FAVOURITE HALF IS ONE USER, WHICH IS THE ONLY USER A BROWSER IS. A
- * star is private to the person who set it, and OpenRegister refuses to
- * answer about anybody else's. "Alice's star is invisible to Bob" is
- * therefore not claimed here; openregister's own FavouriteServiceTest names
- * two users and makes it. What is driven here is the admin's own star: set
- * from the case page, set from a row, narrowing the Cases list, and reaching
- * the dashboard tile.
+ * 🔴 THE STAR IS GONE (one-follow-control). A favourite became a follow with
+ * notifications off (openregister merge-follow-and-favourites), so the second
+ * half drives the follow: a quiet follow from the case page, a follow from a
+ * row, the Following lens with `_favourite` as its alias, and the dashboard
+ * tile. It is one user, the only user a browser is.
  *
  * THE ROWS ARE ADDRESSED BY THEIR RUN PREFIX, NEVER BY POSITION OR COUNT. The
  * Cases index is a shared list on a shared instance and another session's
@@ -48,9 +46,15 @@ const APP_URL = `/apps/${REGISTER}/`
 const CASES_URL = `${APP_URL}cases`
 const API_BASE = `/index.php/apps/openregister/api/objects/${REGISTER}/case`
 
-/** The star endpoint of one case, which OpenRegister owns. */
-function favouriteUrl(caseId: string): string {
-	return `${API_BASE}/${caseId}/favourite`
+/**
+ * The follow endpoint of one case, which OpenRegister owns.
+ *
+ * The star is gone (one-follow-control): a favourite is a follow with
+ * notifications off, so this spec drives `.../watch` where it drove
+ * `.../favourite`.
+ */
+function watchUrl(caseId: string): string {
+	return `${API_BASE}/${caseId}/watch`
 }
 
 /** The shape every case number this schema issues has to read in. */
@@ -92,33 +96,34 @@ async function seedNumberedCase(title: string): Promise<any> {
 }
 
 /**
- * Star a case for the signed-in user.
+ * Follow a case quietly for the signed-in user: what starring used to be.
  *
  * @param caseId The case uuid.
  */
 async function star(caseId: string): Promise<void> {
-	const res = await api.put(favouriteUrl(caseId), {
+	const res = await api.put(watchUrl(caseId), {
 		headers: { requesttoken: token, 'Content-Type': 'application/json' },
+		data: { notify: false },
 	})
-	expect(res.ok(), `starring ${caseId} answered ${res.status()}`).toBeTruthy()
+	expect(res.ok(), `following ${caseId} answered ${res.status()}`).toBeTruthy()
 }
 
 /**
- * Take the signed-in user's star off a case.
+ * Stop following a case as the signed-in user.
  *
  * @param caseId The case uuid.
  */
 async function unstar(caseId: string): Promise<void> {
-	const res = await api.delete(favouriteUrl(caseId), {
+	const res = await api.delete(watchUrl(caseId), {
 		headers: { requesttoken: token },
 	})
-	expect(res.ok(), `unstarring ${caseId} answered ${res.status()}`).toBeTruthy()
+	expect(res.ok(), `unfollowing ${caseId} answered ${res.status()}`).toBeTruthy()
 }
 
 /**
  * The cases one lens answers with, as the signed-in user.
  *
- * @param lens The lens key, `_favourite` or `_recent`.
+ * @param lens The lens key, `_watching`, `_favourite` or `_recent`.
  */
 async function lens(lensKey: string): Promise<any[]> {
 	const res = await api.get(`${API_BASE}?${lensKey}=true&_limit=100`, {
@@ -130,7 +135,7 @@ async function lens(lensKey: string): Promise<any[]> {
 	return body.results ?? body.data ?? []
 }
 
-test.describe('The case number and the star', () => {
+test.describe('The case number and the follows that replaced the star', () => {
 	test.setTimeout(240_000)
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
@@ -237,37 +242,41 @@ test.describe('The case number and the star', () => {
 	})
 
 	/**
-	 * @e2e REQ-FAV-01 you star a case from its page
+	 * @e2e REQ-CM-40 a quiet follow from the case page
 	 */
-	test('the star on the case page sets and clears, and survives a reload', async ({
+	test('the case page has no star, and the bell makes a follow quiet', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
+		await unstar(cases.starred)
 
 		await page.goto(`${APP_URL}cases/${cases.starred}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const toggle = page.getByTestId('case-favourite-toggle')
-		await expect(toggle).toBeVisible()
+		await expect(page.getByTestId('case-favourite-toggle')).toHaveCount(0)
+		const toggle = page.getByTestId('case-follow-toggle')
 		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+		await expect(page.getByTestId('case-follow-notify')).toHaveCount(0)
 
 		await toggle.click()
 		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+		const bell = page.getByTestId('case-follow-notify')
+		await expect(bell).toHaveAttribute('aria-pressed', 'true')
+		await bell.click()
+		await expect(bell).toHaveAttribute('aria-pressed', 'false')
 
 		await page.reload(PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-favourite-toggle')).toHaveAttribute(
-			'aria-pressed',
-			'true',
-		)
+		await expect(page.getByTestId('case-follow-toggle')).toHaveAttribute('aria-pressed', 'true')
+		await expect(page.getByTestId('case-follow-notify')).toHaveAttribute('aria-pressed', 'false')
 
 		expect(errors).toEqual([])
 	})
 
 	/**
-	 * @e2e REQ-FAV-01 starring leaves the case untouched
+	 * @e2e REQ-CM-40 following leaves the case untouched
 	 */
-	test('starring cuts no version and writes no audit entry', async () => {
+	test('following cuts no version and writes no audit entry', async () => {
 		const before = await showObject(api, 'case', cases.unstarred)
 		const versionBefore = before['@self']?.version
 
@@ -276,7 +285,8 @@ test.describe('The case number and the star', () => {
 		const after = await showObject(api, 'case', cases.unstarred)
 
 		expect(after['@self']?.version).toBe(versionBefore)
-		expect(after['@self']?.favourite).toBe(true)
+		expect(after['@self']?.watching).toBe(true)
+		expect(after['@self']?.watchNotify).toBe(false)
 		expect(after.title).toBe(before.title)
 
 		// A control: something a real write DOES move, so the equality above
@@ -285,10 +295,11 @@ test.describe('The case number and the star', () => {
 	})
 
 	/**
-	 * @e2e REQ-FAV-01 you star a case from a list row
+	 * @e2e REQ-CM-40 you follow a case from a list row
 	 */
-	test('the row action stars a case from the Cases list', async ({ page }) => {
+	test('the row action follows a case from the Cases list', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
+		await unstar(cases.rowStar)
 
 		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
@@ -299,11 +310,11 @@ test.describe('The case number and the star', () => {
 		await expect(row).toBeVisible()
 
 		await row.getByRole('button', { name: /actions/i }).click()
-		await page.getByRole('menuitem', { name: /favourites/i }).click()
+		await page.getByRole('menuitem', { name: /follow/i }).click()
 
 		await expect
 			.poll(async () =>
-				(await lens('_favourite')).map((c: any) => objectId(c)),
+				(await lens('_watching')).map((c: any) => objectId(c)),
 			)
 			.toContain(cases.rowStar)
 
@@ -311,16 +322,19 @@ test.describe('The case number and the star', () => {
 	})
 
 	/**
-	 * @e2e REQ-FAV-02 the favourites chip lists only what you starred
+	 * @e2e REQ-FAV-02 the following lens lists what you follow, quiet or not
 	 */
-	test('the Favourites chip narrows the list to the starred cases', async () => {
+	test('the Following lens holds the quiet follows, and _favourite answers the same', async () => {
 		await star(cases.starred)
 		await unstar(cases.alsoUnstarred)
 
-		const starredIds = (await lens('_favourite')).map((c: any) => objectId(c))
+		const followed = (await lens('_watching')).map((c: any) => objectId(c))
 
-		expect(starredIds).toContain(cases.starred)
-		expect(starredIds).not.toContain(cases.alsoUnstarred)
+		expect(followed).toContain(cases.starred)
+		expect(followed).not.toContain(cases.alsoUnstarred)
+		// The deprecated alias, for one release: an app still asking for
+		// favourites gets the follows.
+		expect((await lens('_favourite')).map((c: any) => objectId(c)).sort()).toEqual([...followed].sort())
 	})
 
 	/**
@@ -347,7 +361,7 @@ test.describe('The case number and the star', () => {
 	/**
 	 * @e2e REQ-FAV-02 the dashboard tiles show the same two lists
 	 */
-	test('the dashboard names the starred case and the case just opened', async ({
+	test('the dashboard carries the followed cases and the case just opened', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
@@ -357,7 +371,8 @@ test.describe('The case number and the star', () => {
 		await page.goto(APP_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		await expect(page.getByText('Your favourites')).toBeVisible()
+		await expect(page.getByText('Cases you follow').first()).toBeVisible()
+		await expect(page.getByText('Your favourites')).toHaveCount(0)
 		await expect(page.getByText('Recently opened')).toBeVisible()
 
 		expect(errors).toEqual([])

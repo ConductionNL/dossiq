@@ -43,7 +43,6 @@ import CaseBannerStack from './components/case/CaseBannerStack.vue'
 // (custody-and-handover-of-a-case, rows 2.37 and 2.38).
 // @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
 import CaseCustodyPanel from './components/case/CaseCustodyPanel.vue'
-import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
 // Follow a case you do not own, and see who else does (case-followers,
 // row 13.18), over OpenRegister's own subscription (`object-watchers`).
 // @spec openspec/changes/case-followers/specs/case-management/spec.md
@@ -255,7 +254,7 @@ import {
 	transitionSelection,
 } from './utils/caseBulkActions.js'
 import { claimCase } from './utils/caseClaim.js'
-import { toggleCaseFavourite } from './utils/caseFavourite.js'
+import { toggleCaseFollow } from './utils/caseFollow.js'
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
 import { openCaseOfDocument } from './utils/contactDocuments.js'
 import { openIntegriqConnections } from './utils/integriqConnections.js'
@@ -1068,20 +1067,6 @@ const registry = {
 		_note: 'CaseDetail: what this status asks of the fields on the case, what is still missing before a status the case type derives becomes true, who the case is waiting on, and how long it has been in this status. The field rules are the one of the four that costs no round trip: OpenRegister decides them per reader and per state on the render path and publishes them as `@self.fieldRules`, so the strip reads the answer off the case object the page already holds and says them even on an instance whose transition engine refuses. The other three come from /available-transitions in one round trip, and the derivation is the one that earns the strip: a derived status is not a move a handler can pick, so an unmet derivation leaves nothing on the page to press and nothing to read. Silent on a case that asks nothing of its fields, is ours to move, is inside its maximum and has no derivation pending, and silent rather than erroring on an instance whose transition engine cannot answer.',
 	},
 
-	// --- The star on the case page (case-number-and-favourites). ---
-	//
-	// A LAYOUT grid item and a widget TYPE, for the reason case-unread is one:
-	// CnDetailPage resolves a grid item's renderer from `cnRegistry[widget.type]`
-	// when the app supplies no `widget-<id>` slot, and dossiq supplies none.
-	// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
-	'case-favourite': {
-		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to star and DELETE to unstar, and no declarative widget or action writes two methods: `CnActionButtons`' `toggle` type flips a boolean and PUTs it with one `method`, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.favourite` is attached per reader on the render path, so a data widget over a property would render nothing at all. Deleted the day the library takes a two-verb toggle or a favourite affordance of its own, which is where this belongs for every index and detail page in the fleet
-		kind: 'widget',
-		component: CaseFavouriteStrip,
-		...STRIP_WIDGET_META,
-		_note: 'CaseDetail: the per-reader star, directly under the identity tiles because it is part of what identifies this case TO YOU. Starring writes nothing to the case: OpenRegister keeps the star in its own table, so no version is cut, no audit entry is written and no colleague can tell. The strip renders from `@self.favourite`, which every object read already carries, so it makes no call until somebody presses it.',
-	},
-
 	// --- The line saying this case is in the archive. ---
 	//
 	// A LAYOUT grid item and a widget TYPE, for the reason `case-unread` is
@@ -1391,11 +1376,11 @@ const registry = {
 		handler: markCaseUnread,
 		_note: "The Queue's and Cases' mark-unread row action, for the reason markCaseRead is a function.",
 	},
-	// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
-	toggleCaseFavourite: {
+	// @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+	toggleCaseFollow: {
 		kind: 'handler',
-		handler: toggleCaseFavourite,
-		_note: "The Queue's and Cases' favourite row action. ONE entry rather than a star and an unstar, because `@self.favourite` rides every row so the menu item can say what the click will do. The gesture is PUT to star and DELETE to unstar on one path, and no declarative write takes two methods.",
+		handler: toggleCaseFollow,
+		_note: "The Queue's and Cases' follow row action, which replaced the star (one-follow-control). ONE entry rather than a follow and an unfollow, because `@self.watching` rides every row so the click knows which way to go. The gesture is PUT to follow and DELETE to stop on one path, and no declarative write takes two methods.",
 	},
 	// @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	reassignSelection: {
