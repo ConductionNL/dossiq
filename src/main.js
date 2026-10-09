@@ -48,6 +48,7 @@ import {
 	STRUCTURE_FULL,
 	STRUCTURE_SETTING,
 } from './utils/structureProfile.js'
+import { translateLensLabels } from './utils/translateLensLabels.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
@@ -220,12 +221,15 @@ function navTheming(capabilities) {
 	return { ...theming, emblem: typeof emblem === 'string' ? emblem : '' }
 }
 
-const builtManifest = markRaw({
+const profiledManifest = {
 	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {
 		theming: navTheming(getCapabilities()),
 	}),
 	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
-})
+}
+const builtManifest = markRaw(
+	translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+)
 
 // Case-type navigation now lives on the Cases index page itself: a folder
 // sidebar (config.folderSidebar) lists the live `caseType` objects and filters
