@@ -83,7 +83,7 @@
 						"placement": "right",
 						"title": "All your cases",
 						"body": "You work from this list: every case in the organisation, open and closed.",
-						"task": "Click Cases in the menu",
+						"task": "Click All cases in the menu",
 						"target": {
 							"kind": "nav-item",
 							"ref": "Cases"
@@ -122,7 +122,7 @@
 						"allowManualNext": true,
 						"title": "Where case types come from",
 						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
-						"task": "Open Case types in the menu",
+						"task": "Open Advanced, then Case types",
 						"target": {
 							"kind": "nav-item",
 							"ref": "CaseTypes"
@@ -140,7 +140,7 @@
 						"allowManualNext": true,
 						"title": "Where the automation lives",
 						"body": "Flows are what happens without anyone clicking: a deadline that warns before it passes, a confirmation that goes out on submission. This is where you read and edit them. Nothing to build now.",
-						"task": "Open Flows in the menu",
+						"task": "Open Advanced, then Flows",
 						"target": {
 							"kind": "nav-item",
 							"ref": "Flows"
