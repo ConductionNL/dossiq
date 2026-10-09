@@ -187,7 +187,15 @@ class DeadlineExtensionService {
 		$consumed = (int)($instance['countExtensions'] ?? 0);
 		$daysImpact = $this->calculateDaysImpact(current: $current, newEndDate: $newEndDate);
 
-		$this->assertWithinDeclaredPeriod(instance: $instance, days: $daysImpact, mode: $mode);
+		// The ceiling is measured to the day ASKED FOR. The Algemene termijnenwet
+		// moves an end off a weekend or holiday by law; a fourteen day extension
+		// that the roll carries to the Monday is still the fourteen days the
+		// law allows, not sixteen the case type refuses.
+		$this->assertWithinDeclaredPeriod(
+			instance: $instance,
+			days: $this->calculateDaysImpact(current: $current, newEndDate: $requestedEndDate),
+			mode: $mode
+		);
 
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,

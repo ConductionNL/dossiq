@@ -130,6 +130,37 @@ class DeadlineExtensionLimitTest extends TestCase {
 	}//end testAnExtensionWithinThePeriodIsAllowed()
 
 	/**
+	 * The ceiling counts the days asked for, not the days the roll adds.
+	 *
+	 * Fourteen days from Tuesday 1 September 2026 asks for Tuesday the 15th;
+	 * a roll that carries it on is the law's, not the handler's.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
+	 */
+	public function testTheRollDoesNotCountAgainstTheCeiling(): void {
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnCallback(
+			static fn (DateTimeImmutable $date): DateTimeImmutable => $date->modify('+2 days')
+		);
+		$service = new DeadlineExtensionService(
+			termService: $this->termService,
+			dates: $this->caseDates(),
+			timerService: $timers,
+			declarations: $this->declarations,
+		);
+		$this->declarations->method('forCase')->willReturn(
+			$this->declared(['extensionPeriodDays' => 14])
+		);
+
+		$moved = $service->requestExtension('t1', 'Extra onderzoek nodig', '2026-09-15');
+
+		self::assertSame('2026-09-17', $moved['endDateCurrent']);
+		self::assertSame('2026-09-15', $moved['endDateBeforeRoll']);
+	}//end testTheRollDoesNotCountAgainstTheCeiling()
+
+	/**
 	 * A case type that allows no extension refuses every one of them.
 	 *
 	 * @return void
