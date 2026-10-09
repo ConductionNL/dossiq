@@ -132,6 +132,8 @@ class FakeQueueSource implements QueueSource {
  * @covers \OCA\Dossiq\Service\Queue\QueueOrdering
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Queue\QueueSourceCatalogue
+ * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
  * @uses \OCA\Dossiq\Service\Queue\QueueViewPreferences
  * @uses \OCA\Dossiq\Service\WorkQueueService
  */
