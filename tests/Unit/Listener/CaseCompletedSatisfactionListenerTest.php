@@ -55,10 +55,11 @@ class CaseCompletedSatisfactionListenerTest extends TestCase {
 	 *
 	 * @param bool $pipelinq Whether pipelinq serves the dispatch service.
 	 * @param bool $throws   Whether that service throws.
+	 * @param CaseTypeReader|null $reader A status reader to use instead of the real one.
 	 *
 	 * @return CaseCompletedSatisfactionListener The listener.
 	 */
-	private function listener(bool $pipelinq = true, bool $throws = false): CaseCompletedSatisfactionListener {
+	private function listener(bool $pipelinq = true, bool $throws = false, ?CaseTypeReader $reader = null): CaseCompletedSatisfactionListener {
 		$this->survey = new class($throws) {
 			/**
 			 * @var array<int, array<string, mixed>>
@@ -135,7 +136,7 @@ class CaseCompletedSatisfactionListenerTest extends TestCase {
 
 		return new CaseCompletedSatisfactionListener(
 			new ObjectSchemaSlugResolver($container, $logger),
-			new CaseTypeReader($settings),
+			($reader ?? new CaseTypeReader($settings)),
 			new ProgrammeConsumer(new PipelinqGateway($container, $logger), $logger),
 			$logger,
 		);
@@ -238,4 +239,86 @@ class CaseCompletedSatisfactionListenerTest extends TestCase {
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testTheHandoffNeverBlocksTheSave()
+
+	/**
+	 * An event that is not an update is none of this listener's business.
+	 *
+	 * @return void
+	 */
+	public function testAnotherEventIsIgnored(): void {
+		$this->listener()->handle(new \OCP\EventDispatcher\Event());
+
+		$this->assertSame([], $this->survey->calls);
+	}//end testAnotherEventIsIgnored()
+
+	/**
+	 * A case without a named initiator is still handed off, with no party.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutAnInitiatorIsHandedOffWithNoParty(): void {
+		$after = $this->caseIn('st-afgehandeld');
+		$after->setObject(['id' => 'case-1', 'status' => 'st-afgehandeld']);
+
+		$this->listener()->handle(new ObjectUpdatedEvent($after, $this->caseIn('st-in-behandeling')));
+
+		$this->assertCount(1, $this->survey->calls);
+		$this->assertSame([], $this->survey->calls[0]['contact']);
+	}//end testACaseWithoutAnInitiatorIsHandedOffWithNoParty()
+
+	/**
+	 * A status held as a reference row (or as junk) reads the same as an id.
+	 *
+	 * @return void
+	 */
+	public function testAStatusReferenceRowIsReadAndJunkIsNot(): void {
+		$row = $this->caseIn('x');
+		$row->setObject(['id' => 'case-1', 'status' => ['id' => 'st-afgehandeld']]);
+		$junk = $this->caseIn('x');
+		$junk->setObject(['id' => 'case-1', 'status' => 42]);
+		$open = $this->caseIn('st-in-behandeling');
+
+		$this->listener()->handle(new ObjectUpdatedEvent($junk, $open));
+		$this->assertSame([], $this->survey->calls);
+
+		$this->listener()->handle(new ObjectUpdatedEvent($row, $open));
+		$this->assertCount(1, $this->survey->calls);
+	}//end testAStatusReferenceRowIsReadAndJunkIsNot()
+
+	/**
+	 * An entity that cannot be read is skipped, not fatal.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableEntityIsSkipped(): void {
+		$broken = new class extends ObjectEntity {
+			/**
+			 * Always fails.
+			 *
+			 * @return array<string, mixed> Never returns.
+			 */
+			public function jsonSerialize(): array {
+				throw new RuntimeException('unreadable');
+			}
+		};
+
+		$this->listener()->handle(new ObjectUpdatedEvent($broken, $this->caseIn('st-in-behandeling')));
+
+		$this->assertSame([], $this->survey->calls);
+	}//end testAnUnreadableEntityIsSkipped()
+
+	/**
+	 * A failure inside the hand-off is logged and swallowed.
+	 *
+	 * @return void
+	 */
+	public function testAFailureInTheHandoffIsSwallowed(): void {
+		$reader = $this->createMock(CaseTypeReader::class);
+		$reader->method('isFinalStatus')->willThrowException(new RuntimeException('register down'));
+		$event = new ObjectUpdatedEvent($this->caseIn('st-afgehandeld'), $this->caseIn('st-in-behandeling'));
+
+		$this->listener(reader: $reader)->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testAFailureInTheHandoffIsSwallowed()
 }//end class
