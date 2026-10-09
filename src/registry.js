@@ -87,6 +87,7 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
@@ -470,6 +471,15 @@ const registry = {
 		component: CaseTypeTranslationsWidget,
 		...PANEL_WIDGET_META,
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
+	},
+	// --- What a case type opens to its applicant (portal-citizen-writes-on-the-case D3). ---
+	// @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	CaseTypePortalWidget: {
+		// @custom-widget-ratchet exclude every picker offers the case type's own statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers; a declared form would offer a free text field for a status uuid
+		kind: 'widget',
+		component: CaseTypePortalWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail: the Portal section. Reads the case type and its blueprint statuses, writes portalWritable, both windows and portalWithdrawal in one PATCH, and shows the sentence CaseTypePortalWithdrawalListener refuses an unreachable withdrawal with.',
 	},
 	// @spec openspec/specs/zaaktype-versioning/spec.md
 	CaseTypePublishDialog: {

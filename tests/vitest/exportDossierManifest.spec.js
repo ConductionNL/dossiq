@@ -125,7 +125,8 @@ describe('CaseDetail — the dossier zip is a download, not a transfer (REQ-ARCH
 	 *
 	 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 	 */
-	const CLAIMS = /\b(archiv\w*|archief\w*|transfer\w*|overdr\w*|overbreng\w*|e-?depot)\b/i
+	const CLAIMS =
+		/\b(archiv\w*|archief\w*|transfer\w*|overdr\w*|overbreng\w*|e-?depot)\b/i
 	const nl = JSON.parse(
 		fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8'),
 	).translations
@@ -139,6 +140,8 @@ describe('CaseDetail — the dossier zip is a download, not a transfer (REQ-ARCH
 		const label = exportAction().label
 		expect(label, `"${label}" claims to archive the case`).not.toMatch(CLAIMS)
 		expect(nl[label], `no Dutch entry for "${label}"`).toBeTruthy()
-		expect(nl[label], `"${nl[label]}" claims to archive the case`).not.toMatch(CLAIMS)
+		expect(nl[label], `"${nl[label]}" claims to archive the case`).not.toMatch(
+			CLAIMS,
+		)
 	})
 })
