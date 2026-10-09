@@ -64,6 +64,8 @@ interface ConcludedObjectServiceStub {
  * @covers \OCA\Dossiq\Listener\DecisionConcludedListener
  * @uses \OCA\Dossiq\Service\Support\CaseObjectReference
  * @uses \OCA\Dossiq\Service\Support\FlowDecisionSubject
+ * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  */
 class DecisionConcludedListenerTest extends TestCase {
 	use MakesBezwaarAuditTrail;
