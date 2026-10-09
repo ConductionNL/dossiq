@@ -119,6 +119,7 @@ export default {
 		 * The case id, from the prop or else from the route.
 		 *
 		 * @return {string} The case id, or ''.
+		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
 		 */
 		resolvedCaseId() {
 			const fromProp = this.caseId || ''
@@ -146,6 +147,7 @@ export default {
 			 *
 			 * @param {boolean} opened Whether the dialog is showing.
 			 * @return {void}
+			 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
 			 */
 			handler(opened) {
 				if (opened === true) {
