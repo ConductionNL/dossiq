@@ -228,9 +228,9 @@ describe('the cases list', () => {
 		expect(before.countSubtitle).toBeUndefined()
 	})
 
-	it('draws the table without the view switch and the column filters, which the design has none of', () => {
+	it('draws the view switch as the board does and drops the column filters, which the design has none of', () => {
 		// The filters stay in the filter panel; the full list keeps both.
-		expect(simple.showViewToggle).toBe(false)
+		expect(simple.showViewToggle).toBe(true)
 		expect(simple.headerFilters).toBe(false)
 		expect(before.showViewToggle).toBeUndefined()
 		expect(before.headerFilters).toBeUndefined()
@@ -244,6 +244,10 @@ describe('the cases list', () => {
 			folderSidebar,
 			showTitle,
 			countSubtitle,
+			countText,
+			footerNote,
+			bulkHint,
+			headerButtons,
 			showViewToggle,
 			headerFilters,
 			...others
