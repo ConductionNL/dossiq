@@ -161,6 +161,9 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 			case: heldId,
 			status: 'lopend',
 			startDate: '2026-01-05T09:00:00+00:00',
+			// Required by deadlineInstance (60-termijnbewaking.json): the end
+			// date as first calculated, before any extension moved it.
+			endDateCalculated: '2046-02-16',
 			endDateCurrent: '2046-02-16',
 		})
 		seededTerms.push(objectId(term))

@@ -659,6 +659,45 @@ export async function ensureTeam(
 	return { id: objectId(team), name }
 }
 
+/** The informatieobjecttype this process files its documents under. */
+let documentTypeForRun = ''
+
+/**
+ * File an informatieobject that satisfies its schema.
+ *
+ * `informatieobject` requires title, fileName, vertrouwelijkheidaanduiding
+ * and informatieobjecttype (lib/Settings/register.d/70-document-zaakdossier.json,
+ * since 96aa93a23; `titel` became `title` in f3ca3f782). A spec that filed a
+ * bare `{ titel }` was refused in its setup and never reached the behaviour it
+ * was written for, so the required fields are supplied here once. The type is
+ * created on first use and tracked like every other fixture.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param fields The document fields the spec cares about, `title` included.
+ * @return The created informatieobject.
+ */
+export async function seedDocument(
+	api: APIRequestContext,
+	token: string,
+	fields: Record<string, unknown> & { title: string },
+): Promise<any> {
+	if (documentTypeForRun === '') {
+		const type = await createObject(api, token, 'informatieobjecttype', {
+			description: `${RUN_PREFIX} Document`,
+			informatieobjectcategorie: 'incoming',
+			vertrouwelijkheidaanduiding: 'openbaar',
+		})
+		documentTypeForRun = objectId(type)
+	}
+	return createObject(api, token, 'informatieobject', {
+		fileName: `${String(fields.title).replace(/[^\w-]+/g, '-')}.pdf`,
+		vertrouwelijkheidaanduiding: 'openbaar',
+		informatieobjecttype: documentTypeForRun,
+		...fields,
+	})
+}
+
 /**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
