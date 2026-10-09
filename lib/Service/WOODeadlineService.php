@@ -30,9 +30,8 @@ use DateTime;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Exception\ExtensionCeilingReachedException;
-use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\WooTermExtension;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,11 +40,6 @@ use RuntimeException;
  * Service for WOO-mandated deadline calculation and tracking.
  *
  * @psalm-suppress UnusedClass
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The Woo deadline sits where
- * the case, its term instance, the extension ceiling and the notification meet.
- * The four exception and date types over the limit are value types, not
- * collaborators; the extension itself goes through TermijnService.
  *
  * @spec openspec/changes/woo-case-type/tasks.md#task-4
  */
@@ -57,11 +51,6 @@ class WOODeadlineService {
 	 * WOO initial processing period in days (WOO Art. 4.4).
 	 */
 	private const INITIAL_PERIOD_DAYS = 28;
-
-	/**
-	 * WOO extension period in days (WOO Art. 4.4 verdaging).
-	 */
-	private const EXTENSION_PERIOD_DAYS = 14;
 
 	/**
 	 * Days before deadline at which T-7 warning is emitted.
@@ -77,11 +66,8 @@ class WOODeadlineService {
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
-	 * @param TermijnService|null $termService The case's term instances. Required for an
-	 *        extension; absent, an extension is refused rather than written onto the case.
-	 * @param DeadlineExtensionService|null $extension The one extension path, which rolls
-	 *        the date and holds the ceiling (REQ-WTR-003).
-	 * @param TermDeclarationReader|null $declarations The case type's `extensionPeriod`.
+	 * @param WooTermExtension|null $extension The Woo extension over the term engine.
+	 *        Absent, an extension is refused rather than written onto the case.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -89,9 +75,7 @@ class WOODeadlineService {
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
-		private readonly ?TermijnService $termService = null,
-		private readonly ?DeadlineExtensionService $extension = null,
-		private readonly ?TermDeclarationReader $declarations = null,
+		private readonly ?WooTermExtension $extension = null,
 	) {
 	}//end __construct()
 
@@ -122,19 +106,12 @@ class WOODeadlineService {
 	}//end calculate()
 
 	/**
-	 * Extend the Woo decision term of a case once, through the term engine.
+	 * Extend the case's Woo term once, by the case type's declared extension.
 	 *
-	 * Woo art. 4.4 lid 2 allows one extension of at most two weeks. The new
-	 * end is the term instance's current end plus the case type's
-	 * `extensionPeriod` (P14D for the Woo case type), handed to
-	 * `DeadlineExtensionService::requestExtension()`, which rolls it by the
-	 * Algemene termijnenwet, enforces the definition's ceiling and records the
-	 * reason as the `verleng` event's rationale. The case `deadline` follows
-	 * the instance through the term write path. Nothing is written onto the
-	 * case here: the keys this used to write (`expectedResolution`,
-	 * `deadlineVerlengd`, `verdagingReden`) are not declared on the case
-	 * schema, so the one-extension cap that read them back did not hold
-	 * (REQ-WTR-003).
+	 * Delegated to {@see WooTermExtension}, which moves the statutory term
+	 * instance through the one extension path. A case without a statutory
+	 * term, or a second extension, is refused there with the 409 the
+	 * controller translates (REQ-WTR-003).
 	 *
 	 * @param string $caseId The case UUID
 	 * @param string $reason Mandatory reason for the extension
@@ -142,7 +119,6 @@ class WOODeadlineService {
 	 * @return array{caseId: string, previousDeadline: string, deadline: string, extensionReason: string, countExtensions: int}
 	 *
 	 * @throws \InvalidArgumentException If the reason is empty
-	 * @throws RefusedException When the case has no statutory term or its extension is used up (409)
 	 * @throws \RuntimeException When the term engine is not available
 	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
@@ -152,89 +128,12 @@ class WOODeadlineService {
 			throw new InvalidArgumentException('A reason is required for deadline extension');
 		}
 
-		if ($this->termService === null || $this->extension === null) {
+		if ($this->extension === null) {
 			throw new RuntimeException('The term engine is not available, so the Woo term cannot be extended');
 		}
 
-		$instance = $this->statutoryInstance(caseId: $caseId);
-		if ($instance === null) {
-			throw new RefusedException(
-				rule: 'woo-term-missing',
-				sentence: 'This case has no statutory term to extend.',
-				status: RefusedException::STATUS_REFUSED,
-			);
-		}
-
-		$previous = substr((string)($instance['endDateCurrent'] ?? ''), 0, 10);
-		$current = $this->dates->parse($previous, 'endDateCurrent');
-		$newEnd = $current->modify('+' . $this->extensionPeriodDays(caseId: $caseId) . ' days');
-
-		try {
-			$updated = $this->extension->requestExtension(
-				termInstanceId: (string)($instance['id'] ?? ''),
-				rationale: $reason,
-				newEndDate: $this->dates->formatCalendarDate($newEnd)
-			);
-		} catch (ExtensionCeilingReachedException $e) {
-			throw new RefusedException(
-				rule: 'woo-one-extension',
-				sentence: 'This term was already extended. Woo art. 4.4 lid 2 allows one extension of at most two weeks.',
-				status: RefusedException::STATUS_REFUSED,
-				previous: $e,
-			);
-		}
-
-		$deadline = substr((string)($updated['endDateCurrent'] ?? ''), 0, 10);
-
-		$this->logger->info(
-			'WOO deadline extended for case ' . $caseId . ' to ' . $deadline,
-			['app' => Application::APP_ID],
-		);
-
-		return [
-			'caseId' => $caseId,
-			'previousDeadline' => $previous,
-			'deadline' => $deadline,
-			'extensionReason' => $reason,
-			'countExtensions' => (int)($updated['countExtensions'] ?? 0),
-		];
+		return $this->extension->extend(caseId: $caseId, reason: $reason);
 	}//end extendDeadline()
-
-	/**
-	 * The case's statutory term instance, newest first.
-	 *
-	 * @param string $caseId The case UUID
-	 *
-	 * @return array<string, mixed>|null The instance, or null when the case has none.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) TermKind::ofInstance() is a pure
-	 * classifier over the instance array, with no state to inject.
-	 */
-	private function statutoryInstance(string $caseId): ?array {
-		foreach ((array)$this->termService?->instancesForCase(caseId: $caseId) as $instance) {
-			if (is_array($instance) === true && TermKind::ofInstance(instance: $instance) === TermKind::STATUTORY) {
-				return $instance;
-			}
-		}
-
-		return null;
-	}//end statutoryInstance()
-
-	/**
-	 * The extension the case type declares, in days; the Woo two weeks when it declares none.
-	 *
-	 * @param string $caseId The case UUID
-	 *
-	 * @return int The extension period in days.
-	 */
-	private function extensionPeriodDays(string $caseId): int {
-		$declared = (int)($this->declarations?->forCase(caseId: $caseId)['extensionPeriodDays'] ?? 0);
-		if ($declared > 0) {
-			return $declared;
-		}
-
-		return self::EXTENSION_PERIOD_DAYS;
-	}//end extensionPeriodDays()
 
 	/**
 	 * Check case deadline and emit T-7 warning notifications.

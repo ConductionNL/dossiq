@@ -110,6 +110,34 @@ class DeadlineExtensionService {
 	}//end requestExtension()
 
 	/**
+	 * Request an extension of a fixed number of days past a known end date.
+	 *
+	 * The end date is computed here, beside the roll: {@see requestExtension()}
+	 * rolls it by the Algemene termijnenwet and holds the definition's ceiling.
+	 *
+	 * @param string $termInstanceId Instance id.
+	 * @param string $rationale      Non-empty reason.
+	 * @param string $fromDate       The term's current end date (YYYY-MM-DD).
+	 * @param int    $days           The extension in calendar days.
+	 *
+	 * @return array<string, mixed> The updated instance.
+	 *
+	 * @throws RuntimeException With validation failures (cited AWB rule).
+	 * @throws RefusedException When the move is longer than the case type declares.
+	 *
+	 * @spec openspec/specs/woo-case-type/spec.md
+	 */
+	public function requestExtensionByDays(string $termInstanceId, string $rationale, string $fromDate, int $days): array {
+		$newEnd = $this->dates->parse($fromDate, 'endDateCurrent')->modify('+' . $days . ' days');
+
+		return $this->requestExtension(
+			termInstanceId: $termInstanceId,
+			rationale: $rationale,
+			newEndDate: $this->dates->formatCalendarDate($newEnd)
+		);
+	}//end requestExtensionByDays()
+
+	/**
 	 * Request a supervisor-approved AWB 4:14 lid 3 verlenging.
 	 *
 	 * Bypasses the TermijnDefinitie's aantalVerlengingen ceiling and is

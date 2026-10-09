@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineCalculator;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -167,15 +168,17 @@ class CaseDeadlineListenerTest extends TestCase {
 			$settings,
 			new CaseTypeResolver(new CaseTypeStore($settings)),
 			$this->logger,
-			new TermijnTimerService(
-				settingsService: $settings,
-				logger: $this->logger,
-				dates: $this->caseDates(),
-				fallbackCalendar: new WorkingDayCalculator(),
+			new CaseDeadlineCalculator(
+				timerService: new TermijnTimerService(
+					settingsService: $settings,
+					logger: $this->logger,
+					dates: $this->caseDates(),
+					fallbackCalendar: new WorkingDayCalculator(),
+				),
+				definitions: new TermDefinitions(settingsService: $settings, logger: $this->logger),
+				slugs: new CaseTypeSlugResolver(settingsService: $settings, logger: $this->logger),
 			),
 			$this->mirror,
-			new TermDefinitions(settingsService: $settings, logger: $this->logger),
-			new CaseTypeSlugResolver(settingsService: $settings, logger: $this->logger),
 		);
 	}//end listener()
 

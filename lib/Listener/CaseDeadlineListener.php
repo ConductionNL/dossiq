@@ -51,14 +51,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use DateInterval;
-use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineCalculator;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
-use OCA\Dossiq\Service\Termijn\TermDefinitions;
-use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -72,38 +68,35 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) It listens to two
- * OpenRegister events and reads the case type, its parent chain and its term
- * definition before rolling the date on the calendar; the types over the limit
- * are those events and the date value types, not further collaborators.
- *
  * @spec openspec/specs/woo-case-type/spec.md
  */
 class CaseDeadlineListener implements IEventListener {
 	/**
+	 * The start date plus the term, rolled on the calendar.
+	 *
+	 * @var CaseDeadlineCalculator
+	 */
+	private readonly CaseDeadlineCalculator $calculator;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService           $settingsService Schema slug bridge.
-	 * @param CaseTypeResolver          $resolver        The effective blueprint of a case type.
-	 * @param LoggerInterface           $logger          Structured logger.
-	 * @param TermijnTimerService|null  $timerService    The engine calendar bridge; a
-	 *        statutory term end lands on a day the administered calendar works.
-	 * @param CaseDeadlineMirror|null   $mirror          The date the term write path
+	 * @param SettingsService             $settingsService Schema slug bridge.
+	 * @param CaseTypeResolver            $resolver        The effective blueprint of a case type.
+	 * @param LoggerInterface             $logger          Structured logger.
+	 * @param CaseDeadlineCalculator|null $calculator      The start date plus the term, rolled on
+	 *        the calendar; without one the date is answered unrolled.
+	 * @param CaseDeadlineMirror|null     $mirror          The date the term write path
 	 *        recorded for this case's next save.
-	 * @param TermDefinitions|null      $definitions     The case type's term definition,
-	 *        read for its `rollToWorkingDay` switch.
-	 * @param CaseTypeSlugResolver|null $slugs           A case carries its case type as a
-	 *        uuid; term definitions are keyed by slug.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $resolver,
 		private readonly LoggerInterface $logger,
-		private readonly ?TermijnTimerService $timerService = null,
+		?CaseDeadlineCalculator $calculator = null,
 		private readonly ?CaseDeadlineMirror $mirror = null,
-		private readonly ?TermDefinitions $definitions = null,
-		private readonly ?CaseTypeSlugResolver $slugs = null,
 	) {
+		$this->calculator = ($calculator ?? new CaseDeadlineCalculator());
 	}//end __construct()
 
 	/**
@@ -181,12 +174,17 @@ class CaseDeadlineListener implements IEventListener {
 			return [];
 		}
 
-		$dates = $this->deadlineFrom(
-			startDate: (string)($payload['startDate'] ?? ''),
-			term: $term,
-			definitie: $this->definitionFor(caseTypeId: $caseTypeId)
-		);
-		if ($dates === null) {
+		try {
+			$dates = $this->calculator->deadlineFrom(
+				startDate: (string)($payload['startDate'] ?? ''),
+				term: $term,
+				definitie: $this->definitionFor(caseTypeId: $caseTypeId)
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: could not derive a case deadline',
+				['startDate' => (string)($payload['startDate'] ?? ''), 'term' => $term, 'error' => $e->getMessage()]
+			);
 			return [];
 		}
 
@@ -250,64 +248,23 @@ class CaseDeadlineListener implements IEventListener {
 	}//end effectiveTerm()
 
 	/**
-	 * The case type's active term definition, for its roll switch.
+	 * The case type's active term definition, or an empty one when it cannot be read.
 	 *
-	 * An unreadable definition answers an empty array, and an empty definition
-	 * gets the roll: the Awt applies by law, not by configuration.
+	 * An unreadable definition still gets the roll: the Awt applies by law,
+	 * not by configuration.
 	 *
 	 * @param string $caseTypeId The case's case type (uuid or slug).
 	 *
 	 * @return array<string, mixed> The definition, or an empty array.
 	 */
 	private function definitionFor(string $caseTypeId): array {
-		if ($this->definitions === null || $caseTypeId === '') {
-			return [];
-		}
-
 		try {
-			$slug = ($this->slugs?->toSlug(reference: $caseTypeId) ?? $caseTypeId);
-			if ($slug === '') {
-				return [];
-			}
-
-			return ($this->definitions->activeFor(caseType: $slug) ?? []);
+			return $this->calculator->definitionFor(caseTypeId: $caseTypeId);
 		} catch (Throwable $e) {
 			$this->logger->debug('Dossiq: case deadline listener could not read the term definition: ' . $e->getMessage());
 			return [];
 		}
 	}//end definitionFor()
-
-	/**
-	 * The start date plus the term, rolled, and the date before the roll.
-	 *
-	 * An empty start date means today, which is what the declarative
-	 * `startDate` calculation fills in on create.
-	 *
-	 * @param string               $startDate The case's start date, or the empty string.
-	 * @param string               $term      An ISO 8601 duration such as P28D.
-	 * @param array<string, mixed> $definitie The term definition, for `rollToWorkingDay`.
-	 *
-	 * @return array{deadline: string, deadlineBeforeRoll: string}|null The dates, or null when unusable.
-	 */
-	private function deadlineFrom(string $startDate, string $term, array $definitie): ?array {
-		try {
-			$start = new DateTimeImmutable('today');
-			if (trim($startDate) !== '') {
-				$start = new DateTimeImmutable(substr(trim($startDate), 0, 10));
-			}
-
-			$end = $start->add(new DateInterval($term));
-			$rolled = ($this->timerService?->rollTermEndFor(date: $end, definitie: $definitie) ?? $end);
-
-			return ['deadline' => $rolled->format('Y-m-d'), 'deadlineBeforeRoll' => $end->format('Y-m-d')];
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: could not derive a case deadline',
-				['startDate' => $startDate, 'term' => $term, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end deadlineFrom()
 
 	/**
 	 * Read an entity's payload, or null when it cannot be read.

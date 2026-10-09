@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineFollower;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Service\Termijn\WooTermExtension;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WOODeadlineService;
@@ -272,8 +273,11 @@ class WOODeadlineServiceTest extends TestCase {
 			$logger,
 			$this->caseDates(),
 			$timer,
-			$terms,
-			new DeadlineExtensionService(termService: $terms, dates: $this->caseDates(), timerService: $timer),
+			new WooTermExtension(
+				termService: $terms,
+				extension: new DeadlineExtensionService(termService: $terms, dates: $this->caseDates(), timerService: $timer),
+				logger: $logger,
+			),
 		);
 	}//end wooOverTheEngine()
 
