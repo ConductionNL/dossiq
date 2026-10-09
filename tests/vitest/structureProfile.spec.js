@@ -13,8 +13,9 @@
  *
  * What has to stay true:
  *   - the full profile is byte for byte what it was before profiles existed;
- *   - the simple menu is the nine entries of the design, in order, under
- *     two captions, the first group having none;
+ *   - the simple menu is the eight fixed entries of the design, in order,
+ *     under three captions, the first group having none, the third (My case
+ *     types) holding what each user chose (case-types-in-my-menu);
  *   - nothing is lost: every entry the full menu offers is in the simple menu
  *     or its settings, or a page the simple menu opens links to it.
  *
@@ -22,6 +23,7 @@
  * for the simple file is held here and nowhere else.
  *
  * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
+ * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -104,7 +106,7 @@ describe('the simple profile', () => {
 	const built = build(simpleFile)
 	const main = section(built.menu, 'main')
 
-	it('shows nine entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
+	it('shows eight fixed entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
 		expect(main.map((entry) => entry.id)).toEqual([
 			'Dashboard',
 			'WorkGroup',
@@ -113,14 +115,14 @@ describe('the simple profile', () => {
 			'Cases',
 			'WorkflowBoard',
 			'Tasks',
-			'WooRequestsMenu',
+			'MyCaseTypesCaption',
 			'RelationsCaption',
 			'Contacts',
 			'OrganisationsMenu',
 		])
 		const captions = main.filter((entry) => entry.type === 'caption')
-		expect(captions.map((entry) => entry.label)).toEqual(['Cases', 'Relations'])
-		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(9)
+		expect(captions.map((entry) => entry.label)).toEqual(['Cases', 'My case types', 'Relations'])
+		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
 	})
 
 	it('is flat: no entry holds another', () => {
@@ -183,18 +185,19 @@ describe('the simple profile', () => {
 		})
 	})
 
-	it('opens Woo requests on the cases list, narrowed to the seeded Woo case type', () => {
-		const woo = main.find((entry) => entry.id === 'WooRequestsMenu')
-		expect(woo.route).toBe('Cases')
+	it('names no case type itself: My case types holds what each user chose', () => {
+		// The fixed Woo requests entry is gone. The entries under My case types
+		// come from the /api/manifest delta at orders 31 to 60, so the caption
+		// sits at 30 and Relations starts at 80, leaving room for all thirty.
+		expect(main.some((entry) => entry.query?.caseType)).toBe(false)
+		const caption = main.find((entry) => entry.id === 'MyCaseTypesCaption')
+		expect(caption).toMatchObject({ type: 'caption', order: 30 })
+		const relations = main.find((entry) => entry.id === 'RelationsCaption')
+		expect(relations.order).toBeGreaterThan(60)
 
-		// The uuid is fixed by the seed, so it is the same on every instance.
-		const seed = read('lib', 'Settings', 'register.d', '81-woo-verzoek.json')
-		expect(seed).toContain(`"${woo.query.caseType}"`)
-		expect(seed).toMatch(/"slug":\s*"woo-verzoek"/)
-
-		// And the list reads that key from the address: the library merges the
-		// query into the fetch (useSelfFetchList.resolveQueryFilters), with or
-		// without a pane. The full profile's folder pane filters on the same
+		// And the list reads `?caseType=` from the address: the library merges
+		// the query into the fetch (useSelfFetchList.resolveQueryFilters), with
+		// or without a pane. The full profile's folder pane filters on the same
 		// key; the simple profile has no pane (the design has none) and the
 		// case type stays a column of the list.
 		const fullCases = build(fullFile).pages.find((page) => page.id === 'Cases')
