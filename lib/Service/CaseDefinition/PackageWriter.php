@@ -138,6 +138,142 @@ class PackageWriter {
 	}//end writeCollections()
 
 	/**
+	 * Write a whole package's rows, or none of them.
+	 *
+	 * A group is the rows bound for one schema, named by the settings key that
+	 * resolves it (`case_type_schema`, `workflow_template_schema`, or whatever a
+	 * seed file names). Every group goes in one run: when any row fails, every
+	 * row this run created goes back out, across all groups, so a half-installed
+	 * package never shows up as a case type with no statuses.
+	 *
+	 * A row the instance already holds is left alone and reported as skipped.
+	 * That is what makes a second install of the same package a no-op, and it
+	 * is why nothing here replaces: a replaced row cannot be rolled back.
+	 *
+	 * @param string                                                          $package The package id, for the messages.
+	 * @param array<int, array{schemaKey: string, rows: array<int, array<string, mixed>>}> $groups  The rows, per schema key.
+	 *
+	 * @return array{status: string, message: string, written: array<int, array<string, mixed>>, skipped: array<int, string>}
+	 *         Each written entry carries schemaKey, schema, id and row.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function writePackage(string $package, array $groups): array {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		if ($objectService === null || $register === '') {
+			return [
+				'status' => 'error',
+				'message' => "Package '{$package}' was not installed: this instance has no OpenRegister register configured.",
+				'written' => [],
+				'skipped' => [],
+			];
+		}
+
+		$written = [];
+		$skipped = [];
+
+		try {
+			foreach ($groups as $group) {
+				$this->writeGroup(
+					objectService: $objectService,
+					register: $register,
+					group: $group,
+					written: $written,
+					skipped: $skipped,
+				);
+			}
+		} catch (\Throwable $e) {
+			$this->undo(written: $written);
+
+			return [
+				'status' => 'error',
+				'message' => "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage(),
+				'written' => [],
+				'skipped' => [],
+			];
+		}
+
+		return [
+			'status' => 'success',
+			'message' => "Package '{$package}': " . count($written) . ' row(s) written, ' . count($skipped) . ' already present.',
+			'written' => $written,
+			'skipped' => $skipped,
+		];
+	}//end writePackage()
+
+	/**
+	 * Take back rows a package write created.
+	 *
+	 * Public because the write is not the last step of an install: the
+	 * installer records every row in the shipped-set ledger afterwards, and a
+	 * row it cannot record is a row it has to take back.
+	 *
+	 * @param array<int, array{id: string}> $written The rows {@see self::writePackage()} reported written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function undo(array $written): void {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		if ($objectService === null) {
+			return;
+		}
+
+		$this->rollBack(objectService: $objectService, register: $register, ids: array_column($written, 'id'));
+	}//end undo()
+
+	/**
+	 * Write the rows of one group, collecting what became of each.
+	 *
+	 * @param object                                                        $objectService The OpenRegister object service.
+	 * @param string                                                        $register      The register.
+	 * @param array{schemaKey: string, rows: array<int, array<string, mixed>>} $group         The group.
+	 * @param array<int, array<string, mixed>>                              $written       Collects the rows created.
+	 * @param array<int, string>                                            $skipped       Collects the ids left alone.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the group's schema key resolves to nothing.
+	 */
+	private function writeGroup(
+		object $objectService,
+		string $register,
+		array $group,
+		array &$written,
+		array &$skipped,
+	): void {
+		$schema = $this->settings->getConfigValue(key: $group['schemaKey']);
+		if ($schema === '') {
+			throw new RuntimeException("No schema is configured for '{$group['schemaKey']}', so its rows cannot be written.");
+		}
+
+		foreach ($group['rows'] as $row) {
+			$outcome = $this->writeRow(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				row: $row,
+				strategy: self::STRATEGY_SKIP,
+			);
+
+			if ($outcome['kind'] === 'skipped') {
+				$skipped[] = $outcome['id'];
+				continue;
+			}
+
+			$written[] = [
+				'schemaKey' => $group['schemaKey'],
+				'schema' => $schema,
+				'id' => $outcome['id'],
+				'row' => $row,
+			];
+		}
+	}//end writeGroup()
+
+	/**
 	 * Write every row of every collection, and say what became of each.
 	 *
 	 * `$created` is taken BY REFERENCE because the caller needs it after a

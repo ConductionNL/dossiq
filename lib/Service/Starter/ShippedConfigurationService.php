@@ -92,13 +92,17 @@ class ShippedConfigurationService {
 	 * @param string               $targetSchema The seeded object's schema slug.
 	 * @param string               $targetObject The seeded object's id.
 	 * @param array<string, mixed> $object       The object as it shipped.
+	 * @param string|null          $version      The set's version, when the caller
+	 *                                           read it from the package itself;
+	 *                                           null to look it up in ShippedSets.
 	 *
 	 * @return boolean True when the stamp was written.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
-	public function stamp(string $set, string $targetSchema, string $targetObject, array $object): bool {
-		$version = $this->sets->versionOf(set: $set);
+	public function stamp(string $set, string $targetSchema, string $targetObject, array $object, ?string $version = null): bool {
+		$version = ($version ?? $this->sets->versionOf(set: $set));
 		if ($version === '' || $targetObject === '' || $targetSchema === '') {
 			// ADR-102: a stamp that cannot name its set is worse than no stamp,
 			// because the screen would report the object as shipped and be
@@ -136,6 +140,42 @@ class ShippedConfigurationService {
 
 		return ($saved !== null);
 	}//end stamp()
+
+	/**
+	 * Whether the ledger can be written at all.
+	 *
+	 * Asked before an install writes a row: a row the ledger cannot record is
+	 * a row an upgrade can never account for.
+	 *
+	 * @return boolean True when the ledger schema is configured and reachable.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function ledgerAvailable(): bool {
+		return $this->store->available(configKey: self::LEDGER);
+	}//end ledgerAvailable()
+
+	/**
+	 * The highest version of a set this instance has recorded any row from.
+	 *
+	 * @param string $set The set name.
+	 *
+	 * @return string The version, or '' when nothing from the set is recorded.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function installedVersion(string $set): string {
+		$rows = $this->store->rows(configKey: self::LEDGER, filters: ['set' => $set]);
+		$highest = '';
+		foreach (($rows ?? []) as $row) {
+			$version = (string)($row['setVersion'] ?? '');
+			if (($row['set'] ?? '') === $set && ($highest === '' || version_compare($version, $highest, '>') === true)) {
+				$highest = $version;
+			}
+		}
+
+		return $highest;
+	}//end installedVersion()
 
 	/**
 	 * What an administrator should be told about one object.
