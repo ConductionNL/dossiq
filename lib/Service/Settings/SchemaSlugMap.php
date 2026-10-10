@@ -225,6 +225,8 @@ class SchemaSlugMap {
 		'wooDocumentAssessment' => 'woo_assessment_schema',
 		// The settled Woo refusal grounds (woo-refusal-grounds-list).
 		'wooRefusalGround' => 'woo_refusal_ground_schema',
+		// What a Woo delivery sent out, frozen with its publication (woo-delivered-set-is-a-record).
+		'wooDeliveredSet' => 'woo_delivered_set_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

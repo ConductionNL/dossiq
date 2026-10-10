@@ -40,6 +40,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Listener\BeschikkingImmutabilityListener;
 use OCA\Dossiq\Listener\BewijsstukImmutabilityListener;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
+use OCA\Dossiq\Listener\WooDeliveredSetGuard;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -93,6 +94,17 @@ class ImmutabilityListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
 			listener: BeschikkingImmutabilityListener::class
+		);
+
+		// woo-delivered-set-is-a-record REQ-WDS-002: a frozen delivered set
+		// and the assessments it names refuse change, through every writer.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: WooDeliveredSetGuard::class
+		);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: WooDeliveredSetGuard::class
 		);
 	}//end register()
 }//end class

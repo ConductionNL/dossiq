@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -102,6 +103,7 @@ class WooPublicationService {
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
+	 * @param WooDeliveredSetWriter|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -112,6 +114,7 @@ class WooPublicationService {
 		private readonly ?WooDossierReturn $dossierReturn = null,
 		?WooCaseLedger $caseLedger = null,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
+		private readonly ?WooDeliveredSetWriter $deliveredSets = null,
 	) {
 		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
@@ -170,41 +173,64 @@ class WooPublicationService {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function selectDisclosableDocuments(array $assessments, callable $documentLoader): array {
-		$disclosable = [];
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader)['documents'];
+	}//end selectDisclosableDocuments()
+
+	/**
+	 * The disclosable documents and, beside each, what the delivered set records of it.
+	 *
+	 * The same matrix as selectDisclosableDocuments(), which reads its first
+	 * half: `niet_openbaar` is never delivered, `deels_openbaar` only as its
+	 * finalized redaction, `openbaar` as itself. The second half names the
+	 * assessment, the file that went out and the original it came from
+	 * (woo-delivered-set-is-a-record REQ-WDS-001); the original never goes
+	 * into the publication.
+	 *
+	 * @param array<int, array<string, mixed>> $assessments    The case's document assessments.
+	 * @param callable                         $documentLoader `fn(string $documentRef): ?array`.
+	 *
+	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function collectDelivery(array $assessments, callable $documentLoader): array {
+		$documents = [];
+		$items = [];
 
 		foreach ($assessments as $assessment) {
 			$classification = (string)($assessment['classification'] ?? '');
-
-			if ($classification === 'niet_openbaar') {
-				continue;
-			}
-
+			$originalRef = (string)($assessment['documentRef'] ?? '');
+			$deliveredRef = '';
 			if ($classification === 'openbaar') {
-				$documentRef = (string)($assessment['documentRef'] ?? '');
-				$document = $documentLoader($documentRef);
-				if ($document !== null) {
-					$disclosable[] = $document;
-				}
+				$deliveredRef = $originalRef;
+			} else if ($classification === 'deels_openbaar') {
+				// No finalized redaction yet: excluded. Never fall back to the original.
+				$deliveredRef = (string)($assessment['redactedDocumentRef'] ?? '');
+			}
 
+			if ($deliveredRef === '') {
 				continue;
 			}
 
-			if ($classification === 'deels_openbaar') {
-				$redactedRef = $assessment['redactedDocumentRef'] ?? null;
-				if (empty($redactedRef) === true) {
-					// No finalized redaction yet — exclude. Never fall back to the original.
-					continue;
-				}
-
-				$redactedDocument = $documentLoader((string)$redactedRef);
-				if ($redactedDocument !== null) {
-					$disclosable[] = $redactedDocument;
-				}
+			$document = $documentLoader($deliveredRef);
+			if ($document === null) {
+				continue;
 			}
+
+			$documents[] = $document;
+			$items[] = [
+				'assessment' => (string)($assessment['id'] ?? ($assessment['uuid'] ?? (($assessment['@self'] ?? [])['id'] ?? ''))),
+				'classification' => $classification,
+				'deliveredRef' => $deliveredRef,
+				'originalRef' => $originalRef,
+				'fileName' => (string)($document['fileName'] ?? ($document['title'] ?? '')),
+				'content' => (string)($document['content'] ?? ''),
+			];
 		}//end foreach
 
-		return $disclosable;
-	}//end selectDisclosableDocuments()
+		return ['documents' => $documents, 'items' => $items];
+	}//end collectDelivery()
 
 	/**
 	 * Build the OpenCatalogi publication payload for a WOO decision.
@@ -293,9 +319,22 @@ class WooPublicationService {
 			decisionId: $decisionId,
 		);
 
-		$disclosable = $this->loadDisclosableDocuments(objectService: $objectService, register: $register, caseId: $caseId);
+		$delivery = $this->loadDelivery(objectService: $objectService, register: $register, caseId: $caseId);
+		$disclosable = $delivery['documents'];
 		if (count($disclosable) === 0) {
 			return ['available' => false, 'reason' => 'no_publishable_documents'];
+		}
+
+		// THE SET FIRST (woo-delivered-set-is-a-record REQ-WDS-001): what goes
+		// out is recorded before it goes out. No record, no delivery.
+		$setId = '';
+		if ($this->deliveredSets !== null) {
+			try {
+				$setId = $this->deliveredSets->idOf(row: $this->deliveredSets->open(caseId: $caseId, decisionId: $decisionId, delivered: $delivery['items']));
+			} catch (Throwable $e) {
+				$this->logger->error('WooPublicationService::publish could not record the delivered set', ['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]);
+				return ['available' => false, 'reason' => 'delivered_set_not_written'];
+			}
 		}
 
 		$payload = $this->buildPayload(case: $case, decision: $decision);
@@ -308,8 +347,11 @@ class WooPublicationService {
 				'WooPublicationService::publish failed',
 				['app' => Application::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
+			$this->discardSet(setId: $setId);
 			return ['available' => false, 'reason' => 'opencatalogi_api_error'];
 		}
+
+		$this->freezeSet(setId: $setId, publicationId: $publicationId);
 
 		$publicationUrl = $this->buildPublicationUrl(publicationId: $publicationId);
 
@@ -341,8 +383,48 @@ class WooPublicationService {
 			'available' => true,
 			'publicationId' => $publicationId,
 			'publicationUrl' => $publicationUrl,
+			'deliveredSet' => $setId,
 		];
 	}//end publish()
+
+	/**
+	 * Delete the pending set of a failed delivery; a failure here is logged, the answer stands.
+	 *
+	 * @param string $setId The set, or '' for none.
+	 *
+	 * @return void
+	 */
+	private function discardSet(string $setId): void {
+		if ($setId === '' || $this->deliveredSets === null) {
+			return;
+		}
+
+		try {
+			$this->deliveredSets->discard(setId: $setId);
+		} catch (Throwable $e) {
+			$this->logger->error('WooPublicationService: the pending delivered set of a failed publish could not be deleted', ['app' => Application::APP_ID, 'setId' => $setId, 'error' => $e->getMessage()]);
+		}
+	}//end discardSet()
+
+	/**
+	 * Freeze the set with its publication; a failure is logged loudly, the publication stands.
+	 *
+	 * @param string $setId         The set, or '' for none.
+	 * @param string $publicationId The publication.
+	 *
+	 * @return void
+	 */
+	private function freezeSet(string $setId, string $publicationId): void {
+		if ($setId === '' || $this->deliveredSets === null) {
+			return;
+		}
+
+		try {
+			$this->deliveredSets->freeze(setId: $setId, publicationId: $publicationId);
+		} catch (Throwable $e) {
+			$this->logger->error('WooPublicationService: the delivered set could not be frozen; it stays pending', ['app' => Application::APP_ID, 'setId' => $setId, 'error' => $e->getMessage()]);
+		}
+	}//end freezeSet()
 
 
 
@@ -382,9 +464,9 @@ class WooPublicationService {
 	 * @param string $register The dossiq register slug.
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array<int, array<string, mixed>> The disclosable documents.
+	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
 	 */
-	private function loadDisclosableDocuments(object $objectService, string $register, string $caseId): array {
+	private function loadDelivery(object $objectService, string $register, string $caseId): array {
 		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		$documentSchema = $this->settingsService->getConfigValue('document_schema');
 
@@ -411,8 +493,8 @@ class WooPublicationService {
 			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $documentSchema, id: $documentRef);
 		};
 
-		return $this->selectDisclosableDocuments(assessments: $assessments, documentLoader: $documentLoader);
-	}//end loadDisclosableDocuments()
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader);
+	}//end loadDelivery()
 
 	/**
 	 * Create-or-update the publication in OpenCatalogi and attach every
@@ -518,6 +600,13 @@ class WooPublicationService {
 
 		$decision['wooPublication']['status'] = self::STATUS_WITHDRAWN;
 		$decision['wooPublication']['withdrawnAt'] = date('c');
+
+		// The set stays frozen and records the withdraw (REQ-WDS-002).
+		try {
+			$this->deliveredSets?->markWithdrawn(caseId: (string)($decision['case'] ?? $caseId), publicationId: $publicationId);
+		} catch (Throwable $e) {
+			$this->logger->error('WooPublicationService: the delivered set could not record the withdraw', ['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]);
+		}
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 

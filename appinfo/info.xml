@@ -975,6 +975,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <commands>
         <command>OCA\Dossiq\Command\AdoptShippedFlowsCommand</command>
+        <command>OCA\Dossiq\Command\VerifyWooDeliveredSetCommand</command>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Dossiq\Command\MigrateCaseTeamsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
