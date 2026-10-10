@@ -7,7 +7,6 @@
 <template>
 	<div class="checklists-tab">
 		<div class="checklists-tab__header">
-			<h3>{{ t('dossiq', 'VTH Inspection Checklists') }}</h3>
 			<NcButton type="primary" @click="openEditor(null)">
 				{{ t('dossiq', 'New checklist') }}
 			</NcButton>
@@ -331,12 +330,12 @@ export default {
 
 .checklists-tab__badge--active {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .checklists-tab__badge--inactive {
 	background: var(--color-warning);
-	color: white;
+	color: var(--color-warning-text);
 }
 
 .checklists-tab__meta {

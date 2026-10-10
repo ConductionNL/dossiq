@@ -228,7 +228,7 @@
           }
         },
         "icon": "TimerSandFull",
-        "version": "1.5.0",
+        "version": "1.5.1",
         "x-schema-org": "schema:Action",
         "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",

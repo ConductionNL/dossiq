@@ -8,7 +8,8 @@
   - spec asks for a template to be offered wherever its kind is created, and
   - dossiq owns one of those four surfaces:
   -
-  -   - result: mounted, in the close form, wherever a case is given its result.
+  -   - result: mounted, in CaseLifecycleMenuDialog on every act that carries a
+  -     result, the close form a handler reaches from the case page.
   -   - task: NOT mounted. A task is an engine row written through
   -     lib/Service/Task/EngineTaskGateway.php, and the dialog that creates one
   -     belongs to OpenRegister's flow-task surface, not to this repo.
