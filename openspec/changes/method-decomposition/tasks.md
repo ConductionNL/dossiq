@@ -277,5 +277,22 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         (`ZgwParentStateResolver::draftState`), and the two ZTC catches that moved from the
         controller into `lib/Service` share one logged `searchRowsOrNone()`. 259 sites, 259
         allowed, both new entries classed with a reason.
-- [ ] Slice 7, the singletons (ZgwJwtValidator, LoadDefaultZgwMappings, ZgwRulesBase,
-      ContactMomentService, PlanItemCascade)
+  - [x] 6b `DrcController` (5: the class-level CyclomaticComplexity, NPathComplexity and
+        ExcessiveMethodLength, plus 2 on `uploadChunk`; with them gone no Drc method crosses a
+        threshold). The EIO create, delete, update, chunk upload and unlock each lost their
+        sub-steps to private helpers (`createEio`, `eioEnglishData`/`mapEioBody`/`mapEioOut`,
+        `storeInhoud` now shared by create and update, `destroyEio`/`isReadableEio`,
+        `saveEioKeepingItsLock`, `refuseChunk`/`mergeUploadedChunks`/`chunkProgress`,
+        `refuseUnforcedUnlock`, `lockIdFromLockSystem`/`lockIdFromObject`), and the two dead
+        `is_array()` guards behind `@phpstan-ignore` went (applyInboundMapping returns `array`
+        natively). Characterisation: `tests/Unit/Controller/DrcEioLifecycleTest.php` (8 tests,
+        green on the old controller first) beside the existing Drc contract tests.
+- [ ] Slice 6c `ZrcController` (12, plus 15 method findings its class-level suppressions hide)
+- [ ] Slice 7, the singletons
+  - [x] `ZgwJwtValidator::validate` (2): token decoding, signature check and user binding
+        are their own methods. Characterisation: `tests/Unit/Service/ZgwJwtValidatorTest.php`
+        (3 tests: every refusal in order, user binding, algorithm override; green before and after).
+  - [x] `PlanItemCascade::cascadePass` (1): one pass loops `evaluateItem()`, which uses
+        `criteriaFire()`/`hasCriteria()` and `completeStageIfDone()`. Covered by the existing
+        `tests/Unit/Service/Cmmn/` suite (47 tests, green before and after).
+  - [ ] LoadDefaultZgwMappings (2), ZgwRulesBase (1); ContactMomentService waits on #3563

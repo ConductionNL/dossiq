@@ -116,10 +116,6 @@ class PlanItemCascade {
 	 * @param array<int, string> $changedKeys Subset of touchedKeys whose value changed.
 	 *
 	 * @return bool Whether this pass changed any item's state.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — one evaluation pass over the state machine's
-	 *   own branches (exit sentry, entry sentry, mandatory-cascade, stage auto-complete); splitting
-	 *   it would scatter one pass across several methods that all need the same $context snapshot.
 	 */
 	private function cascadePass(array &$itemsById, array &$state, array $touchedKeys, array $changedKeys): bool {
 		$changed = false;
@@ -131,59 +127,113 @@ class PlanItemCascade {
 		];
 
 		foreach ($itemsById as $id => $item) {
-			$current = $state['planItemStates'][$id] ?? $this->transitions->initialState();
-			if ($this->transitions->isTerminal(state: $current) === true) {
-				continue;
-			}
-
-			if ($this->tree->isParentActive(item: $item, state: $state) === false) {
-				continue;
-			}
-
-			$exitCriteria = $item['exitCriteria'] ?? [];
-			if (is_array($exitCriteria) === true && count($exitCriteria) > 0
-				&& $this->sentries->anyFires(sentries: $exitCriteria, context: $context) === true
-			) {
-				$this->stateMachine->transition(
-					item: $item,
-					from: $current,
-					to: PlanItemTransitions::STATE_TERMINATED,
-					itemsById: $itemsById,
-					state: $state,
-				);
+			if ($this->evaluateItem(id: $id, item: $item, itemsById: $itemsById, state: $state, context: $context) === true) {
 				$changed = true;
-				continue;
 			}
-
-			if ($current === PlanItemTransitions::STATE_AVAILABLE) {
-				$entryCriteria = $item['entryCriteria'] ?? [];
-				$hasNoCriteria = (is_array($entryCriteria) === false || count($entryCriteria) === 0);
-				$satisfied = $hasNoCriteria || $this->sentries->anyFires(sentries: $entryCriteria, context: $context);
-
-				if ($satisfied === true) {
-					$this->advanceFromAvailable(item: $item, current: $current, itemsById: $itemsById, state: $state);
-					$changed = true;
-				}
-
-				continue;
-			}
-
-			if ($current === PlanItemTransitions::STATE_ACTIVE && $item['type'] === PlanItemTransitions::TYPE_STAGE) {
-				if ($this->tree->stageMandatoryChildrenAllTerminal(stageId: $id, itemsById: $itemsById, state: $state) === true) {
-					$this->stateMachine->transition(
-						item: $item,
-						from: $current,
-						to: PlanItemTransitions::STATE_COMPLETED,
-						itemsById: $itemsById,
-						state: $state,
-					);
-					$changed = true;
-				}
-			}//end if
-		}//end foreach
+		}
 
 		return $changed;
 	}//end cascadePass()
+
+	/**
+	 * Evaluate one plan item against the pass's snapshot: an exit sentry terminates it, a
+	 * satisfied entry advances it from `available`, and an active stage whose mandatory
+	 * children are all terminal completes.
+	 *
+	 * @param int|string $id The plan item id.
+	 * @param array<string, mixed> $item The plan item.
+	 * @param array<string, array<string, mixed>> $itemsById Plan items by id.
+	 * @param array<string, mixed> $state Runtime state, mutated in place.
+	 * @param array<string, mixed> $context The sentry context snapshot of this pass.
+	 *
+	 * @return bool Whether the item's state changed.
+	 */
+	private function evaluateItem(int|string $id, array $item, array &$itemsById, array &$state, array $context): bool {
+		$current = $state['planItemStates'][$id] ?? $this->transitions->initialState();
+		if ($this->transitions->isTerminal(state: $current) === true
+			|| $this->tree->isParentActive(item: $item, state: $state) === false
+		) {
+			return false;
+		}
+
+		if ($this->criteriaFire(criteria: $item['exitCriteria'] ?? [], context: $context) === true) {
+			$this->stateMachine->transition(
+				item: $item,
+				from: $current,
+				to: PlanItemTransitions::STATE_TERMINATED,
+				itemsById: $itemsById,
+				state: $state,
+			);
+			return true;
+		}
+
+		if ($current === PlanItemTransitions::STATE_AVAILABLE) {
+			// No entry criteria means the item may start; otherwise one of them must fire.
+			$entryCriteria = $item['entryCriteria'] ?? [];
+			if ($this->hasCriteria(criteria: $entryCriteria) === true
+				&& $this->criteriaFire(criteria: $entryCriteria, context: $context) === false
+			) {
+				return false;
+			}
+
+			$this->advanceFromAvailable(item: $item, current: $current, itemsById: $itemsById, state: $state);
+			return true;
+		}
+
+		return $this->completeStageIfDone(id: $id, item: $item, current: $current, itemsById: $itemsById, state: $state);
+	}//end evaluateItem()
+
+	/**
+	 * Complete an active stage whose mandatory children are all terminal.
+	 *
+	 * @param int|string $id The plan item id.
+	 * @param array<string, mixed> $item The plan item.
+	 * @param string $current Its current state.
+	 * @param array<string, array<string, mixed>> $itemsById Plan items by id.
+	 * @param array<string, mixed> $state Runtime state, mutated in place.
+	 *
+	 * @return bool Whether the stage completed.
+	 */
+	private function completeStageIfDone(int|string $id, array $item, string $current, array &$itemsById, array &$state): bool {
+		if ($current !== PlanItemTransitions::STATE_ACTIVE || $item['type'] !== PlanItemTransitions::TYPE_STAGE
+			|| $this->tree->stageMandatoryChildrenAllTerminal(stageId: $id, itemsById: $itemsById, state: $state) === false
+		) {
+			return false;
+		}
+
+		$this->stateMachine->transition(
+			item: $item,
+			from: $current,
+			to: PlanItemTransitions::STATE_COMPLETED,
+			itemsById: $itemsById,
+			state: $state,
+		);
+		return true;
+	}//end completeStageIfDone()
+
+	/**
+	 * Whether a criteria list declares any sentry.
+	 *
+	 * @param mixed $criteria The item's entry or exit criteria.
+	 *
+	 * @return bool True when it is a non-empty list.
+	 */
+	private function hasCriteria(mixed $criteria): bool {
+		return is_array($criteria) === true && count($criteria) > 0;
+	}//end hasCriteria()
+
+	/**
+	 * Whether any sentry of a non-empty criteria list fires against the snapshot.
+	 *
+	 * @param mixed $criteria The item's entry or exit criteria.
+	 * @param array<string, mixed> $context The sentry context snapshot of this pass.
+	 *
+	 * @return bool True when the list is non-empty and one of its sentries fires.
+	 */
+	private function criteriaFire(mixed $criteria, array $context): bool {
+		return $this->hasCriteria(criteria: $criteria) === true
+			&& $this->sentries->anyFires(sentries: $criteria, context: $context) === true;
+	}//end criteriaFire()
 
 	/**
 	 * Advance a plan item whose entry criteria just became satisfied: a
