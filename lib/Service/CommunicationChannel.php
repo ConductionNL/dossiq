@@ -110,6 +110,8 @@ class CommunicationChannel {
 	 * @param mixed $value The stored or incoming value.
 	 *
 	 * @return string|null The slug.
+	 *
+	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md#requirement-a-case-s-communication-channel-is-a-slug-mapped-at-every-boundary-req-portal-017
 	 */
 	public function toSlug(mixed $value): ?string {
 		if (is_scalar($value) === false) {
@@ -140,6 +142,8 @@ class CommunicationChannel {
 	 * @param mixed $value The incoming value.
 	 *
 	 * @return array<string, string|null>
+	 *
+	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md#requirement-a-case-s-communication-channel-is-a-slug-mapped-at-every-boundary-req-portal-017
 	 */
 	public function normalise(mixed $value): array {
 		if (is_scalar($value) === false || trim((string)$value) === '') {
@@ -163,6 +167,8 @@ class CommunicationChannel {
 	 * @param string|null $source The value it came in with.
 	 *
 	 * @return string The URL, or ''.
+	 *
+	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md#requirement-a-case-s-communication-channel-is-a-slug-mapped-at-every-boundary-req-portal-017
 	 */
 	public function toZgwUrl(?string $slug, ?string $source): string {
 		$source = trim((string)$source);
@@ -193,6 +199,8 @@ class CommunicationChannel {
 	 * @param array<string, mixed> $mapped The case fields the mapping produced.
 	 *
 	 * @return array<string, mixed> The case fields, never holding a URL in the channel.
+	 *
+	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md#requirement-a-case-s-communication-channel-is-a-slug-mapped-at-every-boundary-req-portal-017
 	 */
 	public function inbound(array $body, array $mapped): array {
 		$value = ($mapped['communicationChannel'] ?? null);
@@ -221,6 +229,8 @@ class CommunicationChannel {
 	 * @param array<string, mixed> $mapped The zaak the mapping produced.
 	 *
 	 * @return array<string, mixed> The zaak with its `communicatiekanaal`.
+	 *
+	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md#requirement-a-case-s-communication-channel-is-a-slug-mapped-at-every-boundary-req-portal-017
 	 */
 	public function outbound(array $case, array $mapped): array {
 		$slug = null;
@@ -244,6 +254,8 @@ class CommunicationChannel {
 	 * @param string $value The value.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-contact-channel-follows-the-resident/specs/portal-contribution/spec.md#requirement-a-case-s-communication-channel-is-a-slug-mapped-at-every-boundary-req-portal-017
 	 */
 	public function isUrl(string $value): bool {
 		$scheme = strtolower((string)parse_url($value, PHP_URL_SCHEME));
