@@ -33,7 +33,7 @@ use OCA\Decidiq\Event\DecisionConcludedEvent;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
-use OCA\Dossiq\Service\Permit\PermitIssuer;
+use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseObjectReference;
 use OCA\Dossiq\Service\Support\FlowDecisionSubject;
@@ -419,15 +419,15 @@ class DecisionConcludedListenerTest extends TestCase {
 	}//end listenerForDecision()
 
 	/**
-	 * Decision 172: an approved outcome asks the permit issuer about the
-	 * resolved case; a rejected one does not.
+	 * Decision 172: every terminal outcome is handed to the product issuer
+	 * with its status, so the case type decides which outcome issues.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
 	 */
-	public function testAnApprovedOutcomeIssuesThePermitAndARejectedOneDoesNot(): void {
-		foreach (['approved' => 1, 'rejected' => 0] as $status => $times) {
+	public function testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus(): void {
+		foreach (['approved', 'rejected'] as $status) {
 			$objectService = $this->createMock(ConcludedObjectServiceStub::class);
 			$objectService->method('searchObjectsBySlug')
 				->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
@@ -436,10 +436,10 @@ class DecisionConcludedListenerTest extends TestCase {
 			$materialiser = $this->createMock(BesluitMaterialisationService::class);
 			$materialiser->method('materialiseFromConcludedEvent')->willReturn(['ok' => true]);
 
-			$permits = $this->createMock(PermitIssuer::class);
-			$permits->expects($this->exactly($times))
-				->method('onApprovedDecision')
-				->with('case-9', 'dec-1', '2026-06-15T10:00:00+00:00')
+			$products = $this->createMock(CaseOutcomeProductIssuer::class);
+			$products->expects($this->once())
+				->method('onConcludedDecision')
+				->with('case-9', 'dec-1', $status, '2026-06-15T10:00:00+00:00')
 				->willReturn(null);
 
 			$listener = new DecisionConcludedListener(
@@ -447,11 +447,11 @@ class DecisionConcludedListenerTest extends TestCase {
 				decisionMaterialiser: $materialiser,
 				bacService: $this->createMock(AdvisoryCommitteeService::class),
 				logger: $this->createMock(LoggerInterface::class),
-				permits: $permits
+				products: $products
 			);
 			$listener->handle($this->event(sourceApp: 'procest', status: $status));
 		}
-	}//end testAnApprovedOutcomeIssuesThePermitAndARejectedOneDoesNot()
+	}//end testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus()
 
 
 	/**

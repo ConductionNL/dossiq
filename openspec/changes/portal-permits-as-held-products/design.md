@@ -31,12 +31,16 @@ RBAC: staff of the permit's case type read and write; the portal reads through t
 
 ## D2. Issuing
 
-A permit is issued on decidiq's decision outcome event (Ruben 10 Oct, decision 172, Q-dossiq-L2-4, against the recommendation). decidiq raises `DecisionConcludedEvent`; dossiq's `DecisionConcludedListener` already resolves the case it is about and materialises the besluit. When the status is `approved` it then calls `PermitIssuer`:
+A held product is issued on the decision app's outcome event (Ruben 10 Oct, decision 172, Q-dossiq-L2-4). Following decision 182 (procedures are configuration, code is generic) the code knows no permits: `CaseOutcomeProductIssuer` is a generic capability, and the parking permit is one configuration of it.
 
-- a case whose type has `issuesPermit` gets one permit per decision (idempotent on `decision`): the holder is the case's `portalSubject`, `validFrom` the decision day, the details copied from the case as `detailsFromCase` names them (a top-level case field or a case-type property answer), the plate stored without dashes;
-- a change case, whose type has `issuesPermit.changesPlateOf`, sets its `nieuwKenteken` on the permit its `permit` answer names, only when that permit is the requester's and still in force (D3).
+decidiq raises `DecisionConcludedEvent`; dossiq's `DecisionConcludedListener` resolves the case, materialises the besluit, and hands every terminal outcome with its status to the issuer. The case type's product declaration (`issuesPermit`) decides the rest:
 
-Revoking a permit is not decided by a positive outcome and stays out of this change.
+- `issueOn`: the outcome statuses that issue (default `approved`);
+- `schema` (default `permit`), the static fields `kind` and `theme`, `titleTemplate`, and `detailsFromCase` (product field => case field or case-type answer); `compactFields` are stored in capitals without spaces or dashes (a licence plate);
+- one product per decision (idempotent on `decision`), the holder the case's `portalSubject`, `validFrom` the decision day;
+- `changesProduct` {answer, set} on a change case type: the outcome sets the mapped answers on the product the `answer` names, only when it is the requester's and in force (D3). The parking change case type declares `{answer: permit, set: {kenteken: nieuwKenteken}}`.
+
+Revoking a product is not decided by a positive outcome and stays out of this change.
 
 ## D3. Changing the plate
 

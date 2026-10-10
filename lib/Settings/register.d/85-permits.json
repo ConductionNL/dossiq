@@ -99,7 +99,7 @@
           "issuesPermit": {
             "type": "object",
             "title": "Issues a permit",
-            "description": "When a case of this type is granted, the permit the resident then holds.",
+            "description": "When a case of this type ends with a positive outcome, the product the resident then holds (a permit, a licence, a pass). Read by the generic case-outcome product issuer; everything procedure-specific is declared here (decision 182).",
             "properties": {
               "kind": {
                 "type": "string",
@@ -127,10 +127,43 @@
                 "title": "Change case type",
                 "description": "The case type a request to change the permit opens."
               },
-              "changesPlateOf": {
+              "schema": {
                 "type": "string",
-                "title": "Changes the plate of",
-                "description": "Set on a change case type: the case changes the licence plate of the permit it names."
+                "title": "Product schema",
+                "description": "The schema of the held product a positive outcome writes. Absent means permit."
+              },
+              "issueOn": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Issued on outcome",
+                "description": "The decision outcome statuses that issue the product, as the decision app reports them. Absent means approved."
+              },
+              "compactFields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Compact fields",
+                "description": "Product fields stored in capitals without spaces or dashes, for example a licence plate."
+              },
+              "changesProduct": {
+                "type": "object",
+                "title": "Changes a held product",
+                "description": "Set on a change case type: a positive outcome changes the product the case names instead of issuing one.",
+                "properties": {
+                  "answer": {
+                    "type": "string",
+                    "title": "Product answer",
+                    "description": "The case answer that names the product to change."
+                  },
+                  "set": {
+                    "type": "object",
+                    "title": "Fields to set",
+                    "description": "Each product field and the case answer its new value comes from."
+                  }
+                }
               }
             }
           }
@@ -165,7 +198,13 @@
             "kenteken": "kenteken",
             "adres": "adres"
           },
-          "changeCaseType": "5e7a1000-0000-4000-a000-000000000002"
+          "changeCaseType": "5e7a1000-0000-4000-a000-000000000002",
+          "compactFields": [
+            "kenteken"
+          ],
+          "issueOn": [
+            "approved"
+          ]
         }
       },
       {
@@ -190,7 +229,18 @@
         "issuesPermit": {
           "kind": "parkeren-bewoner",
           "theme": "parkeren",
-          "changesPlateOf": "permit"
+          "changesProduct": {
+            "answer": "permit",
+            "set": {
+              "kenteken": "nieuwKenteken"
+            }
+          },
+          "compactFields": [
+            "kenteken"
+          ],
+          "issueOn": [
+            "approved"
+          ]
         }
       },
       {

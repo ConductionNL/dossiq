@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Tests for issuing a permit on decidiq's positive decision outcome.
+ * Tests for the generic case-outcome product issuer, configured as a parking permit.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -18,9 +18,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\Permit;
+namespace OCA\Dossiq\Tests\Unit\Service\Product;
 
-use OCA\Dossiq\Service\Permit\PermitIssuer;
+use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -30,7 +30,7 @@ use Psr\Log\NullLogger;
 /**
  * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
  */
-class PermitIssuerTest extends TestCase {
+class CaseOutcomeProductIssuerTest extends TestCase {
 
 	private const CASE_ID = '5e7a1000-0000-4000-a000-00000000ac01';
 
@@ -52,9 +52,9 @@ class PermitIssuerTest extends TestCase {
 	/**
 	 * The issuer under test.
 	 *
-	 * @var PermitIssuer
+	 * @var CaseOutcomeProductIssuer
 	 */
-	private PermitIssuer $issuer;
+	private CaseOutcomeProductIssuer $issuer;
 
 	/**
 	 * Build the store and the issuer.
@@ -152,9 +152,11 @@ class PermitIssuerTest extends TestCase {
 						'theme' => 'parkeren',
 						'titleTemplate' => 'Bewonersvergunning {{adres}}',
 						'detailsFromCase' => ['kenteken' => 'kenteken', 'adres' => 'adres'],
+						'compactFields' => ['kenteken'],
+						'issueOn' => ['approved'],
 					],
 				],
-				self::CHANGE_TYPE_ID => ['id' => self::CHANGE_TYPE_ID, 'issuesPermit' => ['changesPlateOf' => 'permit']],
+				self::CHANGE_TYPE_ID => ['id' => self::CHANGE_TYPE_ID, 'issuesPermit' => ['changesProduct' => ['answer' => 'permit', 'set' => ['kenteken' => 'nieuwKenteken']], 'compactFields' => ['kenteken']]],
 			],
 			'permit' => [],
 		];
@@ -164,7 +166,7 @@ class PermitIssuerTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq'][$key] ?? $default)
 		);
-		$this->issuer = new PermitIssuer(settingsService: $settings, logger: new NullLogger());
+		$this->issuer = new CaseOutcomeProductIssuer(settingsService: $settings, logger: new NullLogger());
 	}//end setUp()
 
 	/**
@@ -174,7 +176,7 @@ class PermitIssuerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnApprovedDecisionIssuesThePermitOnce(): void {
-		$permit = $this->issuer->onApprovedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, decidedAt: '2026-10-08T14:00:00+02:00');
+		$permit = $this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: '2026-10-08T14:00:00+02:00');
 
 		$this->assertNotNull($permit);
 		$this->assertCount(1, $this->objects->saved);
@@ -193,7 +195,7 @@ class PermitIssuerTest extends TestCase {
 		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'permit', payload: $written));
 
 		// The same outcome delivered again writes nothing new.
-		$this->issuer->onApprovedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, decidedAt: '2026-10-08T14:00:00+02:00');
+		$this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: '2026-10-08T14:00:00+02:00');
 		$this->assertCount(1, $this->objects->saved);
 	}//end testAnApprovedDecisionIssuesThePermitOnce()
 
@@ -205,14 +207,14 @@ class PermitIssuerTest extends TestCase {
 	 */
 	public function testNoPermitWithoutAnIssuingTypeOrAHolder(): void {
 		$this->objects->store['caseType'][self::TYPE_ID]['issuesPermit'] = null;
-		$this->assertNull($this->issuer->onApprovedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, decidedAt: null));
+		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 
 		$this->setUp();
 		$this->objects->store['case'][self::CASE_ID]['portalSubject'] = '';
-		$this->assertNull($this->issuer->onApprovedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, decidedAt: null));
+		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 		$this->assertSame([], $this->objects->saved);
 
-		$this->assertNull($this->issuer->onApprovedDecision(caseId: 'missing', decisionId: self::DECISION_ID, decidedAt: null));
+		$this->assertNull($this->issuer->onConcludedDecision(caseId: 'missing', decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 	}//end testNoPermitWithoutAnIssuingTypeOrAHolder()
 
 	/**
@@ -224,12 +226,26 @@ class PermitIssuerTest extends TestCase {
 	public function testAnApprovedChangeCaseSetsTheNewPlate(): void {
 		$this->objects->store['permit']['permit-1'] = ['id' => 'permit-1', 'portalSubject' => 'subj-sanne', 'status' => 'active', 'kenteken' => 'GZ482K'];
 
-		$permit = $this->issuer->onApprovedDecision(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, decidedAt: null);
+		$permit = $this->issuer->onConcludedDecision(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null);
 		$this->assertSame('HX901B', $permit['kenteken']);
 		$this->assertSame('HX901B', $this->objects->store['permit']['permit-1']['kenteken']);
 
 		$this->objects->store['permit']['permit-1'] = ['id' => 'permit-1', 'portalSubject' => 'subj-other', 'status' => 'active', 'kenteken' => 'GZ482K'];
-		$this->assertNull($this->issuer->onApprovedDecision(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, decidedAt: null));
+		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 		$this->assertSame('GZ482K', $this->objects->store['permit']['permit-1']['kenteken']);
 	}//end testAnApprovedChangeCaseSetsTheNewPlate()
+
+	/**
+	 * An outcome the case type does not declare issues nothing, and a
+	 * declared one does: the trigger is configuration.
+	 *
+	 * @return void
+	 */
+	public function testOnlyADeclaredOutcomeIssues(): void {
+		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'rejected', decidedAt: null));
+		$this->assertSame([], $this->objects->saved);
+
+		$this->objects->store['caseType'][self::TYPE_ID]['issuesPermit']['issueOn'] = ['granted'];
+		$this->assertNotNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'Granted', decidedAt: null));
+	}//end testOnlyADeclaredOutcomeIssues()
 }//end class

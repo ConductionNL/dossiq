@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Permit;
+namespace OCA\Dossiq\Service\Product;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -19,30 +19,49 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Issue a permit when decidiq concludes a case's decision positively.
+ * Issue (or change) the product a resident holds when a case ends with a positive outcome.
  *
- * Ruben decided on 10 Oct (decision 172, Q-dossiq-L2-4), against the
- * recommendation, that a permit is issued on decidiq's decision outcome event
- * when the outcome is positive. DecisionConcludedListener hears that event
- * (`status: approved`) for a dossiq case and hands it here:
+ * Generic capability (decision 182: procedures are configuration, code is
+ * generic). What a case type issues is declared on the case type
+ * (`issuesPermit`, the product declaration):
  *
- * - a case whose type declares `issuesPermit` gets one permit per decision:
- *   the holder is the case's portal subject, valid from the decision day,
- *   details copied from the case as `detailsFromCase` says;
- * - a change case (`issuesPermit.changesPlateOf`) sets the new plate on the
- *   permit it names, when that permit is the requester's and still in force.
+ * - `schema` the product schema (default `permit`), and static fields such
+ *   as `kind` and `theme`;
+ * - `issueOn` the outcome statuses that issue it (default `approved`);
+ * - `titleTemplate` and `detailsFromCase` (product field => case field or
+ *   case-type answer); `compactFields` are stored in capitals without spaces
+ *   or dashes;
+ * - on a change case type, `changesProduct` {answer, set}: the outcome sets
+ *   fields on the product the case's `answer` names, from the case answers
+ *   `set` maps, instead of issuing one.
  *
- * Revoking a permit is not decided by this event and stays out (design D2).
+ * Parking permits are one configuration of this (decision 172: issued on the
+ * decision app's outcome event). The decision outcome reaches it through
+ * DecisionConcludedListener.
  *
  * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
  */
-class PermitIssuer {
+class CaseOutcomeProductIssuer {
 	use SearchesObjects;
 
 	/**
-	 * The permit schema slug.
+	 * The product schema when the declaration names none.
 	 */
-	public const SCHEMA = 'permit';
+	public const DEFAULT_SCHEMA = 'permit';
+
+	/**
+	 * The outcome statuses that issue when the declaration names none.
+	 *
+	 * @var array<int, string>
+	 */
+	public const DEFAULT_ISSUE_ON = ['approved'];
+
+	/**
+	 * Declaration keys that are copied onto the product as static fields.
+	 *
+	 * @var array<int, string>
+	 */
+	private const STATIC_FIELDS = ['kind', 'theme'];
 
 	/**
 	 * Constructor.
@@ -57,20 +76,21 @@ class PermitIssuer {
 	}//end __construct()
 
 	/**
-	 * Act on a positive decision outcome for a case.
+	 * Act on a concluded decision about a case.
 	 *
-	 * Never throws: the decision stands whether or not a permit could be
+	 * Never throws: the decision stands whether or not a product could be
 	 * written, and a failure is logged with the case and the decision.
 	 *
 	 * @param string      $caseId     The case the decision is about.
 	 * @param string      $decisionId The concluded decision.
+	 * @param string      $status     The outcome status the decision app reported.
 	 * @param string|null $decidedAt  When it concluded (ISO 8601), or null.
 	 *
-	 * @return array<string, mixed>|null The permit written or changed, or null.
+	 * @return array<string, mixed>|null The product written or changed, or null.
 	 *
 	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
 	 */
-	public function onApprovedDecision(string $caseId, string $decisionId, ?string $decidedAt): ?array {
+	public function onConcludedDecision(string $caseId, string $decisionId, string $status, ?string $decidedAt): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '' || trim($caseId) === '') {
@@ -80,57 +100,63 @@ class PermitIssuer {
 		try {
 			$case = $this->read(objectService: $objectService, register: $register, schema: 'case', id: $caseId);
 			$type = $this->read(objectService: $objectService, register: $register, schema: 'caseType', id: (string)(($case ?? [])['caseType'] ?? ''));
-			$issues = (($type ?? [])['issuesPermit'] ?? null);
-			if ($case === null || is_array($issues) === false || $issues === []) {
+			$declared = (($type ?? [])['issuesPermit'] ?? null);
+			if ($case === null || is_array($declared) === false || $declared === []) {
 				return null;
 			}
 
-			if (trim((string)($issues['changesPlateOf'] ?? '')) !== '') {
-				return $this->changePlate(objectService: $objectService, register: $register, case: $case);
+			$issueOn = (array)($declared['issueOn'] ?? self::DEFAULT_ISSUE_ON);
+			if (in_array(strtolower(trim($status)), array_map('strtolower', $issueOn), true) === false) {
+				return null;
+			}
+
+			if (is_array($declared['changesProduct'] ?? null) === true) {
+				return $this->change(objectService: $objectService, register: $register, case: $case, declared: $declared);
 			}
 
 			return $this->issue(
 				objectService: $objectService,
 				register: $register,
 				case: $case,
-				issues: $issues,
+				declared: $declared,
 				decisionId: $decisionId,
 				decidedAt: $decidedAt
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Dossiq: the decision was approved, but its permit could not be written',
+				'Dossiq: the decision concluded, but the product it issues could not be written',
 				['case' => $caseId, 'decision' => $decisionId, 'error' => $e->getMessage()]
 			);
 			return null;
 		}//end try
-	}//end onApprovedDecision()
+	}//end onConcludedDecision()
 
 	/**
-	 * Write the case's permit, once per decision.
+	 * Write the case's product, once per decision.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
 	 * @param string               $register      The register.
 	 * @param array<string, mixed> $case          The case.
-	 * @param array<string, mixed> $issues        The case type's `issuesPermit`.
+	 * @param array<string, mixed> $declared      The case type's product declaration.
 	 * @param string               $decisionId    The decision.
 	 * @param string|null          $decidedAt     When it concluded.
 	 *
-	 * @return array<string, mixed>|null The permit.
+	 * @return array<string, mixed>|null The product.
 	 */
-	private function issue(object $objectService, string $register, array $case, array $issues, string $decisionId, ?string $decidedAt): ?array {
+	private function issue(object $objectService, string $register, array $case, array $declared, string $decisionId, ?string $decidedAt): ?array {
 		$holder = trim((string)($case['portalSubject'] ?? ''));
 		if ($holder === '') {
-			$this->logger->info('Dossiq: an approved case without a portal subject issues no permit', ['case' => ($case['id'] ?? '')]);
+			$this->logger->info('Dossiq: a case without a portal subject issues no product', ['case' => ($case['id'] ?? '')]);
 			return null;
 		}
 
+		$schema = $this->schemaOf(declared: $declared);
 		$existing = $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): array => $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
-				schema: self::SCHEMA,
+				schema: $schema,
 				filters: ['decision' => $decisionId, '_limit' => 1],
 			)
 		);
@@ -138,68 +164,75 @@ class PermitIssuer {
 			return $existing[0];
 		}
 
-		$permit = [
-			'title' => $this->title(template: (string)($issues['titleTemplate'] ?? ''), case: $case),
-			'kind' => (string)($issues['kind'] ?? ''),
-			'theme' => (string)($issues['theme'] ?? ''),
+		$product = [
+			'title' => $this->title(template: (string)($declared['titleTemplate'] ?? ''), case: $case),
 			'portalSubject' => $holder,
 			'case' => (string)($case['id'] ?? ''),
 			'decision' => $decisionId,
 			'validFrom' => $this->day(instant: $decidedAt),
 			'status' => 'active',
 		];
-		foreach ((array)($issues['detailsFromCase'] ?? []) as $field => $source) {
-			$value = $this->caseValue(case: $case, name: (string)$source);
-			if ($value === '') {
-				continue;
-			}
-
-			if ($field === 'kenteken') {
-				$value = PermitPlateChange::normalisePlate(plate: $value);
-			}
-
-			$permit[(string)$field] = $value;
+		foreach (self::STATIC_FIELDS as $field) {
+			$product[$field] = trim((string)($declared[$field] ?? ''));
 		}
 
-		$permit = array_filter($permit, static fn ($value): bool => $value !== '');
+		foreach ((array)($declared['detailsFromCase'] ?? []) as $field => $source) {
+			$product[(string)$field] = $this->shaped(declared: $declared, field: (string)$field, value: $this->caseValue(case: $case, name: (string)$source));
+		}
+
+		$product = array_filter($product, static fn ($value): bool => $value !== '');
 
 		return $this->runAsSystemIfAvailable(
 			objectService: $objectService,
 			operation: fn (): ?array => $this->saveObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: self::SCHEMA,
-				object: $permit
+				schema: $schema,
+				object: $product
 			)
 		);
 	}//end issue()
 
 	/**
-	 * Set the plate an approved change case asked for on the permit it names.
+	 * Set the fields a change case declares on the product it names.
 	 *
 	 * @param object               $objectService OpenRegister's object service.
 	 * @param string               $register      The register.
 	 * @param array<string, mixed> $case          The change case.
+	 * @param array<string, mixed> $declared      The change case type's product declaration.
 	 *
-	 * @return array<string, mixed>|null The permit, changed.
+	 * @return array<string, mixed>|null The product, changed.
 	 */
-	private function changePlate(object $objectService, string $register, array $case): ?array {
-		$permitId = $this->caseValue(case: $case, name: 'permit');
-		$plate = PermitPlateChange::normalisePlate(plate: $this->caseValue(case: $case, name: 'nieuwKenteken'));
-		$permit = $this->read(objectService: $objectService, register: $register, schema: self::SCHEMA, id: $permitId);
-		if ($permit === null || $plate === '') {
+	private function change(object $objectService, string $register, array $case, array $declared): ?array {
+		$changes = (array)$declared['changesProduct'];
+		$schema = $this->schemaOf(declared: $declared);
+		$productId = $this->caseValue(case: $case, name: (string)($changes['answer'] ?? ''));
+		$product = $this->read(objectService: $objectService, register: $register, schema: $schema, id: $productId);
+		if ($product === null) {
 			return null;
 		}
 
-		// Only the requester's own permit, and only while it is in force: a
+		// Only the requester's own product, and only while it is in force: a
 		// change case can name any id, and the decision is about this case.
-		if ((string)($permit['portalSubject'] ?? '') !== (string)($case['portalSubject'] ?? '')
-			|| (string)($permit['status'] ?? 'active') !== 'active'
+		if ((string)($product['portalSubject'] ?? '') !== (string)($case['portalSubject'] ?? '')
+			|| (string)($product['status'] ?? 'active') !== 'active'
 		) {
 			$this->logger->warning(
-				'Dossiq: a change case names a permit that is not its requester\'s or not in force',
-				['case' => ($case['id'] ?? ''), 'permit' => $permitId]
+				'Dossiq: a change case names a product that is not its requester\'s or not in force',
+				['case' => ($case['id'] ?? ''), 'product' => $productId]
 			);
+			return null;
+		}
+
+		$set = [];
+		foreach ((array)($changes['set'] ?? []) as $field => $answer) {
+			$value = $this->shaped(declared: $declared, field: (string)$field, value: $this->caseValue(case: $case, name: (string)$answer));
+			if ($value !== '') {
+				$set[(string)$field] = $value;
+			}
+		}
+
+		if ($set === []) {
 			return null;
 		}
 
@@ -208,12 +241,45 @@ class PermitIssuer {
 			operation: fn (): ?array => $this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: self::SCHEMA,
-				id: $permitId,
-				changes: ['kenteken' => $plate]
+				schema: $schema,
+				id: $productId,
+				changes: $set
 			)
 		);
-	}//end changePlate()
+	}//end change()
+
+	/**
+	 * The product schema a declaration names.
+	 *
+	 * @param array<string, mixed> $declared The declaration.
+	 *
+	 * @return string The schema slug.
+	 */
+	private function schemaOf(array $declared): string {
+		$schema = trim((string)($declared['schema'] ?? ''));
+		if ($schema === '') {
+			return self::DEFAULT_SCHEMA;
+		}
+
+		return $schema;
+	}//end schemaOf()
+
+	/**
+	 * A value as the declaration wants it stored.
+	 *
+	 * @param array<string, mixed> $declared The declaration.
+	 * @param string               $field    The product field.
+	 * @param string               $value    The raw value.
+	 *
+	 * @return string The value.
+	 */
+	private function shaped(array $declared, string $field, string $value): string {
+		if (in_array($field, (array)($declared['compactFields'] ?? []), true) === true) {
+			return strtoupper((string)preg_replace('/[\s-]+/', '', $value));
+		}
+
+		return $value;
+	}//end shaped()
 
 	/**
 	 * A case value by name: a top-level field, else a case-type property answer.
@@ -242,7 +308,7 @@ class PermitIssuer {
 	}//end caseValue()
 
 	/**
-	 * The permit title: the template with case values in double braces.
+	 * The product title: the template with case values in double braces.
 	 *
 	 * @param string               $template The title template.
 	 * @param array<string, mixed> $case     The case.
