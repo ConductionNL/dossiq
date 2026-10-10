@@ -61,6 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use Throwable;
@@ -351,6 +352,8 @@ class PortalContributionProvider {
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
+	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
+	 *                                                   null, which leaves those actions out.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
@@ -358,6 +361,7 @@ class PortalContributionProvider {
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
+		private readonly ?IntakeCaseTypes $caseTypes = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
@@ -716,7 +720,7 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
-		$manifest = new CitizenManifest();
+		$manifest = new CitizenManifest(caseTypes: $this->filingCaseTypes());
 		$collections = $manifest->collections();
 		$actions = $manifest->actions();
 
@@ -854,4 +858,25 @@ class PortalContributionProvider {
 		return $contribution;
 
 	}//end inspectorContribution()
+
+	/**
+	 * The case type each filing action opens (decision 179, Q8).
+	 *
+	 * @return array<string, string> Action id to case type uuid; an unknown one is left out.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
+	 */
+	private function filingCaseTypes(): array {
+		if ($this->caseTypes === null) {
+			return [];
+		}
+
+		return array_filter(
+			[
+				'createBezwaar' => $this->caseTypes->caseTypeFor(setting: IntakeCaseTypes::OBJECTION),
+				'createKlacht' => $this->caseTypes->caseTypeFor(setting: IntakeCaseTypes::COMPLAINT),
+			],
+			static fn (string $caseType): bool => $caseType !== ''
+		);
+	}//end filingCaseTypes()
 }//end class

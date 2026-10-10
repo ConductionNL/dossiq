@@ -52,6 +52,22 @@ class CitizenManifest {
 	public const ANSWER_ACTION = 'beantwoordVraag';
 
 	/**
+	 * Constructor.
+	 *
+	 * @param array<string, string> $caseTypes The case type uuid each case-opening action
+	 *                                         opens, by action id (`createBezwaar`, `createKlacht`),
+	 *                                         resolved from the app settings by
+	 *                                         {@see \OCA\Dossiq\Service\Intake\IntakeCaseTypes}. An action
+	 *                                         whose case type is unknown is left out.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
+	 */
+	public function __construct(
+		private readonly array $caseTypes = [],
+	) {
+	}//end __construct()
+
+	/**
 	 * What a Woo request asks, in the order the steps ask it. `collectionId`
 	 * is not here: only the dossier variant carries it, and it is hidden.
 	 */
@@ -287,7 +303,7 @@ class CitizenManifest {
 	public function actions(): array {
 		$conversation = new PortalConversation();
 
-		return [
+		$actions = [
 			$this->complaintAction(),
 			$this->objectionAction(),
 			$conversation->replyAction(),
@@ -301,6 +317,10 @@ class CitizenManifest {
 			$this->startWooVerzoekAlgemeenAction(),
 			$this->answerQuestionAction(),
 		];
+
+		// A filing whose case type is unknown on this instance is not offered:
+		// every send would be refused for the missing case type.
+		return array_values(array_filter($actions, static fn (?array $action): bool => $action !== null));
 	}//end actions()
 
 	/**
@@ -594,47 +614,59 @@ class CitizenManifest {
 	 * Its own method because {@see self::actions()} is at the length phpmd
 	 * refuses.
 	 *
-	 * @return array<string, mixed> The action.
+	 * 🔴 IT OPENS A CASE, NOT A REQUEST OBJECT (decision 179, Q8). The objection
+	 * is a case of the case type the app setting names, written in the
+	 * resident's own request, with the contested case as a cross-reference.
+	 * It used to write a `portaalVerzoek` that nothing ever turned into a case.
+	 *
+	 * @return array<string, mixed>|null The action, or null when no case type is configured.
 	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/zaakportaal-mijngemeente/spec.md#requirement-bezwaar-objection-filing-within-legal-deadline
 	 */
-	private function objectionAction(): array {
+	private function objectionAction(): ?array {
+		$caseType = trim((string)($this->caseTypes['createBezwaar'] ?? ''));
+		if ($caseType === '') {
+			return null;
+		}
+
 		return [
 			'id' => 'createBezwaar',
 			'type' => 'create',
 			// The case a resident objects to: portaliq's cta with
 			// `withRecord: true` on the case page presets it to the case on
 			// screen, and `crossRefs` below checks it is theirs.
-			'recordField' => 'againstCaseId',
+			'recordField' => 'contestedCase',
 			'label' => 'Bezwaar maken',
 			'summary' => 'Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar.',
 			'audiences' => ['citizen', 'client'],
 			'register' => PortalContributionProvider::REGISTER,
-			'schema' => 'portaalVerzoek',
-			'scopeField' => 'submitterRef',
+			'schema' => 'case',
+			// The resident's own cases are scoped by this field, so the new
+			// case is under "Mijn zaken" the moment it exists.
+			'scopeField' => 'portalSubject',
 			'minTrust' => 'low',
 			'fields' => [
-				'subject',
-				'rationale',
+				'title',
+				'description',
 				'attachments',
-				'againstCaseId',
+				'contestedCase',
 			],
-			// The kind is not the citizen's to choose. A bezwaar and a
-			// klacht run different statutory clocks, and a form that
-			// let the sender pick would let one arrive dressed as the
-			// other.
-			'defaults' => ['kind' => 'bezwaarschrift'],
+			// The case type is not the citizen's to choose. An objection and a
+			// complaint run different statutory clocks, and a form that let the
+			// sender pick would let one arrive dressed as the other.
+			'defaults' => ['caseType' => $caseType, 'intakeChannel' => 'website'],
 			// The case is the one on screen, not a box the resident fills in;
 			// the other fields ask in the resident's words.
-			'requiredFields' => ['rationale'],
+			'requiredFields' => ['title', 'description'],
 			'fieldConfigs' => [
-				'againstCaseId' => ['visible' => false],
-				'subject' => ['label' => 'Waar gaat uw bezwaar over?'],
-				'rationale' => ['label' => 'Waarom bent u het niet eens met het besluit?', 'size' => 'large'],
+				'contestedCase' => ['visible' => false],
+				'title' => ['label' => 'Waar gaat uw bezwaar over?'],
+				'description' => ['label' => 'Waarom bent u het niet eens met het besluit?', 'size' => 'large'],
 				'attachments' => ['label' => 'Stukken die u meestuurt'],
 			],
 			'crossRefs' => [
-				'againstCaseId' => [
+				'contestedCase' => [
 					'register' => PortalContributionProvider::REGISTER,
 					'schema' => 'case',
 					'scopeField' => 'portalSubject',
@@ -654,15 +686,24 @@ class CitizenManifest {
 	 * required. Its own method because {@see self::actions()} is at the
 	 * length phpmd refuses.
 	 *
-	 * @return array<string, mixed> The action.
+	 * It opens a case of the case type the app setting names (decision 179,
+	 * Q8), like the objection.
+	 *
+	 * @return array<string, mixed>|null The action, or null when no case type is configured.
 	 *
 	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/zaakportaal-mijngemeente/spec.md#requirement-klacht-complaint-filing-and-optional-subsidie-aanvragen
 	 */
-	private function complaintAction(): array {
+	private function complaintAction(): ?array {
+		$caseType = trim((string)($this->caseTypes['createKlacht'] ?? ''));
+		if ($caseType === '') {
+			return null;
+		}
+
 		return [
 			'id' => 'createKlacht',
 			'type' => 'create',
-			'recordField' => 'againstCaseId',
+			'recordField' => 'contestedCase',
 			'label' => 'Klacht indienen',
 			// WHAT A VISITOR READS ON THE TILE before they sign in. One
 			// sentence, from the approved mockup (DossiqHome.dc.html), and
@@ -673,32 +714,28 @@ class CitizenManifest {
 			'summary' => 'Vertel ons wat er misging.',
 			'audiences' => ['citizen', 'client'],
 			'register' => PortalContributionProvider::REGISTER,
-			'schema' => 'portaalVerzoek',
-			'scopeField' => 'submitterRef',
+			'schema' => 'case',
+			'scopeField' => 'portalSubject',
 			'minTrust' => 'low',
 			'fields' => [
-				'category',
-				'subject',
-				'rationale',
+				'title',
+				'description',
 				'attachments',
-				'againstCaseId',
+				'contestedCase',
 			],
-			// Stamped server-side, like the bezwaar's. Left to the
-			// sender, the portal sent 'klacht', which the schema's enum
-			// refuses, so every complaint answered 502 write_failed.
-			'defaults' => ['kind' => 'klachtschrift'],
+			// Stamped server-side, like the objection's.
+			'defaults' => ['caseType' => $caseType, 'intakeChannel' => 'website'],
 			// The case is the one on screen, not a box the resident fills in;
 			// the "Klacht indienen" page leaves it empty.
-			'requiredFields' => ['rationale'],
+			'requiredFields' => ['title', 'description'],
 			'fieldConfigs' => [
-				'againstCaseId' => ['visible' => false],
-				'category' => ['label' => 'Waar gaat uw klacht over?'],
-				'subject' => ['label' => 'Onderwerp'],
-				'rationale' => ['label' => 'Wat ging er mis?', 'size' => 'large'],
+				'contestedCase' => ['visible' => false],
+				'title' => ['label' => 'Waar gaat uw klacht over?'],
+				'description' => ['label' => 'Wat ging er mis?', 'size' => 'large'],
 				'attachments' => ['label' => 'Stukken die u meestuurt'],
 			],
 			'crossRefs' => [
-				'againstCaseId' => [
+				'contestedCase' => [
 					'register' => PortalContributionProvider::REGISTER,
 					'schema' => 'case',
 					'scopeField' => 'portalSubject',

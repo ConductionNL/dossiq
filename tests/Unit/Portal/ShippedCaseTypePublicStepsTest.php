@@ -46,6 +46,7 @@ class ShippedCaseTypePublicStepsTest extends TestCase {
 		// Base register, the four resident-facing case types.
 		'@ref:omgevingsvergunning'             => ['Ontvangen', 'In behandeling', 'Besluit', 'Afgehandeld'],
 		'@ref:subsidieaanvraag'                => ['Ontvangen', 'In behandeling', 'Besluit', 'Afgehandeld'],
+		'@ref:bezwaar-behandeling'             => ['Ontvangen', 'In behandeling', 'Beslist'],
 		'@ref:klacht-behandeling'              => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
 		'@ref:melding-openbare-ruimte'         => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
 		// 58-case-type-versions: v2's Veiligheidstoets folds into the status

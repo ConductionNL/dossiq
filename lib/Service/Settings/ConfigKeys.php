@@ -93,6 +93,8 @@ class ConfigKeys {
 		'advisory_report_schema',
 		'appeal_decision_schema',
 		'default_case_type',
+		'portal_objection_case_type',
+		'portal_complaint_case_type',
 		'inspectie_checklist_schema',
 		'inspectie_rapport_schema',
 		'handhavingsactie_schema',

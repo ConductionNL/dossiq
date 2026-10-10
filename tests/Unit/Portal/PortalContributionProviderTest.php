@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -55,7 +56,14 @@ class PortalContributionProviderTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->provider = new PortalContributionProvider();
+		$caseTypes = $this->createMock(IntakeCaseTypes::class);
+		$caseTypes->method('caseTypeFor')->willReturnMap(
+			[
+				[IntakeCaseTypes::OBJECTION, 'bbbbbbbb-0000-4000-a000-000000000001'],
+				[IntakeCaseTypes::COMPLAINT, 'kkkkkkkk-0000-4000-a000-000000000002'],
+			]
+		);
+		$this->provider = new PortalContributionProvider(caseTypes: $caseTypes);
 
 		// Load the base register + every register.d fragment exactly as the
 		// runtime does (SettingsService merges lib/Settings/register.d/*.json
@@ -197,11 +205,11 @@ class PortalContributionProviderTest extends TestCase {
 		// their own guard checks (case-actions-on-the-case-page).
 		foreach (['createBezwaar', 'createKlacht'] as $id) {
 			$action = $this->citizenAction(id: $id);
-			$this->assertSame('againstCaseId', $action['recordField'], $id);
-			$this->assertContains('againstCaseId', $action['fields'], $id);
-			$this->assertArrayHasKey('againstCaseId', $action['crossRefs'], $id);
+			$this->assertSame('contestedCase', $action['recordField'], $id);
+			$this->assertContains('contestedCase', $action['fields'], $id);
+			$this->assertArrayHasKey('contestedCase', $action['crossRefs'], $id);
 			// The case is given by the page, never typed.
-			$this->assertFalse($action['fieldConfigs']['againstCaseId']['visible'], $id);
+			$this->assertFalse($action['fieldConfigs']['contestedCase']['visible'], $id);
 		}
 	}//end testTheReplyActionNamesTheFieldARecordLandsIn()
 
@@ -737,7 +745,7 @@ class PortalContributionProviderTest extends TestCase {
 		$guarded = [];
 
 		foreach ($contribution['actions'] as $action) {
-			foreach (['againstCaseId', 'caseId'] as $reference) {
+			foreach (['contestedCase', 'caseId'] as $reference) {
 				if (in_array($reference, (array)($action['fields'] ?? []), true) === false) {
 					continue;
 				}
@@ -774,11 +782,24 @@ class PortalContributionProviderTest extends TestCase {
 			$actions[(string)$action['id']] = $action;
 		}
 
-		$this->assertSame('bezwaarschrift', $actions['createBezwaar']['defaults']['kind']);
-		$this->assertNotContains('kind', $actions['createBezwaar']['fields']);
+		// Decision 179 (Q8): bezwaar and klacht open a case of the configured
+		// case type. The case type is stamped, never offered.
+		$this->assertSame('case', $actions['createBezwaar']['schema']);
+		$this->assertSame('bbbbbbbb-0000-4000-a000-000000000001', $actions['createBezwaar']['defaults']['caseType']);
+		$this->assertNotContains('caseType', $actions['createBezwaar']['fields']);
 
-		$this->assertSame('klachtschrift', $actions['createKlacht']['defaults']['kind']);
-		$this->assertNotContains('kind', $actions['createKlacht']['fields']);
+		$this->assertSame('case', $actions['createKlacht']['schema']);
+		$this->assertSame('kkkkkkkk-0000-4000-a000-000000000002', $actions['createKlacht']['defaults']['caseType']);
+		$this->assertNotContains('caseType', $actions['createKlacht']['fields']);
+
+		// Every field and default they write is a property of the case schema,
+		// or the write would be refused (decision 179: a form is valid against
+		// its destination).
+		$caseProperties = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/dossiq_register.json'), true)['components']['schemas']['case']['properties'];
+		foreach (['createBezwaar', 'createKlacht'] as $id) {
+			$written = array_merge($actions[$id]['fields'], array_keys($actions[$id]['defaults']));
+			$this->assertSame([], array_values(array_diff($written, array_keys($caseProperties))), $id);
+		}
 
 		// Every create on portaalVerzoek stamps a kind the schema accepts. A
 		// kind left to the client arrived as 'klacht', outside the enum, and
