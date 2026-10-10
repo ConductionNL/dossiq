@@ -9,7 +9,7 @@ Kind: code. Size M. Row: portaliq `dem-rm-my-products` (decision 105). Board: Th
 
 ## 2. Issuing
 
-- [ ] 2.1 (waits on Q-dossiq-L2-4: nothing in dossiq marks a decision or result as granted) Add `lib/Service/Permit/PermitIssuer.php` and `lib/Listener/PermitFromDecisionListener.php` per design D2 (create once per decision, revoke, plate change). Verify: `tests/Unit/Service/Permit/PermitIssuerTest.php` covers grant, a repeated event, revoke and a plate change.
+- [x] 2.1 (Ruben 10 Oct, decision 172, Q-dossiq-L2-4 option 2, against the recommendation: issue on decidiq's decision outcome event. decidiq already raises `DecisionConcludedEvent` (`DecisionLifecycleService`), so nothing was built there. `lib/Service/Permit/PermitIssuer.php`, called by the existing `DecisionConcludedListener` on `status: approved` for a resolved dossiq case: one permit per decision (idempotent on `decision`), holder the case's portal subject, valid from the decision day, details by `detailsFromCase`; a change case (`changesPlateOf`) sets the new plate on its requester's permit in force. Revoking is not decided by this event and stays out. Tests: `tests/Unit/Service/Permit/PermitIssuerTest.php` (grant, repeated event, no issuing type or holder, plate change, a foreign permit), `DecisionConcludedListenerTest::testAnApprovedOutcomeIssuesThePermitAndARejectedOneDoesNot`.) Add `lib/Service/Permit/PermitIssuer.php` and wire it to decidiq's outcome per design D2 (create once per decision, plate change).
 
 ## 3. Contribution
 

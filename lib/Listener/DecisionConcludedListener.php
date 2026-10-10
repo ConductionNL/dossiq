@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException;
+use OCA\Dossiq\Service\Permit\PermitIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -102,6 +103,8 @@ class DecisionConcludedListener implements IEventListener {
 	 * @param FlowDecisionSubject|null $flowDecisions Recognises a flow decision about a dossiq case;
 	 *                                        subject. Nullable so no construction site breaks;
 	 *                                        absent, no flow decision is projected.
+	 * @param PermitIssuer|null $permits Issues the permit a positive outcome grants (decision 172);
+	 *                                   absent, no permit is written.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -111,6 +114,7 @@ class DecisionConcludedListener implements IEventListener {
 		private readonly ?FlowRunMapper $runs = null,
 		private readonly ?FlowRunService $runner = null,
 		private readonly ?FlowDecisionSubject $flowDecisions = null,
+		private readonly ?PermitIssuer $permits = null,
 	) {
 	}//end __construct()
 
@@ -196,6 +200,18 @@ class DecisionConcludedListener implements IEventListener {
 				decisionId: $besluitId,
 				subjectId: $subjectId
 			);
+
+			// Decision 172: a positive outcome on a case whose type issues a
+			// permit writes the resident's permit (or a change case's new
+			// plate). After the besluit, so the permit follows a decision
+			// that is already on the case; never throws.
+			if ($status === 'approved') {
+				$this->permits?->onApprovedDecision(
+					caseId: $caseId,
+					decisionId: $decisionId,
+					decidedAt: $this->readString(event: $event, getter: 'getDecidedAt')
+				);
+			}
 
 			// A case flow that ASKED for this decision is suspended on it.
 			// Deliberately last: the besluit is materialised before the run is

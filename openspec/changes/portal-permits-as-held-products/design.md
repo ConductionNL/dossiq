@@ -31,7 +31,12 @@ RBAC: staff of the permit's case type read and write; the portal reads through t
 
 ## D2. Issuing
 
-`PermitFromDecisionListener` listens for a decision saved with a granted result on a case whose case type has `issuesPermit`. It creates one permit per decision (idempotent on `decision`). A later decision on the same case with result `ingetrokken` sets `revoked`. A decision that changes the plate (from the change case, D3) updates `details.kenteken` on the permit the change case names.
+A permit is issued on decidiq's decision outcome event (Ruben 10 Oct, decision 172, Q-dossiq-L2-4, against the recommendation). decidiq raises `DecisionConcludedEvent`; dossiq's `DecisionConcludedListener` already resolves the case it is about and materialises the besluit. When the status is `approved` it then calls `PermitIssuer`:
+
+- a case whose type has `issuesPermit` gets one permit per decision (idempotent on `decision`): the holder is the case's `portalSubject`, `validFrom` the decision day, the details copied from the case as `detailsFromCase` names them (a top-level case field or a case-type property answer), the plate stored without dashes;
+- a change case, whose type has `issuesPermit.changesPlateOf`, sets its `nieuwKenteken` on the permit its `permit` answer names, only when that permit is the requester's and still in force (D3).
+
+Revoking a permit is not decided by a positive outcome and stays out of this change.
 
 ## D3. Changing the plate
 
