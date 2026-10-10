@@ -353,14 +353,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 old value kept beside it.
             -->
             <step>OCA\Dossiq\Repair\NormaliseCommunicationChannelValues</step>
-            <!-- site-business-and-authorisation D2: a portal case filed before
-                 portalParty existed gets subject:<portalSubject>, once. Restored:
-                 a merge of development had dropped this registration. -->
-            <step>OCA\Dossiq\Repair\BackfillPortalParty</step>
-            <!-- communication-portal-conversation-on-the-case D-2: each portal
-                 message's attachments are copied into the message folder portaliq
-                 serves, once, behind a persisted key. Restored like the step above. -->
-            <step>OCA\Dossiq\Repair\CopyMessageAttachmentsIntoMessageFolders</step>
             <!--
                 The shipped register data assigns flow steps to Nextcloud
                 groups (task-behandelaar -> "behandelaars"). Provision them
