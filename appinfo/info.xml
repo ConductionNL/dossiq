@@ -675,6 +675,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  changes nothing. Unmapped codes are kept, listed on the row and in
                  the output. Post-migration only: a fresh install has none. -->
             <step>OCA\Dossiq\Repair\MapWooRefusalGroundCodes</step>
+            <!-- woo-publish-decision-from-the-case: copies each Woo decision's
+                 publication state onto its case, so existing Woo cases show it.
+                 Idempotent (app config key woo_publication_state_backfill),
+                 non-fatal. Post-migration only: a fresh install has no Woo
+                 cases. -->
+            <step>OCA\Dossiq\Repair\BackfillWooPublicationState</step>
             <!-- simple-case-page: existing cases get `statusRole`, the role of
                  the status they sit in. OpenRegister computes it on save, so a
                  case saved before the field existed has none. Writes one field
@@ -809,6 +815,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
+              BackfillWooPublicationState       shows the publication state on existing Woo cases; a fresh install has none
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
