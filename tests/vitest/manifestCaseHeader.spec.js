@@ -90,7 +90,8 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// cites. A settings register, so a page and not a lens on a case list.
 		// 64 -> 62: `tenancy-onto-openregister-organisation` step 5 retires
 		// Tenants and TenantDetail; a tenant is an OpenRegister organisation.
-		expect(manifest.pages).toHaveLength(62)
+		// 62 -> 63: `woo-delivered-set-is-a-record` adds one page.
+		expect(manifest.pages).toHaveLength(63)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)

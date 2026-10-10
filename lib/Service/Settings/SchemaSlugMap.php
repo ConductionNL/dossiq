@@ -230,6 +230,8 @@ class SchemaSlugMap {
 		'wooRequestConfiguration' => 'woo_request_configuration_schema',
 		'wooExclusion' => 'woo_exclusion_schema',
 		'wooCollectionQuery' => 'woo_collection_query_schema',
+		// What a Woo delivery sent out, frozen with its publication (woo-delivered-set-is-a-record).
+		'wooDeliveredSet' => 'woo_delivered_set_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

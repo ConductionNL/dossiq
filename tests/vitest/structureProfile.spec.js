@@ -435,10 +435,11 @@ describe('the simple profile', () => {
 	})
 
 	// 69 -> 67: tenancy step 5 retires the Tenants and TenantDetail pages.
-	it('builds the same 67 pages as the full profile, so every route stays', () => {
+	// 67 -> 68: woo-delivered-set-is-a-record adds one page.
+	it('builds the same 68 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(67)
+		expect(built.pages).toHaveLength(68)
 	})
 })
 

@@ -45,18 +45,68 @@ class WooCaseLedger {
 	use SearchesObjects;
 
 	/**
+	 * The failure a delivery answers when its set cannot be written first.
+	 */
+	public const SET_NOT_WRITTEN = WooDeliveredSetWriter::SET_NOT_WRITTEN;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
 	 * @param LoggerInterface $logger          Logger.
 	 * @param IURLGenerator|null $urlGenerator Makes the publication link absolute.
+	 * @param WooDeliveredSetWriter|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?IURLGenerator $urlGenerator = null,
+		private readonly ?WooDeliveredSetWriter $deliveredSets = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Deliver through `$send`, recording the set around it when a writer is wired.
+	 *
+	 * @param string                           $caseId     The Woo case.
+	 * @param string                           $decisionId The Woo decision.
+	 * @param array<int, array<string, mixed>> $items      What goes out, one entry per document.
+	 * @param callable(): string               $send       Creates or updates the publication; answers its id.
+	 *
+	 * @return array{publicationId: string, setId: string}
+	 *
+	 * @throws \Throwable The send's failure, after the pending set is gone; SET_NOT_WRITTEN when the set cannot be written.
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function deliver(string $caseId, string $decisionId, array $items, callable $send): array {
+		if ($this->deliveredSets === null) {
+			return ['publicationId' => (string)$send(), 'setId' => ''];
+		}
+
+		return $this->deliveredSets->deliver(caseId: $caseId, decisionId: $decisionId, delivered: $items, send: $send);
+	}//end deliver()
+
+	/**
+	 * Stamp the withdraw on the publication's frozen set; a failure is logged, the withdraw stands.
+	 *
+	 * @param string $caseId        The case.
+	 * @param string $publicationId The withdrawn publication.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	public function markWithdrawn(string $caseId, string $publicationId): void {
+		try {
+			$this->deliveredSets?->markWithdrawn(caseId: $caseId, publicationId: $publicationId);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'WooPublicationService: the delivered set could not record the withdraw',
+				['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
+			);
+		}
+	}//end markWithdrawn()
 
 	/**
 	 * An absolute link for the resident, or the path when no URL generator is wired.
