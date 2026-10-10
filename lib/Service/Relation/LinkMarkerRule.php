@@ -258,9 +258,9 @@ final class LinkMarkerRule {
 			throw new InvalidArgumentException("Marker rule '$marker' has a condition without a `field`.");
 		}
 
-		$on = ($condition['on'] ?? 'source');
-		if (in_array($on, ['source', 'target'], true) === false) {
-			throw new InvalidArgumentException("Marker rule '$marker' reads `on` '$on'; use source or target.");
+		$side = ($condition['on'] ?? 'source');
+		if (in_array($side, ['source', 'target'], true) === false) {
+			throw new InvalidArgumentException("Marker rule '$marker' reads `on` '$side'; use source or target.");
 		}
 
 		$asked = array_values(array_intersect(self::QUESTIONS, array_keys($condition)));

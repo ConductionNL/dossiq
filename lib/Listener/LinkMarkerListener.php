@@ -82,6 +82,8 @@ class LinkMarkerListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-marker-rule-derives-a-flag-on-the-referenced-object-req-lcr-4
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) LinkMarkerRule is built through its validating named constructor.
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatedEvent === false && $event instanceof ObjectUpdatedEvent === false) {
@@ -126,8 +128,8 @@ class LinkMarkerListener implements IEventListener {
 			return;
 		}
 
-		$targetId = $source[$rule->field] ?? '';
-		if (is_string($targetId) === false || trim($targetId) === '') {
+		$targetId = $this->referenceOf(source: $source, field: $rule->field);
+		if ($targetId === '') {
 			return;
 		}
 
@@ -142,7 +144,7 @@ class LinkMarkerListener implements IEventListener {
 			objectService: $objectService,
 			register: $register,
 			schema: $targetSchema,
-			id: trim($targetId)
+			id: $targetId
 		);
 		if ($target === null) {
 			return;
@@ -157,10 +159,27 @@ class LinkMarkerListener implements IEventListener {
 			objectService: $objectService,
 			register: $register,
 			schema: $targetSchema,
-			id: trim($targetId),
+			id: $targetId,
 			changes: [$rule->marker => $marker]
 		);
 	}//end apply()
+
+	/**
+	 * The uuid a source field references, or '' when it holds none.
+	 *
+	 * @param array<string, mixed> $source The saved object.
+	 * @param string               $field  The reference field.
+	 *
+	 * @return string The uuid.
+	 */
+	private function referenceOf(array $source, string $field): string {
+		$value = ($source[$field] ?? '');
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return trim($value);
+	}//end referenceOf()
 
 	/**
 	 * Whether an object is in a schema, by id or by slug.

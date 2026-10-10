@@ -57,6 +57,9 @@ final class RoleLinkDefinition {
 	/**
 	 * Constructor. Use `fromArray()`, which validates.
 	 *
+	 * One parameter per declared field of a role, so a reader sees the whole
+	 * shape in one place; grouping them would hide which ones are optional.
+	 *
 	 * @param string      $role               The role key.
 	 * @param string      $label              What the role is called on screen.
 	 * @param string      $target             TARGET_CASE or TARGET_OBJECT.
@@ -70,6 +73,8 @@ final class RoleLinkDefinition {
 	 * @param string|null $recordActorField   Record field for the acting user, or null.
 	 *
 	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 */
 	private function __construct(
 		public readonly string $role,
