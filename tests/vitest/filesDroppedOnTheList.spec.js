@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -10,6 +11,8 @@
  * @spec openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md
  */
 
+import CnFilesBrowser from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/CnFilesBrowser.vue'
+import CnFilesTab from '@conduction/nextcloud-vue/src/components/CnObjectSidebar/CnFilesTab.vue'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
@@ -59,6 +62,17 @@ describe('files dropped on the list', () => {
 	it('asks for the button, the drop state and the hint', () => {
 		expect(widget.props).toMatchObject({ uploadButton: true, dropOverlay: true, dropHint: true })
 	})
+
+	// The tabs widget renders this leaf bare, so the props land on the files
+	// provider's tab (CnFilesTab), which hands them to CnFilesBrowser. Both
+	// are imported by source path: the bare package name is a stub here.
+	it.each(['uploadButton', 'dropOverlay', 'dropHint'])(
+		'%s is a prop the installed library reads on the way to the browser',
+		(prop) => {
+			expect(CnFilesTab.props, 'CnFilesTab').toHaveProperty(prop)
+			expect(CnFilesBrowser.props, 'CnFilesBrowser').toHaveProperty(prop)
+		},
+	)
 
 	it('names no label of its own, so the Dutch comes from the library', () => {
 		for (const key of ['uploadButtonLabel', 'dropLabel', 'dropHintLabel']) {

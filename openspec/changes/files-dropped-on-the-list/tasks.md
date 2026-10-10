@@ -9,5 +9,5 @@ Kind: code. Board canon: DqZaakDocumenten and DqZaakDocumentenSlepen
   - `tests/vitest/filesDroppedOnTheList.spec.js`
 - [x] 1.2 e2e: the button, the hint and the drop state on a real case.
   - `tests/e2e/case-documents-on-the-case.spec.ts`
-- [ ] 2.1 Bump `@conduction/nextcloud-vue` to the release that carries
-  nextcloud-vue#1419 (not in this change: no release exists yet).
+- [x] 2.1 Bump `@conduction/nextcloud-vue` to the release that carries
+  nextcloud-vue#1419: 2.77.0, done on development by #3582.
