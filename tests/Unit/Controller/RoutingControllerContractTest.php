@@ -76,6 +76,7 @@ interface RoutingControllerContractObjectService {
  * Wire-contract tests for RoutingController::reroute().
  *
  * @covers \OCA\Dossiq\Controller\RoutingController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class RoutingControllerContractTest extends TestCase {
 
