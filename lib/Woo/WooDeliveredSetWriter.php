@@ -285,7 +285,10 @@ class WooDeliveredSetWriter {
 			changes: ['status' => self::STATUS_FROZEN, 'publication' => $publicationId]
 		);
 
-		$this->quietly(what: 'set OpenRegister\'s freeze on the delivered set', operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId));
+		$this->quietly(
+			what: 'set OpenRegister\'s freeze on the delivered set',
+			operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId)
+		);
 	}//end freeze()
 
 	/**
@@ -380,7 +383,10 @@ class WooDeliveredSetWriter {
 			} finally {
 				if ($lifted === true) {
 					$publicationId = (string)($set['publication'] ?? '');
-					$this->quietly(what: 'set OpenRegister\'s freeze again after the withdraw stamp', operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId));
+					$this->quietly(
+						what: 'set OpenRegister\'s freeze again after the withdraw stamp',
+						operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId)
+					);
 				}
 			}
 		}
