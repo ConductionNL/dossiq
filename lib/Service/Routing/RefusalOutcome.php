@@ -209,13 +209,11 @@ class RefusalOutcome {
 		// a refused case a handler cannot find is the lost case this whole
 		// outcome exists to prevent, and search reads the same rows the list
 		// does.
-		// 🔴 `assignedGroup` IS A UUID REFERENCE, NOT A DEPARTMENT NAME. It is
-		// declared `format: uuid, $ref: organisatieRol` on the case schema,
-		// and `refusalDestination.department` is a plain department name. This
-		// line used to write one into the other, so OpenRegister refused the
-		// save and the whole refusal came back 503: on any case type that
-		// declares where a refused case goes, refusing was impossible. The
-		// team is resolved from the declared department and role, and when
+		// 🔴 `assignedGroup` IS A NEXTCLOUD GROUP ID, NOT A DEPARTMENT NAME
+		// (one-team-model). `refusalDestination.department` is a plain
+		// department name, and this line once wrote one into the other. The
+		// team is resolved from the declared department and role to the
+		// group that role names (`organisatieRol.ncGroupId`), and when
 		// nothing resolves the refusal is still RECORDED, just unassigned. A
 		// refused case a handler can find beats a refusal that did not happen.
 		$changes = [self::CASE_FIELD => $record];
@@ -264,25 +262,28 @@ class RefusalOutcome {
 	}//end caseTypeIdOf()
 
 	/**
-	 * The `organisatieRol` a declared refusal destination names.
+	 * The Nextcloud group a declared refusal destination names.
 	 *
 	 * The destination is a department and a role, in words an administrator
-	 * typed on the case type. `case.assignedGroup` is a uuid reference to an
-	 * `organisatieRol`, so the two have to be joined rather than copied. The
-	 * join is on `department` plus `roleName`, which are the same two words
-	 * the destination declares.
+	 * typed on the case type. `case.assignedGroup` is a Nextcloud group id, so
+	 * the words are joined to the `organisatieRol` they describe (on
+	 * `department` plus `roleName`) and the case gets that role's
+	 * `ncGroupId`, the one link from a role to a team.
 	 *
 	 * Returns an empty string when the register is unconfigured, when nothing
-	 * matches, or when the search throws. Every one of those means the case
-	 * is refused and left unassigned, which is the recoverable outcome: an
-	 * administrator assigns it, and the refusal record already says where it
-	 * was meant to go.
+	 * matches, when the matching role names no group, or when the search
+	 * throws. Every one of those means the case is refused and left
+	 * unassigned, which is the recoverable outcome: an administrator assigns
+	 * it, and the refusal record already says where it was meant to go. A
+	 * role's `team` or `roleName` is never tried as a group id: a wrong guess
+	 * hands the case to a team that never sees it.
 	 *
 	 * @param array{department: string, role: string} $destination The declared destination.
 	 *
-	 * @return string The team uuid, or '' when none resolves.
+	 * @return string The Nextcloud group id, or '' when none resolves.
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
 	 */
 	private function teamFor(array $destination): string {
 		$objectService = $this->settingsService->getObjectService();
@@ -317,19 +318,24 @@ class RefusalOutcome {
 			return '';
 		}
 
-		foreach ($rows as $row) {
-			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			if ($id !== '') {
-				return $id;
-			}
+		if ($rows === []) {
+			$this->logger->warning(
+				'Dossiq refusal: no organisatieRol answers to {department}/{role}, so the refused case is unassigned',
+				['department' => $destination['department'], 'role' => $destination['role']],
+			);
+
+			return '';
 		}
 
-		$this->logger->warning(
-			'Dossiq refusal: no organisatieRol answers to {department}/{role}, so the refused case is unassigned',
-			['department' => $destination['department'], 'role' => $destination['role']],
-		);
+		$group = trim((string)($rows[0]['ncGroupId'] ?? ''));
+		if ($group === '') {
+			$this->logger->warning(
+				'Dossiq refusal: the organisatieRol for {department}/{role} names no Nextcloud group, so the refused case is unassigned',
+				['department' => $destination['department'], 'role' => $destination['role']],
+			);
+		}
 
-		return '';
+		return $group;
 	}//end teamFor()
 
 	/**

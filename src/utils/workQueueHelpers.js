@@ -60,12 +60,12 @@ export function urgencyChipClass(tier) {
 }
 
 /**
- * Build a { caseId: { tier, score, daysUntilDeadline } } lookup map from the
+ * Build a { caseId: { deadlineTier, score, daysUntilDeadline } } lookup map from the
  * GET /api/work-queue response's `items` array. Task-type items are
  * skipped — My Work's card urgency chip is keyed by case id only.
  *
  * @param {Array<object>} items Work-queue response `items` array.
- * @return {{[caseId: string]: {tier: string, score: number, daysUntilDeadline: (number|null)}}}
+ * @return {{[caseId: string]: {deadlineTier: string, score: number, daysUntilDeadline: (number|null)}}}
  *   Map keyed by case id.
  */
 export function buildUrgencyMap(items) {
@@ -75,7 +75,7 @@ export function buildUrgencyMap(items) {
 			continue
 		}
 		map[item.id] = {
-			tier: item.tier,
+			deadlineTier: item.deadlineTier,
 			score: item.score,
 			daysUntilDeadline: item.daysUntilDeadline,
 		}
