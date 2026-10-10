@@ -50,9 +50,6 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
- * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -231,6 +228,18 @@ class DrcController extends ZgwController {
 			return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
 		}
 
+		return $this->createEio(resource: $resource);
+	}//end create()
+
+	/**
+	 * Create an enkelvoudiginformatieobject: validate, map, save, store its inhoud or open a
+	 * chunked upload, and answer the ZGW object.
+	 *
+	 * @param string $resource The ZGW resource name (the EIO resource).
+	 *
+	 * @return JSONResponse
+	 */
+	private function createEio(string $resource): JSONResponse {
 		// EIO-specific: handle inhoud (base64 file content).
 		if ($this->zgwService->getObjectService() === null) {
 			return $this->zgwService->unavailableResponse();
@@ -263,40 +272,8 @@ class DrcController extends ZgwController {
 
 			$inhoud = $body['inhoud'] ?? null;
 
-			$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
-			$englishData = $this->zgwService->applyInboundMapping(
-				body: $body,
-				mapping: $inboundMapping,
-				mappingConfig: $mappingConfig
-			);
-
-			if (empty($inhoud) === false) {
-				unset($englishData['content']);
-			}
-
-			// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
-			if (is_array($englishData) === false) {
-				return new JSONResponse(
-					data: ['detail' => 'Invalid mapping result'],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}
-
-			// Chunked upload: set fileParts BEFORE initial save to avoid
-			// a second round-trip when bestandsomvang is given without inhoud.
+			$englishData = $this->eioEnglishData(body: $body, mappingConfig: $mappingConfig);
 			$bestandsomvang = (int)($body['bestandsomvang'] ?? 0);
-			if ($bestandsomvang > 0 && empty($inhoud) === true) {
-				$totalParts = (int)ceil($bestandsomvang / self::DEFAULT_CHUNK_SIZE);
-
-				$englishData['fileParts'] = json_encode(
-					[
-						'pending' => true,
-						'totalParts' => $totalParts,
-						'chunkSize' => self::DEFAULT_CHUNK_SIZE,
-						'fileSize' => $bestandsomvang,
-					]
-				);
-			}
 
 			$object = $this->zgwService->getObjectService()->saveObject(
 				register: $mappingConfig['sourceRegister'],
@@ -309,73 +286,14 @@ class DrcController extends ZgwController {
 
 			// Store file content (only when inhoud is provided).
 			if (empty($inhoud) === false && $objectUuid !== '') {
-				$fileName = $objectData['fileName'] ?? 'document';
-				if ($fileName === '') {
-					$fileName = 'document';
-				}
-
-				$fileSize = $this->zgwService->getDocumentService()->storeBase64(
-					uuid: $objectUuid,
-					fileName: $fileName,
-					content: $inhoud
-				);
-
-				// The file id, and NOT only the size. Three surfaces resolve a
-				// document through `fileId` and each of them fails SILENTLY
-				// without one: `openInFiles()` and `VersionHistoryPanel` both
-				// return early on a falsy id, and Files comments hang off the
-				// same node. Only the upload path stamped it, so a document
-				// created over this API rendered an Open in Files action, a
-				// Version history action and a comments sidebar that all did
-				// nothing and reported nothing.
-				//
-				// The old guard is why: keyed on `fileSize` alone, a caller
-				// that supplied `bestandsomvang` skipped the write entirely
-				// and the id never landed at all.
-				$fileId = $this->resolveStoredFileId(uuid: $objectUuid, fileName: $fileName);
-				$needsSize = (empty($objectData['fileSize']) === true);
-				$needsFileId = ($fileId > 0 && (int)($objectData['fileId'] ?? 0) !== $fileId);
-
-				if ($needsSize === true || $needsFileId === true) {
-					if ($needsSize === true) {
-						$objectData['fileSize'] = $fileSize;
-					}
-
-					if ($fileId > 0) {
-						$objectData['fileId'] = $fileId;
-					}
-
-					// The WHOLE object, never a partial: ObjectService::saveObject
-					// REPLACES, and a partial write drops the four properties the
-					// informatieobject schema requires (#1960).
-					$objectData['uuid'] = $objectUuid;
-					$this->zgwService->getObjectService()->saveObject(
-						register: $mappingConfig['sourceRegister'],
-						schema: $mappingConfig['sourceSchema'],
-						object: $objectData
-					);
-				}
-			}//end if
+				$objectData = $this->storeInhoud(objectData: $objectData, objectUuid: $objectUuid, inhoud: $inhoud, mappingConfig: $mappingConfig);
+			}
 
 			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
+			$mapped = $this->mapEioOut(objectData: $objectData, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 
 			// Add bestandsdelen for chunked upload responses.
-			$chunkInfo = $this->parseFileParts(objectData: $objectData);
-			$mapped['bestandsdelen'] = [];
-			if ($chunkInfo !== null && ($chunkInfo['pending'] ?? false) === true) {
-				$mapped['bestandsdelen'] = $this->buildBestandsdelenArray(
-					uuid: $objectUuid,
-					fileSize: ($chunkInfo['fileSize'] ?? $bestandsomvang),
-					totalParts: ($chunkInfo['totalParts'] ?? 1)
-				);
-			}
+			$mapped['bestandsdelen'] = $this->pendingBestandsdelen(objectData: $objectData, uuid: $objectUuid, fileSize: $bestandsomvang);
 
 			$this->zgwService->publishNotification(
 				self::ZGW_API,
@@ -396,7 +314,176 @@ class DrcController extends ZgwController {
 				statusCode: Http::STATUS_BAD_REQUEST
 			);
 		}//end try
-	}//end create()
+	}//end createEio()
+
+	/**
+	 * Map a validated EIO body to English field names.
+	 *
+	 * Content sent as inhoud is stored as a file, so it never travels in the object. Without
+	 * inhoud, a declared bestandsomvang opens a chunked upload: fileParts is set BEFORE the
+	 * first save, which spares a second round-trip.
+	 *
+	 * @param array $body The validated body.
+	 * @param array $mappingConfig The EIO mapping.
+	 *
+	 * @return array The object to save.
+	 */
+	private function eioEnglishData(array $body, array $mappingConfig): array {
+		$englishData = $this->mapEioBody(body: $body, mappingConfig: $mappingConfig);
+		if (empty($body['inhoud'] ?? null) === false) {
+			return $englishData;
+		}
+
+		$bestandsomvang = (int)($body['bestandsomvang'] ?? 0);
+		if ($bestandsomvang > 0) {
+			$englishData['fileParts'] = $this->pendingFileParts(fileSize: $bestandsomvang);
+		}
+
+		return $englishData;
+	}//end eioEnglishData()
+
+	/**
+	 * Map an EIO body to English field names; content sent as inhoud is stored as a file and
+	 * never travels in the object.
+	 *
+	 * @param array $body The validated body.
+	 * @param array $mappingConfig The EIO mapping.
+	 *
+	 * @return array The mapped object.
+	 */
+	private function mapEioBody(array $body, array $mappingConfig): array {
+		$englishData = $this->zgwService->applyInboundMapping(
+			body: $body,
+			mapping: $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig),
+			mappingConfig: $mappingConfig
+		);
+
+		if (empty($body['inhoud'] ?? null) === false) {
+			unset($englishData['content']);
+		}
+
+		return $englishData;
+	}//end mapEioBody()
+
+	/**
+	 * Map a saved document back to its ZGW shape.
+	 *
+	 * @param array $objectData The saved document.
+	 * @param array $mappingConfig The EIO mapping.
+	 * @param string $baseUrl The collection URL.
+	 *
+	 * @return array The ZGW document.
+	 */
+	private function mapEioOut(array $objectData, array $mappingConfig, string $baseUrl): array {
+		return $this->zgwService->applyOutboundMapping(
+			objectData: $objectData,
+			mapping: $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig),
+			mappingConfig: $mappingConfig,
+			baseUrl: $baseUrl
+		);
+	}//end mapEioOut()
+
+	/**
+	 * The fileParts marker of a document whose content arrives in chunks.
+	 *
+	 * @param int $fileSize The declared bestandsomvang.
+	 *
+	 * @return string The JSON-encoded marker.
+	 */
+	private function pendingFileParts(int $fileSize): string {
+		return (string)json_encode(
+			[
+				'pending' => true,
+				'totalParts' => (int)ceil($fileSize / self::DEFAULT_CHUNK_SIZE),
+				'chunkSize' => self::DEFAULT_CHUNK_SIZE,
+				'fileSize' => $fileSize,
+			]
+		);
+	}//end pendingFileParts()
+
+	/**
+	 * Store a document's base64 inhoud and stamp its size and file id on the object.
+	 *
+	 * @param array $objectData The saved document.
+	 * @param string $objectUuid The document uuid.
+	 * @param mixed $inhoud The base64 content.
+	 * @param array $mappingConfig The EIO mapping.
+	 *
+	 * @return array The document, with fileSize and fileId when they were stamped.
+	 */
+	private function storeInhoud(array $objectData, string $objectUuid, mixed $inhoud, array $mappingConfig): array {
+		$fileName = $objectData['fileName'] ?? 'document';
+		if ($fileName === '') {
+			$fileName = 'document';
+		}
+
+		$fileSize = $this->zgwService->getDocumentService()->storeBase64(
+			uuid: $objectUuid,
+			fileName: $fileName,
+			content: $inhoud
+		);
+
+		// The file id, and NOT only the size. Three surfaces resolve a
+		// document through `fileId` and each of them fails SILENTLY
+		// without one: `openInFiles()` and `VersionHistoryPanel` both
+		// return early on a falsy id, and Files comments hang off the
+		// same node. Only the upload path stamped it, so a document
+		// created over this API rendered an Open in Files action, a
+		// Version history action and a comments sidebar that all did
+		// nothing and reported nothing.
+		//
+		// The old guard is why: keyed on `fileSize` alone, a caller
+		// that supplied `bestandsomvang` skipped the write entirely
+		// and the id never landed at all.
+		$fileId = $this->resolveStoredFileId(uuid: $objectUuid, fileName: $fileName);
+		$needsSize = (empty($objectData['fileSize']) === true);
+		$needsFileId = ($fileId > 0 && (int)($objectData['fileId'] ?? 0) !== $fileId);
+
+		if ($needsSize === true || $needsFileId === true) {
+			if ($needsSize === true) {
+				$objectData['fileSize'] = $fileSize;
+			}
+
+			if ($fileId > 0) {
+				$objectData['fileId'] = $fileId;
+			}
+
+			// The WHOLE object, never a partial: ObjectService::saveObject
+			// REPLACES, and a partial write drops the four properties the
+			// informatieobject schema requires (#1960).
+			$objectData['uuid'] = $objectUuid;
+			$this->zgwService->getObjectService()->saveObject(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema'],
+				object: $objectData
+			);
+		}
+
+		return $objectData;
+	}//end storeInhoud()
+
+	/**
+	 * The bestandsdelen of a document with a pending chunked upload, else [].
+	 *
+	 * @param array $objectData The saved document.
+	 * @param string $uuid The document uuid.
+	 * @param int $fileSize The declared bestandsomvang, used when the marker has none.
+	 *
+	 * @return array The bestandsdelen.
+	 */
+	private function pendingBestandsdelen(array $objectData, string $uuid, int $fileSize): array {
+		$chunkInfo = $this->parseFileParts(objectData: $objectData);
+		if ($chunkInfo === null || ($chunkInfo['pending'] ?? false) !== true) {
+			return [];
+		}
+
+		return $this->buildBestandsdelenArray(
+			uuid: $uuid,
+			fileSize: ($chunkInfo['fileSize'] ?? $fileSize),
+			totalParts: ($chunkInfo['totalParts'] ?? 1)
+		);
+	}//end pendingBestandsdelen()
+
 
 	/**
 	 * Retrieve a single resource by UUID.
@@ -532,80 +619,116 @@ class DrcController extends ZgwController {
 
 		// Drc-006 (VNG): Gebruiksrechten delete — update indicatieGebruiksrecht on EIO.
 		if ($resource === 'gebruiksrechten') {
-			$grData = $this->getGebruiksrechtData(uuid: $uuid);
-			$response = $this->zgwService->handleDestroy($this->request, self::ZGW_API, $resource, $uuid);
-			if ($response->getStatus() === Http::STATUS_NO_CONTENT && $grData !== null) {
-				$this->checkAndClearIndicationGebruiksrecht(eioUuid: $grData['informatieobjectUuid']);
-			}
+			return $this->destroyGebruiksrecht(uuid: $uuid);
+		}
 
+		if ($resource === self::EIO_RESOURCE) {
+			return $this->destroyEio(uuid: $uuid);
+		}
+
+		return $this->zgwService->handleDestroy($this->request, self::ZGW_API, $resource, $uuid);
+	}//end destroy()
+
+	/**
+	 * Delete a gebruiksrecht, and clear its document's indicatieGebruiksrecht when it was the last.
+	 *
+	 * @param string $uuid The gebruiksrecht uuid.
+	 *
+	 * @return JSONResponse
+	 */
+	private function destroyGebruiksrecht(string $uuid): JSONResponse {
+		$grData = $this->getGebruiksrechtData(uuid: $uuid);
+		$response = $this->zgwService->handleDestroy($this->request, self::ZGW_API, 'gebruiksrechten', $uuid);
+		if ($response->getStatus() === Http::STATUS_NO_CONTENT && $grData !== null) {
+			$this->checkAndClearIndicationGebruiksrecht(eioUuid: $grData['informatieobjectUuid']);
+		}
+
+		return $response;
+	}//end destroyGebruiksrecht()
+
+	/**
+	 * Delete an enkelvoudiginformatieobject.
+	 *
+	 * Refused while ObjectInformatieObjecten point at it (drc-008a). After a successful delete its
+	 * gebruiksrechten go (drc-008), and its stored files go when the document could be read
+	 * before the delete.
+	 *
+	 * @param string $uuid The document uuid.
+	 *
+	 * @return JSONResponse
+	 */
+	private function destroyEio(string $uuid): JSONResponse {
+		$hasStoredFiles = $this->isReadableEio(uuid: $uuid);
+
+		// Drc-008a (VNG): Block EIO deletion when OIO relations exist.
+		if ($this->zgwService->getObjectService() !== null
+			&& empty($this->findOioRelationsForEio(eioUuid: $uuid)) === false
+		) {
+			return new JSONResponse(
+				[
+					'detail' => $this->l10n->t('The document cannot be deleted: there are related ObjectInformatieObjecten.'),
+					'invalidParams' => [
+						[
+							'name' => 'nonFieldErrors',
+							'code' => 'pending-relations',
+							'reason' => $this->l10n->t('The document cannot be deleted.'),
+						],
+					],
+				],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		$response = $this->zgwService->handleDestroy($this->request, self::ZGW_API, self::EIO_RESOURCE, $uuid);
+		if ($response->getStatus() !== Http::STATUS_NO_CONTENT) {
 			return $response;
 		}
 
-		if ($resource === self::EIO_RESOURCE && $this->zgwService->getObjectService() !== null) {
-			$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-			if ($mappingConfig !== null) {
-				try {
-					$existing = $this->zgwService->getObjectService()->find(
-						$uuid,
-						register: $mappingConfig['sourceRegister'],
-						schema: $mappingConfig['sourceSchema']
-					);
-					$existingData = $this->objectToArray(row: $existing);
+		// Drc-008 (VNG): Cascade delete gebruiksrechten after EIO deletion.
+		$this->cascadeDeleteGebruiksrechten(eioUuid: $uuid);
 
-					$fileName = $existingData['fileName'] ?? 'document';
-					if ($fileName === '') {
-						$fileName = 'document';
-					}
-				} catch (\Throwable $e) {
-					$fileName = null;
-				}
-			}//end if
-		}//end if
-
-		// Drc-008a (VNG): Block EIO deletion when OIO relations exist.
-		if ($resource === self::EIO_RESOURCE && $this->zgwService->getObjectService() !== null) {
-			$oioRelations = $this->findOioRelationsForEio(eioUuid: $uuid);
-			if (empty($oioRelations) === false) {
-				return new JSONResponse(
-					[
-						'detail' => $this->l10n->t('The document cannot be deleted: there are related ObjectInformatieObjecten.'),
-						'invalidParams' => [
-							[
-								'name' => 'nonFieldErrors',
-								'code' => 'pending-relations',
-								'reason' => $this->l10n->t('The document cannot be deleted.'),
-							],
-						],
-					],
-					Http::STATUS_BAD_REQUEST
+		if ($hasStoredFiles === true) {
+			try {
+				$this->zgwService->getDocumentService()->deleteFiles(uuid: $uuid);
+			} catch (\Throwable $e) {
+				$this->zgwService->getLogger()->warning(
+					'DRC file cleanup failed: ' . $e->getMessage(),
+					['exception' => $e]
 				);
 			}
 		}
 
-		$response = $this->zgwService->handleDestroy($this->request, self::ZGW_API, $resource, $uuid);
+		return $response;
+	}//end destroyEio()
 
-		// Post-delete cleanup (only on successful deletion).
-		if ($resource === self::EIO_RESOURCE
-			&& $response->getStatus() === Http::STATUS_NO_CONTENT
-		) {
-			// Drc-008 (VNG): Cascade delete gebruiksrechten after EIO deletion.
-			$this->cascadeDeleteGebruiksrechten(eioUuid: $uuid);
-
-			// Delete stored files.
-			if (isset($fileName) === true) {
-				try {
-					$this->zgwService->getDocumentService()->deleteFiles(uuid: $uuid);
-				} catch (\Throwable $e) {
-					$this->zgwService->getLogger()->warning(
-						'DRC file cleanup failed: ' . $e->getMessage(),
-						['exception' => $e]
-					);
-				}
-			}
+	/**
+	 * Whether the document can be read, which is what decides whether its files are cleaned up.
+	 *
+	 * @param string $uuid The document uuid.
+	 *
+	 * @return bool True when the document was found.
+	 */
+	private function isReadableEio(string $uuid): bool {
+		if ($this->zgwService->getObjectService() === null) {
+			return false;
 		}
 
-		return $response;
-	}//end destroy()
+		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
+		if ($mappingConfig === null) {
+			return false;
+		}
+
+		try {
+			$this->zgwService->getObjectService()->find(
+				$uuid,
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			);
+			return true;
+		} catch (\Throwable $e) {
+			return false;
+		}
+	}//end isReadableEio()
 
 	/**
 	 * Download the binary file content for an EIO document.
@@ -857,33 +980,10 @@ class DrcController extends ZgwController {
 		$lockId = $body['lock'] ?? '';
 
 		// Determine if this is a forced unlock (wrong/empty lockId + scope).
-		if ($lockId !== $storedLockId) {
-			$hasForceScope = $this->zgwService->consumerHasScope(
-				$this->request,
-				'documenten',
-				'geforceerd-bijwerken'
-			);
-			if ($hasForceScope === false) {
-				$detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
-				if ($lockId === '') {
-					$detail = $this->l10n->t('Forced unlocking is not allowed without the correct scope.');
-				}
-
-				return new JSONResponse(
-					data: [
-						'detail' => $detail,
-						'invalidParams' => [
-							[
-								'name' => 'nonFieldErrors',
-								'code' => 'incorrect-lock-id',
-								'reason' => $detail,
-							],
-						],
-					],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}//end if
-		}//end if
+		$refusal = $this->refuseUnforcedUnlock(lockId: $lockId, storedLockId: $storedLockId);
+		if ($refusal !== null) {
+			return $refusal;
+		}
 
 		// Try OpenRegister's LockHandler, fall back to clearing data blob.
 		try {
@@ -901,6 +1001,42 @@ class DrcController extends ZgwController {
 			return $this->unlockFallback(objectService: $objectService, uuid: $uuid, original: $e);
 		}
 	}//end unlock()
+
+	/**
+	 * Refuse an unlock with a wrong or empty lock id from a consumer without the
+	 * geforceerd-bijwerken scope.
+	 *
+	 * @param mixed $lockId The lock id the caller sent.
+	 * @param string $storedLockId The lock id the document holds.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the unlock may proceed.
+	 */
+	private function refuseUnforcedUnlock(mixed $lockId, string $storedLockId): ?JSONResponse {
+		if ($lockId === $storedLockId
+			|| $this->zgwService->consumerHasScope($this->request, 'documenten', 'geforceerd-bijwerken') === true
+		) {
+			return null;
+		}
+
+		$detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
+		if ($lockId === '') {
+			$detail = $this->l10n->t('Forced unlocking is not allowed without the correct scope.');
+		}
+
+		return new JSONResponse(
+			data: [
+				'detail' => $detail,
+				'invalidParams' => [
+					[
+						'name' => 'nonFieldErrors',
+						'code' => 'incorrect-lock-id',
+						'reason' => $detail,
+					],
+				],
+			],
+			statusCode: Http::STATUS_BAD_REQUEST
+		);
+	}//end refuseUnforcedUnlock()
 
 	/**
 	 * Fallback unlock for when OpenRegister's LockHandler fails (no NC session).
@@ -1428,9 +1564,6 @@ class DrcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
@@ -1459,30 +1592,14 @@ class DrcController extends ZgwController {
 			);
 			$objectData = $this->objectToArray(row: $existing);
 
-			// Verify this document has a pending chunked upload.
+			// Verify this document has a pending chunked upload, and the volgnummer (query
+			// parameter or request body) falls inside it.
 			$chunkInfo = $this->parseFileParts(objectData: $objectData);
-			if ($chunkInfo === null || ($chunkInfo['pending'] ?? false) !== true) {
-				return new JSONResponse(
-					data: ['detail' => $this->l10n->t('This document has no pending chunked upload.')],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}
-
 			$totalParts = (int)($chunkInfo['totalParts'] ?? 0);
-			if ($totalParts <= 0) {
-				return new JSONResponse(
-					data: ['detail' => $this->l10n->t('Invalid chunk configuration.')],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}
-
-			// Get volgnummer from query parameter or request body.
 			$sequenceNumber = (int)($this->request->getParam('sequenceNumber') ?? 0);
-			if ($sequenceNumber <= 0 || $sequenceNumber > $totalParts) {
-				return new JSONResponse(
-					data: ['detail' => $this->l10n->t('Invalid sequence number. Expected 1-%s.', [$totalParts])],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
+			$refusal = $this->refuseChunk(chunkInfo: $chunkInfo, totalParts: $totalParts, sequenceNumber: $sequenceNumber);
+			if ($refusal !== null) {
+				return $refusal;
 			}
 
 			// Read raw body content.
@@ -1507,62 +1624,19 @@ class DrcController extends ZgwController {
 
 			if (count($uploaded) === $totalParts) {
 				// All chunks present — merge into final file.
-				$fileName = $objectData['fileName'] ?? 'document';
-				if ($fileName === '') {
-					$fileName = 'document';
-				}
+				$mergedSize = $this->mergeUploadedChunks(objectData: $objectData, uuid: $uuid, totalParts: $totalParts, mappingConfig: $mappingConfig);
 
-				$mergedSize = $docService->mergeChunks(
-					uuid: $uuid,
-					fileName: $fileName,
+				return $this->chunkProgress(
+					progress: ['sequenceNumber' => $sequenceNumber, 'size' => $chunkSize, 'uploadComplete' => true, 'bestandsomvang' => $mergedSize],
+					uploadedParts: count($uploaded),
 					totalParts: $totalParts
-				);
-
-				// Update the object: clear chunk metadata, set file size.
-				unset(
-					$objectData['@self'],
-					$objectData['id'],
-					$objectData['organisation']
-				);
-				$objectData['fileParts'] = '';
-				$objectData['fileSize'] = $mergedSize;
-
-				// Same stamp as the single-shot path above: the merged file is
-				// the first moment a chunked upload HAS a node to point at.
-				$mergedFileId = $this->resolveStoredFileId(uuid: $uuid, fileName: $fileName);
-				if ($mergedFileId > 0) {
-					$objectData['fileId'] = $mergedFileId;
-				}
-
-				$objectService->saveObject(
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema'],
-					object: $objectData,
-					uuid: $uuid
-				);
-
-				return new JSONResponse(
-					data: [
-						'sequenceNumber' => $sequenceNumber,
-						'size' => $chunkSize,
-						'uploadComplete' => true,
-						'bestandsomvang' => $mergedSize,
-						'uploadedParts' => count($uploaded),
-						'totalParts' => $totalParts,
-					],
-					statusCode: Http::STATUS_OK
 				);
 			}//end if
 
-			return new JSONResponse(
-				data: [
-					'sequenceNumber' => $sequenceNumber,
-					'size' => $chunkSize,
-					'uploadComplete' => false,
-					'uploadedParts' => count($uploaded),
-					'totalParts' => $totalParts,
-				],
-				statusCode: Http::STATUS_OK
+			return $this->chunkProgress(
+				progress: ['sequenceNumber' => $sequenceNumber, 'size' => $chunkSize, 'uploadComplete' => false],
+				uploadedParts: count($uploaded),
+				totalParts: $totalParts
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->error(
@@ -1576,6 +1650,97 @@ class DrcController extends ZgwController {
 			);
 		}//end try
 	}//end uploadChunk()
+
+	/**
+	 * Merge a document's uploaded chunks into its file, and close the chunked upload on the object.
+	 *
+	 * @param array $objectData The stored document.
+	 * @param string $uuid The document uuid.
+	 * @param int $totalParts The number of chunks.
+	 * @param array $mappingConfig The EIO mapping.
+	 *
+	 * @return int The merged file size.
+	 */
+	private function mergeUploadedChunks(array $objectData, string $uuid, int $totalParts, array $mappingConfig): int {
+		$fileName = $objectData['fileName'] ?? 'document';
+		if ($fileName === '') {
+			$fileName = 'document';
+		}
+
+		$mergedSize = $this->zgwService->getDocumentService()->mergeChunks(
+			uuid: $uuid,
+			fileName: $fileName,
+			totalParts: $totalParts
+		);
+
+		// Update the object: clear chunk metadata, set file size.
+		unset(
+			$objectData['@self'],
+			$objectData['id'],
+			$objectData['organisation']
+		);
+		$objectData['fileParts'] = '';
+		$objectData['fileSize'] = $mergedSize;
+
+		// Same stamp as the single-shot path: the merged file is the first moment a chunked
+		// upload HAS a node to point at.
+		$mergedFileId = $this->resolveStoredFileId(uuid: $uuid, fileName: $fileName);
+		if ($mergedFileId > 0) {
+			$objectData['fileId'] = $mergedFileId;
+		}
+
+		$this->zgwService->getObjectService()->saveObject(
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema'],
+			object: $objectData,
+			uuid: $uuid
+		);
+
+		return $mergedSize;
+	}//end mergeUploadedChunks()
+
+	/**
+	 * Refuse a chunk for a document without a pending upload, with a broken chunk
+	 * configuration, or with a volgnummer outside 1..totalParts.
+	 *
+	 * @param array|null $chunkInfo The document's fileParts marker.
+	 * @param int $totalParts The number of parts it expects.
+	 * @param int $sequenceNumber The volgnummer sent.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the chunk may be stored.
+	 */
+	private function refuseChunk(?array $chunkInfo, int $totalParts, int $sequenceNumber): ?JSONResponse {
+		$detail = null;
+		if ($chunkInfo === null || ($chunkInfo['pending'] ?? false) !== true) {
+			$detail = $this->l10n->t('This document has no pending chunked upload.');
+		} elseif ($totalParts <= 0) {
+			$detail = $this->l10n->t('Invalid chunk configuration.');
+		} elseif ($sequenceNumber <= 0 || $sequenceNumber > $totalParts) {
+			$detail = $this->l10n->t('Invalid sequence number. Expected 1-%s.', [$totalParts]);
+		}
+
+		if ($detail === null) {
+			return null;
+		}
+
+		return new JSONResponse(data: ['detail' => $detail], statusCode: Http::STATUS_BAD_REQUEST);
+	}//end refuseChunk()
+
+	/**
+	 * The answer to a stored chunk: the chunk's facts, then how many parts are in.
+	 *
+	 * @param array $progress The chunk's sequenceNumber, size, uploadComplete (and bestandsomvang when complete).
+	 * @param int $uploadedParts The number of parts uploaded so far.
+	 * @param int $totalParts The number of parts expected.
+	 *
+	 * @return JSONResponse
+	 */
+	private function chunkProgress(array $progress, int $uploadedParts, int $totalParts): JSONResponse {
+		return new JSONResponse(
+			data: array_merge($progress, ['uploadedParts' => $uploadedParts, 'totalParts' => $totalParts]),
+			statusCode: Http::STATUS_OK
+		);
+	}//end chunkProgress()
 
 	/**
 	 * Enrich a show response with bestandsdelen if a chunked upload is pending.
@@ -1769,105 +1934,21 @@ class DrcController extends ZgwController {
 
 			$inhoud = $body['inhoud'] ?? null;
 
-			// Preserve lock state from existing object.
-			$existing = $this->zgwService->getObjectService()->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
-			$englishData = $this->zgwService->applyInboundMapping(
-				body: $body,
-				mapping: $inboundMapping,
+			$objectData = $this->saveEioKeepingItsLock(
+				uuid: $uuid,
+				englishData: $this->mapEioBody(body: $body, mappingConfig: $mappingConfig),
 				mappingConfig: $mappingConfig
 			);
-
-			if (empty($inhoud) === false) {
-				unset($englishData['content']);
-			}
-
-			// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
-			if (is_array($englishData) === false) {
-				return new JSONResponse(
-					data: ['detail' => 'Invalid mapping result'],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}
-
-			// Preserve lock state.
-			$englishData['locked'] = $existingData['locked'] ?? false;
-			$englishData['lockId'] = $existingData['lockId'] ?? '';
-
-			$object = $this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData,
-				uuid: $uuid
-			);
-			$objectData = $this->objectToArray(row: $object);
 
 			$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? $uuid);
 
 			// Store file content.
 			if (empty($inhoud) === false && $objectUuid !== '') {
-				$fileName = $objectData['fileName'] ?? 'document';
-				if ($fileName === '') {
-					$fileName = 'document';
-				}
-
-				$fileSize = $this->zgwService->getDocumentService()->storeBase64(
-					uuid: $objectUuid,
-					fileName: $fileName,
-					content: $inhoud
-				);
-
-				// The file id, and NOT only the size. Three surfaces resolve a
-				// document through `fileId` and each of them fails SILENTLY
-				// without one: `openInFiles()` and `VersionHistoryPanel` both
-				// return early on a falsy id, and Files comments hang off the
-				// same node. Only the upload path stamped it, so a document
-				// created over this API rendered an Open in Files action, a
-				// Version history action and a comments sidebar that all did
-				// nothing and reported nothing.
-				//
-				// The old guard is why: keyed on `fileSize` alone, a caller
-				// that supplied `bestandsomvang` skipped the write entirely
-				// and the id never landed at all.
-				$fileId = $this->resolveStoredFileId(uuid: $objectUuid, fileName: $fileName);
-				$needsSize = (empty($objectData['fileSize']) === true);
-				$needsFileId = ($fileId > 0 && (int)($objectData['fileId'] ?? 0) !== $fileId);
-
-				if ($needsSize === true || $needsFileId === true) {
-					if ($needsSize === true) {
-						$objectData['fileSize'] = $fileSize;
-					}
-
-					if ($fileId > 0) {
-						$objectData['fileId'] = $fileId;
-					}
-
-					// The WHOLE object, never a partial: ObjectService::saveObject
-					// REPLACES, and a partial write drops the four properties the
-					// informatieobject schema requires (#1960).
-					$objectData['uuid'] = $objectUuid;
-					$this->zgwService->getObjectService()->saveObject(
-						register: $mappingConfig['sourceRegister'],
-						schema: $mappingConfig['sourceSchema'],
-						object: $objectData
-					);
-				}
-			}//end if
+				$objectData = $this->storeInhoud(objectData: $objectData, objectUuid: $objectUuid, inhoud: $inhoud, mappingConfig: $mappingConfig);
+			}
 
 			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
+			$mapped = $this->mapEioOut(objectData: $objectData, mappingConfig: $mappingConfig, baseUrl: $baseUrl);
 
 			$this->zgwService->publishNotification(
 				self::ZGW_API,
@@ -1889,6 +1970,39 @@ class DrcController extends ZgwController {
 			);
 		}//end try
 	}//end handleEioUpdate()
+
+	/**
+	 * Save an updated document, keeping the lock state the stored one holds.
+	 *
+	 * @param string $uuid The document uuid.
+	 * @param array $englishData The mapped update.
+	 * @param array $mappingConfig The EIO mapping.
+	 *
+	 * @return array The saved document.
+	 */
+	private function saveEioKeepingItsLock(string $uuid, array $englishData, array $mappingConfig): array {
+		$objectService = $this->zgwService->getObjectService();
+		$existingData = $this->objectToArray(
+			row: $objectService->find(
+				$uuid,
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
+		);
+
+		// Preserve lock state.
+		$englishData['locked'] = $existingData['locked'] ?? false;
+		$englishData['lockId'] = $existingData['lockId'] ?? '';
+
+		return $this->objectToArray(
+			row: $objectService->saveObject(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema'],
+				object: $englishData,
+				uuid: $uuid
+			)
+		);
+	}//end saveEioKeepingItsLock()
 
 	/**
 	 * Check document lock state before allowing update.
@@ -2003,49 +2117,73 @@ class DrcController extends ZgwController {
 		array $mappingConfig,
 		string $uuid,
 	): ?string {
-		// Try OpenRegister's dedicated lock system first.
+		// Try OpenRegister's dedicated lock system first, then the object data blob.
+		return $this->lockIdFromLockSystem(objectService: $objectService, uuid: $uuid)
+			?? $this->lockIdFromObject(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+	}//end resolveStoredLockId()
+
+	/**
+	 * The lock id OpenRegister's lock system holds for the object, if it has that system.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $uuid The document uuid.
+	 *
+	 * @return string|null The lock id, or null when there is none or no lock system.
+	 */
+	private function lockIdFromLockSystem(object $objectService, string $uuid): ?string {
+		if (method_exists($objectService, 'getLockInfo') === false) {
+			return null;
+		}
+
 		try {
-			if (method_exists($objectService, 'getLockInfo') === true) {
-				$lockInfo = $objectService->getLockInfo($uuid);
-				if ($lockInfo !== null) {
-					$lockId = $lockInfo['lock_id'] ?? null;
-					if ($lockId !== null && $lockId !== '') {
-						return $lockId;
-					}
-				}
+			$lockId = $objectService->getLockInfo($uuid)['lock_id'] ?? null;
+			if ($lockId !== null && $lockId !== '') {
+				return $lockId;
 			}
 		} catch (\Throwable $e) {
 			// GetLockInfo not available — fall through to data blob check.
+			return null;
 		}
 
-		// Check the object data blob for lockId (stored by lock/lockFallback).
+		return null;
+	}//end lockIdFromLockSystem()
+
+	/**
+	 * The lock id stored on the object by lock/lockFallback, or 'entity-lock' for a locked flag.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param array $mappingConfig The EIO mapping.
+	 * @param string $uuid The document uuid.
+	 *
+	 * @return string|null The lock id, or null when the object is not locked or not found.
+	 */
+	private function lockIdFromObject(object $objectService, array $mappingConfig, string $uuid): ?string {
 		try {
-			$existing = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
+			$existingData = $this->objectToArray(
+				row: $objectService->find(
+					$uuid,
+					register: $mappingConfig['sourceRegister'],
+					schema: $mappingConfig['sourceSchema']
+				)
 			);
-			$existingData = $this->objectToArray(row: $existing);
-
-			// Check for stored lockId first.
-			$lockId = $existingData['lockId'] ?? null;
-			if ($lockId !== null && $lockId !== '') {
-				return (string)$lockId;
-			}
-
-			// Fallback: check locked field (boolean or entity lock structure).
-			$isLocked = $existingData['locked'] ?? false;
-			if ($isLocked === true || $isLocked === 'true'
-				|| $isLocked === 1 || is_array($isLocked) === true
-			) {
-				return 'entity-lock';
-			}
 		} catch (\Throwable $e) {
 			// Object not found — treat as not locked.
-		}//end try
+			return null;
+		}
+
+		$lockId = $existingData['lockId'] ?? null;
+		if ($lockId !== null && $lockId !== '') {
+			return (string)$lockId;
+		}
+
+		// Fallback: check locked field (boolean or entity lock structure).
+		$isLocked = $existingData['locked'] ?? false;
+		if (in_array($isLocked, [true, 'true', 1], true) === true || is_array($isLocked) === true) {
+			return 'entity-lock';
+		}
 
 		return null;
-	}//end resolveStoredLockId()
+	}//end lockIdFromObject()
 
 	/**
 	 * Store a ZGW lockId in the object data blob.

@@ -186,3 +186,133 @@ top-down would decompose methods chosen by a year-old ranking.
 
 62 of the 65 tasks are open. Re-rank against a fresh count before touching any of them, or the
 first thing this change buys is churn in the wrong twelve files.
+
+## Re-ranked 2026-10-10 (lane L11), and the slices built against it
+
+Fresh count on `development` @`3a715bb7c`: **275 `@SuppressWarnings(PHPMD.*)` in `lib/`**, of which
+76 are method complexity (CyclomaticComplexity 36, NPathComplexity 29, ExcessiveMethodLength 11).
+Those 76 sit in thirteen files, every one of them in the ZGW surface except three singletons:
+ZgwService 15, ZrcController 12, ZtcController 10, ZgwZtcRulesService 7, ZgwBrcRulesService 6,
+ZgwZrcRulesService 6, DrcController 5, ZgwDrcRulesService 4, AcController 4, ZgwJwtValidator 2,
+LoadDefaultZgwMappings 2, ZgwRulesBase 1, ContactMomentService 1, PlanItemCascade 1.
+StaticAccess (67) and UnusedFormalParameter (49) are the larger buckets but are not complexity;
+they stay out of this change.
+
+The method below replaces the "live instance" deferral above. Each slice first pins the
+method's every branch through its public callers with a characterisation test (same refusal,
+code, detail and enriched body), watches it green on the untouched code, then decomposes, then
+reruns it. A ZGW rules method is a pure function of the body plus OpenRegister lookups, so a
+characterisation test with a mapped ObjectService is a sufficient safety net; the
+"217 erroring tests" premise of 2026-06 no longer holds (the touched suites run green).
+`.debt-baseline.json` is lowered in the same commit (the ratchet rewrites it).
+
+- [x] Slice 1, `ZgwZrcRulesService` (6 complexity + 2 unused-parameter suppressions gone):
+      `validateCaseFields()` is a sequence of one rule per method (`checkIdentificatieImmutable`,
+      `checkCommunicatiekanaal`, `checkRelevanteAndereZaken`, `checkGegevensgroep` for
+      opschorting and verlenging, `checkHoofdzaak`, `applyBetalingsindicatie`,
+      `checkArchiefstatus`); `validateProductenOfDiensten()` reads the zaaktype's products
+      through `allowedProducts()`; `validateSubResourceType()` resolves the zaak's zaaktype
+      through `getCaseTypeUuidOfCase()` and lost its never-read `$caseTypeField` parameter.
+      Characterisation: `tests/Unit/Service/ZgwZrcCaseFieldRulesTest.php` (27 tests). The
+      class-level ExcessiveClassComplexity (153 against 50) and ExcessiveClassLength stay: they
+      need a class split, not a method split.
+- [x] Slice 2, `ZgwBrcRulesService` (6 complexity suppressions and 2 `phpcs:ignore` gone):
+      `rulesBesluitenCreate()` chains `checkBesluittype`, the uniqueness check (which now owns
+      its own `empty()` guard) and the relation check; the brc-007 relation reads both
+      directions through `isCaseTypeRelatedToDecisionType()` and `caseTypeListsDecisionType()`;
+      brc-008 resolves the document's type through `getDocumentTypeOfDocument()`; shared
+      `getObjectByUrl()`, `decodeList()` and `missingInformatieobjecttypeError()` replace the
+      repeated lookups, JSON decoding and the duplicated over-long message. Characterisation:
+      `tests/Unit/Service/ZgwBrcRulesServiceTest.php` (15 tests). Class complexity is 89 against
+      50, so its class-level suppression stays.
+- [x] Slice 3, `ZgwZtcRulesService` (7 complexity suppressions gone): ztc-001 is
+      `checkSelectielijstProcestype()`; both type create rules write their `_directFields` through
+      one `withDirectFields()` map; the ZIOT rule asks `needsNameLookup()`; the reference arrays
+      resolve one reference at a time through `resolveReference()` inside a shared
+      `getLookupScope()` guard. Characterisation: `tests/Unit/Service/ZgwZtcReferenceRulesTest.php`
+      (7 tests) beside the existing `ZgwZtcRulesServiceTest`.
+- [x] Slice 4, `ZgwDrcRulesService` (4 complexity + 1 unused-parameter suppressions gone):
+      the document create rules run `checkInformatieobjecttype()` and `applyCreateDefaults()`;
+      the ObjectInformatieObject create rules are `checkOioUrls()` then `checkOioRelations()`;
+      `validateIndicationGebruiksrechtTrue()` lost its never-read `$body`. Characterisation:
+      `tests/Unit/Service/ZgwDrcRulesServiceTest.php` (10 tests). With a context, an OIO for a
+      zaak or besluit is refused either way (a duplicate when the ZIO/BIO exists, inconsistent
+      when it does not). That matches VNG: the ZRC/BRC creates that OIO itself as a side effect
+      of the ZIO/BIO, so a client never posts one. The test pins it.
+- [x] Slice 5, `ZgwService` (15 method-complexity suppressions, now 0)
+  - [x] 5a: the four parent-state answers (`resolveZaakClosed`, `…FromBody`,
+        `resolveParentZaaktypeDraft`, `…FromBody`; 8 suppressions) were four copies of one
+        lookup. They move to the new `lib/Service/Zgw/ZgwParentStateResolver.php` (one lookup,
+        one fail-closed and one fail-open answer) and `ZgwService` delegates, so the public API
+        and both controllers are unchanged. New class, own test:
+        `tests/Unit/Service/Zgw/ZgwParentStateResolverTest.php` (9 tests, every branch
+        including fail-closed on a throwing or missing ObjectService).
+  - [x] 5b: `consumerHasScope` / `getConsumerAuthorisaties` (3 suppressions) read the
+        consumer through one `getConsumerAuthConfig()`, and each keeps its own fail-closed
+        answer. Characterisation: `tests/Unit/Service/ZgwServiceConsumerScopeTest.php` (4 tests:
+        every deny path, superuser, scoped, unconfigured; green before and after).
+  - [x] 5c: `handleCreate` / `handleUpdate` (4 suppressions) share `ruleRefusal()`,
+        `findSerialized()`, `mapInbound()` and `mapOutbound()`. The PATCH merge moved to the new
+        `lib/Service/Zgw/ZgwPatchMerger.php`, which holds the subtle part (which mapped fields
+        count as patched, and which stored arrays come back as arrays). New class, own test:
+        `tests/Unit/Service/Zgw/ZgwPatchMergerTest.php` (5 tests, including the
+        productsOrServices array-versus-string case the inline comment records). The two
+        handlers themselves have no unit test; nothing constructs ZgwService in tests, so their
+        orchestration is covered by the Newman ZGW collections (live pass, decision 139).
+- [ ] Slice 6, the controllers (ZrcController 12, ZtcController 10, DrcController 5); AcController
+      waits until #3298 (which edits it) lands. Note: each controller also carries CLASS-level
+      CyclomaticComplexity/NPathComplexity suppressions, which silence every method in the file;
+      removing them shows 15 hidden method findings in ZrcController and 9 in DrcController.
+  - [x] 6a `ZtcController` (11 suppressions: the class-level CyclomaticComplexity,
+        NPathComplexity and ExcessiveClassLength, plus the 8 on its enrich and filter methods).
+        The read-path cross-reference work moves to three new classes:
+        `ZtcCrossReferenceEnricher` (builds the lists), `ZtcRelatedTypeLookup` (the OpenRegister
+        lookups behind them) and `ZtcUrlValidityFilter` (drops URLs to concept or out-of-date
+        types). `index`, `handlePublish` and the ZIOT omschrijving lookup each lost a step to a
+        private helper. The controller went from 1,324 to about 800 lines. New classes, one
+        test: `tests/Unit/Service/Zgw/ZtcCrossReferenceTest.php` (8 tests); the existing
+        `ZtcControllerContractTest` still passes.
+  - [x] The swallowing-catch ratchet (`ServiceCatchReturnsNullTest`, ceiling 259) holds:
+        the two `ZgwService::resolveParentZaaktypeDraft*` sites collapsed into one
+        (`ZgwParentStateResolver::draftState`), and the two ZTC catches that moved from the
+        controller into `lib/Service` share one logged `searchRowsOrNone()`. 259 sites, 259
+        allowed, both new entries classed with a reason.
+  - [x] 6b `DrcController` (5: the class-level CyclomaticComplexity, NPathComplexity and
+        ExcessiveMethodLength, plus 2 on `uploadChunk`; with them gone no Drc method crosses a
+        threshold). The EIO create, delete, update, chunk upload and unlock each lost their
+        sub-steps to private helpers (`createEio`, `eioEnglishData`/`mapEioBody`/`mapEioOut`,
+        `storeInhoud` now shared by create and update, `destroyEio`/`isReadableEio`,
+        `saveEioKeepingItsLock`, `refuseChunk`/`mergeUploadedChunks`/`chunkProgress`,
+        `refuseUnforcedUnlock`, `lockIdFromLockSystem`/`lockIdFromObject`), and the two dead
+        `is_array()` guards behind `@phpstan-ignore` went (applyInboundMapping returns `array`
+        natively). Characterisation: `tests/Unit/Controller/DrcEioLifecycleTest.php` (8 tests,
+        green on the old controller first) beside the existing Drc contract tests.
+- [x] Slice 6c `ZrcController` (12 suppressions gone: the class-level CyclomaticComplexity,
+      NPathComplexity and ExcessiveMethodLength, and the method-level ones on destroyCase,
+      checkReopenScope, checkIndicationGebruiksrechtBeforeClose and handleEindstatusEffect; with
+      them gone no Zrc method crosses a threshold, so the 15 hidden findings are gone too).
+      What a new status or resultaat does to its zaak moved to three new classes:
+      `ZrcStatusEffects` (close on eindstatus, reopen, result-time archiving, the zrc-008c
+      reopen test), `ZrcEindstatus` (own flag, else highest volgnummer; it was written out
+      twice) and `ZrcUsageRights` (zrc-007b settle, zrc-007q check). The controller lost
+      `CaseDateNormaliser` and `ArchivalNominationDeriver` and went from 2,562 to about 1,950
+      lines; `create` (CC 20), `destroyCase` (21), `update`/`patch`, the two read-access
+      checks, the body pre-validation and the inbound related-zaken write each lost their
+      sub-steps to private helpers. The `is_array()` guard behind `@phpstan-ignore` on
+      `applyInboundMapping()` went (it returns `array` natively).
+      Characterisation, green on the old code first: `ZrcStatusEffectsTest` (19; also run
+      against the six original controller methods copied verbatim into a scratch harness, same
+      19 green), `ZrcDestroyCaseTest` (9), `ZrcCaseReadAccessTest` (10), `ZrcWritePathTest` (15).
+      Own tests for the new classes: `ZrcEindstatusTest`, `ZrcUsageRightsTest`.
+      `OneDateWritePathTest` lists `Service/Zgw/ZrcStatusEffects.php` under the ZrcController
+      write path; the swallowing-catch ceiling holds at 259. The class-level ExcessiveClassLength,
+      ExcessiveClassComplexity, TooMany(Public)Methods and CouplingBetweenObjects stay: they need
+      the controller split by resource, not by method.
+- [ ] Slice 7, the singletons
+  - [x] `ZgwJwtValidator::validate` (2): token decoding, signature check and user binding
+        are their own methods. Characterisation: `tests/Unit/Service/ZgwJwtValidatorTest.php`
+        (3 tests: every refusal in order, user binding, algorithm override; green before and after).
+  - [x] `PlanItemCascade::cascadePass` (1): one pass loops `evaluateItem()`, which uses
+        `criteriaFire()`/`hasCriteria()` and `completeStageIfDone()`. Covered by the existing
+        `tests/Unit/Service/Cmmn/` suite (47 tests, green before and after).
+  - [ ] LoadDefaultZgwMappings (2), ZgwRulesBase (1); ContactMomentService waits on #3563
