@@ -820,6 +820,14 @@ $extra = [
     ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
     ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],
     ['name' => 'wooSources#add',    'url' => '/api/cases/{id}/woo/sources/add',    'verb' => 'POST'],
+    // The corpus of a Woo request (woo-request-corpus-collection).
+    ['name' => 'wooCollection#plan',       'url' => '/api/cases/{id}/woo/plan',                                    'verb' => 'GET'],
+    ['name' => 'wooCollection#recordPlan', 'url' => '/api/cases/{id}/woo/plan',                                    'verb' => 'PUT'],
+    ['name' => 'wooCollection#report',     'url' => '/api/cases/{id}/woo/collection',                              'verb' => 'GET'],
+    ['name' => 'wooCollection#exclude',    'url' => '/api/cases/{id}/woo/documents/{documentRef}/exclude',         'verb' => 'POST'],
+    ['name' => 'wooCollection#queries',    'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'GET'],
+    ['name' => 'wooCollection#storeQuery', 'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'POST'],
+    ['name' => 'wooCollection#rerun',      'url' => '/api/cases/{id}/woo/collection/queries/{queryId}/rerun',      'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are
