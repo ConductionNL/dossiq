@@ -6,6 +6,16 @@ A test marked **fails today** must be run on `origin/development` first and seen
 failing line in the PR body. Dates in tests come from a fixed clock and a fixed calendar, never
 from `today`.
 
+> **Moved, 2026-10-09.** Sections 1 to 3 (the rolled case deadline, rolled API
+> end dates, the Woo extension through the term engine) are built under
+> `openspec/changes/one-term-engine` (Ruben's one-term-engine decision of
+> 2026-10-09), which supersedes them: the case deadline follows the statutory
+> term instance rather than a generalised `CaseInheritedDeadlineListener`, and
+> `deadlineBeforeRoll` on the case is not added (the instance keeps
+> `endDateCalculated` and `endDateBeforeRoll`). Do not build sections 1 to 3
+> here. Section 4 (the quarterly report) and its part of section 5 stay in this
+> change.
+
 ## 1. The case deadline is rolled
 
 - [ ] 1.1 Stop the case `deadline` coming from the unrolled calculation. Remove

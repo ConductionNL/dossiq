@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
+use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Term\TermResolution;
 use OCA\Dossiq\Service\TermijnService;
@@ -63,6 +64,12 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @param TermResolution|null $resolution The case type's own first-response term,
 	 *        which wins over the Awb default when one is declared. Optional for the
 	 *        same reason as the parameter above it.
+	 * @param IntakeTermStart|null $intake When the request arrived and when its clock
+	 *        starts, on the calendar the term counts on. The term starts there, not at
+	 *        the moment the case row was written (REQ-OTE-02). Optional so a build
+	 *        without it starts the term at creation exactly as before.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -71,6 +78,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseTermsService $caseTerms = null,
 		private readonly ?TermResolution $resolution = null,
+		private readonly ?IntakeTermStart $intake = null,
 	) {
 	}//end __construct()
 
@@ -101,6 +109,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof ObjectCreatedEvent) === false) {
@@ -153,7 +162,15 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		);
 
 		try {
-			$this->termService->createTermijnInstance($caseId, $caseType, null, $resolution);
+			// The term counts from receipt, not from the moment this row was
+			// written (REQ-OTE-02). Null only when no intake reader is wired,
+			// which is the old behaviour: the term starts now.
+			$this->termService->createTermijnInstance(
+				$caseId,
+				$caseType,
+				$this->intake?->termStartFor(case: $payload),
+				$resolution
+			);
 			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
 		} catch (NoTermijnDefinitieException $e) {
 			// NOT debug. A case that matched no definition at all has no
@@ -190,11 +207,13 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *
 	 * @param string $caseId The case UUID.
 	 * @param string $caseTypeRef The case type as the case carries it.
-	 * @param array<string, mixed> $payload The created case.
+	 * @param array<string, mixed> $payload The created case. Its clocks start where the
+	 *        statutory term starts, so the three clocks of one case count from one day.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 */
 	private function bindTheOtherClocks(string $caseId, string $caseTypeRef, array $payload): void {
 		if ($this->caseTerms === null) {
@@ -205,6 +224,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			$this->caseTerms->bindForCase(
 				caseId: $caseId,
 				caseTypeId: $caseTypeRef,
+				start: $this->intake?->termStartFor(case: $payload),
 				plannedStart: trim((string)($payload['plannedStartDate'] ?? '')),
 			);
 		} catch (\Throwable $e) {
