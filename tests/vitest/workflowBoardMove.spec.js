@@ -94,8 +94,8 @@ vi.mock('../../src/dialogs/BulkTransitionDialog.vue', () => ({
 const WorkflowBoard = (
 	await import('../../src/views/workflow-board/WorkflowBoard.vue')
 ).default
-const CaseTransitionConfirmDialog = (
-	await import('../../src/dialogs/CaseTransitionConfirmDialog.vue')
+const CaseLifecycleMenuDialog = (
+	await import('../../src/dialogs/CaseLifecycleMenuDialog.vue')
 ).default
 
 /** The case the board moves. */
@@ -152,14 +152,23 @@ async function boardWithOffer(transitions) {
 }
 
 /**
- * The case-page confirm dialog, mounted on the same transition.
+ * The case page's lifecycle menu, with the same transition chosen.
  *
- * @return {object} The mounted wrapper.
+ * The menu is the surface a handler moves a case with on the case page, so it
+ * is the oracle: the board must post what the menu posts. The menu refuses a
+ * confirm without a reason and the board sends none, so the caller fills one
+ * in and compares the two posts without it.
+ *
+ * @return {Promise<object>} The mounted wrapper.
  */
-function casePageDialog() {
-	return shallowMount(CaseTransitionConfirmDialog, {
-		props: { caseId: CASE.id, transition: OFFERED, closing: false },
+async function casePageMenu() {
+	axios.get.mockResolvedValue({ data: {} })
+	const wrapper = shallowMount(CaseLifecycleMenuDialog, {
+		props: { caseId: CASE.id },
 	})
+	await flushPromises()
+	wrapper.vm.choose({ ...OFFERED, kind: 'transition', disabled: false })
+	return wrapper
 }
 
 /**
@@ -188,17 +197,23 @@ describe('moving a case on the workflow board', () => {
 		expect(axios.post).toHaveBeenCalledTimes(1)
 		const fromBoard = axios.post.mock.calls[0]
 
-		// The identical move, made the other way.
+		// The identical move, made the other way. The menu asks for a reason
+		// and the board does not, so the comment is the one difference allowed.
 		axios.post.mockClear()
-		await casePageDialog().vm.confirm()
+		const menu = await casePageMenu()
+		menu.vm.reason = 'Alle stukken zijn binnen.'
+		await menu.vm.confirm()
+		expect(axios.post).toHaveBeenCalledTimes(1)
 		const fromCasePage = axios.post.mock.calls[0]
+		const { comment, ...menuMove } = fromCasePage[1]
 
 		expect(fromBoard[0]).toBe(
 			'/index.php/apps/dossiq/api/case/case-1/transition',
 		)
 		expect(fromBoard[0]).toBe(fromCasePage[0])
+		expect(comment).toBe('Alle stukken zijn binnen.')
 		expect(fromBoard[1]).toEqual({ transitionId: 't1' })
-		expect(fromBoard[1]).toEqual(fromCasePage[1])
+		expect(fromBoard[1]).toEqual(menuMove)
 	})
 
 	// @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
