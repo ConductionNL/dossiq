@@ -133,7 +133,6 @@
                 <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
                 <referencedClass name="OCA\OpenRegister\Service\FileService"/>
                 <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
-                <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
                 <!-- OpenRegister's Flow node contract (ADR-065: OR is the only
                      flow engine). Same dynamic-load situation as the entries
                      above: dossiq contributes nodes into OR's registry and

@@ -205,6 +205,28 @@
       },
       "deadlineInstance": {
         "slug": "deadlineInstance",
+        "configuration": {
+          "x-openregister-mcp": {
+            "enabled": true,
+            "tools": {
+              "search": {
+                "description": "Find the statutory deadlines running on cases, for example the ones about to expire.",
+                "scope": "read",
+                "readOnlyHint": true,
+                "filters": [
+                  "case",
+                  "status",
+                  "deadlineDefinition"
+                ]
+              },
+              "get": {
+                "description": "Read one statutory deadline by id: start, calculated end, current end and pauses.",
+                "scope": "read",
+                "readOnlyHint": true
+              }
+            }
+          }
+        },
         "icon": "TimerSandFull",
         "version": "1.3.0",
         "x-schema-org": "schema:Action",
