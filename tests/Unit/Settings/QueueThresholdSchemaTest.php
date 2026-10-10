@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
  * a field OpenRegister drops on save, and the editor would then report a
  * threshold it never stored.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class QueueThresholdSchemaTest extends TestCase {
 

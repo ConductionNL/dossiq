@@ -124,9 +124,9 @@ describe('the cases list', () => {
 		expect(lead[0].default).toBe(true)
 	})
 
-	it('keeps every one of the 19 lenses it had, with the filter it had', () => {
-		expect(before.quickFilters).toHaveLength(19)
-		expect(simple.quickFilters).toHaveLength(20)
+	it('keeps every one of the 18 lenses it had (19 before one-follow-control folded Favourites into Following), with the filter it had', () => {
+		expect(before.quickFilters).toHaveLength(18)
+		expect(simple.quickFilters).toHaveLength(19)
 		for (const lens of before.quickFilters) {
 			const kept = simple.quickFilters.find(
 				(item) => item.label === lens.label,
@@ -190,7 +190,7 @@ describe('the cases list', () => {
 		}
 	})
 
-	it('draws the handler as an avatar and the deadline in colour, red from the day it ends', () => {
+	it('draws the handler as an avatar and the deadline in colour, red from the day after it ends', () => {
 		const handler = simple.columns.find((column) => column.key === 'assignee')
 		expect(handler).toMatchObject({
 			widget: 'avatar',
@@ -198,8 +198,9 @@ describe('the cases list', () => {
 		})
 		const deadline = simple.columns.find((column) => column.key === 'deadline')
 		expect(deadline.widget).toBe('date')
+		// A term is not late on its last day (one-term-engine, REQ-OTE-05).
 		expect(deadline.widgetProps.variantWhen).toEqual([
-			{ op: 'lte', value: 0, variant: 'error' },
+			{ op: 'lt', value: 0, variant: 'error' },
 			{ op: 'lte', value: 5, variant: 'warning' },
 		])
 	})
@@ -284,16 +285,16 @@ describe('the board', () => {
 		expect(rule).toEqual({
 			field: 'deadline',
 			variantWhen: [
-				{ op: 'lte', value: 0, variant: 'error' },
+				{ op: 'lt', value: 0, variant: 'error' },
 				{ op: 'lte', value: 3, variant: 'warning' },
 			],
 		})
 		expect(page(builtFull, 'WorkflowBoard').config.dueRule).toBeUndefined()
 	})
 
-	it('counts today as late with the rule, and only yesterday without it', () => {
+	it('counts only yesterday as late, with the rule and without it', () => {
 		expect(cardDueSeverity(-1, rule)).toBe('overdue')
-		expect(cardDueSeverity(0, rule)).toBe('overdue')
+		expect(cardDueSeverity(0, rule)).toBe('warning')
 		expect(cardDueSeverity(1, rule)).toBe('warning')
 		expect(cardDueSeverity(3, rule)).toBe('warning')
 		expect(cardDueSeverity(4, rule)).toBe('ok')
@@ -590,9 +591,9 @@ describe('the landing page', () => {
 		}
 	})
 
-	it('marks today as late in the week strip, like the list and the board', () => {
+	it('marks only a passed deadline as late in the week strip, like the list and the board', () => {
 		expect(widget('simple-week').content.lateWhen).toEqual({
-			op: 'lte',
+			op: 'lt',
 			value: 0,
 		})
 		expect(widget('simple-week').content.itemRoute).toBe('CaseDetail')

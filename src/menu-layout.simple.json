@@ -443,7 +443,7 @@
 									"metaFields": ["identifier"],
 									"itemRoute": "CaseDetail",
 									"lateWhen": {
-										"op": "lte",
+										"op": "lt",
 										"value": 0
 									},
 									"emptyText": "No deadlines"
@@ -1236,7 +1236,7 @@
 		},
 		{
 			"id": "Cases",
-			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day it ends (`lte 0`), the same rule the board uses.",
+			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
@@ -1273,7 +1273,7 @@
 						"widgetProps": {
 							"variantWhen": [
 								{
-									"op": "lte",
+									"op": "lt",
 									"value": 0,
 									"variant": "error"
 								},
@@ -1353,13 +1353,13 @@
 		},
 		{
 			"id": "WorkflowBoard",
-			"_note": "The board is dossiq's own component, not the library's board, so the library's `dueRule` does not reach it by itself. CaseCard reads this rule and decides with it. Today counts as late here (`lte 0`). Without a rule, which is the full structure, a card is late only after its deadline.",
+			"_note": "The board is dossiq's own component, not the library's board, so the library's `dueRule` does not reach it by itself. CaseCard reads this rule and decides with it. A card is late from the day after its deadline (`lt 0`) and amber from three days before it, today included (one-term-engine, REQ-OTE-05). Without a rule, which is the full structure, a card is late only after its deadline too.",
 			"config": {
 				"dueRule": {
 					"field": "deadline",
 					"variantWhen": [
 						{
-							"op": "lte",
+							"op": "lt",
 							"value": 0,
 							"variant": "error"
 						},

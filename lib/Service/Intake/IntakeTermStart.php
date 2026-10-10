@@ -123,6 +123,48 @@ class IntakeTermStart {
 	}//end stampFor()
 
 	/**
+	 * The moment a case's term starts: its `termStartsAt`.
+	 *
+	 * THE STAMP IS NOT YET ON A NEW CASE, as a rule. `IntakeTermStartListener`
+	 * stamps the case on the same create event as the term is bound on, and
+	 * runs after the bind, so reading the stamp back would find nothing. The
+	 * same calendar question is asked here instead, from the same arrival
+	 * moment, which is what keeps the term and the stamp equal: one calendar,
+	 * asked once each, the same way.
+	 *
+	 * When no calendar answers, the arrival moment itself and never "now": a
+	 * case registered on Tuesday for a request received on Sunday is owed the
+	 * days since Sunday.
+	 *
+	 * @param array<string, mixed> $case The case, as stored or as just created.
+	 *
+	 * @return DateTimeImmutable When its term starts.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
+	 */
+	public function termStartFor(array $case): DateTimeImmutable {
+		$stamped = trim((string)($case[self::TERM_STARTS_AT] ?? ''));
+		if ($stamped !== '') {
+			try {
+				return new DateTimeImmutable($stamped);
+			} catch (Throwable $e) {
+				$this->logger?->warning(
+					'Dossiq intake: a case carries a term start that does not read as a date',
+					['termStartsAt' => $stamped, 'error' => $e->getMessage()],
+				);
+			}
+		}
+
+		$arrival = $this->arrivalOf(case: $case);
+		$startsAt = trim((string)($this->stampFor(receivedAt: $arrival)[self::TERM_STARTS_AT] ?? ''));
+		if ($startsAt === '') {
+			return $arrival;
+		}
+
+		return new DateTimeImmutable($startsAt);
+	}//end termStartFor()
+
+	/**
 	 * Whether a case already carries the stamp.
 	 *
 	 * The stamp is written once and never moved, so this is what stops a

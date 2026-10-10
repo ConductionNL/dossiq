@@ -36,13 +36,31 @@ vi.mock('@nextcloud/vue', () => ({
 		},
 		emits: ['update:modelValue'],
 		render() {
-			return h('select', { class: 'NcSelect', 'aria-label': this.inputLabel })
+			// The option slot is rendered per option, so a test can read what
+			// the picker shows beside each case type.
+			const options = this.$slots.option
+				? this.options.map((option) =>
+						h(
+							'div',
+							{ class: 'NcSelect__option' },
+							this.$slots.option(option),
+						),
+					)
+				: []
+			return h('div', [
+				h('select', { class: 'NcSelect', 'aria-label': this.inputLabel }),
+				...options,
+			])
 		},
 	},
 }))
 vi.mock('@nextcloud/l10n', () => ({
 	translate: (app, text, vars = {}) =>
 		text.replace(/{(\w+)}/g, (_, key) => String(vars[key] ?? `{${key}}`)),
+	translatePlural: (app, one, many, count, vars = {}) =>
+		(count === 1 ? one : many).replace(/{(\w+)}/g, (_, key) =>
+			String(vars[key] ?? `{${key}}`),
+		),
 }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (url) => url }))
 vi.mock('@nextcloud/axios', () => ({ default: { get: vi.fn(), put: vi.fn() } }))
@@ -184,6 +202,61 @@ describe('Case types in my menu', () => {
 		expect(rows(wrapper)).toEqual(['Woo-verzoek'])
 		expect(wrapper.find('[data-testid="menu-case-types-status"]').text()).toBe(
 			'Your change was not saved. Try again.',
+		)
+	})
+	// @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	it('says how many open cases each case type has, in the list and in the picker', async () => {
+		const wrapper = await mountWith(
+			[{ ...WOO, openCases: 19 }],
+			[
+				{ ...BEZWAAR, openCases: 7 },
+				{ ...KLACHT, openCases: 1 },
+				{ ...WOO, openCases: 19 },
+			],
+		)
+
+		expect(wrapper.find('[data-testid="menu-case-types-count"]').text()).toBe(
+			'19 open cases',
+		)
+		expect(
+			wrapper
+				.findAll('[data-testid="menu-case-types-option-count"]')
+				.map((count) => count.text()),
+		).toEqual(['7 open cases', '1 open case'])
+	})
+
+	// @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	it('shows 0 for a case type with no open cases and nothing when the count is unknown', async () => {
+		const wrapper = await mountWith(
+			[{ ...WOO, openCases: null }],
+			[
+				{ ...BEZWAAR, openCases: 0 },
+				{ ...WOO, openCases: null },
+			],
+		)
+
+		expect(wrapper.find('[data-testid="menu-case-types-count"]').exists()).toBe(
+			false,
+		)
+		expect(
+			wrapper
+				.findAll('[data-testid="menu-case-types-option-count"]')
+				.map((count) => count.text()),
+		).toEqual(['0 open cases'])
+	})
+
+	// @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	it('keeps the count of a case type it adds, without asking the server again', async () => {
+		const wrapper = await mountWith([], [{ ...KLACHT, openCases: 4 }])
+
+		wrapper
+			.findComponent({ name: 'NcSelect' })
+			.vm.$emit('update:modelValue', { id: 'k', title: 'Klacht' })
+		await flushPromises()
+
+		expect(axios.get).toHaveBeenCalledTimes(1)
+		expect(wrapper.find('[data-testid="menu-case-types-count"]').text()).toBe(
+			'4 open cases',
 		)
 	})
 })

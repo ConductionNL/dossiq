@@ -160,11 +160,11 @@ export default {
 }
 
 .status-enabled {
-	color: var(--color-success);
+	color: var(--color-success-text);
 }
 
 .status-disabled {
-	color: var(--color-warning);
+	color: var(--color-warning-text);
 }
 
 .status-unconfigured {
@@ -172,7 +172,7 @@ export default {
 }
 
 .success-message {
-	color: var(--color-success);
+	color: var(--color-success-text);
 	margin-top: 12px;
 }
 </style>

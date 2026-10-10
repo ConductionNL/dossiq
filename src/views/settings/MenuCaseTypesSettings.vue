@@ -12,7 +12,12 @@
   focuses the handle and presses Arrow up or Arrow down. The handle's name says
   where the row is, and a polite live region says where it went.
 
+  Beside each case type, in the list and in the picker, stands how many open
+  cases of that type the reader may see (REQ-CTN-006). The numbers come with
+  the first read and are kept here, so saving the list does not ask again.
+
   @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-005
+  @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 -->
 <template>
 	<div class="menu-case-types" data-testid="menu-case-types">
@@ -49,7 +54,15 @@
 				<span class="menu-case-types__icon" aria-hidden="true">
 					<FolderOutline :size="20" />
 				</span>
-				<span class="menu-case-types__label">{{ caseType.title }}</span>
+				<span class="menu-case-types__text">
+					<span class="menu-case-types__label">{{ caseType.title }}</span>
+					<span
+						v-if="openCasesLabel(caseType)"
+						class="menu-case-types__meta"
+						data-testid="menu-case-types-count"
+						>{{ openCasesLabel(caseType) }}</span
+					>
+				</span>
 				<NcButton
 					variant="tertiary"
 					:aria-label="
@@ -82,7 +95,19 @@
 			:placeholder="t('dossiq', 'Search a case type')"
 			:disabled="!loaded"
 			data-testid="menu-case-types-add"
-			@update:modelValue="add" />
+			@update:modelValue="add">
+			<template #option="option">
+				<span class="menu-case-types__option">
+					<span>{{ option.title }}</span>
+					<span
+						v-if="openCasesLabel(option)"
+						class="menu-case-types__meta"
+						data-testid="menu-case-types-option-count"
+						>{{ openCasesLabel(option) }}</span
+					>
+				</span>
+			</template>
+		</NcSelect>
 		<p class="menu-case-types__hint">
 			{{
 				t(
@@ -102,7 +127,7 @@
 </template>
 
 <script>
-import { translate as t } from '@nextcloud/l10n'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { NcButton, NcSelect } from '@nextcloud/vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import DragVertical from 'vue-material-design-icons/DragVertical.vue'
@@ -131,6 +156,7 @@ export default {
 			loadError: '',
 			status: '',
 			dragIndex: null,
+			openCases: {},
 		}
 	},
 
@@ -156,6 +182,12 @@ export default {
 	async mounted() {
 		try {
 			const { chosen, available } = await fetchMenuCaseTypes()
+			this.openCases = Object.fromEntries(
+				[...available, ...chosen].map((caseType) => [
+					caseType.id,
+					caseType.openCases ?? null,
+				]),
+			)
 			this.chosen = chosen
 			this.available = available
 			this.loaded = true
@@ -169,6 +201,27 @@ export default {
 
 	methods: {
 		t,
+
+		/**
+		 * "{n} open cases" for a case type, or '' when the count is unknown.
+		 *
+		 * A count the server could not read stays off the screen: an empty
+		 * place is honest, a 0 nobody counted is not.
+		 *
+		 * @param {{id: string}} caseType The case type.
+		 * @return {string} The label.
+		 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+		 */
+		openCasesLabel(caseType) {
+			const count = this.openCases[caseType?.id]
+			if (typeof count !== 'number' || !Number.isFinite(count)) {
+				return ''
+			}
+
+			return n('dossiq', '{count} open case', '{count} open cases', count, {
+				count,
+			})
+		},
 
 		/**
 		 * The handle's name: which row, and where it is now.
@@ -388,10 +441,25 @@ export default {
 	color: var(--color-main-text);
 }
 
-.menu-case-types__label {
+.menu-case-types__text {
+	display: flex;
 	flex: 1 1 auto;
+	flex-direction: column;
 	min-width: 0;
+}
+
+.menu-case-types__label {
 	font-weight: 600;
+}
+
+.menu-case-types__option {
+	display: flex;
+	flex-direction: column;
+}
+
+.menu-case-types__meta {
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
 }
 
 .menu-case-types__hint,
