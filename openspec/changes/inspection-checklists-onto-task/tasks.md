@@ -19,10 +19,13 @@ before the decisions would specify a guess.
       the portal's collections and its `submitChecklistRun` write,
       `testInspectorContributionShape` plus the field-drift test in
       `tests/Unit/Portal/PortalContributionProviderTest.php`. The mobile store
-      `src/store/modules/inspection.js` (stack A) had none; it is pinned by
-      `tests/vitest/inspectionStore.spec.js`, added 10 Oct 2026.
-      Mutation-checked: dropping the `nvt` term from the result rule reddened
-      one test of the eight, alone.
+      `src/store/modules/inspection.js` (stack A) and the template seed
+      `lib/Repair/Vth/VthChecklistSeeder.php` (stack B) had none. Added 10 Oct
+      2026: `tests/vitest/inspectionStore.spec.js` and
+      `tests/Unit/Repair/Vth/VthChecklistSeederTest.php`. Mutation-checked:
+      dropping the `nvt` term from the result rule reddened one store test of
+      eight, and reading the slug from the body instead of `@self` reddened
+      one seeder test of six.
 - [x] 2 **Map.** Done 10 Oct 2026, written up in the proposal under "What the
       map found". Three stacks, seven schemas. The run maps onto `Task`; the
       template and its typed items do not. Five decisions came out of it
