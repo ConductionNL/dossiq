@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
+use OCA\Dossiq\Exception\NoticeNotSentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -39,6 +40,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\InformationRequestService
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Exception\NoticeNotSentException
  * @uses \OCA\Dossiq\Service\TermKind
  */
 class RequestInformationSuspendsTest extends TestCase {
@@ -170,6 +172,37 @@ class RequestInformationSuspendsTest extends TestCase {
 		self::assertFalse($result['suspended']);
 		self::assertStringContainsString('unreachable', $result['error']);
 	}//end testAFailedLetterLeavesTheClockRunning()
+
+	/**
+	 * REQ-WRN-004: a request no transport took does not stop the clock, and
+	 * the handler is told why it was not sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-term-is-suspended-only-by-a-request-for-information-that-went-out-req-wrn-004
+	 */
+	public function testAnUnsentRequestDoesNotSuspendTheTerm(): void {
+		$delivery = [
+			'status' => 'not-sent',
+			'channel' => '',
+			'reasonCode' => 'no-channel',
+			'reason' => 'This case has no address for the requester, so the notice was not sent.',
+			'channelsTried' => [],
+		];
+		$this->notifications->method('sendTermijnNotification')->willThrowException(
+			new NoticeNotSentException(reasonCode: 'no-channel', reason: $delivery['reason'], delivery: $delivery)
+		);
+		$this->pause->expects(self::never())->method('registerPauze');
+
+		$result = $this->service()->ask(caseId: 'c1', items: ['Bankafschrift'], recipient: '', durationDays: 14);
+
+		self::assertFalse($result['sent']);
+		self::assertFalse($result['suspended'], 'the term keeps running');
+		self::assertSame('no-channel', $result['reasonCode']);
+		self::assertSame('not-sent', $result['notice']['status']);
+		self::assertSame('2026-11-01', $result['instance']['endDateCurrent'] ?? null, 'the end date did not move');
+		self::assertSame(InformationRequestService::EVENT_FAILED, $this->events[0]['type']);
+	}//end testAnUnsentRequestDoesNotSuspendTheTerm()
 
 	/**
 	 * A failed letter is recorded on the term, so the case shows what happened.
