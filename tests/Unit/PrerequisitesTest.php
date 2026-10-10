@@ -41,6 +41,7 @@ use PHPUnit\Framework\TestCase;
  * One declaration, read live and mirrored nowhere else.
  *
  * @covers \OCA\Dossiq\Prerequisites
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class PrerequisitesTest extends TestCase {
 
