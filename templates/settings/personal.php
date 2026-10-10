@@ -9,6 +9,7 @@ Util::addScript($appId, $appId . '-shared-vendor');
 Util::addScript($appId, $appId . '-shared-nc-vue');
 Util::addScript($appId, $appId . '-personal-settings');
 ?>
+<div id="dossiq-personal-menu-case-types"></div>
 <div id="dossiq-personal-settings"></div>
 <div id="dossiq-personal-email-matching"></div>
 <div id="dossiq-personal-work-digest"></div>
