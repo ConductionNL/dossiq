@@ -27,7 +27,7 @@
 			<p class="bulk-document-dialog__count">
 				{{
 					t('dossiq', '{count} document(s) selected', {
-						count: selectedIds.length,
+						count: selectionCount,
 					})
 				}}
 			</p>
@@ -138,6 +138,17 @@ export default {
 			default: '',
 		},
 
+		/**
+		 * The Nextcloud file ids of a Files-tab selection, handed in by
+		 * CnFilesBrowser's `bulkActions` dispatch (nextcloud-vue
+		 * files-browser-hosts-a-documents-list), next to `files`. Resolved to
+		 * document ids through one read of the case's dossier listing.
+		 */
+		fileIds: {
+			type: Array,
+			default: () => [],
+		},
+
 		/** The clicked node's name, for the dialog's own sentence. */
 		fileName: {
 			type: String,
@@ -220,6 +231,19 @@ export default {
 		 * @return {number} The success count.
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
+		/**
+		 * How many documents the dialog acts on: the selection, else the
+		 * Files-tab selection, else the one clicked file.
+		 *
+		 * @return {number} The count.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		selectionCount() {
+			if (this.selectedIds.length > 0) return this.selectedIds.length
+			if (this.fileIds.length > 0) return this.fileIds.length
+			return this.fileId === '' ? 0 : 1
+		},
+
 		succeededCount() {
 			return this.results.filter((r) => r && r.success !== false).length
 		},
@@ -270,6 +294,9 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveDocumentIds() {
+			if (this.selectedIds.length === 0 && this.fileIds.length > 0) {
+				return this.resolveFromFileIds(this.fileIds)
+			}
 			if (this.selectedIds.length === 0) {
 				return this.resolveFromFileId()
 			}
@@ -314,12 +341,24 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveFromFileId() {
-			const fileId = Number(this.fileId)
-			if (
-				!Number.isFinite(fileId)
-				|| fileId <= 0
-				|| this.resolvedCaseId === ''
-			) {
+			return this.resolveFromFileIds([this.fileId])
+		},
+
+		/**
+		 * The informatieobject ids behind a set of file ids, in the order the
+		 * files were given, from ONE read of the case's dossier listing. A file
+		 * with no record yet is dropped, and the act then reports that it
+		 * changed nothing for it rather than posting an id that would miss.
+		 *
+		 * @param {Array<string|number>} fileIds The Nextcloud file ids.
+		 * @return {Promise<Array<string>>} The document ids found.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async resolveFromFileIds(fileIds) {
+			const wanted = fileIds
+				.map((value) => Number(value))
+				.filter((value) => Number.isFinite(value) && value > 0)
+			if (wanted.length === 0 || this.resolvedCaseId === '') {
 				return []
 			}
 			const url = generateUrl(
@@ -329,9 +368,15 @@ export default {
 			const rows = Array.isArray(data?.informatieobjecten)
 				? data.informatieobjecten
 				: []
-			const record = rows.find((row) => Number(row.fileId) === fileId) || null
-			const id = record === null ? '' : String(record.id || '')
-			return id === '' ? [] : [id]
+			const resolved = []
+			wanted.forEach((fileId) => {
+				const record = rows.find((row) => Number(row.fileId) === fileId) || null
+				const id = record === null ? '' : String(record.id || '')
+				if (id !== '') {
+					resolved.push(id)
+				}
+			})
+			return resolved
 		},
 
 		/**

@@ -2761,7 +2761,10 @@
 									"label": "Read as a message",
 									"icon": "EmailOutline",
 									"type": "handler",
-									"handler": "readFileAsMessage"
+									"handler": "readFileAsMessage",
+									"visibleIf": {
+										"extension": ["eml", "msg"]
+									}
 								}
 							],
 							"newActions": [
@@ -2796,6 +2799,30 @@
 									"label": "Approval",
 									"property": "approvalMarker",
 									"formatter": "approvalChain"
+								}
+							],
+							"bulkActions": [
+								{
+									"id": "bulk-mark-final",
+									"label": "Mark as final",
+									"icon": "FileCheckOutline",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "mark-final",
+										"caseId": "@objectId"
+									}
+								},
+								{
+									"id": "bulk-change-confidentiality",
+									"label": "Change confidentiality",
+									"icon": "ShieldLockOutline",
+									"type": "open-modal",
+									"target": "BulkDocumentActionDialog",
+									"props": {
+										"mode": "confidentiality",
+										"caseId": "@objectId"
+									}
 								}
 							]
 						}

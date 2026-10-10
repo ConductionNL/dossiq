@@ -107,6 +107,25 @@ criteria under a task are plain bullets.
   Recorded rather than chosen, because picking (a) quietly would retire a
   capability nobody agreed to retire, and picking (b) quietly would commit the
   library to three more seams on one app's say-so.
+  **RE-SCOPED 2026-10-10 (decision 153, lane L4).** `DossierTab` was retired on
+  2026-09-13 (175761ab8): the Documents tab IS nextcloud-vue `CnFilesBrowser`
+  through the `files` leaf. So 2.2 is now "the Files tab carries what the
+  retired list had". Built on `build/dq-l4-5`, against nextcloud-vue #1428 and
+  #1433 (not released yet; dossiq still pins 2.76.0, which ignores these keys):
+  `bulkActions` Mark as final and Change confidentiality on
+  `BulkDocumentActionDialog` (takes the selection's `fileIds`), `visibleIf`
+  `{extension: [eml, msg]}` on Read as a message, and the orphan
+  `src/components/tabs/CaseDocumentsTab.vue` removed. OPEN: the columns. The
+  library reads `{key, label, source: "row", formatter}` with row data from
+  `rowDataUrl` (`/apps/dossiq/api/cases/{objectId}/dossier`, path
+  `informatieobjecten`, key `fileId`), and `groupBy`/`facets` name declared
+  columns (`informatieobjecttype`, `keywords`). The Scan and Approval columns
+  read `scanVerdict` and `approvalMarker`, which the dossier listing does not
+  carry (they come from `/api/files/{fileId}/scan` and
+  `/api/informatieobjecten/approval-markers`), so the listing has to add them before the
+  columns move to the library shape, or two shipped columns go blank. Tick after
+  that and after dossiq pins the release.
+
 - [x] 2.3 `src/views/cases/components/DossierTab.vue`: render the Direction
   and Keywords columns (chips), add the keyword filter (facet on
   `keywords`) beside the sort dropdown, and the empty state "No documents
