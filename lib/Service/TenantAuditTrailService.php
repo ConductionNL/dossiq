@@ -333,10 +333,10 @@ class TenantAuditTrailService {
 			],
 			[
 				'key' => 'audit_logged_mutations',
-				'description' => 'Mandate decisions, tenant provisioning, and tenant status changes each write a hash-chained OpenRegister audit row',
+				'description' => 'Mandate decisions and tenant status changes, provisioning included, each write a hash-chained OpenRegister audit row',
 				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry '
 					. '(probed live); MandateValidationMiddleware::logDecision; '
-					. 'TenantSaasService::create/updateStatus',
+					. 'OrganisationStatusAuditListener on OpenRegister\'s OrganisationUpdatedEvent',
 				'status' => $auditStatus,
 			],
 			[

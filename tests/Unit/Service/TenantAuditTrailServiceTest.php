@@ -334,6 +334,8 @@ class TenantAuditTrailServiceTest extends TestCase {
 			'TenantContextMiddleware',
 			'TenantController',
 			'TenantIsolationMiddleware',
+			'TenantSaasService',
+			'TenantSaasController',
 		];
 		$items   = $this->makeService()->hardeningChecklist();
 
