@@ -399,6 +399,14 @@ continued, not replaced.
       Four decisions (2a-2d in that change) now block the Move step.
       `tenantOnboardingTask` is re-filed to the task cluster: it is a step, a
       completedBy, a completedAt and a blockedReason, which is a `Task`.
+
+      **State 2026-10-10.** The decisions are made (2a to 2h, Q1 to Q7) and
+      most of the move has landed: `tenant-isolation-names-the-control-that-runs`
+      (#3476), the active organisation (#3483, archived) and the dry run plus
+      repair step (#3486). Gate 23 still counts six `Tenant*.php` files. Four
+      wait on that change's task 6.3, a person's dry run on the dev instance
+      (Q-dossiq-L5-1); the two onboarding files wait on the `skipped` mapping
+      of `remove-casetask` task 7.1 (Q-dossiq-L5-2).
 - [ ] 4.2 **Documents** onto `File` + the files leaf (7 schemas, including
       `usageRights`, which is ZGW `gebruiksrechten` and belongs here rather
       than with access control). Existing
