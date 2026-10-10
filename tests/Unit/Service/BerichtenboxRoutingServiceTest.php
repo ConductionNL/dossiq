@@ -69,8 +69,6 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 		]);
 
 		$this->assertSame('berichtenbox-mijnoverheid', $result['notificationChannel']);
-		$this->assertNotEmpty($result['messageId']);
-		$this->assertSame('systeem', $result['sentBy']);
 	}//end testBurgerRoutesToMijnOverheid()
 
 	/**
@@ -108,4 +106,31 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 
 		$this->assertSame('print-post', $result['notificationChannel']);
 	}//end testFallbackToPrint()
+
+	/**
+	 * REQ-WRN-001, "The old router cannot fake a send": it picks a channel and
+	 * nothing more. No message id, no sent moment and no sender, because no
+	 * transport was called and any of those would read as a send.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testTheRouterNeverAnswersAMessageId(): void {
+		$addressees = [
+			['type' => 'burger', 'bsn' => '123456789', 'messageBoxConfirmed' => true],
+			['type' => 'bedrijf', 'oin' => '00000001234567890000', 'messageBoxConfirmed' => true],
+			['type' => 'burger', 'bsn' => '987654321', 'messageBoxConfirmed' => false],
+			[],
+		];
+
+		foreach ($addressees as $addressee) {
+			$result = $this->service->routeToBerichtenbox(['reference' => 'Z/2026/9/B01', 'addressee' => $addressee]);
+
+			$this->assertArrayNotHasKey('messageId', $result);
+			$this->assertArrayNotHasKey('sentOn', $result);
+			$this->assertArrayNotHasKey('sentBy', $result);
+			$this->assertNotSame('', $result['notificationChannel']);
+		}
+	}//end testTheRouterNeverAnswersAMessageId()
 }//end class
