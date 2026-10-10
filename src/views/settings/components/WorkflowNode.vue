@@ -332,7 +332,7 @@ export default {
 
 .workflow-node__final-badge {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 	border-radius: 4px;
 	padding: 0 4px;
 	font-size: 10px;
@@ -361,7 +361,7 @@ export default {
 
 .workflow-node__step--required::before {
 	content: '*';
-	color: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .workflow-node__step-name {

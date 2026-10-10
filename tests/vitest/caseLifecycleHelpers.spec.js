@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page's lifecycle reasoning: stepper ordering, whether a transition
- * closes the case, whether it may be confirmed, and what a refusal means.
+ * The case page's lifecycle reasoning: stepper ordering, the transition
+ * payload, and what a refusal means.
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  * @spec openspec/specs/case-dashboard-view/spec.md
@@ -12,8 +12,6 @@
 import { describe, expect, it } from 'vitest'
 import {
 	buildTransitionPayload,
-	canConfirmTransition,
-	isClosingTransition,
 	refusalMessage,
 	rowId,
 	toStages,
@@ -66,83 +64,6 @@ describe('toStages', () => {
 	it('survives a missing or malformed collection', () => {
 		expect(toStages(undefined)).toEqual([])
 		expect(toStages(['nonsense', null])).toEqual([])
-	})
-})
-
-describe('isClosingTransition', () => {
-	const statuses = [
-		{ id: 'progress', isFinal: false },
-		{ id: 'done', isFinal: true },
-		{ id: 'archived', isFinal: 'true' },
-	]
-
-	it('is true for the status that closes the case', () => {
-		expect(isClosingTransition(statuses, 'done')).toBe(true)
-	})
-
-	it('reads a JSON-shaped boolean', () => {
-		expect(isClosingTransition(statuses, 'archived')).toBe(true)
-	})
-
-	it('is false for an ordinary status, an unknown one and none at all', () => {
-		expect(isClosingTransition(statuses, 'progress')).toBe(false)
-		expect(isClosingTransition(statuses, 'nope')).toBe(false)
-		expect(isClosingTransition(statuses, '')).toBe(false)
-	})
-})
-
-describe('canConfirmTransition', () => {
-	it('allows an ordinary transition', () => {
-		expect(
-			canConfirmTransition({
-				closing: false,
-				resultTypes: [],
-				resultTypeId: '',
-				busy: false,
-			}),
-		).toBe(true)
-	})
-
-	it('blocks a closing transition until a result is picked', () => {
-		const resultTypes = [{ id: 'granted' }, { id: 'refused' }]
-		expect(
-			canConfirmTransition({
-				closing: true,
-				resultTypes,
-				resultTypeId: '',
-				busy: false,
-			}),
-		).toBe(false)
-		expect(
-			canConfirmTransition({
-				closing: true,
-				resultTypes,
-				resultTypeId: 'granted',
-				busy: false,
-			}),
-		).toBe(true)
-	})
-
-	it('allows a closing transition on a case type that offers no results', () => {
-		expect(
-			canConfirmTransition({
-				closing: true,
-				resultTypes: [],
-				resultTypeId: '',
-				busy: false,
-			}),
-		).toBe(true)
-	})
-
-	it('blocks while a request is in flight', () => {
-		expect(
-			canConfirmTransition({
-				closing: false,
-				resultTypes: [],
-				resultTypeId: '',
-				busy: true,
-			}),
-		).toBe(false)
 	})
 })
 
