@@ -28,8 +28,9 @@ a reader cannot use:
 - `src/manifest.json`: the Deadline column of Your team's queue (My work, team
   view, and the Dashboard preset) and of the Cases you follow preset carries
   `format: date`.
-- `src/manifest.json`: the Recently opened tile uses fixed layout with a width for
-  the number and the date column; the title takes what is left and truncates.
+- `src/manifest.json`: the Recently opened tile draws two columns, as the board
+  DqDashboard does: the title with the case number as a muted line under it, and
+  the date on the right. The title wraps instead of pushing the table wider.
 
 ## Not changed, by the board
 
