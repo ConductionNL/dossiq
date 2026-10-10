@@ -165,6 +165,18 @@ final class TimelineKinds {
 	public const APPLICANT_RESPONSE = 'reactie-indiener';
 
 	/**
+	 * A document review's stopping rule was met by a recall estimate.
+	 *
+	 * Internal: the handler reads that the review found enough, with the
+	 * numbers it rests on; the handler still decides to stop.
+	 *
+	 * @var string
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-meeting-the-stopping-rule-is-recorded-req-wrs-003
+	 */
+	public const STOPPING_RULE_MET = 'stopregel-gehaald';
+
+	/**
 	 * Every declaration, in the shape `TimelineKindService::declareKind()` takes.
 	 *
 	 * @var array<int, array<string, mixed>>
@@ -338,6 +350,22 @@ final class TimelineKinds {
 			],
 			'required' => ['act'],
 			'followUp' => true,
+		],
+		[
+			'slug' => self::STOPPING_RULE_MET,
+			'title' => 'Stopregel gehaald',
+			'description' => 'A recall estimate of the document review reached the stopping rule declared before review.',
+			'properties' => [
+				'sample' => ['type' => 'string'],
+				'targetRecall' => ['type' => 'number'],
+				'confidence' => ['type' => 'number'],
+				'recallEstimate' => ['type' => 'number'],
+				'recallLowerBound' => ['type' => 'number'],
+				'n' => ['type' => 'integer'],
+				'k' => ['type' => 'integer'],
+			],
+			'required' => ['sample', 'targetRecall', 'recallLowerBound'],
+			'followUp' => false,
 		],
 	];
 

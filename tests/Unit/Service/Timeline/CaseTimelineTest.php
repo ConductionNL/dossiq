@@ -861,6 +861,7 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::DECISION_SENT,
 			TimelineKinds::DATA_SUBJECT_REQUEST,
 			TimelineKinds::APPLICANT_RESPONSE,
+			TimelineKinds::STOPPING_RULE_MET,
 		];
 
 		foreach ($named as $slug) {

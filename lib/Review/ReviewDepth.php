@@ -103,6 +103,26 @@ class ReviewDepth {
 	}//end pagesRequired()
 
 	/**
+	 * A simple random sample of `size` items drawn with a seed: the same seed and set draw the same items,
+	 * in whatever order the set was given.
+	 *
+	 * @param list<string> $items The set to draw from.
+	 * @param int $size How many to draw.
+	 * @param int $seed The seed.
+	 *
+	 * @return list<string> The drawn items.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
+	 */
+	public function drawSample(array $items, int $size, int $seed): array {
+		$sorted = array_values(array_unique($items));
+		sort($sorted, SORT_STRING);
+		$shuffled = (new Randomizer(new Mt19937($seed)))->shuffleArray($sorted);
+
+		return array_slice($shuffled, 0, max(0, $size));
+	}//end drawSample()
+
+	/**
 	 * The type a depth is configured by: the informatieobjecttype, or the class of the mime type.
 	 *
 	 * @param array<string, mixed> $document The document.
