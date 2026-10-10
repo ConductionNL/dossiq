@@ -357,11 +357,11 @@ class PrerequisitesTest extends TestCase {
 		$rows = array_column($report['apps']['optional'], null, 'id');
 
 		$expected = [
-			'openconnector' => 'integriq',
-			'docudesk' => 'filinq',
-			'hrmq' => 'humaniq',
-			'decidesk' => 'decidiq',
-			'nldesign' => 'thematiq',
+			'openconnector' => 'Integriq',
+			'docudesk' => 'Filinq',
+			'hrmq' => 'Humaniq',
+			'decidesk' => 'Decidiq',
+			'nldesign' => 'Thematiq',
 		];
 		foreach ($expected as $id => $name) {
 			$this->assertArrayHasKey($id, $rows, sprintf('"%s" stays the lookup id', $id));
@@ -369,8 +369,49 @@ class PrerequisitesTest extends TestCase {
 			$this->assertTrue($rows[$id]['present'], sprintf('"%s" is looked up by its old id', $id));
 		}
 
-		// An app whose name did not move reads as its id.
-		$this->assertSame('portaliq', $rows['portaliq']['name']);
-		$this->assertSame('openregister', $report['apps']['required'][0]['name']);
+		// An app whose name did not move reads as its product name, not its id.
+		$this->assertSame('Portaliq', $rows['portaliq']['name']);
+		$this->assertSame('OpenRegister', $report['apps']['required'][0]['name']);
 	}//end testARenamedAppShowsItsNewNameAndKeepsItsLookupId()
+
+	/**
+	 * Every app row names the product, never the lowercase app id.
+	 *
+	 * Round 5 read "integriq, filinq, humaniq, ..." on the settings page: the
+	 * display name of a renamed app was its new id, and an app that was never
+	 * renamed showed its id. The lookup ids stay exactly as they are.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 */
+	public function testEveryAppRowShowsAProductNameAndKeepsItsLookupId(): void {
+		$report = (new Prerequisites())->check($this->appManager([]));
+		$rows   = array_merge($report['apps']['required'], $report['apps']['optional']);
+
+		$this->assertSame(
+			array_merge(array_keys(Prerequisites::APPS_REQUIRED), array_keys(Prerequisites::APPS_OPTIONAL)),
+			array_column($rows, 'id'),
+			'the lookup ids are the declared keys, unchanged'
+		);
+
+		$names = array_column($rows, 'name', 'id');
+		$this->assertSame(
+			[
+				'openregister' => 'OpenRegister',
+				'openconnector' => 'Integriq',
+				'docudesk' => 'Filinq',
+				'hrmq' => 'Humaniq',
+				'decidesk' => 'Decidiq',
+				'portaliq' => 'Portaliq',
+				'pipelinq' => 'Pipelinq',
+				'hermiq' => 'Hermiq',
+				'nldesign' => 'Thematiq',
+			],
+			$names
+		);
+		foreach ($names as $id => $name) {
+			$this->assertNotSame($id, $name, sprintf('"%s" reads as a product name, not its id', $id));
+		}
+	}//end testEveryAppRowShowsAProductNameAndKeepsItsLookupId()
 }//end class

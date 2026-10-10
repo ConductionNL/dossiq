@@ -113,24 +113,34 @@ final class Prerequisites {
 	];
 
 	/**
-	 * What a person reads for an app whose product name moved ahead of its id.
+	 * The product name a person reads for each declared app id.
 	 *
-	 * 🔴 DISPLAY ONLY. The keys of APPS_OPTIONAL stay the ids `isInstalled()`
-	 * is asked about; a key moves only when that app's own `<id>` in its
-	 * `appinfo/info.xml` has moved. Until then the row shows the current
-	 * product name and looks up the old id, so an administrator is not told
-	 * to install an app under a name the app store no longer uses.
+	 * 🔴 DISPLAY ONLY. The keys of APPS_REQUIRED and APPS_OPTIONAL stay the ids
+	 * `isInstalled()` is asked about; a key moves only when that app's own
+	 * `<id>` in its `appinfo/info.xml` has moved. Until then the row shows the
+	 * current product name and looks up the old id, so an administrator is not
+	 * told to install an app under a name the app store no longer uses.
+	 *
+	 * Every declared id has an entry, written as the product is written
+	 * ("Integriq", "OpenRegister"), because the page is read by a person and an
+	 * app id ("integriq") is a lookup key, not a name. Round 5 showed the
+	 * lowercase ids; `PrerequisitesTest` now holds every row to this list.
 	 *
 	 * @var array<string, string>
 	 *
 	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
 	 */
 	public const DISPLAY_NAMES = [
-		'openconnector' => 'integriq',
-		'docudesk' => 'filinq',
-		'hrmq' => 'humaniq',
-		'decidesk' => 'decidiq',
-		'nldesign' => 'thematiq',
+		'openregister' => 'OpenRegister',
+		'openconnector' => 'Integriq',
+		'docudesk' => 'Filinq',
+		'hrmq' => 'Humaniq',
+		'decidesk' => 'Decidiq',
+		'portaliq' => 'Portaliq',
+		'pipelinq' => 'Pipelinq',
+		'hermiq' => 'Hermiq',
+		'nldesign' => 'Thematiq',
 	];
 
 	/**

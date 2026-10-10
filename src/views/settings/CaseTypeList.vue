@@ -23,9 +23,30 @@
 			:loading="loading"
 			:selectable="true"
 			:rowClickToView="true"
+			:addLabel="t('dossiq', 'Add case type')"
 			@add="$emit('create')"
 			@refresh="fetchCaseTypes"
 			@rowClick="selectCaseType">
+			<!--
+				THE HEADING IS AN h3, BECAUSE THIS LIST SITS INSIDE A SECTION.
+
+				`CnIndexPage` draws its title as the page's `<h1>`, which is right
+				for a page of its own and wrong here: on the admin settings page
+				this list lives inside the "Case type management" section, whose
+				name is already an `<h2>`, so the default made an `<h1>` the child
+				of an `<h2>` and a screen reader's heading list jumped back to the
+				top of the page (WCAG 1.3.1). The `#header` slot replaces the
+				library header, so the list's own name sits one level under its
+				section. It stays visually hidden, as the library's own header is
+				without `showTitle`: the section name above already says it to the
+				eye. The Add button gets a sentence-case label for the same reader:
+				the library's default spells the schema title, "Case Type".
+			-->
+			<template #header="{ title: headerTitle }">
+				<h3 class="hidden-visually" data-testid="case-type-list-heading">
+					{{ headerTitle }}
+				</h3>
+			</template>
 			<!--
 				THE EMPTY LIST IS THE FIRST THING A NEW ADMIN SEES, AND IT SAID
 				"No items found".
