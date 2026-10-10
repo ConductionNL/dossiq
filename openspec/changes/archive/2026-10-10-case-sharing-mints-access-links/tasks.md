@@ -35,11 +35,16 @@
       Declared in `lib/Settings/register.d/39-case-access-links.json` rather
       than in the monolith, per ADR-037, because several lanes build against
       that file at once.
-- [ ] 3.5 `token` leaves the schema's required list. NOT DONE, and inherited:
-      partner shares have been written without a token since they were built,
-      so the list is already wrong for a reason this change did not create.
-      ADR-037 concatenates list values, so a fragment cannot shorten it; it
-      needs an edit to the monolith and a lane that owns that file.
+- [x] 3.5 `token` leaves the schema's required list. Partner shares have been
+      written without a token since they were built, and ADR-037 concatenates
+      list values, so a fragment cannot shorten it: edited in the monolith
+      (`lib/Settings/dossiq_register.json` and the mock register, caseShare
+      1.1.0, register 0.20.22, info.xml bumped).
+      - `tests/Unit/Service/PartnerShareScopeTest.php`
+        (`testTheWrittenPartnerShareIsValidAgainstTheRealSchema`: the payload
+        `createPartnerShare()` writes, validated against the merged live
+        register; red before the edit with "required properties (token) are
+        missing")
 
 ## 4. The endpoints
 

@@ -58,7 +58,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -68,7 +68,7 @@ namespace OCA\Dossiq\Service\Timeline;
 /**
  * The declarations dossiq puts on an instance once.
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 final class TimelineKinds {
 

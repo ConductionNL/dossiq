@@ -19,3 +19,14 @@
 - **Spec ref**: REQ-CDV-01c
 - **Files**: `src/views/cases/CaseDetail.vue`
 - **Acceptance**: Invalid case ID shows "Zaak niet gevonden" with back button
+
+## Archived as superseded (10 Oct 2026, lane L1)
+
+Not built, and no longer buildable as written. Every task names
+`src/views/cases/CaseDetail.vue`, which `fe2949d06` (feat(shell): adopt
+CnAppRoot + delete obsolete per-page views) deleted: the case page is now the
+manifest detail page rendered by the library. The delta spec marked the four
+items IMPLEMENTED, but it was never folded into `openspec/specs/case-dashboard-view`,
+which still lists REQ-CDV-07b and REQ-CDV-07c under "Not yet implemented".
+That list stays the record of what is owed; a new change against the manifest
+case page picks them up.

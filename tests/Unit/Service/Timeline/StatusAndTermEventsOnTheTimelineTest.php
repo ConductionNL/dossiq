@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -166,7 +166,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAStatusMoveReachesTheTimeline(): void {
 		$store = $this->statusStore(actor: 'handler');
@@ -261,7 +261,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheActorTheCallerNamesWinsOverTheSession(): void {
 		$store = $this->statusStore(actor: 'session-user');
@@ -289,7 +289,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheStatusSentenceCarriesNamesRatherThanIds(): void {
 		$store = $this->statusStore(actor: 'handler');
@@ -317,7 +317,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedTimelineWriteStillReturnsTheStatusRecord(): void {
 		$this->armTimeline(answer: '');
@@ -344,7 +344,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testATermEventReachesTheTimeline(): void {
 		$service = $this->termService();
@@ -378,7 +378,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedTimelineWriteStillReturnsTheTermEvent(): void {
 		$this->armTimeline(answer: '');
@@ -408,7 +408,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAPhaseTermStartReachesTheTimeline(): void {
 		$service = $this->termService();
@@ -442,7 +442,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testRewritingAnExistingTermAnnouncesNoStart(): void {
 		$service = $this->termService();
@@ -465,7 +465,7 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testATermEventWithoutAReadableCaseWritesNoEntry(): void {
 		$service = $this->termService();

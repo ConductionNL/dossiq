@@ -342,7 +342,7 @@ class CaseRelationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
 	 */
 	public function testACaseWaitsOnAnotherAndThatOtherBlocksIt(): void {
 		$store = [
@@ -369,6 +369,71 @@ class CaseRelationServiceTest extends TestCase {
 		// one the offer reads back from the blocking side.
 		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
 	}//end testACaseWaitsOnAnotherAndThatOtherBlocksIt()
+
+	/**
+	 * The waits-on pair lives on the relation primitive only.
+	 *
+	 * `relatedCases` is the ZGW `relevanteAndereZaken` list, and `waitsOn` is
+	 * not a ZGW `aardRelatie`. Writing it there as well kept a second copy that
+	 * nothing needs: the offer and the Related panel both read `blockingCases`
+	 * through OpenRegister's relation rows.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 */
+	public function testWaitsOnIsNotWrittenIntoRelatedCases(): void {
+		$store = [
+			'a' => ['id' => 'a', 'title' => 'Vergunning'],
+			'b' => ['id' => 'b', 'title' => 'Bezwaar'],
+		];
+		$service = $this->makeService($store);
+
+		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'waitsOn')['ok']);
+
+		$this->assertCount(0, $this->relationsOf($store, 'a'));
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+
+		// Declared twice from the same side is still a duplicate, now that the
+		// relation list no longer carries the pair to catch it.
+		$again = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'waitsOn');
+		$this->assertFalse($again['ok']);
+		$this->assertSame('duplicate', $again['reason']);
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+	}//end testWaitsOnIsNotWrittenIntoRelatedCases()
+
+	/**
+	 * A waits-on entry written into `relatedCases` before the move is promoted
+	 * onto the primitive and taken out of the relation list.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 */
+	public function testNormaliseMovesALegacyWaitsOnOntoThePrimitive(): void {
+		$store = [
+			'a' => [
+				'id' => 'a',
+				'relatedCases' => json_encode(
+					[
+						['caseId' => 'b', 'aardRelatie' => 'waitsOn'],
+						['caseId' => 'c', 'aardRelatie' => 'vervolg'],
+					]
+				),
+			],
+			'b' => ['id' => 'b'],
+			'c' => ['id' => 'c'],
+		];
+		$service = $this->makeService($store);
+
+		$service->normalise(caseId: 'a');
+
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+		$this->assertSame(['c'], $store['a']['followUpCases'] ?? []);
+		$left = $this->relationsOf($store, 'a');
+		$this->assertCount(1, $left);
+		$this->assertSame('vervolg', $left[0]['aardRelatie']);
+	}//end testNormaliseMovesALegacyWaitsOnOntoThePrimitive()
 
 	/**
 	 * The same type declared from both cases is two contradictory statements,
