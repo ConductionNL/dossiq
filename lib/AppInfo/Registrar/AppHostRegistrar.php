@@ -39,7 +39,6 @@ use OCA\Dossiq\Dashboard\OverdueCasesWidget;
 use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\StartCaseWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
-use OCA\Dossiq\Mcp\DossiqToolProvider;
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -134,7 +133,6 @@ class AppHostRegistrar {
 					StalledCasesWidget::class,
 					StartCaseWidget::class,
 				],
-				'mcpProvider' => DossiqToolProvider::class,
 			]
 		);
 	}//end register()
