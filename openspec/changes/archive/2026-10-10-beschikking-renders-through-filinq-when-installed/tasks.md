@@ -30,4 +30,4 @@ Tier: MVP. Kind: code. Row: 12.11. Delivered half: integriq
 ## 4. Check
 
 - [x] 4.1 `openspec validate beschikking-renders-through-filinq-when-installed --strict`.
-- [ ] 4.2 (not run: needs a live instance with filinq) Live, on an instance with filinq enabled and the key unset: generate a beschikking from a case and confirm a real file in Files and in filinq's generated documents (dossiq#3131's live check, step 3 without setting the key). Close dossiq#3131.
+- [ ] 4.2 (live pass, decision 139) (not run: needs a live instance with filinq) Live, on an instance with filinq enabled and the key unset: generate a beschikking from a case and confirm a real file in Files and in filinq's generated documents (dossiq#3131's live check, step 3 without setting the key). Close dossiq#3131.
