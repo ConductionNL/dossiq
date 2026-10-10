@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -76,6 +77,11 @@ class AanvullingsverzoekService {
 	public const STATES = ['open', 'answered', 'expired', 'withdrawn'];
 
 	/**
+	 * Who raised a request's portal task, on the task and on its close.
+	 */
+	public const PORTAL_TASK_SOURCE = 'dossiq.aanvullingsverzoek';
+
+	/**
 	 * Constructor.
 	 *
 	 * There is deliberately NO TermijnService here. Everything this class needs
@@ -87,11 +93,14 @@ class AanvullingsverzoekService {
 	 *                                                   suspends as one act.
 	 * @param SettingsService           $settingsService The OpenRegister seam.
 	 * @param LoggerInterface           $logger          Structured logger.
+	 * @param ResidentQuestionTask|null $portalTask      Turns the request into a task in the resident's
+	 *                                                   portal (decision 169), or null in a test that is not about it.
 	 */
 	public function __construct(
 		private readonly InformationRequestService $act,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?ResidentQuestionTask $portalTask = null,
 	) {
 	}//end __construct()
 
@@ -185,6 +194,7 @@ class AanvullingsverzoekService {
 		}
 
 		$written = $this->write(request: $request);
+		$written = $this->raisePortalTask(written: $written, userId: $userId);
 		$this->markCaseWaiting(caseId: $caseId, since: $now->format('c'));
 
 		$this->logger->info(
@@ -194,6 +204,65 @@ class AanvullingsverzoekService {
 
 		return $written;
 	}//end ask()
+
+	/**
+	 * Raise the resident's portal task for a request just written, and
+	 * remember it on the request so the request can close it (decision 169).
+	 *
+	 * A task that cannot be raised, or remembered, leaves the request as it
+	 * is: the letter went out and the term is suspended, and the question still
+	 * shows under "Vragen aan u".
+	 *
+	 * @param array<string, mixed> $written The stored request.
+	 * @param string               $userId  The handler who asked.
+	 *
+	 * @return array<string, mixed> The request, with `portalTask` when one was raised.
+	 *
+	 * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
+	 */
+	private function raisePortalTask(array $written, string $userId): array {
+		if ($this->portalTask === null) {
+			return $written;
+		}
+
+		$id = trim((string)($written['id'] ?? ($written['uuid'] ?? '')));
+		$items = [];
+		foreach ((array)($written['missingItems'] ?? []) as $row) {
+			if (is_array($row) === true) {
+				$row = ($row['item'] ?? '');
+			}
+
+			$items[] = (string)$row;
+		}
+
+		$task = $this->portalTask->raise(
+			question: [
+				'id' => $id,
+				'case' => (string)($written['case'] ?? ''),
+				'portalSubject' => (string)($written['portalSubject'] ?? ''),
+				'title' => 'Vul uw aanvraag aan',
+				'items' => $items,
+				'due' => (string)($written['hersteltermijn'] ?? ''),
+				'source' => self::PORTAL_TASK_SOURCE,
+			],
+			actor: $userId
+		);
+		if ($task === null || $id === '') {
+			return $written;
+		}
+
+		try {
+			$this->write(request: ['portalTask' => $task], id: $id);
+		} catch (RefusedException $e) {
+			$this->logger->warning(
+				'Dossiq: the portal task was raised, but the request could not remember it',
+				['app' => Application::APP_ID, 'request' => $id, 'task' => $task]
+			);
+			return $written;
+		}
+
+		return array_merge($written, ['portalTask' => $task]);
+	}//end raisePortalTask()
 
 	/**
 	 * The case's portal subject, or '' when it has none or cannot be read.
@@ -206,7 +275,7 @@ class AanvullingsverzoekService {
 	 * without an OpenRegister, the way `write()` and `markCaseWaiting()` are
 	 * already seams in this class.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-sees-what-the-organisation-still-needs-from-them-req-srpd-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-sees-what-the-organisation-still-needs-from-them-req-srpd-001
 	 */
 	protected function portalSubjectOf(string $caseId): string {
 		try {
@@ -396,13 +465,26 @@ class AanvullingsverzoekService {
 
 		try {
 			if (trim($id) !== '') {
-				return ($this->patchObjectAsArray(
+				$patched = ($this->patchObjectAsArray(
 					objectService: $objectService,
 					register: $register,
 					schema: self::SCHEMA,
 					id: trim($id),
 					changes: $request
 				) ?? $request);
+
+				// A request that leaves `open` takes its portal task with it
+				// (decision 169). Every change of state is written here, so
+				// this is the one place that sees all of them.
+				if (array_key_exists('state', $request) === true && $request['state'] !== 'open') {
+					$this->portalTask?->close(
+						taskUuid: (string)($patched['portalTask'] ?? ''),
+						reason: sprintf('The aanvullingsverzoek is %s in dossiq.', (string)$request['state']),
+						source: self::PORTAL_TASK_SOURCE
+					);
+				}
+
+				return $patched;
 			}
 
 			$stored = $this->saveObjectAsArray(
