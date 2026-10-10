@@ -82,9 +82,12 @@ be read SHALL be `missing`, never `match`. The route SHALL require read access t
 
 ### Requirement: The delivered rendition is compared with its original (REQ-WDS-004)
 
-For each item of a set whose `deliveredRef` differs from its `originalRef`, the officer SHALL be able
-to open the original and the delivered rendition side by side, page by page, in filinq's review
-workbench viewer. The set's page SHALL list every item with both files, its classification and its
+The Woo case type configures the generic document compare (document-compare REQ-DCP-001, decision
+182) on its delivered set page: the `file-set-items` widget with `filesUrl`
+`/apps/dossiq/api/cases/{case}/woo/delivered-sets/{set}/items/{index}` and the classification labels
+of `openbaar` and `deels_openbaar`. For each item of a set whose `deliveredRef` differs from its
+`originalRef`, the officer SHALL be able to open the original and the delivered rendition side by
+side in filinq's compare view. The set's page SHALL list every item with both files, its classification and its
 hash, so the record shows what came in beside what went out. When filinq or its viewer is absent,
 the compare action SHALL say that the compare view needs filinq and SHALL offer both files to open
 separately. It SHALL NOT render a view that looks like a comparison.
