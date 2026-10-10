@@ -247,5 +247,18 @@ class CrossAppListenerRegistrar {
 			'OCA\\OpenRegister\\Event\\ObjectUpdatedEvent',
 			'OCA\\Dossiq\\Listener\\CaseCompletedSatisfactionListener'
 		);
+
+		// A case that names a BRP person or KvK company as requester asks
+		// OpenRegister to keep that row current from the source (contacts-domain
+		// 4.3, Tier B B22, openregister registry-subscriptions). After the save;
+		// FQN strings for the reason above.
+		$context->registerEventListener(
+			'OCA\\OpenRegister\\Event\\ObjectCreatedEvent',
+			'OCA\\Dossiq\\Listener\\RequesterRegistrySubscriptionListener'
+		);
+		$context->registerEventListener(
+			'OCA\\OpenRegister\\Event\\ObjectUpdatedEvent',
+			'OCA\\Dossiq\\Listener\\RequesterRegistrySubscriptionListener'
+		);
 	}//end registerPortalListeners()
 }//end class
