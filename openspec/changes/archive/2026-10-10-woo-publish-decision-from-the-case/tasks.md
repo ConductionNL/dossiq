@@ -4,7 +4,7 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
 
 ## 1. The decision keeps what is written to it
 
-- [ ] 1.1 Prove whether OpenRegister keeps an undeclared `wooPublication` on the
+- [ ] 1.1 (live pass, decision 139: needs a running OpenRegister; moot for the code since 1.2 declares the property, and the repair in 3.1 marks a decision without `wooPublication` as ready) Prove whether OpenRegister keeps an undeclared `wooPublication` on the
   `decision` schema today: save one, read it back through `ObjectService::find()`,
   and record the answer in the PR body.
   - verification: the read-back output pasted in the PR
@@ -30,12 +30,12 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
 
 ## 3. The case carries its publication state
 
-- [ ] 3.1 (writers and schema done in `register.d/82` and `WooCaseLedger`; the repair step is NOT built: no UI path ever published a Woo case, see the PR) Declare `wooPublicationStatus` and `wooPublicationUrl` on `case`
+- [x] 3.1 (writers and schema in `register.d/82` and `WooCaseLedger`; repair step `lib/Repair/BackfillWooPublicationState.php`, post-migration, completion key `woo_publication_state_backfill`, test `tests/Unit/Repair/BackfillWooPublicationStateTest.php`; the `occ maintenance:repair` check is 3.2) Declare `wooPublicationStatus` and `wooPublicationUrl` on `case`
   (design D-2); write them from `assembleDecision()`, `publish()` and
   `withdraw()`; add an idempotent repair step for existing Woo cases, registered
   post-migration with a persisted version key (ADR-106).
   - unit: one test per writer asserting the case write; one repair test run twice
-  - `occ maintenance:repair` on a dev instance with one published Woo case:
+- [ ] 3.2 (live pass, decision 139) `occ maintenance:repair` on a dev instance with one published Woo case:
     the case reads `published` with its url
 
 ## 4. The surface
@@ -44,7 +44,7 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
   `woo-withdraw` (design D-4); the two fields on the Data tab's core section.
   - `npm run check:manifest` exit 0
   - vitest: both actions present with their url, method and `visibleWhen`
-- [ ] 4.2 `tests/e2e/woo-publish-from-the-case.spec.ts`: a handler publishes a
+- [ ] 4.2 (written; the run is the live pass, decision 139) `tests/e2e/woo-publish-from-the-case.spec.ts`: a handler publishes a
   ready Woo decision, sees the link, withdraws it; citing the scenarios below.
   - `npx playwright test tests/e2e/woo-publish-from-the-case.spec.ts` exit 0
 - [x] 4.3 Delete `src/services/wooPublicationApi.js` if nothing imports it after

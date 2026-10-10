@@ -14,7 +14,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
  */
 
 declare(strict_types=1);
@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @covers \OCA\Dossiq\Woo\WooCaseLedger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Woo\WooResultLink
  */
 class WooPublicationJourneyTest extends TestCase {
 
@@ -188,7 +189,7 @@ class WooPublicationJourneyTest extends TestCase {
 	/**
 	 * After publishing the case reads published with an absolute link, and the dossier is told.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 *
 	 * @return void
 	 */
@@ -226,7 +227,7 @@ class WooPublicationJourneyTest extends TestCase {
 	/**
 	 * No Woo decision, and more than one, are named refusals, and nothing is sent.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 *
 	 * @return void
 	 */
