@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Mcp;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Intake\CaseIntakeFiling;
+use OCA\Dossiq\Service\Intake\RequestCatalogue;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use RuntimeException;
 
@@ -60,10 +61,12 @@ class IntakeTools {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseIntakeFiling $filing Writes the case through the create form's own path.
+	 * @param CaseIntakeFiling $filing    Writes the case through the create form's own path.
+	 * @param RequestCatalogue $catalogue The request types a conversation may be filed under.
 	 */
 	public function __construct(
 		private readonly CaseIntakeFiling $filing,
+		private readonly RequestCatalogue $catalogue,
 	) {
 	}//end __construct()
 
@@ -110,4 +113,33 @@ class IntakeTools {
 			'title' => (string)($case['title'] ?? ''),
 		];
 	}//end fileCase()
+
+	/**
+	 * The request types a resident's conversation may be filed under.
+	 *
+	 * The intake classifies from this list and from nothing else: a type
+	 * outside it is invented, and hermiq hands that conversation to a person.
+	 * Each entry's `type` is what `fileCase` accepts. A read: it carries no
+	 * intake mark, because the mark grants a create, and it is offered to
+	 * hermiq's outside surface, where the intake runs.
+	 *
+	 * @return array{requestTypes: list<array{type: string, title: string, description: string}>} The catalogue.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-request-catalogue-is-the-case-types-declared-for-intake
+	 */
+	#[McpTool(
+		name: 'requestCatalogue',
+		description: 'The request types a resident can file through the conversational intake: one entry per published '
+			. 'case type declared for intake, with the `type` that fileCase accepts.',
+		readOnlyHint: true,
+		destructiveHint: false,
+		scope: 'read',
+		subject: 'caseType',
+		action: 'list',
+		reach: 'user',
+		annotations: ['outsideAgent' => true]
+	)]
+	public function requestCatalogue(): array {
+		return ['requestTypes' => $this->catalogue->entries()];
+	}//end requestCatalogue()
 }//end class

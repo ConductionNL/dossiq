@@ -113,7 +113,22 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
     against the real case schema, a missing subject, a draft-only case type,
     a refusal from the create path and from RBAC, no storage),
     `IntakeToolsTest::testARefusalIsThrownWithDossiqsSentence`.
-- [ ] 5.3 Declare the request catalogue hermiq classifies from.
+- [x] 5.3 Declare the request catalogue hermiq classifies from.
+  - Configuration, not a list in code: a case type is a request type when it is
+    published and places an AI feature on the `intake` surface
+    (`caseType.aiFeatures`). `lib/Service/Intake/RequestCatalogue.php` lists
+    them, one entry per identifier (the `type` `dossiq.fileCase` accepts).
+  - Declared as the read tool `dossiq.requestCatalogue`
+    (`IntakeTools::requestCatalogue`, scope read, reach user, `outsideAgent`,
+    no intake mark). New scenario "The request catalogue is the case types
+    declared for intake".
+  - Tests: `tests/Unit/Service/Intake/RequestCatalogueTest.php`,
+    `IntakeToolsTest::testTheRequestCatalogueIsTheCataloguesEntries`,
+    `DossiqScannableServicesTest` (read tools, reach, outside surface).
+  - hermiq side: `IntakeController::conclude` takes the catalogue as a request
+    parameter; whoever drives the intake reads it from this tool. A case type
+    must declare an intake feature (for example `"conversational-intake":
+    "intake"`) before it appears.
 - [x] 6.1 Ship the initial prompt library into hermiq and stop owning it
   (REQ-AIC-06).
   - Data, not code: `lib/Settings/assistant-prompts.json` (usage scope

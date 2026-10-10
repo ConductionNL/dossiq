@@ -58,6 +58,7 @@ class DossiqScannableServicesTest extends TestCase {
 		'getWorkload',
 		'listAvailableTransitions',
 		'listOverdueComplaints',
+		'requestCatalogue',
 	];
 
 	/**
@@ -84,6 +85,7 @@ class DossiqScannableServicesTest extends TestCase {
 		'cancelAppointment' => 'external',
 		'draftBeschikking' => 'user',
 		'fileCase' => 'instance',
+		'requestCatalogue' => 'user',
 	];
 
 	/**
@@ -271,8 +273,8 @@ class DossiqScannableServicesTest extends TestCase {
 	}//end testOnlyTheCreateToolCarriesTheIntakeMark()
 
 	/**
-	 * The six curated reads, and nothing else, are offered to hermiq's outbound
-	 * surface (`outsideAgent`, design D-5). The caller's own rights still decide
+	 * The curated reads, and nothing else, are offered to hermiq's outbound
+	 * surface (`outsideAgent`, design D-5), the request catalogue among them. The caller's own rights still decide
 	 * per call, because each read runs its controller's gate; a write is never
 	 * offered there.
 	 *
