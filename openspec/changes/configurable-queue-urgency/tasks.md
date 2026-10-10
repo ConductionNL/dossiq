@@ -27,23 +27,23 @@ method is edited here.
 
 ## 2. Frontend
 
-- [ ] 2.1 `src/views/settings/tabs/QueueUrgencySettingsTab.vue` and its
+- [x] 2.1 `src/views/settings/tabs/QueueUrgencySettingsTab.vue` and its
   section in `AdminRoot.vue`; bounds validated before save.
   - `tests/vitest/queueUrgencySettings.spec.js`
-- [ ] 2.2 Case type General tab: the two threshold fields.
+- [x] 2.2 Case type General tab: the two threshold fields.
   - `tests/vitest/caseTypeQueueThresholds.spec.js`
-- [ ] 2.3 `src/utils/workQueueHelpers.js`: `deadlineTierPillClass()`, pill
+- [x] 2.3 `src/utils/workQueueHelpers.js`: `deadlineTierPillClass()`, pill
   labels including Normaal, the ranked list builder, search and filter over it,
   the mode resolver with its deadline fallback.
   - `tests/vitest/workQueueHelpers.spec.js`
-- [ ] 2.4 `MyWorkCards.vue` / `MyWorkCaseCard.vue`: Urgentie renders the ranked
+- [x] 2.4 `MyWorkCards.vue` / `MyWorkCaseCard.vue`: Urgentie renders the ranked
   rows; Nieuwste keeps the self-fetch; the pill on every card.
-- [ ] 2.5 `src/views/queue/PersonalQueueView.vue`: read `deadlineTier`.
-- [ ] 2.6 l10n: Late / Te laat, Soon / Bijna, and the section's strings.
-- [ ] 2.7 `tests/e2e/configurable-queue-urgency.spec.ts` for the scenarios
+- [x] 2.5 `src/views/queue/PersonalQueueView.vue`: read `deadlineTier`.
+- [x] 2.6 l10n: Late / Te laat, Soon / Bijna, and the section's strings.
+- [x] 2.7 `tests/e2e/configurable-queue-urgency.spec.ts` for the scenarios
   without an exclude.
 
 ## 3. Board
 
-- [ ] 3.1 design-system: the Queue urgency section on the dossiq admin settings
-  board, in its own PR.
+- [x] 3.1 design-system: the Queue urgency section on the dossiq admin settings
+  board, in its own PR (ConductionNL/design-system#149).

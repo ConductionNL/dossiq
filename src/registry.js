@@ -1432,7 +1432,7 @@ const registry = {
 		kind: 'handler',
 		handler: extendTermSelection,
 	},
-	// @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	// @spec openspec/specs/admin-settings/spec.md
 	openIntegriqConnections: {
 		kind: 'handler',
 		handler: openIntegriqConnections,

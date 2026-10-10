@@ -105,7 +105,7 @@ class TenantOrganisationResolver {
 	 *
 	 * @return array<string, mixed>|null The tenant, or null.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function resolveActive(): ?array {
 		$active = $this->readActiveOrganisation();
