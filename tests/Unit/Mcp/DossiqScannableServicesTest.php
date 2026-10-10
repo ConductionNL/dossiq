@@ -29,10 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Mcp;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\AppInfo\Registrar\AppHostRegistrar;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
-use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -192,17 +190,13 @@ class DossiqScannableServicesTest extends TestCase {
 			DossiqScannableServices::ALIAS
 		);
 
-		$aliases = [];
-		$context = $this->createMock(IRegistrationContext::class);
-		$context->method('registerServiceAlias')->willReturnCallback(
-			static function (string $alias, string $target) use (&$aliases): void {
-				$aliases[$alias] = $target;
-			}
-		);
-
-		(new AppHostRegistrar())->register(context: $context);
-
-		$this->assertSame(DossiqScannableServices::class, $aliases[DossiqScannableServices::ALIAS] ?? null);
+		// Application::register() cannot be built in a unit run (its parent needs
+		// a live DI container), so read the binding where the gate reads it.
+		$source = file_get_contents(__DIR__ . '/../../../lib/AppInfo/Application.php');
+		$this->assertIsString($source);
+		$bound = preg_match("/registerServiceAlias\\(\\s*'([^']+)',\\s*DossiqScannableServices::class/", $source, $found);
+		$this->assertSame(1, $bound, 'Application.php binds DossiqScannableServices under a spelled-out alias.');
+		$this->assertSame(DossiqScannableServices::ALIAS, stripcslashes($found[1]));
 	}//end testTheListIsRegisteredUnderOpenRegistersAlias()
 
 	/**
