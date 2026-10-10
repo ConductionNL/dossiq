@@ -150,7 +150,6 @@
 					"requester",
 					"intakeChannel",
 					"description",
-					"startDate",
 					"plannedEndDate",
 					"assignee",
 					"confidentiality",
