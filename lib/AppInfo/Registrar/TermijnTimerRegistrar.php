@@ -30,17 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
-use OCA\Dossiq\Listener\AdviceTimerFiredListener;
-use OCA\Dossiq\Listener\AdviceTimerListener;
-use OCA\Dossiq\Listener\BezwaarArchiveTimerFiredListener;
-use OCA\Dossiq\Listener\BezwaarArchiveTimerListener;
-use OCA\Dossiq\Listener\DsoDeadlineTimerFiredListener;
-use OCA\Dossiq\Listener\DsoDeadlineTimerListener;
-use OCA\Dossiq\Listener\MilestoneStallTimerFiredListener;
-use OCA\Dossiq\Listener\MilestoneStallTimerListener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Listener\TermStatusClockListener;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -71,47 +62,8 @@ class TermijnTimerRegistrar {
 			listener: TermijnTimerFiredListener::class
 		);
 
-		// The advice deadline: its fire is the reminder and the expiry, and
-		// every save that moves a request's status or deadline re-syncs it.
-		$context->registerEventListener(
-			event: FlowTimerFiredEvent::class,
-			listener: AdviceTimerFiredListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: AdviceTimerListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatedEvent::class,
-			listener: AdviceTimerListener::class
-		);
-
-		// The bezwaartermijn: its breach archives the beschikking (or, with an
-		// objection, only switches the trigger off), and every save that moves
-		// a trigger's dates or switch re-syncs it.
-		$context->registerEventListener(
-			event: FlowTimerFiredEvent::class,
-			listener: BezwaarArchiveTimerFiredListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: BezwaarArchiveTimerListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatedEvent::class,
-			listener: BezwaarArchiveTimerListener::class
-		);
-
-		// The DSO decision term and the milestone stall: band and breach
-		// rungs from the engine, and the saves that move their deadlines.
-		foreach ([DsoDeadlineTimerFiredListener::class, MilestoneStallTimerFiredListener::class] as $fired) {
-			$context->registerEventListener(event: FlowTimerFiredEvent::class, listener: $fired);
-		}
-
-		foreach ([DsoDeadlineTimerListener::class, MilestoneStallTimerListener::class] as $saved) {
-			$context->registerEventListener(event: ObjectCreatedEvent::class, listener: $saved);
-			$context->registerEventListener(event: ObjectUpdatedEvent::class, listener: $saved);
-		}
+		// The advice, bezwaar, DSO and milestone clocks, off their daily jobs.
+		(new DeadlineTimerRegistrar())->register(context: $context);
 
 		// A term runs only in the statuses it declares, so the clock is
 		// reconciled with the case's status after every save that landed. It
