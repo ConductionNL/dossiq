@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service\Queue;
 /**
  * Thresholds and weights for one scoring run.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 final class UrgencyProfile {
 
@@ -95,7 +95,7 @@ final class UrgencyProfile {
 	 * @param mixed $priorityWeight Raw priority weight.
 	 * @param mixed $idleWeight     Raw idle weight.
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function __construct(
 		mixed $criticalDays = self::DEFAULT_CRITICAL_DAYS,
@@ -123,7 +123,7 @@ final class UrgencyProfile {
 	 *
 	 * @return self The profile for cases of that type.
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function withCaseTypeThresholds(mixed $criticalDays, mixed $warningDays): self {
 		$critical = $this->criticalDays;
@@ -149,7 +149,7 @@ final class UrgencyProfile {
 	 *
 	 * @return array{criticalDays: int, warningDays: int, priorityWeight: float, idleWeight: float}
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function toArray(): array {
 		return [

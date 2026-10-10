@@ -355,7 +355,7 @@ export default {
 }
 
 .rules-tab__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .rules-tab__empty {

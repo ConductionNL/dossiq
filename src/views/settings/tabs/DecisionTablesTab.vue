@@ -419,7 +419,7 @@ export default {
 .decision-tables-tab__errors {
 	margin: 8px 0;
 	padding-left: 18px;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 0.9em;
 }
 </style>
