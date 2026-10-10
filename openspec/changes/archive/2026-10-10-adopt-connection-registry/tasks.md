@@ -29,9 +29,10 @@
   on `dossiqIntegration` in `lib/Settings/dossiq_register.json`.
 - [x] 5.1 `tests/e2e/integrations-page.spec.ts` reads `integriq/app_connection`
   filtered on `app=dossiq`. Not run here: it needs integriq's side installed.
-- [ ] 6.1 After integriq ships: run the e2e spec against an instance with both
+- [ ] 6.1 (live pass, decision 139) After integriq ships: run the e2e spec against an instance with both
   apps, then archive this change and fold the delta into `admin-settings`.
-- [ ] 6.2 Follow-up issue: remove `dossiqIntegration` from the register.
+- [x] 6.2 Follow-up issue: remove `dossiqIntegration` from the register.
+  (ConductionNL/dossiq#2716, open since 2026-09-14)
 - [x] 7.1 Contract amendments (hydra#673): `simulatedValues` on the two
   mock-backed seams, `limited` in `connectionStatus` and in
   `IntegrationStatusService::STATUSES`, `l10n` en and nl.
