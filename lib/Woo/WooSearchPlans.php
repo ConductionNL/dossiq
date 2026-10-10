@@ -118,7 +118,7 @@ class WooSearchPlans {
 	public function custodianNames(array $plan): array {
 		$names = [];
 		foreach ((array)($plan['custodians'] ?? []) as $custodian) {
-			$name = trim((string)(is_array($custodian) === true ? ($custodian['name'] ?? '') : ''));
+			$name = trim((string)(((array)$custodian)['name'] ?? ''));
 			if ($name !== '') {
 				$names[] = $name;
 			}
@@ -206,7 +206,11 @@ class WooSearchPlans {
 	private function validated(array $input): array {
 		$custodians = [];
 		foreach ((array)($input['custodians'] ?? []) as $custodian) {
-			$name = trim((string)(is_array($custodian) === true ? ($custodian['name'] ?? '') : $custodian));
+			if (is_array($custodian) === false) {
+				$custodian = ['name' => $custodian];
+			}
+
+			$name = trim((string)($custodian['name'] ?? ''));
 			if ($name === '') {
 				continue;
 			}
@@ -264,7 +268,8 @@ class WooSearchPlans {
 			return null;
 		}
 
-		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['case' => $caseId, '_limit' => 5]);
+		$filters = ['case' => $caseId, '_limit' => 5];
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 		foreach ($rows as $row) {
 			if ((string)($row['case'] ?? '') === $caseId) {
 				return $row;
