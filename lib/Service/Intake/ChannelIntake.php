@@ -302,6 +302,11 @@ class ChannelIntake {
 			'startDate' => $this->facts->receivedDate(message: $message),
 		];
 
+		$receivedAt = $this->facts->receivedMoment(message: $message);
+		if ($receivedAt !== null) {
+			$object['receivedAt'] = $receivedAt;
+		}
+
 		foreach (self::ACCEPTED_FIELDS as $field) {
 			$value = ($payload[$field] ?? null);
 			if (is_scalar($value) === false) {

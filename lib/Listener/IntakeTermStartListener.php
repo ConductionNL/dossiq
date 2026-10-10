@@ -13,6 +13,10 @@
  * "SHALL NOT be recomputed on read": the stamp is a record of what the citizen
  * was told, not a derivation of what today's calendar would say.
  *
+ * The same write carries the case's start date and its type's receipt date
+ * answer, when the case does not already carry them: the create form no
+ * longer asks either (receipt-and-start-dates-are-set-at-creation).
+ *
  * @category Listener
  * @package  OCA\Dossiq\Listener
  *
@@ -34,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Service\Intake\CaseReceiptDates;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -62,14 +67,17 @@ class IntakeTermStartListener implements IEventListener {
 	 * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
 	 * @param SettingsService          $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface          $logger          Records a case that went unstamped.
+	 * @param CaseReceiptDates         $receiptDates    The receipt and start dates a case is missing.
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
 	 */
 	public function __construct(
 		private readonly IntakeTermStart $intake,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseReceiptDates $receiptDates,
 	) {
 	}//end __construct()
 
@@ -90,6 +98,7 @@ class IntakeTermStartListener implements IEventListener {
 	 * and what is left is one write.
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof ObjectCreatedEvent) === false) {
@@ -106,18 +115,28 @@ class IntakeTermStartListener implements IEventListener {
 		}
 
 		$caseId = trim((string)($payload['id'] ?? ($payload['uuid'] ?? '')));
-		if ($caseId === '' || $this->intake->isStamped(case: $payload) === true) {
+		if ($caseId === '') {
 			return;
 		}
 
-		$stamp = $this->intake->stampFor(receivedAt: $this->intake->arrivalOf(case: $payload));
-		if ($stamp === []) {
-			// Already logged by IntakeTermStart, naming the moment it could
-			// not place. Nothing is written: a half stamp is a claim.
+		// The stamp is written once. An empty stamp means the calendar did
+		// not answer, already logged by IntakeTermStart: nothing of it is
+		// written, because a half stamp is a claim.
+		$changes = [];
+		if ($this->intake->isStamped(case: $payload) === false) {
+			$changes = $this->intake->stampForCase(case: $payload);
+		}
+
+		// The receipt and start dates do not wait for the calendar: they are
+		// the day the request came in, which is known either way. Each is
+		// written only when the case does not carry it, so an import keeps
+		// its own and a replay writes nothing.
+		$changes = array_merge($changes, $this->receiptDates->changesFor(case: $payload));
+		if ($changes === []) {
 			return;
 		}
 
-		$this->write(case: $payload, caseId: $caseId, changes: $stamp);
+		$this->write(case: $payload, caseId: $caseId, changes: $changes);
 	}//end handle()
 
 	/**

@@ -28,9 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use RuntimeException;
+use Throwable;
 
 /**
  * An intake record, to the case payload.
@@ -105,6 +108,15 @@ class DsoIntakeCasePayload {
 			'permitApplicationRef' => $permitApplicationId,
 			'startDate' => $submissionDate,
 		];
+
+		// The submission moment, when the record carries one with a time, is
+		// when the request was received: the term starts there, not at the
+		// moment this case row is written (REQ-TERM-043). A bare date says
+		// only the day, and the start date already carries that.
+		$receivedAt = $this->submissionMoment(submitted: $submitted);
+		if ($receivedAt !== null) {
+			$case['receivedAt'] = $receivedAt;
+		}
 
 		$summary = trim((string)($permitApplication['mappedSummary'] ?? ''));
 		if ($summary !== '') {
@@ -217,4 +229,24 @@ class DsoIntakeCasePayload {
 
 		return 'reguliere';
 	}//end determineProcedureType()
+
+	/**
+	 * The submission moment, ATOM, when the record names one with a time.
+	 *
+	 * @param string $submitted The record's `submissionDate` or `indieningsdatum`.
+	 *
+	 * @return string|null The moment, or null for a bare date or an unreadable value.
+	 */
+	private function submissionMoment(string $submitted): ?string {
+		$submitted = trim($submitted);
+		if (preg_match('/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/', $submitted) !== 1) {
+			return null;
+		}
+
+		try {
+			return (new DateTimeImmutable($submitted))->format(DateTimeInterface::ATOM);
+		} catch (Throwable $e) {
+			return null;
+		}
+	}//end submissionMoment()
 }//end class

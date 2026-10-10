@@ -130,4 +130,27 @@ class MessageFacts {
 
 		return ($received ?? $this->dates->today()->format('Y-m-d'));
 	}//end receivedDate()
+
+	/**
+	 * The moment a message says it arrived, or null when it does not say.
+	 *
+	 * Written onto the case as `receivedAt`, so the term starts at the moment
+	 * the message arrived rather than at the moment the case row was written
+	 * (REQ-TERM-043). Null rather than now: a case without it falls back to
+	 * its own creation moment, which is the same claim made honestly.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return string|null The moment, ATOM, or null.
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 */
+	public function receivedMoment(array $message): ?string {
+		$received = $this->dates->tryParse(value: ($message['receivedAt'] ?? null));
+		if ($received === null) {
+			return null;
+		}
+
+		return $this->dates->formatMoment(moment: $received);
+	}//end receivedMoment()
 }//end class

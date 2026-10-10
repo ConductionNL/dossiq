@@ -240,7 +240,34 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 		$this->assertSame(self::INITIAL_STATUS_ID, $case['status'], 'the case opens at its type\'s initial status');
 		$this->assertSame('submitted', $case['dsoStatus'], 'dsoStatus is written, so the DSO term timer arms on the case');
 		$this->assertSame(self::VERZOEK_ID, $case['permitApplicationRef']);
+		$this->assertArrayNotHasKey('receivedAt', $case, 'a bare submission date names no moment, so none is claimed');
 	}//end testTheIntakeCaseFitsTheRealCaseSchema()
+
+	/**
+	 * A submission with a time is the moment the request was received.
+	 *
+	 * Sunday evening, created on Monday: the case says Sunday evening, so the
+	 * term engine starts the clock from the submission (REQ-TERM-043).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 */
+	public function testTheSubmissionMomentIsTheReceipt(): void {
+		$verzoek = $this->mappedVerzoek();
+		$verzoek['submissionDate'] = '2026-10-04T20:00:00+02:00';
+		$this->rows[self::VERZOEK_ID] = $verzoek;
+
+		$this->service()->createZaakFromVergunningaanvraag(permitApplicationId: self::VERZOEK_ID, permitApplication: $verzoek);
+
+		$creates = array_values(array_filter($this->writes, static fn (array $write): bool => $write['method'] === 'saveObject'));
+		$this->assertCount(1, $creates);
+		$case = $creates[0]['data'];
+
+		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'case', payload: $case));
+		$this->assertSame('2026-10-04T20:00:00+02:00', $case['receivedAt']);
+		$this->assertSame('2026-10-04', $case['startDate']);
+	}//end testTheSubmissionMomentIsTheReceipt()
 
 	/**
 	 * A DSO status move writes dsoStatus and leaves the case's own status alone.
