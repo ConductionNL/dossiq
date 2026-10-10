@@ -61,12 +61,15 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
 - [ ] 5.3 Declare the request catalogue hermiq classifies from.
 - [ ] 6.1 Ship the initial prompt library into hermiq and stop owning it
   (REQ-AIC-06).
-- [ ] 7.1 Fix the `AuditTrailMapper` stub's return type, which is `object`
+- [x] 7.1 Fix the `AuditTrailMapper` stub's return type, which is `object`
   where OpenRegister returns `AuditTrail` (D-6).
-  - `tests/Stubs/Db/AuditTrailMapper.php`
-- [ ] 7.2 Stop `AiSettingsControllerShapeTest` restating the feature list
+  - `tests/Stubs/Db/AuditTrailMapper.php`: `createAuditTrailEntry(): AuditTrail`
+    (landed in #2896 and #2981); `tests/Unit/Support/StubApiDriftTest.php`
+    compares return types when both sides declare one.
+- [x] 7.2 Stop `AiSettingsControllerShapeTest` restating the feature list
   `ConfigKeys` already holds (D-6).
-  - `tests/Unit/Controller/AiSettingsControllerShapeTest.php`
+  - `tests/Unit/Controller/AiSettingsControllerShapeTest.php::switchKeys()`
+    derives the feature flags from `ConfigKeys::ALL` (5 tests green, 10 Oct).
 - [ ] 8.1 Unit tests: the declaration, the unavailable-not-local read, the
   missing-reference refusal, the grouping render, the acknowledgement count and
   the intake tool's delegation.
