@@ -615,6 +615,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 POST-MIGRATION only: a fresh install has no instances to arm.
             -->
             <step>OCA\Dossiq\Repair\ArmTermijnEngineTimers</step>
+            <!-- one-term-engine (REQ-OTE-08): every case's deadline is written
+                 from its statutory term, through the same mirror the term
+                 engine uses when a term moves. Cases saved before that carry
+                 the calculated date. Runs after ArmTermijnEngineTimers, under
+                 the system identity; idempotent, counted, non-fatal.
+                 Post-migration only: a fresh install has no cases. -->
+            <step>OCA\Dossiq\Repair\ReconcileCaseDeadlinesWithTerms</step>
             <!-- Rewrites stored flows that still name a retired node type
                  (RetiredNodeMap). Post-migration only: a fresh install has
                  no stored flow to rewrite. -->
@@ -759,6 +766,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateAiOversightToHermiq        replays existing audit history
               MigrateCommitteesToDecidiq        raises existing committees; none are seeded
               ArmTermijnEngineTimers            arms existing TermijnInstances; none exist yet
+              ReconcileCaseDeadlinesWithTerms   writes existing case deadlines from their terms; none exist yet
               RetireOriRegister                 retires a register a fresh install never had
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents

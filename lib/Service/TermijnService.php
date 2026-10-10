@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
@@ -82,6 +83,10 @@ class TermijnService {
 	 *        built over the same settings and logger this service was given, because those are its
 	 *        only two dependencies and a default built from them is the same store the container
 	 *        wires: fifteen test builds keep working without naming a collaborator they never chose.
+	 * @param CaseDeadlineMirror|null $mirror Writes a statutory term's end date onto its case after
+	 *        every save of that term, so the case list and the case page read one date (REQ-OTE-01).
+	 *        Optional so a test build that never chose it saves terms exactly as before.
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -90,6 +95,7 @@ class TermijnService {
 		private readonly ?TermEventEntry $termEntry = null,
 		?TermDefinitions $definitions = null,
 		?TermInstanceStore $store = null,
+		private readonly ?CaseDeadlineMirror $mirror = null,
 	) {
 		$this->definitions = ($definitions ?? new TermDefinitions(
 			settingsService: $settingsService,
@@ -128,6 +134,7 @@ class TermijnService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function createTermijnInstance(
 		string $caseId,
@@ -195,7 +202,16 @@ class TermijnService {
 			moment: $startDate,
 		);
 
-		return ($this->armEngineTimer(instance: $saved, definitie: $definitie) ?? $saved);
+		$armed = $this->armEngineTimer(instance: $saved, definitie: $definitie);
+		if ($armed !== null) {
+			// Arming wrote the instance again through updateTermijnInstance(),
+			// which has already brought the case in line.
+			return $armed;
+		}
+
+		$this->followCase(instance: $saved);
+
+		return $saved;
 	}//end createTermijnInstance()
 
 	/**
@@ -288,6 +304,7 @@ class TermijnService {
 	 * @return array<string, mixed>|null The stored instance, or null when the store refused.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function saveTermInstance(array $instance): ?array {
 		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
@@ -299,6 +316,7 @@ class TermijnService {
 		// writer is given the fact rather than a verdict and this method keeps
 		// no branch of its own.
 		$this->termEntry?->recordStart(instance: (array)$saved, requested: $instance);
+		$this->followCase(instance: $saved);
 
 		return $saved;
 	}//end saveTermInstance()
@@ -312,6 +330,7 @@ class TermijnService {
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function updateTermijnInstance(string $termInstanceId, array $patch): ?array {
 		$current = $this->getTermijnInstance(termInstanceId: $termInstanceId);
@@ -321,8 +340,31 @@ class TermijnService {
 
 		$merged = array_merge($current, $patch);
 		$merged['id'] = $termInstanceId;
-		return $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
+		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
+		$this->followCase(instance: $saved);
+
+		return $saved;
 	}//end updateTermijnInstance()
+
+	/**
+	 * Bring the case's deadline in line after a statutory term was saved.
+	 *
+	 * THE ONE WRITE PATH IS WHY THIS LIVES HERE. Creating, pausing, resuming,
+	 * extending, re-binding and rolling a term all end in one of the three
+	 * writers above, so asking the mirror from them is what makes "every act
+	 * that moves the term moves the case" true without a call in each of
+	 * those services. A planned, internal or phase term never decides the
+	 * case's deadline, so it costs nothing here.
+	 *
+	 * @param array<string, mixed>|null $instance The instance as stored, or null when the store refused.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	private function followCase(?array $instance): void {
+		$this->mirror?->followInstance(instance: $instance);
+	}//end followCase()
 
 	/**
 	 * Resolve the active TermijnDefinitie for a zaaktype.
