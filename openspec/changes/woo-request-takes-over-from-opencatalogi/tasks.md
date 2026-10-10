@@ -126,46 +126,24 @@ are where local stubs lie).
 
 ## 5. Drafting through filinq
 
-- [ ] 5.1 Read filinq's `woo-request-workflow` change on filinq `development` at the moment you build
-  (on 2026-10-05 it was on filinq's spec branch `spec/woo-capability-build-specs`, PR #1341, issue
-  #1343). It names the contract: `DocumentGenerationRequestedEvent` with `templateSlug`
-  `woo-besluit` or `woo-inventarislijst` and `data.wooDecision`. Copy the `wooDecision` shape from its
-  spec into this change's `design.md` (create it). If filinq has not merged it, build the adapter
-  against that contract, keep 5.2's contract test, and say in the PR body that drafting is proven only
-  on dossiq's side until filinq lands (REQ-WTO-005).
-- [ ] 5.2 Add `lib/Woo/WooDecisionDrafts.php` with `draft(string $caseId): array` per REQ-WTO-005 and
-  REQ-WTO-006, dispatching the event through `IEventDispatcher` the way
-  `lib/Service/Beschikking/FilinqTemplateEngineAdapter.php` already does. Call it from
-  `WOODecisionService::assembleDecision()` and return its answer under `draft` (REQ-WTO-005,
-  REQ-WTO-006).
-  - **fails today**: `tests/Unit/Service/WOODecisionServiceTest.php`
-    `testTheDecisionCarriesTheDraftStatus`, `testAnUnhandledEventIsFilinqMissingAndFilesNothing`,
-    `testFilinqsErrorIsTheReason`.
-  - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
-    `testCreateDecisionAnswersTheDraftStatus`.
-  - Contract: `tests/Unit/Woo/WooDecisionDraftsContractTest.php` asserts the request keys
-    (`templateSlug`, `data.wooDecision`, `object`, `format`) and the result keys it reads, as literals
-    copied from filinq's spec with its source line. filinq's change tests the same contract on its
-    side; name that test in the PR body.
-
-- [ ] 5.3 The `wooDecision` dossiq sends has the shape filinq's template service checks (REQ-WTO-005,
-  row 7.9's dossiq half). filinq's `woo-request-workflow` REQ-DDWRW-010 reads `data.wooDecision` with
-  `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind` (`disclose`,
-  `partially-disclose`, `withhold` or `not-held`), `organisation`, and `documents`, a list of
-  `{inventoryNumber, title, date, assessment, groundCodes, remark}` with `assessment` one of
-  `disclose`, `partially-disclose`, `withhold`. It refuses a missing key, a `partially-disclose` or
-  `withhold` document without a ground code, and a duplicate inventory number. Build the shape in one
-  place (`WooDecisionDrafts::wooDecision(string $caseId): array`), mapping dossiq's assessment
-  `classification` `openbaar` to `disclose`, `deels_openbaar` to `partially-disclose` and
-  `niet_openbaar` to `withhold`, and `weigeringsgronden` to `groundCodes`.
-  - **fails today** (the class does not exist): `tests/Unit/Woo/WooDecisionShapeTest.php`
-    `testEveryKeyFilinqRequiresIsPresent`, `testDossiqClassificationsMapToFilinqAssessments`,
-    `testAWithheldDocumentCarriesItsGroundCodes`, `testInventoryNumbersAreUniqueAndStable`, built from
-    a fixture case with one document of each classification. Copy the key list as literals from
-    filinq's spec with its source line, so a rename on either side fails this test.
-  - Through the caller: `WOODecisionServiceTest::testTheDraftRequestCarriesTheWooDecisionShape`
-    captures the dispatched `DocumentGenerationRequestedEvent` and runs the same assertions on its
-    `data.wooDecision`.
+- [x] 5.1 filinq's contract read on filinq `development` (10 Oct 2026): `OCA\Filinq\Event\DocumentGenerationRequestedEvent`
+  (`lib/Event/DocumentGenerationRequestedEvent.php`) with `templateSlug` + `templateNamespace`, `data`,
+  `object`, `format`, handled by `DocumentGenerationRequestedListener` through
+  `DocumentGenerationRequestService::generate()`. The filinq side under decision 156 is therefore
+  built; only the `woo-besluit` / `woo-inventarislijst` template content is filinq's
+  `woo-request-workflow` (not on development).
+- [x] 5.2 Decision 182: generic, not `WooDecisionDrafts`. `lib/Service/Drafts/CaseDocumentDrafts.php`
+  (`draft(caseId, purpose)`) over the case type's `documentDrafts` (`register.d/89-case-document-drafts.json`),
+  called from `WOODecisionService::assembleDecision()` for `decision` and `inventory` (answers under
+  `draft` and `inventoryDraft`). REQ-CDD-001/003, REQ-WTO-005/006.
+  - done: `tests/Unit/Service/Drafts/CaseDocumentDraftsTest.php` (7: the Woo case type's real declaration
+    drafted and filed, filinq's error is the reason, unhandled is filinq-missing, undeclared asks nothing,
+    unbuildable data refused before filinq, data beside the case without a data key, inventory);
+    through the caller `WOODecisionServiceTest::testTheDecisionCarriesTheDraftStatus`.
+- [x] 5.3 The `wooDecision` shape is configuration on the Woo case type, built by the generic
+  `lib/Service/Drafts/CaseDraftData.php` (REQ-CDD-002).
+  - done: `tests/Unit/Service/Drafts/CaseDraftDataTest.php` (6); the shape over one assessment of each
+    classification in `CaseDocumentDraftsTest::testTheWooDecisionIsDraftedFromItsCaseTypesTemplateAndFiled`.
 
 ## 6. End to end and live
 

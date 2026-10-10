@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.3.0",
+          "version": "1.4.0",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -146,6 +146,148 @@
           ],
           "supervisorGroup": "dossiq-coordinators",
           "hideOthers": false
+        },
+        "documentDrafts": {
+          "decision": {
+            "templateSlug": "woo-besluit",
+            "templateNamespace": "dossiq",
+            "format": "docx",
+            "documentType": "Besluit",
+            "title": "Woo-besluit",
+            "dataKey": "wooDecision",
+            "fields": [
+              {
+                "to": "reference",
+                "from": "identifier",
+                "required": true
+              },
+              {
+                "to": "subject",
+                "from": "title",
+                "required": true
+              },
+              {
+                "to": "receivedAt",
+                "from": "startDate"
+              },
+              {
+                "to": "decisionDate",
+                "value": "@today"
+              }
+            ],
+            "lists": [
+              {
+                "to": "documents",
+                "schemaKey": "woo_assessment_schema",
+                "caseField": "caseRef",
+                "sortBy": "documentRef",
+                "numberAs": "inventoryNumber",
+                "fields": [
+                  {
+                    "to": "documentRef",
+                    "from": "documentRef"
+                  },
+                  {
+                    "to": "assessment",
+                    "from": "classification",
+                    "values": {
+                      "openbaar": "disclose",
+                      "deels_openbaar": "partially-disclose",
+                      "niet_openbaar": "withhold"
+                    }
+                  },
+                  {
+                    "to": "groundCodes",
+                    "from": "weigeringsgronden",
+                    "default": []
+                  }
+                ]
+              }
+            ],
+            "summaries": [
+              {
+                "to": "decisionKind",
+                "over": "documents",
+                "field": "assessment",
+                "all": {
+                  "disclose": "disclose",
+                  "withhold": "withhold"
+                },
+                "empty": "not-held",
+                "mixed": "partially-disclose"
+              }
+            ]
+          },
+          "inventory": {
+            "templateSlug": "woo-inventarislijst",
+            "templateNamespace": "dossiq",
+            "format": "docx",
+            "documentType": "Inventarislijst",
+            "title": "Inventarislijst",
+            "dataKey": "wooDecision",
+            "fields": [
+              {
+                "to": "reference",
+                "from": "identifier",
+                "required": true
+              },
+              {
+                "to": "subject",
+                "from": "title",
+                "required": true
+              },
+              {
+                "to": "receivedAt",
+                "from": "startDate"
+              },
+              {
+                "to": "decisionDate",
+                "value": "@today"
+              }
+            ],
+            "lists": [
+              {
+                "to": "documents",
+                "schemaKey": "woo_assessment_schema",
+                "caseField": "caseRef",
+                "sortBy": "documentRef",
+                "numberAs": "inventoryNumber",
+                "fields": [
+                  {
+                    "to": "documentRef",
+                    "from": "documentRef"
+                  },
+                  {
+                    "to": "assessment",
+                    "from": "classification",
+                    "values": {
+                      "openbaar": "disclose",
+                      "deels_openbaar": "partially-disclose",
+                      "niet_openbaar": "withhold"
+                    }
+                  },
+                  {
+                    "to": "groundCodes",
+                    "from": "weigeringsgronden",
+                    "default": []
+                  }
+                ]
+              }
+            ],
+            "summaries": [
+              {
+                "to": "decisionKind",
+                "over": "documents",
+                "field": "assessment",
+                "all": {
+                  "disclose": "disclose",
+                  "withhold": "withhold"
+                },
+                "empty": "not-held",
+                "mixed": "partially-disclose"
+              }
+            ]
+          }
         },
         "recordImports": [
           {

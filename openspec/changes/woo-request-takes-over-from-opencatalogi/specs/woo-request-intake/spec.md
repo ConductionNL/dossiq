@@ -173,38 +173,38 @@ The declaration SHALL:
 
 ### Requirement: The decision and inventory are drafted from the organisation's templates (REQ-WTO-005)
 
-When the handler creates the Woo decision (POST `/api/cases/{id}/woo/decision`), dossiq SHALL ask
-filinq for a besluit draft and an inventory draft through one adapter,
-`OCA\Dossiq\Woo\WooDecisionDrafts::draft(string $caseId): array`, which answers
-`{status: 'drafted'|'not-drafted', besluitFileId?: int, inventoryFileId?: int, template?: string, reasonCode?: string, reason?: string}`.
-The adapter SHALL use the contract filinq's `woo-request-workflow` amendment names: it dispatches
-`new \OCA\Filinq\Event\DocumentGenerationRequestedEvent(request: [...], requestingApp: 'dossiq')`
-once with `templateSlug` `woo-besluit` and once with `woo-inventarislijst`, each with
-`data` `['wooDecision' => ...]` in the shape filinq's spec declares, `object` the case reference and
-`format` `pdf`, and then reads `isHandled()`, `getResult()` (`fileId`, `path`, `name`, `mime`,
-`size`, `format`, `template`, `object`, `metadata`, `requestingApp`, `warnings`) or `getError()`.
-The drafts SHALL be filed as documents on the case. The decision record SHALL be written either
-way, and SHALL carry the draft status.
+Decision 182: the drafting is the generic capability `case-document-drafts` (REQ-CDD-001 to
+REQ-CDD-003), configured here. The Woo case type (`register.d/81-woo-verzoek.json`) SHALL declare
+`documentDrafts.decision` (template `woo-besluit`) and `documentDrafts.inventory` (template
+`woo-inventarislijst`), both in namespace `dossiq`, format `docx`, data key `wooDecision`, with
+`reference` (case `identifier`), `subject` (case `title`), `receivedAt` (case `startDate`),
+`decisionDate` (`@today`), `documents` (the case's `woo_assessment_schema` records by `caseRef`,
+sorted by `documentRef`, numbered into `inventoryNumber`, `classification` mapped `openbaar` to
+`disclose`, `deels_openbaar` to `partially-disclose`, `niet_openbaar` to `withhold`, and
+`weigeringsgronden` as `groundCodes`) and `decisionKind` (the shared assessment, `not-held` without
+documents, `partially-disclose` when mixed). When the handler creates the Woo decision,
+`WOODecisionService::assembleDecision()` SHALL draft both and answer them under `draft` and
+`inventoryDraft`; the decision record SHALL be written either way. The organisation's letterhead
+and name come from the filinq template, not from the data. The `woo-besluit` and
+`woo-inventarislijst` templates themselves are filinq content (filinq's `woo-request-workflow`).
 
 #### Scenario: filinq drafts the besluit
-- **GIVEN** filinq installed with an organisation-edited Woo besluit template
+- **GIVEN** filinq installed with the organisation's `woo-besluit` template
 - **WHEN** the handler creates the decision on a fully assessed Woo case
-- **THEN** a besluit document and an inventory document SHALL be on the case, and the response SHALL say `drafted` with the template filinq used
+- **THEN** a besluit document and an inventory document SHALL be on the case, and the response SHALL say `drafted`
 
 #### Scenario: The wooDecision has the shape filinq checks
 - **GIVEN** a Woo case with one `openbaar`, one `deels_openbaar` and one `niet_openbaar` assessment, the last two with weigeringsgronden
 - **WHEN** dossiq builds the `wooDecision` for the draft request
-- **THEN** it SHALL carry `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind`, `organisation` and three `documents` with unique `inventoryNumber`s, assessments `disclose`, `partially-disclose` and `withhold`, and non-empty `groundCodes` on the last two
+- **THEN** it SHALL carry `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind` and three `documents` with unique `inventoryNumber`s, assessments `disclose`, `partially-disclose` and `withhold`, and non-empty `groundCodes` on the last two
 
 ### Requirement: Without filinq the decision says no draft was made (REQ-WTO-006)
 
-When the event comes back neither handled nor refused (filinq absent), `draft()` SHALL answer
-`not-drafted` with reason code `filinq-missing`. When `getError()` answers, it SHALL answer
-`not-drafted` with `filinq-refused` and filinq's error as the reason. It SHALL NOT file a placeholder
-document. The decision response and the case page SHALL say that
-no draft was generated and why.
+Per REQ-CDD-003: without filinq (not installed, or nobody answered the event) the draft SHALL answer
+`filinq-missing`; on filinq's error it SHALL answer `failed` with filinq's error as the reason. No
+placeholder document SHALL be filed. The decision response SHALL carry that answer.
 
 #### Scenario: No filinq, no fake letter
 - **GIVEN** filinq is not installed
 - **WHEN** the handler creates the decision
-- **THEN** the decision SHALL be stored, the response SHALL carry `draft.status` `not-drafted` with `filinq-missing`, and no new document SHALL be on the case
+- **THEN** the decision SHALL be stored, the response SHALL carry `draft.status` `filinq-missing`, and no new document SHALL be on the case
