@@ -8991,13 +8991,12 @@
             "caseShare": {
                 "slug": "caseShare",
                 "icon": "ShareVariant",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:CreativeWork",
                 "title": "Case share",
                 "description": "Token- or partner-based share over a case for external collaboration",
                 "type": "object",
                 "required": [
-                    "token",
                     "caseId",
                     "shareType",
                     "permissionLevel"
@@ -13056,6 +13055,7 @@
                     "version": "1.1.0",
                     "slug": "leverancier-contractverlenging-verzoek"
                 },
+                "isDraft": false,
                 "title": "Leverancier contractverlenging verzoek",
                 "category": "Inkoop en leveranciers",
                 "description": "Verzoek tot verlenging van een lopend contract met een leverancier",
@@ -13068,6 +13068,7 @@
                     "version": "1.1.0",
                     "slug": "leverancier-iban-wijziging"
                 },
+                "isDraft": false,
                 "title": "Leverancier IBAN-wijziging",
                 "category": "Inkoop en leveranciers",
                 "description": "Wijziging van het bankrekeningnummer van een leverancier (4-ogen procedure)",
@@ -13080,6 +13081,7 @@
                     "version": "1.1.0",
                     "slug": "leverancier-accreditatie-verificatie"
                 },
+                "isDraft": false,
                 "title": "Leverancier accreditatie verificatie",
                 "category": "Inkoop en leveranciers",
                 "description": "Verificatie van accreditaties van een leverancier",
@@ -13092,6 +13094,7 @@
                     "version": "1.1.0",
                     "slug": "leverancier-mutatie"
                 },
+                "isDraft": false,
                 "title": "Leverancier mutatie",
                 "category": "Inkoop en leveranciers",
                 "description": "Algemene wijziging van leveranciersgegevens",

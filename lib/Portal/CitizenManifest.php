@@ -43,6 +43,14 @@ use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
  * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
  */
 class CitizenManifest {
+
+	/**
+	 * The row action that answers a question of `vragenAanU`.
+	 *
+	 * @var string
+	 */
+	public const ANSWER_ACTION = 'beantwoordVraag';
+
 	/**
 	 * What a Woo request asks, in the order the steps ask it. `collectionId`
 	 * is not here: only the dossier variant carries it, and it is hidden.
@@ -257,6 +265,10 @@ class CitizenManifest {
 			// resident's own, so an answered one showing is untidy rather
 			// than a leak.
 			'defaultFilters' => ['state' => 'open'],
+			// THE ANSWER GOES ON THE ROW IT ANSWERS (woo-dossier-shared-with-the-requester
+			// REQ-WDS-001). portaliq proves the row is the resident's before it
+			// forwards, and offers the action only on an open request.
+			'rowActions' => [self::ANSWER_ACTION],
 			'columns' => [
 				['field' => 'summary', 'label' => 'Wat wij nodig hebben', 'render' => 'text'],
 				['field' => 'hersteltermijn', 'label' => 'Graag voor', 'render' => 'date'],
@@ -287,8 +299,42 @@ class CitizenManifest {
 			// steps, no `attachTo`, so portaliq offers it anywhere a resident
 			// is signed in rather than only on a dossier page.
 			$this->startWooVerzoekAlgemeenAction(),
+			$this->answerQuestionAction(),
 		];
 	}//end actions()
+
+	/**
+	 * The requester answers a question of `vragenAanU` (woo-dossier-shared-with-the-requester REQ-WDS-001).
+	 *
+	 * An endpoint row action: portaliq stamps the proven row's id under
+	 * `requestId` and forwards only `antwoord`. dossiq records the answer on
+	 * the open request and tells the handler; the request stays open until the
+	 * handler says it is complete. Documents go through the case's own upload,
+	 * because portaliq's row forward carries no files.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function answerQuestionAction(): array {
+		return [
+			'id' => self::ANSWER_ACTION,
+			'label' => 'Beantwoorden',
+			'audiences' => ['citizen', 'client'],
+			'endpoint' => '/index.php/apps/dossiq/api/portal/vragen/antwoord',
+			'method' => 'POST',
+			'rowField' => 'requestId',
+			'rowWhen' => ['field' => 'state', 'in' => ['open']],
+			'minTrust' => 'low',
+			'fields' => ['antwoord'],
+			'requiredFields' => ['antwoord'],
+			'fieldConfigs' => [
+				'antwoord' => ['label' => 'Uw antwoord', 'size' => 'large', 'maxLength' => 4000],
+			],
+			'submitLabel' => 'Antwoord versturen',
+			'successMessage' => 'Wij hebben uw antwoord ontvangen. U hoort van ons of wij nog iets nodig hebben.',
+		];
+	}//end answerQuestionAction()
 
 	/**
 	 * A resident starts a Woo request from their dossier (hydra woo-citizen-journey C5).

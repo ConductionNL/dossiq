@@ -1807,20 +1807,6 @@
       "reason": "`getConsumerAuthorisaties()` answers `return []` when the read fails; the catch logs at warning (\"Could not get consumer autorisaties\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwService.php",
-      "method": "resolveParentZaaktypeDraft",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`resolveParentZaaktypeDraft()` answers `return null` when the read fails; the catch logs at warning (\"Could not resolve parent zaaktype draft status\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/ZgwService.php",
-      "method": "resolveParentZaaktypeDraftFromBody",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`resolveParentZaaktypeDraftFromBody()` answers `return null` when the read fails; the catch logs at warning (\"Could not resolve parent zaaktype draft from body\"), so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/ZgwZrcRulesService.php",
       "method": "caseTypeDefaultAssignee",
       "occurrence": 1,
@@ -1847,6 +1833,20 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`registry()` answers `return null` when OpenRegister's node catalogue cannot be resolved; the catch logs at warning (\"OpenRegister node catalogue unavailable for a retired action\") and the caller records the action as failed with `retired_action_needs_openregister`, never as run."
+    },
+    {
+      "file": "lib/Service/Zgw/ZgwParentStateResolver.php",
+      "method": "draftState",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`draftState()` answers `return null` when the parent zaaktype cannot be read; the catch logs at warning (\"Could not resolve parent zaaktype draft status\" / \"... from body\"). It is the one site the two former ZgwService::resolveParentZaaktypeDraft* entries collapsed into (method-decomposition), so a failed read and an absent record are the same answer: not applicable."
+    },
+    {
+      "file": "lib/Service/Zgw/ZtcRelatedTypeLookup.php",
+      "method": "searchRowsOrNone",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`searchRowsOrNone()` answers `return []` when a ZTC enrichment search fails; the catch logs at warning naming the schema. It moved out of ZtcController (method-decomposition), where the same catches lived outside lib/Service and were not counted; a failed search leaves one cross-reference list unenriched on a read instead of failing the read."
     }
   ]
 }
