@@ -89,6 +89,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'CopyEmbeddedBezwaarAuditTrail' => 'copies embedded bezwaar audit entries; a fresh install has none',
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
 		'MapWooRefusalGroundCodes' => 'rewrites refusal ground codes on existing Woo assessments and decisions; a fresh install has none',
+		'CreateWooDocumentReviews' => 'marks existing assessed Woo documents in scope; a fresh install has no assessments',
 		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
