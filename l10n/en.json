@@ -77,6 +77,10 @@
             "{count} case moved without all of its automatic actions. Its status record shows which.",
             "{count} cases moved without all of their automatic actions. Their status records show which."
         ],
+        "_{count} open case_::_{count} open cases_": [
+            "{count} open case",
+            "{count} open cases"
+        ],
         "_{count} working day in this status_::_{count} working days in this status_": [
             "{count} working day in this status",
             "{count} working days in this status"
@@ -8974,6 +8978,8 @@
         "{count} followers": "{count} followers",
         "{count} items": "{count} items",
         "{count} of {total} document(s) updated": "{count} of {total} document(s) updated",
+        "{count} open case": "{count} open case",
+        "{count} open cases": "{count} open cases",
         "{count} opened so far": "{count} opened so far",
         "{count} photos": "{count} photos",
         "{count} skipped": "{count} skipped",

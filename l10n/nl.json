@@ -77,6 +77,10 @@
             "{count} zaak is verplaatst, maar niet al haar automatische acties zijn uitgevoerd. De statusregistratie laat zien welke.",
             "{count} zaken zijn verplaatst, maar niet al hun automatische acties zijn uitgevoerd. De statusregistraties laten zien welke."
         ],
+        "_{count} open case_::_{count} open cases_": [
+            "{count} open zaak",
+            "{count} open zaken"
+        ],
         "_{count} working day in this status_::_{count} working days in this status_": [
             "{count} werkdag in deze status",
             "{count} werkdagen in deze status"
@@ -8974,6 +8978,8 @@
         "{count} followers": "{count} volgers",
         "{count} items": "{count} items",
         "{count} of {total} document(s) updated": "{count} van {total} document(en) bijgewerkt",
+        "{count} open case": "{count} open zaak",
+        "{count} open cases": "{count} open zaken",
         "{count} opened so far": "{count} tot nu toe geopend",
         "{count} photos": "{count} foto's",
         "{count} skipped": "{count} overgeslagen",
