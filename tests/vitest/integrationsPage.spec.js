@@ -243,8 +243,10 @@ describe('the connection declaration', () => {
 			'OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter',
 			'mock',
 		])
+		// An empty template key binds filinq's adapter when filinq is enabled,
+		// so only the mock class itself reads Simulated; dossiq reports the
+		// rest (IntegrationStatusService::recordTemplates()).
 		expect(byKey.templates.adapter.simulatedValues).toEqual([
-			'',
 			'OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter',
 		])
 		expect(connections.some((c) => 'reportedOnly' in c)).toBe(false)

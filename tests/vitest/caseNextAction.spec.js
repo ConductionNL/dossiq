@@ -159,10 +159,11 @@ describe('the milestone carries an owner role', () => {
 
 	it('moves the milestoneDefinition version, or the property is inert', () => {
 		// OpenRegister re-imports a schema when its version moves. The base
-		// fragment declares 1.0.0; this one has to be ahead of it.
+		// fragment declares 1.0.1 (1.0.0 until unified search left it out);
+		// this one has to be ahead of it.
 		const base = milestoneFragment.components.schemas.milestoneDefinition.version
 		const added = fragment.components.schemas.milestoneDefinition.version
-		expect(base).toBe('1.0.0')
+		expect(base).toBe('1.0.1')
 		expect(added).not.toBe(base)
 	})
 

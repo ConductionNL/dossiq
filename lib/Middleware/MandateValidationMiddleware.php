@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Exception\RefusedException;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
@@ -36,6 +37,12 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Mandate-matrix middleware. Audit-logs every decision (allow + deny).
+ *
+ * It also refuses, with 403, a request whose organisation is not `active`.
+ * That check was `TenantMiddleware`'s, the only thing refusing a suspended
+ * organisation on dossiq's routes; OpenRegister's `TenantQuotaMiddleware`
+ * makes it on OpenRegister's routes only. It moved here when the active
+ * tenant became OpenRegister's active organisation (Q3, Ruben 2026-10-08).
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
  */
@@ -60,12 +67,30 @@ class MandateValidationMiddleware extends Middleware {
 	private const STATUS_PATH_HINTS = ['/transition', '/status'];
 
 	/**
+	 * Controllers on which an organisation that is not active is not refused.
+	 *
+	 * The list `TenantMiddleware` had, less the deleted tenant controller:
+	 * settings and the dashboard stay
+	 * reachable, and health and metrics are served by the OpenRegister AppHost
+	 * engine (ADR-040), whose dispatched controller is the generic class.
+	 *
+	 * @var array<int, string>
+	 */
+	private const LIFECYCLE_EXEMPT_CONTROLLERS = [
+		'OCA\Dossiq\Controller\SettingsController',
+		'OCA\Dossiq\Controller\DashboardController',
+		'OCA\OpenRegister\AppHost\Controller\GenericHealthController',
+		'OCA\OpenRegister\AppHost\Controller\GenericMetricsController',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request Request.
 	 * @param IUserSession $userSession User session.
 	 * @param TenantContext $context Tenant context.
 	 * @param TenantAuthenticationService $authService Auth service.
+	 * @param TenantService $tenantService Platform admin check.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
@@ -73,6 +98,7 @@ class MandateValidationMiddleware extends Middleware {
 		private readonly IUserSession $userSession,
 		private readonly TenantContext $context,
 		private readonly TenantAuthenticationService $authService,
+		private readonly TenantService $tenantService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -85,31 +111,28 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * @return void
 	 *
-	 * @throws MandateDeniedException When the action is denied.
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
-	 * fixed by OCP\AppFramework\Middleware::beforeController(); this middleware
-	 * dispatches on the request URI instead.
+	 * @throws MandateDeniedException When the action is denied, or the organisation is not active.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $methodName is fixed by
+	 * OCP\AppFramework\Middleware::beforeController(); this middleware
+	 * dispatches on the controller class and the request URI instead.
 	 *
 	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
-		if ($this->context->isBound() === false) {
+		$user = $this->userSession->getUser();
+		if ($user === null || $this->context->isBound() === false) {
 			return;
 		}
+
+		$userId = $user->getUID();
+		$this->refuseAnOrganisationThatIsNotActive(controller: $controller, userId: $userId);
 
 		$verb = strtoupper($this->request->getMethod());
 		$action = $this->resolveAction(verb: $verb, path: $this->request->getRequestUri());
 		if ($action === null) {
 			return;
 		}
-
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return;
-		}
-
-		$userId = $user->getUID();
 		$tenantId = $this->context->getTenantId();
 
 		$decision = $this->authService->validateMandateMatrix(
@@ -148,10 +171,12 @@ class MandateValidationMiddleware extends Middleware {
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
 		if ($exception instanceof MandateDeniedException) {
-			return new JSONResponse(
-				['success' => false, 'error' => $exception->getMessage()],
-				403
-			);
+			$answer = ['success' => false, 'error' => $exception->getMessage()];
+			if ($exception->getLifecycleStatus() !== '') {
+				$answer['status'] = $exception->getLifecycleStatus();
+			}
+
+			return new JSONResponse($answer, 403);
 		}
 
 		// A mandate check that could not run is not a denial. It used to leave
@@ -171,6 +196,43 @@ class MandateValidationMiddleware extends Middleware {
 
 		throw $exception;
 	}//end afterException()
+
+	/**
+	 * Refuse a request whose organisation is not `active` (REQ-TAO-003).
+	 *
+	 * For a signed-in user who is not a platform admin, on a controller outside
+	 * the exempt list. The status is the stored Organisation's. An empty status
+	 * reads as `active`, as OpenRegister's own serialisation reads it and as
+	 * `TenantMiddleware` read it.
+	 *
+	 * @param object $controller The dispatched controller.
+	 * @param string $userId     The signed-in uid.
+	 *
+	 * @return void
+	 *
+	 * @throws MandateDeniedException When the organisation is not active.
+	 */
+	private function refuseAnOrganisationThatIsNotActive(object $controller, string $userId): void {
+		if (in_array(get_class($controller), self::LIFECYCLE_EXEMPT_CONTROLLERS, true) === true) {
+			return;
+		}
+
+		if ($this->tenantService->isPlatformAdmin($userId) === true) {
+			return;
+		}
+
+		$status = $this->context->getStatus();
+		if ($status === '' || $status === 'active') {
+			return;
+		}
+
+		$this->logger->info(
+			'Dossiq: request refused because the organisation is not active',
+			['userId' => $userId, 'tenantId' => $this->context->getTenantId(), 'status' => $status]
+		);
+
+		throw (new MandateDeniedException(message: 'Organisation is '.$status, code: 403))->withLifecycleStatus(status: $status);
+	}//end refuseAnOrganisationThatIsNotActive()
 
 	/**
 	 * Resolve the matrix action key for the request.

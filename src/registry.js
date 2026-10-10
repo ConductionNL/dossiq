@@ -26,7 +26,7 @@
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
-// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+// @spec openspec/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
 // The line saying this case is in the archive, and what that means for the
 // reader (archived-cases-leave-the-lenses).
@@ -55,7 +55,7 @@ import CaseFollowStrip from './components/case/CaseFollowStrip.vue'
 // @spec openspec/specs/case-dashboard-view/spec.md
 import CaseLocationMap from './components/case/CaseLocationMap.vue'
 // Who is on the case and in which role, over OpenRegister's party model.
-// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+// @spec openspec/specs/roles-decisions/spec.md
 import CasePartiesWidget from './components/case/CasePartiesWidget.vue'
 // The case's own state on the case page is no longer a registry component at
 // all: the identity band is four configured library tiles (stat + countdown)
@@ -81,12 +81,13 @@ import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // @spec openspec/specs/case-knowledge-base/spec.md
 import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
-// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+// @spec openspec/specs/archief-edepot-handover/spec.md
 import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
 import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
 // @spec openspec/specs/case-configuration-i18n/spec.md
@@ -145,6 +146,7 @@ import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 import RemindDialog from './dialogs/RemindDialog.vue'
@@ -471,6 +473,15 @@ const registry = {
 		...PANEL_WIDGET_META,
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
 	},
+	// --- What a case type opens to its applicant (portal-citizen-writes-on-the-case D3). ---
+	// @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	CaseTypePortalWidget: {
+		// @custom-widget-ratchet exclude every picker offers the case type's own statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers; a declared form would offer a free text field for a status uuid
+		kind: 'widget',
+		component: CaseTypePortalWidget,
+		...PANEL_WIDGET_META,
+		_note: 'CaseTypeDetail: the Portal section. Reads the case type and its blueprint statuses, writes portalWritable, both windows and portalWithdrawal in one PATCH, and shows the sentence CaseTypePortalWithdrawalListener refuses an unreachable withdrawal with.',
+	},
 	// @spec openspec/specs/zaaktype-versioning/spec.md
 	CaseTypePublishDialog: {
 		kind: 'modal',
@@ -619,7 +630,7 @@ const registry = {
 	// `@self._retention` and derives nothing. A second derivation in the browser
 	// would eventually disagree with the stored one, and a records manager reading
 	// a disposal date has no way to tell which of the two they are looking at.
-	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	// @spec openspec/specs/archief-edepot-handover/spec.md
 	// Keyed by TYPE, not by component name. A tab child resolves through
 	// `resolveRegistryRenderer`, which reads `cnRegistry[widget.type]` and
 	// nothing else: a page `slots` map is read by CnDashboardPage's grid and
@@ -664,7 +675,7 @@ const registry = {
 	// `/archival/reviews/pending` reads the session user id, so nothing is narrowed
 	// in the browser. A filter over a wider list would be a weaker thing wearing
 	// the same label.
-	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	// @spec openspec/specs/archief-edepot-handover/spec.md
 	MyArchivalReviews: {
 		// @custom-widget-ratchet exclude a destruction list entry is not a dossiq object: it lives on openregister's destruction list and no declarative widget reads that surface, and each of the three answers carries a reason, with retain also carrying a new date, collected before the post. Deleted the day the manifest vocabulary has a worklist widget over a leaf endpoint
 		kind: 'widget',
@@ -713,7 +724,7 @@ const registry = {
 	},
 
 	// --- Which role a party takes on the case (gemachtigde-role-on-every-case-type). ---
-	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	// @spec openspec/specs/roles-decisions/spec.md
 	RoleTypePicker: {
 		kind: 'form-field',
 		component: RoleTypePicker,
@@ -735,6 +746,15 @@ const registry = {
 		component: BerichtenboxComposeDialog,
 		propsSchema: {},
 		_note: "Composes one letter to a citizen's digital post and posts it to BerichtenboxController#send, which hands it to IntegriqAdapter and integriq's typed send command. UNTIL 2026-09-18 THIS FILE WAS REFERENCED NOWHERE IN DOSSIQ: not here, not by src/manifest.json, not by another component, and the only occurrence of its name in the repository was its own `name:` line. The CaseDetail `send-digital-post` header action opens it now, and tests/vitest/registryOrphans.spec.js fails on a registered modal that no manifest action names, so it cannot go dark again quietly. It takes `open` beside its older `show` because `open` is what every other registry modal on this page is opened with and an action declaring the wrong one of the two would mount a dialog that renders nothing; `caseId` arrives as the unresolved `@objectId` token, as it does for BeschikkingComposerDialog, and the route answers instead. The recipient is read off the case's `initiatorSourceId` and only for an `initiatorType` of person, because a KvK number is not an address a letter can go to. A REFUSAL DOES NOT CLOSE IT: `sent` is emitted only for a send carrying a tracked message, and the provider's own sentence is shown, because a handler told which credential is missing can ask for it and a handler told \"sending failed\" cannot.",
+	},
+
+	// --- Message the applicant, the CaseDetail header action (communication-portal-conversation-on-the-case). ---
+	// @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	PortalMessageDialog: {
+		kind: 'modal',
+		component: PortalMessageDialog,
+		propsSchema: {},
+		_note: "Writes one portaalBericht from the handler to the applicant's portal inbox. Opened by the CaseDetail `message-applicant` header action (visible only on a case with a portalSubject) and by Reply on a resident's message in the timeline tab, which closes that message's follow-up on `sent`. recipientRef is the case's portalSubject, never a user id: the inbox is scoped on it. caseId may arrive as the unresolved `@objectId` token and the route answers instead, as for BerichtenboxComposeDialog.",
 	},
 
 	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
@@ -1125,7 +1145,7 @@ const registry = {
 	// `case-unread` records: a tab child renders through CnTabsWidget, which
 	// resolves `cnRegistry[widget.type]` and renders nothing at all when no key
 	// answers.
-	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	// @spec openspec/specs/roles-decisions/spec.md
 	'case-party-roles': {
 		// @custom-widget-ratchet exclude a party link is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/parties`, which answers contact-link rows grouped by role together with the schema's own kinds and roles, and the indicators come from `/api/parties/{uuid}`. There is no `integration` id that resolves the party model either; `contacts` renders the person links beside this and cannot see a party with no account. Deleted the day nextcloud-vue ships a parties widget type over that listing
 		kind: 'widget',

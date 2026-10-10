@@ -4,6 +4,11 @@ import { createApp, h } from 'vue'
 import EmailSettings from './views/settings/EmailSettings.vue'
 import pinia from './pinia.js'
 
+// Library CSS: this bundle mounts library components outside the app page, so
+// it needs the stylesheet main.js imports. Without it every component here
+// rendered unstyled (r4-tour-menu-labels-and-settings-styles).
+import '@conduction/nextcloud-vue/css/index.css'
+
 const appVersion = loadState('dossiq', 'version', 'Unknown')
 
 // Vue 3: props pass FLAT in h(); component children (arrays) become the default slot.

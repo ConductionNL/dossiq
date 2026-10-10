@@ -18,7 +18,7 @@
  *
  * @link https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+ * @spec openspec/specs/vth-dso-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\SetupCheck\SetupResult;
 /**
  * Warns while DSO intake is off.
  *
- * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+ * @spec openspec/specs/vth-dso-integration/spec.md
  */
 class DsoIntakeCheck implements ISetupCheck {
 
@@ -60,7 +60,7 @@ class DsoIntakeCheck implements ISetupCheck {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function getName(): string {
 		return $this->l10n->t('Dossiq DSO intake');
@@ -71,7 +71,7 @@ class DsoIntakeCheck implements ISetupCheck {
 	 *
 	 * @return string The category.
 	 *
-	 * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function getCategory(): string {
 		return 'system';
@@ -84,7 +84,7 @@ class DsoIntakeCheck implements ISetupCheck {
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) SetupResult's named constructors are the only way OCP offers to build one.
 	 *
-	 * @spec openspec/changes/dso-intake-on-by-default/specs/vth-dso-integration/spec.md
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function run(): SetupResult {
 		$schema = $this->appConfig->getValueString(

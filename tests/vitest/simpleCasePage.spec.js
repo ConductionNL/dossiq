@@ -244,7 +244,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 25 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 26 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -258,10 +258,10 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(25)
+		expect(placed).toHaveLength(26)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(15)
+		expect(count('Case')).toBe(16)
 		expect(count('Publication')).toBe(3)
 		expect(count('Dossier')).toBe(1)
 		expect(count('admin')).toBe(2)

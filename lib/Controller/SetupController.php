@@ -127,7 +127,7 @@ class SetupController extends Controller {
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function status(): DataResponse {
@@ -323,7 +323,7 @@ class SetupController extends Controller {
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {

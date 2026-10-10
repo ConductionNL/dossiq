@@ -882,7 +882,7 @@ class SetupControllerStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function testClosingTheWizardRecordsOnlyTheSetupVersion(): void {
 		$built = $this->build(config: $this->provisioned(), requestParams: ['finished' => false]);
@@ -900,7 +900,7 @@ class SetupControllerStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function testARealChoiceSurvivesTheClose(): void {
 		$built = $this->build(
@@ -924,7 +924,7 @@ class SetupControllerStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function testStatusReportsTheClosedVersion(): void {
 		$data = $this->controller($this->provisioned() + ['setup_dismissed_version' => '1'])->status()->getData();
@@ -943,7 +943,7 @@ class SetupControllerStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	public function testNoCloseNoDismissedKey(): void {
 		$data = $this->controller($this->provisioned())->status()->getData();

@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -91,7 +91,7 @@ function optionOf(row, scope) {
  * @param {Array<object>} rows Every role type this instance holds.
  * @param {string} caseTypeId The uuid of the case's type, '' when unknown.
  * @return {Array<object>} The options, in the order the picker shows them.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
 export function offeredRoleTypes(rows, caseTypeId) {
 	const all = (Array.isArray(rows) ? rows : []).filter(
@@ -131,7 +131,7 @@ export function offeredRoleTypes(rows, caseTypeId) {
  * no roles, which is a different and wrong answer.
  *
  * @return {Promise<Array<object>|null>} The rows, or null when they could not be read.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
 export async function fetchRoleTypes() {
 	try {
@@ -159,7 +159,7 @@ export async function fetchRoleTypes() {
  *
  * @param {string} caseId The case uuid.
  * @return {Promise<string>} The case type uuid, '' when there is none to read.
- * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
+ * @spec openspec/specs/roles-decisions/spec.md#requirement-every-case-type-offers-a-gemachtigde-role-req-role-009
  */
 export async function fetchCaseTypeOf(caseId) {
 	const id = String(caseId || '').trim()

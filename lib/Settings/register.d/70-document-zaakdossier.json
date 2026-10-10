@@ -14,7 +14,8 @@
       "informatieobject": {
         "slug": "informatieobject",
         "icon": "FileDocumentOutline",
-        "version": "1.2.0",
+        "version": "1.2.1",
+        "searchable": false,
         "title": "Informatieobject",
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
         "x-schema-org": "DigitalDocument",
@@ -111,7 +112,8 @@
       "besluitinformatieobject": {
         "slug": "besluitinformatieobject",
         "icon": "Gavel",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Besluitinformatieobject",
         "description": "ZGW DRC join between a besluit (decision) and an informatieobject.",
         "type": "object",
@@ -125,7 +127,8 @@
       "informatieobjecttype": {
         "slug": "informatieobjecttype",
         "icon": "FolderTextOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Informatieobjecttype",
         "description": "ZGW DRC document type catalog entry. Defines the default confidentiality classification per document category.",
         "type": "object",

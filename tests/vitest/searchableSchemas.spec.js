@@ -32,73 +32,227 @@ const EXPECTED_SEARCHABLE_SLUGS = ['case', 'objectionProceeding', 'beroep']
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
-describe('searchable schema opt-in (register JSON)', () => {
-	it('flags exactly case, bezwaar, beroep as searchable', () => {
-		const register = loadJson(REGISTER_PATH)
-		const schemas = register.components.schemas
+const FRAGMENT_DIR = path.resolve(__dirname, '../../lib/Settings/register.d')
 
-		const searchableSlugs = Object.keys(schemas).filter(
-			(slug) => schemas[slug].searchable === true,
-		)
+/**
+ * Case-owned records that wait on OpenRegister before they can link to their
+ * case (unified-search-opens-every-hit-in-dossiq, tasks 2.2 and 2.3).
+ *
+ * The deep link for these is `/apps/dossiq/cases/{<case field>}`, and
+ * OpenRegister's unified search builds the link from the hit's metadata only
+ * (`ObjectSearchResultFormatter::format()` passes `@self` plus uuid, register
+ * and schema), so a template naming an object property is never filled. Until
+ * openregister hands the formatter the object's own properties they stay as
+ * they are: searchable, opening OpenRegister's own page. The list may only
+ * shrink: each entry leaves it for a deep link or `searchable: false`.
+ */
+const PENDING_CASE_LINK = [
+	'aanvullingsverzoek',
+	'adviceRequest',
+	'advisoryReport',
+	'appealDecision',
+	'beschikking',
+	'case-location',
+	'caseBerichtenboxMessage',
+	'caseCustody',
+	'caseDocument',
+	'caseFederatedActivity',
+	'caseFederatedShare',
+	'caseIncident',
+	'caseObject',
+	'caseProperty',
+	'caseShare',
+	'caseTakeover',
+	'consultation',
+	'contactmoment',
+	'customerContact',
+	'deadlineInstance',
+	'decision',
+	'dispatch',
+	'fieldInspection',
+	'gezinsplan',
+	'handhavingsactie',
+	'hearingSession',
+	'indicatiestelling',
+	'inspectieRapport',
+	'inspectionChecklistRun',
+	'inspectionResult',
+	'mailIntakeEntry',
+	'mandateEscalation',
+	'milestoneRecord',
+	'objection',
+	'obligation',
+	'plannedAction',
+	'portaalBericht',
+	'reIntegratieTraject',
+	'result',
+	'role',
+	'samenwerkverzoek',
+	'subsidieAanvraag',
+	'supplierContract',
+	'supplierTender',
+	'toestemming',
+	'wooDocumentAssessment',
+	'zaakinformatieobject',
+]
 
-		expect(searchableSlugs.sort()).toEqual([...EXPECTED_SEARCHABLE_SLUGS].sort())
-	})
-})
-
-describe('deep links cover all searchable schemas', () => {
-	it('has a deepLinks entry for every searchable schema slug', () => {
-		const register = loadJson(REGISTER_PATH)
-		const manifest = loadJson(MANIFEST_PATH)
-		const schemas = register.components.schemas
-
-		const searchableSlugs = Object.keys(schemas).filter(
-			(slug) => schemas[slug].searchable === true,
-		)
-		const deepLinkSlugs = manifest.deepLinks.map((entry) => entry.schemaSlug)
-
-		searchableSlugs.forEach((slug) => {
-			expect(deepLinkSlugs).toContain(slug)
-		})
-	})
-
-	it('maps each deepLink urlTemplate to a route that exists as a manifest page', () => {
-		const manifest = loadJson(MANIFEST_PATH)
-
-		const expectedTemplates = {
-			case: '/apps/dossiq/cases/{uuid}',
-			// The KEY is the schema slug and moves with it; the URL is a published
-			// ROUTE and deliberately does not: a route resolves at request time,
-			// so breaking one fails silently. #1845 renamed the slug and left both
-			// of these maps, and the manifest's own `deepLinks` entry, keyed on
-			// `task`.
-			objectionProceeding: '/apps/dossiq/bezwaren/{uuid}',
-			beroep: '/apps/dossiq/beroepen/{uuid}',
+/**
+ * Every schema dossiq ships, merged the way the runtime merges them: the
+ * base register, then each fragment in filename order, a re-declared schema
+ * contributing its keys and properties.
+ *
+ * @return {object} Schemas by slug.
+ */
+function mergedSchemas() {
+	const merged = {}
+	const files = [REGISTER_PATH].concat(
+		fs
+			.readdirSync(FRAGMENT_DIR)
+			.filter((name) => name.endsWith('.json'))
+			.sort()
+			.map((name) => path.join(FRAGMENT_DIR, name)),
+	)
+	for (const file of files) {
+		const schemas = loadJson(file).components?.schemas ?? {}
+		for (const [slug, schema] of Object.entries(schemas)) {
+			const previous = merged[slug] ?? {}
+			merged[slug] = {
+				...previous,
+				...schema,
+				properties: {
+					...(previous.properties ?? {}),
+					...(schema.properties ?? {}),
+				},
+			}
 		}
+	}
+	return merged
+}
 
-		const expectedRoutes = {
-			case: '/cases/:id',
-			objectionProceeding: '/bezwaren/:id',
-			beroep: '/beroepen/:id',
+/**
+ * The schemas a unified search hit would open nowhere useful: neither linked
+ * to a dossiq page, nor opted out, nor knowingly pending (design D5).
+ *
+ * @param {object} schemas Schemas by slug.
+ * @param {Array<object>} deepLinks The manifest's deep links.
+ * @param {Array<string>} pending Slugs that wait on OpenRegister.
+ * @return {Array<string>} The offending slugs.
+ */
+function unlinkedSchemas(schemas, deepLinks, pending) {
+	const linked = new Set(deepLinks.map((entry) => entry.schemaSlug))
+	return Object.keys(schemas).filter(
+		(slug) =>
+			!linked.has(slug)
+			&& schemas[slug].searchable !== false
+			&& !pending.includes(slug),
+	)
+}
+
+describe('every hit opens a dossiq page or is not a hit (design D5)', () => {
+	const schemas = mergedSchemas()
+	const manifest = loadJson(MANIFEST_PATH)
+
+	it('links or opts out every schema', () => {
+		const unlinked = unlinkedSchemas(
+			schemas,
+			manifest.deepLinks,
+			PENDING_CASE_LINK,
+		)
+		expect(
+			unlinked,
+			`link these to a page or set searchable: false: ${unlinked.join(', ')}`,
+		).toEqual([])
+	})
+
+	it('names the schema a fixture with neither, in the message', () => {
+		const fixture = { ...schemas, routingRuleCopy: { properties: {} } }
+		const unlinked = unlinkedSchemas(
+			fixture,
+			manifest.deepLinks,
+			PENDING_CASE_LINK,
+		)
+		expect(unlinked).toEqual(['routingRuleCopy'])
+		expect(() =>
+			expect(
+				unlinked,
+				`link these to a page or set searchable: false: ${unlinked.join(', ')}`,
+			).toEqual([]),
+		).toThrow(/routingRuleCopy/)
+	})
+
+	it('keeps the pending list honest: each entry is a case-owned schema still searchable', () => {
+		for (const slug of PENDING_CASE_LINK) {
+			expect(schemas[slug], `${slug} is a shipped schema`).toBeDefined()
+			expect(
+				schemas[slug].searchable,
+				`${slug} left the list: remove it here`,
+			).not.toBe(false)
+			expect(
+				manifest.deepLinks.map((entry) => entry.schemaSlug),
+			).not.toContain(slug)
+			const field = ['case', 'caseId', 'caseRef', 'parentCase'].find(
+				(key) => key in schemas[slug].properties,
+			)
+			expect(field, `${slug} holds its case in a field`).toBeDefined()
 		}
+	})
 
+	it('opens every deep link on a manifest route, filling only uuid or a property of its schema', () => {
+		const pageRoutes = manifest.pages.map((page) => page.route)
+		for (const entry of manifest.deepLinks) {
+			expect(entry.registerSlug).toBe('dossiq')
+			expect(
+				schemas[entry.schemaSlug],
+				`deep link on unknown schema ${entry.schemaSlug}`,
+			).toBeDefined()
+			expect(
+				entry.displayName,
+				`${entry.schemaSlug} names its hit`,
+			).toBeTruthy()
+			const route = entry.urlTemplate
+				.replace(/^\/apps\/dossiq/, '')
+				.replace(/\{[^}]+\}/g, ':id')
+			expect(
+				pageRoutes,
+				`${entry.urlTemplate} is not a manifest route`,
+			).toContain(route)
+			for (const [, field] of entry.urlTemplate.matchAll(/\{([^}]+)\}/g)) {
+				if (field !== 'uuid') {
+					expect(
+						schemas[entry.schemaSlug].properties,
+						`${entry.schemaSlug} has no ${field}`,
+					).toHaveProperty(field)
+				}
+			}
+		}
+	})
+
+	it('keeps the explicit opt-in on case, bezwaar and beroep', () => {
+		const register = loadJson(REGISTER_PATH)
+		for (const slug of EXPECTED_SEARCHABLE_SLUGS) {
+			expect(register.components.schemas[slug].searchable).toBe(true)
+		}
+	})
+
+	it('keeps the published routes of the first deep links, and the task page', () => {
 		const pageRoutes = manifest.pages.map((page) => page.route)
 		const deepLinksBySlug = Object.fromEntries(
 			manifest.deepLinks.map((entry) => [entry.schemaSlug, entry]),
 		)
 
-		Object.keys(expectedTemplates).forEach((slug) => {
-			const deepLink = deepLinksBySlug[slug]
-			expect(deepLink, `missing deepLink for schema "${slug}"`).toBeDefined()
-			expect(deepLink.urlTemplate).toBe(expectedTemplates[slug])
-			expect(
-				pageRoutes,
-				`manifest has no page route "${expectedRoutes[slug]}" for schema "${slug}"`,
-			).toContain(expectedRoutes[slug])
-		})
+		// The KEY is the schema slug and moves with it; the URL is a published
+		// ROUTE and deliberately does not: a route resolves at request time,
+		// so breaking one fails silently.
+		expect(deepLinksBySlug.case.urlTemplate).toBe('/apps/dossiq/cases/{uuid}')
+		expect(deepLinksBySlug.objectionProceeding.urlTemplate).toBe(
+			'/apps/dossiq/bezwaren/{uuid}',
+		)
+		expect(deepLinksBySlug.beroep.urlTemplate).toBe(
+			'/apps/dossiq/beroepen/{uuid}',
+		)
 
 		// The task page survived the schema. Its route is what every
-		// notification and bookmark holds, so it is asserted on its own now
-		// that no deepLink entry covers it.
+		// notification and bookmark holds.
 		expect(
 			pageRoutes,
 			'the task page route must survive the schema it used to bind',

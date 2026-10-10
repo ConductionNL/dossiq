@@ -78,7 +78,7 @@ class AskPersonTaskStore {
      *
      * @return string|null The uid, or null.
      *
-     * @spec openspec/changes/remove-casetask/tasks.md
+     * @spec openspec/specs/task-management/spec.md
      */
     private function actor(): ?string {
         $uid = $this->userSession->getUser()?->getUID();

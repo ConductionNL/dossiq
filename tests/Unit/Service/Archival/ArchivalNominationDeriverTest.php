@@ -272,6 +272,49 @@ class ArchivalNominationDeriverTest extends TestCase {
 	}//end testHoofdzaakDerivesFromTheParentCasesEndDate()
 
 	/**
+	 * The case carries its result type's selectielijst class, so OpenRegister
+	 * reads the category through the case schema's `categoryProperty`
+	 * (decision 127). It is copied even when no base date can be derived.
+	 *
+	 * @return void
+	 */
+	public function testTheResultTypesSelectionListClassIsCopiedOntoTheCase(): void {
+		$this->seedResultType(
+			id: 'rt-5',
+			fields: [
+				'archivalAction' => 'vernietigen',
+				'archivalPeriod' => 'P5Y',
+				'sourceDateArchiveProcedure' => '{"afleidingswijze":"ander_datumkenmerk"}',
+				'selectionListClass' => 'https://selectielijst.openzaak.nl/api/v1/resultaten/8af64c99',
+			]
+		);
+
+		$derived = $this->deriver->derive(case: ['id' => 'case-1'], resultTypeId: 'rt-5', endDate: '2026-09-08');
+
+		$this->assertSame(
+			'https://selectielijst.openzaak.nl/api/v1/resultaten/8af64c99',
+			$derived['selectionListClass']
+		);
+	}//end testTheResultTypesSelectionListClassIsCopiedOntoTheCase()
+
+	/**
+	 * A result type without a class writes no key, so a class set on the case
+	 * by hand survives the merge.
+	 *
+	 * @return void
+	 */
+	public function testAResultTypeWithoutAClassLeavesTheCasesClassAlone(): void {
+		$this->seedResultType(
+			id: 'rt-6',
+			fields: ['archivalAction' => 'vernietigen', 'archivalPeriod' => 'P5Y', 'selectionListClass' => '  ']
+		);
+
+		$derived = $this->deriver->derive(case: ['id' => 'case-1'], resultTypeId: 'rt-6', endDate: '2026-09-08');
+
+		$this->assertArrayNotHasKey('selectionListClass', $derived);
+	}//end testAResultTypeWithoutAClassLeavesTheCasesClassAlone()
+
+	/**
 	 * A resultType nobody can read closes the case with no archival claim
 	 * rather than refusing the close.
 	 *

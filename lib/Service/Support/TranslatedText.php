@@ -44,7 +44,7 @@ class TranslatedText {
 	 * @param IL10N           $l10n The app's translator, which knows the reader's language.
 	 * @param LanguageMapText $map  How a language map is read.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
@@ -60,7 +60,7 @@ class TranslatedText {
 	 * @return string The text, trimmed, or '' when there is none.
 	 *
 	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function forReader(mixed $value): string {
 		return $this->map->textOf(value: $value, language: $this->l10n->getLanguageCode());

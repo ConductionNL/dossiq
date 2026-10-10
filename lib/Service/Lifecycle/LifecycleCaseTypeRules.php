@@ -161,7 +161,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return bool True when `autoCloseOnSilence` is set to true.
 	 *
-	 * @spec openspec/changes/background-jobs-decisions/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function autoCloseOptedIn(string $caseTypeId): bool {
 		return (($this->row(caseTypeId: $caseTypeId)['autoCloseOnSilence'] ?? false) === true);
@@ -174,7 +174,7 @@ class LifecycleCaseTypeRules {
 	 *
 	 * @return int The period in days, 0 when the case type declares none or did not opt in.
 	 *
-	 * @spec openspec/changes/background-jobs-decisions/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	public function silenceDays(string $caseTypeId): int {
 		$row = $this->row(caseTypeId: $caseTypeId);

@@ -76,7 +76,7 @@ class FileRequestService {
 	 *         the case has no folder.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function request(string $caseId, string $personUid, string $note = '', int $days = 0): array {
 		$person = $this->people->personOn(caseId: $caseId, personUid: $personUid);
@@ -157,7 +157,7 @@ class FileRequestService {
 	 *
 	 * @return string|null The refusing indicator, or null.
 	 *
-	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 * @spec openspec/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	private function refusalFor(string $partyUuid): ?string {
 		if ($this->refusals === null) {

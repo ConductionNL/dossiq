@@ -18,7 +18,7 @@
   without. Nothing is defaulted: a date this app invented would be recorded as
   the reviewer's own.
 
-  @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+  @spec openspec/specs/archief-edepot-handover/spec.md
 -->
 <template>
 	<div class="archival-reviews" data-testid="archival-reviews">
@@ -136,7 +136,7 @@ export default {
 	 * Read the worklist once the section is on the page.
 	 *
 	 * @return {Promise<void>}
-	 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -147,7 +147,7 @@ export default {
 		 * Read this person's own pending entries.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -167,7 +167,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {object} The draft, never undefined.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		draftFor(entry) {
 			return this.drafts[entry.entryId] ?? { answer: '', reason: '', date: '' }
@@ -179,7 +179,7 @@ export default {
 		 * @param {object} entry The entry.
 		 * @param {object} patch The fields to change.
 		 * @return {void}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		patch(entry, patch) {
 			this.drafts = {
@@ -191,7 +191,7 @@ export default {
 		/**
 		 * @param {object} entry The entry.
 		 * @return {string} The chosen answer.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		answerFor(entry) {
 			return String(this.draftFor(entry).answer ?? '')
@@ -200,7 +200,7 @@ export default {
 		/**
 		 * @param {object} entry The entry.
 		 * @return {string} The typed reason.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		reasonFor(entry) {
 			return String(this.draftFor(entry).reason ?? '')
@@ -209,7 +209,7 @@ export default {
 		/**
 		 * @param {object} entry The entry.
 		 * @return {string} The chosen new disposal date.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		dateFor(entry) {
 			return String(this.draftFor(entry).date ?? '')
@@ -219,7 +219,7 @@ export default {
 		 * @param {object} entry The entry.
 		 * @param {string} value The chosen answer.
 		 * @return {void}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		setAnswer(entry, value) {
 			this.patch(entry, { answer: String(value ?? '') })
@@ -229,7 +229,7 @@ export default {
 		 * @param {object} entry The entry.
 		 * @param {string} value The typed reason.
 		 * @return {void}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		setReason(entry, value) {
 			this.patch(entry, { reason: String(value ?? '') })
@@ -239,7 +239,7 @@ export default {
 		 * @param {object} entry The entry.
 		 * @param {string} value The chosen date.
 		 * @return {void}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		setDate(entry, value) {
 			this.patch(entry, { date: String(value ?? '') })
@@ -255,7 +255,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {boolean} True when openregister will accept it.
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		canAnswer(entry) {
 			const draft = this.draftFor(entry)
@@ -280,7 +280,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+		 * @spec openspec/specs/archief-edepot-handover/spec.md
 		 */
 		async answer(entry) {
 			if (this.canAnswer(entry) === false) {

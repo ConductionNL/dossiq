@@ -200,7 +200,7 @@ class EngineTaskGateway {
      *
      * @return boolean True when a task written here will reach the engine.
      *
-     * @spec openspec/changes/remove-casetask/tasks.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function isEnabled(): bool {
         return $this->resolveService() !== null;
@@ -521,7 +521,7 @@ class EngineTaskGateway {
      *
      * @return array<string, mixed>|null The task, or null.
      *
-     * @spec openspec/changes/remove-casetask/tasks.md
+     * @spec openspec/specs/task-management/spec.md
      */
     public function find(string $taskId): ?array {
         $id = trim($taskId);

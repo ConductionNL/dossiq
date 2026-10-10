@@ -34,13 +34,13 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
-	createObject,
 	ensureCaseType,
 	getRequestToken,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedDocument,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
@@ -64,8 +64,8 @@ test.beforeAll(async ({ playwright, baseURL }) => {
 	})
 	caseId = objectId(seeded)
 
-	const document = await createObject(api, token, 'informatieobject', {
-		titel: `${RUN_PREFIX} concept brief`,
+	const document = await seedDocument(api, token, {
+		title: `${RUN_PREFIX} concept brief`,
 		status: 'draft',
 		zaak: caseId,
 	})
@@ -93,7 +93,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 			'decidiq answers on this instance, so the absent path is not the one under test',
 		)
 
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Files' }).click()
 		await page
@@ -150,8 +150,8 @@ test.describe('dossiq reads the route and never decides it', () => {
 			'no decidiq on this instance, so nothing is in a route',
 		)
 
-		const other = await createObject(api, token, 'informatieobject', {
-			titel: `${RUN_PREFIX} bijlage`,
+		const other = await seedDocument(api, token, {
+			title: `${RUN_PREFIX} bijlage`,
 			status: 'draft',
 			zaak: caseId,
 		})
@@ -188,7 +188,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 			'no decidiq on this instance, so there is no chain to render',
 		)
 
-		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Files' }).click()
 		await page

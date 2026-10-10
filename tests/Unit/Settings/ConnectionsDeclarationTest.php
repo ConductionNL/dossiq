@@ -333,9 +333,10 @@ class ConnectionsDeclarationTest extends TestCase {
 	 * class, and that class must exist and implement the seam, or the entry
 	 * matches a value nothing can bind.
 	 *
-	 * THE TWO SEAMS NO LONGER AGREE ABOUT THE EMPTY STRING, and that is the
-	 * point of this test. `beschikking_template_adapter` still falls back to
-	 * its mock, so empty is simulated there. `berichtenbox_adapter` falls back
+	 * NEITHER SEAM LISTS THE EMPTY STRING. `beschikking_template_adapter`
+	 * binds filinq's adapter when filinq is enabled and the mock otherwise, so
+	 * an empty key says nothing on its own: dossiq reports that card itself
+	 * (IntegrationStatusService::recordTemplates()). `berichtenbox_adapter` falls back
 	 * to {@see \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter}, which
 	 * refuses rather than simulating, so listing empty there told an admin a
 	 * mock was answering when nothing was. `mock` is listed beside the class
@@ -352,7 +353,7 @@ class ConnectionsDeclarationTest extends TestCase {
 				BerichtenboxAdapterInterface::class,
 			],
 			'templates' => [
-				['', MockTemplateEngineAdapter::class],
+				[MockTemplateEngineAdapter::class],
 				MockTemplateEngineAdapter::class,
 				TemplateEngineAdapterInterface::class,
 			],

@@ -729,6 +729,7 @@ describe('what this change does NOT move', () => {
 			'Store',
 			'Organisations',
 			'Map layers',
+			'Woo refusal grounds',
 			'Case types',
 			// The eighth later addition (attribute-catalogue-folders): the
 			// attribute catalogue, beside the case types it files for. It

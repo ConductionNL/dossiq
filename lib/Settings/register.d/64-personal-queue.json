@@ -12,7 +12,8 @@
 			"workDigest": {
 				"slug": "workDigest",
 				"icon": "EmailNewsletter",
-				"version": "1.0.0",
+				"version": "1.0.1",
+				"searchable": false,
 				"title": "Work digest",
 				"description": "One person's daily digest of what is waiting on them. Written only when their queue is not empty, so a row here means a message went out and the absence of a row means nothing was said (one-personal-queue).",
 				"type": "object",
@@ -78,7 +79,8 @@
 			"queueMention": {
 				"slug": "queueMention",
 				"icon": "At",
-				"version": "1.0.0",
+				"version": "1.0.1",
+				"searchable": false,
 				"title": "Mention on the queue",
 				"description": "A record that one person was named in a note, so the mention can be waited on rather than only rung. Closes when the reader opens what they were mentioned in; it is never dismissed (one-personal-queue).",
 				"type": "object",

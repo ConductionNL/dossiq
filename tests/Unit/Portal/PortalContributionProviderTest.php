@@ -36,6 +36,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
+ * @uses   \OCA\Dossiq\Portal\PortalConversation
  */
 class PortalContributionProviderTest extends TestCase {
 	/**
@@ -474,7 +475,7 @@ class PortalContributionProviderTest extends TestCase {
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
 		$this->assertSame(
-			['createKlacht', 'createBezwaar', 'replyToMessage', 'amendCase', 'startWooVerzoek', 'startWooVerzoekAlgemeen'],
+			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'startWooVerzoek', 'startWooVerzoekAlgemeen'],
 			$actionIds
 		);
 	}
@@ -745,7 +746,7 @@ class PortalContributionProviderTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage'], array_keys($guarded));
+		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase'], array_keys($guarded));
 		foreach ($guarded as $id => $declaration) {
 			$this->assertIsArray($declaration, $id . ' names a case without guarding it');
 			$this->assertSame('case', $declaration['schema'], $id);

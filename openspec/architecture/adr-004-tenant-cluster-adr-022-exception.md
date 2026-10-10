@@ -68,13 +68,25 @@ Branding, domain, locale and feature flags have no column on the organisation.
 Billing is shillinq's domain, not OpenRegister's. Two of the four quota types
 map onto `storageQuota` and `requestQuota`; two do not.
 
-### Session-led tenant binding, kept by decision 3
+### Tenant binding onto OpenRegister's active organisation, by decision 3 and Q3
 
 - `lib/Service/TenantContext.php`
 - `lib/Service/TenantSessionService.php`
 
-The session is the source of truth for the active tenant. These two read it and
-hand it to the scoping filters.
+The active tenant is OpenRegister's active organisation, read through
+`OrganisationService::getActiveOrganisation()`, and only when the user's
+`tenantUser` memberships list it (Q3). `TenantSessionService` answers it and
+keeps no session key of its own. `TenantContext` carries it for the request.
+Neither chooses a tenant; both read OpenRegister's choice.
+
+### Membership, role and mandate lookups, kept until they move to OpenRegister (Q2)
+
+- `lib/Service/TenantAuthenticationService.php` (gate 23 rules: 4)
+
+`listTenantsForUser()`, `isMemberOf()`, `resolveUserRole()`, `loadActiveMatrix()` and
+`validateMandateMatrix()` read the `tenantUser` and `tenantMandate` satellites that decision 2b
+keeps in dossiq. OpenRegister has no per-membership role or mandate matrix, so these stay until it
+has one. Ruben decided this on 2026-10-08 (Q2).
 
 ## What this exception does not cover
 
@@ -83,36 +95,29 @@ buy silence for the work, which is the opposite of the point.
 
 Still counted, by class name so that this paragraph suppresses nothing:
 
-- `TenantIsolationMiddleware`, `TenantSchemaProvisioner`, `TenantProvisioningService`
-  and `TenantSeedService`. This is the schema-per-tenant pipeline. Nothing creates
-  the schema it switches to, Postgres ignores a missing schema, and every request
-  resolves in `public`. It is deleted by dossiq#2470, not exempted.
-- `TenantSaasService`, `TenantSaasController`, `TenantLifecycleControlService`,
-  `TenantMigrationService` and `TenantController`. These administer the local
-  tenant store, which retires once the data has moved.
-- `TenantOnboardingService`, `TenantOnboardingController` and `TenantWelcomeMailer`.
-  These map field for field onto OpenRegister's task, and move there.
-- `TenantJwtService`, `TenantAuthenticationService`, `TenantClaimValidationMiddleware`
-  and `TenantClaimMismatchException`. The header and token binding stops leading
-  once the session does. Their end state is undecided, so red is the accurate
-  signal.
-- `TenantMiddleware` and `TenantContextMiddleware`, which gate 23 rule 7 also
-  names. They are re-pointed by the move, not kept as they stand.
+- `TenantSaasService`, `TenantSaasController`, `TenantLifecycleControlService` and
+  `TenantMigrationService`. These administer the local tenant store, which retires
+  once the data has moved.
+- `TenantOnboardingService` and `TenantOnboardingController`. These map field for
+  field onto OpenRegister's task, and move there.
 
-### Rule 7 on `TenantAuditTrailService` stays red
+Deleted, not exempted, and so named here by class only:
 
-The first version of this ADR could not keep this promise. Gate 23 then
-suppressed by path across all of its rules at once, so covering the file for
-rule 4 also hid rule 7's `search_path` hit on it. The gate now suppresses per
-rule, and this ADR covers rule 4 only. The file carries its own
-`(gate 23 rules: 4)` list as well, so widening the header line later cannot
-reach it.
+- The schema-per-tenant pipeline: the isolation middleware, the schema provisioner,
+  the provisioning, seed and welcome mail services. Nothing created the schema it
+  switched to, so every request resolved in `public`. dossiq#2470 deleted it.
+- The token path: the JWT service, the claim middleware and its exception (Q2).
+- The two tenant middlewares, the switch route and the tenant controller (Q3, Q5).
 
-So gate 23 reports that hit again, and it should. The hardening checklist in
-that class cites the inert isolation middleware as isolation evidence, at
-lines 276 and 302. That is the finding behind dossiq#2470. Dossiq stays red on
-rule 7 until #2470 deletes those two strings and the isolation code they
-point at. This ADR does not license keeping them.
+### Rule 7 on `TenantAuditTrailService` is not covered
+
+Gate 23 suppresses per rule, and this ADR covers rule 4 only. The file carries
+its own `(gate 23 rules: 4)` list as well, so widening the header line later
+cannot reach it. Rule 7 used to fire on the file because its hardening
+checklist cited the inert search_path middleware as isolation evidence. That
+was dossiq#2470, and `tenant-isolation-names-the-control-that-runs` removed
+both strings and the code they pointed at. If rule 7 fires on the file again,
+this ADR does not license it.
 
 Rule 2 is not covered here either. The gate clears `TenantAuditTrailService`
 under rule 2 because it writes through OpenRegister's `AuditTrailMapper`. If it
@@ -129,23 +134,22 @@ exception never runs ahead of the work.
   reports how many tenants are left unmigrated. It is covered for rule 4 for that release only,
   added by task 6.11 of `tenancy-onto-openregister-organisation`, and deleted in the release after,
   once the count is zero (task 6.4). Same pattern as decision D12 for Woo requests.
-- **Q2, the token path.** `TenantJwtService`, `TenantClaimValidationMiddleware` and
-  `TenantClaimMismatchException` are deleted, not exempted
+- **Q2, the token path.** The JWT service, the tenant claim middleware and its mismatch
+  exception are deleted, not exempted
   (`tenancy-onto-openregister-organisation-active-organisation`). The membership, role and mandate
   lookups in `TenantAuthenticationService` stay in dossiq, covered for rule 4 until they move to
   OpenRegister. That change adds its path line.
 - **Q3, the active tenant.** It is OpenRegister's active organisation, read through
-  `OrganisationService::getActiveOrganisation()`. `TenantMiddleware`, `TenantContextMiddleware`, the
-  `switchTenant` route of `TenantController` and the session store of `TenantSessionService` are
-  deleted, not exempted. `TenantSessionService` stays in the session-led section above with what
-  is left of it. The refusal of a non-active organisation moves into `MandateValidationMiddleware`.
+  `OrganisationService::getActiveOrganisation()`. The two tenant middlewares, the tenant switch
+  route and the session store of `TenantSessionService` are deleted, not exempted.
+  `TenantSessionService` stays in the tenant binding section above with what is left of it. The refusal of a non-active organisation moves into `MandateValidationMiddleware`.
 - **Q4, the audit anchor.** Tenant objects are never deleted. They stay read-only as the anchor of
   every tenant audit entry `TenantAuditTrailService` writes, so existing and new entries for those
   tenants keep resolving. The `tenant` schema stays declared for that reason.
 
 Ruben answered the three points left after that, later the same day:
 
-- **Q5, `TenantController`.** Its `current`, `memberships`, `provision` and `usage` endpoints move
+- **Q5, the tenant controller.** Its `current`, `memberships`, `provision` and `usage` endpoints move
   to OpenRegister's organisation endpoints (`getActive`, `index`, `activate`, and `usage` with
   `show`), and the controller is deleted, not exempted
   (`tenancy-onto-openregister-organisation-active-organisation`).
@@ -185,9 +189,17 @@ candidate to move up rather than a permanent local store.
 
 ## Status of the work
 
-Nothing here is done. The tenancy change stands at nine of thirteen tasks, and
-the four that remain are the whole migration. This ADR records a scheduled move
-and buys it room. It does not report progress.
+Done, on the branches named in the changes:
+
+- `tenant-isolation-names-the-control-that-runs` (dossiq#3465): the schema-per-tenant pipeline is
+  deleted and the hardening checklist names OpenRegister's organisation row filter.
+- `tenancy-onto-openregister-organisation-active-organisation` (dossiq#3469): the token path, the
+  two tenant middlewares and the tenant controller are deleted, the active tenant is OpenRegister's
+  active organisation, and the refusal of an organisation that is not active lives in
+  `MandateValidationMiddleware`.
+
+Not done: `bezwaar-audit-onto-openregister-trail` (dossiq#3467) and the rest of
+`tenancy-onto-openregister-organisation` (dossiq#3466), whose migration a person runs dry first.
 
 ## Next
 

@@ -3,10 +3,9 @@
 /**
  * TenantSessionService Unit Tests
  *
- * This class is the tenancy boundary now: it decides which tenant a request
- * acts as, and it is the only place membership is checked. A regression here
- * does not throw — it returns another tenant's rows, correctly formatted, with
- * HTTP 200.
+ * The tenant a request acts as is OpenRegister's active organisation, and only
+ * when the user's `tenantUser` memberships list it (Q3, Ruben 2026-10-08).
+ * dossiq keeps no tenant choice of its own in the session.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -17,203 +16,158 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation/proposal.md
+ * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantSessionService;
+use OCA\Dossiq\Tests\Support\MakesActiveOrganisationContext;
 use OCP\ISession;
-use OCP\IUser;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use RuntimeException;
+use ReflectionClass;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantSessionService
+ *
+ * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
  */
 class TenantSessionServiceTest extends TestCase {
-	/**
-	 * A session backed by a real array, so a write is observable by a read.
-	 *
-	 * A mock returning a fixed value would let `switchTo()` appear to work
-	 * without storing anything — the store has to be real for these tests to
-	 * mean what they say.
-	 *
-	 * @var array<string, mixed>
-	 */
-	private array $store = [];
+	use MakesActiveOrganisationContext;
 
 	/**
-	 * Build the service over a real store and a controllable membership list.
+	 * The organisation set active in OpenRegister is the tenant (REQ-TAO-002).
 	 *
-	 * @param array<string>|null $memberships Memberships, or null to throw.
-	 * @param string|null        $uid         The signed-in uid, or null.
+	 * The user belongs to A and B. B is active, so B is the answer, not the
+	 * first membership.
 	 *
-	 * @return TenantSessionService The service.
+	 * @return void
 	 */
-	private function newService(?array $memberships, ?string $uid = 'alice'): TenantSessionService {
-		$session = $this->createMock(ISession::class);
-		$session->method('get')->willReturnCallback(
-			fn (string $key): mixed => ($this->store[$key] ?? null)
-		);
-		$session->method('set')->willReturnCallback(
-			function (string $key, mixed $value): void {
-				$this->store[$key] = $value;
-			}
-		);
-		$session->method('remove')->willReturnCallback(
-			function (string $key): void {
-				unset($this->store[$key]);
-			}
+	public function testTheActiveTenantIsOpenRegistersActiveOrganisation(): void {
+		$service = $this->activeOrganisationSession(
+			active: 'org-b',
+			stored: ['org-a' => $this->organisationRow(uuid: 'org-a'), 'org-b' => $this->organisationRow(uuid: 'org-b')],
+			memberships: ['org-a', 'org-b'],
 		);
 
-		$users = $this->createMock(IUserSession::class);
-		if ($uid === null) {
-			$users->method('getUser')->willReturn(null);
-		} else {
-			$user = $this->createMock(IUser::class);
-			$user->method('getUID')->willReturn($uid);
-			$users->method('getUser')->willReturn($user);
+		$this->assertSame('org-b', $service->activeTenantId());
+		$this->assertSame('slug-org-b', $service->activeTenant()['slug']);
+	}
+
+	/**
+	 * An active organisation without a tenantUser row is no tenant (REQ-TAO-002).
+	 *
+	 * @return void
+	 */
+	public function testAnActiveOrganisationTheUserHasNoMembershipOfIsNotTheTenant(): void {
+		$service = $this->activeOrganisationSession(
+			active: 'org-c',
+			stored: ['org-c' => $this->organisationRow(uuid: 'org-c')],
+			memberships: ['org-a'],
+		);
+
+		$this->assertNull($service->activeTenantId());
+		$this->assertNull($service->activeTenant());
+	}
+
+	/**
+	 * The service keeps no session key, no switch and no clear of its own.
+	 *
+	 * @return void
+	 */
+	public function testTheServiceKeepsNoSessionKeyOfItsOwn(): void {
+		$class = new ReflectionClass(TenantSessionService::class);
+
+		$this->assertFalse($class->hasConstant('SESSION_KEY'));
+		$this->assertFalse($class->hasMethod('switchTo'));
+		$this->assertFalse($class->hasMethod('clear'));
+		foreach ($class->getConstructor()?->getParameters() ?? [] as $parameter) {
+			$this->assertNotSame(ISession::class, (string) $parameter->getType(), 'the service must not take the PHP session');
 		}
+	}
 
-		$auth = $this->createMock(TenantAuthenticationService::class);
-		if ($memberships === null) {
-			$auth->method('listTenantsForUser')->willThrowException(new RuntimeException('backend down'));
-			$auth->method('isMemberOf')->willThrowException(new RuntimeException('backend down'));
-		} else {
-			$auth->method('listTenantsForUser')->willReturn($memberships);
-			$auth->method('isMemberOf')->willReturnCallback(
-				static fn (string $tenantId, string $userId): bool => in_array($tenantId, $memberships, true)
-			);
-		}
-
-		return new TenantSessionService(
-			session: $session,
-			users: $users,
-			auth: $auth,
-			logger: $this->createMock(LoggerInterface::class),
+	/**
+	 * The status is the stored row's, not the session cache's default.
+	 *
+	 * OpenRegister rebuilds the cached active organisation without a status,
+	 * so it reads `active`. A suspended organisation must still read suspended.
+	 *
+	 * @return void
+	 */
+	public function testTheStatusIsReadFromTheStoredOrganisation(): void {
+		$service = $this->activeOrganisationSession(
+			active: 'org-a',
+			stored: ['org-a' => $this->organisationRow(uuid: 'org-a', status: 'suspended')],
+			memberships: ['org-a'],
 		);
+
+		$this->assertSame('suspended', $service->activeTenant()['status']);
 	}
 
 	/**
-	 * THE ONE THAT MATTERS: a switch to a tenant you do not belong to is refused.
+	 * No active organisation, no tenant.
 	 *
 	 * @return void
 	 */
-	public function testSwitchingToATenantYouDoNotBelongToIsRefused(): void {
-		$service = $this->newService(memberships: ['tenant-a']);
-
-		$this->assertFalse($service->switchTo('tenant-b'));
-
-		// The refusal has to be a refusal to BIND, not only a false return.
-		// `tenant-a` still resolves here because it is the sole membership —
-		// what must not have happened is `tenant-b` being stored anyway.
-		$this->assertSame('tenant-a', $service->activeTenantId());
-	}
-
-	/**
-	 * A switch to a tenant you do belong to is applied and readable back.
-	 *
-	 * @return void
-	 */
-	public function testSwitchingToAMembershipIsApplied(): void {
-		$service = $this->newService(memberships: ['tenant-a', 'tenant-b']);
-
-		$this->assertTrue($service->switchTo('tenant-b'));
-		$this->assertSame('tenant-b', $service->activeTenantId());
-	}
-
-	/**
-	 * Revoking a membership takes effect on the next request, not the next login.
-	 *
-	 * The stored choice is re-verified on every read rather than trusted. A
-	 * session outlives the membership that justified it, so a service that
-	 * trusted its own stored value would keep serving a tenant the user has
-	 * been removed from — for as long as they stay logged in.
-	 *
-	 * @return void
-	 */
-	public function testARevokedMembershipStopsResolvingImmediately(): void {
-		$service = $this->newService(memberships: ['tenant-a', 'tenant-b']);
-		$this->assertTrue($service->switchTo('tenant-b'));
-		$this->assertSame('tenant-b', $service->activeTenantId());
-
-		// Same stored session, but the membership is gone.
-		$revoked = $this->newService(memberships: ['tenant-a']);
-
-		$this->assertNotSame('tenant-b', $revoked->activeTenantId());
-	}
-
-	/**
-	 * A sole membership resolves without an explicit switch.
-	 *
-	 * Ordinary single-tenant use must not require a switch, or every such
-	 * deployment would resolve to nothing.
-	 *
-	 * @return void
-	 */
-	public function testASoleMembershipResolvesWithoutASwitch(): void {
-		$service = $this->newService(memberships: ['tenant-a']);
-
-		$this->assertSame('tenant-a', $service->activeTenantId());
-	}
-
-	/**
-	 * Several memberships and no choice resolves to NOTHING, not to the first.
-	 *
-	 * Picking one would be choosing a tenant on the user's behalf, which is the
-	 * thing this class exists to stop. Returning `$memberships[0]` would pass a
-	 * sole-membership test and quietly guess everywhere else.
-	 *
-	 * @return void
-	 */
-	public function testSeveralMembershipsWithNoChoiceResolveToNothing(): void {
-		$service = $this->newService(memberships: ['tenant-a', 'tenant-b']);
+	public function testNoActiveOrganisationIsNoTenant(): void {
+		$service = $this->activeOrganisationSession(active: null, stored: [], memberships: ['org-a']);
 
 		$this->assertNull($service->activeTenantId());
 	}
 
 	/**
-	 * An anonymous caller resolves to nothing and cannot switch.
+	 * An active organisation whose stored row cannot be read is no tenant.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableStoredRowIsNoTenant(): void {
+		$service = $this->activeOrganisationSession(active: 'org-a', stored: [], memberships: ['org-a']);
+
+		$this->assertNull($service->activeTenantId());
+	}
+
+	/**
+	 * A failing OpenRegister, or none at all, is no tenant.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterThereIsNoTenant(): void {
+		$stored = ['org-a' => $this->organisationRow(uuid: 'org-a')];
+
+		$this->assertNull($this->activeOrganisationSession(active: 'org-a', stored: $stored, memberships: ['org-a'], openRegister: false)->activeTenantId());
+		$this->assertNull($this->activeOrganisationSession(active: 'org-a', stored: $stored, memberships: ['org-a'], activeThrows: true)->activeTenantId());
+	}
+
+	/**
+	 * An anonymous caller has no tenant.
 	 *
 	 * @return void
 	 */
 	public function testAnAnonymousCallerHasNoTenant(): void {
-		$service = $this->newService(memberships: ['tenant-a'], uid: null);
+		$service = $this->activeOrganisationSession(
+			active: 'org-a',
+			stored: ['org-a' => $this->organisationRow(uuid: 'org-a')],
+			memberships: ['org-a'],
+			uid: null,
+		);
 
 		$this->assertNull($service->activeTenantId());
-		$this->assertFalse($service->switchTo('tenant-a'));
 	}
 
 	/**
-	 * A membership lookup that fails binds nothing rather than falling open.
-	 *
-	 * An unreadable membership list is not "no restrictions". This is the
-	 * failure mode where falling open is invisible: the backend blips, and
-	 * every request in that window acts as whatever was stored.
+	 * A failed membership lookup fails closed to no tenant.
 	 *
 	 * @return void
 	 */
 	public function testAFailedMembershipLookupResolvesToNothing(): void {
-		$service = $this->newService(memberships: null);
+		$service = $this->activeOrganisationSession(
+			active: 'org-a',
+			stored: ['org-a' => $this->organisationRow(uuid: 'org-a')],
+			memberships: null,
+		);
 
 		$this->assertNull($service->activeTenantId());
-		$this->assertFalse($service->switchTo('tenant-a'));
-	}
-
-	/**
-	 * An empty tenant id is not a switch.
-	 *
-	 * @return void
-	 */
-	public function testAnEmptyTenantIdIsRefused(): void {
-		$service = $this->newService(memberships: ['tenant-a']);
-
-		$this->assertFalse($service->switchTo('   '));
 	}
 }

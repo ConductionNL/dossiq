@@ -318,10 +318,11 @@ Wherever the change case type dialog, the version move dialog or the
 rebind journal names a case type or a status, it SHALL resolve a
 translatable value stored as a language map to one string: the reader's
 language first (a regional code also accepts its base language), then
-Dutch, then the first non-empty text in the map. Rows of a case type
-SHALL be told apart by that text, read the same way for every reader, so
-two statuses with different names SHALL never merge into one. The literal
-"Array" SHALL never be shown.
+Dutch, then the first non-empty text in the map. There SHALL be one
+implementation of that reading, received by the classes that need it.
+Rows of a case type SHALL be told apart by that text, read the same way
+for every reader, so two statuses with different names SHALL never merge
+into one. The literal "Array" SHALL never be shown.
 
 #### Scenario: Status options are separate and readable
 
@@ -344,6 +345,12 @@ two statuses with different names SHALL never merge into one. The literal
 - WHEN an English or Dutch reader previews the rebind
 - THEN the status reads "In Bearbeitung"
 
+#### Scenario: The resolver and the dialog read the map the same way
+
+- GIVEN a case type whose statuses are stored as `{"nl": "Ontvangen"}` and `{"nl": "Afgehandeld"}`
+- WHEN the resolver merges the statuses and the dialog lists them
+- THEN there are two statuses, named "Ontvangen" and "Afgehandeld"
+
 ### Requirement: A version move reads the answers in the register's list shape (REQ-ZV-12)
 
 The version move preview SHALL report as answered every dropped field the
@@ -357,3 +364,15 @@ A legacy name-keyed map SHALL still be read.
 - AND the next version of its case type has no field `oppervlakte`
 - WHEN the handler previews the version move
 - THEN `oppervlakte` is listed among the answers about to be lost
+
+### Requirement: A rebind re-arms the case's terms under the target case type (REQ-ZV-13)
+
+When a case is rebound, its running terms SHALL be re-armed under the
+target case type's slug. A case type uuid SHALL be turned into its slug
+first, because term definitions are keyed by slug and a uuid matches none.
+
+#### Scenario: The uuid becomes the slug
+
+- GIVEN a rebind onto the case type with uuid `6f1c2a0e-uuid-of-kapvergunning` and slug `kapvergunning`
+- WHEN the terms are re-armed
+- THEN the re-arm is asked for the definitions of `kapvergunning`

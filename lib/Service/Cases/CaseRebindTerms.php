@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Dossiq\Service\Termijn\TermRearm;
 /**
  * The re-arm of a rebound case's terms, keyed by its new case type's slug.
  *
- * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindTerms {
 	/**
@@ -50,7 +50,7 @@ class CaseRebindTerms {
 	 * @param TermRearm            $terms The re-arm of a case's running terms.
 	 * @param CaseTypeSlugResolver $slugs Case type uuid to the slug term definitions are keyed by.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly TermRearm $terms,
@@ -67,7 +67,7 @@ class CaseRebindTerms {
 	 *
 	 * @return array{rearmed: int, kept: int, note: string} What happened to the clocks.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function rearm(string $caseId, string $targetCaseTypeId, string $reason): array {
 		return $this->terms->forDefinition(

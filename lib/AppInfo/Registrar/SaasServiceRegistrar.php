@@ -3,11 +3,11 @@
 /**
  * Dossiq SaaS service registrar.
  *
- * The two SaaS services that cannot be autowired because their constructors take
- * plain strings read from app config: the tenant JWT signing secret and the
- * Shillinq invoicing endpoint + API key. Split out of Application so those
- * config-reading factories sit next to each other rather than inside the
- * bootstrap class.
+ * The SaaS service that cannot be autowired because its constructor takes
+ * plain strings read from app config: the Shillinq invoicing endpoint and API
+ * key. Split out of Application so the config-reading factory sits outside
+ * the bootstrap class. The tenant token service it also built is deleted
+ * (Q2, 2026-10-08); `jwt_signing_secret` stays, read by `PortalAssertionVerifier`.
  *
  * @category AppInfo
  * @package  OCA\Dossiq\AppInfo\Registrar
@@ -32,13 +32,12 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ShillinqIntegrationService;
-use OCA\Dossiq\Service\TenantJwtService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IConfig;
 use Psr\Container\ContainerInterface;
 
 /**
- * Registers the config-driven SaaS services (tenant JWT, Shillinq invoicing).
+ * Registers the config-driven SaaS service (Shillinq invoicing).
  *
  * @psalm-suppress UnusedClass
  *
@@ -55,26 +54,6 @@ class SaasServiceRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		// SaaS chain (member 05): factory the TenantJwtService with the secret
-		// from app config (dossiq.jwt_signing_secret). Generates a
-		// per-instance random fallback when unset (dev-friendly; production
-		// must set the secret via occ config:app:set dossiq jwt_signing_secret).
-		$context->registerService(
-			TenantJwtService::class,
-			static function (ContainerInterface $c): TenantJwtService {
-				$config = $c->get(IConfig::class);
-				$secret = (string)$config->getAppValue(Application::APP_ID, 'jwt_signing_secret', '');
-				if ($secret === '' || strlen($secret) < 16) {
-					$secret = (string)$config->getSystemValue(
-						'secret',
-						str_pad(Application::APP_ID, 32, '_')
-					);
-				}
-
-				return new TenantJwtService(signingSecret: $secret);
-			}
-		);
-
 		// SaaS chain (member 10): factory the ShillinqIntegrationService with
 		// the invoicing endpoint + API key from app config. Without this the
 		// string constructor args default to '' and exportInvoice short-circuits

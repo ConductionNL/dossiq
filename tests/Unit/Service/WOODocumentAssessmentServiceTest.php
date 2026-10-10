@@ -22,8 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Tests\Support\RefusalGroundStore;
+use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -63,6 +66,10 @@ interface RedactionProposalObjectServiceStub {
  * Unit tests for WOODocumentAssessmentService.
  *
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
+ *
+ * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class WOODocumentAssessmentServiceTest extends TestCase {
 
@@ -87,6 +94,13 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 	private WOODocumentAssessmentService $service;
 
 	/**
+	 * The seeded refusal grounds the service validates against.
+	 *
+	 * @var RefusalGroundStore
+	 */
+	private RefusalGroundStore $grounds;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -96,12 +110,91 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$this->grounds = RefusalGroundStore::seeded();
+		$groundSettings = $this->createMock(SettingsService::class);
+		$groundSettings->method('getObjectService')->willReturn($this->grounds);
+
 		$this->service = new WOODocumentAssessmentService(
 			$this->settingsService,
 			$this->userSession,
 			$this->logger,
+			null,
+			new WooRefusalGrounds(settingsService: $groundSettings, logger: $this->logger),
 		);
 	}//end setUp()
+
+	/**
+	 * A settled ground that was retired cannot be cited on a new assessment.
+	 *
+	 * @return void
+	 */
+	public function testARetiredGroundIsRefused(): void {
+		foreach ($this->grounds->rows as $index => $row) {
+			if ($row['code'] === '5.1.2.e') {
+				$this->grounds->rows[$index]['status'] = 'retired';
+			}
+		}
+
+		$errors = $this->service->validate([
+			'documentRef' => 'doc-uuid-001',
+			'classification' => 'deels_openbaar',
+			'weigeringsgronden' => ['5.1.2.e'],
+		]);
+
+		$this->assertStringContainsString('5.1.2.e', $errors['weigeringsgronden']);
+		$this->assertStringContainsString('retired', $errors['weigeringsgronden']);
+	}//end testARetiredGroundIsRefused()
+
+	/**
+	 * An old code that the settled list does not carry is refused by name.
+	 *
+	 * @return void
+	 */
+	public function testAnOldCodeThatNoLongerExistsIsRefused(): void {
+		$errors = $this->service->validate([
+			'documentRef' => 'doc-uuid-001',
+			'classification' => 'niet_openbaar',
+			'weigeringsgronden' => ['5.2.5'],
+		]);
+
+		$this->assertSame('Unknown weigeringsgrond: 5.2.5', $errors['weigeringsgronden']);
+	}//end testAnOldCodeThatNoLongerExistsIsRefused()
+
+	/**
+	 * A group node of the tree is not a ground and cannot be cited.
+	 *
+	 * @return void
+	 */
+	public function testAGroupNodeCannotBeCited(): void {
+		$errors = $this->service->validate([
+			'documentRef' => 'doc-uuid-001',
+			'classification' => 'niet_openbaar',
+			'weigeringsgronden' => ['5.1.2'],
+		]);
+
+		$this->assertStringContainsString('cannot be cited', $errors['weigeringsgronden']);
+	}//end testAGroupNodeCannotBeCited()
+
+	/**
+	 * An unreadable list refuses the assessment with 503, never accepts it.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableListRefusesTheAssessment(): void {
+		$this->grounds->fails = true;
+
+		try {
+			$this->service->validate([
+				'documentRef' => 'doc-uuid-001',
+				'classification' => 'niet_openbaar',
+				'weigeringsgronden' => ['5.1.2.e'],
+			]);
+			$this->fail('an unreadable list accepted the assessment');
+		} catch (RefusedException $e) {
+			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			$this->assertSame('woo-refusal-grounds-unavailable', $e->getRule());
+		}
+	}//end testAnUnreadableListRefusesTheAssessment()
 
 	/**
 	 * Validate returns no errors for a valid 'openbaar' assessment.
@@ -157,7 +250,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$errors = $this->service->validate([
 			'documentRef' => 'doc-uuid-001',
 			'classification' => 'niet_openbaar',
-			'weigeringsgronden' => ['5.1.5'],
+			'weigeringsgronden' => ['5.1.2.e'],
 		]);
 
 		$this->assertEmpty($errors);

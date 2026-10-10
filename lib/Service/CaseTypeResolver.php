@@ -107,7 +107,7 @@ class CaseTypeResolver {
 	 * @param CaseTypeStore   $store Every OpenRegister read this resolver performs.
 	 * @param LanguageMapText $text  How a translatable title or name is read, the same for every reader.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
@@ -436,7 +436,7 @@ class CaseTypeResolver {
 	 *
 	 * @return array<string, mixed> The row, with `origin` and `originCaseType`.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function tag(array $row, string $origin, array $ancestor): array {
 		$row['origin'] = $origin;
@@ -458,7 +458,7 @@ class CaseTypeResolver {
 	 *
 	 * @return string The lower-cased, trimmed name, or the id when it has none.
 	 *
-	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function mergeKey(array $row): string {
 		$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));

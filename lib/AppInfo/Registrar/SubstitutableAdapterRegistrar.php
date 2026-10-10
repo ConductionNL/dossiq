@@ -47,6 +47,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Dossiq\Service\Beschikking\TemplateAdapterChoice;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter;
@@ -148,12 +149,23 @@ class SubstitutableAdapterRegistrar {
 		$context->registerService(
 			TemplateEngineAdapterInterface::class,
 			static function (ContainerInterface $c): TemplateEngineAdapterInterface {
+				$l10n = $c->get(IL10N::class);
+
 				return ConfiguredAdapter::resolve(
 					container: $c,
 					configKey: self::TEMPLATE_CONFIG_KEY,
 					interface: TemplateEngineAdapterInterface::class,
 					mockClass: MockTemplateEngineAdapter::class,
-					fallbackReason: self::templateFallbackReason(container: $c),
+					fallbackReason: $l10n->t(
+						'Filinq is not installed, so every beschikking is rendered by a mock. '
+						. 'Install filinq to render through it.'
+					),
+					defaultClass: self::defaultTemplateAdapter(container: $c),
+					chosenMockReason: $l10n->t(
+						'beschikking_template_adapter names the mock, so every beschikking is rendered '
+						. 'by a mock although filinq is installed. Clear beschikking_template_adapter '
+						. 'to render through filinq.'
+					),
 				);
 			}
 		);
@@ -187,34 +199,18 @@ class SubstitutableAdapterRegistrar {
 	}//end resolveBerichtenboxAlias()
 
 	/**
-	 * Why the template mock is running, in the words the reader needs.
+	 * The template adapter an empty `beschikking_template_adapter` binds on this instance.
 	 *
-	 * Two different sentences, because they ask for two different things. An
-	 * instance without filinq needs to install it; an instance with filinq needs
-	 * to name its adapter. One message covering both would tell each reader half
-	 * of what they have to do.
+	 * The rule is {@see TemplateAdapterChoice}'s, which the Document templates
+	 * card asks too.
 	 *
 	 * @param ContainerInterface $container The DI container.
 	 *
-	 * @return string The translated sentence.
+	 * @return string The adapter class.
 	 *
-	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
 	 */
-	private static function templateFallbackReason(ContainerInterface $container): string {
-		$l10n = $container->get(IL10N::class);
-		if (FleetAppId::isEnabledForUser(appManager: $container->get(IAppManager::class), canonical: 'filinq') === true) {
-			return $l10n->t(
-				'Filinq is installed but no template adapter is configured, so every '
-				. 'beschikking is rendered by a mock. Set beschikking_template_adapter to '
-				. '%s to render through filinq.',
-				[FilinqTemplateEngineAdapter::class]
-			);
-		}
-
-		return $l10n->t(
-			'Filinq is not installed, so every beschikking is rendered by a mock. '
-			. 'Install filinq, then set beschikking_template_adapter to %s.',
-			[FilinqTemplateEngineAdapter::class]
-		);
-	}//end templateFallbackReason()
+	public static function defaultTemplateAdapter(ContainerInterface $container): string {
+		return (new TemplateAdapterChoice(appManager: $container->get(IAppManager::class)))->adapterFor(named: '');
+	}//end defaultTemplateAdapter()
 }//end class

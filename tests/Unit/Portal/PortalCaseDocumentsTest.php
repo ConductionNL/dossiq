@@ -42,6 +42,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
+ * @uses   \OCA\Dossiq\Portal\PortalConversation
  */
 class PortalCaseDocumentsTest extends TestCase {
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
