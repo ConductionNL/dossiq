@@ -20,7 +20,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
@@ -70,7 +69,7 @@ class IntakeTermStartListenerTest extends TestCase {
 		$resolver->method('resolveFromPayload')->willReturn($slug);
 
 		$time = $this->createMock(ITimeFactory::class);
-		$time->method('getDateTime')->willReturnCallback(static fn (): DateTime => new DateTime(self::SUNDAY));
+		$time->method('now')->willReturnCallback(static fn (): DateTimeImmutable => new DateTimeImmutable(self::SUNDAY));
 
 		return new IntakeTermStartListener(
 			intake: new IntakeTermStart(calendar: $calendar),

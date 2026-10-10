@@ -171,12 +171,28 @@ class DrainIntakeObjectsCommand extends Command {
 			return Command::SUCCESS;
 		}
 
-		$sources = $this->searchObjectsAsArraysUnscoped(objectService: $objectService, register: $register, schema: $sourceSchema, filters: ['_limit' => 10000]);
+		$sources = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $sourceSchema,
+			filters: ['_limit' => 10000]
+		);
 		$report = $this->drain->drain(
 			sources: $sources,
 			plan: self::PLAN,
-			existing: fn (array $source): string => $this->caseHolding(objectService: $objectService, register: $register, caseSchema: $caseSchema, source: $source),
-			submit: fn (array $case): array => $this->submit(submitter: $submitter, register: $register, caseSchema: $caseSchema, case: $case, admin: $admin),
+			existing: fn (array $source): string => $this->caseHolding(
+				objectService: $objectService,
+				register: $register,
+				caseSchema: $caseSchema,
+				source: $source
+			),
+			submit: fn (array $case): array => $this->submit(
+				submitter: $submitter,
+				register: $register,
+				caseSchema: $caseSchema,
+				case: $case,
+				admin: $admin
+			),
 			markSource: function (array $source, string $caseId) use ($objectService, $register, $sourceSchema): void {
 				$this->markSource(objectService: $objectService, register: $register, schema: $sourceSchema, source: $source, caseId: $caseId);
 			},
@@ -197,7 +213,12 @@ class DrainIntakeObjectsCommand extends Command {
 	 */
 	private function print(array $report, bool $apply, OutputInterface $output): int {
 		foreach ($report['delivered'] as $row) {
-			$output->writeln('  delivered ' . $row['source'] . ($row['case'] !== '' ? ' -> case ' . $row['case'] : ' (dry run)'));
+			$outcome = ' (dry run)';
+			if ($row['case'] !== '') {
+				$outcome = ' -> case ' . $row['case'];
+			}
+
+			$output->writeln('  delivered ' . $row['source'] . $outcome);
 		}
 
 		foreach ($report['refused'] as $row) {
@@ -206,8 +227,10 @@ class DrainIntakeObjectsCommand extends Command {
 		}
 
 		$pending = count($report['refused']);
+		$hint = '';
 		if ($apply === false) {
 			$pending += count($report['delivered']);
+			$hint = ' Dry run: pass --apply to open the cases.';
 		}
 
 		$output->writeln(
@@ -217,11 +240,15 @@ class DrainIntakeObjectsCommand extends Command {
 				count($report['already']),
 				count($report['refused']),
 				$pending,
-				($apply === false ? ' Dry run: pass --apply to open the cases.' : '')
+				$hint
 			)
 		);
 
-		return ($pending === 0) ? Command::SUCCESS : Command::FAILURE;
+		if ($pending === 0) {
+			return Command::SUCCESS;
+		}
+
+		return Command::FAILURE;
 	}//end print()
 
 	/**
@@ -314,7 +341,11 @@ class DrainIntakeObjectsCommand extends Command {
 			return null;
 		}
 
-		return is_object($service) === true ? $service : null;
+		if (is_object($service) === false) {
+			return null;
+		}
+
+		return $service;
 	}//end formSubmit()
 
 	/**

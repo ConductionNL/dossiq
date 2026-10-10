@@ -142,19 +142,32 @@ class ReceiptMoment {
 			return null;
 		}
 
+		return $this->serialised(object: $object);
+	}//end receivedObject()
+
+	/**
+	 * An object as an array, however the event carries it.
+	 *
+	 * @param mixed $object An array, or an entity with `jsonSerialize()`.
+	 *
+	 * @return array<string, mixed>|null The array, or null.
+	 */
+	private function serialised(mixed $object): ?array {
 		if (is_array($object) === true) {
 			return $object;
 		}
 
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
+		if (is_object($object) === false || method_exists($object, 'jsonSerialize') === false) {
+			return null;
+		}
+
+		$serialized = $object->jsonSerialize();
+		if (is_array($serialized) === true) {
+			return $serialized;
 		}
 
 		return null;
-	}//end receivedObject()
+	}//end serialised()
 
 	/**
 	 * The moment OpenRegister records for an activation, or null for any other event.

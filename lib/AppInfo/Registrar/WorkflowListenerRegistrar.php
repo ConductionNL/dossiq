@@ -34,13 +34,10 @@ use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
-use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -146,21 +143,9 @@ class WorkflowListenerRegistrar {
 			listener: CustodyCaseCreatedListener::class
 		);
 
-		// When the request arrived, and when its clock starts. Written once,
-		// INSIDE the save that receives the case (the create, or the save that
-		// sends a draft), so the create answer carries it (decision 179). The
-		// priority puts it before OpenRegister's calculation listener, which
-		// counts the fallback deadline from the start date written here.
-		$context->registerEventListener(
-			event: ObjectCreatingEvent::class,
-			listener: IntakeTermStartListener::class,
-			priority: IntakeTermStartListener::PRIORITY
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatingEvent::class,
-			listener: IntakeTermStartListener::class,
-			priority: IntakeTermStartListener::PRIORITY
-		);
+		// When the request arrived, and when its clock starts, is written
+		// INSIDE the save that receives the case: IntakeListenerRegistrar
+		// registers IntakeTermStartListener on the pre-persist events.
 
 		// A phase carries its own clock, and the clock moves when the case
 		// does. The listener reconciles rather than compares, so it needs no

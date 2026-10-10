@@ -132,7 +132,7 @@ class IntakeTermStartListener implements IEventListener {
 
 			// The draft was begun earlier; it arrives now. Its creation moment
 			// is when the resident started typing, not when they pressed send.
-			$sentAt = DateTimeImmutable::createFromMutable($this->time->getDateTime());
+			$sentAt = $this->time->now();
 			$this->stamp(event: $event, entity: $entity, sentAt: $sentAt);
 		}
 	}//end handle()

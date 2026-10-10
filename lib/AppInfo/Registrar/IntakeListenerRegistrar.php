@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
+use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -91,6 +92,22 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: IntakeRequirementsListener::class
+		);
+
+		// When the request arrived, and when its clock starts. Written once,
+		// INSIDE the save that receives the case (the create, or the save that
+		// sends a draft), so the create answer carries it (decision 179). The
+		// priority puts it before OpenRegister's calculation listener, which
+		// counts the fallback deadline from the start date written here.
+		$context->registerEventListener(
+			event: ObjectCreatingEvent::class,
+			listener: IntakeTermStartListener::class,
+			priority: IntakeTermStartListener::PRIORITY
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: IntakeTermStartListener::class,
+			priority: IntakeTermStartListener::PRIORITY
 		);
 	}//end register()
 }//end class
