@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -389,7 +389,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testRecordWritesTheKindVisibilityAndFields(): void {
 		$id = $this->timeline()->record(
@@ -418,7 +418,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAnEntryIsInternalUnlessTheCallerSaysOtherwise(): void {
 		$this->timeline()->record(
@@ -436,7 +436,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testRelatedCasesAreWrittenInOneAct(): void {
 		$id = $this->timeline()->record(
@@ -461,7 +461,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheAddressedCaseIsNeverWrittenTwice(): void {
 		$this->timeline()->record(
@@ -482,7 +482,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAnUnreadableRelatedCaseIsLoggedByName(): void {
 		$this->objects->unreadable = ['case-3'];
@@ -513,7 +513,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAnOpenRegisterWithoutTheTimelineWritesNothing(): void {
 		$id = $this->timeline(writerResolves: false)->record(
@@ -532,7 +532,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testOpenRegisterDisabledIsNotAvailable(): void {
 		$this->assertFalse($this->timeline(openRegister: false)->isAvailable());
@@ -544,7 +544,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAnUnconfiguredCaseSchemaIsLoggedNotThrown(): void {
 		$this->logger->expects($this->once())->method('warning');
@@ -564,7 +564,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedWriteIsSwallowedAndLogged(): void {
 		$this->writer->throws = true;
@@ -587,7 +587,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAWriterThatCannotBeBuiltIsLoggedNotThrown(): void {
 		$this->containerAnswersButCannotBuild = true;
@@ -608,7 +608,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testABlankCaseOrKindWritesNothing(): void {
 		$timeline = $this->timeline();
@@ -623,7 +623,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testACaseThatCannotBeReadWritesNothing(): void {
 		$this->objects->unreadable = ['case-1'];
@@ -642,7 +642,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testTheContactMomentKindDeclaresTheChannelsTheServiceAccepts(): void {
 		$reflected = new ReflectionClass(ContactMomentService::class);
@@ -844,7 +844,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testEveryDeclaredKindIsWellFormed(): void {
 		$slugs = array_column(TimelineKinds::DECLARATIONS, 'slug');
@@ -889,7 +889,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testOnlyInboundMailCarriesAFollowUp(): void {
 		$carrying = [];
@@ -909,7 +909,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testThePortalMessageKindDeclaresNoRecipientIdentifier(): void {
 		foreach (TimelineKinds::DECLARATIONS as $declaration) {
@@ -930,7 +930,7 @@ class CaseTimelineTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testEverySeededTextBlockHasANameAndABody(): void {
 		$this->assertNotSame([], TimelineKinds::TEXT_BLOCKS);

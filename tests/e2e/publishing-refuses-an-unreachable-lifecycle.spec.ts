@@ -19,7 +19,7 @@
  * A fixture that wrote an array would be stored as something the reader cannot
  * decode, and every finding here would disappear.
  *
- * @spec openspec/changes/publishing-refuses-an-unreachable-lifecycle/specs/case-type-publish-validation/spec.md
+ * @spec openspec/specs/case-type-publish-validation/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'

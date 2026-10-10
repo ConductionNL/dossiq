@@ -25,5 +25,8 @@
   status record, a post-persist listener records the derived move, and
   `TermijnService` records every term event and the start of a term that
   writes none. Both kinds gained the fields their writers carry
-- [ ] 12 The applicant-facing visibility toggle, in
-  `timeline-entries-default-internal`
+- [x] 12 The applicant-facing visibility toggle, in
+  `timeline-entries-default-internal`: built there and archived 7 Oct
+  (`openspec/changes/archive/2026-10-07-timeline-entries-default-internal`,
+  task 1.1 note and contact forms default internal with the toggle, 1.3
+  `CaseTimeline::publicEntries()`).
