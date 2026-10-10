@@ -8,11 +8,14 @@
  * Step 1 of inspection-checklists-onto-task: every reader and writer of the
  * seven schemas has a test that fails when its behaviour changes. This store
  * had none. What it does today, and what the move must keep:
- * - templates live in `inspectieChecklist`, reports in `inspectieRapport`;
+ * - templates live in `inspectionChecklistTemplate` (4.1), reports in
+ *   `inspectieRapport` until 4.2 moves them onto Task;
  * - a report's result is computed from its items, where `nvt` items count
  *   neither for nor against;
  * - a report with a failed item opens a follow-up task on the case;
- * - a new checklist version archives the old one and starts as a draft.
+ *
+ * The store's own template writes (save, new version, delete) had no caller
+ * and were removed in 4.1; templates are authored in the settings tab.
  *
  * @spec openspec/changes/inspection-checklists-onto-task/tasks.md
  */
@@ -44,14 +47,20 @@ describe('inspection store (stack A)', () => {
 		objectStore.saveObject.mockImplementation(async (schema, data) => ({ id: data.id || 'new-id', ...data }))
 	})
 
-	it('reads checklists from inspectieChecklist, scoped to the case type', async () => {
-		objectStore.fetchCollection.mockResolvedValue({ results: [{ id: 'c1', status: 'active' }, { id: 'c2', status: 'archived' }] })
+	it('reads templates from inspectionChecklistTemplate, scoped to the case type, with section items flattened', async () => {
+		objectStore.fetchCollection.mockResolvedValue({
+			results: [
+				{ id: 'c1', status: 'active', sections: [{ items: [{ id: 'a', label: 'A' }] }, { items: [{ id: 'b', label: 'B' }] }] },
+				{ id: 'c2', status: 'retired', sections: [] },
+			],
+		})
 		const store = useInspectionStore()
 
 		await store.fetchChecklists('type-1')
 
-		expect(objectStore.fetchCollection).toHaveBeenCalledWith('inspectieChecklist', { caseType: 'type-1', limit: 100 })
+		expect(objectStore.fetchCollection).toHaveBeenCalledWith('inspectionChecklistTemplate', { caseType: 'type-1', limit: 100 })
 		expect(store.activeChecklists.map((c) => c.id)).toEqual(['c1'])
+		expect(store.activeChecklists[0].items.map((i) => i.id)).toEqual(['a', 'b'])
 	})
 
 	it('reads reports from inspectieRapport, scoped to the case', async () => {
@@ -91,15 +100,6 @@ describe('inspection store (stack A)', () => {
 		expect(objectStore.saveObject).toHaveBeenCalledWith('inspectieRapport', expect.objectContaining({ result: 'non_conform', failedItems: 1 }))
 	})
 
-	it('archives the old checklist and saves the next version as a draft', async () => {
-		const store = useInspectionStore()
-
-		await store.createNewVersion({ id: 'c1', name: 'Fundering', version: 2, status: 'active' })
-
-		expect(objectStore.saveObject).toHaveBeenNthCalledWith(1, 'inspectieChecklist', expect.objectContaining({ id: 'c1', status: 'archived' }))
-		expect(objectStore.saveObject).toHaveBeenNthCalledWith(2, 'inspectieChecklist', expect.objectContaining({ id: undefined, version: 3, status: 'draft' }))
-	})
-
 	it('keeps the error and returns null when the report cannot be written', async () => {
 		objectStore.saveObject.mockRejectedValue(new Error('schema refused'))
 		const store = useInspectionStore()
@@ -109,14 +109,5 @@ describe('inspection store (stack A)', () => {
 		expect(saved).toBeNull()
 		expect(store.error).toBe('schema refused')
 		expect(engineTaskStore.create).not.toHaveBeenCalled()
-	})
-
-	it('deletes a checklist from inspectieChecklist and drops it locally', async () => {
-		const store = useInspectionStore()
-		store.checklists = [{ id: 'c1' }, { id: 'c2' }]
-
-		expect(await store.deleteChecklist('c1')).toBe(true)
-		expect(objectStore.deleteObject).toHaveBeenCalledWith('inspectieChecklist', 'c1')
-		expect(store.checklists.map((c) => c.id)).toEqual(['c2'])
 	})
 })

@@ -8,6 +8,19 @@ import { defineStore } from 'pinia'
 import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
 
+/**
+ * A template with its section items as one flat, ordered `items` list.
+ *
+ * @param {object} template An `inspectionChecklistTemplate` object
+ * @return {object} The template, with `items`
+ * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
+ */
+export function flattenTemplate(template) {
+	const sections = Array.isArray(template?.sections) ? template.sections : []
+	const items = sections.flatMap((section) => (Array.isArray(section?.items) ? section.items : []))
+	return { ...template, items }
+}
+
 export const useInspectionStore = defineStore('inspection', {
 	state: () => ({
 		/** @type {Array} Checklists for the current case type */
@@ -61,11 +74,16 @@ export const useInspectionStore = defineStore('inspection', {
 
 	actions: {
 		/**
-		 * Fetch all checklists for a case type.
+		 * Fetch the checklist templates for a case type.
+		 *
+		 * Templates are `inspectionChecklistTemplate` objects, the one template
+		 * schema (inspection-checklists-onto-task 4.1). Their items sit in
+		 * sections; the panel reads one flat `items` list, so each template is
+		 * flattened here.
 		 *
 		 * @param {string} caseTypeId UUID of the case type
 		 * @return {Promise<Array>} Checklists
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 		 */
 		async fetchChecklists(caseTypeId) {
 			this.loading = true
@@ -73,94 +91,19 @@ export const useInspectionStore = defineStore('inspection', {
 			try {
 				const objectStore = useObjectStore()
 				const response = await objectStore.fetchCollection(
-					'inspectieChecklist',
+					'inspectionChecklistTemplate',
 					{
 						caseType: caseTypeId,
 						limit: 100,
 					},
 				)
-				this.checklists = response?.results || response || []
+				const templates = response?.results || response || []
+				this.checklists = templates.map(flattenTemplate)
 				return this.checklists
 			} catch (error) {
 				this.error = error.message
 				console.error('Error fetching checklists:', error)
 				return []
-			} finally {
-				this.loading = false
-			}
-		},
-
-		/**
-		 * Save a checklist (create or update).
-		 *
-		 * @param {object} checklistData The checklist data
-		 * @return {Promise<object|null>} Saved checklist
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
-		 */
-		async saveChecklist(checklistData) {
-			this.loading = true
-			this.error = null
-			try {
-				const objectStore = useObjectStore()
-				const saved = await objectStore.saveObject(
-					'inspectieChecklist',
-					checklistData,
-				)
-				// Update local list
-				const index = this.checklists.findIndex((c) => c.id === saved.id)
-				if (index >= 0) {
-					this.checklists.splice(index, 1, saved)
-				} else {
-					this.checklists.push(saved)
-				}
-				return saved
-			} catch (error) {
-				this.error = error.message
-				console.error('Error saving checklist:', error)
-				return null
-			} finally {
-				this.loading = false
-			}
-		},
-
-		/**
-		 * Create a new version of a checklist.
-		 *
-		 * @param {object} checklist The checklist to version
-		 * @return {Promise<object|null>} New version
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
-		 */
-		async createNewVersion(checklist) {
-			const newVersion = {
-				...checklist,
-				id: undefined,
-				version: (checklist.version || 1) + 1,
-				status: 'draft',
-			}
-			// Archive old version
-			if (checklist.id) {
-				await this.saveChecklist({ ...checklist, status: 'archived' })
-			}
-			return this.saveChecklist(newVersion)
-		},
-
-		/**
-		 * Delete a checklist.
-		 *
-		 * @param {string} checklistId UUID of the checklist
-		 * @return {Promise<boolean>} Success
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
-		 */
-		async deleteChecklist(checklistId) {
-			this.loading = true
-			try {
-				const objectStore = useObjectStore()
-				await objectStore.deleteObject('inspectieChecklist', checklistId)
-				this.checklists = this.checklists.filter((c) => c.id !== checklistId)
-				return true
-			} catch (error) {
-				this.error = error.message
-				return false
 			} finally {
 				this.loading = false
 			}

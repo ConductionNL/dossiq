@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.23"
+        "version": "0.20.26"
     },
     "x-openregister": {
         "type": "application",
@@ -8160,7 +8160,7 @@
             "inspectionChecklistTemplate": {
                 "slug": "inspectionChecklistTemplate",
                 "icon": "ClipboardListOutline",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "x-schema-org": "schema:HowTo",
                 "title": "Inspection Checklist Template",
@@ -8244,6 +8244,11 @@
                                             "responseType"
                                         ],
                                         "properties": {
+                                            "id": {
+                                                "type": "string",
+                                                "description": "Stable key an answer names; kept when the label changes",
+                                                "title": "Id"
+                                            },
                                             "order": {
                                                 "type": "integer",
                                                 "description": "Display order of the item",
@@ -8319,6 +8324,16 @@
                                                 "description": "Allowed values when responseType is meerkeuze",
                                                 "title": "Choices"
                                             },
+                                            "weight": {
+                                                "type": "number",
+                                                "description": "Weight of this item in a scored checklist",
+                                                "title": "Weight"
+                                            },
+                                            "parent": {
+                                                "type": "string",
+                                                "description": "Id of the item this one is nested under",
+                                                "title": "Parent"
+                                            },
                                             "failureAction": {
                                                 "type": "object",
                                                 "description": "Conditional follow-up dispatched on failure",
@@ -8356,6 +8371,11 @@
                             }
                         },
                         "title": "Sections"
+                    },
+                    "legacyRef": {
+                        "type": "string",
+                        "description": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
+                        "title": "Legacy reference"
                     },
                     "seedKey": {
                         "type": "string",

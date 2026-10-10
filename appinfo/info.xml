@@ -682,6 +682,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  and the case differs. Idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
+            <!-- inspection-checklists-onto-task 4.1: every inspectieChecklist and
+                 inspectionChecklist (with its checklistItem rows) becomes one
+                 inspectionChecklistTemplate carrying legacyRef. Skips what is
+                 folded; never folds a checklist half. Post-migration only: a
+                 fresh install has no older checklists. -->
+            <step>OCA\Dossiq\Repair\FoldInspectionChecklistTemplates</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
