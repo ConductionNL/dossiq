@@ -103,7 +103,11 @@ describe('buildUrgencyMap', () => {
 			},
 		]
 		expect(buildUrgencyMap(items)).toEqual({
-			'case-1': { deadlineTier: 'overdue', score: 1005, daysUntilDeadline: -2 },
+			'case-1': {
+				deadlineTier: 'overdue',
+				score: 1005,
+				daysUntilDeadline: -2,
+			},
 			'case-2': { deadlineTier: 'normal', score: 260, daysUntilDeadline: 30 },
 		})
 	})

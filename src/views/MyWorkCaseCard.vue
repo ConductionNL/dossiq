@@ -202,7 +202,9 @@ export default {
 
 		/** CSS modifier class for the urgency chip; '' when no chip should render. */
 		urgencyChipClassName() {
-			return urgencyChipClass(this.urgencyEntry && this.urgencyEntry.deadlineTier)
+			return urgencyChipClass(
+				this.urgencyEntry && this.urgencyEntry.deadlineTier,
+			)
 		},
 
 		/**
