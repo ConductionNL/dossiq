@@ -26,7 +26,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 class CaseLinkShares {
 
@@ -86,7 +86,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, array<string, mixed>> The shares.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function listForCase(string $caseId): array {
 		$found = $this->readRecords(caseId: $caseId);
@@ -116,7 +116,7 @@ class CaseLinkShares {
 	 *
 	 * @return bool True when the case carries a share holding that link.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function belongsToCase(int $linkId, string $caseId): bool {
 		if ($linkId <= 0) {
@@ -142,7 +142,7 @@ class CaseLinkShares {
 	 *
 	 * @return bool True when OpenRegister revoked it.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function revokeLink(int $linkId, string $userId): bool {
 		return $this->accessLinks->revokeLink(linkId: $linkId, userId: $userId);
@@ -157,7 +157,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<string, mixed>|null The updated link, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function pauseLink(int $linkId, string $userId, bool $paused): ?array {
 		return $this->accessLinks->setPaused(linkId: $linkId, userId: $userId, paused: $paused);
@@ -175,7 +175,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<string, mixed>|null The body a holder is served, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function holderPreview(int $linkId, string $caseId): ?array {
 		foreach ($this->listForCase(caseId: $caseId) as $share) {
@@ -205,7 +205,7 @@ class CaseLinkShares {
 	 *
 	 * @return bool True when the share was updated.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function markCollected(string $shareId, int $noteId): bool {
 		$objectService = $this->gateway->objectService();
@@ -248,7 +248,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<string, mixed> The stored share, or an error array.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function store(
 		string $caseId,
@@ -344,7 +344,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, int> The link ids OpenRegister refused to revoke.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function revokeMinted(array $link, array $documents, string $userId): array {
 		return $this->revokeLinksOf(
@@ -370,7 +370,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, int> The link ids that were not revoked.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
 	 */
 
 	public function revokeLinksOf(array $share, string $userId): array {
@@ -391,7 +391,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, int> The link ids.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
 	 */
 	private function linkIdsOf(array $share): array {
 		$ids = [];
@@ -426,7 +426,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<int, mixed> The records.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	private function readRecords(string $caseId): array {
 		$objectService = $this->gateway->objectService();
@@ -469,7 +469,7 @@ class CaseLinkShares {
 	 *
 	 * @return array<string, mixed> The record.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function recordFor(
 		string $caseId,
@@ -513,7 +513,7 @@ class CaseLinkShares {
 	 *
 	 * @return string The anchor, or an empty string.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	private function anchorOf(string $url): string {
 		$url = trim($url);
