@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261010150000</version>
+    <version>0.4.47-unstable.20261010160000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -682,6 +682,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  and the case differs. Idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
+            <!-- retire-cmmn-caseplanstate group 2: every CMMN case's casePlanState
+                 blob moves into OpenRegister plan-item rows (ensureItems), is
+                 verified, and only then cleared. Convergent; an unmappable case
+                 keeps its blob and is logged. Post-migration only: a fresh
+                 install has no blobs. -->
+            <step>OCA\Dossiq\Repair\MigrateCmmnCasePlans</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
@@ -1018,6 +1024,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
         <command>OCA\Dossiq\Command\RollbackCasePlansCommand</command>
+        <command>OCA\Dossiq\Command\MigrateCasePlansCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
     </commands>
