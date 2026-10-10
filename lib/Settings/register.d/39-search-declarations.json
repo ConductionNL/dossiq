@@ -98,7 +98,7 @@
             "matchType": "range",
             "inputControl": "date-range"
           },
-          "deadlineBeforeRoll": {
+          "statutoryDeadline": {
             "matchType": "range",
             "inputControl": "date-range"
           },

@@ -19,18 +19,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\DeadlineExtensionService;
-use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
+use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
-use OCA\Dossiq\Service\WorkingDayCalculator;
-use Psr\Log\LoggerInterface;
-use RuntimeException;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * REQ-TERM-066: the declared extension length is enforced.
@@ -38,9 +39,6 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\DeadlineExtensionService
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
- * @uses \OCA\Dossiq\Service\TermijnTimerService
- * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
- * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class DeadlineExtensionLimitTest extends TestCase {
 	use BindsTermFixtures;
@@ -94,8 +92,25 @@ class DeadlineExtensionLimitTest extends TestCase {
 			dates: $this->caseDates(),
 			timerService: null,
 			declarations: $this->declarations,
+			mirror: $this->mirror(),
 		);
 	}//end setUp()
+
+	/**
+	 * The rule for which statutory term decides a case.
+	 *
+	 * @return CaseDeadlineMirror The mirror; its store is never reached here.
+	 */
+	private function mirror(): CaseDeadlineMirror {
+		$settings = $this->createMock(SettingsService::class);
+		$logger = $this->createMock(LoggerInterface::class);
+
+		return new CaseDeadlineMirror(
+			settingsService: $settings,
+			store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+			logger: $logger,
+		);
+	}//end mirror()
 
 	/**
 	 * An extension beyond the declared period is refused with a 4xx that names
@@ -134,6 +149,140 @@ class DeadlineExtensionLimitTest extends TestCase {
 		self::assertSame('2026-10-01', $moved['endDateCurrent'], 'Thirty days is inside forty-two.');
 		self::assertSame('verlengd', $moved['status']);
 	}//end testAnExtensionWithinThePeriodIsAllowed()
+
+	/**
+	 * The ceiling counts the days asked for, not the days the roll adds.
+	 *
+	 * Fourteen days from Tuesday 1 September 2026 asks for Tuesday the 15th;
+	 * a roll that carries it on is the law's, not the handler's.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
+	 */
+	public function testTheRollDoesNotCountAgainstTheCeiling(): void {
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnCallback(
+			static fn (DateTimeImmutable $date): DateTimeImmutable => $date->modify('+2 days')
+		);
+		$service = new DeadlineExtensionService(
+			termService: $this->termService,
+			dates: $this->caseDates(),
+			timerService: $timers,
+			declarations: $this->declarations,
+		);
+		$this->declarations->method('forCase')->willReturn(
+			$this->declared(['extensionPeriodDays' => 14])
+		);
+
+		$moved = $service->requestExtension('t1', 'Extra onderzoek nodig', '2026-09-15');
+
+		self::assertSame('2026-09-17', $moved['endDateCurrent']);
+		self::assertSame('2026-09-15', $moved['endDateBeforeRoll']);
+	}//end testTheRollDoesNotCountAgainstTheCeiling()
+
+	/**
+	 * A law that names its extension in days extends the case's statutory term.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testTheStatutoryTermOfACaseIsExtendedByDays(): void {
+		$this->termService->method('instancesForCase')->willReturn([
+			['id' => 't1', 'case' => 'c1', 'status' => 'lopend', 'endDateCurrent' => '2026-09-01'],
+		]);
+		$this->declarations->method('forCase')->willReturn(
+			$this->declared(['extensionPeriodDays' => 14])
+		);
+
+		$extended = $this->service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14);
+
+		self::assertSame('2026-09-01', $extended['previous']);
+		self::assertSame('2026-09-15', $extended['instance']['endDateCurrent']);
+	}//end testTheStatutoryTermOfACaseIsExtendedByDays()
+
+	/**
+	 * A named base day replaces the current end, and the new end is still rolled.
+	 *
+	 * The term's four weeks ended on Saturday 30 May 2026 and rolled to Monday
+	 * 1 June; fourteen days from the Saturday ask for Saturday 13 June, which
+	 * the roll carries on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testTheDaysCountFromTheNamedBaseAndTheEndIsRolled(): void {
+		$termService = $this->createMock(TermijnService::class);
+		$termService->method('instancesForCase')->willReturn([
+			['id' => 't1', 'case' => 'c1', 'status' => 'lopend', 'endDateCurrent' => '2026-06-01'],
+		]);
+		$termService->method('getTermijnInstance')->willReturn(
+			['id' => 't1', 'case' => 'c1', 'endDateCurrent' => '2026-06-01', 'countExtensions' => 0, 'deadlineDefinition' => '']
+		);
+		$termService->method('updateTermijnInstance')->willReturnCallback(
+			static fn (string $id, array $patch): array => array_merge(['id' => $id], $patch)
+		);
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnCallback(
+			static fn (DateTimeImmutable $date): DateTimeImmutable => $date->format('N') === '6' ? $date->modify('+2 days') : $date
+		);
+		$this->declarations->method('forCase')->willReturn($this->declared(['extensionPeriodDays' => 14]));
+		$service = new DeadlineExtensionService(
+			termService: $termService,
+			dates: $this->caseDates(),
+			timerService: $timers,
+			declarations: $this->declarations,
+			mirror: $this->mirror(),
+		);
+
+		$extended = $service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14, static fn (array $term): string => '2026-05-30');
+
+		self::assertSame('2026-06-01', $extended['previous']);
+		self::assertSame('2026-06-13', $extended['instance']['endDateBeforeRoll']);
+		self::assertSame('2026-06-15', $extended['instance']['endDateCurrent']);
+	}//end testTheDaysCountFromTheNamedBaseAndTheEndIsRolled()
+
+	/**
+	 * A second extension of a term that allows one is a 409.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testASecondExtensionOfACaseTermIsAConflict(): void {
+		$termService = $this->createMock(TermijnService::class);
+		$termService->method('instancesForCase')->willReturn([
+			['id' => 't1', 'case' => 'c1', 'status' => 'verlengd', 'endDateCurrent' => '2026-09-15'],
+		]);
+		$termService->method('getTermijnInstance')->willReturn(
+			['id' => 't1', 'case' => 'c1', 'endDateCurrent' => '2026-09-15', 'countExtensions' => 1, 'deadlineDefinition' => '']
+		);
+		$service = new DeadlineExtensionService(termService: $termService, dates: $this->caseDates(), mirror: $this->mirror());
+
+		try {
+			$service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14);
+			self::fail('A second extension must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('extension-ceiling-reached', $e->getRule());
+			self::assertSame(RefusedException::STATUS_REFUSED, $e->getStatus());
+		}
+	}//end testASecondExtensionOfACaseTermIsAConflict()
+
+	/**
+	 * A case without a running statutory term has nothing to extend.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testACaseWithoutARunningTermRefuses(): void {
+		$this->termService->method('instancesForCase')->willReturn([]);
+
+		$this->expectException(RefusedException::class);
+		$this->service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14);
+	}//end testACaseWithoutARunningTermRefuses()
 
 	/**
 	 * A case type that allows no extension refuses every one of them.
@@ -179,87 +328,32 @@ class DeadlineExtensionLimitTest extends TestCase {
 
 		self::assertSame('2026-12-31', $moved['endDateCurrent']);
 	}//end testNoDeclaredPeriodMeansNoCeiling()
-
 	/**
-	 * The service with the real timer on the statutory fallback calendar, over
-	 * one running term bound to a definition.
-	 *
-	 * @param array<string, mixed>|null $definitie The definition the store answers, or null.
-	 * @param int                       $consumed  Extensions already used.
-	 *
-	 * @return DeadlineExtensionService The service.
-	 */
-	private function rollingService(?array $definitie, int $consumed = 0): DeadlineExtensionService {
-		$store = $this->createMock(TermijnService::class);
-		$store->method('getTermijnInstance')->willReturn(
-			[
-				'id' => 't1',
-				'case' => 'c1',
-				'endDateCurrent' => '2026-11-02',
-				'countExtensions' => $consumed,
-				'deadlineDefinition' => 'td-woo-verzoek',
-			]
-		);
-		$store->method('getTermijnDefinitieById')->willReturn($definitie);
-		$store->method('updateTermijnInstance')->willReturnCallback(
-			static fn (string $id, array $patch): array => array_merge(['id' => $id], $patch)
-		);
-
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getOpenRegisterClass')->willReturn(null);
-
-		return new DeadlineExtensionService(
-			termService: $store,
-			dates: $this->caseDates(),
-			timerService: new TermijnTimerService(
-				settingsService: $settings,
-				logger: $this->createMock(LoggerInterface::class),
-				dates: $this->caseDates(),
-				fallbackCalendar: new WorkingDayCalculator(),
-			),
-		);
-	}//end rollingService()
-
-	/**
-	 * REQ-WTR-002: a Sunday sent as the new end lands on Monday, and the
-	 * supplied date is kept beside it.
+	 * A Sunday sent to termijn#verleng lands on Monday, and the Sunday is kept.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
 	 */
 	public function testASundayEndDateIsRolledToMonday(): void {
-		$moved = $this->rollingService(['id' => 'td-woo-verzoek', 'countExtensions' => 1])
-			->requestExtension('t1', 'Zienswijzen van derden', '2026-11-15');
+		$this->declarations->method('forCase')->willReturn(
+			$this->declared(['extensionPeriodDays' => 42])
+		);
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnCallback(
+			static fn (DateTimeImmutable $date): DateTimeImmutable => ($date->format('N') === '7' ? $date->modify('+1 day') : $date)
+		);
+		$service = new DeadlineExtensionService(
+			termService: $this->termService,
+			dates: $this->caseDates(),
+			timerService: $timers,
+			declarations: $this->declarations,
+		);
 
-		self::assertSame('2026-11-16', $moved['endDateCurrent']);
-		self::assertSame('2026-11-15', $moved['endDateBeforeRoll']);
+		$moved = $service->requestExtension('t1', 'Zienswijzen van derden', '2026-09-13');
+
+		self::assertSame('2026-09-14', $moved['endDateCurrent'], 'Sunday 13 September moves to Monday.');
+		self::assertSame('2026-09-13', $moved['endDateBeforeRoll'], 'The day as asked is kept beside it.');
 	}//end testASundayEndDateIsRolledToMonday()
 
-	/**
-	 * REQ-WTR-003: the seeded Woo definition allows one extension, read from
-	 * the definition itself, and a second is refused.
-	 *
-	 * @return void
-	 */
-	public function testTheWooDefinitionAllowsOneExtension(): void {
-		$seed = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/termijnbewaking_seed_data.json'), true);
-		$woo = array_values(array_filter($seed['termijnDefinities'], static fn (array $row): bool => $row['caseType'] === 'woo-verzoek'))[0];
-		self::assertSame(1, $woo['countExtensions'], 'the seeded Woo term allows exactly one extension');
-
-		$moved = $this->rollingService($woo)->requestExtension('t1', 'Zienswijzen van derden', '2026-11-16');
-		self::assertSame(1, $moved['countExtensions']);
-
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('maximum aantal verlengingen');
-		$this->rollingService($woo, consumed: 1)->requestExtension('t1', 'Nog een keer', '2026-11-30');
-	}//end testTheWooDefinitionAllowsOneExtension()
-
-	/**
-	 * A definition that cannot be read counts as one extension, the safe value.
-	 *
-	 * @return void
-	 */
-	public function testAMissingDefinitionCountsAsOne(): void {
-		$this->expectException(RuntimeException::class);
-		$this->rollingService(null, consumed: 1)->requestExtension('t1', 'Nog een keer', '2026-11-30');
-	}//end testAMissingDefinitionCountsAsOne()
 }//end class

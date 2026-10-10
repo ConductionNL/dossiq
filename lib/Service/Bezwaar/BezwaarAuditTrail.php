@@ -34,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * Writes bezwaar entries onto OpenRegister's audit trail of their record.
  *
- * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 class BezwaarAuditTrail {
 
@@ -128,7 +128,7 @@ class BezwaarAuditTrail {
 	 *
 	 * @return array<string, mixed> The entry.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function entry(string $event, array $payload, string $tag = ''): array {
 		$entry = ['event' => $event];
@@ -158,7 +158,7 @@ class BezwaarAuditTrail {
 	 *
 	 * @throws BezwaarEntryNotWrittenException When OpenRegister is absent, the record does not resolve, or the write fails.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function record(
 		string $register,
@@ -194,7 +194,7 @@ class BezwaarAuditTrail {
 	 *
 	 * @throws BezwaarEntryNotWrittenException When OpenRegister is absent, the record does not resolve, or the write fails.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function write(string $register, string $schema, string $objectUuid, string $action, array $context, ?string $actorId = null): void {
 		if (in_array('openregister', (array)$this->appManager->getInstalledApps(), true) === false) {
@@ -258,7 +258,7 @@ class BezwaarAuditTrail {
 	 *
 	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; the record is deleted first.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function recordForNewRecord(
 		object $objectService,
@@ -310,7 +310,7 @@ class BezwaarAuditTrail {
 	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; nothing is changed.
 	 * @throws Throwable The change's own failure, after the not-applied entry.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function recordThenApply(
 		string $register,
@@ -363,7 +363,7 @@ class BezwaarAuditTrail {
 	 *
 	 * @return bool Whether the entry was written.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function recordRefusal(
 		string $register,

@@ -6,23 +6,26 @@ A test marked **fails today** must be run on `origin/development` first and seen
 failing line in the PR body. Dates in tests come from a fixed clock and a fixed calendar, never
 from `today`.
 
+> **Moved, 2026-10-09.** Sections 1 to 3 (the rolled case deadline, rolled API
+> end dates, the Woo extension through the term engine) are built under
+> `openspec/changes/one-term-engine` (Ruben's one-term-engine decision of
+> 2026-10-09), which supersedes them: the case deadline follows the statutory
+> term instance rather than a generalised `CaseInheritedDeadlineListener`, and
+> `deadlineBeforeRoll` on the case is not added (the instance keeps
+> `endDateCalculated` and `endDateBeforeRoll`). Do not build sections 1 to 3
+> here. Section 4 (the quarterly report) and its part of section 5 stay in this
+> change.
+
 ## 1. The case deadline is rolled
 
-- [x] 1.1 Stop the case `deadline` coming from the unrolled calculation. Remove
+- [x] 1.1 (moved to `one-term-engine`, which built it) Stop the case `deadline` coming from the unrolled calculation. Remove
   `x-openregister-calculations.deadline` from `components.schemas.case` in
   `lib/Settings/dossiq_register.json`. Declare `deadlineBeforeRoll` (date, readOnly) on the case
   and bump the register version. First establish, against the real OpenRegister on
   `origin/development`, whether a materialised calculation runs before or after
   `ObjectCreatingEvent` listeners. If it runs after, removing it is required, not optional. Write
   the answer in the PR body (REQ-WTR-001).
-  - Done. Answer (openregister `development`, `CalculationOnSaveListener`): the calculation is a
-    listener on `ObjectCreatingEvent`/`ObjectUpdatingEvent` at the default priority 0, so it runs
-    BEFORE dossiq's listener at -100, and dossiq's `setModifiedData` is merged after both and after
-    `enforceReadOnlyOnUpdate`. The listener would win on a save, but the calculation still writes
-    the unrolled date on `occ openregister:rematerialise-calculations` and on every update without
-    the listener, so it is removed. Case schema 1.38.0, register 0.20.21, `deadlineBeforeRoll`
-    declared, digests recorded.
-- [x] 1.2 Generalise `CaseInheritedDeadlineListener` (or add `CaseDeadlineListener` beside it) so
+- [x] 1.2 (moved to `one-term-engine`, which built it) Generalise `CaseInheritedDeadlineListener` (or add `CaseDeadlineListener` beside it) so
   every case whose effective case type declares `processingDeadline` gets
   `deadline = rollTermEndFor(startDate + term, definitie)` and `deadlineBeforeRoll`. It keeps the
   `rollToWorkingDay: false` switch (REQ-WTR-001).
@@ -32,26 +35,16 @@ from `today`.
     the real `ObjectCreatingEvent` and `ObjectEntity` classes, or with an environment-aware double
     that has their real signatures (`getObject()`, `setModifiedData()`). Do not use an
     anonymous stub.
-  - Done: renamed to `lib/Listener/CaseDeadlineListener.php`, covering every case type with an
-    effective term; an update keeps a stored deadline unless the start date or case type moved.
-    `tests/Unit/Listener/CaseDeadlineListenerTest.php` (15 tests, real events, real timer on the
-    statutory fallback calendar). Fails today: the class does not exist on `origin/development`,
-    and the old listener left a Woo case (own term) to the unrolled calculation (2026-12-25).
-- [x] 1.3 Mirror the term instance onto the case. When a Woo case's statutory term instance's
+- [x] 1.3 (moved to `one-term-engine`, which built it) Mirror the term instance onto the case. When a Woo case's statutory term instance's
   `endDateCurrent` changes (extension, pause, resume), the case `deadline` is written to match.
   Wire it at `TermijnService::saveTermInstance()` / `updateTermijnInstance()`, the one write path
   (REQ-WTR-001).
   - unit `tests/Unit/Service/TermijnServiceTest.php`
     `testACaseDeadlineFollowsItsTermAfterAPause`.
-  - Done: `lib/Service/Termijn/CaseDeadlineFollower.php` called from `saveTermInstance()` and
-    `updateTermijnInstance()`. `deadline` is readOnly, so the follower records the date in
-    `CaseDeadlineMirror` and saves the case with its stored values; `CaseDeadlineListener` takes
-    the date on that save. Only a statutory instance moves the case
-    (`testAnInternalTargetDoesNotMoveTheCaseDeadline`).
 
 ## 2. API end dates are rolled
 
-- [x] 2.1 `DeadlineExtensionService::applyExtension()` rolls `newEndDate` with
+- [x] 2.1 (moved to `one-term-engine`, which built it) `DeadlineExtensionService::applyExtension()` rolls `newEndDate` with
   `TermijnTimerService::rollTermEndFor()` and the instance's definition before the ceiling check
   and before it stores the date. It stores the supplied date as `endDateBeforeRoll`. Declare
   `endDateBeforeRoll` on `deadlineInstance` in `register.d/60-termijnbewaking.json` (REQ-WTR-002).
@@ -59,14 +52,10 @@ from `today`.
     `testASundayEndDateIsRolledToMonday`.
   - Through the caller: `tests/Unit/Controller/TermijnControllerTest.php`
     `testVerlengRollsTheEndDate`, with POST to `verleng` and a Sunday `newEinddatum`.
-  - Done: rolled in `applyExtension()` before the ceiling check and the days impact;
-    `endDateBeforeRoll` declared in `register.d/60-termijnbewaking.json`. Tests in
-    `DeadlineExtensionLimitTest` and, through the route, `TermijnControllerContractTest`
-    `testVerlengRollsTheEndDate` (the controller test class is the contract test).
 
 ## 3. The Woo extension goes through termijn#verleng
 
-- [x] 3.1 Rewrite `WOODeadlineService::extendDeadline(caseId, reason)`. It resolves the case's Woo
+- [x] 3.1 (moved to `one-term-engine`, which built it) Rewrite `WOODeadlineService::extendDeadline(caseId, reason)`. It resolves the case's Woo
   term instance (`TermijnService::getTermijnInstanceForZaak()`), computes
   `endDateCurrent + extensionPeriod` (read from the case type, P14D), and calls
   `DeadlineExtensionService::requestExtension(instanceId, reason, newEnd)`. It returns
@@ -80,29 +69,14 @@ from `today`.
     (`tests/Support/RealSchemaValidator`).
   - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
     `testASecondWooExtensionAnswers409`.
-  - Done: the statutory instance is picked from `instancesForCase()` (the latest instance can be
-    another kind); the period comes from `TermDeclarationReader` (P14D, 14 when undeclared). The
-    ceiling refusal is `ExtensionCeilingReachedException` (a `RuntimeException`, same message), which
-    the Woo service turns into `RefusedException` `woo-one-extension` (409). No term engine: refused,
-    nothing written. Tests run over the real `TermijnService`, `DeadlineExtensionService` and the
-    seeded Woo definition.
-- [x] 3.2 Make sure the seeded Woo term definition caps extensions at one. Check
+- [x] 3.2 (moved to `one-term-engine`, which built it) Make sure the seeded Woo term definition caps extensions at one. Check
   `register.d/81-woo-verzoek.json` and the `TermijnDefinitie` the Woo case type binds. Replace
   `resolveMaxExtensions()`'s reflection on `definitieCache` with a real read of the definition. A
   missing definition counts as one, which is the safe value (REQ-WTR-003).
   - unit: `tests/Unit/Service/DeadlineExtensionLimitTest.php`
     `testTheWooDefinitionAllowsOneExtension`.
-  - Done: `termijnbewaking_seed_data.json` `td-woo-verzoek` has `countExtensions` 1 (the test reads
-    the seed). The reflection is gone: `TermijnService::getTermijnDefinitieById()` reads the row
-    through `TermDefinitions::byId()`; a missing definition counts as one
-    (`testAMissingDefinitionCountsAsOne`).
-- [x] 3.3 Search `src/` and `lib/` for readers of `expectedResolution`, `deadlineVerlengd` and
+- [x] 3.3 (moved to `one-term-engine`, which built it) Search `src/` and `lib/` for readers of `expectedResolution`, `deadlineVerlengd` and
   `verdagingReden`, and move each one to `deadline` or the term instance. List them in the PR body.
-  - Done. Readers found: `WOODeadlineService::resolveWarningDeadline()` (now reads `deadline`) and
-    `extendDeadline()` itself. Nothing in `src/`. Left as is: `calculate()` returns an
-    `expectedResolution` key (a return value, no caller in `lib/`), and the Woo case type's
-    `verdagingReden` property definition (`register.d/81-woo-verzoek.json`), a handler-entered case
-    property, not a key this route wrote.
 
 ## 4. The report groups by the real case type
 
@@ -130,11 +104,14 @@ from `today`.
 
 - [ ] 5.1 `tests/e2e/woo-term-rolls.spec.ts`: create a Woo case through the API with a start date
   whose term ends on a configured holiday, and read the `deadline` back. Extend it once and then
-  twice. Cite REQ-WTR-001 and REQ-WTR-003. (live pass, decision 139: written as `tests/e2e/woo-term-rolls.spec.ts`)
+  twice. Cite REQ-WTR-001 and REQ-WTR-003. (live pass, decision 139: written as
+  `tests/e2e/woo-term-rolls.spec.ts`, asserting the dates `one-term-engine` computes: the case
+  deadline is the statutory instance's, and the one extension counts from the unrolled end)
 - [ ] 5.2 Live check after merge on the dev instance: one Woo case started on 2026-11-27 through
   the portal intake. Read `deadline` and the term instance's `endDateCurrent` through the
   OpenRegister API, and record both. This proves the removed calculation no longer overwrites the
-  listener. (live pass, decision 139)
+  listener. (live pass, decision 139. Since `one-term-engine` the calculation stays as the fallback
+  for a case with no statutory term, so the check reads that the instance's date wins.)
 
 ## 6. Verify and deliver
 

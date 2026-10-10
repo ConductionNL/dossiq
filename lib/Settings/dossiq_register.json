@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.22"
+        "version": "0.20.23"
     },
     "x-openregister": {
         "type": "application",
@@ -1581,7 +1581,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.39.0",
+                "version": "1.40.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1816,10 +1816,24 @@
                                 ]
                             }
                         },
+                        "deadline": {
+                            "type": "date",
+                            "materialise": true,
+                            "expression": {
+                                "dateAdd": {
+                                    "date": {
+                                        "prop": "startDate"
+                                    },
+                                    "duration": {
+                                        "prop": "@ref.caseType.processingDeadline"
+                                    }
+                                }
+                            }
+                        },
                         "statutoryTerm": {
                             "type": "string",
                             "materialise": true,
-                            "description": "The case type's processing deadline, copied onto the case so a data widget can read it. A data widget builds its fields from the schema's own properties, so an include path like caseType.processingDeadline matches no property and renders nothing at all; the same is true of a stat caption, which interpolates only an endpoint payload. Materialised because cross-object @ref lookups resolve in OpenRegister's save-time listener and nowhere else. A case type whose deadline changes later needs occ openregister:rematerialise-calculations.",
+                            "description": "The case type's processing deadline, copied onto the case so a data widget can read it. A data widget builds its fields from the schema's own properties, so an include path like caseType.processingDeadline matches no property and renders nothing at all; the same is true of a stat caption, which interpolates only an endpoint payload. Materialised for the reason deadline is: cross-object @ref lookups resolve in OpenRegister's save-time listener and nowhere else. A case type whose deadline changes later needs occ openregister:rematerialise-calculations, exactly as deadline does.",
                             "expression": {
                                 "prop": "@ref.caseType.processingDeadline"
                             }
@@ -2933,16 +2947,16 @@
                         "type": "string",
                         "format": "date",
                         "readOnly": true,
-                        "description": "Processing deadline: the start date plus the case type's processingDeadline, rolled to the first working day on the organisation's calendar (Algemene termijnenwet art. 1). Written by dossiq's case deadline listener, not by a calculation, because the calculation engine has no working-day roll. Where the case has a statutory term instance, this follows the instance's endDateCurrent after every extension, pause and resumption.",
+                        "description": "Processing deadline. While the case has a statutory term, this is that term's current end date, after pauses, extensions and the Algemene termijnenwet roll, and it moves when the term moves. Only a case without a statutory term falls back to startDate + the case type's processingDeadline (x-openregister-calculations.deadline).",
                         "title": "Deadline",
                         "order": 11
                     },
-                    "deadlineBeforeRoll": {
+                    "statutoryDeadline": {
                         "type": "string",
                         "format": "date",
-                        "readOnly": true,
-                        "description": "The deadline before the Algemene termijnenwet roll. Equal to deadline when the term did not end on a weekend or holiday, so a reader can see whether the roll moved it.",
-                        "title": "Deadline before the roll"
+                        "visible": false,
+                        "description": "The statutory term's current end date, written by the term engine whenever the term moves. Read deadline instead: it carries the same date, and a fallback when the case has no statutory term.",
+                        "title": "Statutory term end"
                     },
                     "confidentiality": {
                         "type": "string",

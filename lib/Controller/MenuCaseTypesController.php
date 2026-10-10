@@ -31,6 +31,8 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * The current user's menu case types.
@@ -45,11 +47,13 @@ class MenuCaseTypesController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param MenuCaseTypesService $menuCaseTypes The per-user menu choice.
 	 * @param IUserSession $userSession The user session.
+	 * @param LoggerInterface $logger Logs why the open-case counts are missing.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly MenuCaseTypesService $menuCaseTypes,
 		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -57,9 +61,11 @@ class MenuCaseTypesController extends Controller {
 	/**
 	 * The chosen case types in order, and every case type the user may add.
 	 *
-	 * @return JSONResponse `{chosen: [{id, title}], available: [{id, title}]}`.
+	 * @return JSONResponse `{chosen: [{id, title, openCases}], available: [{id, title, openCases}]}`;
+	 *                      `openCases` is null when the count could not be read.
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -70,7 +76,21 @@ class MenuCaseTypesController extends Controller {
 			return new JSONResponse(data: ['message' => 'Not logged in'], statusCode: Http::STATUS_UNAUTHORIZED);
 		}
 
+		// The counts are read ONCE for the offered case types, and the chosen
+		// ones are a subset of those, so they take their count from the same
+		// answer (REQ-CTN-006: one aggregate query per load).
 		$offered = $this->menuCaseTypes->offeredCaseTypes(userId: $user->getUID());
+		try {
+			$offered = $this->menuCaseTypes->withOpenCaseCounts(caseTypes: $offered);
+		} catch (Throwable $e) {
+			// The picker still works without its numbers; it shows none
+			// rather than a 0 nobody counted.
+			$this->logger->warning(
+				'Dossiq menu case types: OpenRegister could not count the open cases per case type, so the picker shows no numbers',
+				['exception' => $e->getMessage()]
+			);
+			$offered = $this->menuCaseTypes->withUnknownOpenCaseCounts(caseTypes: $offered);
+		}
 
 		return new JSONResponse(
 			data: [

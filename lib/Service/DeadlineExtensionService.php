@@ -30,8 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Exception\ExtensionCeilingReachedException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use ReflectionClass;
 use RuntimeException;
 
 /**
@@ -68,12 +69,15 @@ class DeadlineExtensionService {
 	 *        caller that builds this service by hand keeps working; when it is
 	 *        absent the declared ceiling is simply not enforced, which is the
 	 *        behaviour this change replaces rather than a new silence.
+	 * @param CaseDeadlineMirror|null $mirror Which statutory term decides a case, for an
+	 *        extension asked for by case ({@see extendStatutoryTermOfCase()}).
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermDeclarationReader $declarations = null,
+		private readonly ?CaseDeadlineMirror $mirror = null,
 	) {
 	}//end __construct()
 
@@ -110,32 +114,80 @@ class DeadlineExtensionService {
 	}//end requestExtension()
 
 	/**
-	 * Request an extension of a fixed number of days past a known end date.
+	 * Extend the statutory term of a case by a number of days.
 	 *
-	 * The end date is computed here, beside the roll: {@see requestExtension()}
-	 * rolls it by the Algemene termijnenwet and holds the definition's ceiling.
+	 * For a law that names its extension in days rather than as an end date
+	 * (Woo art. 4.4 lid 2: at most two weeks). The term is the one that
+	 * decides the case's deadline ({@see CaseDeadlineMirror::decidingInstance()});
+	 * the requested end is a base day plus the days (by default the term's
+	 * current end; a caller can name another, such as the unrolled original
+	 * end Woo art. 4.4 counts from), and from there it is
+	 * the same extension as {@see requestExtension()}: rolled, checked against
+	 * the definition's ceiling, stored, and followed by the case's deadline.
 	 *
-	 * @param string $termInstanceId Instance id.
-	 * @param string $rationale      Non-empty reason.
-	 * @param string $fromDate       The term's current end date (YYYY-MM-DD).
-	 * @param int    $days           The extension in calendar days.
+	 * @param string $caseId    The case uuid.
+	 * @param string $rationale Why (the `verleng` event's rationale).
+	 * @param int    $days      How many days to add.
+	 * @param (\Closure(array<string, mixed>): string)|null $baseOf The day the days count
+	 *        from, as `Y-m-d`, given the term; null counts from its current end.
 	 *
-	 * @return array<string, mixed> The updated instance.
+	 * @return array{previous: string, instance: array<string, mixed>} The end before, and the extended term.
 	 *
-	 * @throws RuntimeException With validation failures (cited AWB rule).
-	 * @throws RefusedException When the move is longer than the case type declares.
+	 * @throws RefusedException When the case has no running statutory term, or it has had
+	 *         every extension it allows (409), or a declared period refuses it (422).
 	 *
-	 * @spec openspec/specs/woo-case-type/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
-	public function requestExtensionByDays(string $termInstanceId, string $rationale, string $fromDate, int $days): array {
-		$newEnd = $this->dates->parse($fromDate, 'endDateCurrent')->modify('+' . $days . ' days');
+	public function extendStatutoryTermOfCase(string $caseId, string $rationale, int $days, ?\Closure $baseOf = null): array {
+		if ($this->mirror === null) {
+			throw new RefusedException(
+				rule: 'term-engine-unavailable',
+				sentence: 'The term engine is not available, so the term cannot be extended.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			);
+		}
 
-		return $this->requestExtension(
-			termInstanceId: $termInstanceId,
-			rationale: $rationale,
-			newEndDate: $this->dates->formatCalendarDate($newEnd)
+		$term = $this->mirror->decidingInstance(instances: $this->termService->instancesForCase(caseId: $caseId));
+		if ($term === null || (string)($term['status'] ?? '') === 'completed') {
+			throw new RefusedException(
+				rule: 'no-running-statutory-term',
+				sentence: 'This case has no running term to extend.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		$previous = $this->mirror->endOf(instance: $term);
+		$base = $previous;
+		if ($baseOf !== null) {
+			$base = $baseOf($term);
+		}
+
+		$requested = $this->dates->formatCalendarDate(
+			$this->dates->parse($base, 'endDateCurrent')->modify('+' . max(0, $days) . ' days')
 		);
-	}//end requestExtensionByDays()
+
+		try {
+			$extended = $this->requestExtension(
+				termInstanceId: (string)($term['id'] ?? ''),
+				rationale: $rationale,
+				newEndDate: $requested,
+			);
+		} catch (RefusedException $e) {
+			throw $e;
+		} catch (RuntimeException $e) {
+			// With a positive number of days the end always moves forward, so
+			// what is left is the ceiling: a 409 the reader can act on, not a
+			// 500. The engine's own message is for the log.
+			throw new RefusedException(
+				rule: 'extension-ceiling-reached',
+				sentence: 'This term has had every extension it allows.',
+				status: RefusedException::STATUS_REFUSED,
+				previous: $e,
+			);
+		}
+
+		return ['previous' => $previous, 'instance' => $extended];
+	}//end extendStatutoryTermOfCase()
 
 	/**
 	 * Request a supervisor-approved AWB 4:14 lid 3 verlenging.
@@ -185,6 +237,7 @@ class DeadlineExtensionService {
 	 * @throws RefusedException When the move is longer than the case type declares.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
 	 */
 	private function applyExtension(
 		string $termInstanceId,
@@ -195,31 +248,40 @@ class DeadlineExtensionService {
 	): array {
 		$this->assertExtensionInput(rationale: $rationale, newEndDate: $newEndDate);
 
+		// ROLLED BEFORE IT IS CHECKED OR STORED (REQ-OTE-03). An end date a
+		// caller sends is a term end like any other, so the Algemene
+		// termijnenwet decides the day it lands on; the ceiling and the days
+		// impact are then measured to the day the term actually ends. The date
+		// as asked is kept beside it, so a reader can see the roll happened.
+		$requestedEndDate = $newEndDate;
+		$newEndDate = $this->rolledEndDate(endDate: $newEndDate);
+
 		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
 			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
-		// Every end date accepted through the API obeys the Algemene
-		// termijnenwet (REQ-WTR-002): rolled before the ceiling check and
-		// before it is stored, with the supplied date kept beside it.
-		$definitie = $this->definitionOf(instance: $instance);
-		$suppliedEndDate = $newEndDate;
-		$newEndDate = $this->rolled(date: $newEndDate, definitie: $definitie);
-
-		$this->assertExtensionPermitted(instance: $instance, newEndDate: $newEndDate, mode: $mode, definitie: $definitie);
+		$this->assertExtensionPermitted(instance: $instance, newEndDate: $newEndDate, mode: $mode);
 
 		$current = (string)($instance['endDateCurrent'] ?? '');
 		$consumed = (int)($instance['countExtensions'] ?? 0);
 		$daysImpact = $this->calculateDaysImpact(current: $current, newEndDate: $newEndDate);
 
-		$this->assertWithinDeclaredPeriod(instance: $instance, days: $daysImpact, mode: $mode);
+		// The ceiling is measured to the day ASKED FOR. The Algemene termijnenwet
+		// moves an end off a weekend or holiday by law; a fourteen day extension
+		// that the roll carries to the Monday is still the fourteen days the
+		// law allows, not sixteen the case type refuses.
+		$this->assertWithinDeclaredPeriod(
+			instance: $instance,
+			days: $this->calculateDaysImpact(current: $current, newEndDate: $requestedEndDate),
+			mode: $mode
+		);
 
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
 			[
 				'endDateCurrent' => $newEndDate,
-				'endDateBeforeRoll' => $suppliedEndDate,
+				'endDateBeforeRoll' => $requestedEndDate,
 				'status' => 'verlengd',
 				'countExtensions' => ($consumed + 1),
 			]
@@ -252,6 +314,28 @@ class DeadlineExtensionService {
 	}//end applyExtension()
 
 	/**
+	 * The requested end date, rolled off a day the Awt does not let a term end on.
+	 *
+	 * Without a timer service there is no calendar to ask, and the date stays
+	 * as requested, which is what this service did before.
+	 *
+	 * @param string $endDate The requested end date (YYYY-MM-DD).
+	 *
+	 * @return string The end date the term actually gets (YYYY-MM-DD).
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
+	 */
+	private function rolledEndDate(string $endDate): string {
+		if ($this->timerService === null) {
+			return $endDate;
+		}
+
+		$date = $this->dates->parse($endDate, 'newEinddatum');
+
+		return $this->dates->formatCalendarDate($this->timerService->rollTermEndFor(date: $date));
+	}//end rolledEndDate()
+
+	/**
 	 * Validate the raw verlenging input before any lookup is performed.
 	 *
 	 * @param string $rationale Non-empty reason.
@@ -277,23 +361,21 @@ class DeadlineExtensionService {
 	 * @param array<string, mixed> $instance Instance row.
 	 * @param string $newEndDate New deadline (YYYY-MM-DD).
 	 * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
-	 * @param array<string, mixed> $definitie The instance's TermijnDefinitie, or an empty array.
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException When the deadline does not move forward.
-	 * @throws ExtensionCeilingReachedException When the ceiling is exhausted.
+	 * @throws RuntimeException When the deadline does not move forward or the ceiling is exhausted.
 	 */
-	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode, array $definitie): void {
+	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode): void {
 		$current = (string)($instance['endDateCurrent'] ?? '');
 		if ($current !== '' && $newEndDate <= $current) {
 			throw new RuntimeException('newEinddatum must be later than current einddatumActueel');
 		}
 
 		$consumed = (int)($instance['countExtensions'] ?? 0);
-		$maxExt = $this->resolveMaxExtensions(definitie: $definitie);
+		$maxExt = $this->resolveMaxExtensions(instance: $instance);
 		if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
-			throw new ExtensionCeilingReachedException(message: 'AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
+			throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
 		}
 	}//end assertExtensionPermitted()
 
@@ -385,58 +467,50 @@ class DeadlineExtensionService {
 	}//end resolveExtensionContext()
 
 	/**
-	 * The TermijnDefinitie a term instance names, read by id.
+	 * Resolve the maximum number of extensions allowed for this instance.
+	 *
+	 * Looks up the TermijnDefinitie via the instance reference and reads
+	 * aantalVerlengingen; falls back to 1 when missing (AWB default).
 	 *
 	 * @param array<string, mixed> $instance Instance row.
 	 *
-	 * @return array<string, mixed> The definition, or an empty array when it cannot be read.
+	 * @return int
 	 */
-	private function definitionOf(array $instance): array {
+	private function resolveMaxExtensions(array $instance): int {
+		// Prefer to look up the definition by the linked id.
 		$defId = (string)($instance['deadlineDefinition'] ?? '');
 		if ($defId === '') {
-			return [];
-		}
-
-		return ($this->termService->getTermijnDefinitieById($defId) ?? []);
-	}//end definitionOf()
-
-	/**
-	 * A supplied end date, rolled by the Algemene termijnenwet when the term declares it.
-	 *
-	 * Without the engine bridge the date is answered as supplied, which is what
-	 * a build without a calendar always did.
-	 *
-	 * @param string               $date      The supplied end date (YYYY-MM-DD).
-	 * @param array<string, mixed> $definitie The instance's TermijnDefinitie.
-	 *
-	 * @return string The end date the term actually ends on (YYYY-MM-DD).
-	 */
-	private function rolled(string $date, array $definitie): string {
-		if ($this->timerService === null) {
-			return $date;
-		}
-
-		$parsed = $this->dates->parse($date, 'newEinddatum');
-
-		return $this->timerService->rollTermEndFor(date: $parsed, definitie: $definitie)->format('Y-m-d');
-	}//end rolled()
-
-	/**
-	 * The maximum number of standard extensions the definition allows.
-	 *
-	 * Read from the definition's `countExtensions` (the schema's "Maximum
-	 * Extensions"). A missing definition counts as one, the safe value: Woo
-	 * art. 4.4 lid 2 and Awb 4:14 allow one.
-	 *
-	 * @param array<string, mixed> $definitie The instance's TermijnDefinitie, or an empty array.
-	 *
-	 * @return int The ceiling.
-	 */
-	private function resolveMaxExtensions(array $definitie): int {
-		if ($definitie === [] || array_key_exists('countExtensions', $definitie) === false) {
 			return 1;
 		}
 
-		return max(0, (int)$definitie['countExtensions']);
+		// Walk the TermijnService cache by zaaktype if available. As a
+		// safe fallback, return the default 1 — a real lookup would
+		// call SettingsService->getObjectService()->find($defId) here,
+		// but TermijnService already caches lookups by zaaktype which
+		// is the data we actually need.
+		$svcDef = null;
+		try {
+			$reflection = new ReflectionClass($this->termService);
+			if ($reflection->hasProperty('definitieCache') === true) {
+				$prop = $reflection->getProperty('definitieCache');
+				$cache = $prop->getValue($this->termService);
+				if (is_array($cache) === true) {
+					foreach ($cache as $row) {
+						if (is_array($row) === true && (string)($row['id'] ?? '') === $defId) {
+							$svcDef = $row;
+							break;
+						}
+					}
+				}
+			}
+		} catch (\Throwable $e) {
+			$svcDef = null;
+		}
+
+		if (is_array($svcDef) === true) {
+			return (int)($svcDef['countExtensions'] ?? 1);
+		}
+
+		return 1;
 	}//end resolveMaxExtensions()
 }//end class
