@@ -82,7 +82,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "right",
 						"title": "All your cases",
-						"body": "You work from this list: every case in the organisation, open and closed.",
+						"body": "You work from this list: the open cases in your teams.",
 						"task": "Click All cases in the menu",
 						"target": {
 							"kind": "nav-item",
@@ -121,7 +121,7 @@
 						"optional": true,
 						"allowManualNext": true,
 						"title": "Where case types come from",
-						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look. You do not need to make one: dossiq ships with a set of them.",
 						"task": "Open Advanced, then Case types",
 						"target": {
 							"kind": "nav-item",
@@ -169,8 +169,8 @@
 						"id": "done",
 						"sinceVersion": "0.2.17",
 						"placement": "top",
-						"title": "Your first case is on the board",
-						"body": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
+						"title": "Your first case is on the dashboard",
+						"body": "The dashboard tracks progress as cases move through it. The documentation covers the rest.",
 						"task": "Open the documentation",
 						"target": {
 							"kind": "selector",
@@ -916,7 +916,7 @@
 						"id": "recent-cases",
 						"type": "object-table",
 						"title": "Recently opened",
-						"_note": "case-number-and-favourites, row 2.19. What this reader opened last, over OpenRegister's `_recent` lens, which carries its own order (last view descending) and keeps the last hundred. Deliberately NO `order` of its own: an order declared here would override the one thing the lens is for and the tile would answer a different question from its chip. Deliberately no status filter either, for the reason the chip carries none: this answers 'what was I just looking at'.",
+						"_note": "case-number-and-favourites, row 2.19. What this reader opened last, over OpenRegister's `_recent` lens, which carries its own order (last view descending) and keeps the last hundred. Deliberately NO `order` of its own: an order declared here would override the one thing the lens is for and the tile would answer a different question from its chip. Deliberately no status filter either, for the reason the chip carries none: this answers 'what was I just looking at'. The muted date column reads `@self.viewedAt`, the ISO 8601 moment this reader last opened the case, which the `_recent` lens adds to the metadata envelope of each object it returns. When OpenRegister reports `@self.lenses.recent.available: false`, CnDataTable shows the matching `lensReasonTexts` entry instead of `emptyText` (nextcloud-vue#1421); the values are English source keys, translated through dossiq's own catalogue like `emptyText`.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -934,6 +934,11 @@
 								{
 									"key": "title",
 									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "@self.viewedAt",
+									"formatter": "daysSince",
+									"cellClass": "cn-cell--muted cn-cell--end"
 								}
 							],
 							"rowRoute": "CaseDetail",
@@ -946,7 +951,12 @@
 							"viewAllLabel": "View all",
 							"hideHeader": true,
 							"borderless": true,
-							"emptyText": "Cases you open show up here"
+							"emptyText": "Cases you open show up here",
+							"lensReasonTexts": {
+								"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",
+								"recent.anonymous": "Sign in to see the cases you opened recently.",
+								"recent.read-history-unavailable": "Your recent cases are not available right now."
+							}
 						}
 					},
 					{
@@ -2701,7 +2711,11 @@
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
 						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers. scan-verdict-on-the-row: `columns` also declares Scan, over `scanVerdict` and the formatter of the same name in src/services/formatters.js, read by the same `files-browser-columns` WHEN IT LANDS and inert for the same reason. document-acts-reach-a-surface: `rowActions` also carries Versions (VersionHistoryPanel), Mark as final and Change confidentiality (BulkDocumentActionDialog in its two mutating modes). All three were registered in src/registry.js and named by NO manifest action from 2026-09-13, when the Documents tab that opened them was retired and this leaf replaced it; tests/vitest/registryOrphans.spec.js fails on a modal no page opens, so the next retirement says so on its own branch. CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto an `open-modal` action's props, which is how each dialog knows which file it was opened on; `caseId` is the unresolved `@objectId` token here, exactly as it is for every other open-modal on this page, and each dialog falls back to the route. THERE IS NO `bulkActions` ENTRY AND THAT IS DELIBERATE: CnFilesBrowser carries no selection bar (its own header note says the Files app's list, its selection bar and its inline rename are bound to the Files router and cannot be mounted here), so a `bulkActions` prop declared on this widget would be read by nothing and would be a second dark declaration of the kind this change exists to end. The three acts are offered per row until the library carries a selection; the whole case file as one download is the CaseDetail Export dossier header action. inbound-messages-consume-integriq: `rowActions` also carries Read as a message, a FUNCTION handler rather than a declarative act, because CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and holds no `api-call`, so a declared POST would render a menu item that does nothing when clicked. It is offered on EVERY file row and not only on a `.eml` or `.msg`, because the browser has no per-row condition at all; the handler checks the name and answers with a sentence rather than being absent, and the SERVER decides what a file really is, since integriq's reader looks at the bytes and a `.msg` renamed `.eml` still parses as what it is. dossiq parses nothing itself: reading MS-CFB in two apps is two answers to one question and the one in integriq is tested. The original file is never moved or deleted, because it is the record and an archive that kept only the reading cannot answer a question about the bytes later on. dossiq scans nothing: the verdict is whatever `files_antivirus` recorded for the node, read through GET /api/files/{fileId}/scan, and an instance with no scanner reads Not scanned rather than clean (ADR-102).",
+						"_dropNote": "files-dropped-on-the-list (boards DqZaakDocumenten and DqZaakDocumentenSlepen, design-system#148): `uploadButton` puts Add files beside the New menu as the primary button, `dropOverlay` draws Drop to add over the list while files are dragged onto it and announces it in a polite live region, `dropHint` puts Or drag files onto this list. under it. All three are nextcloud-vue CnFilesBrowser opt-ins (nextcloud-vue#1419) whose words, and their Dutch, come from the library: a label declared here would reach the component untranslated. The drop is never the only way in: the button stays, and the New menu keeps its upload entry. Carried since nextcloud-vue 2.77.0: the tabs widget renders this leaf bare, so the props reach CnFilesTab, which hands them to CnFilesBrowser.",
 						"props": {
+							"uploadButton": true,
+							"dropOverlay": true,
+							"dropHint": true,
 							"rowActions": [
 								{
 									"id": "document-properties",
@@ -5226,25 +5240,32 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "wooRefusalGround",
+				"showTitle": true,
 				"_note": "woo-refusal-grounds-list REQ-WRG-003. The settled grounds of design D-2 (decision 133). Sorted by code with the broader ground beside each, so the list reads as the tree: 5.1, then 5.1.1 and its letters, then 5.1.2 and its letters. Add creates a narrower ground under a parent code; editing the status to retired is how a ground is retired, because WooRefusalGroundDeleteGuard refuses a delete while anything cites it. No board on identity.conduction.nl/screens draws this page.",
 				"columns": [
 					{
-						"key": "code"
+						"key": "code",
+						"label": "Code"
 					},
 					{
-						"key": "label"
+						"key": "label",
+						"label": "Ground"
 					},
 					{
-						"key": "parent"
+						"key": "parent",
+						"label": "Broader ground"
 					},
 					{
-						"key": "kind"
+						"key": "kind",
+						"label": "Kind"
 					},
 					{
-						"key": "citable"
+						"key": "citable",
+						"label": "Citable"
 					},
 					{
-						"key": "status"
+						"key": "status",
+						"label": "Status"
 					}
 				],
 				"defaultSort": "code",

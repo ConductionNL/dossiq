@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 class WorkQueueServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

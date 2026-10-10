@@ -72,8 +72,11 @@
 					</td>
 				</tr>
 				<tr v-if="!rows.length">
-					<td colspan="5" class="shipped-configuration__empty">
-						{{ t('dossiq', 'Nothing has been seeded yet.') }}
+					<td
+						colspan="5"
+						class="shipped-configuration__empty"
+						data-testid="shipped-configuration-empty">
+						{{ emptyText }}
 					</td>
 				</tr>
 			</tbody>
@@ -89,7 +92,11 @@
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
-import { adoptShipped, listShipped } from '../../services/starterApi.js'
+import {
+	adoptShipped,
+	countObjects,
+	listShipped,
+} from '../../services/starterApi.js'
 import {
 	adoptionLosesLocalChange,
 	hasUpdate,
@@ -103,6 +110,7 @@ export default {
 		return {
 			schema: 'caseType',
 			rows: [],
+			present: null,
 			loadError: '',
 			schemas: [
 				{ slug: 'caseType', label: t('dossiq', 'Case types') },
@@ -111,6 +119,30 @@ export default {
 				{ slug: 'resultType', label: t('dossiq', 'Results') },
 			],
 		}
+	},
+
+	computed: {
+		/**
+		 * What the empty table says, which depends on what the register holds.
+		 *
+		 * The ledger only records what a starter set seeded. Objects that came
+		 * with the register import are not in it, so "nothing seeded" beside
+		 * 24 case types was untrue (round-4 cloud check).
+		 *
+		 * @return {string} The sentence.
+		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		 */
+		emptyText() {
+			if (typeof this.present === 'number' && this.present > 0) {
+				return t(
+					'dossiq',
+					'The register holds {count} of these. None came from a starter set, so there is no shipped version to compare with.',
+					{ count: this.present },
+				)
+			}
+
+			return t('dossiq', 'Nothing has been seeded yet.')
+		},
 	},
 
 	mounted() {
@@ -128,11 +160,16 @@ export default {
 				const data = await listShipped(this.schema)
 				this.rows = Array.isArray(data.items) ? data.items : []
 				this.loadError = ''
+				this.present = null
+				if (this.rows.length === 0) {
+					this.present = await countObjects(this.schema)
+				}
 			} catch {
 				// The list is emptied on purpose. Leaving the previous rows on
 				// screen beside an error message would read as the current
 				// state of the register, which is exactly what it is not.
 				this.rows = []
+				this.present = null
 				this.loadError = t(
 					'dossiq',
 					'Could not read the shipped configuration',
@@ -230,7 +267,7 @@ export default {
 }
 
 .shipped-configuration__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 </style>

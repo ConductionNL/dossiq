@@ -249,17 +249,17 @@ export default {
 
 .mandaat-import__counter--good {
 	background: var(--color-success);
-	color: var(--color-main-background);
+	color: var(--color-success-text);
 }
 
 .mandaat-import__counter--warn {
 	background: var(--color-warning);
-	color: var(--color-main-background);
+	color: var(--color-warning-text);
 }
 
 .mandaat-import__counter--alert {
 	background: var(--color-error);
-	color: var(--color-main-background);
+	color: var(--color-error-text);
 }
 
 .mandaat-import__counter--neutral {

@@ -99,11 +99,13 @@ class CaseLifecycleService {
 	 *
 	 * @return array{suspended: bool, canSuspend: bool, canResume: bool,
 	 *               canExtend: bool, canReopen: bool, isFinalStatus: bool,
-	 *               extensionCount: int, deadline: string, statusName: string}
+	 *               extensionCount: int, deadline: string, statusName: string,
+	 *               caseType: string}
 	 *
 	 * @throws RuntimeException When the case cannot be read
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
 	 */
 	public function state(string $caseId): array {
 		$case = $this->requireCase(caseId: $caseId);
@@ -122,6 +124,7 @@ class CaseLifecycleService {
 			'extensionCount' => (int)($case['extensionCount'] ?? 0),
 			'deadline' => (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? '')),
 			'statusName' => $this->store->lookupStatusName(statusTypeId: (string)($case['status'] ?? '')),
+			'caseType' => (string)($case['caseType'] ?? ''),
 		];
 	}//end state()
 
