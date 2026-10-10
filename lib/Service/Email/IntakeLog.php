@@ -269,7 +269,7 @@ class IntakeLog {
 	 *
 	 * @return string The entry id, or '' when nothing was stored.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function recordChannelMessage(
 		string $channel,
@@ -338,7 +338,7 @@ class IntakeLog {
 	 *
 	 * @return array<string, mixed>|null The entry, or null when this message is new.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function findChannelEntry(string $channel, string $channelMessageId): ?array {
 		if (trim($channel) === '' || trim($channelMessageId) === '') {
