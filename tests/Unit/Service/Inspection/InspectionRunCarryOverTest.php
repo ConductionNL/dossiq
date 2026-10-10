@@ -99,7 +99,7 @@ final class InspectionRunCarryOverTest extends TestCase {
 
 		$this->assertSame('active', $data['state']);
 		$this->assertArrayNotHasKey('outcome', $data);
-		$this->assertSame(['party-7', 'external'], [$data['assignee'], $data['performerType']]);
+		$this->assertSame(['party:party-7', 'external'], [$data['assignee'], $data['performerType']]);
 		$this->assertSame('t-9', $data['templateId']);
 		$this->assertSame(4, $data['templateVersion']);
 		$this->assertSame('Brand', $data['templateSnapshot']['name']);

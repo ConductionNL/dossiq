@@ -165,3 +165,33 @@ submission writes is what the results endpoint returns.
 - **WHEN** a permitted caller submits an inspection result for a case
 - **THEN** `GET /api/vth/cases/{id}/inspection-results` SHALL return that
   result for the same case
+
+## ADDED Requirements
+
+### Requirement: An external inspector completes a checklist task from the portal
+
+A checklist task assigned to a portal party (performer type `external`, assignee `party:` + the party's portal reference) SHALL be completed through dossiq's endpoint `POST /api/portal/checklist-tasks`, forwarded by portaliq with its signed `X-Portal-Subject` assertion and naming the task as `taskId`. Dossiq SHALL take the party only from the verified assertion, SHALL accept the `inspector` audience only, and SHALL let OpenRegister's portal task seam compare the task's stored party reference with that party before anything is checked or written. The answers SHALL be checked against the checklist frozen on the task, and the task SHALL be completed with the outcome the checklist's rule gives, never one the request names. A task that carries no checklist SHALL be refused. The portal's inspector contribution SHALL offer this as its one write; the update on `inspectionChecklistRun` SHALL no longer be offered. An open external run carried over from the older schemas SHALL be assigned to `party:` + its `assignedInspectorRef`, so it reaches the inspector's portal task list.
+
+#### Scenario: The assigned inspector submits a checklist
+
+- **GIVEN** an open checklist task assigned to `party:insp-7` with a required item `q1`
+- **WHEN** portaliq forwards `{taskId, items: [{itemId: q1, value: ja}]}` with an assertion for `insp-7`, audience `inspector`
+- **THEN** the task is completed with the answers as its responses and the rule's outcome, and the run is returned
+
+#### Scenario: Another party knows the task id
+
+- **GIVEN** the same task
+- **WHEN** a forward arrives with an assertion for `insp-8`
+- **THEN** the answer is 404 "No such task" and the task stays open
+
+#### Scenario: A required item is left open
+
+- **WHEN** the assigned inspector submits without `q1`
+- **THEN** the answer is 422 naming the item, and the task stays open
+
+#### Scenario: No valid assertion
+
+- **WHEN** the forward carries no valid assertion, or a resident's
+- **THEN** the answer is 401 (counted against brute-force protection) or 403, and nothing runs
+
+@e2e exclude the portal forward needs portaliq, a signed assertion and an external task on a live instance (live pass, decision 139); covered by PortalChecklistTaskControllerTest and InspectionRunPortalTest.

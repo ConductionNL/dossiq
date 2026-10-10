@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Inspection;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
+use ReflectionClass;
 use RuntimeException;
 use Throwable;
 
@@ -61,6 +62,20 @@ class InspectionRunService {
 	 * @var string
 	 */
 	public const TASK_SERVICE = 'OCA\\OpenRegister\\Service\\Task\\TaskService';
+
+	/**
+	 * OpenRegister's portal task seam, by name.
+	 *
+	 * @var string
+	 */
+	public const PORTAL_TASK_SERVICE = 'OCA\\OpenRegister\\Service\\Portal\\PortalTaskService';
+
+	/**
+	 * OpenRegister's value object for a verified portal subject, by name.
+	 *
+	 * @var string
+	 */
+	public const PORTAL_SUBJECT = 'OCA\\OpenRegister\\Service\\Portal\\PortalSubject';
 
 	/**
 	 * How many runs one case answers.
@@ -136,6 +151,60 @@ class InspectionRunService {
 
 		return $this->asRun(task: $completed->jsonSerialize());
 	}//end submit()
+
+	/**
+	 * Complete an open checklist task for the portal party it is assigned to.
+	 *
+	 * OpenRegister's portal task seam does the party check: `show()` answers
+	 * only a task whose performer type is external and whose stored assignee
+	 * is this subject's party reference, and `complete()` checks it again
+	 * inside the task layer, audits a denial and refuses a closed task. What
+	 * this adds is the checklist's own rule: the answers are checked against
+	 * the template frozen on the task, and the outcome is the rule's verdict,
+	 * never a word the caller sends.
+	 *
+	 * @param string               $subjectRef The verified portal subject.
+	 * @param string               $taskUuid   The task.
+	 * @param array<string, mixed> $payload    The request body (`items`, `remarks`).
+	 *
+	 * @return array<string, mixed> The run, as {@see runsForCase()} answers one.
+	 *
+	 * @throws RuntimeException When the seam is absent, the task carries no checklist, or the run breaks a rule.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-an-external-inspector-completes-a-checklist-task-from-the-portal
+	 */
+	public function completeForParty(string $subjectRef, string $taskUuid, array $payload): array {
+		$portal = $this->settingsService->getOpenRegisterClass(class: self::PORTAL_TASK_SERVICE);
+		if ($portal === null || class_exists(self::PORTAL_SUBJECT) === false) {
+			throw new RuntimeException('The OpenRegister portal task layer is not available');
+		}
+
+		// Built by name: OpenRegister is optional, so its value object cannot
+		// be named as a type here.
+		$subject = (new ReflectionClass(self::PORTAL_SUBJECT))->newInstance($subjectRef);
+		$task = $portal->show($subject, $taskUuid);
+		$snapshot = $task->jsonSerialize()['templateSnapshot'] ?? null;
+		if (is_array($snapshot) === false || $snapshot === []) {
+			throw new RuntimeException('This task has no checklist to complete');
+		}
+
+		$answers = $this->answers->fromPayload(payload: $payload);
+		$violations = $this->answers->violations(snapshot: $snapshot, answers: $answers);
+		if ($violations !== []) {
+			throw new RuntimeException(implode(' ', $violations));
+		}
+
+		$completed = $portal->complete(
+			$subject,
+			$taskUuid,
+			$answers,
+			$this->stringOrNull(value: ($payload['remarks'] ?? null)),
+			[],
+			$this->answers->outcome(snapshot: $snapshot, answers: $answers)
+		);
+
+		return $this->asRun(task: $completed->jsonSerialize());
+	}//end completeForParty()
 
 	/**
 	 * Every run on a case, newest last.

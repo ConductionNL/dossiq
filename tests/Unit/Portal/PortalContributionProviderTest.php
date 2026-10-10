@@ -885,17 +885,14 @@ class PortalContributionProviderTest extends TestCase {
 		foreach ($contribution['collections'] as $collection) {
 			$this->assertSame('assignedInspectorRef', $collection['scopeField']);
 		}
-		// The run submit ships as an UPDATE on a run the inspector already
-		// holds, which is what removes the write-IDOR rather than guarding it:
-		// the client sends no `case` and no `template` at all, and the status
-		// is the server's.
+		// The run is an OpenRegister task: the one write forwards to dossiq's
+		// endpoint, which lets the portal seam check the stored party
+		// reference. The client sends no `case`, no `template`, no outcome.
 		$actions = $contribution['actions'];
-		$this->assertSame(['submitChecklistRun'], array_column($actions, 'id'));
-		$this->assertSame('update', $actions[0]['type']);
-		$this->assertSame('assignedInspectorRef', $actions[0]['scopeField']);
-		$this->assertNotContains('case', $actions[0]['fields']);
-		$this->assertNotContains('template', $actions[0]['fields']);
-		$this->assertSame(['status' => 'submitted'], $actions[0]['set']);
+		$this->assertSame(['completeChecklistTask'], array_column($actions, 'id'));
+		$this->assertSame('/index.php/apps/dossiq/api/portal/checklist-tasks', $actions[0]['endpoint']);
+		$this->assertArrayNotHasKey('type', $actions[0]);
+		$this->assertSame(['taskId', 'items', 'remarks'], $actions[0]['fields']);
 	}
 
 	/**

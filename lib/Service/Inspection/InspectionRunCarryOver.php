@@ -179,6 +179,13 @@ class InspectionRunCarryOver {
 
 		$external = trim((string)($object['assignedInspectorRef'] ?? ''));
 		if ($external !== '') {
+			// OpenRegister's portal seam compares the stored assignee, whole,
+			// with `party:` + the portal subject. Without the prefix an open
+			// external run would never reach the inspector's task list.
+			if (str_starts_with($external, 'party:') === false) {
+				$external = 'party:' . $external;
+			}
+
 			return ['assignee' => $external, 'performerType' => 'external'];
 		}
 

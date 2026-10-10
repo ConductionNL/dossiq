@@ -816,6 +816,8 @@ $extra = [
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
+    // A portal party completes the checklist task assigned to them (inspection-checklists-onto-task 4.3).
+    ['name' => 'portalChecklistTask#complete', 'url' => '/api/portal/checklist-tasks', 'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are

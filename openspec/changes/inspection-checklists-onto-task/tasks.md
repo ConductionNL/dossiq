@@ -83,9 +83,25 @@ delta specs and validates strictly.
         template, since the leaf finds the cached template by id
         (`testPlannedItemsNamingAFoldedSourceAreRepointed`). Open: bump
         `@conduction/nextcloud-vue` to the release carrying #1454.
-  - [ ] 4.3 Portal inspector on OpenRegister's portal task seam: external
+  - [x] 4.3 Portal inspector on OpenRegister's portal task seam: external
         runs as `performerType: external` tasks; a dossiq endpoint action
         completes one after checking the stored party reference.
+        `lib/Controller/PortalChecklistTaskController.php`
+        (`POST /api/portal/checklist-tasks`, `taskId` in the body, audience
+        `inspector`) and `InspectionRunService::completeForParty()`, which
+        reads the task through OpenRegister's `PortalTaskService::show()`
+        (party check), checks the answers against the frozen checklist and
+        completes through `PortalTaskService::complete()` with the rule's
+        outcome. The inspector contribution's one write is now the endpoint
+        action `completeChecklistTask`; `submitChecklistRun` is gone (it
+        wrote a schema nothing reads since 4.2). The carry-over assigns open
+        external runs to `party:` + `assignedInspectorRef`. Tests:
+        `PortalChecklistTaskControllerTest`, `InspectionRunPortalTest`,
+        `testInspectorContributionShape`, `InspectionRunCarryOverTest`. The
+        two read collections stay until step 5. Open outside dossiq: portaliq
+        has no way yet to open an app's endpoint action from a task in
+        "Mijn taken" (its proxy completes through OpenRegister's seam
+        directly, which skips the checklist rule).
   - [ ] 4.4 Live pass (decision 139).
 - [ ] 5 **Remove.** One release after step 4. Retire the six schemas and `checklistResult`, the
       immutability listener, the stack C template paths and the portal

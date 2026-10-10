@@ -755,7 +755,10 @@ class PortalContributionProvider {
 	 *  - `checklistRuns` (`inspectionChecklistRun`, scope `assignedInspectorRef`)
 	 *    — their checklist runs and lifecycle/result state.
 	 *
-	 * One write ships: `submitChecklistRun`. It is an UPDATE on a run the
+	 * One write ships: `completeChecklistTask`, an endpoint action that
+	 * completes the OpenRegister checklist task assigned to the inspector
+	 * (inspection-checklists-onto-task 4.3, design D6). It replaced the
+	 * `submitChecklistRun` update described below. That was an UPDATE on a run the
 	 * inspector is already assigned, not a create, and that is what removes the
 	 * write-IDOR the submit was deferred over rather than guarding it. The old
 	 * shape had the client send `case` and `template`, which the flat writer
@@ -817,25 +820,25 @@ class PortalContributionProvider {
 			],
 			'actions' => [
 				[
-					'id' => 'submitChecklistRun',
-					'type' => 'update',
+					// THE RUN IS AN OPENREGISTER TASK NOW (decision 175). The
+					// older update on `inspectionChecklistRun` wrote a schema
+					// nothing reads since runs moved onto Task, so it is gone.
+					// This forwards the answers to dossiq, which lets
+					// OpenRegister's portal seam check the task's stored party
+					// reference against the assertion, checks the answers
+					// against the checklist frozen on the task and completes it
+					// with the rule's outcome. No `type`, `register` or
+					// `schema`: the flat writer never takes it for its own.
+					'id' => 'completeChecklistTask',
 					'label' => 'Checklist indienen',
-					'register' => self::REGISTER,
-					'schema' => 'inspectionChecklistRun',
-					'scopeField' => 'assignedInspectorRef',
+					'endpoint' => '/index.php/apps/dossiq/api/portal/checklist-tasks',
+					'method' => 'POST',
 					'minTrust' => 'low',
-					'fields' => [
-						'responses',
-						'overallResult',
-						'followUpType',
-						'photos',
-						'completedAt',
-						'status',
-					],
-					// The transition is the server's. `status` is whitelisted only
-					// so this may write it; the value comes from here and never from
-					// the request.
-					'set' => ['status' => 'submitted'],
+					'fields' => ['taskId', 'items', 'remarks'],
+					'requiredFields' => ['taskId', 'items'],
+					'fieldConfigs' => ['taskId' => ['visible' => false]],
+					'submitLabel' => 'Checklist indienen',
+					'successMessage' => 'Uw checklist is ingediend.',
 				],
 			],
 			'notifications' => [],
