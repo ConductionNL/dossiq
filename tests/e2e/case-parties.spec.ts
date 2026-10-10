@@ -32,10 +32,12 @@ import {
 	adoptableCaseTypes,
 	cleanupRunObjects,
 	createObject,
+	ensureTeam,
 	getRequestToken,
 	listObjects,
 	objectId,
 	REGISTER,
+	removeTeams,
 	RUN_PREFIX,
 	seedCase,
 	showObject,
@@ -263,17 +265,15 @@ test.describe('Case detail — the Parties tab', () => {
 				caseType: caseTypeId,
 				genericRole: 'advisor',
 			}),
-			createObject(api, token, 'organisatieRol', {
-				roleName: `${RUN_PREFIX} Team Permits`,
-				roleType: 'ambtelijk',
-				department: 'Ruimte',
-				team: 'Permits',
-			}),
+			// A team is a Nextcloud group (one-team-model), not a register row.
+			ensureTeam(api, token, 'Team Permits'),
 		])
 		handlerTypeId = objectId(handlerType)
 		advisorTypeId = objectId(advisorType)
-		teamId = objectId(team)
-		teamName = String(team.roleName)
+		teamId = team.id
+		// The Team column shows the group id itself, so that is the text the
+		// row is asserted to carry.
+		teamName = team.id
 
 		const seeded = await Promise.all([
 			seedCase(api, token, {
@@ -347,7 +347,8 @@ test.describe('Case detail — the Parties tab', () => {
 		// cannot be removed by a user; they carry the family prefix, so
 		// global-setup's residue sweep takes them before the next run rather
 		// than this teardown failing on a 403 it was never going to win.
-		await cleanupRunObjects(api, token, ['role', 'roleType', 'organisatieRol'])
+		await cleanupRunObjects(api, token, ['role', 'roleType'])
+		await removeTeams(api)
 		await api.dispose()
 	})
 
@@ -768,14 +769,16 @@ test.describe('Case detail — the Parties tab', () => {
 	test.describe('the team on a case and on a task', () => {
 		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
 		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
+		// @e2e openspec/specs/case-access-control/spec.md#the-cases-team-is-stored-as-a-group-id
+		// @e2e case-access-control::the-cases-team-is-stored-as-a-group-id
 		//
 		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
 		// citation is unverified. Each line names the break and the assertion
 		// that must redden; restore after.
 		//   src/manifest.json `case-core` include: drop "assignedGroup"
 		//     -> "the Data panel offers a Team field"
-		//   src/manifest.json Cases Team column: key "assignedGroup.roleName" -> "assignedGroup.x"
-		//     -> "the Team column must show the team picked on the case page, by name"
+		//   src/manifest.json Cases Team column: key "assignedGroup" -> "assignedGroup.x"
+		//     -> "the Team column must show the team picked on the case page"
 		test('a team picked on the case page is stored and shows in the Team column', async ({
 			page,
 		}) => {
@@ -808,22 +811,13 @@ test.describe('Case detail — the Parties tab', () => {
 			const editor = core.locator('.cn-object-data-widget__editor')
 			await expect(editor).toBeVisible({ timeout: 15_000 })
 
-			await editor.getByRole('combobox').first().click()
-			// The options are the `organisatieRol` rows. They are matched on the
-			// team's name OR its uuid: `organisatieRol` declares no name field,
-			// so OpenRegister names each row by its uuid and the picker lists
-			// uuids (reported with this change). The scenario's THENs are about
-			// what is STORED and what the index shows, and those are asserted
-			// below either way.
-			await page
-				.getByRole('option')
-				.filter({ hasText: new RegExp(`${teamName}|${teamId}`) })
-				.first()
-				.click({ timeout: 30_000 })
-			// Choosing the option IS the save: a relation field commits on
-			// selection and closes its editor, so there is no confirm button to
-			// press. Whether it saved is read off the stored case below, which
-			// is also what fails if a later widget version starts to need one.
+			// The team is a Nextcloud group id. nextcloud-vue's inline editor
+			// has no group picker yet (the create and edit dialogs do), so the
+			// Data panel edits the id as text and Enter commits it. What was
+			// STORED and what the index shows are asserted below either way.
+			const input = editor.locator('input').first()
+			await input.fill(teamId)
+			await input.press('Enter')
 
 			// The stored reference, not the rendered label.
 			await expect
@@ -860,7 +854,7 @@ test.describe('Case detail — the Parties tab', () => {
 			await expect(row).toHaveCount(1, { timeout: 30_000 })
 			await expect(
 				row,
-				'the Team column must show the team picked on the case page, by name',
+				'the Team column must show the team picked on the case page',
 			).toContainText(teamName, { timeout: 20_000 })
 		})
 
@@ -887,9 +881,8 @@ test.describe('Case detail — the Parties tab', () => {
 				hasText: `${RUN_PREFIX} Parties team`,
 			})
 			await expect(row).toHaveCount(1, { timeout: 30_000 })
-			// The NAME, not the uuid: the column reads `assignedGroup.roleName`
-			// off the reference OpenRegister expanded through `extend`. A bare
-			// $ref column renders the raw uuid, which looks like data.
+			// The group id: since one-team-model the column reads
+			// `assignedGroup` itself, which holds the Nextcloud group.
 			await expect(row).toContainText(teamName, { timeout: 20_000 })
 			await expect(row).toContainText(currentUser)
 			await expect(
@@ -1031,11 +1024,9 @@ test.describe('Case detail — the Parties tab', () => {
 			// on this instance with the bucket above present in the response,
 			// and re-checked 2026-09-12: nextcloud-vue#1110 fixes it upstream
 			// but the newest published version is 2.48.2, which this app pins
-			// and which still binds `resolvedSidebar.facets`. Two more
-			// presentation defects sit behind it: `organisatieRol` declares no
-			// name field, so OpenRegister labels the bucket with a shortened
-			// uuid rather than Team Permits, and the Team cell on the case
-			// page renders that uuid too.
+			// and which still binds `resolvedSidebar.facets`. Since
+			// one-team-model the bucket key is the group id, so the uuid label
+			// that used to sit behind it is gone.
 			//
 			// So the scenario's "lists Team Permits" half is still NOT proven
 			// on screen, and cannot be until dossiq takes a nextcloud-vue that

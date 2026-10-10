@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.3",
+    "version": "1.3.4",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -2443,7 +2443,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.11.0",
+        "version": "1.12.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2939,9 +2939,8 @@
           },
           "assignedGroup": {
             "type": "string",
-            "format": "uuid",
-            "$ref": "organisatieRol",
-            "description": "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.",
+            "referenceType": "nextcloud-group",
+            "description": "The team handling this case, a Nextcloud group. A team is an assignment, not a permission. A case can have a team, a handler, or both.",
             "title": "Team",
             "facetable": true
           },
@@ -10667,7 +10666,7 @@
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
         "type": "object",
@@ -10709,6 +10708,13 @@
             "type": "string",
             "title": "Team",
             "description": "Team to which this role belongs.",
+            "maxLength": 255
+          },
+          "ncGroupId": {
+            "type": "string",
+            "referenceType": "nextcloud-group",
+            "title": "Nextcloud group",
+            "description": "The Nextcloud group this role belongs to. Cases of this role move to this group. Leave it empty and nothing is guessed.",
             "maxLength": 255
           },
           "mandateLevel": {
