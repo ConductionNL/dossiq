@@ -57,12 +57,24 @@
       `deviatingPenaltyPaymentRegime`). Retire `WOODeadlineCheckJob`; remove its allowlist entry.
       NOTE: the WOO service owns its own notified-thresholds list — migrate it to
       `notificatiesVerstuurd`-style dedup consulted by the shared listener.
-- [ ] 2.2 **Bezwaar** — `Beschikking/BezwaarTermijnScheduler` + `BezwaarTermijnJob`: the
+- [x] 2.2 **Bezwaar** — `Beschikking/BezwaarTermijnScheduler` + `BezwaarTermijnJob`: the
       bezwaartermijn (6 weeks after bekendmaking, AWB 6:7) is anchor-shaped — arm with
       `anchorEvent: bekendmaking`, and use `supersede()` when the bekendmaking moves. Retire
       `BezwaarTermijnJob`; remove its allowlist entry. NOTE: the scheduler currently advances
       beschikking status from cron; that transition becomes a listener consuming the timer fire,
       keeping the state machine in `StateMachineService`.
+      Built 10 Oct (lane L7): `lib/Service/Beschikking/BezwaarArchiveTimer.php` arms one timer per
+      active `bezwaarTrigger`, anchored on the bekendmaking (`anchorEvent: bekendmaking`) and
+      breaching at the start of its `archiveDate`, the first day the job acted
+      (`archiveDate <= today`). A moved bekendmaking or archive date re-arms through cancel-then-
+      arm (the same supersede shape as the advice timer, rather than the engine's in-place
+      `supersede()`). The job's act moved to `BezwaarArchiveTrigger::process()`, which reads the
+      trigger FRESH so an objection registered after arming still prevents the archive, and
+      archives through `BeschikkingService::archive()` (its state machine). The scheduler never
+      advanced status itself on this path; the job did, and that is now the timer-fire listener
+      `BezwaarArchiveTimerFiredListener`. `BezwaarArchiveTimerListener` syncs on saves,
+      `lib/Repair/ArmBezwaarArchiveTimers.php` arms the triggers running at upgrade. Job, its two
+      tests and its allowlist entry are gone. Live check owed (live pass, decision 139).
 - [ ] 2.3 **DSO** — `DsoDeadlineJob` advances case status from cron: replace with an armed timer
       per DSO-zaak and a `FlowTimerFiredEvent` consumer that drives the SAME
       `StatusTransitionService` path a user action takes (no cron-only transition code). Retire

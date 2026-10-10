@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 use OCA\Dossiq\AppInfo\Registrar\TermijnTimerRegistrar;
 use OCA\Dossiq\Listener\AdviceTimerFiredListener;
 use OCA\Dossiq\Listener\AdviceTimerListener;
+use OCA\Dossiq\Listener\BezwaarArchiveTimerFiredListener;
+use OCA\Dossiq\Listener\BezwaarArchiveTimerListener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
@@ -41,7 +43,7 @@ use PHPUnit\Framework\TestCase;
 class TermijnTimerRegistrarTest extends TestCase {
 
 	/**
-	 * The term and advice timer listeners attach to their events.
+	 * The term, advice and bezwaartermijn timer listeners attach to their events.
 	 *
 	 * @return void
 	 */
@@ -61,6 +63,9 @@ class TermijnTimerRegistrarTest extends TestCase {
 			['OCA\OpenRegister\Event\FlowTimerFiredEvent', AdviceTimerFiredListener::class],
 			['OCA\OpenRegister\Event\ObjectCreatedEvent', AdviceTimerListener::class],
 			['OCA\OpenRegister\Event\ObjectUpdatedEvent', AdviceTimerListener::class],
+			['OCA\OpenRegister\Event\FlowTimerFiredEvent', BezwaarArchiveTimerFiredListener::class],
+			['OCA\OpenRegister\Event\ObjectCreatedEvent', BezwaarArchiveTimerListener::class],
+			['OCA\OpenRegister\Event\ObjectUpdatedEvent', BezwaarArchiveTimerListener::class],
 		] as $pair) {
 			self::assertContains(needle: $pair, haystack: $registered, message: implode(' -> ', $pair));
 		}

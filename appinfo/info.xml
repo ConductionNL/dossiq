@@ -170,7 +170,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             having done it.
         -->
         <job>OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob</job>
-        <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
+        <!--
+            BezwaarTermijnJob is RETIRED: an active bezwaarTrigger now carries
+            an armed OpenRegister FlowTimer anchored on the bekendmaking
+            (Service/Beschikking/BezwaarArchiveTimer.php); its breach archives
+            the beschikking through BezwaarArchiveTrigger
+            (termijnbewaking-op-engine-timers 2.2).
+        -->
         <!--
             pause-reason-with-chasing REQ-TERM-011: a pause reason declares its
             own reminder interval and budget, and the engine rung armed with the
@@ -624,6 +630,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  AdviceDeadlineJob retired, expiring the overdue ones.
                  Supersedes, so a second run arms nothing twice. -->
             <step>OCA\Dossiq\Repair\ArmAdviceTimers</step>
+            <!-- Arms the bezwaartermijn timer of every trigger active before
+                 BezwaarTermijnJob retired, handling the ones already due.
+                 Supersedes, so a second run arms nothing twice. -->
+            <step>OCA\Dossiq\Repair\ArmBezwaarArchiveTimers</step>
             <!-- one-term-engine (REQ-OTE-08): every case's deadline is written
                  from its statutory term, through the same mirror the term
                  engine uses when a term moves. Cases saved before that carry
@@ -769,6 +779,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateCommitteesToDecidiq        raises existing committees; none are seeded
               ArmTermijnEngineTimers            arms existing TermijnInstances; none exist yet
               ArmAdviceTimers                   arms existing open advice requests; none exist yet
+              ArmBezwaarArchiveTimers           arms existing bezwaar triggers; none exist yet
               ReconcileCaseDeadlinesWithTerms   writes existing case deadlines from their terms; none exist yet
               RetireOriRegister                 retires a register a fresh install never had
               FoldCasePropertiesOntoCase        backfill over existing cases

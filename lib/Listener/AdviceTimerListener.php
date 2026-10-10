@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Listener\Support\SavedObjectPayload;
 use OCA\Dossiq\Service\Advice\AdviceTimer;
 use OCA\Dossiq\Service\AdviceService;
 use OCA\Dossiq\Service\SettingsService;
@@ -51,6 +52,7 @@ use Throwable;
  * @template-implements IEventListener<Event>
  */
 class AdviceTimerListener implements IEventListener {
+	use SavedObjectPayload;
 
 	/**
 	 * The config key naming the adviesAanvraag schema.
@@ -86,15 +88,10 @@ class AdviceTimerListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		try {
-			$advice = $this->arrayOf(entity: $this->call(event: $event, method: 'getObject') ?? $this->call(event: $event, method: 'getNewObject'));
-			if ($advice === null || $this->isAdviceRequest(object: $advice) === false) {
-				return;
-			}
-
-			$before = $this->arrayOf(entity: $this->call(event: $event, method: 'getOldObject'));
-			if ($before !== null
-				&& (string) ($before['status'] ?? '') === (string) ($advice['status'] ?? '')
-				&& (string) ($before['deadline'] ?? '') === (string) ($advice['deadline'] ?? '')
+			$advice = $this->savedObject(event: $event);
+			if ($advice === null
+				|| $this->inSchema(object: $advice, configured: (string) $this->settingsService->getConfigValue(self::SCHEMA_CONFIG_KEY)) === false
+				|| $this->unchanged(before: $this->previousObject(event: $event), after: $advice, fields: ['status', 'deadline']) === true
 			) {
 				return;
 			}
@@ -106,64 +103,4 @@ class AdviceTimerListener implements IEventListener {
 			$this->logger->warning('Dossiq advice: the advice timer could not be synced: '.$e->getMessage());
 		}
 	}//end handle()
-
-	/**
-	 * Whether the object is an adviesAanvraag.
-	 *
-	 * @param array<string, mixed> $object The object payload.
-	 *
-	 * @return bool
-	 */
-	private function isAdviceRequest(array $object): bool {
-		$configured = (string) $this->settingsService->getConfigValue(self::SCHEMA_CONFIG_KEY);
-		if ($configured === '') {
-			return false;
-		}
-
-		$candidate = (string) ($object['@self']['schema'] ?? ($object['schema'] ?? ''));
-
-		return $candidate !== '' && ($candidate === $configured || str_ends_with($candidate, '/'.$configured));
-	}//end isAdviceRequest()
-
-	/**
-	 * Call an event getter when the event has it.
-	 *
-	 * @param Event  $event  The event.
-	 * @param string $method The getter.
-	 *
-	 * @return mixed The value, or null.
-	 */
-	private function call(Event $event, string $method): mixed {
-		if (method_exists($event, $method) === false) {
-			return null;
-		}
-
-		return $event->{$method}();
-	}//end call()
-
-	/**
-	 * An entity or array as the object's array, with a top-level id.
-	 *
-	 * @param mixed $entity The entity.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function arrayOf(mixed $entity): ?array {
-		$data = null;
-		if (is_array($entity) === true) {
-			$data = $entity;
-		} else if (is_object($entity) === true && method_exists($entity, 'jsonSerialize') === true) {
-			$serialized = $entity->jsonSerialize();
-			if (is_array($serialized) === true) {
-				$data = $serialized;
-			}
-		}
-
-		if ($data === null) {
-			return null;
-		}
-
-		$data['id'] = (string) ($data['id'] ?? ($data['@self']['id'] ?? ''));
-		return $data;
-	}//end arrayOf()
 }//end class

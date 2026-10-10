@@ -80,6 +80,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateCommitteesToDecidiq' => 'raises existing committees; a fresh install seeds none',
 		'ArmTermijnEngineTimers' => 'arms existing TermijnInstances; none exist yet',
 		'ArmAdviceTimers' => 'arms existing open advice requests; none exist yet',
+		'ArmBezwaarArchiveTimers' => 'arms existing bezwaar triggers; none exist yet',
 		'ReconcileCaseDeadlinesWithTerms' => 'writes existing case deadlines from their terms; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',
 		'RewriteRetiredFlowNodes' => 'rewrites stored flows; a fresh install has none',

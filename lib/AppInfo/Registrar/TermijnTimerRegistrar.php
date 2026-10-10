@@ -32,6 +32,8 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\AdviceTimerFiredListener;
 use OCA\Dossiq\Listener\AdviceTimerListener;
+use OCA\Dossiq\Listener\BezwaarArchiveTimerFiredListener;
+use OCA\Dossiq\Listener\BezwaarArchiveTimerListener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Listener\TermStatusClockListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -78,6 +80,22 @@ class TermijnTimerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatedEvent::class,
 			listener: AdviceTimerListener::class
+		);
+
+		// The bezwaartermijn: its breach archives the beschikking (or, with an
+		// objection, only switches the trigger off), and every save that moves
+		// a trigger's dates or switch re-syncs it.
+		$context->registerEventListener(
+			event: FlowTimerFiredEvent::class,
+			listener: BezwaarArchiveTimerFiredListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: BezwaarArchiveTimerListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: BezwaarArchiveTimerListener::class
 		);
 
 		// A term runs only in the statuses it declares, so the clock is
