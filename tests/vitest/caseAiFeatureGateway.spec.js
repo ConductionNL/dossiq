@@ -25,7 +25,8 @@ vi.mock('@nextcloud/router', () => ({
 	generateUrl: (path, params = {}) => path.replace('{slug}', params.slug ?? ''),
 }))
 vi.mock('@nextcloud/l10n', () => ({
-	translate: (app, text, vars = {}) => text.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match),
+	translate: (app, text, vars = {}) =>
+		text.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match),
 }))
 
 describe('caseAiFeatureGateway', () => {
@@ -35,17 +36,37 @@ describe('caseAiFeatureGateway', () => {
 
 	it('refuses a run without a usable reference before any request', async () => {
 		for (const reference of [undefined, '', '  ', 'besluit.pdf']) {
-			await expect(runFeatureOnDocument({ feature: 'document-summary', documentReference: reference, instruction: 'Vat samen' }))
-				.rejects.toMatchObject({ name: 'AiFeatureRefusal', gate: MISSING_REFERENCE, feature: 'document-summary' })
+			await expect(
+				runFeatureOnDocument({
+					feature: 'document-summary',
+					documentReference: reference,
+					instruction: 'Vat samen',
+				}),
+			).rejects.toMatchObject({
+				name: 'AiFeatureRefusal',
+				gate: MISSING_REFERENCE,
+				feature: 'document-summary',
+			})
 		}
 
 		expect(axios.post).not.toHaveBeenCalled()
 	})
 
 	it('carries the reference with the request to hermiq', async () => {
-		axios.post.mockResolvedValue({ data: { feature: 'document-summary', documentReference: '42', output: 'Verleend.', notices: [] } })
+		axios.post.mockResolvedValue({
+			data: {
+				feature: 'document-summary',
+				documentReference: '42',
+				output: 'Verleend.',
+				notices: [],
+			},
+		})
 
-		const result = await runFeatureOnDocument({ feature: 'document-summary', documentReference: 42, instruction: 'Vat samen' })
+		const result = await runFeatureOnDocument({
+			feature: 'document-summary',
+			documentReference: 42,
+			instruction: 'Vat samen',
+		})
 
 		expect(axios.post).toHaveBeenCalledWith(
 			'/apps/hermiq/api/ai-features/document-summary/run-on-document',
@@ -54,11 +75,19 @@ describe('caseAiFeatureGateway', () => {
 		expect(result.output).toBe('Verleend.')
 	})
 
-	it('turns a gate refusal into a refusal carrying hermiq\'s gate and sentence', async () => {
-		axios.post.mockRejectedValue({ response: { status: 422, data: { error: 'Refused by the redaction check', gate: 'redaction' } } })
+	it("turns a gate refusal into a refusal carrying hermiq's gate and sentence", async () => {
+		axios.post.mockRejectedValue({
+			response: {
+				status: 422,
+				data: { error: 'Refused by the redaction check', gate: 'redaction' },
+			},
+		})
 
-		const refusal = await runFeatureOnDocument({ feature: 'document-summary', documentReference: '42', instruction: 'Vat samen' })
-			.catch((error) => error)
+		const refusal = await runFeatureOnDocument({
+			feature: 'document-summary',
+			documentReference: '42',
+			instruction: 'Vat samen',
+		}).catch((error) => error)
 
 		expect(refusal).toBeInstanceOf(AiFeatureRefusal)
 		expect(refusal.gate).toBe('redaction')
@@ -69,16 +98,37 @@ describe('caseAiFeatureGateway', () => {
 		const failure = new Error('Network Error')
 		axios.post.mockRejectedValue(failure)
 
-		await expect(runFeatureOnDocument({ feature: 'document-summary', documentReference: '42', instruction: 'Vat samen' }))
-			.rejects.toBe(failure)
+		await expect(
+			runFeatureOnDocument({
+				feature: 'document-summary',
+				documentReference: '42',
+				instruction: 'Vat samen',
+			}),
+		).rejects.toBe(failure)
 	})
 
 	it('names the feature and the reason in the sentence a handler reads', () => {
-		expect(refusalSentence(new AiFeatureRefusal('document-summary', 'x', 'redaction'), 'Samenvatting'))
-			.toBe('Samenvatting will not read a document that has not been redacted.')
-		expect(refusalSentence(new AiFeatureRefusal('document-summary', 'x', MISSING_REFERENCE), 'Samenvatting'))
-			.toBe('Samenvatting reads a document, and no document was chosen.')
-		expect(refusalSentence(new AiFeatureRefusal('document-summary', 'Refused by the residency check', 'residency'), 'Samenvatting'))
-			.toBe('Samenvatting did not run: Refused by the residency check')
+		expect(
+			refusalSentence(
+				new AiFeatureRefusal('document-summary', 'x', 'redaction'),
+				'Samenvatting',
+			),
+		).toBe('Samenvatting will not read a document that has not been redacted.')
+		expect(
+			refusalSentence(
+				new AiFeatureRefusal('document-summary', 'x', MISSING_REFERENCE),
+				'Samenvatting',
+			),
+		).toBe('Samenvatting reads a document, and no document was chosen.')
+		expect(
+			refusalSentence(
+				new AiFeatureRefusal(
+					'document-summary',
+					'Refused by the residency check',
+					'residency',
+				),
+				'Samenvatting',
+			),
+		).toBe('Samenvatting did not run: Refused by the residency check')
 	})
 })

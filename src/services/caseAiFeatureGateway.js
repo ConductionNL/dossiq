@@ -36,7 +36,6 @@ export const MISSING_REFERENCE = 'missing-reference'
  * A run that was refused, by dossiq before sending or by one of hermiq's gates.
  */
 export class AiFeatureRefusal extends Error {
-
 	/**
 	 * @param {string} feature The feature slug.
 	 * @param {string} reason The refusing side's own sentence.
@@ -50,7 +49,6 @@ export class AiFeatureRefusal extends Error {
 		this.reason = reason
 		this.gate = gate
 	}
-
 }
 
 /**
@@ -64,21 +62,38 @@ export class AiFeatureRefusal extends Error {
  * @throws {AiFeatureRefusal} When the reference is missing, or hermiq refuses.
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-a-document-reading-feature-without-a-reference-never-reaches-hermiq
  */
-export async function runFeatureOnDocument({ feature, documentReference, instruction }) {
+export async function runFeatureOnDocument({
+	feature,
+	documentReference,
+	instruction,
+}) {
 	const reference = String(documentReference ?? '').trim()
 	if (/^\d+$/.test(reference) === false) {
-		throw new AiFeatureRefusal(feature, t('dossiq', 'No document was chosen.'), MISSING_REFERENCE)
+		throw new AiFeatureRefusal(
+			feature,
+			t('dossiq', 'No document was chosen.'),
+			MISSING_REFERENCE,
+		)
 	}
 
-	const url = generateUrl('/apps/hermiq/api/ai-features/{slug}/run-on-document', { slug: feature })
+	const url = generateUrl('/apps/hermiq/api/ai-features/{slug}/run-on-document', {
+		slug: feature,
+	})
 	try {
-		const response = await axios.post(url, { documentReference: reference, instruction })
+		const response = await axios.post(url, {
+			documentReference: reference,
+			instruction,
+		})
 		return response.data
 	} catch (error) {
 		const status = error?.response?.status
 		const data = error?.response?.data ?? {}
 		if ([400, 403, 404, 422].includes(status) === true) {
-			throw new AiFeatureRefusal(feature, String(data.error ?? ''), data.gate ?? null)
+			throw new AiFeatureRefusal(
+				feature,
+				String(data.error ?? ''),
+				data.gate ?? null,
+			)
 		}
 
 		throw error
@@ -95,12 +110,23 @@ export async function runFeatureOnDocument({ feature, documentReference, instruc
  */
 export function refusalSentence(refusal, featureLabel) {
 	if (refusal.gate === MISSING_REFERENCE) {
-		return t('dossiq', '{feature} reads a document, and no document was chosen.', { feature: featureLabel })
+		return t(
+			'dossiq',
+			'{feature} reads a document, and no document was chosen.',
+			{ feature: featureLabel },
+		)
 	}
 
 	if (refusal.gate === 'redaction') {
-		return t('dossiq', '{feature} will not read a document that has not been redacted.', { feature: featureLabel })
+		return t(
+			'dossiq',
+			'{feature} will not read a document that has not been redacted.',
+			{ feature: featureLabel },
+		)
 	}
 
-	return t('dossiq', '{feature} did not run: {reason}', { feature: featureLabel, reason: refusal.reason })
+	return t('dossiq', '{feature} did not run: {reason}', {
+		feature: featureLabel,
+		reason: refusal.reason,
+	})
 }
