@@ -259,7 +259,7 @@ class AdapterHonestyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/specs/beschikking-generatie/spec.md#scenario-filinq-absent-and-the-warning-says-to-install-it
+	 * @spec openspec/specs/beschikking-generatie/spec.md#scenario-filinq-absent-and-the-warning-says-to-install-it
 	 */
 	public function testWithoutFilinqTheMockRunsAndTheWarningSaysInstallIt(): void {
 		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
@@ -278,7 +278,7 @@ class AdapterHonestyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/specs/beschikking-generatie/spec.md#scenario-filinq-present-but-no-adapter-named-and-the-warning-says-which
+	 * @spec openspec/specs/beschikking-generatie/spec.md#scenario-filinq-present-but-no-adapter-named-and-the-warning-says-which
 	 */
 	public function testWithFilinqAndAnEmptyKeyFilinqRenders(): void {
 		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
@@ -302,7 +302,7 @@ class AdapterHonestyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/specs/beschikking-generatie/spec.md#scenario-an-administrator-chose-the-mock
+	 * @spec openspec/specs/beschikking-generatie/spec.md#scenario-an-administrator-chose-the-mock
 	 */
 	public function testANamedMockRunsAndTheLogSaysItWasChosen(): void {
 		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
@@ -442,7 +442,7 @@ class AdapterHonestyTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function testTheTemplatesRowReadsSimulatedForTheMockOnly(): void {
 		$adapter = $this->declaredConnection(key: 'templates')['adapter'];

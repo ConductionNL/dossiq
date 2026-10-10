@@ -103,7 +103,10 @@ class TermijnTimerServiceTest extends TestCase {
 		self::assertSame('nl-termijn-default', $config['ladder']);
 		self::assertSame(1, $config['extensionMax']);
 		self::assertSame('case_created', $config['anchorEvent']);
-		self::assertSame('2026-06-01', $config['anchorEventAt']->format('Y-m-d'));
+		// The day AFTER the start day, at midnight: the Awt counts a term from
+		// there, so a 56 day SLA breaches the day after the last day and never
+		// on it (REQ-OTE-05).
+		self::assertSame('2026-06-02 00:00', $config['anchorEventAt']->format('Y-m-d H:i'));
 		self::assertArrayNotHasKey('onExpiry', $config);
 		self::assertSame('dossiq-termijn', $config['metadata']['source']);
 		self::assertSame('beslistermijn', $config['metadata']['kind']);
