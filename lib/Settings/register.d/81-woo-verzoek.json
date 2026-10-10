@@ -468,7 +468,8 @@
         "definition": "Ontvangstdatum",
         "description": "Datum waarop het WOO-verzoek is ontvangen. Dossiq vult deze bij het aanmaken van de zaak; de wettelijke termijn begint hier.",
         "propertyType": "date",
-        "isRequired": false
+        "isRequired": false,
+        "hideOnCreate": true
       },
       {
         "@self": {

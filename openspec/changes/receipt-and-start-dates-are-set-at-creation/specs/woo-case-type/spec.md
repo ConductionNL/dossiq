@@ -4,6 +4,8 @@
 The system MUST provide intake fields specific to WOO requests as property definitions on the zaaktype. The ontvangstdatum is not one the case worker fills: dossiq answers it when the case is created (REQ-TERM-042).
 
 #### Scenario: Required intake fields
+@e2e exclude The hidden Ontvangstdatum is asserted in tests/vitest/wooReceiptDateOffCreateForm.spec.js; the seeded definitions are data, not a create run.
+
 - **GIVEN** a new WOO Verzoek case being created via `CaseCreateDialog.vue`
 - **WHEN** the case worker fills in the intake form
 - **THEN** the form MUST include these property definitions:
@@ -15,6 +17,7 @@ The system MUST provide intake fields specific to WOO requests as property defin
   - **Bestuurlijke aangelegenheid** (text -- administrative matter)
   - **Gewenste vorm** (enum: papier/digitaal/inzage, default: digitaal)
 - **AND** **Ontvangstdatum** (date) MUST NOT be required: dossiq answers it on creation from the receipt, and keeps an answer an integration supplied
+- **AND** the create form MUST NOT ask for the **Ontvangstdatum** (`hideOnCreate`, REQ-PDM-16)
 
 #### Scenario: Intake form validation
 - **GIVEN** a case worker submitting the WOO intake form

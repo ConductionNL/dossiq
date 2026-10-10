@@ -1156,7 +1156,7 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.5.1",
+                "version": "1.6.0",
                 "searchable": false,
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
@@ -1305,6 +1305,12 @@
                         "type": "string",
                         "description": "Default value for this property",
                         "title": "Default value"
+                    },
+                    "hideOnCreate": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "Hide on the create form",
+                        "description": "Leave this question off the form that creates a case, because dossiq answers it itself at creation. The case form still shows it once the case exists."
                     }
                 }
             },
