@@ -103,7 +103,7 @@ class OpenRegisterSharingGateway {
 	 *
 	 * @return object|null The OR AccessLinkService, or null when it is not there.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function accessLinkService(): ?object {
 		return $this->resolve(
@@ -121,7 +121,7 @@ class OpenRegisterSharingGateway {
 	 *
 	 * @return object|null The OR AccessLinkReader, or null when it is not there.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function accessLinkReader(): ?object {
 		return $this->resolve(
@@ -139,7 +139,7 @@ class OpenRegisterSharingGateway {
 	 *
 	 * @return object|null The OR NoteService, or null when it is not there.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function noteService(): ?object {
 		return $this->resolve(
@@ -157,7 +157,7 @@ class OpenRegisterSharingGateway {
 	 *
 	 * @return object|null The service, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function resolve(string $className, array $methods): ?object {
 		if ($this->appManager->isInstalled('openregister') === false) {

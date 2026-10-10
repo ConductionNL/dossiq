@@ -4,6 +4,7 @@
   "caseTypes": [
     {
       "slug": "omgevingsvergunning-bouwactiviteit",
+      "isDraft": false,
       "title": "Omgevingsvergunning Bouwactiviteit",
       "category": "Vergunningen",
       "x-index": {
@@ -67,6 +68,7 @@
     },
     {
       "slug": "sloopmelding",
+      "isDraft": false,
       "title": "Sloopmelding",
       "category": "Vergunningen",
       "description": "Melding voor sloopactiviteiten. Beoordelingstermijn 4 weken.",
@@ -95,6 +97,7 @@
     },
     {
       "slug": "toezichtzaak-bouw",
+      "isDraft": false,
       "title": "Toezichtzaak Bouw",
       "category": "Toezicht en handhaving",
       "x-index": {
@@ -142,6 +145,7 @@
     },
     {
       "slug": "toezichtzaak-milieu",
+      "isDraft": false,
       "title": "Toezichtzaak Milieu",
       "category": "Toezicht en handhaving",
       "description": "Toezichtzaak voor milieuactiviteiten (periodiek of incidenteel).",
@@ -167,6 +171,7 @@
     },
     {
       "slug": "handhavingszaak",
+      "isDraft": false,
       "title": "Handhavingszaak",
       "category": "Toezicht en handhaving",
       "x-index": {
@@ -222,6 +227,7 @@
     },
     {
       "slug": "invorderingszaak",
+      "isDraft": false,
       "title": "Invorderingszaak",
       "category": "Toezicht en handhaving",
       "description": "Invorderingszaak voor verbeurde dwangsommen.",

@@ -10,7 +10,7 @@
   answer; the server decides whether it fits, and this field only shows that
   verdict.
 
-  @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<div class="rebind-field" :data-testid="`case-rebind-required-${field.name}`">
@@ -104,7 +104,7 @@ export default {
 		 *
 		 * @return {string} The type.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		inputType() {
 			return INPUT_TYPES[this.field.kind] || 'text'
@@ -115,7 +115,7 @@ export default {
 		 *
 		 * @return {string} The sentence, or '' when the answer is fine.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		problem() {
 			if (this.field.valid) {
