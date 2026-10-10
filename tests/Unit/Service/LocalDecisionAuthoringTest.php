@@ -101,6 +101,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Service/MandaatImportService.php' => 'Imports the mandateringsbesluit; same configuration reasoning as MandaatRepository.',
 		'lib/Service/WOODecisionService.php' => 'BLOCKED-2 (see the change tasks): authors the Woo besluit locally because decidiq has no woo-decision type yet. The raise moves to the delegation seam when decidiq grows one; the assembly and the Art. 5.1/5.2 guard stay either way.',
 		'lib/Service/WooPublicationService.php' => 'Publication stamping of the Woo besluit record; grey area C-3 (publication mechanics), pending the ruling recorded in the change.',
+		'lib/Repair/BackfillWooPublicationState.php' => 'Idempotent upgrade step that reads which decision on a case carries a wooSummary and writes only the case\'s publication state from it (woo-publish-decision-from-the-case D-2); authors no decision.',
 		'lib/Woo/WooCaseLedger.php' => 'Reads which decision on a case carries a wooSummary, and writes only the case\'s publication state (woo-publish-decision-from-the-case D-1, D-2); authors no decision.',
 	];
 
