@@ -65,6 +65,8 @@ class InstallPackageCommand extends Command {
 	 * Name, arguments and options.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:package:install')
