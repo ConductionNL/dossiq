@@ -483,19 +483,6 @@
         "propertyType": "string",
         "isRequired": false,
         "defaultValue": "digitaal"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "propertyDefinition",
-          "slug": "woo-verzoek-verdagingreden"
-        },
-        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
-        "name": "verdagingReden",
-        "definition": "Reden verdaging",
-        "description": "Reden voor de verlenging van de beslistermijn",
-        "propertyType": "string",
-        "isRequired": false
       }
     ]
   }

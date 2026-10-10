@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\Queue\UrgencyProfile;
 use OCA\Dossiq\Service\Status\StatusDeclaration;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -118,6 +119,20 @@ class WorkQueueService {
 	private const MAX_BUSINESS_DAY_WALK = 3660;
 
 	/**
+	 * The term statuses whose end date still counts for urgency.
+	 *
+	 * @var array<int, string>
+	 */
+	private const OPEN_TERM_STATUSES = ['lopend', 'verlengd', 'paused', 'exceeded'];
+
+	/**
+	 * Whether the Monday-to-Friday fallback has been said in the log already.
+	 *
+	 * @var bool
+	 */
+	private bool $saidFallback = false;
+
+	/**
 	 * Maximum number of cases fetched for the workload aggregation.
 	 */
 	private const WORKLOAD_LIMIT = 1000;
@@ -131,6 +146,9 @@ class WorkQueueService {
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param QueueUrgencySettings $urgencySettings The admin's thresholds and weights.
 	 * @param CaseJournal $journal Reads the case's own record of acts.
+	 * @param WorkingDayRoll|null $calendar The administered calendar the business days are
+	 *        counted on (REQ-OTE-04). Optional so a build without it counts Monday to Friday,
+	 *        as before, and says so once in the log.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -139,6 +157,7 @@ class WorkQueueService {
 		private readonly CaseDateNormaliser $dates,
 		private readonly QueueUrgencySettings $urgencySettings,
 		private readonly CaseJournal $journal,
+		private readonly ?WorkingDayRoll $calendar = null,
 	) {
 	}//end __construct()
 
@@ -745,15 +764,17 @@ class WorkQueueService {
 	}//end resolveCaseDeadline()
 
 	/**
-	 * Find the nearest `einddatumActueel` among a case's active (`lopend`)
-	 * termijn instances, or null when termijn tracking is not configured, the
-	 * case has none, or the lookup fails.
+	 * Find the nearest `endDateCurrent` among a case's open term instances
+	 * (running, extended, paused or exceeded), or null when termijn tracking
+	 * is not configured, the case has none, or the lookup fails.
 	 *
 	 * @param object $objectService OpenRegister ObjectService.
 	 * @param string $register Register slug/id.
 	 * @param string $caseId Case id.
 	 *
 	 * @return string|null The nearest active deadline, or null.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
 	private function nearestActiveTermDeadline(object $objectService, string $register, string $caseId): ?string {
 		$termSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
@@ -766,10 +787,7 @@ class WorkQueueService {
 				objectService: $objectService,
 				register: $register,
 				schema: $termSchema,
-				filters: [
-					'case' => $caseId,
-					'status' => 'lopend',
-				]
+				filters: ['case' => $caseId]
 			);
 		} catch (\Throwable $e) {
 			return null;
@@ -777,6 +795,15 @@ class WorkQueueService {
 
 		$nearest = null;
 		foreach ($instances as $instance) {
+			// EVERY OPEN TERM, not only a running one (REQ-OTE-06). A paused
+			// term's end has already moved by the pause and an extended one's
+			// by the extension, so both are the dates a handler is judged on.
+			// Filtered here rather than in the query, because a list of
+			// statuses is not a filter every store reads the same way.
+			if (in_array((string)($instance['status'] ?? ''), self::OPEN_TERM_STATUSES, true) === false) {
+				continue;
+			}
+
 			$date = (string)($instance['endDateCurrent'] ?? '');
 			if ($date === '' || ($nearest !== null && $date >= $nearest)) {
 				continue;
@@ -826,6 +853,8 @@ class WorkQueueService {
 	 * @param DateTimeImmutable $target The target date (date-only).
 	 *
 	 * @return int Signed business-day offset.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	private function businessDaysBetween(DateTimeImmutable $today, DateTimeImmutable $target): int {
 		if ($today->format('Y-m-d') === $target->format('Y-m-d')) {
@@ -835,6 +864,24 @@ class WorkQueueService {
 		$direction = 1;
 		if ($target < $today) {
 			$direction = -1;
+		}
+
+		// THE ADMINISTERED CALENDAR FIRST (REQ-TERM-026, REQ-OTE-04). A closure
+		// day the organisation declared is not a working day, and Koningsdag
+		// is not one either, which a Monday-to-Friday walk counts as both.
+		// The same days the walk below counts: forward the days after today up
+		// to and including the target, backward the target up to today. The
+		// engine counts the working days in [from, to), so the bounds shift.
+		$from = $target->setTime(0, 0);
+		$to = $today->setTime(0, 0);
+		if ($direction > 0) {
+			$from = $today->setTime(0, 0)->modify('+1 day');
+			$to = $target->setTime(0, 0)->modify('+1 day');
+		}
+
+		$counted = $this->administeredBusinessDays(earlier: $from, later: $to);
+		if ($counted !== null) {
+			return ($counted * $direction);
 		}
 
 		$cursor = $today;
@@ -858,5 +905,35 @@ class WorkQueueService {
 
 		return ($count * $direction);
 	}//end businessDaysBetween()
+
+	/**
+	 * The working days between two days on the administered calendar, or null.
+	 *
+	 * Null when no calendar is wired or it does not answer; the caller then
+	 * walks Monday to Friday, and this says so once per request.
+	 *
+	 * @param DateTimeImmutable $earlier The earlier day.
+	 * @param DateTimeImmutable $later   The later day.
+	 *
+	 * @return int|null The unsigned count, or null.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 */
+	private function administeredBusinessDays(DateTimeImmutable $earlier, DateTimeImmutable $later): ?int {
+		$counted = $this->calendar?->daysBetween(from: $earlier, to: $later, mode: WorkingDayRoll::MODE_WORKING_DAYS);
+		if ($counted !== null) {
+			return $counted;
+		}
+
+		if ($this->saidFallback === false) {
+			$this->saidFallback = true;
+			$this->logger->warning(
+				'Dossiq work queue: the organisation calendar did not answer, so days until a deadline '
+				. 'were counted Monday to Friday, without holidays or closure days'
+			);
+		}
+
+		return null;
+	}//end administeredBusinessDays()
 
 }//end class
