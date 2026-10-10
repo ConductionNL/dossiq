@@ -239,7 +239,26 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
       zaak or besluit is refused either way (a duplicate when the ZIO/BIO exists, inconsistent
       when it does not). That matches VNG: the ZRC/BRC creates that OIO itself as a side effect
       of the ZIO/BIO, so a client never posts one. The test pins it.
-- [ ] Slice 5, `ZgwService` (15), in several PRs
+- [x] Slice 5, `ZgwService` (15 method-complexity suppressions, now 0)
+  - [x] 5a: the four parent-state answers (`resolveZaakClosed`, `…FromBody`,
+        `resolveParentZaaktypeDraft`, `…FromBody`; 8 suppressions) were four copies of one
+        lookup. They move to the new `lib/Service/Zgw/ZgwParentStateResolver.php` (one lookup,
+        one fail-closed and one fail-open answer) and `ZgwService` delegates, so the public API
+        and both controllers are unchanged. New class, own test:
+        `tests/Unit/Service/Zgw/ZgwParentStateResolverTest.php` (9 tests, every branch
+        including fail-closed on a throwing or missing ObjectService).
+  - [x] 5b: `consumerHasScope` / `getConsumerAuthorisaties` (3 suppressions) read the
+        consumer through one `getConsumerAuthConfig()`, and each keeps its own fail-closed
+        answer. Characterisation: `tests/Unit/Service/ZgwServiceConsumerScopeTest.php` (4 tests:
+        every deny path, superuser, scoped, unconfigured; green before and after).
+  - [x] 5c: `handleCreate` / `handleUpdate` (4 suppressions) share `ruleRefusal()`,
+        `findSerialized()`, `mapInbound()` and `mapOutbound()`. The PATCH merge moved to the new
+        `lib/Service/Zgw/ZgwPatchMerger.php`, which holds the subtle part (which mapped fields
+        count as patched, and which stored arrays come back as arrays). New class, own test:
+        `tests/Unit/Service/Zgw/ZgwPatchMergerTest.php` (5 tests, including the
+        productsOrServices array-versus-string case the inline comment records). The two
+        handlers themselves have no unit test; nothing constructs ZgwService in tests, so their
+        orchestration is covered by the Newman ZGW collections (live pass, decision 139).
 - [ ] Slice 6, the controllers (ZrcController 12, ZtcController 10, DrcController 5); AcController
       waits until #3298 (which edits it) lands
 - [ ] Slice 7, the singletons (ZgwJwtValidator, LoadDefaultZgwMappings, ZgwRulesBase,

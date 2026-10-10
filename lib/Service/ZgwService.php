@@ -30,6 +30,8 @@ use OCA\OpenRegister\Db\Mapping;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
+use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -155,6 +157,13 @@ class ZgwService {
 	 * @var object|null
 	 */
 	private $objectService = null;
+
+	/**
+	 * The parent zaak / zaaktype resolver, built on first use.
+	 *
+	 * @var ZgwParentStateResolver|null
+	 */
+	private ?ZgwParentStateResolver $parentStateResolver = null;
 
 	/**
 	 * Cached request body to avoid re-reading php://input.
@@ -679,59 +688,23 @@ class ZgwService {
 	 *
 	 * @return bool True if the consumer has the scope or heeftAlleAutorisaties
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — multiple JWT validation paths
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function consumerHasScope(IRequest $request, string $component, string $scope): bool {
-		// H2: Fail closed — if ConsumerMapper is not available we cannot verify scope,
-		// so we must deny rather than grant.
-		if ($this->consumerMapper === null) {
-			return false;
-		}
-
 		try {
-			$authHeader = $request->getHeader('Authorization');
-			$token = str_replace('Bearer ', '', $authHeader);
-			$parts = explode('.', $token);
-			// H2: Malformed JWT → deny, not grant.
-			if (count($parts) !== 3) {
+			// H2: Fail closed — no mapper, a malformed JWT, no client_id/iss or no matching
+			// consumer all deny, never grant.
+			$authConfig = $this->getConsumerAuthConfig(request: $request);
+			if ($authConfig === null) {
 				return false;
-			}
-
-			$payload = json_decode(base64_decode($parts[1]), true);
-			$clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
-			// H2: Missing client_id/iss → deny, not grant.
-			if ($clientId === null) {
-				return false;
-			}
-
-			$consumers = $this->consumerMapper->findAll(
-				filters: ['name' => $clientId]
-			);
-			// H2: No matching consumer → deny, not grant.
-			if (empty($consumers) === true) {
-				return false;
-			}
-
-			$consumer = $consumers[0];
-			$authConfig = [];
-			if (method_exists($consumer, 'getAuthorizationConfiguration') === true) {
-				$authConfig = $consumer->getAuthorizationConfiguration() ?? [];
 			}
 
 			if (($authConfig['superuser'] ?? false) === true) {
 				return true;
 			}
 
-			$scopes = $authConfig['scopes'] ?? [];
-			foreach ($scopes as $auth) {
-				$authComponent = $auth['component'] ?? '';
-				$authScopes = $auth['scopes'] ?? [];
-				if ($authComponent === $component
-					&& in_array($scope, $authScopes, true) === true
-				) {
+			foreach (($authConfig['scopes'] ?? []) as $auth) {
+				if (($auth['component'] ?? '') === $component && in_array($scope, $auth['scopes'] ?? [], true) === true) {
 					return true;
 				}
 			}
@@ -757,44 +730,15 @@ class ZgwService {
 	 *
 	 * @return array|null Array of autorisatie entries, or null if unrestricted
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getConsumerAuthorisaties(IRequest $request, string $component): ?array {
-		// H2: Fail closed — if ConsumerMapper unavailable, return empty set (not null/unrestricted).
-		if ($this->consumerMapper === null) {
-			return [];
-		}
-
 		try {
-			$authHeader = $request->getHeader('Authorization');
-			$token = str_replace('Bearer ', '', $authHeader);
-			$parts = explode('.', $token);
-			// H2: Malformed JWT → return empty (restricted), not null (unrestricted).
-			if (count($parts) !== 3) {
+			// H2: Fail closed — no mapper, a malformed JWT, no client_id/iss or no matching
+			// consumer all return the empty set (restricted), never null (unrestricted).
+			$authConfig = $this->getConsumerAuthConfig(request: $request);
+			if ($authConfig === null) {
 				return [];
-			}
-
-			$payload = json_decode(base64_decode($parts[1]), true);
-			$clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
-			// H2: Missing client_id/iss → return empty (restricted).
-			if ($clientId === null) {
-				return [];
-			}
-
-			$consumers = $this->consumerMapper->findAll(
-				filters: ['name' => $clientId]
-			);
-			// H2: No matching consumer → return empty (restricted).
-			if (empty($consumers) === true) {
-				return [];
-			}
-
-			$consumer = $consumers[0];
-			$authConfig = [];
-			if (method_exists($consumer, 'getAuthorizationConfiguration') === true) {
-				$authConfig = $consumer->getAuthorizationConfiguration() ?? [];
 			}
 
 			if (($authConfig['superuser'] ?? false) === true) {
@@ -802,10 +746,8 @@ class ZgwService {
 			}
 
 			$result = [];
-			$scopes = $authConfig['scopes'] ?? [];
-			foreach ($scopes as $auth) {
-				$authComponent = $auth['component'] ?? '';
-				if ($authComponent === $component) {
+			foreach (($authConfig['scopes'] ?? []) as $auth) {
+				if (($auth['component'] ?? '') === $component) {
 					$result[] = $auth;
 				}
 			}
@@ -821,6 +763,47 @@ class ZgwService {
 			return [];
 		}//end try
 	}//end getConsumerAuthorisaties()
+
+	/**
+	 * The authorisation configuration of the consumer a request's bearer JWT names.
+	 *
+	 * Errors from the mapper propagate, so each caller keeps its own fail-closed answer.
+	 *
+	 * @param IRequest $request The request object
+	 *
+	 * @return array|null The configuration (empty when the consumer declares none), or null when
+	 *                    the mapper is unavailable, the JWT is malformed, it names no client, or
+	 *                    no consumer matches
+	 */
+	private function getConsumerAuthConfig(IRequest $request): ?array {
+		if ($this->consumerMapper === null) {
+			return null;
+		}
+
+		$token = str_replace('Bearer ', '', $request->getHeader('Authorization'));
+		$parts = explode('.', $token);
+		if (count($parts) !== 3) {
+			return null;
+		}
+
+		$payload = json_decode(base64_decode($parts[1]), true);
+		$clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
+		if ($clientId === null) {
+			return null;
+		}
+
+		$consumers = $this->consumerMapper->findAll(filters: ['name' => $clientId]);
+		if (empty($consumers) === true) {
+			return null;
+		}
+
+		$consumer = $consumers[0];
+		if (method_exists($consumer, 'getAuthorizationConfiguration') === false) {
+			return [];
+		}
+
+		return $consumer->getAuthorizationConfiguration() ?? [];
+	}//end getConsumerAuthConfig()
 
 	/**
 	 * Publish a ZGW notification (non-blocking).
@@ -1011,7 +994,6 @@ class ZgwService {
 	 * @return JSONResponse
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)   — ZGW scope flags from middleware
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength) — orchestration method with validation + mapping
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -1047,25 +1029,12 @@ class ZgwService {
 				hasGeforceerd: $hasForceer
 			);
 			if ($ruleResult['valid'] === false) {
-				return new JSONResponse(
-					data: $this->buildValidationError(ruleResult: $ruleResult),
-					statusCode: $ruleResult['status']
-				);
+				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			$enrichedBody = $ruleResult['enrichedBody'];
-
-			// Extract direct OpenRegister fields that bypass Twig inbound mapping
-			// (used for array fields like documentTypes/caseTypes that Twig cannot handle).
-			$directFields = $enrichedBody['_directFields'] ?? [];
-			unset($enrichedBody['_directFields']);
-
-			$inboundMapping = $this->createInboundMapping(mappingConfig: $mappingConfig);
-			$englishData = $this->applyInboundMapping(
-				body: $enrichedBody,
-				mapping: $inboundMapping,
-				mappingConfig: $mappingConfig
-			);
+			// Map to English; direct OpenRegister fields (array fields like documentTypes/caseTypes
+			// that Twig cannot handle) bypass the inbound mapping.
+			$englishData = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $mappingConfig)['data'];
 
 			// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
 			if (is_array($englishData) === false) {
@@ -1075,43 +1044,22 @@ class ZgwService {
 				);
 			}
 
-			// Merge direct fields into mapped data (array fields that Twig drops).
-			if (empty($directFields) === false) {
-				$englishData = array_merge($englishData, $directFields);
-			}
-
 			$object = $this->objectService->saveObject(
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema'],
 				object: $englishData
 			);
 
-			$objectData = $object;
-			if (is_array($object) === false) {
-				$objectData = $object->jsonSerialize();
-			}
-
-			$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
-
-			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-			$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-
-			$mapped = $this->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-
-			$resourceUrl = $baseUrl . '/' . $objectUuid;
+			$outbound = $this->mapOutbound(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig, object: $object);
+			$objectUuid = $outbound['objectData']['id'] ?? ($outbound['objectData']['@self']['id'] ?? '');
 			$this->publishNotification(
 				zgwApi: $zgwApi,
 				resource: $resource,
-				resourceUrl: $resourceUrl,
+				resourceUrl: $outbound['baseUrl'] . '/' . $objectUuid,
 				action: 'create'
 			);
 
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
+			return new JSONResponse(data: $outbound['mapped'], statusCode: Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW create error: ' . $e->getMessage(),
@@ -1200,9 +1148,6 @@ class ZgwService {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)   — ZGW scope flags from middleware
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -1238,23 +1183,12 @@ class ZgwService {
 				$action = 'patch';
 			}
 
-			$existingObj = $this->objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-
-			$existingData = $existingObj;
-			if (is_array($existingObj) === false) {
-				$existingData = $existingObj->jsonSerialize();
-			}
-
 			$ruleResult = $this->businessRulesService->validate(
 				zgwApi: $zgwApi,
 				resource: $resource,
 				action: $action,
 				body: $body,
-				existingObject: $existingData,
+				existingObject: $this->findSerialized(uuid: $uuid, mappingConfig: $mappingConfig),
 				objectService: $this->objectService,
 				mappingConfig: $mappingConfig,
 				parentCaseTypeDraft: $parentZtDraft,
@@ -1262,30 +1196,12 @@ class ZgwService {
 				hasGeforceerd: $hasForceer
 			);
 			if ($ruleResult['valid'] === false) {
-				return new JSONResponse(
-					data: $this->buildValidationError(ruleResult: $ruleResult),
-					statusCode: $ruleResult['status']
-				);
+				return $this->ruleRefusal(ruleResult: $ruleResult);
 			}
 
-			$enrichedBody = $ruleResult['enrichedBody'];
-
-			// Extract direct OpenRegister fields that bypass Twig inbound mapping.
-			$directFields = $enrichedBody['_directFields'] ?? [];
-			unset($enrichedBody['_directFields']);
-
-			$inboundMapping = $this->createInboundMapping(mappingConfig: $mappingConfig);
-			$englishData = $this->applyInboundMapping(
-				body: $enrichedBody,
-				mapping: $inboundMapping,
-				mappingConfig: $mappingConfig
-			);
-
-			// Merge direct fields into mapped data (array fields that Twig drops).
-			if (empty($directFields) === false) {
-				$englishData = array_merge($englishData, $directFields);
-			}
-
+			// Map to English; direct OpenRegister fields bypass the Twig inbound mapping.
+			$inbound = $this->mapInbound(enrichedBody: $ruleResult['enrichedBody'], mappingConfig: $mappingConfig);
+			$englishData = $inbound['data'];
 			$englishData['id'] = $uuid;
 
 			// For partial updates (PATCH), merge with existing object data.
@@ -1295,89 +1211,17 @@ class ZgwService {
 					register: $mappingConfig['sourceRegister'],
 					schema: $mappingConfig['sourceSchema']
 				);
-				$existingData = $existing->jsonSerialize();
-
-				unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
-
-				if (isset($existingData['identifier']) === true
-					&& is_int($existingData['identifier']) === true
-				) {
-					$existingData['identifier'] = (string)$existingData['identifier'];
-				}
-
-				// Track which keys were originally arrays before json_encode for Twig.
-				$arrayKeys = [];
-				foreach ($existingData as $key => $value) {
-					if (is_array($value) === true) {
-						$arrayKeys[] = $key;
-						$existingData[$key] = json_encode($value);
-					}
-				}
-
-				$bodyKeys = array_keys($body);
-				$reverseMap = $mappingConfig['reverseMapping'] ?? [];
-				$validKeys = [];
-				foreach ($reverseMap as $engKey => $twigTpl) {
-					if (preg_match_all('/\{\{\s*(\w+)/', $twigTpl, $matches) === 1) {
-						foreach ($matches[1] as $zgwField) {
-							if (in_array($zgwField, $bodyKeys, true) === true) {
-								$validKeys[] = $engKey;
-							}
-						}
-					}
-				}
-
-				$patchData = [];
-				foreach ($validKeys as $key) {
-					if (isset($englishData[$key]) === true) {
-						$patchData[$key] = $englishData[$key];
-					}
-				}
-
-				$englishData = array_merge($existingData, $patchData);
-
-				// Determine which English fields are STORED as JSON strings.
-				//
-				// An encoding template is not enough to tell: Twig cannot emit an
-				// array, so a field backed by an ARRAY property is json_encode'd for
-				// transport and cast straight back by `reverseCast`. Reading the
-				// template alone put caseType.productsOrServices in this list and
-				// PATCH then wrote a string into an array property.
-				$reverseCast = ($mappingConfig['reverseCast'] ?? []);
-				$jsonStringFields = [];
-				foreach ($reverseMap as $engKey => $twigTpl) {
-					if (strpos($twigTpl, 'json_encode') === false) {
-						continue;
-					}
-
-					if (($reverseCast[$engKey] ?? '') === 'jsonToArray') {
-						continue;
-					}
-
-					$jsonStringFields[] = $engKey;
-				}
-
-				// Restore fields that were originally arrays, but skip fields
-				// that are stored as JSON strings in the schema (productsOrServices,
-				// referenceProcess, relatedCaseTypes, etc.). Those must remain as
-				// JSON-encoded strings for OpenRegister validation.
-				foreach ($arrayKeys as $key) {
-					if (in_array($key, $jsonStringFields, true) === true) {
-						continue;
-					}
-
-					if (isset($englishData[$key]) === true && is_string($englishData[$key]) === true) {
-						$decoded = json_decode($englishData[$key], true);
-						if (is_array($decoded) === true) {
-							$englishData[$key] = $decoded;
-						}
-					}
-				}
-			}//end if
+				$englishData = (new ZgwPatchMerger())->merge(
+					existingData: $existing->jsonSerialize(),
+					body: $body,
+					englishData: $englishData,
+					mappingConfig: $mappingConfig
+				);
+			}
 
 			// Apply _directFields after PATCH merge to ensure they override correctly.
-			if (empty($directFields) === false) {
-				$englishData = array_merge($englishData, $directFields);
+			if (empty($inbound['directFields']) === false) {
+				$englishData = array_merge($englishData, $inbound['directFields']);
 			}
 
 			$object = $this->objectService->saveObject(
@@ -1387,29 +1231,15 @@ class ZgwService {
 				uuid: $uuid
 			);
 
-			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
-			$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-
-			$objectData = $object;
-			if (is_array($object) === false) {
-				$objectData = $object->jsonSerialize();
-			}
-
-			$mapped = $this->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-
+			$outbound = $this->mapOutbound(request: $request, zgwApi: $zgwApi, resource: $resource, mappingConfig: $mappingConfig, object: $object);
 			$this->publishNotification(
 				zgwApi: $zgwApi,
 				resource: $resource,
-				resourceUrl: $baseUrl . '/' . $uuid,
+				resourceUrl: $outbound['baseUrl'] . '/' . $uuid,
 				action: 'update'
 			);
 
-			return new JSONResponse(data: $mapped);
+			return new JSONResponse(data: $outbound['mapped']);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ZGW update error (' . $resource . ' ' . $uuid . '): ' . $e->getMessage(),
@@ -1421,6 +1251,98 @@ class ZgwService {
 			);
 		}//end try
 	}//end handleUpdate()
+
+	/**
+	 * The response for a business-rule refusal.
+	 *
+	 * @param array $ruleResult The failed rule result (`status`, `detail`, `invalidParams`)
+	 *
+	 * @return JSONResponse The ZGW validation error
+	 */
+	private function ruleRefusal(array $ruleResult): JSONResponse {
+		return new JSONResponse(
+			data: $this->buildValidationError(ruleResult: $ruleResult),
+			statusCode: $ruleResult['status']
+		);
+	}//end ruleRefusal()
+
+	/**
+	 * Find a stored object and serialise it.
+	 *
+	 * @param string $uuid The object uuid
+	 * @param array $mappingConfig The ZGW mapping (`sourceRegister`, `sourceSchema`)
+	 *
+	 * @return mixed The object as an array (or whatever the ObjectService returned as one)
+	 */
+	private function findSerialized(string $uuid, array $mappingConfig): mixed {
+		$existingObj = $this->objectService->find(
+			$uuid,
+			register: $mappingConfig['sourceRegister'],
+			schema: $mappingConfig['sourceSchema']
+		);
+		if (is_array($existingObj) === false) {
+			return $existingObj->jsonSerialize();
+		}
+
+		return $existingObj;
+	}//end findSerialized()
+
+	/**
+	 * Map a validated ZGW body to English field names.
+	 *
+	 * `_directFields` bypass the Twig inbound mapping (array fields Twig drops) and are merged
+	 * over the mapped data when the mapping produced an array.
+	 *
+	 * @param array $enrichedBody The body the business rules returned
+	 * @param array $mappingConfig The ZGW mapping
+	 *
+	 * @return array{data: mixed, directFields: array} The mapped data and the direct fields
+	 */
+	private function mapInbound(array $enrichedBody, array $mappingConfig): array {
+		$directFields = $enrichedBody['_directFields'] ?? [];
+		unset($enrichedBody['_directFields']);
+
+		$data = $this->applyInboundMapping(
+			body: $enrichedBody,
+			mapping: $this->createInboundMapping(mappingConfig: $mappingConfig),
+			mappingConfig: $mappingConfig
+		);
+		if (is_array($data) === true && empty($directFields) === false) {
+			$data = array_merge($data, $directFields);
+		}
+
+		return ['data' => $data, 'directFields' => $directFields];
+	}//end mapInbound()
+
+	/**
+	 * Map a saved object back to its ZGW shape.
+	 *
+	 * @param IRequest $request The request (for the base URL)
+	 * @param string $zgwApi The ZGW API
+	 * @param string $resource The ZGW resource
+	 * @param array $mappingConfig The ZGW mapping
+	 * @param mixed $object The saved object
+	 *
+	 * @return array{mapped: array, baseUrl: string, objectData: mixed} The ZGW object, its
+	 *                                                                  collection URL and the
+	 *                                                                  serialised object
+	 */
+	private function mapOutbound(IRequest $request, string $zgwApi, string $resource, array $mappingConfig, mixed $object): array {
+		$objectData = $object;
+		if (is_array($object) === false) {
+			$objectData = $object->jsonSerialize();
+		}
+
+		$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
+		$mapped = $this->applyOutboundMapping(
+			objectData: $objectData,
+			mapping: $this->createOutboundMapping(mappingConfig: $mappingConfig),
+			mappingConfig: $mappingConfig,
+			baseUrl: $baseUrl
+		);
+
+		return ['mapped' => $mapped, 'baseUrl' => $baseUrl, 'objectData' => $objectData];
+	}//end mapOutbound()
 
 	/**
 	 * Generic destroy (delete) operation for a ZGW resource.
@@ -1725,81 +1647,14 @@ class ZgwService {
 	 *
 	 * @return bool|null True if closed, false if open, null if N/A
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveZaakClosed(string $resource, array $existingData): ?bool {
-		if ($resource === 'zaken') {
-			$endDate = $existingData['endDate'] ?? null;
-			return $endDate !== null && $endDate !== '';
-		}
-
-		$caseSubResources = [
-			'statussen',
-			'resultaten',
-			'rollen',
-			'zaakeigenschappen',
-			'zaakinformatieobjecten',
-			'zaakobjecten',
-			'klantcontacten',
-		];
-		if (in_array($resource, $caseSubResources, true) === false) {
-			return null;
-		}
-
-		$zaakUuid = $existingData['case'] ?? ($existingData['zaak'] ?? null);
-		if ($zaakUuid === null || $zaakUuid === '') {
-			return null;
-		}
-
-		if (preg_match(
-			'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-			(string)$zaakUuid,
-			$matches
-		) === 1
-		) {
-			$zaakUuid = $matches[1];
-		}
-
-		try {
-			$caseConfig = $this->zgwMappingService->getMapping('case');
-			if ($caseConfig === null) {
-				return null;
-			}
-
-			$case = $this->objectService->find(
-				$zaakUuid,
-				register: $caseConfig['sourceRegister'],
-				schema: $caseConfig['sourceSchema']
-			);
-			if ($case === null) {
-				return null;
-			}
-
-			$caseData = $case;
-			if (is_array($case) === false) {
-				$caseData = $case->jsonSerialize();
-			}
-
-			$endDate = $caseData['endDate'] ?? null;
-
-			return $endDate !== null && $endDate !== '';
-		} catch (\Throwable $e) {
-			// WF3a fix: fail-CLOSED on any unexpected error. Returning true
-			// (= zaak is closed) rather than null prevents a transient OR error
-			// or crafted UUID from bypassing closed-zaak protection (zrc-007).
-			// Callers check `$caseClosed === true && $hasGeforceerd === false`
-			// so returning true with no geforceerd scope → 403. This is the
-			// safe default: a consumer who genuinely needs to write must have
-			// the zaken.geforceerd-bijwerken scope.
-			$this->logger->error(
-				'Could not resolve zaak closed status — returning true (fail-closed)',
-				['exception' => $e->getMessage()]
-			);
-			return true;
-		}//end try
+		return $this->getParentStateResolver()->resolveZaakClosed(
+			objectService: $this->objectService,
+			resource: $resource,
+			existingData: $existingData
+		);
 	}//end resolveZaakClosed()
 
 	/**
@@ -1810,78 +1665,14 @@ class ZgwService {
 	 *
 	 * @return bool|null True if closed, false if open, null if N/A
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveZaakClosedFromBody(string $resource, array $body): ?bool {
-		if ($resource === 'zaken') {
-			return null;
-		}
-
-		$caseSubResources = [
-			'statussen',
-			'resultaten',
-			'rollen',
-			'zaakeigenschappen',
-			'zaakinformatieobjecten',
-			'zaakobjecten',
-			'klantcontacten',
-		];
-		if (in_array($resource, $caseSubResources, true) === false) {
-			return null;
-		}
-
-		$caseUrl = $body['case'] ?? null;
-		if ($caseUrl === null || $caseUrl === '') {
-			return null;
-		}
-
-		if (preg_match(
-			'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-			(string)$caseUrl,
-			$matches
-		) !== 1
-		) {
-			return null;
-		}
-
-		$zaakUuid = $matches[1];
-
-		try {
-			$caseConfig = $this->zgwMappingService->getMapping('case');
-			if ($caseConfig === null) {
-				return null;
-			}
-
-			$case = $this->objectService->find(
-				$zaakUuid,
-				register: $caseConfig['sourceRegister'],
-				schema: $caseConfig['sourceSchema']
-			);
-			if ($case === null) {
-				return null;
-			}
-
-			$caseData = $case;
-			if (is_array($case) === false) {
-				$caseData = $case->jsonSerialize();
-			}
-
-			$endDate = $caseData['endDate'] ?? null;
-
-			return $endDate !== null && $endDate !== '';
-		} catch (\Throwable $e) {
-			// WF3b fix: fail-CLOSED on any unexpected error. See resolveZaakClosed
-			// for rationale — returning true prevents closed-zaak bypass when the
-			// zaak lookup throws (e.g. transient OR error or crafted body URL).
-			$this->logger->error(
-				'Could not resolve zaak closed status from body — returning true (fail-closed)',
-				['exception' => $e->getMessage()]
-			);
-			return true;
-		}//end try
+		return $this->getParentStateResolver()->resolveZaakClosedFromBody(
+			objectService: $this->objectService,
+			resource: $resource,
+			body: $body
+		);
 	}//end resolveZaakClosedFromBody()
 
 	/**
@@ -1892,71 +1683,14 @@ class ZgwService {
 	 *
 	 * @return bool|null True if draft, false if published, null if N/A
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveParentZaaktypeDraft(string $resource, array $existingData): ?bool {
-		$subResources = [
-			'statustypen',
-			'resultaattypen',
-			'roltypen',
-			'eigenschappen',
-			'zaaktype-informatieobjecttypen',
-		];
-
-		if (in_array($resource, $subResources, true) === false) {
-			return null;
-		}
-
-		$zaaktypeUuid = $existingData['caseType'] ?? null;
-		if ($zaaktypeUuid === null || $zaaktypeUuid === '') {
-			return null;
-		}
-
-		if (preg_match(
-			'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-			(string)$zaaktypeUuid,
-			$matches
-		) === 1
-		) {
-			$zaaktypeUuid = $matches[1];
-		}
-
-		try {
-			$caseTypeConfig = $this->zgwMappingService->getMapping('caseType');
-			if ($caseTypeConfig === null) {
-				return null;
-			}
-
-			$caseType = $this->objectService->find(
-				$zaaktypeUuid,
-				register: $caseTypeConfig['sourceRegister'],
-				schema: $caseTypeConfig['sourceSchema']
-			);
-			if ($caseType === null) {
-				return null;
-			}
-
-			$ztData = $caseType;
-			if (is_array($caseType) === false) {
-				$ztData = $caseType->jsonSerialize();
-			}
-
-			$isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
-
-			if ($isDraft === false || $isDraft === 'false' || $isDraft === '0' || $isDraft === 0) {
-				return false;
-			}
-
-			return true;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Could not resolve parent zaaktype draft status: ' . $e->getMessage()
-			);
-			return null;
-		}//end try
+		return $this->getParentStateResolver()->resolveParentZaaktypeDraft(
+			objectService: $this->objectService,
+			resource: $resource,
+			existingData: $existingData
+		);
 	}//end resolveParentZaaktypeDraft()
 
 	/**
@@ -1970,73 +1704,29 @@ class ZgwService {
 	 *
 	 * @return bool|null True if draft, false if published, null if N/A
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function resolveParentZaaktypeDraftFromBody(string $resource, array $body): ?bool {
-		$subResources = [
-			'statustypen',
-			'resultaattypen',
-			'roltypen',
-			'eigenschappen',
-			'zaaktype-informatieobjecttypen',
-		];
-
-		if (in_array($resource, $subResources, true) === false) {
-			return null;
-		}
-
-		$caseTypeRef = $body['caseType'] ?? null;
-		if ($caseTypeRef === null || $caseTypeRef === '') {
-			return null;
-		}
-
-		// Extract UUID from URL or plain UUID.
-		if (preg_match(
-			'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-			(string)$caseTypeRef,
-			$matches
-		) !== 1
-		) {
-			return null;
-		}
-
-		$zaaktypeUuid = $matches[1];
-
-		try {
-			$caseTypeConfig = $this->zgwMappingService->getMapping('caseType');
-			if ($caseTypeConfig === null) {
-				return null;
-			}
-
-			$caseType = $this->objectService->find(
-				$zaaktypeUuid,
-				register: $caseTypeConfig['sourceRegister'],
-				schema: $caseTypeConfig['sourceSchema']
-			);
-			if ($caseType === null) {
-				return null;
-			}
-
-			$ztData = $caseType;
-			if (is_array($caseType) === false) {
-				$ztData = $caseType->jsonSerialize();
-			}
-
-			$isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
-
-			if ($isDraft === false || $isDraft === 'false' || $isDraft === '0' || $isDraft === 0) {
-				return false;
-			}
-
-			return true;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Could not resolve parent zaaktype draft from body: ' . $e->getMessage()
-			);
-			return null;
-		}//end try
+		return $this->getParentStateResolver()->resolveParentZaaktypeDraftFromBody(
+			objectService: $this->objectService,
+			resource: $resource,
+			body: $body
+		);
 	}//end resolveParentZaaktypeDraftFromBody()
+
+	/**
+	 * The resolver for the parent zaak and parent zaaktype answers, built on first use.
+	 *
+	 * @return ZgwParentStateResolver
+	 */
+	private function getParentStateResolver(): ZgwParentStateResolver {
+		if ($this->parentStateResolver === null) {
+			$this->parentStateResolver = new ZgwParentStateResolver(
+				zgwMappingService: $this->zgwMappingService,
+				logger: $this->logger
+			);
+		}
+
+		return $this->parentStateResolver;
+	}//end getParentStateResolver()
 }//end class
