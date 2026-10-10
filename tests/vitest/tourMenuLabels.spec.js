@@ -14,7 +14,7 @@
  * structureProfile.spec.js builds them, so a label or a section that moves
  * in the manifest, a fragment or a layout file moves under this test too.
  *
- * @spec openspec/changes/r4-tour-menu-labels-and-settings-styles/specs/getting-started-tour/spec.md
+ * @spec openspec/specs/getting-started-tour/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

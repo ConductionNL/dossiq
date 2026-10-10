@@ -81,7 +81,7 @@ class CaseTeamMigrationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function testACaseWhoseRoleNamesAGroupIsConverted(): void {
 		$report = $this->migration()->run(apply: true);
@@ -100,7 +100,7 @@ class CaseTeamMigrationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function testARoleWithoutAGroupIsReportedNotGuessed(): void {
 		$report = $this->migration()->run(apply: true);
@@ -128,7 +128,7 @@ class CaseTeamMigrationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function testRunningItTwiceChangesNothingMore(): void {
 		$this->migration()->run(apply: true);
@@ -147,7 +147,7 @@ class CaseTeamMigrationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function testADryRunWritesNothing(): void {
 		$report = $this->migration()->run(apply: false);
