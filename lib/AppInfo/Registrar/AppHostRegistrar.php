@@ -34,6 +34,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
 use OCA\Dossiq\Dashboard\CasesOverviewWidget;
 use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
+use OCA\Dossiq\Dashboard\MyOpenWorkWidget;
 use OCA\Dossiq\Dashboard\MyTasksWidget;
 use OCA\Dossiq\Dashboard\OverdueCasesWidget;
 use OCA\Dossiq\Dashboard\StalledCasesWidget;
@@ -47,6 +48,10 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * Registers the OpenRegister AppHost engine for dossiq.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The registrar names every dashboard
+ * widget class once, by design: one more widget is one more class it couples to,
+ * and splitting the list would only move it.
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
@@ -128,6 +133,7 @@ class AppHostRegistrar {
 				'dashboardWidgets' => [
 					CasesOverviewWidget::class,
 					MyTasksWidget::class,
+					MyOpenWorkWidget::class,
 					OverdueCasesWidget::class,
 					DeadlineAlertsWidget::class,
 					TaskRemindersWidget::class,
