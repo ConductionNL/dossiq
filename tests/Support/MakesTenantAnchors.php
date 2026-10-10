@@ -32,7 +32,6 @@ namespace OCA\Dossiq\Tests\Support;
 use DateTime;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantOrganisationResolver;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCA\Dossiq\Service\TenantService;
 use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
@@ -183,12 +182,10 @@ trait MakesTenantAnchors {
 		$apps = $this->anchorApps(openRegister: $openRegister);
 		$logger = $this->anchorLogger();
 
-		$legacy = $this->createMock(TenantSaasService::class);
-		$legacy->method('getById')->willReturn(null);
 
 		return new TenantService(
 			groupManager: $this->createMock(IGroupManager::class),
-			organisations: new TenantOrganisationResolver(appManager: $apps, container: $container, tenantSaas: $legacy, logger: $logger),
+			organisations: new TenantOrganisationResolver(appManager: $apps, container: $container, logger: $logger),
 			appManager: $apps,
 			container: $container,
 			logger: $logger,
