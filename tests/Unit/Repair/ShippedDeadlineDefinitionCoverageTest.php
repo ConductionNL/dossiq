@@ -87,6 +87,8 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		'evenementenvergunning' => ['statutory', 56, 56, 1, 'APV 1:2'],
 		'zaaktype-cultuur-subsidie-2026' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'melding-openbare-ruimte' => ['planned', 14, 0, 0, 'Servicenorm'],
+		'parkeervergunning-bewoners' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		'kenteken-wijzigen-parkeervergunning' => ['planned', 14, 0, 0, 'Servicenorm'],
 		'building-permit' => ['planned', 56, 0, 0, 'Service norm'],
 		'grant-application' => ['planned', 42, 0, 0, 'Service norm'],
 		'citizen-complaint' => ['planned', 42, 0, 0, 'Service norm'],
