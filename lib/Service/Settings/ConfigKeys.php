@@ -331,6 +331,9 @@ class ConfigKeys {
 		'dossier_informatieobject_schema',
 		'dossier_zaakinformatieobject_schema',
 		'woo_assessment_schema',
+		'woo_review_schema',
+		'woo_triage_rule_schema',
+		'woo_review_batch_schema',
 		'dossier_besluitinformatieobject_schema',
 		'dossier_informatieobjecttype_schema',
 		// Maximum upload size in bytes (0 = no app-level limit, NC limit applies).

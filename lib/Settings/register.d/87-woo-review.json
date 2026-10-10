@@ -1,0 +1,232 @@
+{
+  "_note": "woo-review-triage (rows 19.7 to 19.11). Relevance apart from the disclosure verdict, visible triage rules, and batches assigned to named reviewers. No x-openregister-hierarchy: OpenRegister refuses a parent that references another schema. The private authorization block of REQ-WRT-006 comes with section 6, once woo-request-scoped-access sets the grants; declaring it before then would lock the reviewers out.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "wooDocumentReview",
+          "wooTriageRule",
+          "wooReviewBatch"
+        ]
+      }
+    },
+    "schemas": {
+      "wooDocumentReview": {
+        "slug": "wooDocumentReview",
+        "icon": "FileFindOutline",
+        "version": "1.0.0",
+        "title": "Woo document review",
+        "description": "Per document collected on a Woo case: is it about the request at all, who or which rule said so, its batch, and the pages a reviewer saw.",
+        "type": "object",
+        "required": [
+          "case",
+          "documentRef",
+          "relevance"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case the document was collected on.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "documentRef": {
+            "type": "string",
+            "title": "Document",
+            "description": "The informatieobject under review."
+          },
+          "relevance": {
+            "type": "string",
+            "title": "Relevance",
+            "description": "Whether the document is about the request: not marked yet, in scope or out of scope.",
+            "enum": [
+              "unmarked",
+              "in-scope",
+              "out-of-scope"
+            ],
+            "default": "unmarked",
+            "facetable": true
+          },
+          "relevanceSource": {
+            "type": "string",
+            "title": "Marked by",
+            "description": "Whether a reviewer or a triage rule set the relevance.",
+            "enum": [
+              "reviewer",
+              "rule"
+            ]
+          },
+          "rule": {
+            "type": "string",
+            "title": "Rule",
+            "description": "The triage rule that decided the relevance, when a rule did."
+          },
+          "overturnedRule": {
+            "type": "string",
+            "title": "Overturned rule",
+            "description": "The triage rule whose marking a reviewer changed."
+          },
+          "markedBy": {
+            "type": "string",
+            "title": "Marked by user",
+            "description": "Who set the relevance."
+          },
+          "markedAt": {
+            "type": "string",
+            "title": "Marked at",
+            "description": "When the relevance was set.",
+            "format": "date-time"
+          },
+          "batch": {
+            "type": "string",
+            "title": "Batch",
+            "description": "The review batch the document is in.",
+            "facetable": true
+          },
+          "depth": {
+            "type": "object",
+            "title": "Review depth",
+            "description": "The review depth that applied: every page, or a sample and its size and seed."
+          },
+          "pageCount": {
+            "type": "integer",
+            "title": "Page count",
+            "description": "How many pages the document has."
+          },
+          "pagesRequired": {
+            "type": "array",
+            "title": "Pages required",
+            "description": "The page numbers a reviewer must see before a verdict.",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "pagesSeen": {
+            "type": "array",
+            "title": "Pages seen",
+            "description": "The pages a reviewer saw, with who and when.",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "wooTriageRule": {
+        "slug": "wooTriageRule",
+        "icon": "FilterCogOutline",
+        "version": "1.0.0",
+        "title": "Woo triage rule",
+        "description": "A visible rule on a Woo case that marks collected documents in or out of scope without a reviewer opening each one.",
+        "type": "object",
+        "required": [
+          "case",
+          "name",
+          "effect"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case the rule belongs to.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "The rule's name, shown on the case and on every document it marked."
+          },
+          "conditions": {
+            "type": "object",
+            "title": "Conditions",
+            "description": "All of these must hold: custodian, source system, mime type, date range, sender domain, text that is or is not in the document."
+          },
+          "effect": {
+            "type": "string",
+            "title": "Effect",
+            "description": "What a match marks the document as.",
+            "enum": [
+              "in-scope",
+              "out-of-scope"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "Rules run in this order; the first match decides.",
+            "default": 0
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "description": "Whether the rule runs when the rules are applied.",
+            "default": true
+          }
+        }
+      },
+      "wooReviewBatch": {
+        "slug": "wooReviewBatch",
+        "icon": "TrayFull",
+        "version": "1.0.0",
+        "title": "Woo review batch",
+        "description": "A named part of a Woo case's in-scope documents, assigned to one reviewer through a task.",
+        "type": "object",
+        "required": [
+          "case",
+          "name",
+          "assignee"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case the batch belongs to.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "The batch's name, shown on the case and on the reviewer's task."
+          },
+          "documents": {
+            "type": "array",
+            "title": "Documents",
+            "description": "The documents in the batch.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filter": {
+            "type": "object",
+            "title": "Filter",
+            "description": "The filter the documents were taken by: custodian, source system or rule."
+          },
+          "assignee": {
+            "type": "string",
+            "title": "Reviewer",
+            "description": "The Nextcloud user who reviews the batch.",
+            "facetable": true
+          },
+          "task": {
+            "type": "string",
+            "title": "Task",
+            "description": "The dossiq task that assigns the batch."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Whether the batch is still open.",
+            "enum": [
+              "open",
+              "closed"
+            ],
+            "default": "open",
+            "facetable": true
+          }
+        }
+      }
+    }
+  }
+}
