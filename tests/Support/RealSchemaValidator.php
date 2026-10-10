@@ -106,8 +106,12 @@ class RealSchemaValidator {
 	 */
 	private function jsonSchema(array $schema, bool $creating): array {
 		$out = ['type' => 'object', 'properties' => []];
+		$required = (array)($schema['required'] ?? []);
 		foreach (($schema['properties'] ?? []) as $name => $property) {
 			$out['properties'][$name] = $this->property(property: (array)$property);
+			if (in_array($name, $required, true) === false) {
+				$out['properties'][$name] = $this->acceptNull(property: $out['properties'][$name]);
+			}
 		}
 
 		if ($creating === true && empty($schema['required']) === false) {
@@ -116,6 +120,29 @@ class RealSchemaValidator {
 
 		return $out;
 	}//end jsonSchema()
+
+	/**
+	 * OpenRegister's widening of an optional top-level property to null
+	 * (ValidateObject): a typed property accepts null, except an enum that
+	 * does not list null, which must be a listed value or left out.
+	 *
+	 * @param array<string, mixed> $property The JSON Schema property.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function acceptNull(array $property): array {
+		if (is_array($property['enum'] ?? null) === true && in_array(null, $property['enum'], true) === false) {
+			return $property;
+		}
+
+		if (is_string($property['type'] ?? null) === true) {
+			$property['type'] = [$property['type'], 'null'];
+		} else if (is_array($property['type'] ?? null) === true && in_array('null', $property['type'], true) === false) {
+			$property['type'][] = 'null';
+		}
+
+		return $property;
+	}//end acceptNull()
 
 	/**
 	 * One property, keeping only the keywords a JSON-Schema validator judges on.

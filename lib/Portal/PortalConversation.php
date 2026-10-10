@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#2-attachments
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ namespace OCA\Dossiq\Portal;
 /**
  * Declares the reply, the reply form and the question from the case.
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#3-reply-and-case-choice
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalConversation {
 
@@ -93,7 +93,7 @@ class PortalConversation {
 	 *
 	 * @return array<string, mixed> The declaration.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#3-reply-and-case-choice
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function inboxReply(): array {
 		return [
@@ -108,7 +108,7 @@ class PortalConversation {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#3-reply-and-case-choice
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function replyAction(): array {
 		return [
@@ -162,7 +162,7 @@ class PortalConversation {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function askAction(): array {
 		return [
@@ -197,7 +197,7 @@ class PortalConversation {
 	 *
 	 * @return array<string, string> The declaration.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseMessagesBlock(): array {
 		return [

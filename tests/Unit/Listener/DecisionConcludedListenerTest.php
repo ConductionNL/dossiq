@@ -33,6 +33,7 @@ use OCA\Decidiq\Event\DecisionConcludedEvent;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
+use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseObjectReference;
 use OCA\Dossiq\Service\Support\FlowDecisionSubject;
@@ -416,6 +417,41 @@ class DecisionConcludedListenerTest extends TestCase {
 			$this->createMock(LoggerInterface::class)
 		);
 	}//end listenerForDecision()
+
+	/**
+	 * Decision 172: every terminal outcome is handed to the product issuer
+	 * with its status, so the case type decides which outcome issues.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 */
+	public function testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus(): void {
+		foreach (['approved', 'rejected'] as $status) {
+			$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+			$objectService->method('searchObjectsBySlug')
+				->willReturn([['decisionRef' => 'dec-1', 'case' => 'case-9', 'besluitRef' => 'bes-2']]);
+			$settings = $this->createMock(SettingsService::class);
+			$settings->method('getObjectService')->willReturn($objectService);
+			$materialiser = $this->createMock(BesluitMaterialisationService::class);
+			$materialiser->method('materialiseFromConcludedEvent')->willReturn(['ok' => true]);
+
+			$products = $this->createMock(CaseOutcomeProductIssuer::class);
+			$products->expects($this->once())
+				->method('onConcludedDecision')
+				->with('case-9', 'dec-1', $status, '2026-06-15T10:00:00+00:00');
+
+			$listener = new DecisionConcludedListener(
+				settingsService: $settings,
+				decisionMaterialiser: $materialiser,
+				bacService: $this->createMock(AdvisoryCommitteeService::class),
+				logger: $this->createMock(LoggerInterface::class),
+				products: $products
+			);
+			$listener->handle($this->event(sourceApp: 'procest', status: $status));
+		}
+	}//end testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus()
+
 
 	/**
 	 * Build a DecisionConcludedEvent fixture.

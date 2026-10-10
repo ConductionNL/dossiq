@@ -192,6 +192,22 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	}//end portalFacts()
 
 	/**
+	 * The contact channel a resident picks in the portal is heard
+	 * (portal-contact-channel-follows-the-resident), under the listener's own
+	 * EVENT name, which the registrar spells as a string.
+	 *
+	 * @return void
+	 */
+	public function testTheContactChannelFactIsBound(): void {
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		$this->assertSame(
+			expected: [\OCA\Dossiq\Listener\PortalContactDetailsChangedListener::class],
+			actual: ($registered[\OCA\Dossiq\Listener\PortalContactDetailsChangedListener::EVENT] ?? []),
+		);
+	}//end testTheContactChannelFactIsBound()
+
+	/**
 	 * The listeners on another app's event are registered by name, unguarded.
 	 *
 	 * Source-read, because the stub makes the class loadable here and a run
@@ -283,6 +299,7 @@ class CrossAppListenerRegistrarTest extends TestCase {
 			'message received' => ['OCA\Dossiq\Listener\MessageReceivedListener', 'OCA\Integriq\Event\MessageReceivedEvent'],
 			'portal write' => ['OCA\Dossiq\Listener\PortalClientWriteListener', 'OCA\Portaliq\Event\PortalClientWriteEvent'],
 			'portal withdrawal' => ['OCA\Dossiq\Listener\PortalClientWithdrawalListener', 'OCA\Portaliq\Event\PortalClientWithdrawalEvent'],
+			'portal contact channel' => ['OCA\Dossiq\Listener\PortalContactDetailsChangedListener', 'OCA\Portaliq\Event\PortalContactDetailsChangedEvent'],
 			'document generated' => ['OCA\Dossiq\Listener\DocumentGeneratedListener', 'OCA\Filinq\Event\DocumentGeneratedEvent'],
 			'form submitted' => ['OCA\Dossiq\Listener\FormSubmittedListener', 'OCA\Forms\Events\FormSubmittedEvent'],
 		];

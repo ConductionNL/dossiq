@@ -585,7 +585,7 @@ export default {
 		 * @param {object} entry The entry.
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		isResidentMessage(entry) {
 			return entry.kind === RESIDENT_MESSAGE_KIND
@@ -596,7 +596,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async onReplySent() {
 			const entry = this.replyTo

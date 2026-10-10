@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261010150000</version>
+    <version>0.4.47-unstable.20261010163438</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -346,6 +346,21 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\RenameCollidingSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
+            <!--
+                After the import, so the case schema already declares the
+                channel slug enum and communicationChannelSource (decision 171):
+                every stored ZGW channel URL or intake word becomes a slug, the
+                old value kept beside it.
+            -->
+            <step>OCA\Dossiq\Repair\NormaliseCommunicationChannelValues</step>
+            <!-- site-business-and-authorisation D2: a portal case filed before
+                 portalParty existed gets subject:<portalSubject>, once. Restored:
+                 a merge of development had dropped this registration. -->
+            <step>OCA\Dossiq\Repair\BackfillPortalParty</step>
+            <!-- communication-portal-conversation-on-the-case D-2: each portal
+                 message's attachments are copied into the message folder portaliq
+                 serves, once, behind a persisted key. Restored like the step above. -->
+            <step>OCA\Dossiq\Repair\CopyMessageAttachmentsIntoMessageFolders</step>
             <!--
                 The shipped register data assigns flow steps to Nextcloud
                 groups (task-behandelaar -> "behandelaars"). Provision them

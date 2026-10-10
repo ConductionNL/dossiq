@@ -180,6 +180,7 @@ class ZgwService {
 	 * @param ZgwBusinessRulesService $businessRulesService The business rules service
 	 * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
 	 * @param LoggerInterface $logger The logger
+	 * @param CommunicationChannel|null $channels Maps a zaak's communicatiekanaal onto a channel slug (decision 171)
 	 *
 	 * @return void
 	 */
@@ -191,6 +192,7 @@ class ZgwService {
 		private readonly ZgwBusinessRulesService $businessRulesService,
 		private readonly ZgwJwtValidator $jwtValidator,
 		private readonly LoggerInterface $logger,
+		private readonly ?CommunicationChannel $channels = null,
 	) {
 		$container = \OC::$server;
 
@@ -466,6 +468,11 @@ class ZgwService {
 			}
 		}
 
+		// Decision 171: the case holds a slug, a zaak answers with a URL.
+		if ($zgwResource === 'zaak') {
+			$mapped = $this->channels()->outbound(case: $objectData, mapped: $mapped);
+		}
+
 		return $mapped;
 	}//end applyOutboundMapping()
 
@@ -513,8 +520,23 @@ class ZgwService {
 			}
 		}
 
+		// Decision 171: a ZGW communicatiekanaal URL becomes a channel slug
+		// here, at the boundary, so the slug enum never refuses a zaak.
+		if (($mappingConfig['zgwResource'] ?? '') === 'zaak') {
+			$mapped = $this->channels()->inbound(body: $body, mapped: $mapped);
+		}
+
 		return $mapped;
 	}//end applyInboundMapping()
+
+	/**
+	 * The channel mapping, injected or built without an administrator's map.
+	 *
+	 * @return CommunicationChannel
+	 */
+	private function channels(): CommunicationChannel {
+		return ($this->channels ?? new CommunicationChannel());
+	}//end channels()
 
 	/**
 	 * Get the request body, falling back to raw body parsing for malformed JSON.

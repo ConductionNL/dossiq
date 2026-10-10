@@ -48,7 +48,7 @@ are never proposable.
 
 `case.linkedTypes` gains `portaliq-change-proposal-queue` in a fragment
 `lib/Settings/register.d/77-portaliq-change-proposals.json`, and `CaseDetail`
-places it as a `type: integration` widget titled "Voorgestelde wijzigingen".
+places it as a `type: integration` widget titled "Voorgestelde wijzigingen", shown as the Proposals (Voorstellen) tab of the case panels, as board PtVoorstelBeoordelen draws it (amended 10 Oct: the board wins over a grid panel).
 A leaf whose app has not registered it is never mounted, so until portaliq
 lands T06 the panel is absent rather than empty.
 

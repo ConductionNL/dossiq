@@ -57,6 +57,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -309,10 +310,18 @@ class ChannelIntake {
 			}
 
 			$text = trim((string)$value);
-			if ($text !== '') {
-				$object[$field] = $text;
+			if ($text === '') {
+				continue;
 			}
+
+			$object[$field] = $text;
 		}
+
+		// Decision 171: the channel is a slug enum, so a message's words
+		// ("E-mail", "brief") become their slug and the words are kept. A word
+		// that names no channel writes no channel, never a value the schema
+		// refuses, which would lose the whole case.
+		$object = $this->withChannelSlug(object: $object);
 
 		$description = trim((string)($message['text'] ?? ''));
 		if (($object['description'] ?? '') === '' && $description !== '') {
@@ -342,6 +351,24 @@ class ChannelIntake {
 		}
 		return $object;
 	}//end caseObjectFor()
+
+	/**
+	 * The case object with its channel words turned into a slug, the words
+	 * kept beside it (decision 171). An object without a channel is unchanged.
+	 *
+	 * @param array<string, mixed> $object The case object.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function withChannelSlug(array $object): array {
+		$fields = array_filter(
+			(new CommunicationChannel())->normalise(value: ($object['communicationChannel'] ?? null)),
+			static fn ($value): bool => $value !== null
+		);
+		unset($object['communicationChannel']);
+
+		return array_merge($object, $fields);
+	}//end withChannelSlug()
 
 	/**
 	 * The case type the rule mapped, when this instance has it.

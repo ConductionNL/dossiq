@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * Starts a Woo request for the resident portaliq vouches for.
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
  */
 class PortalWooRequestController extends Controller {
 
@@ -64,7 +64,7 @@ class PortalWooRequestController extends Controller {
 	/**
 	 * The portal audiences this action is offered to (DigiD arrives as client).
 	 */
-	private const AUDIENCES = ['citizen', 'client'];
+	private const AUDIENCES = ['citizen', 'client', 'business'];
 
 	/**
 	 * The form fields the action forwards.
@@ -121,7 +121,7 @@ class PortalWooRequestController extends Controller {
 	 *
 	 * @return JSONResponse 201 `{caseId, caseUrl}`; 401, 403, 400, 404 or 503 `{error, message}`.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -139,6 +139,14 @@ class PortalWooRequestController extends Controller {
 		}
 
 		$request = ['subjectRef' => (string)$claims['sub']];
+		// The branch a company session is restricted to comes from the signed
+		// assertion only, like the subject; a branch in the body is never read
+		// (portal-case-list-declarations D3).
+		$branch = trim((string)($claims['branch'] ?? ''));
+		if ($branch !== '') {
+			$request['branch'] = $branch;
+		}
+
 		foreach (self::FIELDS as $field) {
 			$request[$field] = $this->request->getParam($field);
 		}

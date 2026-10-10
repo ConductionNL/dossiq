@@ -75,7 +75,7 @@ import {
  * on a resident's message, it emits `sent` so the timeline closes that
  * message's follow-up; a refusal keeps the dialog open with the reason.
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export default {
 	name: 'PortalMessageDialog',
@@ -119,7 +119,7 @@ export default {
 		 * The case id, from the prop or else from the route.
 		 *
 		 * @return {string} The case id, or ''.
-		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		resolvedCaseId() {
 			const fromProp = this.caseId || ''
@@ -147,7 +147,7 @@ export default {
 			 *
 			 * @param {boolean} opened Whether the dialog is showing.
 			 * @return {void}
-			 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+			 * @spec openspec/specs/portal-contribution/spec.md
 			 */
 			handler(opened) {
 				if (opened === true) {
@@ -163,7 +163,7 @@ export default {
 		 * Read the case: its portal subject and its reference.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async loadCase() {
 			if (this.resolvedCaseId === '') {
@@ -185,7 +185,7 @@ export default {
 		 * Write the message to the applicant's inbox.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async send() {
 			this.error = ''

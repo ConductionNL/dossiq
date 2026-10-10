@@ -38,7 +38,7 @@ What dossiq has:
 ## Impact
 
 - Specs: one requirement added to `portal-contribution`.
-- New: `lib/Settings/register.d/` fragment for `permit`, `lib/Service/Permit/PermitIssuer.php`, `lib/Listener/PermitFromDecisionListener.php`, seed case type "Parkeervergunning bewoners" with `issuesPermit`.
+- New: `lib/Settings/register.d/` fragment for `permit`, the generic `lib/Service/Product/CaseOutcomeProductIssuer.php` (decision 182), called from the existing `DecisionConcludedListener`, seed case type "Parkeervergunning bewoners" with `issuesPermit`.
 - Changed: `lib/Portal/CitizenManifest.php` (collection and action), `lib/Portal/PortalContributionProvider.php` (field constants), `caseType` schema (`issuesPermit`).
 
 ## Cross-project dependencies

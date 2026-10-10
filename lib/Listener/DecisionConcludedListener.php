@@ -47,6 +47,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\Bezwaar\BezwaarEntryNotWrittenException;
+use OCA\Dossiq\Service\Product\CaseOutcomeProductIssuer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -62,6 +63,12 @@ use Throwable;
  * Materialises the ZGW Besluit from decidesk's `DecisionConcludedEvent`.
  *
  * @template-implements IEventListener<Event>
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The listener joins the decision
+ * app's outcome to everything a concluded decision touches in dossiq: the besluit,
+ * the advisory committee record, the waiting flow run and the declared product.
+ * Each collaborator is one of those effects; splitting them would duplicate the
+ * case resolution every effect depends on.
  *
  * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
  */
@@ -102,6 +109,8 @@ class DecisionConcludedListener implements IEventListener {
 	 * @param FlowDecisionSubject|null $flowDecisions Recognises a flow decision about a dossiq case;
 	 *                                        subject. Nullable so no construction site breaks;
 	 *                                        absent, no flow decision is projected.
+	 * @param CaseOutcomeProductIssuer|null $products Issues the product a case type declares for this outcome
+	 *                                                (decision 172); absent, no product is written.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -111,6 +120,7 @@ class DecisionConcludedListener implements IEventListener {
 		private readonly ?FlowRunMapper $runs = null,
 		private readonly ?FlowRunService $runner = null,
 		private readonly ?FlowDecisionSubject $flowDecisions = null,
+		private readonly ?CaseOutcomeProductIssuer $products = null,
 	) {
 	}//end __construct()
 
@@ -195,6 +205,14 @@ class DecisionConcludedListener implements IEventListener {
 				decision: $decisionRecord,
 				decisionId: $besluitId,
 				subjectId: $subjectId
+			);
+
+			// Decision 172: the product the case type declares; never throws.
+			$this->products?->onConcludedDecision(
+				caseId: $caseId,
+				decisionId: $decisionId,
+				status: $status,
+				decidedAt: $this->readString(event: $event, getter: 'getDecidedAt')
 			);
 
 			// A case flow that ASKED for this decision is suspended on it.

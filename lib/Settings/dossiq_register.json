@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.23"
+        "version": "0.20.26"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.16.0",
+                "version": "1.18.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -1581,7 +1581,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.40.0",
+                "version": "1.41.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3462,10 +3462,17 @@
                     },
                     "communicationChannel": {
                         "type": "string",
-                        "format": "uri",
-                        "description": "URL reference to the communication channel",
+                        "enum": ["email", "portal", "post", "website", "zgw-api", null],
+                        "description": "How letters about this case reach the applicant, as a channel slug. A ZGW communicatiekanaal URL is mapped to a slug at the ZGW boundary (zgw-api when the URL maps to nothing known) and kept in communicationChannelSource (decision 171). null is in the enum, not in a union type, so a value that names no channel can be cleared: OpenRegister widens an optional enum to null only when the enum lists it.",
                         "visible": false,
                         "title": "Communication channel"
+                    },
+                    "communicationChannelSource": {
+                        "type": "string",
+                        "description": "The value the channel arrived as when it was not a slug: the ZGW communicatiekanaal URL the case was created with, or the words of an older intake. The ZGW API answers with this URL, so a ZGW client reads back what it wrote.",
+                        "visible": false,
+                        "readOnly": true,
+                        "title": "Communication channel as received"
                     },
                     "workflowTemplate": {
                         "type": "string",
