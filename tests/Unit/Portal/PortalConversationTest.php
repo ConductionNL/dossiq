@@ -80,7 +80,7 @@ class PortalConversationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#3-reply-and-case-choice
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testTheInboxReplyCarriesTheCaseFromTheMessage(): void {
 		$berichten = $this->collection('berichten');
@@ -105,7 +105,7 @@ class PortalConversationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#3-reply-and-case-choice
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testTheReplyFormOffersTheResidentsOwnCases(): void {
 		$provider = $this->action('replyToMessage')['optionsProviders']['caseId'];
@@ -132,7 +132,7 @@ class PortalConversationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#2-attachments
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testAttachmentsAreFilesBothWays(): void {
 		$this->assertTrue($this->collection('berichten')['filesDownload']);
@@ -156,7 +156,7 @@ class PortalConversationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testAResidentAsksFromTheCase(): void {
 		$ask = $this->action('askAboutCase');
@@ -181,7 +181,7 @@ class PortalConversationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testTheCaseDetailListsItsMessagesAndOffersTheQuestion(): void {
 		$cases = $this->collection('mijnZaken');
@@ -197,7 +197,7 @@ class PortalConversationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testTheInboxPageKeepsTheReplyForm(): void {
 		$pages = array_column($this->contribution()['pages'], null, 'id');

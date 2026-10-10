@@ -44,6 +44,11 @@ use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
  */
 class CitizenManifest {
 	/**
+	 * The case field holding the branch number a company filed under.
+	 */
+	public const BRANCH_FIELD = 'portalBranch';
+
+	/**
 	 * What a Woo request asks, in the order the steps ask it. `collectionId`
 	 * is not here: only the dossier variant carries it, and it is hidden.
 	 */
@@ -309,7 +314,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	private function startWooVerzoekAction(): array {
 		// THE DOSSIER GOES IN THE FIRST STEP, hidden. Portaliq gathers every
@@ -366,7 +371,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
 	 */
 	private function startWooVerzoekAlgemeenAction(): array {
@@ -416,7 +421,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/portal-citizen-writes-on-the-case/tasks.md#1.1
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function amendCaseAction(): array {
 		return [
@@ -448,7 +453,16 @@ class CitizenManifest {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-says-who-must-act-req-srpd-002
 	 */
-	private function caseCollection(): array {
+	public function caseCollection(): array {
+		return array_merge($this->caseDetailKeys(), $this->caseListKeys());
+	}//end caseCollection()
+
+	/**
+	 * What the case collection projects and what its detail shows.
+	 *
+	 * @return array<string, mixed> The keys.
+	 */
+	private function caseDetailKeys(): array {
 		return [
 			'id' => 'mijnZaken',
 			'register' => PortalContributionProvider::REGISTER,
@@ -457,7 +471,9 @@ class CitizenManifest {
 			'label' => 'Mijn zaken',
 			'listable' => true,
 			'minTrust' => 'low',
-			'fields' => PortalContributionProvider::CITIZEN_CASE_FIELDS,
+			// The branch rides along for portaliq's branch scope only: it is
+			// not on CITIZEN_CASE_FIELDS, so the acknowledgement never quotes it.
+			'fields' => array_merge(PortalContributionProvider::CITIZEN_CASE_FIELDS, [self::BRANCH_FIELD]),
 			// WHAT THE RESIDENT READS, labelled and typed. Without these
 			// portaliq falls back to every projected field as plain text
 			// under its key, uuids included (dossiq#3143). `caseType` and
@@ -513,6 +529,17 @@ class CitizenManifest {
 					'us' => 'De gemeente is aan zet',
 				],
 			],
+		];
+	}//end caseDetailKeys()
+
+	/**
+	 * How "Mijn zaken" lists a case: what makes it a case, when it is closed,
+	 * which branch filed it, its number and its case type.
+	 *
+	 * @return array<string, mixed> The keys.
+	 */
+	private function caseListKeys(): array {
+		return [
 			// LISTED ON "MY CASES". Portaliq's merged case list keeps only
 			// collections of kind `cases` (PortalCaseListReader), and reads a
 			// row as closed when `closedField` holds a value (false does not
@@ -525,6 +552,16 @@ class CitizenManifest {
 			// drops a closed marker the collection does not project.
 			'kind' => 'cases',
 			'closedField' => 'isFinalStatus',
+			// THE BRANCH A COMPANY FILED UNDER. A session restricted to one
+			// branch reads only the cases whose `portalBranch` is that branch,
+			// and a case filed before the field existed is hidden from it,
+			// which portaliq calls the safe answer (portal-case-list-declarations D3).
+			'branchField' => self::BRANCH_FIELD,
+			// THE CASE NUMBER, for a session that came in with a case number
+			// instead of an account. Portaliq reads it only for a case type
+			// whose `portalIdentityKind` admits `reference`, and no case type
+			// does until portaliq checks the address against the case (D4).
+			'referenceField' => 'identifier',
 			// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
 			// portal needs to tell statuses apart; the merged case list
 			// showed it as is. portaliq shows this field instead.
@@ -539,7 +576,7 @@ class CitizenManifest {
 				'labelField' => 'title',
 			],
 		];
-	}//end caseCollection()
+	}//end caseListKeys()
 
 	/**
 	 * Making an objection: the start point a resident reads on the home page

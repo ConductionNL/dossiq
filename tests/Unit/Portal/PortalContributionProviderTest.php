@@ -451,12 +451,19 @@ class PortalContributionProviderTest extends TestCase {
 		// supplier's payment record and showed it to nobody, least of all the
 		// supplier it was about. The order is asserted because the portal
 		// renders the collections in it.
+		// `mijnZaken` comes last: a company on eHerkenning follows its own
+		// cases beside procurement (portal-case-list-declarations D1).
 		$this->assertSame(
-			['tenders', 'contracts', 'invoices', 'performance', 'messages'],
+			['tenders', 'contracts', 'invoices', 'performance', 'messages', 'mijnZaken'],
 			$ids
 		);
 		foreach ($contribution['collections'] as $collection) {
-			$this->assertSame('supplierRef', $collection['scopeField']);
+			$expected = 'supplierRef';
+			if ($collection['id'] === 'mijnZaken') {
+				$expected = 'portalSubject';
+			}
+
+			$this->assertSame($expected, $collection['scopeField']);
 		}
 	}
 
@@ -492,7 +499,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	public function testAResidentStartsAWooRequestFromTheirDossier(string $audience): void {
 		$actions = [];

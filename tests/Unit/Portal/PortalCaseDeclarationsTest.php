@@ -31,7 +31,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  * @spec openspec/changes/portal-case-list-declarations/tasks.md
  */
 
@@ -242,6 +242,95 @@ class PortalCaseDeclarationsTest extends TestCase {
 	 *
 	 * @return array<string, mixed>
 	 */
+	/**
+	 * A company signing in with eHerkenning gets audience `supplier` from
+	 * portaliq's preset, and reads its cases beside the procurement pages
+	 * (design D1). The inspector reads no cases.
+	 *
+	 * @return void
+	 */
+	public function testACompanyOnEherkenningReadsItsCasesBesideProcurement(): void {
+		$supplier = $this->provider->getContribution(['audience' => 'supplier']);
+		$this->assertIsArray($supplier);
+		$ids = array_column($supplier['collections'], 'id');
+		$this->assertContains('mijnZaken', $ids);
+		foreach (['tenders', 'contracts', 'invoices', 'messages'] as $procurement) {
+			$this->assertContains($procurement, $ids, 'the procurement pages stay');
+		}
+
+		$cases = array_values(array_filter($supplier['collections'], static fn (array $c): bool => $c['id'] === 'mijnZaken'))[0];
+		$this->assertSame($this->caseCollection(), $cases, 'every audience reads the same case declaration');
+		$this->assertSame('portalSubject', $cases['scopeField'], 'a company reads only the cases filed under its own subject');
+
+		$inspector = $this->provider->getContribution(['audience' => 'inspector']);
+		$this->assertNotContains('mijnZaken', array_column($inspector['collections'], 'id'));
+	}//end testACompanyOnEherkenningReadsItsCasesBesideProcurement()
+
+	/**
+	 * The branch a company filed under and the ways in a case type admits are
+	 * register properties (design D3, D4).
+	 *
+	 * @return void
+	 */
+	public function testTheBranchAndTheWaysInAreDeclaredOnTheRegister(): void {
+		$branch = $this->properties['case']['portalBranch'];
+		$this->assertSame('string', $branch['type']);
+		$this->assertSame('^[0-9]{12}$', $branch['pattern'], 'a vestigingsnummer is twelve digits');
+		$this->assertFalse($branch['visible'], 'not on the staff forms');
+
+		$kinds = $this->properties['caseType']['portalIdentityKind'];
+		$this->assertSame('array', $kinds['type']);
+		$this->assertSame(['account', 'reference'], $kinds['items']['enum']);
+		foreach ([$branch, $kinds] as $property) {
+			$this->assertNotSame('', (string)($property['title'] ?? ''));
+			$this->assertNotSame('', (string)($property['description'] ?? ''));
+		}
+	}//end testTheBranchAndTheWaysInAreDeclaredOnTheRegister()
+
+	/**
+	 * 🔴 No seeded case type admits a case number and an address as a way in:
+	 * portaliq does not yet check the address against the case, so admitting
+	 * it would let anyone who knows a case number read that case (design D4).
+	 *
+	 * @return void
+	 */
+	public function testNoSeededCaseTypeAdmitsTheReferenceWayIn(): void {
+		$settingsDir = __DIR__ . '/../../../lib/Settings';
+		$files = array_merge([$settingsDir . '/dossiq_register.json'], glob($settingsDir . '/register.d/*.json'));
+		$seeded = 0;
+		foreach ($files as $file) {
+			$decoded = json_decode((string)file_get_contents($file), true);
+			foreach (($decoded['components']['objects'] ?? []) as $object) {
+				if (array_key_exists('portalIdentityKind', (array)$object) === true) {
+					$seeded++;
+					$this->assertNotContains('reference', (array)$object['portalIdentityKind'], basename($file));
+				}
+			}
+		}
+
+		$this->assertGreaterThanOrEqual(0, $seeded);
+	}//end testNoSeededCaseTypeAdmitsTheReferenceWayIn()
+
+	/**
+	 * The case list names the field holding the branch and the one holding
+	 * the case number, and projects both: portaliq drops a branch field the
+	 * row does not carry (design D3, D4).
+	 *
+	 * @return void
+	 */
+	public function testTheCaseListNamesItsBranchAndCaseNumberFields(): void {
+		$cases = $this->caseCollection();
+		$this->assertSame('portalBranch', $cases['branchField']);
+		$this->assertContains('portalBranch', $cases['fields']);
+		$this->assertSame('identifier', $cases['referenceField']);
+		$this->assertContains('identifier', $cases['fields']);
+		$this->assertNotContains(
+			'portalBranch',
+			$this->provider->citizenCaseFields(),
+			'the acknowledgement does not quote a branch number back'
+		);
+	}//end testTheCaseListNamesItsBranchAndCaseNumberFields()
+
 	private function caseCollection(): array {
 		$contribution = $this->provider->getContribution(['audience' => 'client']);
 		$this->assertIsArray($contribution);

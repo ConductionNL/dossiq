@@ -172,7 +172,7 @@ class PortalPages {
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
-	 * @spec openspec/changes/resident-overview-reads-as-designed/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 */
 	private function residentOverviewBlocks(array $collections): array {
 		// THE OVERVIEW OPENS WITH THE TIME OF DAY AND THE RESIDENT'S FIRST NAME

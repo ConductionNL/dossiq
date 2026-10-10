@@ -1,0 +1,1 @@
+- No screen: dossiq contributes a manifest declaration and server endpoints only; portaliq renders every resident page from it (portaliq's boards, not dossiq's)
