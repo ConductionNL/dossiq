@@ -52,6 +52,21 @@ class CitizenManifest {
 	public const ANSWER_ACTION = 'beantwoordVraag';
 
 	/**
+	 * The field the requester's files travel under (portaliq row-action-carries-files).
+	 */
+	public const ANSWER_FILES_FIELD = 'bijlagen';
+
+	/**
+	 * At most this many files with one answer.
+	 */
+	public const ANSWER_FILES_MAX = 5;
+
+	/**
+	 * At most this many bytes per file (10 MiB).
+	 */
+	public const ANSWER_FILES_MAX_BYTES = 10485760;
+
+	/**
 	 * What a Woo request asks, in the order the steps ask it. `collectionId`
 	 * is not here: only the dossier variant carries it, and it is hidden.
 	 */
@@ -328,6 +343,7 @@ class CitizenManifest {
 			'minTrust' => 'low',
 			'fields' => ['antwoord'],
 			'requiredFields' => ['antwoord'],
+			'files' => ['field' => self::ANSWER_FILES_FIELD, 'max' => self::ANSWER_FILES_MAX, 'maxBytes' => self::ANSWER_FILES_MAX_BYTES],
 			'fieldConfigs' => [
 				'antwoord' => ['label' => 'Uw antwoord', 'size' => 'large', 'maxLength' => 4000],
 			],

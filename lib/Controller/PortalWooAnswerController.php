@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Portal\CitizenManifest;
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
 use OCA\Dossiq\Portal\PortalWooAnswer;
 use OCP\AppFramework\Controller;
@@ -107,14 +108,77 @@ class PortalWooAnswerController extends Controller {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		$attachments = $this->attachments();
+		if ($attachments === null) {
+			return new JSONResponse(
+				['error' => 'invalid', 'message' => 'Send at most five files of at most 10 MB each.'],
+				Http::STATUS_UNPROCESSABLE_ENTITY
+			);
+		}
+
 		$result = $this->answers->answer(
 			subjectRef: (string)($claims['sub'] ?? ''),
 			requestId: $this->stringParam(key: 'requestId'),
 			answer: $this->stringParam(key: 'antwoord'),
+			attachments: $attachments,
 		);
 
 		return new JSONResponse($result['body'], $result['status']);
 	}//end answer()
+
+	/**
+	 * The files portaliq forwarded under `bijlagen` (row-action-carries-files), read into bytes.
+	 *
+	 * Portaliq already checked the number and size; they are checked again
+	 * here because this route trusts the assertion, not the forwarder's checks.
+	 *
+	 * @return list<array{name: string, content: string}>|null The files, or null when there are too many or one is too large.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function attachments(): ?array {
+		$uploaded = $this->request->getUploadedFile(CitizenManifest::ANSWER_FILES_FIELD);
+		if (is_array($uploaded) === false || isset($uploaded['tmp_name']) === false) {
+			return [];
+		}
+
+		$entries = [$uploaded];
+		if (is_array($uploaded['tmp_name']) === true) {
+			$entries = [];
+			foreach (array_keys($uploaded['tmp_name']) as $key) {
+				$entries[] = [
+					'name' => ($uploaded['name'][$key] ?? ''),
+					'tmp_name' => $uploaded['tmp_name'][$key],
+					'size' => ($uploaded['size'][$key] ?? 0),
+				];
+			}
+		}
+
+		if (count($entries) > CitizenManifest::ANSWER_FILES_MAX) {
+			return null;
+		}
+
+		$files = [];
+		foreach ($entries as $entry) {
+			if ((int)($entry['size'] ?? 0) > CitizenManifest::ANSWER_FILES_MAX_BYTES) {
+				return null;
+			}
+
+			$path = (string)($entry['tmp_name'] ?? '');
+			if ($path === '' || is_readable($path) === false) {
+				continue;
+			}
+
+			$content = file_get_contents($path);
+			if ($content === false) {
+				continue;
+			}
+
+			$files[] = ['name' => basename((string)($entry['name'] ?? 'bijlage')), 'content' => $content];
+		}
+
+		return $files;
+	}//end attachments()
 
 	/**
 	 * A request param as a string, or '' when it is absent or not a string.

@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -69,6 +70,7 @@ class PortalWooAnswer {
 	 * @param AanvullingsverzoekResolutionService $resolution Records the answer on the open request.
 	 * @param ApplicantPortalActs                 $acts       Tells the handler.
 	 * @param LoggerInterface                     $logger     Logger.
+	 * @param DocumentRecordStore|null            $documents  Stores the requester's files on the case.
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
@@ -76,6 +78,7 @@ class PortalWooAnswer {
 		private readonly AanvullingsverzoekResolutionService $resolution,
 		private readonly ApplicantPortalActs $acts,
 		private readonly LoggerInterface $logger,
+		private readonly ?DocumentRecordStore $documents = null,
 	) {
 	}//end __construct()
 
@@ -90,12 +93,19 @@ class PortalWooAnswer {
 	 * @param string                 $requestId  The aanvullingsverzoek the row names.
 	 * @param string                 $answer     What the requester wrote.
 	 * @param DateTimeImmutable|null $now        The moment of the answer.
+	 * @param list<array{name: string, content: string}> $attachments The files sent with the answer.
 	 *
 	 * @return array{status: int, body: array<string, mixed>} The HTTP status and body.
 	 *
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
-	public function answer(string $subjectRef, string $requestId, string $answer, ?DateTimeImmutable $now = null): array {
+	public function answer(
+		string $subjectRef,
+		string $requestId,
+		string $answer,
+		?DateTimeImmutable $now = null,
+		array $attachments = [],
+	): array {
 		$text = trim($answer);
 		if ($text === '' || mb_strlen($text) > self::MAX_LENGTH) {
 			return ['status' => 400, 'body' => ['error' => 'invalid', 'message' => 'Write an answer of at most 4000 characters.']];
@@ -119,7 +129,8 @@ class PortalWooAnswer {
 				subjectRef: trim($subjectRef),
 				requestId: trim($requestId),
 				text: $text,
-				moment: $moment
+				moment: $moment,
+				attachments: $attachments
 			)
 		);
 	}//end answer()
@@ -134,6 +145,7 @@ class PortalWooAnswer {
 	 * @param string            $requestId     The request id.
 	 * @param string            $text          The answer.
 	 * @param DateTimeImmutable $moment        When.
+	 * @param list<array{name: string, content: string}> $attachments The files.
 	 *
 	 * @return array{status: int, body: array<string, mixed>}
 	 */
@@ -145,6 +157,7 @@ class PortalWooAnswer {
 		string $requestId,
 		string $text,
 		DateTimeImmutable $moment,
+		array $attachments = [],
 	): array {
 		$notFound = ['status' => 404, 'body' => ['error' => 'not_found']];
 		$caseId = $this->answerableCase(
@@ -178,10 +191,52 @@ class PortalWooAnswer {
 			return ['status' => 503, 'body' => ['error' => 'unavailable']];
 		}
 
-		$this->acts->recordWrite(caseId: $caseId, act: self::ACT, fields: ['applicantAnswer'], occurredAt: $moment->format('c'));
+		$filed = $this->fileAttachments(caseId: $caseId, attachments: $attachments);
+		$fields = ['applicantAnswer'];
+		if ($filed > 0) {
+			$fields[] = 'documents';
+		}
 
-		return ['status' => 200, 'body' => ['requestId' => $requestId, 'state' => 'open']];
+		$this->acts->recordWrite(caseId: $caseId, act: self::ACT, fields: $fields, occurredAt: $moment->format('c'));
+
+		return ['status' => 200, 'body' => ['requestId' => $requestId, 'state' => 'open', 'attachments' => $filed]];
 	}//end record()
+
+	/**
+	 * Store the requester's files in the case's folder.
+	 *
+	 * The document projection turns each file in a case folder into an
+	 * incoming document record, so the handler finds the attachments with the
+	 * case's other documents. A file that cannot be stored is logged and not
+	 * counted; the answer itself stands.
+	 *
+	 * @param string                                          $caseId      The case.
+	 * @param list<array{name: string, content: string}> $attachments The files.
+	 *
+	 * @return int How many were stored.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 */
+	private function fileAttachments(string $caseId, array $attachments): int {
+		if ($this->documents === null || $attachments === []) {
+			return 0;
+		}
+
+		$filed = 0;
+		foreach ($attachments as $attachment) {
+			try {
+				$this->documents->storeFileOnObject(objectId: $caseId, fileName: $attachment['name'], content: $attachment['content']);
+				$filed++;
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'Dossiq: a file sent with a portal answer could not be stored on the case',
+					['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+				);
+			}
+		}
+
+		return $filed;
+	}//end fileAttachments()
 
 	/**
 	 * The case of a request the subject may answer, or null.

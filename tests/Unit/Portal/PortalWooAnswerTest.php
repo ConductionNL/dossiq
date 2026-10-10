@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\IRequest;
@@ -107,15 +108,17 @@ class PortalWooAnswerTest extends TestCase {
 	 *
 	 * @return PortalWooAnswerController
 	 */
-	private function controller(array $body, ?string $assertion = null): PortalWooAnswerController {
+	private function controller(array $body, ?string $assertion = null, array $uploads = [], ?object $fileService = null): PortalWooAnswerController {
 		$assertion = ($assertion ?? PortalAssertionVerifierTest::mint());
 		$request = $this->createMock(IRequest::class);
+		$request->method('getUploadedFile')->willReturnCallback(static fn (string $key): mixed => ($uploads[$key] ?? []));
 		$request->method('getHeader')->willReturnCallback(fn (string $name): string => ($name === PortalAssertionVerifier::HEADER) ? $assertion : '');
 		$request->method('getParam')->willReturnCallback(fn (string $key, mixed $default = null): mixed => ($body[$key] ?? $default));
 		$request->method('getRemoteAddress')->willReturn('127.0.0.1');
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getFileService')->willReturn($fileService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? $default)
 		);
@@ -127,6 +130,7 @@ class PortalWooAnswerTest extends TestCase {
 			resolution: new AanvullingsverzoekResolutionService(requests: $requests, act: $this->act, logger: new NullLogger()),
 			acts: $this->acts,
 			logger: new NullLogger(),
+			documents: new DocumentRecordStore(settingsService: $settings),
 		);
 
 		return new PortalWooAnswerController(
@@ -158,6 +162,58 @@ class PortalWooAnswerTest extends TestCase {
 		$this->assertNotEmpty($request['applicantAnsweredAt']);
 		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'aanvullingsverzoek', payload: $request, creating: false));
 	}//end testTheAnswerLandsOnTheOpenRequest()
+
+	/**
+	 * The files portaliq forwards under `bijlagen` land in the case's folder, where the projection files them as incoming documents.
+	 *
+	 * @return void
+	 */
+	public function testTheAttachmentsAreFiledOnTheCase(): void {
+		$files = new class {
+			/** @var list<array{object: string, name: string, content: string}> */
+			public array $added = [];
+
+			public function addFile(string $objectEntity, string $fileName, string $content, mixed ...$rest): object {
+				$this->added[] = ['object' => $objectEntity, 'name' => $fileName, 'content' => $content];
+
+				return new \stdClass();
+			}
+		};
+		$tmp = tempnam(sys_get_temp_dir(), 'wds');
+		file_put_contents($tmp, 'kaart bytes');
+		$this->acts->expects($this->once())->method('recordWrite')
+			->with('case-87', 'answer', ['applicantAnswer', 'documents'], $this->isType('string'))
+			->willReturn(true);
+
+		$response = $this->controller(
+			body: ['requestId' => 'req-1', 'antwoord' => 'Zie de kaart in de bijlage'],
+			uploads: ['bijlagen' => ['name' => ['../speeltuinen.pdf'], 'tmp_name' => [$tmp], 'size' => [11], 'error' => [0]]],
+			fileService: $files
+		)->answer();
+		unlink($tmp);
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame(1, $response->getData()['attachments']);
+		$this->assertSame([['object' => 'case-87', 'name' => 'speeltuinen.pdf', 'content' => 'kaart bytes']], $files->added);
+	}//end testTheAttachmentsAreFiledOnTheCase()
+
+	/**
+	 * More than five files is refused before anything is written.
+	 *
+	 * @return void
+	 */
+	public function testTooManyFilesAreRefused(): void {
+		$this->acts->expects($this->never())->method('recordWrite');
+		$names = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+		$response = $this->controller(
+			body: ['requestId' => 'req-1', 'antwoord' => 'Zes bijlagen'],
+			uploads: ['bijlagen' => ['name' => $names, 'tmp_name' => $names, 'size' => array_fill(0, 6, 1), 'error' => array_fill(0, 6, 0)]]
+		)->answer();
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertArrayNotHasKey('applicantAnswer', $this->store->row(schema: 'aanvullingsverzoek', uuid: 'req-1'));
+	}//end testTooManyFilesAreRefused()
 
 	/**
 	 * A request of another resident answers 404 and nothing is written.
