@@ -378,12 +378,14 @@ class PrerequisitesTest extends TestCase {
 	}//end testTheNextcloudRowSaysWhetherThisInstanceIsInRange()
 
 	/**
-	 * A renamed app reads its new name and is still looked up by its old id.
+	 * A renamed app is a row under the id it ships, reads its new name, and
+	 * still reads present on an instance that answers only to the old id.
 	 *
 	 * 🔴 THE LOOKUP IS THE HALF THAT MUST NOT MOVE. `isInstalled()` answers
-	 * false for an id nothing answers to, so a key renamed ahead of the app
-	 * would report every installed sibling as missing. The double below only
-	 * knows the OLD ids, which is what an instance answers today.
+	 * false for an id nothing answers to, so a row keyed on the new id must
+	 * resolve through `FleetAppId`, which also tries the old one. The double
+	 * below only knows the OLD ids, which is what an instance that has not
+	 * upgraded answers today.
 	 *
 	 * @return void
 	 *
@@ -396,16 +398,16 @@ class PrerequisitesTest extends TestCase {
 		$rows = array_column($report['apps']['optional'], null, 'id');
 
 		$expected = [
-			'openconnector' => 'integriq',
-			'docudesk' => 'filinq',
-			'hrmq' => 'humaniq',
-			'decidesk' => 'decidiq',
-			'nldesign' => 'thematiq',
+			'integriq' => 'openconnector',
+			'filinq' => 'docudesk',
+			'humaniq' => 'hrmq',
+			'decidiq' => 'decidesk',
+			'thematiq' => 'nldesign',
 		];
-		foreach ($expected as $id => $name) {
-			$this->assertArrayHasKey($id, $rows, sprintf('"%s" stays the lookup id', $id));
-			$this->assertSame($name, $rows[$id]['name'], sprintf('"%s" reads as "%s"', $id, $name));
-			$this->assertTrue($rows[$id]['present'], sprintf('"%s" is looked up by its old id', $id));
+		foreach ($expected as $id => $oldId) {
+			$this->assertArrayHasKey($id, $rows, sprintf('"%s" is the row id', $id));
+			$this->assertSame($id, $rows[$id]['name'], sprintf('"%s" reads as itself', $id));
+			$this->assertTrue($rows[$id]['present'], sprintf('"%s" is found under its old id "%s"', $id, $oldId));
 		}
 
 		// An app whose name did not move reads as its id.
