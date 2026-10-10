@@ -213,20 +213,22 @@ class InspectionAnswers {
 	}//end forPanel()
 
 	/**
-	 * One answer, or null when it names no item.
+	 * One answer, or null when it names no item. The item comes as `itemId`,
+	 * `itemRef` or the offline leaf's `questionId`; the value as `value`,
+	 * `result` or `answer`.
 	 *
 	 * @param array<string, mixed> $raw The answer as sent.
 	 *
 	 * @return array<string, mixed>|null The answer.
 	 */
 	private function answer(array $raw): ?array {
-		$itemId = trim((string)($raw['itemId'] ?? $raw['itemRef'] ?? ''));
+		$itemId = trim((string)($raw['itemId'] ?? $raw['itemRef'] ?? $raw['questionId'] ?? ''));
 		if ($itemId === '') {
 			return null;
 		}
 
 		$answer = ['itemId' => $itemId];
-		$value = ($raw['value'] ?? $raw['result'] ?? null);
+		$value = ($raw['value'] ?? $raw['result'] ?? $raw['answer'] ?? null);
 		if ($value !== null && $value !== '') {
 			$word = strtolower(trim((string)$value));
 			$answer['value'] = (self::YES_NO[$word] ?? (string)$value);
@@ -249,7 +251,7 @@ class InspectionAnswers {
 	 * @return array<string, mixed> The answer.
 	 */
 	private function withExtras(array $answer, array $raw): array {
-		foreach (['choice' => 'choice', 'comment' => 'comment', 'remark' => 'comment'] as $from => $to) {
+		foreach (['choice' => 'choice', 'comment' => 'comment', 'remark' => 'comment', 'notes' => 'comment'] as $from => $to) {
 			if (trim((string)($raw[$from] ?? '')) !== '' && isset($answer[$to]) === false) {
 				$answer[$to] = (string)$raw[$from];
 			}
@@ -268,7 +270,8 @@ class InspectionAnswers {
 	}//end withExtras()
 
 	/**
-	 * The photo file ids of one answer.
+	 * The photo file ids of one answer: `photos`, the offline leaf's
+	 * `evidenceRefs`, and a single `photoRef`.
 	 *
 	 * @param array<string, mixed> $raw The answer as sent.
 	 *
@@ -276,9 +279,13 @@ class InspectionAnswers {
 	 */
 	private function photos(array $raw): array {
 		$photos = [];
-		if (is_array($raw['photos'] ?? null) === true) {
-			foreach ($raw['photos'] as $photo) {
-				if (is_scalar($photo) === true && (string)$photo !== '') {
+		foreach (['photos', 'evidenceRefs'] as $key) {
+			if (is_array($raw[$key] ?? null) === false) {
+				continue;
+			}
+
+			foreach ($raw[$key] as $photo) {
+				if (is_scalar($photo) === true && (string)$photo !== '' && in_array((string)$photo, $photos, true) === false) {
 					$photos[] = (string)$photo;
 				}
 			}

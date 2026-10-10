@@ -4,9 +4,11 @@
  * An older stored run, as the fields of the task that replaces it.
  *
  * Pure. inspection-checklists-onto-task 4.2: every `inspectieRapport` (stack
- * A), `inspectionChecklistRun` (stack B) and `inspectionResult` (stack C)
- * becomes one inspection task, carried over once and keyed on
- * `metadata.legacyRef`. A submitted run arrives completed; a stack B run that
+ * A), `inspectionChecklistRun` (stack B), `inspectionResult` (stack C) and
+ * offline `checklistResult` becomes one inspection task, carried over once and
+ * keyed on `metadata.legacyRef`. A source that holds no case of its own names
+ * a parent object that does (a `checklistResult` names its `fieldInspection`),
+ * and the parent fills what the source leaves out. A submitted run arrives completed; a stack B run that
  * was never submitted arrives active. OpenRegister's import path takes no
  * completion moment, so the original one rides in `metadata.legacyCompletedAt`.
  *
@@ -39,23 +41,45 @@ namespace OCA\Dossiq\Service\Inspection;
 class InspectionRunCarryOver {
 
 	/**
-	 * The three source schemas, with the request key their answers sit under
-	 * and the older template schema their checklist reference points into.
+	 * The source schemas, with the request key their answers sit under, the
+	 * older template schema their checklist reference points into, and, for a
+	 * source without a case of its own, the parent that holds it: the parent
+	 * schema, the source field naming the parent, and the parent's case field.
 	 *
-	 * @var array<string, array{answers: string, checklist: string, templatePrefix: string}>
+	 * @var array<string, array{answers: string, checklist: string, templatePrefix: string, parent?: array{schema: string, ref: string, case: string}}>
 	 */
 	public const SOURCES = [
 		'inspectieRapport' => ['answers' => 'items', 'checklist' => 'checklist', 'templatePrefix' => 'inspectieChecklist/'],
 		'inspectionChecklistRun' => ['answers' => 'responses', 'checklist' => 'template', 'templatePrefix' => ''],
 		'inspectionResult' => ['answers' => 'answers', 'checklist' => 'checklist', 'templatePrefix' => 'inspectionChecklist/'],
+		'checklistResult' => [
+			'answers' => 'items',
+			'checklist' => 'checklistTemplateRef',
+			'templatePrefix' => 'inspectionChecklist/',
+			'parent' => ['schema' => 'fieldInspection', 'ref' => 'inspectionRef', 'case' => 'caseRef'],
+		],
 	];
 
 	/**
-	 * Stack B statuses that never reached a submit.
+	 * Statuses that never reached a submit: stack B's, and an offline
+	 * inspection that is planned or still running.
 	 *
 	 * @var array<int, string>
 	 */
-	private const OPEN = ['draft', 'in_execution'];
+	private const OPEN = ['draft', 'in_execution', 'planned', 'in_progress'];
+
+	/**
+	 * Parent fields copied onto a source that leaves them out: parent field => source field.
+	 *
+	 * @var array<string, string>
+	 */
+	private const FROM_PARENT = [
+		'inspectorRef' => 'inspector',
+		'startedAt' => 'startedAt',
+		'completedAt' => 'completedAt',
+		'status' => 'status',
+		'gpsLocation' => 'location',
+	];
 
 	/**
 	 * The answers and the outcome rule.
@@ -111,6 +135,92 @@ class InspectionRunCarryOver {
 
 		return $source['templatePrefix'] . (string)($object[$source['checklist']] ?? '');
 	}//end templateRef()
+
+	/**
+	 * Every key the template may be indexed under: the folded legacy
+	 * reference first, then the bare reference, which a planned item already
+	 * repointed to its template holds.
+	 *
+	 * @param string               $schema The source schema slug.
+	 * @param array<string, mixed> $object The source object.
+	 *
+	 * @return array<int, string> The keys, most specific first.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
+	 */
+	public function templateKeys(string $schema, array $object): array {
+		$bare = (string)($object[self::SOURCES[$schema]['checklist']] ?? '');
+
+		return array_values(array_unique([$this->templateRef(schema: $schema, object: $object), $bare]));
+	}//end templateKeys()
+
+	/**
+	 * The parent a source names, when its schema declares one.
+	 *
+	 * @param string               $schema The source schema slug.
+	 * @param array<string, mixed> $object The source object.
+	 *
+	 * @return array{schema: string, id: string}|null The parent schema and id, or null.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
+	 */
+	public function parentOf(string $schema, array $object): ?array {
+		$parent = (self::SOURCES[$schema]['parent'] ?? null);
+		if ($parent === null) {
+			return null;
+		}
+
+		$id = trim((string)($object[$parent['ref']] ?? ''));
+		if ($id === '') {
+			return null;
+		}
+
+		return ['schema' => $parent['schema'], 'id' => $id];
+	}//end parentOf()
+
+	/**
+	 * The source with its case and the fields it leaves out taken from its
+	 * parent. A source without a declared parent, or whose parent was not
+	 * found, comes back unchanged.
+	 *
+	 * @param string                    $schema The source schema slug.
+	 * @param array<string, mixed>      $object The source object.
+	 * @param array<string, mixed>|null $parent The parent object, when found.
+	 *
+	 * @return array<string, mixed> The source, completed.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
+	 */
+	public function withParent(string $schema, array $object, ?array $parent): array {
+		$declared = (self::SOURCES[$schema]['parent'] ?? null);
+		if ($declared === null || $parent === null) {
+			return $object;
+		}
+
+		$case = trim((string)($parent[$declared['case']] ?? ''));
+		if (trim((string)($object['case'] ?? '')) === '' && $case !== '') {
+			$object['case'] = $case;
+		}
+
+		foreach (self::FROM_PARENT as $from => $to) {
+			if (($object[$to] ?? null) === null && $this->filled(value: ($parent[$from] ?? null)) === true) {
+				$object[$to] = $parent[$from];
+			}
+		}
+
+		return $object;
+	}//end withParent()
+
+	/**
+	 * Whether a parent value says anything.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return boolean False for null, an empty string and an empty list.
+	 */
+	private function filled(mixed $value): bool {
+		return $value !== null && $value !== '' && $value !== [];
+	}//end filled()
 
 	/**
 	 * The fields of the task that replaces a source run.
