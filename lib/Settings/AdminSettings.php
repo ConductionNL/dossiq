@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\ServerVersion;
 use OCP\Settings\IDelegatedSettings;
 
 /**
@@ -51,12 +52,14 @@ class AdminSettings implements IDelegatedSettings {
 	 * @param IInitialState $initialState The initial state service.
 	 * @param SettingsService $settingsService Reads the stored config values.
 	 * @param QueueUrgencySettings $queueUrgency The queue thresholds and weights.
+	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
 		private IInitialState $initialState,
 		private SettingsService $settingsService,
 		private QueueUrgencySettings $queueUrgency,
+		private ServerVersion $serverVersion,
 	) {
 	}//end __construct()
 
@@ -84,7 +87,10 @@ class AdminSettings implements IDelegatedSettings {
 		// just installed the extension the block told them about.
 		$this->initialState->provideInitialState(
 			'prerequisites',
-			(new Prerequisites())->check($this->appManager)
+			(new Prerequisites())->check(
+				appManager: $this->appManager,
+				nextcloudMajor: $this->serverVersion->getMajorVersion()
+			)
 		);
 		$this->initialState->provideInitialState(
 			'consultationSettings',
