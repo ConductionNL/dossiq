@@ -131,3 +131,27 @@ Without these, the same 149 come back. Each is a hydra-side or convention-side d
       so the headline overstates how much of the old debt was paid. And half of the gate-credit
       gain is the gate: on the 2026-09-11 tree the current gate already credits
       184 of 330 without a line of dossiq changing.
+
+## Re-measured 2026-10-10 (lane L11), and the archive-path repair
+
+Same extractor, current gate (`.github` `origin/main` extracted to a scratch dir, not the
+vendored 1.17 copy, which lacks `spec_files` and `covering_ref`), `development` @`3a715bb7c`:
+**613 citations, 357 credited onto 300 distinct scenarios.** The suite has doubled since 09-12
+and the dominant defect moved: **220 citations point into `openspec/changes/**`**, 146 of them
+at a file that no longer exists because its change was archived. That is task 5.3's prediction
+come true at scale.
+
+- [x] 6.1 Repoint every citation into an archived or vanished change at the canonical
+      `openspec/specs/<capability>/spec.md#<slug>` when the canonical spec carries that
+      scenario (133 citations, 30 files; comment lines only, no test body touched). After:
+      **490 credited onto 395 distinct scenarios** (+95 scenarios), 13 citations still at a
+      vanished file. 13 of the 133 now land on a scenario the spec marks `@e2e exclude`, which
+      gate-19 reports as a contradiction to settle under 5.4 rather than hiding it.
+- [ ] 6.2 The 29 archive-path citations whose slug the canonical spec does not carry (the
+      archive renamed or folded the scenario: `a-dashboard-the-reader-arranges`,
+      `hours-onto-humaniq-leaf`, `case-type-fields-filter-the-case-list`,
+      `columns-follow-the-case-type`, and the `requirement-*` anchors in
+      `intake-triage-and-refusal`, which name requirements, not scenarios). Each needs a
+      reading of the canonical spec to find the scenario the test proves.
+- [ ] 6.3 The 58 citations into changes that are still open stay as they are until their change
+      is archived; the archive step of that change carries the repoint (its lane owns the file).
