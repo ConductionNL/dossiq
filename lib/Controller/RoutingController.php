@@ -170,7 +170,7 @@ class RoutingController extends Controller {
 	 *
 	 * @return JSONResponse `{caseId, assignee, team, areaFallbackUsed, reason, takeBack}`
 	 *
-	 * @auth admin-only, like reroute: routing writes the assignee of a case
+	 * @auth admin-only routing writes the assignee of a case
 	 * whatever the caller's own role on it, so it is restricted to server
 	 * admins, enforced in the body via IGroupManager::isAdmin().
 	 *

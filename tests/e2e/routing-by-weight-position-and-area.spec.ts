@@ -94,6 +94,7 @@ test.afterAll(async () => {
 })
 
 test.describe('work is divided in proportion to what each member is there for', () => {
+	// @e2e role-based-step-routing::a-part-time-member-gets-a-smaller-share
 	test('a part-time colleague receives a smaller share over a full cycle', async () => {
 		await bindMember('e2e-aad', 1)
 		await bindMember('e2e-bea', 0.4)
@@ -119,6 +120,7 @@ test.describe('work is divided in proportion to what each member is there for', 
 })
 
 test.describe('a rule may name a position inside a team', () => {
+	// @e2e role-based-step-routing::the-senior-of-one-team-not-of-all-teams
 	test('the senior of team zuid gets it, and the senior of noord is never a candidate', async () => {
 		await bindMember('e2e-sanne', 1, 'zuid')
 		await bindMember('e2e-mo', 1, 'noord')
@@ -147,6 +149,7 @@ test.describe('a rule may name a position inside a team', () => {
 })
 
 test.describe('the case holds the area it is in, and routing reads it', () => {
+	// @e2e role-based-step-routing::the-area-team-gets-the-case
 	test('a case at an address in wijk Zuid routes to the team declared for it', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Zuid`,
@@ -168,6 +171,7 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 		expect(body.areaFallbackUsed).toBe(false)
 	})
 
+	// @e2e role-based-step-routing::changing-the-address-re-resolves-the-area
 	test('correcting the address re-resolves the area', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Verhuisd`,
@@ -187,6 +191,7 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 		expect(stored.district).toBe('Noord')
 	})
 
+	// @e2e role-based-step-routing::an-address-outside-every-boundary-uses-the-fallback
 	test('an address outside every boundary routes by the fallback and says so', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Buiten de grenzen`,
@@ -213,7 +218,8 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 })
 
 test.describe('work not taken up returns to the pool', () => {
-	test('the assignee\'s first edit accepts the case, so nothing is taken back', async () => {
+	// @e2e role-based-step-routing::accepting-cancels-the-window
+	test("the assignee's first edit accepts the case, so nothing is taken back", async () => {
 		// A team of one, so the signed-in admin is the only candidate.
 		await bindMember(ADMIN, 1, `${RUN_PREFIX}-aanname`)
 		const caseId = await seedCase(api, token, {
@@ -238,7 +244,9 @@ test.describe('work not taken up returns to the pool', () => {
 		expect(before.routing.acceptedAt ?? '').toBe('')
 
 		// The first edit by the person it was routed to.
-		await updateObject(api, token, 'case', caseId, { description: `${RUN_PREFIX} gebeld met de aanvrager` })
+		await updateObject(api, token, 'case', caseId, {
+			description: `${RUN_PREFIX} gebeld met de aanvrager`,
+		})
 
 		const after = await showObject(api, 'case', caseId)
 		expect(after.assignee).toBe(ADMIN)
