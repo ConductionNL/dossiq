@@ -318,7 +318,7 @@ class CaseEmailServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testASentMailReachesTheTimelineAsAPublicEntry(): void {
 		$seen = [];
@@ -366,7 +366,7 @@ class CaseEmailServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testARefusedMailWritesNoTimelineEntry(): void {
 		$timeline = $this->createMock(CaseTimeline::class);

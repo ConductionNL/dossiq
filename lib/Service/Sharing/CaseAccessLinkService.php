@@ -27,7 +27,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md
  */
 class CaseAccessLinkService {
 	/**
@@ -104,7 +104,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return array<string, mixed> The link row plus its url, or an error array.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function mintCaseLink(
 		string $caseId,
@@ -141,7 +141,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return array<string, mixed> The link row plus its url, or an error array.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
 	 */
 	public function mintFileLink(
 		string $caseId,
@@ -180,7 +180,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return bool True when OpenRegister revoked it.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function revokeLink(int $linkId, string $userId): bool {
 		$service = $this->gateway->accessLinkService();
@@ -217,7 +217,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return array<string, mixed>|null The updated link, or null when there was none to update.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function setPaused(int $linkId, string $userId, bool $paused): ?array {
 		$service = $this->gateway->accessLinkService();
@@ -252,7 +252,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return string One of `revoked`, `paused`, `expired`, `live`.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function stateOf(array $link): string {
 		if (empty($link['revokedAt']) === false) {
@@ -285,7 +285,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return array<string, mixed>|null The stripped body, or null when the link answers nothing.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	public function holderPreview(string $anchor): ?array {
 		$service = $this->gateway->accessLinkService();
@@ -329,7 +329,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return array<string, mixed> The link row plus its url, or an error array.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function mint(
 		string $userId,
@@ -383,7 +383,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return array<int, string>|null The capabilities, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function declaredCapabilities(array $capabilities): ?array {
 		$declared = ['read'];
@@ -415,7 +415,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return string An ISO 8601 date.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function expiry(?string $expiresAt): string {
 		$raw = trim((string)$expiresAt);
@@ -433,7 +433,7 @@ class CaseAccessLinkService {
 	 *
 	 * @return string|null The value, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function trimmedOrNull(?string $value): ?string {
 		$trimmed = trim((string)$value);
