@@ -346,4 +346,55 @@ class MilestoneServiceStalledTest extends TestCase {
 
 	}//end testAllMilestonesReachedIsNotFlagged()
 
+
+	/**
+	 * waitingOn() names the milestone a case waits on even when it is not late,
+	 * with the deadline the stalled list would use, so the stall timer and the
+	 * list agree.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	public function testWaitingOnNamesTheMilestoneBeforeItIsLate(): void {
+		$today = (new \DateTimeImmutable('today'))->format('Y-m-d');
+		$case  = [
+			'id'        => 'zaak-2',
+			'caseType'  => 'ct-1',
+			'status'    => 'in_handling',
+			'assignee'  => 'behandelaar-a',
+			'startDate' => $today,
+		];
+		$this->wireSettings(
+			objectService: $this->fakeObjectService(
+				[
+					'1' => [$case],
+					'2' => [
+						[
+							'id'                          => 'def-1',
+							'caseType'                    => 'ct-1',
+							'identifier'                  => 'documenten_compleet',
+							'label'                       => 'Documenten compleet',
+							'order'                       => 1,
+							'expectedDurationWorkingDays' => 5,
+						],
+					],
+					'3' => [],
+				]
+			)
+		);
+		$detector = new StalledCaseDetector(
+			settingsService: $this->settingsService,
+			repository: new MilestoneRepository(settingsService: $this->settingsService),
+			workingDays: new WorkingDayCalculator(),
+			schedule: new MilestoneSchedule(workingDays: new WorkingDayCalculator()),
+		);
+
+		$row = $detector->waitingOn(case: $case);
+
+		$this->assertSame(expected: 'documenten_compleet', actual: $row['milestoneIdentifier']);
+		$this->assertLessThan(0, $row['daysOverdue']);
+		$this->assertGreaterThan($today, $row['deadline']);
+		$this->assertSame(expected: [], actual: $detector->findStalledCases(thresholdDays: 0));
+	}//end testWaitingOnNamesTheMilestoneBeforeItIsLate()
 }//end class

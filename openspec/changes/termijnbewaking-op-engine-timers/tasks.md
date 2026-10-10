@@ -75,10 +75,20 @@
       `BezwaarArchiveTimerFiredListener`. `BezwaarArchiveTimerListener` syncs on saves,
       `lib/Repair/ArmBezwaarArchiveTimers.php` arms the triggers running at upgrade. Job, its two
       tests and its allowlist entry are gone. Live check owed (live pass, decision 139).
-- [ ] 2.3 **DSO** — `DsoDeadlineJob` advances case status from cron: replace with an armed timer
+- [x] 2.3 **DSO** — `DsoDeadlineJob` advances case status from cron: replace with an armed timer
       per DSO-zaak and a `FlowTimerFiredEvent` consumer that drives the SAME
       `StatusTransitionService` path a user action takes (no cron-only transition code). Retire
       the job; remove its allowlist entry.
+      Built 10 Oct (lane L7). Correction to the task text, read off the job: DsoDeadlineJob never
+      moved a status; it notified the assignee in a warning and a critical band and, on overdue,
+      set `deadlineOverdue` with one journal entry, so there was no transition to route.
+      `lib/Service/Dso/DsoDeadlineTimer.php` arms one timer per open DSO case (`dsoStatus`
+      submitted/in_handling) breaching on the deadline day (the job called day 0 overdue), with
+      the two bands as `preBreach` rungs in businessDays read from the `dso_deadline_warning_weeks_*`
+      settings as working days, as the job read them. Subject `<case>:dso`, because status dwell
+      timers are cancelled by subject on the case id. One notification per band instead of one
+      per day. `DsoDeadlineActs` (fresh read; a decided case is never marked), listener, fired
+      listener, `ArmDsoDeadlineTimers` repair. Job, two tests, allowlist entry gone.
 - [x] 2.4 **Vergadering** — DELIVERED BY RETIREMENT, not by migration: the wave-5 status sweep
       (`openspec/changes/case-status-onto-engine-lifecycle`) found the engine dead — the job
       scanned for cases with a literal `status: 'planned'`, which `case.status` (a statusType
@@ -99,30 +109,63 @@
       gone; wiring asserted from `tests/Unit/AppInfo/TermijnTimerRegistrarTest.php`. Live check
       owed (live pass, decision 139): an advice request with a deadline 5 days out arms a timer
       (`occ` / OR flow timers list) whose reminder fires on day 2 and expiry on day 6.
-- [ ] 2.6 Shared: extend `TermijnTimerFiredListener` (or split per engine) on `metadata.kind`;
+- [x] 2.6 Shared: extend `TermijnTimerFiredListener` (or split per engine) on `metadata.kind`;
       each retirement carries its own fixture pair for the date arithmetic that moves.
+      Split per engine (10 Oct, lane L7): each engine has its own fired listener keyed on its own
+      `metadata.source` (`dossiq-advice`, `dossiq-bezwaartermijn`, `dossiq-dso`,
+      `dossiq-milestone`), all registered in `TermijnTimerRegistrar`, and each timer test pins the
+      days the retired job acted on (`AdviceTimerTest`, `BezwaarArchiveTimerTest`,
+      `DsoDeadlineTimerTest`, `MilestoneStallTimerTest`). The saved-object plumbing they share is
+      `Listener/Support/SavedObjectPayload`.
 
 ## Phase 3: milestones (staged)
 
-- [ ] 3.1 `Milestone/StalledCaseDetector` + `BottleneckDetectionJob`: the stalled-threshold
+- [x] 3.1 `Milestone/StalledCaseDetector` + `BottleneckDetectionJob`: the stalled-threshold
       becomes an armed `due`/`none` timer per active milestone (SLA in `businessDays` against the
       seeded `nl-national` calendar); detection-on-cron becomes rung fires. Retire
       `BottleneckDetectionJob`; remove its allowlist entry.
-- [ ] 3.2 `MilestoneService`: replace the app-local working-day math with the engine
+      Built 10 Oct (lane L7): `StalledCaseDetector::waitingOn()` names the milestone a case waits
+      on with its scheduled deadline (the same row the stalled list reports, without the lateness
+      filter), and `lib/Service/Milestone/MilestoneStallTimer.php` arms one timer per case on it,
+      breaching the day after the deadline (`daysOverdue > 0`). It re-syncs on case saves that move
+      status, start date or case type and on every milestone-record save. `MilestoneStallActs`
+      tells the assignee once, only when the case still waits late on the armed milestone. The
+      SLA stays dossiq's working-day count; the engine `SlaCalculator`/`nl-national` calendar is
+      task 3.2. Job, its test and allowlist entry gone.
+- [x] 3.2 `MilestoneService`: replace the app-local working-day math with the engine
       `SlaCalculator` + `WorkingCalendarService` (fixture pair: same business-day counts across a
       weekend + Dutch national holiday).
+      Found done underneath this task (checked 10 Oct, lane L7): `WorkingDayCalculator`, which
+      `MilestoneSchedule` and `StalledCaseDetector` count with, asks OpenRegister's administered
+      calendar through `Termijn\WorkingDayRoll::worksOn()` since 2026-09-19 and keeps its Dutch
+      list only as the logged fallback (`tests/Unit/Service/WorkingDaysAreAdministeredTest.php`).
+      The fixture pair at the milestone level: `tests/Unit/Service/Milestone/MilestoneScheduleOnTheCalendarTest.php`
+      (Ascension and Whit Monday 2026 land the same on the calendar as on the list; an
+      administered closure day moves the milestone).
 
 ## Phase 4: KCC (staged)
 
-- [ ] 4.1 Retire `Kcc/SlaCalculator` (the name-for-name duplicate): `CallbackService` and the KCC
+- [x] 4.1 Retire `Kcc/SlaCalculator` (the name-for-name duplicate): `CallbackService` and the KCC
       routing consult the engine `SlaCalculator` against the organisation calendar; the KCC
       callback SLA (2 working hours) becomes `{value: 2, unit: hours}` timers on the callback
       object with the KCC ladder as escalationRules. Fixture pair: identical due moments for the
       documented KCC cases before and after.
+      Built 10 Oct (lane L7), read off the code first: the only production caller of
+      `Kcc/SlaCalculator` was `CallbackService::applyAttempt()`, for the retry backoff. Its channel
+      SLA tables (`deadlineFor()`, `isBreached()`) had no caller in `lib/` or `src/`, and no KCC
+      routing consults an SLA in dossiq any more (the agent panel moved to pipelinq), so there was
+      no SLA to arm a timer for and no fixture pair to keep. The backoff moved to
+      `lib/Service/Kcc/CallbackRetrySchedule.php` (`tests/Unit/Service/Kcc/CallbackRetryScheduleTest.php`,
+      ported from the retired test); the calculator and its test are gone; the date audit and the
+      no-local-calendar control file follow.
 - [ ] 4.2 Sweep `lib/` for remaining `->diff(` deadline math outside the allowlisted calculation
       classes; tighten the structural test's allowlist to empty.
+      Partly (10 Oct, lane L7): the allowlist in `TimedJobDeadlineThresholdTest` shrank from six
+      to two. Left: `WOODeadlineCheckJob` (task 2.1, waits on #3539 and the Woo lanes, which own
+      the Woo services) and `PauseChaseJob` (the documented fallback while OpenRegister is an
+      optional runtime dependency).
 
 ## Verify
 
-- [ ] V.1 `openspec validate termijnbewaking-op-engine-timers --strict` exits 0.
+- [x] V.1 `openspec validate termijnbewaking-op-engine-timers --strict` exits 0 (10 Oct, openspec 1.12.0).
 - [ ] V.2 After each phase: the structural test's allowlist shrank; hydra gates green on the diff.
