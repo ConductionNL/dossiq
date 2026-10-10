@@ -46,9 +46,9 @@ describe('the Recently opened tile', () => {
 	it('shows when you opened each case, as a relative date read off the envelope', async () => {
 		const recent = recentTile()
 		const keys = recent.content.columns.map((column) => column.key)
-		expect(keys).toEqual(['identifier', 'title', '@self.viewedAt'])
+		expect(keys).toEqual(['title', '@self.viewedAt'])
 
-		const when = recent.content.columns[2]
+		const when = recent.content.columns[1]
 		expect(when.formatter).toBe('daysSince')
 		expect(when.cellClass).toBe('cn-cell--muted cn-cell--end')
 		// The lens carries the order; the tile still declares none of its own.
@@ -147,5 +147,29 @@ describe('the Recently opened tile', () => {
 		expect(recentTile().type).toBe('object-table')
 		expect(CnWidgetObjectTable.props).toHaveProperty('lensReasonTexts')
 		expect(CnDataTable.props).toHaveProperty('lensReasonTexts')
+	})
+
+	/**
+	 * The date column stays inside the tile (my-work-cards-and-team-tiles-read-right,
+	 * finding F7). The tile is about 340px wide and three columns asked for about
+	 * 490px, so the date was cut off. The board DqDashboard draws two columns:
+	 * the title with the case number as a muted line under it, and the date.
+	 * The title wraps rather than pushing the table wider.
+	 */
+	it('draws the number under the title, so the date keeps its place in a narrow tile', () => {
+		const [title, when] = recentTile().content.columns
+
+		expect(title.key).toBe('title')
+		expect(title.secondary).toBe('identifier')
+		expect(title.cellClass.split(' ')).toContain('cn-cell--wrap')
+		expect(when.cellClass.split(' ')).toContain('cn-cell--end')
+		// The library draws `secondary` as a second line (zuiddrecht-pixel-gaps).
+		expect(
+			CnDataTable.methods.secondaryValue.call(
+				{ getCellValue: (row, key) => row[key] },
+				{ identifier: '2026-0004' },
+				title,
+			),
+		).toBe('2026-0004')
 	})
 })
