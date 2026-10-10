@@ -16,6 +16,10 @@
     </projectFiles>
     <stubs>
         <file name="vendor/nextcloud/ocp/OCP/Capabilities/ICapability.php" preloadClasses="true" />
+        <!-- OpenRegister's ADR-063 MCP contracts (hermiq-ai-tooling): the
+             #[McpTool] attribute and IMcpScannableServices, declaration-only. -->
+        <file name="tests/Stubs/Mcp/Attribute/McpTool.php" />
+        <file name="tests/Stubs/Mcp/IMcpScannableServices.php" />
         <!-- Integriq's ADR-041 delivery-seam contract (optional app, resolved
              by FQN string at runtime). Declaration-only stubs mirroring the
              real constructors verbatim, same discipline as the Decidiq event
@@ -133,7 +137,6 @@
                 <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
                 <referencedClass name="OCA\OpenRegister\Service\FileService"/>
                 <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
-                <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
                 <!-- OpenRegister's Flow node contract (ADR-065: OR is the only
                      flow engine). Same dynamic-load situation as the entries
                      above: dossiq contributes nodes into OR's registry and

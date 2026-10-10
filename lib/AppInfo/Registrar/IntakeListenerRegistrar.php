@@ -31,6 +31,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
+use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -61,6 +62,15 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: VergunningaanvraagCreatedListener::class
+		);
+		// A new case is placed once in hermiq's grouping of similar reports
+		// (ai-features-on-the-case, REQ-AIC-04). The job reads whether the case
+		// type declares the feature. The acknowledgement of receipt is queued
+		// on its own and never reads the group: a group does not reduce the
+		// confirmations owed.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: ReportGroupingOnCreateListener::class
 		);
 		// Integriq writes the activity mapping onto its dso_verzoek in an
 		// update, so the case is made on that write.

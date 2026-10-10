@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -64,6 +65,20 @@ class ObjectListenerRegistrarTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A created case reaches the report grouping, through the intake registrar
+	 * this one calls (ai-features-on-the-case, REQ-AIC-04).
+	 *
+	 * @return void
+	 */
+	public function testTheReportGroupingIsRegisteredOnCreation(): void {
+		$this->assertContains(
+			needle: ReportGroupingOnCreateListener::class,
+			haystack: ($this->registrations()['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),
+			message: 'without the registration no case is ever grouped, and every grouping test stays green',
+		);
+	}//end testTheReportGroupingIsRegisteredOnCreation()
+
 	public function testTheGuardIsNotOnThePostPersistEvent(): void {
 		$registered = $this->registrations();
 
