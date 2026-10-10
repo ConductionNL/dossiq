@@ -82,7 +82,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "right",
 						"title": "All your cases",
-						"body": "You work from this list: every case in the organisation, open and closed.",
+						"body": "You work from this list: the open cases in your teams.",
 						"task": "Click All cases in the menu",
 						"target": {
 							"kind": "nav-item",
@@ -121,7 +121,7 @@
 						"optional": true,
 						"allowManualNext": true,
 						"title": "Where case types come from",
-						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look. You do not need to make one: dossiq ships with a set of them.",
 						"task": "Open Advanced, then Case types",
 						"target": {
 							"kind": "nav-item",
@@ -169,8 +169,8 @@
 						"id": "done",
 						"sinceVersion": "0.2.17",
 						"placement": "top",
-						"title": "Your first case is on the board",
-						"body": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
+						"title": "Your first case is on the dashboard",
+						"body": "The dashboard tracks progress as cases move through it. The documentation covers the rest.",
 						"task": "Open the documentation",
 						"target": {
 							"kind": "selector",
@@ -588,6 +588,7 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
+									"assignedGroup": "@myGroups",
 									"assignee": "IS NULL",
 									"isFinalStatus": false,
 									"statusHiddenInLists": false,
@@ -601,12 +602,13 @@
 									{ "key": "deadline", "label": "Deadline" }
 								],
 								"rowRoute": "CaseDetail",
-								"emptyText": "Nothing is waiting in the shared queue"
+								"emptyText": "Nothing is waiting for your teams",
+								"prompt": "Cases waiting for your teams show here"
 							}
 						}
 					}
 				],
-				"_userWidgetsNote": "REQ-DASH-024. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the SHARED QUEUE, the unclaimed work the Queue page is built on, and not `assignedGroup`, which is what the requirement asks for and what nothing can express today: measured 2026-09-18, `resolveFilterTokens` knows @me, @now, @today, @today±Nd, @monthStart, @quarterStart and @yearStart and no group token, the manifest schema's `sentinelFilterToken` pattern enumerates exactly those, and OpenRegister's reserved lens list carries no group lens either. A preset filtering `assignedGroup` on an unresolved token sends the literal string, matches nothing and arrives as a permanently empty card, which is the failure this requirement was written to prevent. The group-scoped variant waits on a `@myGroups` token in nextcloud-vue's `resolveFilterTokens` plus its pattern in `sentinelTokens.js`; that is the library's half and is recorded on this change rather than guessed at here.",
+				"_userWidgetsNote": "REQ-DASH-024, my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
 				"description": "Case volume, status and performance across the team",
 				"headerActions": [
 					{
@@ -876,14 +878,14 @@
 					{
 						"id": "favourite-cases",
 						"type": "object-table",
-						"title": "Your favourites",
-						"_note": "case-number-and-favourites, row 2.19. The cases this reader starred, over OpenRegister's `_favourite` lens (favourites-and-recent, openregister#3766). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the star sits on the case row. No `isFinalStatus` filter: a case you starred and then closed is exactly the one you want back. View all leads to the Favourites chip on Cases, which is the same lens, so the tile and the list cannot show different sets.",
+						"title": "Cases you follow",
+						"_note": "one-follow-control. The cases this reader follows, over OpenRegister's `_watching` lens. This tile was Your favourites over `_favourite`; a favourite became a follow with notifications off (openregister merge-follow-and-favourites, Ruben 9 October on DqMijnWerk), so the tile asks the one lens and the board DqDashboard draws it as Zaken die u volgt. The widget id stays `favourite-cases` because a reader's own dashboard layout stores it, and a renamed id would drop the tile from every saved layout. No `isFinalStatus` filter: a case you follow and that just closed is exactly the one you want back. View all leads to the Following chip on Cases, the same lens.",
 						"content": {
 							"source": {
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"_favourite": true
+									"_watching": true
 								},
 								"limit": 5
 							},
@@ -901,20 +903,20 @@
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
-									"_favourite": "true"
+									"_watching": "true"
 								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
 							"borderless": true,
-							"emptyText": "Star a case to find it here"
+							"emptyText": "Follow a case to find it here"
 						}
 					},
 					{
 						"id": "recent-cases",
 						"type": "object-table",
 						"title": "Recently opened",
-						"_note": "case-number-and-favourites, row 2.19. What this reader opened last, over OpenRegister's `_recent` lens, which carries its own order (last view descending) and keeps the last hundred. Deliberately NO `order` of its own: an order declared here would override the one thing the lens is for and the tile would answer a different question from its chip. Deliberately no status filter either, for the reason the chip carries none: this answers 'what was I just looking at'.",
+						"_note": "case-number-and-favourites, row 2.19. What this reader opened last, over OpenRegister's `_recent` lens, which carries its own order (last view descending) and keeps the last hundred. Deliberately NO `order` of its own: an order declared here would override the one thing the lens is for and the tile would answer a different question from its chip. Deliberately no status filter either, for the reason the chip carries none: this answers 'what was I just looking at'. The muted date column reads `@self.viewedAt`, the ISO 8601 moment this reader last opened the case, which the `_recent` lens adds to the metadata envelope of each object it returns. When OpenRegister reports `@self.lenses.recent.available: false`, CnDataTable shows the matching `lensReasonTexts` entry instead of `emptyText` (nextcloud-vue#1421); the values are English source keys, translated through dossiq's own catalogue like `emptyText`.",
 						"content": {
 							"source": {
 								"register": "dossiq",
@@ -932,6 +934,11 @@
 								{
 									"key": "title",
 									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "@self.viewedAt",
+									"formatter": "daysSince",
+									"cellClass": "cn-cell--muted cn-cell--end"
 								}
 							],
 							"rowRoute": "CaseDetail",
@@ -944,7 +951,12 @@
 							"viewAllLabel": "View all",
 							"hideHeader": true,
 							"borderless": true,
-							"emptyText": "Cases you open show up here"
+							"emptyText": "Cases you open show up here",
+							"lensReasonTexts": {
+								"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",
+								"recent.anonymous": "Sign in to see the cases you opened recently.",
+								"recent.read-history-unavailable": "Your recent cases are not available right now."
+							}
 						}
 					},
 					{
@@ -1150,7 +1162,7 @@
 						}
 					}
 				],
-				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the shared queue (the Dashboard's `your-teams-queue` preset, the Queue page's own filter) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. `userLayout` is back on this page (landing-view-layouts): since nextcloud-vue 2.69.0 a reader's arrangement is kept per view, under `dashboard-layout.MyWorkHome.view.<view>`, so My work and My team each remember their own layout while the manifest still decides which widgets they hold. `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
+				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. `userLayout` is back on this page (landing-view-layouts): since nextcloud-vue 2.69.0 a reader's arrangement is kept per view, under `dashboard-layout.MyWorkHome.view.<view>`, so My work and My team each remember their own layout while the manifest still decides which widgets they hold. `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
 				"viewsLabel": "Whose work",
 				"defaultView": "mine",
 				"views": [
@@ -1391,6 +1403,7 @@
 									"register": "dossiq",
 									"schema": "case",
 									"filter": {
+										"assignedGroup": "@myGroups",
 										"assignee": "IS NULL",
 										"isFinalStatus": false,
 										"statusHiddenInLists": false,
@@ -1413,7 +1426,8 @@
 										}
 									],
 									"rowRoute": "CaseDetail",
-									"emptyText": "Nothing is waiting in the shared queue"
+									"emptyText": "Nothing is waiting for your teams",
+									"prompt": "Cases waiting for your teams show here"
 								}
 							},
 							{
@@ -1757,10 +1771,10 @@
 						"type": "handler"
 					},
 					{
-						"id": "favourite",
-						"label": "Add to or remove from favourites",
-						"icon": "StarOutline",
-						"handler": "toggleCaseFavourite",
+						"id": "follow",
+						"label": "Follow or stop following",
+						"icon": "EyeOutline",
+						"handler": "toggleCaseFollow",
 						"type": "handler"
 					}
 				],
@@ -1954,14 +1968,14 @@
 						"type": "handler"
 					},
 					{
-						"id": "favourite",
-						"label": "Add to or remove from favourites",
-						"icon": "StarOutline",
-						"handler": "toggleCaseFavourite",
+						"id": "follow",
+						"label": "Follow or stop following",
+						"icon": "EyeOutline",
+						"handler": "toggleCaseFollow",
 						"type": "handler"
 					}
 				],
-				"_teamColumnNote": "one-team-model. `assignedGroup` holds a Nextcloud group id, so the Team column reads the field itself: nothing to expand, and the server can sort a flat string. It used to be a $ref to an organisatieRol read through `extend` as `assignedGroup.roleName`, while the handover wrote group ids into the same field, so the column showed a name for some cases and nothing for the rest. The column shows the group id, which is what the handover dialog and the case type name too; a group display name needs a group cell in nextcloud-vue. The Team FACET comes from `facetable: true` on the property and now counts group ids.",
+				"_teamColumnNote": "one-team-model, my-teams-queue. `assignedGroup` holds a Nextcloud group id, so the Team column reads the field itself: nothing to expand, and the server can sort a flat string. It used to be a $ref to an organisatieRol read through `extend` as `assignedGroup.roleName`, while the handover wrote group ids into the same field, so the column showed a name for some cases and nothing for the rest. `widget: group` is nextcloud-vue's group cell (nextcloud-group-surfaces): it shows the group's display name, looked up once per group id per page, and the id while the name loads or when the group cannot be found. The library also picks it on its own for a property marked `referenceType: nextcloud-group`; the column names it so the intent reads here. It stays sortable on the stored id. The Team FACET comes from `facetable: true` on the property and counts group ids.",
 				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. lifecycle-acts-on-the-case REQ-LIFE-01: every WORKING lens now carries `statusHiddenInLists: false`, not only All. A status an administrator marked hidden used to empty one chip and leave the same cases filling Overdue, Due this week, Mine, Unclaimed, the Queue, My Work and the dashboard tiles beside it, so the list and the count disagreed and neither said why. Two lenses deliberately do NOT carry it. Closed is the lens a person explicitly filtered onto the terminal statuses, and hidden statuses are mostly those, so filtering there would empty the one list that is supposed to hold them. The same reasoning keeps it off the Completed this month tile. Hidden means out of the WORKING list, never out of search and never off the case's own page.",
 				"quickFilters": [
 					{
@@ -2001,17 +2015,8 @@
 						}
 					},
 					{
-						"label": "Favourites",
-						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
-						"filter": {
-							"_favourite": true,
-							"statusHiddenInLists": false,
-							"isDraft": false
-						}
-					},
-					{
-						"label": "Followed",
-						"_note": "case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for. It sits beside Favourites, behind the '⋯' chip rather than in the strip: the four pills are the lenses a handler reaches for every morning, and this one answers which cases you chose to keep an eye on.",
+						"label": "Following",
+						"_note": "one-follow-control: the ONE lens for the cases you keep an eye on. The Favourites chip that sat beside it is gone, because a favourite is a follow with notifications off (openregister merge-follow-and-favourites), and `_favourite` now answers exactly what `_watching` answers. case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for. It sits beside Favourites, behind the '⋯' chip rather than in the strip: the four pills are the lenses a handler reaches for every morning, and this one answers which cases you chose to keep an eye on.",
 						"filter": {
 							"_watching": true,
 							"statusHiddenInLists": false,
@@ -2185,7 +2190,8 @@
 					"assignee",
 					{
 						"key": "assignedGroup",
-						"label": "Team"
+						"label": "Team",
+						"widget": "group"
 					},
 					{
 						"key": "deadline",
@@ -2705,7 +2711,11 @@
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
 						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers. scan-verdict-on-the-row: `columns` also declares Scan, over `scanVerdict` and the formatter of the same name in src/services/formatters.js, read by the same `files-browser-columns` WHEN IT LANDS and inert for the same reason. document-acts-reach-a-surface: `rowActions` also carries Versions (VersionHistoryPanel), Mark as final and Change confidentiality (BulkDocumentActionDialog in its two mutating modes). All three were registered in src/registry.js and named by NO manifest action from 2026-09-13, when the Documents tab that opened them was retired and this leaf replaced it; tests/vitest/registryOrphans.spec.js fails on a modal no page opens, so the next retirement says so on its own branch. CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto an `open-modal` action's props, which is how each dialog knows which file it was opened on; `caseId` is the unresolved `@objectId` token here, exactly as it is for every other open-modal on this page, and each dialog falls back to the route. THERE IS NO `bulkActions` ENTRY AND THAT IS DELIBERATE: CnFilesBrowser carries no selection bar (its own header note says the Files app's list, its selection bar and its inline rename are bound to the Files router and cannot be mounted here), so a `bulkActions` prop declared on this widget would be read by nothing and would be a second dark declaration of the kind this change exists to end. The three acts are offered per row until the library carries a selection; the whole case file as one download is the CaseDetail Export dossier header action. inbound-messages-consume-integriq: `rowActions` also carries Read as a message, a FUNCTION handler rather than a declarative act, because CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and holds no `api-call`, so a declared POST would render a menu item that does nothing when clicked. It is offered on EVERY file row and not only on a `.eml` or `.msg`, because the browser has no per-row condition at all; the handler checks the name and answers with a sentence rather than being absent, and the SERVER decides what a file really is, since integriq's reader looks at the bytes and a `.msg` renamed `.eml` still parses as what it is. dossiq parses nothing itself: reading MS-CFB in two apps is two answers to one question and the one in integriq is tested. The original file is never moved or deleted, because it is the record and an archive that kept only the reading cannot answer a question about the bytes later on. dossiq scans nothing: the verdict is whatever `files_antivirus` recorded for the node, read through GET /api/files/{fileId}/scan, and an instance with no scanner reads Not scanned rather than clean (ADR-102).",
+						"_dropNote": "files-dropped-on-the-list (boards DqZaakDocumenten and DqZaakDocumentenSlepen, design-system#148): `uploadButton` puts Add files beside the New menu as the primary button, `dropOverlay` draws Drop to add over the list while files are dragged onto it and announces it in a polite live region, `dropHint` puts Or drag files onto this list. under it. All three are nextcloud-vue CnFilesBrowser opt-ins (nextcloud-vue#1419) whose words, and their Dutch, come from the library: a label declared here would reach the component untranslated. The drop is never the only way in: the button stays, and the New menu keeps its upload entry. Carried since nextcloud-vue 2.77.0: the tabs widget renders this leaf bare, so the props reach CnFilesTab, which hands them to CnFilesBrowser.",
 						"props": {
+							"uploadButton": true,
+							"dropOverlay": true,
+							"dropHint": true,
 							"rowActions": [
 								{
 									"id": "document-properties",
@@ -3287,7 +3297,7 @@
 						"type": "case-banner-stack",
 						"title": "Case banners",
 						"icon": "FlagOutline",
-						"_note": "Archived, Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
+						"_note": "Archived, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
 					},
 					{
 						"id": "family-plan",
@@ -5231,25 +5241,32 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "wooRefusalGround",
+				"showTitle": true,
 				"_note": "woo-refusal-grounds-list REQ-WRG-003. The settled grounds of design D-2 (decision 133). Sorted by code with the broader ground beside each, so the list reads as the tree: 5.1, then 5.1.1 and its letters, then 5.1.2 and its letters. Add creates a narrower ground under a parent code; editing the status to retired is how a ground is retired, because WooRefusalGroundDeleteGuard refuses a delete while anything cites it. No board on identity.conduction.nl/screens draws this page.",
 				"columns": [
 					{
-						"key": "code"
+						"key": "code",
+						"label": "Code"
 					},
 					{
-						"key": "label"
+						"key": "label",
+						"label": "Ground"
 					},
 					{
-						"key": "parent"
+						"key": "parent",
+						"label": "Broader ground"
 					},
 					{
-						"key": "kind"
+						"key": "kind",
+						"label": "Kind"
 					},
 					{
-						"key": "citable"
+						"key": "citable",
+						"label": "Citable"
 					},
 					{
-						"key": "status"
+						"key": "status",
+						"label": "Status"
 					}
 				],
 				"defaultSort": "code",
