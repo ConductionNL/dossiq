@@ -1,3 +1,3 @@
 # Screens
 
-- No board found yet (decision 150)
+- No screen: dossiq half resolves the recipient, the screen is in portaliq

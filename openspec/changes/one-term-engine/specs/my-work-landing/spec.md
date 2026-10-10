@@ -10,7 +10,7 @@ days, as the week strip shows) in the simple structure. A case whose deadline
 is today SHALL be listed as due today, not as overdue (REQ-OTE-05).
 
 #### Scenario: My Work shows open tasks, deadlines and open cases
-@e2e exclude a manifest widget declaration; the widgets and their windows are asserted in tests/vitest/manifestDueRules.spec.js
+@e2e exclude a manifest widget declaration; the widgets and their windows are asserted in tests/vitest/simpleListAndDashboard.spec.js
 
 - **WHEN** a handler views My Work in the full structure
 - **THEN** the page shows a "My work" widget of the current user's open tasks
@@ -18,13 +18,13 @@ is today SHALL be listed as due today, not as overdue (REQ-OTE-05).
 - **AND** an "Open Cases" widget of the most recently started open cases
 
 #### Scenario: The simple structure shows the week
-@e2e exclude a manifest window value; asserted in tests/vitest/manifestDueRules.spec.js
+@e2e exclude a manifest window value; asserted in tests/vitest/simpleListAndDashboard.spec.js
 
 - **WHEN** a handler views My Work in the simple structure
 - **THEN** the deadlines shown SHALL be those from today up to seven days ahead
 
 #### Scenario: The Dashboard no longer carries the personal-workload widgets
-@e2e exclude a manifest widget declaration; the widgets and their windows are asserted in tests/vitest/manifestDueRules.spec.js
+@e2e exclude a manifest widget declaration; the widgets and their windows are asserted in tests/vitest/simpleListAndDashboard.spec.js
 
 - **WHEN** a handler views `/dashboard`
 - **THEN** the page does NOT show the My work, Deadlines or Open Cases widgets

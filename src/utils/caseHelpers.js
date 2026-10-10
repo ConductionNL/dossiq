@@ -3,6 +3,7 @@
  * identifier generation, and overdue logic.
  */
 
+import { daysUntilDeadline, isOverdue } from './deadlineCountdown.js'
 import { formatDuration, parseDuration } from './durationHelpers.js'
 
 /**
@@ -90,15 +91,12 @@ export function generateIdentifier() {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseOverdue(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
 	if (isFinal) return false
-	const deadline = new Date(caseObj.deadline)
-	const now = new Date()
-	deadline.setHours(0, 0, 0, 0)
-	now.setHours(0, 0, 0, 0)
-	return deadline < now
+	return isOverdue(caseObj.deadline)
 }
 
 /**
@@ -108,17 +106,12 @@ export function isCaseOverdue(caseObj, isFinal = false) {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseDueToday(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
 	if (isFinal) return false
-	const deadline = new Date(caseObj.deadline)
-	const now = new Date()
-	return (
-		deadline.getFullYear() === now.getFullYear()
-		&& deadline.getMonth() === now.getMonth()
-		&& deadline.getDate() === now.getDate()
-	)
+	return daysUntilDeadline(caseObj.deadline) === 0
 }
 
 /**
@@ -128,18 +121,12 @@ export function isCaseDueToday(caseObj, isFinal = false) {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function isCaseDueTomorrow(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
 	if (isFinal) return false
-	const deadline = new Date(caseObj.deadline)
-	const tomorrow = new Date()
-	tomorrow.setDate(tomorrow.getDate() + 1)
-	return (
-		deadline.getFullYear() === tomorrow.getFullYear()
-		&& deadline.getMonth() === tomorrow.getMonth()
-		&& deadline.getDate() === tomorrow.getDate()
-	)
+	return daysUntilDeadline(caseObj.deadline) === 1
 }
 
 /**
@@ -149,15 +136,11 @@ export function isCaseDueTomorrow(caseObj, isFinal = false) {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {string|null} Overdue text or null if not overdue
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function getCaseOverdueText(caseObj, isFinal = false) {
 	if (!isCaseOverdue(caseObj, isFinal)) return null
-	const deadline = new Date(caseObj.deadline)
-	const now = new Date()
-	deadline.setHours(0, 0, 0, 0)
-	now.setHours(0, 0, 0, 0)
-	const diffMs = now - deadline
-	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+	const diffDays = -daysUntilDeadline(caseObj.deadline)
 	if (diffDays === 1) {
 		return t('dossiq', '1 day overdue')
 	}
@@ -219,15 +202,10 @@ export function getDaysElapsed(startDate) {
  * @param {string} deadline ISO date string
  * @return {number} Days remaining (negative if overdue)
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
  */
 export function getDaysRemaining(deadline) {
-	if (!deadline) return 0
-	const dl = new Date(deadline)
-	const now = new Date()
-	dl.setHours(0, 0, 0, 0)
-	now.setHours(0, 0, 0, 0)
-	const diffMs = dl - now
-	return Math.floor(diffMs / (1000 * 60 * 60 * 24))
+	return daysUntilDeadline(deadline) ?? 0
 }
 
 /**

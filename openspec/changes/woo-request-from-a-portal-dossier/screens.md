@@ -1,3 +1,3 @@
 # Screens
 
-- No board found yet (decision 150)
+- No screen: endpoint contract for starting a Woo request, the form is in site-woo-request-in-steps

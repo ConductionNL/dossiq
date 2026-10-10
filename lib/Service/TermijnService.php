@@ -239,7 +239,7 @@ class TermijnService {
 
 		return $this->updateTermijnInstance(
 			termInstanceId: (string)($instance['id'] ?? ''),
-			patch: ['engineTimerId' => $timerId]
+			patch: ['engineTimerId' => $timerId, 'timerBreachesAfterLastDay' => true]
 		);
 	}//end armEngineTimer()
 

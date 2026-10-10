@@ -1,3 +1,3 @@
 # Screens
 
-- No board found yet (decision 150)
+- No screen: backend: tenant store moves to OpenRegister organisation, migration on upgrade

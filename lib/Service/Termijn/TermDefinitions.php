@@ -220,19 +220,24 @@ class TermDefinitions {
 	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
-		return $this->rolled(date: $this->counted(start: $start, days: $days, definitie: $definitie), definitie: $definitie);
+		return $this->rolled(date: $this->countedEndDateFor(start: $start, days: $days, definitie: $definitie), definitie: $definitie);
 	}//end endDateFor()
 
 	/**
 	 * The end date the declared duration implies, before the Awt roll.
+	 *
+	 * Public for the one law that counts from it: a Woo extension runs from
+	 * the original end of the first four weeks, unrolled (Woo art. 4.4 lid 2).
 	 *
 	 * @param DateTimeImmutable    $start     The day the term starts.
 	 * @param int                  $days      The declared duration.
 	 * @param array<string, mixed> $definitie The definition.
 	 *
 	 * @return DateTimeImmutable The counted end date.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
-	private function counted(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
+	public function countedEndDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		$mode = self::countingModeOf(definitie: $definitie);
 		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS || $this->roll === null) {
 			return self::plusDays(start: $start, days: $days);
@@ -250,7 +255,7 @@ class TermDefinitions {
 		);
 
 		return self::plusDays(start: $start, days: $days);
-	}//end counted()
+	}//end countedEndDateFor()
 
 	/**
 	 * A number of calendar days after a date.

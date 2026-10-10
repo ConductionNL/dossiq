@@ -1,3 +1,3 @@
 # Screens
 
-- No board found yet (decision 150)
+- No screen: dossiq records a permit object, the screen is in portaliq

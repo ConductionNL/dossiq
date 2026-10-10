@@ -4,7 +4,7 @@
 // The Integrations page's Add integration header action, registered in
 // registry.js as a `kind: 'handler'` entry.
 //
-// @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+// @spec openspec/specs/admin-settings/spec.md
 
 import { generateUrl } from '@nextcloud/router'
 
@@ -28,7 +28,7 @@ export const INTEGRIQ_CONNECTIONS_PATH =
  *
  * @return {void}
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export function openIntegriqConnections() {
 	window.location.assign(generateUrl(INTEGRIQ_CONNECTIONS_PATH))

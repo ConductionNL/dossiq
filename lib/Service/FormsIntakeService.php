@@ -35,7 +35,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 class FormsIntakeService {
 
@@ -89,7 +89,7 @@ class FormsIntakeService {
 	 *
 	 * @return string|null The new case's id, or `null` when nothing was created.
 	 *
-	 * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+	 * @spec openspec/specs/leaf-integrations/spec.md
 	 */
 	public function caseFor(string $formHash, array $answers, string $submitted = ''): ?string {
 		$formHash = trim($formHash);
@@ -181,7 +181,7 @@ class FormsIntakeService {
 	 *
 	 * @return array<string, mixed>|null The case type, or null when none is bound.
 	 *
-	 * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+	 * @spec openspec/specs/leaf-integrations/spec.md
 	 */
 	private function caseTypeBoundTo(string $formHash): ?array {
 		$objectService = $this->settingsService->getObjectService();
