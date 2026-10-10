@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Woo\WooSources
+ * @uses   \OCA\Dossiq\Support\FleetAppId
  */
 class WooSourcesTest extends TestCase {
 
