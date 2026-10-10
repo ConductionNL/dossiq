@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Throwable;
  * lists OpenRegister membership; dossiq's role and mandate matrix live on the
  * `tenantUser` row, so an organisation without one is no dossiq tenant.
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 class TenantSessionService {
 	/**
@@ -84,7 +84,7 @@ class TenantSessionService {
 	 *
 	 * @return array<string, mixed>|null The tenant-shaped organisation, or null.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function activeTenant(): ?array {
 		$uid = $this->uid();
@@ -126,7 +126,7 @@ class TenantSessionService {
 	 *
 	 * @return string|null The tenant id, or null when none is resolved.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function activeTenantId(): ?string {
 		$tenant = $this->activeTenant();
