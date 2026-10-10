@@ -32,7 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Portal\AanvullingPortalTask;
+use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
@@ -392,12 +392,12 @@ class AanvullingsverzoekServiceTest extends TestCase {
 	 */
 	public function testAskingRaisesThePortalTaskAndRemembersIt(): void {
 		$this->act->method('ask')->willReturn($this->sent());
-		$portalTask = $this->createMock(AanvullingPortalTask::class);
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
 		$raisedFor = [];
 		$portalTask->method('raise')->willReturnCallback(
-			function (array $request, string $actor) use (&$raisedFor): ?string {
-				$raisedFor[] = [$request['id'], $request['portalSubject'] ?? '', $actor];
-				return (($request['portalSubject'] ?? '') === '') ? null : 'task-1';
+			function (array $question, string $actor) use (&$raisedFor): ?string {
+				$raisedFor[] = [$question['id'], $question['portalSubject'], $question['title'], $question['items'], $question['due'], $question['source'], $actor];
+				return 'task-1';
 			}
 		);
 
@@ -425,7 +425,7 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
 		);
 
-		self::assertSame([['avr-1', 'person:bsn-hash-1', 'handler1']], $raisedFor);
+		self::assertSame([['avr-1', 'person:bsn-hash-1', 'Vul uw aanvraag aan', ['Bankafschrift'], '2026-10-01', 'dossiq.aanvullingsverzoek', 'handler1']], $raisedFor);
 		self::assertSame('task-1', $request['portalTask']);
 		self::assertSame(['avr-1', ['portalTask' => 'task-1']], $writes[1]);
 	}//end testAskingRaisesThePortalTaskAndRemembersIt()
@@ -456,10 +456,10 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturn('register-1');
 
 		$closed = [];
-		$portalTask = $this->createMock(AanvullingPortalTask::class);
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
 		$portalTask->method('close')->willReturnCallback(
-			function (array $request) use (&$closed): bool {
-				$closed[] = $request;
+			function (string $taskUuid, string $reason, string $source) use (&$closed): bool {
+				$closed[] = [$taskUuid, $reason, $source];
 				return true;
 			}
 		);
@@ -469,8 +469,6 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		self::assertSame([], $closed);
 
 		$service->write(request: ['state' => 'answered', 'answeredBy' => 'handler1'], id: 'avr-1');
-		self::assertCount(1, $closed);
-		self::assertSame('task-1', $closed[0]['portalTask']);
-		self::assertSame('answered', $closed[0]['state']);
+		self::assertSame([['task-1', 'The aanvullingsverzoek is answered in dossiq.', 'dossiq.aanvullingsverzoek']], $closed);
 	}//end testAWriteThatLeavesOpenClosesThePortalTask()
 }//end class

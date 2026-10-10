@@ -1,5 +1,9 @@
 # Design: an aanvullingsverzoek is a portal task
 
+## D-0 A generic capability, configured by the aanvullingsverzoek (decision 182)
+
+Procedures are configuration, code is generic. The code that raises and closes the task is `ResidentQuestionTask`: "a question to the resident becomes a portal task". It knows no aanvullingsverzoek. `AanvullingsverzoekService` is its first caller and hands it the question's id, case, portal subject, title ("Vul uw aanvraag aan"), the missing items, the hersteltermijn as due date and its source. Any other question to a resident can use the same capability.
+
 ## D-1 The task is an OpenRegister external task, not a portaliq object
 
 Portaliq lists a resident's tasks from openregister's portal task seam: open tasks whose performer type is `external` and whose assignee is the subject's party reference (`party:` + subject reference). The case's `portalSubject` is that subject reference, the same value `vragenAanU` is scoped by. So dossiq writes the task through openregister's trusted in-process intake (`Task\TaskService::import`), resolved through the container like the other optional OpenRegister services. Nothing new is needed in portaliq or openregister.

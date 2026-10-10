@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Tests for the portal task an aanvullingsverzoek raises (decision 169).
+ * Tests for the generic question-to-the-resident portal task (decision 169, 182).
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
-use OCA\Dossiq\Portal\AanvullingPortalTask;
+use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -30,7 +30,7 @@ use RuntimeException;
 /**
  * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
  */
-class AanvullingPortalTaskTest extends TestCase {
+class ResidentQuestionTaskTest extends TestCase {
 
 	/**
 	 * A stand-in for OpenRegister's task service, recording what it was asked.
@@ -102,35 +102,35 @@ class AanvullingPortalTaskTest extends TestCase {
 	 *
 	 * @param object|null $tasks The task service, or null when OpenRegister has none.
 	 *
-	 * @return AanvullingPortalTask
+	 * @return ResidentQuestionTask
 	 */
-	private function unit(?object $tasks): AanvullingPortalTask {
+	private function unit(?object $tasks): ResidentQuestionTask {
 		$container = $this->createMock(ContainerInterface::class);
 		if ($tasks === null) {
 			$container->method('get')->willThrowException(new RuntimeException('no such service'));
 		} else {
-			$container->method('get')->with(AanvullingPortalTask::TASK_SERVICE)->willReturn($tasks);
+			$container->method('get')->with(ResidentQuestionTask::TASK_SERVICE)->willReturn($tasks);
 		}
 
-		return new AanvullingPortalTask(container: $container, logger: new NullLogger());
+		return new ResidentQuestionTask(container: $container, logger: new NullLogger());
 	}//end unit()
 
 	/**
-	 * A request as AanvullingsverzoekService writes it.
+	 * A question as a caller hands it over.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function request(): array {
+	private function question(): array {
 		return [
 			'id' => 'avr-1',
 			'case' => 'case-1',
 			'portalSubject' => 'person:bsn-hash-1',
-			'summary' => 'Bankafschrift',
-			'missingItems' => [['item' => 'Bankafschrift', 'received' => false], ['item' => 'Huurcontract', 'received' => false]],
-			'hersteltermijn' => '2026-10-24',
-			'state' => 'open',
+			'title' => 'Vul uw aanvraag aan',
+			'items' => ['Bankafschrift', 'Huurcontract'],
+			'due' => '2026-10-24',
+			'source' => 'dossiq.aanvullingsverzoek',
 		];
-	}//end request()
+	}//end question()
 
 	/**
 	 * The task goes to the resident's party reference, on the case, due on
@@ -140,7 +140,7 @@ class AanvullingPortalTaskTest extends TestCase {
 	 */
 	public function testTheTaskIsTheResidentsOnTheCaseDueOnTheHersteltermijn(): void {
 		$tasks = $this->tasks();
-		$uuid = $this->unit(tasks: $tasks)->raise(request: $this->request(), actor: 'handler1');
+		$uuid = $this->unit(tasks: $tasks)->raise(question: $this->question(), actor: 'handler1');
 
 		$this->assertSame('task-1', $uuid);
 		$this->assertCount(1, $tasks->imported);
@@ -154,8 +154,9 @@ class AanvullingPortalTaskTest extends TestCase {
 		$this->assertStringContainsString('Bankafschrift', $data['description']);
 		$this->assertStringContainsString('Huurcontract', $data['description']);
 		$this->assertStringNotContainsString('—', $data['title'] . $data['description']);
-		$this->assertSame('avr-1', $data['metadata']['aanvullingsverzoek']);
-		$this->assertSame(AanvullingPortalTask::SOURCE, $data['metadata']['source']);
+		$this->assertSame('avr-1', $data['metadata']['question']);
+		$this->assertSame('dossiq.aanvullingsverzoek', $data['metadata']['source']);
+		$this->assertSame('Vul uw aanvraag aan', $data['title']);
 		$this->assertSame('party:person:bsn-hash-1', $data['metadata']['partyReference']);
 	}//end testTheTaskIsTheResidentsOnTheCaseDueOnTheHersteltermijn()
 
@@ -167,39 +168,36 @@ class AanvullingPortalTaskTest extends TestCase {
 	 * @return void
 	 */
 	public function testNoTaskIsRaisedWithoutAResidentAndAFailureNeverThrows(): void {
-		foreach (['portalSubject', 'case', 'id'] as $missing) {
+		foreach (['portalSubject', 'case', 'id', 'title'] as $missing) {
 			$tasks = $this->tasks();
-			$request = $this->request();
-			$request[$missing] = '';
-			$this->assertNull($this->unit(tasks: $tasks)->raise(request: $request, actor: 'h'), $missing);
+			$question = $this->question();
+			$question[$missing] = '';
+			$this->assertNull($this->unit(tasks: $tasks)->raise(question: $question, actor: 'h'), $missing);
 			$this->assertSame([], $tasks->imported, $missing);
 		}
 
-		$this->assertNull($this->unit(tasks: $this->tasks(refuse: true))->raise(request: $this->request(), actor: 'h'));
-		$this->assertNull($this->unit(tasks: null)->raise(request: $this->request(), actor: 'h'));
+		$this->assertNull($this->unit(tasks: $this->tasks(refuse: true))->raise(question: $this->question(), actor: 'h'));
+		$this->assertNull($this->unit(tasks: null)->raise(question: $this->question(), actor: 'h'));
 	}//end testNoTaskIsRaisedWithoutAResidentAndAFailureNeverThrows()
 
 	/**
-	 * A request that leaves `open` closes its task, saying why; one without a
-	 * task, or still open, closes nothing.
+	 * A settled question closes its task with the reason and the source; no
+	 * task closes nothing, and a refusing OpenRegister never throws.
 	 *
 	 * @return void
 	 */
-	public function testARequestThatLeavesOpenClosesItsTask(): void {
+	public function testASettledQuestionClosesItsTask(): void {
 		$tasks = $this->tasks();
 		$unit = $this->unit(tasks: $tasks);
 
-		$this->assertTrue($unit->close(request: ['portalTask' => 'task-1', 'state' => 'answered']));
-		$this->assertSame('task-1', $tasks->terminated[0]['uuid']);
-		$this->assertSame(AanvullingPortalTask::SOURCE, $tasks->terminated[0]['source']);
-		$this->assertStringContainsString('answered', $tasks->terminated[0]['reason']);
+		$this->assertTrue($unit->close(taskUuid: 'task-1', reason: 'The aanvullingsverzoek is answered in dossiq.', source: 'dossiq.aanvullingsverzoek'));
+		$this->assertSame(['uuid' => 'task-1', 'reason' => 'The aanvullingsverzoek is answered in dossiq.', 'source' => 'dossiq.aanvullingsverzoek'], $tasks->terminated[0]);
 
-		$this->assertFalse($unit->close(request: ['portalTask' => 'task-1', 'state' => 'open']));
-		$this->assertFalse($unit->close(request: ['portalTask' => '', 'state' => 'expired']));
+		$this->assertFalse($unit->close(taskUuid: '', reason: 'x', source: 's'));
 		$this->assertCount(1, $tasks->terminated);
 
-		$this->assertFalse($this->unit(tasks: $this->tasks(refuse: true))->close(request: ['portalTask' => 'task-1', 'state' => 'withdrawn']));
-	}//end testARequestThatLeavesOpenClosesItsTask()
+		$this->assertFalse($this->unit(tasks: $this->tasks(refuse: true))->close(taskUuid: 'task-1', reason: 'x', source: 's'));
+	}//end testASettledQuestionClosesItsTask()
 
 	/**
 	 * The request schema takes the task's uuid, so remembering it cannot be

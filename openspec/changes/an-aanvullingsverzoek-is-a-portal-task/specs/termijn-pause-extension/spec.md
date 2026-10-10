@@ -10,7 +10,7 @@ When a handler asks the applicant for missing information on a case that has a `
 - **WHEN** the handler asks for "Bankafschrift" and "Huurcontract" with a hersteltermijn ending 24 October 2026
 - **THEN** OpenRegister holds an active external task assigned to `party:person:bsn-hash-1` on that case, due 24 October 2026 23:59 Amsterdam time, naming both items
 - **AND** the request's `portalTask` names that task
-- @e2e exclude backend write, covered by PHPUnit `AanvullingPortalTaskTest` and `AanvullingsverzoekServiceTest::testAskingRaisesThePortalTaskAndRemembersIt`; the portal list is the live pass (task 3.1)
+- @e2e exclude backend write, covered by PHPUnit `ResidentQuestionTaskTest` and `AanvullingsverzoekServiceTest::testAskingRaisesThePortalTaskAndRemembersIt`; the portal list is the live pass (task 3.1)
 
 #### Scenario: Answering closes the task
 
@@ -24,4 +24,15 @@ When a handler asks the applicant for missing information on a case that has a `
 - **GIVEN** OpenRegister refuses to create the task
 - **WHEN** the handler asks
 - **THEN** the letter is sent, the term is suspended, the request is written without `portalTask`, and the failure is logged
-- @e2e exclude failure path, covered by PHPUnit `AanvullingPortalTaskTest::testNoTaskIsRaisedWithoutAResidentAndAFailureNeverThrows`
+- @e2e exclude failure path, covered by PHPUnit `ResidentQuestionTaskTest::testNoTaskIsRaisedWithoutAResidentAndAFailureNeverThrows`
+
+### Requirement: A question to a resident is a task in their portal (REQ-AVR-07)
+
+Any question dossiq puts to a resident on a case with a `portalSubject` MAY be raised as an OpenRegister external task through one generic capability: assignee `party:` followed by the portal subject, the case as subject, the caller's title, the asked items in the description, due at the end of the caller's due day. The capability MUST close the task as moot, with the caller's reason and source, when the caller says the question is settled, and MUST NOT throw: a task that cannot be raised or closed is logged. It MUST NOT carry procedure knowledge; the caller supplies the title, items, due date and source (decision 182). REQ-AVR-06 is its configuration for the aanvullingsverzoek.
+
+#### Scenario: Any caller's question becomes the resident's task
+
+- **GIVEN** a caller with a question titled "Vul uw aanvraag aan", two items and a due date, on a case with a portal subject
+- **WHEN** it raises the question
+- **THEN** OpenRegister holds one active external task for the resident with that title, both items and that due day
+- @e2e exclude backend write, covered by PHPUnit `ResidentQuestionTaskTest`

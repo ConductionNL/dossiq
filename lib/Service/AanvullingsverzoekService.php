@@ -50,7 +50,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Portal\AanvullingPortalTask;
+use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -77,6 +77,11 @@ class AanvullingsverzoekService {
 	public const STATES = ['open', 'answered', 'expired', 'withdrawn'];
 
 	/**
+	 * Who raised a request's portal task, on the task and on its close.
+	 */
+	public const PORTAL_TASK_SOURCE = 'dossiq.aanvullingsverzoek';
+
+	/**
 	 * Constructor.
 	 *
 	 * There is deliberately NO TermijnService here. Everything this class needs
@@ -88,14 +93,14 @@ class AanvullingsverzoekService {
 	 *                                                   suspends as one act.
 	 * @param SettingsService           $settingsService The OpenRegister seam.
 	 * @param LoggerInterface           $logger          Structured logger.
-	 * @param AanvullingPortalTask|null $portalTask      The resident's portal task for a request
-	 *                                                   (decision 169), or null in a test that is not about it.
+	 * @param ResidentQuestionTask|null $portalTask      Turns the request into a task in the resident's
+	 *                                                   portal (decision 169), or null in a test that is not about it.
 	 */
 	public function __construct(
 		private readonly InformationRequestService $act,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
-		private readonly ?AanvullingPortalTask $portalTask = null,
+		private readonly ?ResidentQuestionTask $portalTask = null,
 	) {
 	}//end __construct()
 
@@ -221,7 +226,27 @@ class AanvullingsverzoekService {
 		}
 
 		$id = trim((string)($written['id'] ?? ($written['uuid'] ?? '')));
-		$task = $this->portalTask->raise(request: $written, actor: $userId);
+		$items = [];
+		foreach ((array)($written['missingItems'] ?? []) as $row) {
+			if (is_array($row) === true) {
+				$row = ($row['item'] ?? '');
+			}
+
+			$items[] = (string)$row;
+		}
+
+		$task = $this->portalTask->raise(
+			question: [
+				'id' => $id,
+				'case' => (string)($written['case'] ?? ''),
+				'portalSubject' => (string)($written['portalSubject'] ?? ''),
+				'title' => 'Vul uw aanvraag aan',
+				'items' => $items,
+				'due' => (string)($written['hersteltermijn'] ?? ''),
+				'source' => self::PORTAL_TASK_SOURCE,
+			],
+			actor: $userId
+		);
 		if ($task === null || $id === '') {
 			return $written;
 		}
@@ -452,7 +477,11 @@ class AanvullingsverzoekService {
 				// (decision 169). Every change of state is written here, so
 				// this is the one place that sees all of them.
 				if (array_key_exists('state', $request) === true && $request['state'] !== 'open') {
-					$this->portalTask?->close(request: $patched);
+					$this->portalTask?->close(
+						taskUuid: (string)($patched['portalTask'] ?? ''),
+						reason: sprintf('The aanvullingsverzoek is %s in dossiq.', (string)$request['state']),
+						source: self::PORTAL_TASK_SOURCE
+					);
 				}
 
 				return $patched;
