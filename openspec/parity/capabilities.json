@@ -13219,6 +13219,7 @@
 				],
 				"evidence": "openregister#3766 77bdb1901; dossiq#2875 a4919e93a",
 				"owner": "ConductionNL/openregister",
+				"spec": "openspec/specs/case-management",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": [
