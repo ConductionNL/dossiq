@@ -72,6 +72,8 @@ class TenantOnboardingControllerTest extends TestCase {
 			logger: $this->anchorLogger(),
 			billingService: ($billing ?? $this->createMock(TenantBillingService::class)),
 			tenantService: $this->realTenantService(openRegister: $openRegister),
+			steps: $this->realOnboardingSteps(),
+			userSession: $this->createMock(IUserSession::class),
 		);
 
 		return new TenantOnboardingController(
@@ -99,8 +101,12 @@ class TenantOnboardingControllerTest extends TestCase {
 		$this->assertSame('Gemeente Zuiddrecht', $anchors[0]['displayName']);
 		$this->assertSame('2026-10-01T09:00:00+00:00', $anchors[0]['createdAt']);
 
-		$steps = $this->anchorStore->all(schema: 'tenantOnboardingTask');
-		$this->assertCount(count(TenantOnboardingService::STEPS), $steps, 'The steps are written after the anchor.');
+		$steps = array_values($this->engine->tasks);
+		$this->assertCount(count(TenantOnboardingService::STEPS), $steps, 'The steps are written after the anchor, as engine tasks.');
+		$this->assertSame(TenantOnboardingService::STEPS, array_column($steps, 'taskKey'));
+		$this->assertSame([self::ORG], array_values(array_unique(array_column($steps, 'organisation'))));
+		$this->assertSame([self::ORG], array_values(array_unique(array_column($steps, 'objectUuid'))));
+		$this->assertSame(['available'], array_values(array_unique(array_column($steps, 'state'))));
 	}//end testInitialisingOnboardingForANewOrganisationCreatesItsAnchor()
 
 	/**
@@ -120,11 +126,8 @@ class TenantOnboardingControllerTest extends TestCase {
 		$anchors = $this->storedAnchors();
 		$this->assertCount(1, $anchors);
 		$this->assertSame('Gemeente Zuiddrecht', $anchors[0]['displayName'], 'An existing anchor is never updated.');
-		$this->assertSame(
-			$writesAfterFirst + count(TenantOnboardingService::STEPS),
-			$this->anchorStore->writes,
-			'The second initialise wrote its steps and no anchor.'
-		);
+		$this->assertSame($writesAfterFirst, $this->anchorStore->writes, 'The second initialise wrote no anchor.');
+		$this->assertCount(count(TenantOnboardingService::STEPS), $this->engine->tasks, 'and opened no step twice.');
 	}//end testASecondInitialiseCreatesNoSecondAnchor()
 
 	/**
@@ -137,7 +140,7 @@ class TenantOnboardingControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
 		$this->assertSame([], $this->storedAnchors());
-		$this->assertSame([], $this->anchorStore->all(schema: 'tenantOnboardingTask'));
+		$this->assertSame([], $this->engine->tasks);
 		$this->assertNotSame([], $this->anchorErrors, 'The refusal is logged.');
 	}//end testAnIdWithNoOrganisationWritesNothingAndAnswersConflict()
 

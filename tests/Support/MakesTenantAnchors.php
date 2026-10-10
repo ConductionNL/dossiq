@@ -30,6 +30,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use DateTime;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantOrganisationResolver;
 use OCA\Dossiq\Service\TenantService;
@@ -63,6 +65,13 @@ trait MakesTenantAnchors {
 	private array $organisations = [];
 
 	/**
+	 * OpenRegister's task engine, where onboarding steps live.
+	 *
+	 * @var InMemoryTaskEngine
+	 */
+	private InMemoryTaskEngine $engine;
+
+	/**
 	 * Every error logged by the chain, message and context.
 	 *
 	 * @var array<int, array{0: string, 1: array<string, mixed>}>
@@ -79,6 +88,7 @@ trait MakesTenantAnchors {
 		$this->anchorTrail = new RecordingAuditTrailMapper();
 		$this->organisations = [];
 		$this->anchorErrors = [];
+		$this->engine = new InMemoryTaskEngine();
 	}//end startAnchorStore()
 
 	/**
@@ -108,6 +118,7 @@ trait MakesTenantAnchors {
 	private function anchorContainer(): ContainerInterface {
 		$objects = new EntityAnsweringRegister(register: $this->anchorStore);
 		$trail = $this->anchorTrail;
+		$engine = $this->engine;
 
 		$mapper = $this->createMock(OrganisationByUuidStub::class);
 		$mapper->method('findByUuid')->willReturnCallback(
@@ -122,8 +133,11 @@ trait MakesTenantAnchors {
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($objects, $trail, $mapper): object {
+			static function (string $id) use ($objects, $trail, $mapper, $engine): object {
 				return match ($id) {
+					'OCA\\OpenRegister\\Service\\Task\\TaskService',
+					'OCA\\OpenRegister\\Service\\Task\\TaskInboxService',
+					'OCA\\OpenRegister\\Service\\Task\\TaskFormCompletion' => $engine,
 					'OCA\\OpenRegister\\Service\\ObjectService' => $objects,
 					'OCA\\OpenRegister\\Db\\AuditTrailMapper' => $trail,
 					'OCA\\OpenRegister\\Db\\OrganisationMapper' => $mapper,
@@ -191,6 +205,18 @@ trait MakesTenantAnchors {
 			logger: $logger,
 		);
 	}//end realTenantService()
+
+	/**
+	 * The real OnboardingSteps over the in-memory engine.
+	 *
+	 * @return OnboardingSteps The steps.
+	 */
+	private function realOnboardingSteps(): OnboardingSteps {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('isOpenRegisterAvailable')->willReturn(true);
+
+		return new OnboardingSteps(settings: $settings, container: $this->anchorContainer(), logger: $this->anchorLogger());
+	}//end realOnboardingSteps()
 
 	/**
 	 * The real TenantAuditTrailService over the shared store and trail.

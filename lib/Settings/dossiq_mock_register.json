@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.5",
+    "version": "1.3.6",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -13962,9 +13962,9 @@
       "tenantOnboardingTask": {
         "slug": "tenantOnboardingTask",
         "icon": "CheckboxMarkedCircleOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Tenant Onboarding Task",
-        "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
+        "description": "Frozen record of a tenant onboarding step as it was before the steps moved onto OpenRegister's task engine (remove-casetask task 7.1). New steps are engine tasks; a tenant's rows here are carried onto the engine the first time an admin opens its onboarding, and are kept as written.",
         "type": "object",
         "required": [
           "tenantRef",
