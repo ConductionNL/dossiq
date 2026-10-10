@@ -3177,6 +3177,7 @@ OC.L10N.register(
         "How the bezwaarschrift was received": "How the bezwaarschrift was received",
         "How the caller was identified": "How the caller was identified",
         "How the milestone was reached.": "How the milestone was reached.",
+        "How the team is doing": "How the team is doing",
         "How this case is shared: a public access link, a partner organisation handover, or the retired token. ADR-037 concatenates enum values, so `token` and `partner` keep their places.": "How this case is shared: a public access link, a partner organisation handover, or the retired token. ADR-037 concatenates enum values, so `token` and `partner` keep their places.",
         "How this endpoint authenticates. WSSE UsernameToken is the StUF default.": "How this endpoint authenticates. WSSE UsernameToken is the StUF default.",
         "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.": "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.",
