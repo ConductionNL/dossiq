@@ -1196,4 +1196,63 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertNotEmpty($props, "schema '{$slug}' must declare properties");
 		return $props;
 	}
+
+	/**
+	 * dossiq's receiveWooRequest() has opencatalogi's signature, so portaliq
+	 * swaps one app id. The expected signature is copied from opencatalogi's
+	 * class at 35999c29, lib/Portal/PortalContributionProvider.php line 122:
+	 * `public function receiveWooRequest(array $answers, string $receivedAt=''): array`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	public function testReceiveWooRequestHasOpencatalogisSignature(): void {
+		$method = new \ReflectionMethod(PortalContributionProvider::class, 'receiveWooRequest');
+		$parameters = $method->getParameters();
+
+		self::assertTrue($method->isPublic());
+		self::assertSame('array', (string)$method->getReturnType());
+		self::assertCount(2, $parameters);
+		self::assertSame('answers', $parameters[0]->getName());
+		self::assertSame('array', (string)$parameters[0]->getType());
+		self::assertFalse($parameters[0]->isOptional());
+		self::assertSame('receivedAt', $parameters[1]->getName());
+		self::assertSame('string', (string)$parameters[1]->getType());
+		self::assertSame('', $parameters[1]->getDefaultValue());
+	}//end testReceiveWooRequestHasOpencatalogisSignature()
+
+	/**
+	 * Built with `new`, as portaliq may, the provider answers unavailable with
+	 * opencatalogi's five keys, each a string, plus caseUrl.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey(): void {
+		$answer = $this->provider->receiveWooRequest(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00');
+
+		self::assertSame(['outcome', 'requestId', 'reference', 'dueAt', 'message', 'caseUrl'], array_keys($answer));
+		self::assertSame('unavailable', $answer['outcome']);
+		foreach ($answer as $value) {
+			self::assertIsString($value);
+		}
+	}//end testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey()
+
+	/**
+	 * With the intake wired, the request goes to receive() with origin portal-form.
+	 *
+	 * @return void
+	 */
+	public function testTheProviderHandsTheRequestToTheIntakeAsAPortalForm(): void {
+		$intake = $this->createMock(\OCA\Dossiq\Woo\WooRequestIntake::class);
+		$intake->expects(self::once())->method('receive')
+			->with(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00', 'portal-form')
+			->willReturn(['outcome' => 'armed', 'requestId' => 'c1', 'reference' => 'ZAAK-1', 'dueAt' => '2026-12-28', 'message' => '', 'caseUrl' => '']);
+
+		$provider = new PortalContributionProvider(wooRequests: $intake);
+		$answer = $provider->receiveWooRequest(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00');
+
+		self::assertSame('armed', $answer['outcome']);
+		self::assertSame('2026-12-28', $answer['dueAt']);
+	}//end testTheProviderHandsTheRequestToTheIntakeAsAPortalForm()
 }

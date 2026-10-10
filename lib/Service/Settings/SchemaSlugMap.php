@@ -225,6 +225,11 @@ class SchemaSlugMap {
 		'wooDocumentAssessment' => 'woo_assessment_schema',
 		// The settled Woo refusal grounds (woo-refusal-grounds-list).
 		'wooRefusalGround' => 'woo_refusal_ground_schema',
+		// The corpus of a Woo request (woo-request-corpus-collection).
+		'wooSearchPlan' => 'woo_search_plan_schema',
+		'wooRequestConfiguration' => 'woo_request_configuration_schema',
+		'wooExclusion' => 'woo_exclusion_schema',
+		'wooCollectionQuery' => 'woo_collection_query_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

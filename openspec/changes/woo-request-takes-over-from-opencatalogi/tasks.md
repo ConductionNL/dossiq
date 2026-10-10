@@ -17,7 +17,7 @@ are where local stubs lie).
 
 ## 1. Receive opencatalogi's shape
 
-- [ ] 1.1 Add `WooRequestIntake::receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array`
+- [x] 1.1 Add `WooRequestIntake::receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array`
   with the mapping of REQ-WTO-001. Add `portal-form` and `opencatalogi` to `ORIGINS`, to
   `INTAKE_CHANNEL` and to the `wooRequest.origin` enum in `register.d/81-woo-verzoek.json`. Make
   `subjectRef` optional in `WooRequestForm::normalise()` for those two origins only. Keep `start()`
@@ -27,7 +27,11 @@ are where local stubs lie).
     `testEveryOutcomeCarriesAllSixKeysAsStrings`, `testThePortalDossierOriginStillNeedsASubject`.
   - Validate the written case against the real schema with `tests/Support/RealSchemaValidator`:
     `testTheReceivedCaseValidatesAgainstTheCaseSchema`.
-- [ ] 1.2 Add `PortalContributionProvider::receiveWooRequest(array $answers, string $receivedAt = ''): array`
+  - Built (10 Oct): `lib/Woo/WooRequestIntake.php` `receive()`, the answer mapping in
+    `lib/Woo/WooReceivedAnswers.php` (test `tests/Unit/Woo/WooReceivedAnswersTest.php`). Decision 179:
+    the submit creates the case directly, no intake object in between. Phone and address go on
+    `wooRequest.verzoekerTelefoon` / `verzoekerAdres` (spec amended: no requester role type is seeded).
+- [x] 1.2 Add `PortalContributionProvider::receiveWooRequest(array $answers, string $receivedAt = ''): array`
   calling `receive()` with origin `portal-form`. Its constructor takes `WooRequestIntake` as an
   optional dependency, as opencatalogi's does, and answers `unavailable` with every key when it is
   null (REQ-WTO-001).
@@ -39,6 +43,10 @@ are where local stubs lie).
   - Through the caller: construct the provider through the real DI container the way portaliq's
     `PortalProviderLocator::locate('dossiq')` does (`OCA\Dossiq\Portal\PortalContributionProvider`),
     and call `receiveWooRequest()` on it: `testTheProviderPortaliqLocatesReceivesARequest`.
+  - Built (10 Oct): `tests/Unit/Portal/PortalContributionProviderTest.php`
+    `testReceiveWooRequestHasOpencatalogisSignature`, `testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey`,
+    `testTheProviderHandsTheRequestToTheIntakeAsAPortalForm`. The real-container construction is not a unit
+    test (no container in phpunit-unit); it is part of the 6.1 e2e (live pass, decision 139).
 
 ## 2. armed means a term runs
 
@@ -49,6 +57,10 @@ are where local stubs lie).
   - **fails today**: `tests/Unit/Woo/WooRequestIntakeReceiveTest.php`
     `testTheTermCountsFromWhenTheRequesterSentIt` (sent 2026-11-27, delivered 2026-11-30, expects
     `dueAt` 2026-12-28), `testARefusedTimerIsNotArmed`, `testNoTermEngineWritesNoCase`.
+  - Built (10 Oct): `lib/Woo/WooReceivedTerm.php` (test `tests/Unit/Woo/WooReceivedTermTest.php`) and the
+    three tests above. The P28D count and Awt roll themselves are the term engine's, bound by
+    `DeadlineCaseCreatedListener` from the case's `receivedAt`; the intake test plays that part.
+    Open: the row 10.8 `AcknowledgementDutyTest` check.
   - Row 10.8: `tests/Unit/Service/AcknowledgementDutyTest.php`
     `testTheAcknowledgementNamesTheStartAndTheDueDate`, on the rendered template text of a case
     written by `receive()`. It may pass already if `intake-says-when-the-term-starts` finished it;
@@ -73,10 +85,11 @@ are where local stubs lie).
 
 ## 4. The import
 
-- [ ] 4.1 Declare `formerReferences` (array of `{application, reference}`) on the case in
+- [x] 4.1 Declare `formerReferences` (array of `{application, reference}`) on the case in
   `lib/Settings/dossiq_register.json`, add it to the case search declaration in
   `register.d/39-search-declarations.json`, and bump the register version (REQ-WTO-004).
   - unit: `tests/Unit/Settings/CaseSchemaTest.php` `testFormerReferencesIsDeclaredAndSearchable`.
+  - Built (10 Oct): register 0.20.27, `matchType: exact` like `identifier` (a whole reference, not half).
 - [ ] 4.2 Add `lib/Woo/OpenCatalogiWooImport.php` with `run(bool $dryRun = false): array` per
   REQ-WTO-004. Resolve opencatalogi's register and `wooRequest` schema by slug through
   OpenRegister, as the system, `_rbac: false`. Find an existing case by
@@ -92,6 +105,12 @@ are where local stubs lie).
   - Use opencatalogi's real `wooRequest` shape as the fixture: copy one object of each status
     from `lib/Settings/opencatalogi_mock_register.json` at 35999c29 into
     `tests/Fixtures/opencatalogi-woo-requests.json` and cite the source line.
+  - Part built (10 Oct): the per-request mapping `lib/Woo/OpenCatalogiWooCase.php` (status to stage,
+    start, requester, channel, `formerReferences`, extension count, end date, withdrawn result) with
+    `tests/Unit/Woo/OpenCatalogiWooCaseTest.php` (`testEveryStatusMapsToItsStage` and four more) on the
+    fixture (rows 1-3 from the mock register lines 1903-1966; rows 4-5 constructed, the mock has no
+    `awaiting_clarification` or `withdrawn` request). The stamp it needs is opencatalogi#1897. Open: `run()`
+    itself (find, write, carry the term, stamp), the term carry over `TermijnService`/`TermijnTimerService`.
 - [ ] 4.3 Add `lib/Command/ImportOpenCatalogiWooRequests.php` (`dossiq:woo:import-opencatalogi`,
   `--dry-run`) and register it in `appinfo/info.xml` (REQ-WTO-004).
   - Through the caller: `tests/Unit/Command/ImportOpenCatalogiWooRequestsTest.php`

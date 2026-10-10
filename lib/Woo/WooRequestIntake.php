@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
@@ -50,6 +51,11 @@ use Throwable;
  * Opens a Woo request case for a resident, optionally from their dossier.
  *
  * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The two classes over the limit are the
+ * small Woo readers receive() hands its work to (WooReceivedAnswers, WooReceivedTerm). This
+ * stays the one class that writes a Woo case, which is the point of it (REQ-WRI-002).
  */
 class WooRequestIntake {
 
@@ -68,7 +74,13 @@ class WooRequestIntake {
 	/**
 	 * Where a request may come from.
 	 */
-	public const ORIGINS = ['portal', 'pipelinq'];
+	public const ORIGINS = ['portal', 'pipelinq', 'portal-form', 'opencatalogi'];
+
+	/**
+	 * The origins receive() takes, which need no resident subject: an
+	 * anonymous portal form, and a request opencatalogi took in (REQ-WTO-001).
+	 */
+	public const SUBJECTLESS_ORIGINS = ['portal-form', 'opencatalogi'];
 
 	/**
 	 * The prefix of the reference a dossier keeps in `sourceOf`.
@@ -79,7 +91,12 @@ class WooRequestIntake {
 	 * The case's `intakeChannel` per origin, in the case schema's own enum.
 	 * The origin itself is kept in `wooRequest.origin`.
 	 */
-	public const INTAKE_CHANNEL = ['portal' => 'website', 'pipelinq' => 'other'];
+	public const INTAKE_CHANNEL = [
+		'portal' => 'website',
+		'pipelinq' => 'other',
+		'portal-form' => 'website',
+		'opencatalogi' => 'other',
+	];
 
 	/**
 	 * Constructor.
@@ -87,11 +104,17 @@ class WooRequestIntake {
 	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
 	 * @param IURLGenerator   $urlGenerator    Makes the publication and case links absolute.
 	 * @param LoggerInterface $logger          Logger.
+	 * @param WooReceivedTerm|null $receivedTerm Reads back the term a received case got. Null
+	 *                                           only where receive() is never called.
+	 * @param CaseDateNormaliser|null $dates      Reads when the requester sent it. Null only
+	 *                                           where receive() is never called.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
+		private readonly ?WooReceivedTerm $receivedTerm = null,
+		private readonly ?CaseDateNormaliser $dates = null,
 	) {
 	}//end __construct()
 
@@ -130,8 +153,15 @@ class WooRequestIntake {
 			objectService: $objectService,
 			register: $register,
 			caseType: $caseType,
-			subjectRef: $subjectRef,
 			wooRequest: $wooRequest,
+			intake: [
+				// The statutory clock starts today: `deadline` is startDate plus
+				// the type's processingDeadline (P28D).
+				'startDate' => date('Y-m-d'),
+				'portalSubject' => $subjectRef,
+				'intakeChannel' => self::INTAKE_CHANNEL[(string)$wooRequest['origin']],
+			],
+			startFrom: trim((string)($request['startFrom'] ?? '')),
 		);
 		$caseId = $saved['id'];
 
@@ -151,6 +181,100 @@ class WooRequestIntake {
 			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
 		] + $saved['answer'];
 	}//end start()
+
+	/**
+	 * Receive a Woo request in opencatalogi's shape and open its case.
+	 *
+	 * The form submit creates the case directly (decision 179): nothing is
+	 * queued in between, and a request that cannot become a valid case is
+	 * refused here with nothing written.
+	 *
+	 * @param array<string, mixed> $answers    `{requestedInformation, requesterName?, requesterEmail?,
+	 *                                         requesterPhone?, requesterAddress?, channel?, subjectRef?,
+	 *                                         originReference?}`.
+	 * @param string               $receivedAt When the requester sent it (ISO 8601); now when empty or unreadable.
+	 * @param string               $origin     `portal-form` or `opencatalogi`.
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
+	 */
+	public function receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array {
+		try {
+			if ($this->dates === null) {
+				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
+			}
+
+			$answersMap = new WooReceivedAnswers(dates: $this->dates);
+			$wooRequest = (new WooRequestForm())->normalise(request: $answersMap->toRequest(answers: $answers, origin: $origin));
+			$intake = $answersMap->intake(answers: $answers, origin: $origin, receivedAt: $receivedAt);
+
+			$objectService = $this->settingsService->getObjectService();
+			$register = $this->settingsService->getConfigValue('register');
+			if ($objectService === null || $register === '') {
+				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
+			}
+
+			// NO TERM ENGINE, NO CASE. A Woo request without a running
+			// statutory term is the state this intake exists to prevent, so
+			// it is refused before anything is written (REQ-WTO-002).
+			$receivedTerm = $this->receivedTerm;
+			if ($receivedTerm === null || $receivedTerm->isAvailable() === false) {
+				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The term engine is not available.');
+			}
+
+			$caseType = $this->caseType(objectService: $objectService, register: $register);
+			$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, wooRequest: $wooRequest, intake: $intake);
+		} catch (WooRequestRefused $e) {
+			// An unavailable dependency is `unavailable`; every other refusal is `refused`.
+			$outcome = ([WooRequestRefused::UNAVAILABLE => 'unavailable'][$e->getReason()] ?? 'refused');
+
+			return array_merge(WooReceivedAnswers::EMPTY_ANSWER, ['outcome' => $outcome, 'message' => $e->getDetail()]);
+		}//end try
+
+		return $this->termAnswer(receivedTerm: $receivedTerm, objectService: $objectService, register: $register, caseId: $saved['id']);
+	}//end receive()
+
+	/**
+	 * Armed only when the written case's statutory term runs.
+	 *
+	 * Read back, never assumed: the case must have a statutory term instance,
+	 * that instance an engine timer, and the case `deadline` must be the
+	 * instance's rolled `endDateCurrent`. Anything less answers `not-armed`
+	 * and leaves an internal timeline entry on the case saying why.
+	 *
+	 * @param WooReceivedTerm $receivedTerm  Reads the term back.
+	 * @param object          $objectService The OpenRegister ObjectService.
+	 * @param string          $register      The dossiq register.
+	 * @param string          $caseId        The written case.
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
+	 */
+	private function termAnswer(WooReceivedTerm $receivedTerm, object $objectService, string $register, string $caseId): array {
+		$case = [];
+		try {
+			$case = (array)$this->runAsSystemIfAvailable(
+				objectService: $objectService,
+				operation: fn (): ?array => $this->findUnscoped(
+					objectService: $objectService,
+					register: $register,
+					schema: $this->settingsService->getConfigValue('case_schema'),
+					id: $caseId,
+				)
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('WooRequestIntake: the received case could not be read back', ['case' => $caseId, 'error' => $e->getMessage()]);
+		}
+
+		return $receivedTerm->answer(
+			caseId: $caseId,
+			case: $case,
+			caseUrl: $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId)
+		);
+	}//end termAnswer()
 
 	/**
 	 * The public path of a publication, the same one the publish side links to.
@@ -245,25 +369,34 @@ class WooRequestIntake {
 	 * @param object                $objectService The OpenRegister ObjectService.
 	 * @param string                $register      The dossiq register.
 	 * @param array<string, mixed>  $caseType      The Woo request case type.
-	 * @param string                $subjectRef    The resident.
 	 * @param array<string, string> $wooRequest    The request as the case keeps it.
+	 * @param array<string, string> $intake        How it came in: `startDate`, `intakeChannel`,
+	 *                                             and when known `portalSubject` and `receivedAt`.
+	 * @param string                $startFrom     An earlier Woo case this request starts from, or ''.
 	 *
 	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when the write fails.
 	 */
-	private function writeCase(object $objectService, string $register, array $caseType, string $subjectRef, array $wooRequest): array {
+	private function writeCase(
+		object $objectService,
+		string $register,
+		array $caseType,
+		array $wooRequest,
+		array $intake,
+		string $startFrom = '',
+	): array {
 		$case = [
 			'title' => $wooRequest['onderwerp'],
 			'description' => $wooRequest['omschrijving'],
 			'caseType' => self::CASE_TYPE_ID,
-			// The statutory clock starts today: `deadline` is startDate plus
-			// the type's processingDeadline (P28D).
-			'startDate' => date('Y-m-d'),
-			'portalSubject' => $subjectRef,
-			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
-			'wooRequest' => $wooRequest,
-		];
+		] + $intake + ['wooRequest' => $wooRequest];
+
+		// A request that starts from an earlier one names it; WooStartFromListener
+		// copies that request's configuration once the case exists (REQ-WRC-005).
+		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $startFrom) === 1) {
+			$case['wooStartFrom'] = $startFrom;
+		}
 
 		// THE REQUESTER DETAILS ALSO ANSWER THE CASE TYPE'S OWN QUESTIONS.
 		// The Woo type declares verzoekerNaam, verzoekerEmail and

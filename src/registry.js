@@ -145,10 +145,12 @@ import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 import RemindDialog from './dialogs/RemindDialog.vue'
+import WooSearchPlanDialog from './dialogs/WooSearchPlanDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -553,6 +555,22 @@ const registry = {
 		component: CaseMergeDialog,
 		propsSchema: {},
 		_note: "Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server's and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out. WHY THE ACTION IS HIDDEN ON A CLOSED CASE, moved here from the manifest entry: a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog; hiding them in the header too would leave a handler wondering why an act they were told about is not there. The manifest entry carries no `_note` because `$defs/action` sets `additionalProperties: false`, which is the same reason CasePlanFollowUpDialog above records.",
+	},
+
+	// @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	GatherDocumentsDialog: {
+		kind: 'modal',
+		component: GatherDocumentsDialog,
+		propsSchema: {},
+		_note: "Gather documents on a Woo request case (woo-requests-gather-documents-from-sources). Searches files and other cases through Nextcloud unified search with the handler's own access, and integriq's Microsoft 365 source through dossiq. Which provider and filters each platform source uses is the answer of GET /woo/sources, so the dialog guesses nothing. A source that cannot answer is listed with its reason, never as an empty result. Each pick is added or refused on its own; the refused ones stay on screen with the server's sentence. The header action shows on the seeded Woo request case type only (WooRequestIntake::CASE_TYPE_ID) and not on an archived case; the manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
+	WooSearchPlanDialog: {
+		kind: 'modal',
+		component: WooSearchPlanDialog,
+		propsSchema: {},
+		_note: "The search plan of a Woo request (woo-request-corpus-collection REQ-WRC-001): whose files, which systems, the period and the terms, recorded before collection. Gather documents refuses to search or add until it is recorded. Recording again changes the same plan object, so the history under the form is that object's OpenRegister audit trail. Shown on the seeded Woo request case type only; the manifest carries no _note because $defs/action refuses one.",
 	},
 
 	// @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
