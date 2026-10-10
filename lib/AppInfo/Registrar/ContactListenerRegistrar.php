@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
 use OCA\Dossiq\Listener\ContactMomentTimelineListener;
 use OCA\Dossiq\Listener\PortalMessageTimelineListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -52,6 +53,14 @@ class ContactListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: ContactMomentTimelineListener::class
+		);
+
+		// The same create event carries the moment to pipelinq's record: the
+		// case page's Log contact form saves straight to OpenRegister and runs
+		// no dossiq service (parties-and-contact-moments-consume-pipelinq).
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: ContactMomentPipelinqListener::class
 		);
 
 		// A resident's portal message, written by portaliq straight into

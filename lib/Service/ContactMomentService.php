@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Pipelinq\ContactMomentBridge;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -62,26 +61,16 @@ class ContactMomentService {
 	 * @param IUserSession $userSession The session, for the handling employee default.
 	 * @param LoggerInterface $logger The logger.
 	 * @param CaseDateNormaliser $dates The one date write path.
-	 * @param ContactMomentBridge|null $pipelinqBridge Appends the moment to pipelinq
-	 *        when that app is installed. Nullable and last, so every existing
-	 *        construction of this service keeps working.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
-		// 🔴 THE BRANCH ALSO ADDED `CaseTimeline` HERE AND IT IS DELIBERATELY
-		// NOT KEPT. While this branch sat unopened, parity moved the timeline
-		// write to `ContactMomentTimelineListener`, and parity's own comment
-		// below says so. Keeping both would write every contact moment onto
-		// the case timeline twice, and the branch's `recordOnTimeline()` no
-		// longer exists in this file to call.
-		//    NULLABLE AND LAST, so every existing construction of this service —
-		//    production wiring and the tests parity already has — keeps working
-		//    unchanged. The bridge is best-effort bookkeeping beside the write,
-		//    not something the write depends on.
-		private readonly ?ContactMomentBridge $pipelinqBridge = null,
+		// The timeline entry and the pipelinq append are NOT written here. Both
+		// moved to listeners on the create event (ContactMomentTimelineListener,
+		// ContactMomentPipelinqListener), because the case page's Log contact
+		// form saves straight to OpenRegister and never runs this service.
 	) {
 	}//end __construct()
 
@@ -155,25 +144,6 @@ class ContactMomentService {
 		}
 
 		$record = $this->normalize(result: $created);
-
-		// The same moment, appended to the fleet's own record. Best effort and
-		// AFTER the dossiq write on purpose: a handler logging a call they
-		// have just taken must not lose it because another app said no. The
-		// refusal travels back on the record so the surface can show it.
-		// No bridge wired means no bridge attempt, and no refusal to report —
-		// not a silent failure and not a refusal invented on its behalf.
-		$bridged = ['appended' => false, 'reason' => '', 'indicators' => []];
-		if ($this->pipelinqBridge !== null) {
-			$bridged = $this->pipelinqBridge->append(
-				caseId: (string)($data['case'] ?? ''),
-				moment: $record,
-			);
-		}
-
-		if ($bridged['appended'] === false && $bridged['reason'] !== '') {
-			$record['pipelinqRefusal'] = $bridged['reason'];
-			$record['pipelinqIndicators'] = $bridged['indicators'];
-		}
 
 		return $record;
 	}//end createContactMoment()
