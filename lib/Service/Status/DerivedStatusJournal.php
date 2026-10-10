@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ namespace OCA\Dossiq\Service\Status;
 /**
  * The derived moves this request decided but has not yet recorded.
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class DerivedStatusJournal {
 
@@ -69,7 +69,7 @@ class DerivedStatusJournal {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function stage(string $caseId, string $fromStatus, string $toStatus): void {
 		if ($caseId === '' || $toStatus === '' || $fromStatus === $toStatus) {
@@ -90,7 +90,7 @@ class DerivedStatusJournal {
 	 *
 	 * @return array{from: string, to: string}|null The staged move, or null.
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function take(string $caseId): ?array {
 		if (isset($this->staged[$caseId]) === false) {

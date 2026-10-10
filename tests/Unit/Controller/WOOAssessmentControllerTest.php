@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WOOAssessmentController;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
@@ -312,6 +313,57 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testExtendDeadlineReturns400ForEmptyReason()
 
 	/**
+	 * A second Woo extension answers 409 with the term engine's rule and
+	 * sentence, not a 500 (one-term-engine REQ: only one extension allowed).
+	 *
+	 * @return void
+	 */
+	public function testASecondWooExtensionAnswers409(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['reason', '', 'Nog meer tijd nodig']]);
+
+		$this->deadlineService->method('extendDeadline')->willThrowException(
+			new RefusedException(
+				rule: 'extension-ceiling-reached',
+				sentence: 'This term has had every extension it allows.',
+			)
+		);
+
+		$response = $this->controller->extendDeadline('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('extension-ceiling-reached', $response->getData()['error']);
+		$this->assertSame('This term has had every extension it allows.', $response->getData()['message']);
+	}//end testASecondWooExtensionAnswers409()
+
+	/**
+	 * Without an ExtensionNotice wired the extension stands, and the answer
+	 * says the requester was not told (REQ-WRN-005).
+	 *
+	 * @return void
+	 */
+	public function testAnExtensionWithoutANoticeSaysTheRequesterWasNotTold(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['reason', '', 'Zienswijzen van derden']]);
+		$this->deadlineService->method('extendDeadline')->willReturn(
+			['caseId' => 'case-uuid-001', 'deadline' => '2026-11-16', 'termInstanceId' => 'ti-1', 'extensionReason' => 'Zienswijzen van derden']
+		);
+
+		$response = $this->controller->extendDeadline('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('2026-11-16', $response->getData()['deadline']);
+		$this->assertSame('not-sent', $response->getData()['noticeStatus']);
+		$this->assertSame('notice-not-wired', $response->getData()['noticeReasonCode']);
+	}//end testAnExtensionWithoutANoticeSaysTheRequesterWasNotTold()
+
+	/**
 	 * CreateDecision returns 422 when outstanding documents exist.
 	 *
 	 * Acceptance criterion: unassessed document → blocked with explicit error.
@@ -357,7 +409,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	public function testPublishWithoutADecisionIdAnswers409WhenTheCaseHasNoWooDecision(): void {
 		$user = $this->createMock(IUser::class);
@@ -384,7 +436,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
 	 */
 	public function testARefusalIsTranslatedForTheHeaderAction(): void {
 		$user = $this->createMock(IUser::class);
@@ -430,7 +482,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	public function testWithdrawWithoutOpenCatalogiAnswers503(): void {
 		$user = $this->createMock(IUser::class);

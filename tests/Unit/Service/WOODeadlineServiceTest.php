@@ -221,6 +221,7 @@ class WOODeadlineServiceTest extends TestCase {
 		self::assertSame('2026-05-29', $result['previousDeadline']);
 		self::assertSame('2026-06-12', $result['deadline']);
 		self::assertSame(1, $result['countExtensions']);
+		self::assertSame('ti-1', $result['termInstanceId'], 'the notice names the term it extended');
 	}//end testExtendDeadlineExtendsTheStatutoryTerm()
 
 	/**
