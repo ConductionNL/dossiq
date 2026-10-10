@@ -3,9 +3,9 @@
 <!--
 	The case's banner strips, in one grid row instead of six.
 
-	Archived, Follow, New since you last looked, What this status
-	asks for and Attention were six `gridWidth: 12, gridHeight: 1` widgets
-	stacked down the page. Four of the six render conditionally —
+	Archived, New since you last looked, What this status asks for and
+	Attention were separate `gridWidth: 12, gridHeight: 1` widgets stacked down
+	the page. Four of the six render conditionally —
 	`CaseArchivedStrip`, `CaseUnreadPanel`, `CaseStatusDeclarationPanel` and
 	`CaseAttentionPanel` are each a root `v-if` — so an ordinary case (open,
 	nothing new, nothing flagged, status fine) reserved four empty full-width
@@ -20,26 +20,28 @@
 	(nextcloud-vue CnDashboardGrid) is the second, and this widget uses both.
 
 	The order is the order the rows had, which is the order they are read in:
-	whether this is a record or work, what I marked, what I am watching, what
-	changed, what the status wants, what is wrong. Archived comes first because
-	it changes how everything under it should be read (archived-cases-leave-
-	the-lenses REQ-CM-43). The Follow strip sits after it because it is
-	per-reader state, where every strip under it is about the case rather than
-	about you. The star that sat beside it is gone: a favourite is a follow
-	with notifications off (one-follow-control).
+	whether this is a record or work, what changed, what the status wants, what
+	is wrong. Archived comes first because it changes how everything under it
+	should be read (archived-cases-leave-the-lenses REQ-CM-43).
+
+	🔴 NO FOLLOW STRIP. Following is the one control beside the case title,
+	nextcloud-vue's CnFollowToggle that CnDetailPage draws for every object
+	carrying `@self.watching`, with its bell and its count. A dossiq strip here
+	drew a second Follow button that did not sync with the first, so a reader
+	saw "Volgen" in the header and "Volg deze zaak" under it, answering
+	differently (one-follow-control-in-the-header).
 
 	Each panel keeps its own `v-if`, its own fetch and its own tests. This adds
-	no conditions of its own: it is a container, and a sixth strip belongs here
-	rather than in a sixth row.
+	no conditions of its own: it is a container, and another strip belongs here
+	rather than in a row of its own.
 
 	@spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
 	@spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
-	@spec openspec/changes/case-followers/specs/case-management/spec.md
+	@spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
 -->
 <template>
 	<div class="case-banner-stack" data-testid="case-banner-stack">
 		<CaseArchivedStrip :objectData="objectData" />
-		<CaseFollowStrip :objectId="objectId" :objectData="objectData" />
 		<CaseUnreadPanel :objectId="objectId" />
 		<CaseStatusDeclarationPanel :objectId="objectId" :objectData="objectData" />
 		<CaseAttentionPanel :objectId="objectId" />
@@ -49,7 +51,6 @@
 <script>
 import CaseArchivedStrip from './CaseArchivedStrip.vue'
 import CaseAttentionPanel from './CaseAttentionPanel.vue'
-import CaseFollowStrip from './CaseFollowStrip.vue'
 import CaseStatusDeclarationPanel from './CaseStatusDeclarationPanel.vue'
 import CaseUnreadPanel from './CaseUnreadPanel.vue'
 
@@ -59,7 +60,6 @@ export default {
 	components: {
 		CaseArchivedStrip,
 		CaseAttentionPanel,
-		CaseFollowStrip,
 		CaseStatusDeclarationPanel,
 		CaseUnreadPanel,
 	},
@@ -72,8 +72,8 @@ export default {
 		},
 
 		/**
-		 * The loaded case record. The archived strip, the Follow strip and the
-		 * status declaration read it; the others fetch from `objectId`.
+		 * The loaded case record. The archived strip and the status
+		 * declaration read it; the others fetch from `objectId`.
 		 */
 		objectData: {
 			type: Object,

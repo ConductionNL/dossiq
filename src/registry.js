@@ -47,7 +47,6 @@ import CaseCustodyPanel from './components/case/CaseCustodyPanel.vue'
 // row 13.18), over OpenRegister's own subscription (`object-watchers`).
 // @spec openspec/changes/case-followers/specs/case-management/spec.md
 import CaseFollowersPanel from './components/case/CaseFollowersPanel.vue'
-import CaseFollowStrip from './components/case/CaseFollowStrip.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -1101,22 +1100,13 @@ const registry = {
 
 	// --- Following a case you do not own (case-followers, row 13.18). ---
 	//
-	// A widget TYPE for the strip and a TAB CHILD type for the panel. Both
-	// resolve from `cnRegistry[widget.type]`: CnDetailPage falls back to
-	// CnDetailWidgetHost for a grid item with no `widget-<id>` slot, and
-	// CnTabsWidget resolves a panel the same way and renders nothing at all,
-	// logging nothing, when no key answers. CaseDetail mounts the strip
-	// through CaseBannerStack rather than as a row of its own — the type is
-	// still a valid placement, just not the one that page uses.
+	// A TAB CHILD type for the Followers panel. It resolves from
+	// `cnRegistry[widget.type]`, and CnTabsWidget renders nothing at all,
+	// logging nothing, when no key answers. There is no `case-follow` type any
+	// more: the Follow button is nextcloud-vue's CnFollowToggle beside the case
+	// title, which CnDetailPage draws on its own (one-follow-control-in-the-header).
 	// @spec openspec/changes/case-followers/specs/case-management/spec.md
-	'case-follow': {
-		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to follow and DELETE to stop, and no declarative action writes both: `executeApiCall` maps every method that is not `PUT` to `post`, so an `api-call` declared `method: "DELETE"` would POST to a route that takes DELETE and there is nothing in the manifest to say it could never have worked. `CnActionButtons`' `toggle` type writes with one `method` for both directions, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.watching` is attached per reader on the render path, so a data widget over a property would render nothing. Deleted the day the library takes a DELETE verb and a two-verb toggle, which is where this belongs for every app in the fleet
-		kind: 'widget',
-		component: CaseFollowStrip,
-		...STRIP_WIDGET_META,
-		_note: 'CaseDetail: follow a case you do not own, beside the star and saying the opposite kind of thing. The star is private and silent; following subscribes you to the case\'s own notifications through OpenRegister\'s `{"watchers": true}` recipient block, and the people who may edit the case can see that you took it. The strip renders from `@self.watching`, which every object read already carries, so it makes no call until somebody presses it. The count beside the button is silent for a reader OpenRegister told no count, because an absent `@self.watcherCount` means "not your business" and never "nobody".',
-	},
-
+	// @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
 	'case-followers': {
 		// @custom-widget-ratchet exclude a subscription is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/watchers`, a sub-resource that takes no register-and-schema pair of its own, and there is no `integration` id that reaches it. The 403 a reader without `update` gets has to be drawn APART from an empty list, which a declarative list cannot do: both would render as no rows. Deleted the day nextcloud-vue ships a watchers widget type over that listing
 		kind: 'widget',
