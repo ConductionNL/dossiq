@@ -226,7 +226,7 @@ class CaseTeamMigrationTest extends TestCase {
 			function (string $search): array {
 				$group = $this->createMock(IGroup::class);
 				$group->method('getGID')->willReturn('handhaving');
-				$group->method('getDisplayName')->willReturn('Handhaving');
+				$group->method('getDisplayName')->willReturn('Team Handhaving');
 
 				return [$group];
 			}

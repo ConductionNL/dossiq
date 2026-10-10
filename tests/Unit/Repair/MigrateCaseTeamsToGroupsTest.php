@@ -75,4 +75,41 @@ class MigrateCaseTeamsToGroupsTest extends TestCase {
 
 		(new MigrateCaseTeamsToGroups(migration: $migration, logger: new NullLogger()))->run($output);
 	}//end testAFailureIsAWarningNotABrokenUpgrade()
+	/**
+	 * A migration that could not run says why, and warns about nothing.
+	 *
+	 * @return void
+	 */
+	public function testASkippedRunSaysWhy(): void {
+		$migration = $this->createMock(CaseTeamMigration::class);
+		$migration->method('run')->willReturn(
+			['ran' => false, 'skippedBecause' => 'OpenRegister is not available', 'converted' => 0, 'alreadyGroup' => 0, 'failed' => 0, 'unmapped' => []]
+		);
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with($this->stringContains('OpenRegister is not available'));
+		$output->expects($this->never())->method('warning');
+
+		$step = new MigrateCaseTeamsToGroups(migration: $migration, logger: new NullLogger());
+		self::assertNotSame('', $step->getName());
+		$step->run($output);
+	}//end testASkippedRunSaysWhy()
+
+	/**
+	 * Nothing left over means no warning.
+	 *
+	 * @return void
+	 */
+	public function testNothingLeftMeansNoWarning(): void {
+		$migration = $this->createMock(CaseTeamMigration::class);
+		$migration->method('run')->willReturn(
+			['ran' => true, 'skippedBecause' => '', 'converted' => 1, 'alreadyGroup' => 0, 'failed' => 0, 'unmapped' => []]
+		);
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info');
+		$output->expects($this->never())->method('warning');
+
+		(new MigrateCaseTeamsToGroups(migration: $migration, logger: new NullLogger()))->run($output);
+	}//end testNothingLeftMeansNoWarning()
 }//end class
