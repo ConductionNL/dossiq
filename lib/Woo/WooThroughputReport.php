@@ -22,12 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCP\IConfig;
 use OCP\IUserManager;
 use Throwable;
 
@@ -38,8 +36,9 @@ use Throwable;
  * merged on its `development`, so this groups a paged search of the
  * assessments in PHP. The search is the caller's own, scoped search: RBAC and
  * the active organisation apply, so one organisation never counts another's
- * reviewers. The day is the day of `assessedAt` in the instance time zone, so
- * an assessment at 23:30 UTC on a CET instance counts on the next day.
+ * reviewers. The day is the day of `assessedAt` in the instance's configured
+ * zone, read through CaseDateNormaliser (the one class that resolves a zone),
+ * so an assessment at 23:30 UTC on a CET instance counts on the next day.
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
@@ -66,14 +65,14 @@ class WooThroughputReport {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param IConfig $config The system configuration, for the instance time zone.
+	 * @param CaseDateNormaliser $caseDates Reads a moment as a day in the instance's zone.
 	 * @param IUserManager $userManager The user manager, for display names.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly IConfig $config,
+		private readonly CaseDateNormaliser $caseDates,
 		private readonly IUserManager $userManager,
 	) {
 	}//end __construct()
@@ -128,7 +127,7 @@ class WooThroughputReport {
 	 *
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
-	public static function toCsv(array $rows): string {
+	public function toCsv(array $rows): string {
 		$columns = array_merge(['reviewer', 'displayName', 'day'], self::VERDICTS, ['total']);
 		$lines = [self::csvLine(cells: $columns)];
 		foreach ($rows as $row) {
@@ -153,43 +152,56 @@ class WooThroughputReport {
 	 * @return array{rows: list<array<string, int|string>>, cases: list<string>, truncated: bool} The report.
 	 */
 	private function report(array $filters, ?string $from, ?string $to): array {
-		$zone = $this->instanceZone();
 		$groups = [];
 		$cases = [];
 		$read = $this->readAssessments(filters: $filters);
 		foreach ($read['rows'] as $assessment) {
-			$reviewer = trim((string)($assessment['assessedBy'] ?? ''));
-			$verdict = (string)($assessment['classification'] ?? '');
-			$day = $this->dayOf(moment: (string)($assessment['assessedAt'] ?? ''), zone: $zone);
-			if ($reviewer === '' || $day === null || in_array($verdict, self::VERDICTS, true) === false) {
+			$counted = $this->countable(assessment: $assessment, from: $from, to: $to);
+			if ($counted === null) {
 				continue;
 			}
 
-			if (($from !== null && $day < $from) || ($to !== null && $day > $to)) {
-				continue;
-			}
-
+			[$reviewer, $day, $verdict] = $counted;
 			$key = $reviewer . "\0" . $day;
-			if (isset($groups[$key]) === false) {
-				$groups[$key] = ['reviewer' => $reviewer, 'day' => $day] + array_fill_keys(self::VERDICTS, 0) + ['total' => 0];
-			}
-
+			$groups[$key] ??= ['reviewer' => $reviewer, 'day' => $day] + array_fill_keys(self::VERDICTS, 0) + ['total' => 0];
 			$groups[$key][$verdict]++;
 			$groups[$key]['total']++;
-			$case = (string)($assessment['caseRef'] ?? '');
-			if ($case !== '') {
-				$cases[$case] = true;
-			}
-		}//end foreach
+			$cases[(string)($assessment['caseRef'] ?? '')] = true;
+		}
 
+		unset($cases['']);
 		ksort($groups);
 		$rows = [];
 		foreach ($groups as $group) {
 			$rows[] = ['reviewer' => $group['reviewer'], 'displayName' => $this->displayName(userId: $group['reviewer'])] + $group;
 		}
 
-		return ['rows' => $rows, 'cases' => array_keys($cases), 'truncated' => $read['truncated']];
+		return ['rows' => $rows, 'cases' => array_map('strval', array_keys($cases)), 'truncated' => $read['truncated']];
 	}//end report()
+
+	/**
+	 * The reviewer, day and verdict an assessment counts under, or null when it counts nowhere.
+	 *
+	 * @param array<string, mixed> $assessment The assessment.
+	 * @param string|null $from The first day, or null.
+	 * @param string|null $to The last day, or null.
+	 *
+	 * @return array{0: string, 1: string, 2: string}|null The reviewer, day and verdict.
+	 */
+	private function countable(array $assessment, ?string $from, ?string $to): ?array {
+		$reviewer = trim((string)($assessment['assessedBy'] ?? ''));
+		$verdict = (string)($assessment['classification'] ?? '');
+		$day = $this->caseDates->toCalendarDateOrNull(value: (string)($assessment['assessedAt'] ?? ''));
+		if ($reviewer === '' || $day === null || in_array($verdict, self::VERDICTS, true) === false) {
+			return null;
+		}
+
+		if (($from !== null && $day < $from) || ($to !== null && $day > $to)) {
+			return null;
+		}
+
+		return [$reviewer, $day, $verdict];
+	}//end countable()
 
 	/**
 	 * Page through the assessments the caller may read.
@@ -205,10 +217,7 @@ class WooThroughputReport {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		if ($objectService === null || $register === '' || $schema === '') {
-			throw RefusedException::indeterminate(
-				rule: 'woo-throughput-unavailable',
-				sentence: 'The Woo assessments cannot be read, so the report cannot be made.',
-			);
+			throw $this->unavailable(previous: null);
 		}
 
 		$rows = [];
@@ -221,11 +230,7 @@ class WooThroughputReport {
 					filters: $filters + ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)],
 				);
 			} catch (Throwable $e) {
-				throw RefusedException::indeterminate(
-					rule: 'woo-throughput-unavailable',
-					sentence: 'The Woo assessments cannot be read, so the report cannot be made.',
-					previous: $e,
-				);
+				throw $this->unavailable(previous: $e);
 			}
 
 			array_push($rows, ...$batch);
@@ -238,37 +243,20 @@ class WooThroughputReport {
 	}//end readAssessments()
 
 	/**
-	 * The instance time zone, UTC when it is unset or not a zone.
+	 * The refusal when the assessments cannot be read.
 	 *
-	 * @return DateTimeZone The zone.
+	 * @param Throwable|null $previous The cause.
+	 *
+	 * @return RefusedException The refusal.
 	 */
-	private function instanceZone(): DateTimeZone {
-		try {
-			return new DateTimeZone($this->config->getSystemValueString('default_timezone', 'UTC'));
-		} catch (Throwable) {
-			return new DateTimeZone('UTC');
-		}
-	}//end instanceZone()
-
-	/**
-	 * The day of a moment in a zone, or null when the moment is not a date.
-	 *
-	 * @param string $moment The moment as stored.
-	 * @param DateTimeZone $zone The zone the day is read in.
-	 *
-	 * @return string|null The day, Y-m-d.
-	 */
-	private function dayOf(string $moment, DateTimeZone $zone): ?string {
-		if ($moment === '') {
-			return null;
-		}
-
-		try {
-			return (new DateTimeImmutable($moment))->setTimezone($zone)->format('Y-m-d');
-		} catch (Throwable) {
-			return null;
-		}
-	}//end dayOf()
+	private function unavailable(?Throwable $previous): RefusedException {
+		return new RefusedException(
+			rule: 'woo-throughput-unavailable',
+			sentence: 'The Woo assessments cannot be read, so the report cannot be made.',
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
+	}//end unavailable()
 
 	/**
 	 * A reviewer's display name, the user id when the user is gone.

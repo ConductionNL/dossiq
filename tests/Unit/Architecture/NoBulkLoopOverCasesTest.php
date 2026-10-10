@@ -68,6 +68,11 @@ class NoBulkLoopOverCasesTest extends TestCase {
 			. 'draw a badge. It writes nothing and changes nothing, and the '
 			. 'loop is over rows already read in ONE search rather than one '
 			. 'search per case, which is the cost a job would exist to avoid.',
+		'lib/Woo/WooReportReadLog.php::recordThroughputRead' =>
+			'Records a READ: one audit entry on each Woo case a throughput report counted, '
+			. 'in the request of the reader, before the answer is sent. It changes no case, '
+			. 'and a job would answer the report before the read was on record, which is the '
+			. 'one order REQ-WRR-002 forbids.',
 	];
 
 	/**

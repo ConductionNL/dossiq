@@ -74,7 +74,7 @@ class RecallEstimator {
 		for ($step = 0; $step < self::STEPS; $step++) {
 			$mid = (($low + $high) / 2);
 			// The CDF falls as p rises: above alpha means the bound lies higher.
-			if ($this->binomialCdf(k: $k, n: $n, p: $mid) > $alpha) {
+			if ($this->binomialCdf(k: $k, n: $n, prob: $mid) > $alpha) {
 				$low = $mid;
 				continue;
 			}
@@ -94,7 +94,7 @@ class RecallEstimator {
 	 * @param int $n The sample size.
 	 * @param float $confidence The confidence of the bound.
 	 *
-	 * @return array{found: int, nullSetSize: int, k: int, n: int, confidence: float, elusion: float, elusionUpper: float, estimate: float, lowerBound: float} The estimate.
+	 * @return array<string, int|float> The inputs, `elusion`, `elusionUpper`, `estimate` and `lowerBound`.
 	 *
 	 * @throws InvalidArgumentException When the inputs describe no estimate.
 	 *
@@ -143,21 +143,21 @@ class RecallEstimator {
 	 *
 	 * @param int $k The successes.
 	 * @param int $n The trials.
-	 * @param float $p The probability.
+	 * @param float $prob The probability.
 	 *
 	 * @return float The cumulative probability.
 	 */
-	private function binomialCdf(int $k, int $n, float $p): float {
-		if ($p <= 0.0) {
+	private function binomialCdf(int $k, int $n, float $prob): float {
+		if ($prob <= 0.0) {
 			return 1.0;
 		}
 
-		if ($p >= 1.0) {
+		if ($prob >= 1.0) {
 			return 0.0;
 		}
 
-		$logP = log($p);
-		$logQ = log1p(-$p);
+		$logP = log($prob);
+		$logQ = log1p(-$prob);
 		$logChoose = 0.0;
 		$sum = 0.0;
 		for ($i = 0; $i <= $k; $i++) {

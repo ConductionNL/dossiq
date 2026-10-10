@@ -136,9 +136,10 @@ class WooReportReadLog {
 	 * @return RefusedException The refusal.
 	 */
 	private function notRecorded(?Throwable $previous): RefusedException {
-		return RefusedException::indeterminate(
+		return new RefusedException(
 			rule: 'woo-throughput-not-recorded',
 			sentence: 'This read cannot be recorded, so the report is not shown.',
+			status: RefusedException::STATUS_INDETERMINATE,
 			previous: $previous,
 		);
 	}//end notRecorded()

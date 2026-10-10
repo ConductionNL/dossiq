@@ -95,9 +95,12 @@ class WooReportController extends Controller {
 		}
 
 		// The group is the only way in: no admin bypass (REQ-WRR-002).
-		if ($this->switches->isThroughputReader(userId: $user->getUID()) === false) {
+		if ($this->switches->maySeeThroughput(userId: $user->getUID()) === false) {
 			return new JSONResponse(
-				['error' => 'woo-throughput-not-a-reader', 'message' => $this->l10n->t('Only the reader group the organisation named may read the throughput report.')],
+				[
+					'error' => 'woo-throughput-not-a-reader',
+					'message' => $this->l10n->t('Only the reader group the organisation named may read the throughput report.'),
+				],
 				Http::STATUS_FORBIDDEN
 			);
 		}
@@ -111,12 +114,7 @@ class WooReportController extends Controller {
 		}
 
 		try {
-			if ($caseId !== '') {
-				$report = $this->throughputReport->forCase(caseId: $caseId);
-			} else {
-				$report = $this->throughputReport->forPeriod(from: $from, to: $to);
-			}
-
+			$report = $this->read(caseId: $caseId, from: $from, to: $to);
 			$this->readLog->recordThroughputRead(readerId: $user->getUID(), scope: $scope, caseIds: $report['cases']);
 		} catch (RefusedException $e) {
 			return new JSONResponse(
@@ -127,7 +125,7 @@ class WooReportController extends Controller {
 
 		if ($this->request->getParam('format', '') === 'csv') {
 			return new DataDownloadResponse(
-				WooThroughputReport::toCsv(rows: $report['rows']),
+				$this->throughputReport->toCsv(rows: $report['rows']),
 				'woo-throughput.csv',
 				'text/csv; charset=utf-8'
 			);
@@ -135,6 +133,25 @@ class WooReportController extends Controller {
 
 		return new JSONResponse(['scope' => $scope] + $report);
 	}//end throughput()
+
+	/**
+	 * Read one case, or a period when no case is named.
+	 *
+	 * @param string $caseId The case, or ''.
+	 * @param string $from The first day of the period.
+	 * @param string $to The last day of the period.
+	 *
+	 * @return array{rows: list<array<string, int|string>>, cases: list<string>, truncated: bool} The report.
+	 *
+	 * @throws RefusedException When the report cannot be made.
+	 */
+	private function read(string $caseId, string $from, string $to): array {
+		if ($caseId !== '') {
+			return $this->throughputReport->forCase(caseId: $caseId);
+		}
+
+		return $this->throughputReport->forPeriod(from: $from, to: $to);
+	}//end read()
 
 	/**
 	 * The 403 of a report the organisation has not switched on.

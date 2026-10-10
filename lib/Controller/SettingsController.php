@@ -30,7 +30,6 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
-use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -213,7 +212,7 @@ class SettingsController extends Controller {
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	private function refusalSentence(string $rule): string {
-		if ($rule === WooReportSwitches::RULE_NEEDS_READERS) {
+		if ($rule === 'woo-throughput-needs-reader-group') {
 			return $this->l10n->t('Name an existing reader group before switching the throughput report on.');
 		}
 

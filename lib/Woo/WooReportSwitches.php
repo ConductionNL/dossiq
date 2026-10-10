@@ -26,6 +26,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
+use OCP\IUserSession;
 
 /**
  * Whether the organisation switched a Woo review report on, and who may read the throughput.
@@ -65,12 +66,14 @@ class WooReportSwitches {
 	 *
 	 * @param IAppConfig $appConfig The app configuration.
 	 * @param IGroupManager $groupManager The Nextcloud group manager.
+	 * @param IUserSession|null $userSession The session, for what the signed-in user is offered.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
 		private readonly IGroupManager $groupManager,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -126,14 +129,36 @@ class WooReportSwitches {
 	 *
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
-	public function isThroughputReader(string $userId): bool {
+	public function maySeeThroughput(string $userId): bool {
 		$group = $this->readerGroup();
 		if ($userId === '' || $this->groupExists(groupId: $group) === false) {
 			return false;
 		}
 
 		return $this->groupManager->isInGroup($userId, $group);
-	}//end isThroughputReader()
+	}//end maySeeThroughput()
+
+	/**
+	 * Which reports the signed-in user is offered, for the menu.
+	 *
+	 * The throughput report is offered only while it is on AND the user is
+	 * in its reader group. The parties report is not offered yet: its route
+	 * waits on the corpus collection (woo-review-reports, section 4).
+	 *
+	 * @return array{throughput: bool} What the user is offered.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function offeredToCurrentUser(): array {
+		$user = $this->userSession?->getUser();
+		if ($user === null) {
+			return ['throughput' => false];
+		}
+
+		return [
+			'throughput' => $this->isOn(switch: self::THROUGHPUT) && $this->maySeeThroughput(userId: $user->getUID()),
+		];
+	}//end offeredToCurrentUser()
 
 	/**
 	 * Refuse a settings save that would leave the throughput report on without a reader group.
@@ -178,6 +203,8 @@ class WooReportSwitches {
 	 * @param mixed $value The value as stored or posted.
 	 *
 	 * @return bool True for 'true', '1', 'yes' or 'on'.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public static function truthy(mixed $value): bool {
 		if (is_bool($value) === true) {
