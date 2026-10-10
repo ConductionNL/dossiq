@@ -10,9 +10,10 @@ lane in portaliq#1110: `site-mijn-omgeving-components` (blocks `tasks`, `inbox`,
 
 ## 0. Decisions for Ruben
 
-- [ ] 0.1 Should every `aanvullingsverzoek` also become a portaliq portal task, so it counts
-      under "Taken"? This change shows it through `vragenAanU` instead (proposal, not in
-      this change).
+- [x] 0.1 Should every `aanvullingsverzoek` also become a portaliq portal task, so it counts
+      under "Taken"? **Ruben, 10 Oct (decision 169, Q-dossiq-L2-1): yes.** dossiq writes the task
+      when it asks and closes it when the resident answers. That is its own change,
+      `an-aanvullingsverzoek-is-a-portal-task`; this change keeps `vragenAanU`.
 - [x] 0.2 The seeded Woo type has five public steps; the mockup draws four ("Afgerond" for
       "Besluit genomen" and "Afgehandeld"). **Ruben, 4 October: show the five the case type
       declares and do not relabel the case type.** The mockup's four were a simplification.
@@ -31,13 +32,11 @@ lane in portaliq#1110: `site-mijn-omgeving-components` (blocks `tasks`, `inbox`,
     `::testACaseWithoutAPortalSubjectWritesNone`. The lookup sits inside the try: without that
     an instance with no register configured turned a working ask into a refusal, which the
     existing ask tests caught.
-- [ ] 1.2 The ask form tells the handler that the summary and the missing items go to the
-      applicant.
-  - **Blocked, and not by this change.** There is no ask form: `requestInformation()` in
-    `src/services/caseTermsApi.js` has no caller anywhere in `src/`, and the manifest declares
-    no action on `/api/cases/{caseId}/information-request`. The desk sends a request through
-    the API alone, so there is no screen to put the sentence on. Building that form is a
-    change of its own; this one cannot carry it. Reported rather than ticked.
+- [x] 1.2 ~~The ask form tells the handler that the summary and the missing items go to the
+      applicant.~~ **Dropped from this change (Ruben, 10 Oct, decision 170, Q-dossiq-L2-2).** There
+      was no ask form to carry the sentence. It is now its own change,
+      `handler-asks-the-applicant-for-missing-information` (REQ-AVR-05), whose board
+      `DqAanvullingVragen` is on the design backlog.
 - [x] 1.3 Collection `vragenAanU` (design D1), with `defaultFilters: {state: open}` (design D4).
   - unit: `PortalContributionProviderTest::testTheQuestionsToTheResidentAreScopedAndMinimal`
     asserts the scope, the projection, the six internal fields it leaves out and the filter;
