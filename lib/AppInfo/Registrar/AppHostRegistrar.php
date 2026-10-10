@@ -33,7 +33,6 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
-use OCA\Dossiq\Mcp\DossiqToolProvider;
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -120,7 +119,6 @@ class AppHostRegistrar {
 				'namespace' => 'OCA\\Dossiq',
 				'sectionName' => 'Dossiq',
 				'dashboardWidgets' => (new DashboardWidgetList())->classes(),
-				'mcpProvider' => DossiqToolProvider::class,
 			]
 		);
 
