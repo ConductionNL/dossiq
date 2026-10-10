@@ -36,7 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
-use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DossierRowAnnotator;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -61,10 +61,11 @@ class ZaakdossierController extends Controller {
 	 * @param InformatieobjectReader $reader The clearance-gated document reader.
 	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
-	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
-	 *        so a document in an unfinished route cannot be made final.
 	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
 	 *        before a bulk transition writes anything, and the metadata run that reports per id.
+	 * @param DossierRowAnnotator $rows Puts the scan verdict and decidiq's approval marker on each
+	 *        listed row, so the Files tab's Scan and Approval columns read the listing it already
+	 *        fetches; also answers the marker of one document for approvalMarkers().
 	 */
 	public function __construct(
 		string $appName,
@@ -73,8 +74,8 @@ class ZaakdossierController extends Controller {
 		private readonly InformatieobjectReader $reader,
 		private readonly DossierUploadHandler $uploadHandler,
 		private readonly IUserSession $userSession,
-		private readonly DocumentApprovalClearance $approvals,
 		private readonly BulkDocumentActions $bulk,
+		private readonly DossierRowAnnotator $rows,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -113,7 +114,9 @@ class ZaakdossierController extends Controller {
 			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->fileService->groupByType(documents: $filtered);
+		// After the clearance filter, never before: a marker names who holds up
+		// a route, and that is only for a caller who may read the document.
+		$regrouped = $this->fileService->groupByType(documents: $this->rows->annotate(documents: $filtered));
 
 		return new JSONResponse($regrouped);
 	}//end listDossier()
@@ -340,17 +343,12 @@ class ZaakdossierController extends Controller {
 				continue;
 			}
 
-			$clearance = $this->approvals->forDocument(documentId: $id);
-			if (($clearance['routed'] ?? false) !== true) {
+			$marker = $this->rows->markerForDocument(documentId: $id);
+			if ($marker === null) {
 				continue;
 			}
 
-			$markers[$id] = [
-				'routed' => true,
-				'cleared' => ($clearance['cleared'] ?? false),
-				'waitingOn' => ($clearance['waitingOn'] ?? []),
-				'reason' => $this->approvals->describe(clearance: $clearance),
-			];
+			$markers[$id] = $marker;
 		}
 
 		return new JSONResponse(['markers' => $markers]);

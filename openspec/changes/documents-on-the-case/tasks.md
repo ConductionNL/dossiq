@@ -107,6 +107,30 @@ criteria under a task are plain bullets.
   Recorded rather than chosen, because picking (a) quietly would retire a
   capability nobody agreed to retire, and picking (b) quietly would commit the
   library to three more seams on one app's say-so.
+  **RE-SCOPED 2026-10-10 (decision 153, lane L4).** `DossierTab` was retired on
+  2026-09-13 (175761ab8): the Documents tab IS nextcloud-vue `CnFilesBrowser`
+  through the `files` leaf. So 2.2 is now "the Files tab carries what the
+  retired list had". Built on `build/dq-l4-5`, against nextcloud-vue #1428 and
+  #1433 (not released yet; dossiq still pins 2.76.0, which ignores these keys):
+  `bulkActions` Mark as final and Change confidentiality on
+  `BulkDocumentActionDialog` (takes the selection's `fileIds`), `visibleIf`
+  `{extension: [eml, msg]}` on Read as a message, and the orphan
+  `src/components/tabs/CaseDocumentsTab.vue` removed. Columns (same branch,
+  10 Oct round 4): the dossier listing now carries `scanVerdict` and
+  `approvalMarker` on every row (`lib/Service/Zaakdossier/DossierRowAnnotator.php`,
+  one scanner query through `ScanVerdictReader::verdictsFor()` and one decidiq
+  lookup through `DocumentApprovalClearance::forDocuments()`, after the
+  clearance filter; tests `tests/Unit/Service/Zaakdossier/DossierRowAnnotatorTest.php`,
+  `DocumentApprovalClearanceTest.php`, `tests/Unit/Service/Documents/ScanVerdictReaderTest.php`),
+  and the case-files columns are `{key, label, source: "row", formatter}`:
+  Type, Sender, Recipients, Keywords, Scan, Approval, with `rowDataUrl`
+  `/apps/dossiq/api/cases/{objectId}/dossier`, `rowDataPath` informatieobjecten,
+  `rowDataKey` fileId, `groupBy` informatieobjecttype, `facets` [keywords],
+  `preferenceApp` dossiq (vitest pins in `tests/vitest/partyCorrespondence.spec.js`,
+  `scanVerdict.spec.js`, `documentRowApprovalMarker.spec.js`). OPEN: pin the
+  nextcloud-vue release that carries #1428 and #1433 (not released on
+  10 Oct; dossiq pins 2.76.0, which ignores these keys). Tick after that.
+
 - [x] 2.3 `src/views/cases/components/DossierTab.vue`: render the Direction
   and Keywords columns (chips), add the keyword filter (facet on
   `keywords`) beside the sort dropdown, and the empty state "No documents
