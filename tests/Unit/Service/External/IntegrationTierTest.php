@@ -6,8 +6,8 @@
  * Proves the config-tier model: IntegrationMode defaults every seam to
  * `log` (fail-closed to no external call) and rejects unknown modes; the
  * live BRP/KvK adapters shape the mock/test API responses into the
- * existing result value-objects and never log the BSN; the DigiD/eHerkenning
- * simulators return simulator-flagged assertions without touching SAML.
+ * existing result value-objects and never log the BSN. DigiD and eHerkenning
+ * are integriq's identity broker (`OCA\Integriq\Auth\Idp`), not dossiq's.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service\External
@@ -23,8 +23,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\External;
 
-use OCA\Dossiq\Service\Auth\SimulatorDigidSamlAdapter;
-use OCA\Dossiq\Service\Auth\SimulatorEHerkenningSamlAdapter;
 use OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter;
 use OCA\Dossiq\Service\External\IntegrationMode;
 use OCA\Dossiq\Service\External\Kvk\KvkApiAdapter;
@@ -34,16 +32,12 @@ use OCP\Http\Client\IResponse;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\External\IntegrationMode
  * @covers \OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter
  * @covers \OCA\Dossiq\Service\External\Kvk\KvkApiAdapter
- * @covers \OCA\Dossiq\Service\Auth\SimulatorDigidSamlAdapter
- * @covers \OCA\Dossiq\Service\Auth\SimulatorEHerkenningSamlAdapter
  *
- * @uses \OCA\Dossiq\Service\Auth\BrokerAssertionResult
  * @uses \OCA\Dossiq\Service\External\Brp\BrpLookupResult
  * @uses \OCA\Dossiq\Service\External\Kvk\KvkLookupResult
  */
@@ -181,39 +175,4 @@ class IntegrationTierTest extends TestCase {
 		$this->assertSame('Test EMZ Dagobert', $result->entity['name']);
 		$this->assertFalse($adapter->isDormant());
 	}//end testKvkAdapterPrefersHoofdvestiging()
-
-	/**
-	 * DigiD simulator returns a simulator-flagged assertion for a valid BSN
-	 * and refuses anything that is not a 9-digit BSN.
-	 *
-	 * @return void
-	 */
-	public function testDigidSimulatorFlagsItselfAndValidatesBsn(): void {
-		$adapter = new SimulatorDigidSamlAdapter();
-		$this->assertTrue($adapter->isActive());
-
-		$assertion = $adapter->decodeAssertion(json_encode(['bsn' => '999990627']), 'relay-1');
-		$this->assertSame('999990627', $assertion->bsn);
-		$this->assertTrue($assertion->attributes['simulator']);
-		$this->assertSame('simulator', $assertion->attributes['authenticatedBy']);
-
-		$this->expectException(RuntimeException::class);
-		$adapter->decodeAssertion(json_encode(['bsn' => 'not-a-bsn']), 'relay-2');
-	}//end testDigidSimulatorFlagsItselfAndValidatesBsn()
-
-	/**
-	 * eHerkenning simulator returns a simulator-flagged assertion for a
-	 * valid KvK number and refuses non-8-digit input.
-	 *
-	 * @return void
-	 */
-	public function testEHerkenningSimulatorFlagsItselfAndValidatesKvk(): void {
-		$adapter = new SimulatorEHerkenningSamlAdapter();
-		$assertion = $adapter->decodeAssertion(json_encode(['kvkNumber' => '69599084']), 'relay-3');
-		$this->assertSame('69599084', $assertion->kvkNumber);
-		$this->assertTrue($assertion->attributes['simulator']);
-
-		$this->expectException(RuntimeException::class);
-		$adapter->decodeAssertion(json_encode(['kvkNumber' => '123']), 'relay-4');
-	}//end testEHerkenningSimulatorFlagsItselfAndValidatesKvk()
 }//end class

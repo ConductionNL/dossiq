@@ -8,8 +8,7 @@
  * surrounding lifecycle (leverancier-onboarding eHerkenning hand-off,
  * bedrijfszaak intake, BRP/KvK register-set seed) stays observable
  * until an openconnector-backed binding to the KvK Handelsregister
- * API is wired in via `Application::register()`. Mirrors the
- * `LogEHerkenningSamlAdapter` / `LogDigidSamlAdapter`
+ * API is wired in via `Application::register()`. Follows the
  * dormant-default pattern used across the Dossiq external surface.
  *
  * @category Service
