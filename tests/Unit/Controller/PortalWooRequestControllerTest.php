@@ -200,6 +200,18 @@ class PortalWooRequestControllerTest extends TestCase {
 	}//end testWithoutAnAssertedBranchTheRequestNamesNone()
 
 	/**
+	 * A company on a municipal portal may file a Woo request (site-business-and-authorisation D1).
+	 *
+	 * @return void
+	 */
+	public function testACompanyIsServed(): void {
+		$controller = $this->controller(PortalAssertionVerifierTest::mint(['audience' => 'business']), ['onderwerp' => 'Parkeerbeleid']);
+		$this->intake->method('start')->willReturn(['caseId' => 'case-1', 'caseUrl' => 'https://x/case-1']);
+
+		self::assertSame(201, $controller->start()->getStatus());
+	}//end testACompanyIsServed()
+
+	/**
 	 * No assertion, no request.
 	 *
 	 * @return void

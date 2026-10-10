@@ -321,6 +321,22 @@ class PortalContributionProvider {
 	];
 
 	/**
+	 * The group a company's pages sit in (site-business-and-authorisation D1).
+	 */
+	public const BUSINESS_GROUP = 'Uw bedrijf';
+
+	/**
+	 * The resident's page labels, with the running cases named as the company's.
+	 */
+	private const BUSINESS_PAGE_LABELS = [
+		'overzicht' => 'Overzicht',
+		'mijnZaken' => 'Uw zaak',
+		'berichten' => 'Berichten',
+		'verzoeken' => 'Verzoeken van uw bedrijf',
+		'lopendeZaken' => 'Lopende zaken van uw bedrijf',
+	];
+
+	/**
 	 * Builds the declared pages (no dependencies, so `new` still works).
 	 *
 	 * @var PortalPages
@@ -502,7 +518,7 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/portal-case-list-declarations/tasks.md#1.1
 	 */
 	public function getAudiences(): array {
-		return ['supplier', 'citizen', 'client', 'inspector'];
+		return ['supplier', 'citizen', 'client', 'business', 'inspector'];
 	}//end getAudiences()
 
 	/**
@@ -553,6 +569,14 @@ class PortalContributionProvider {
 
 		if ($audience === 'citizen' || $audience === 'client') {
 			return $this->citizenContribution();
+		}
+
+		// A COMPANY ON A MUNICIPAL PORTAL: the resident's manifest, worded for
+		// a company (site-business-and-authorisation D1). A portal that keeps
+		// portaliq's eHerkenning preset gets `supplier` instead, with the
+		// procurement pages and the case collection beside them.
+		if ($audience === 'business') {
+			return $this->citizenContribution(group: self::BUSINESS_GROUP, labels: self::BUSINESS_PAGE_LABELS);
 		}
 
 		if ($audience === 'inspector') {
@@ -716,18 +740,22 @@ class PortalContributionProvider {
 	 * today. Until it does, a second complaint is filed and found rather than
 	 * refused, which is the `onCreate: warn` the schema declares.
 	 *
+	 * @param string                $group  The group every page sits in.
+	 * @param array<string, string> $labels The label per page id.
+	 *
 	 * @return array<string, mixed> The citizen manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
-	private function citizenContribution(): array {
+	private function citizenContribution(string $group=self::CITIZEN_GROUP, array $labels=self::CITIZEN_PAGE_LABELS): array {
 		$manifest = new CitizenManifest();
 		$collections = $manifest->collections();
 		$actions = $manifest->actions();
 
 		return [
-			'label' => self::CITIZEN_GROUP,
+			'label' => $group,
 			'collections' => $collections,
 			'actions' => $actions,
 			// THE FOUR PAGES OF THE DESIGN, not one page per collection: an
@@ -739,8 +767,8 @@ class PortalContributionProvider {
 			'pages' => $this->pages->forResident(
 				collections: $collections,
 				actions: $actions,
-				group: self::CITIZEN_GROUP,
-				labels: self::CITIZEN_PAGE_LABELS
+				group: $group,
+				labels: $labels
 			),
 			// A declared rule key, not a change rule: dossiq writes the
 			// message itself (WooDecisionNotice), so portaliq sends its

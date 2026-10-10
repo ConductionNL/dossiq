@@ -331,6 +331,91 @@ class PortalCaseDeclarationsTest extends TestCase {
 		);
 	}//end testTheCaseListNamesItsBranchAndCaseNumberFields()
 
+	/**
+	 * A resident may propose a corrected title or description, and nothing
+	 * the organisation decides (portal-change-proposals-on-the-case D1). The
+	 * case list offers the action, which is where portaliq's site looks.
+	 *
+	 * @return void
+	 */
+	public function testAResidentMayProposeOnlyWhatTheySupplied(): void {
+		$client = $this->provider->getContribution(['audience' => 'client']);
+		$proposals = array_values(array_filter($client['actions'], static fn (array $a): bool => ($a['type'] ?? '') === 'propose-change'));
+		$this->assertCount(1, $proposals);
+		$action = $proposals[0];
+		$this->assertSame('proposeCaseChange', $action['id']);
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'case', 'scopeField' => 'portalSubject'], array_intersect_key($action, array_flip(['register', 'schema', 'scopeField'])));
+		$this->assertSame(['title', 'description'], $action['proposable']);
+		foreach ($action['proposable'] as $field) {
+			$this->assertArrayHasKey($field, $this->properties['case']);
+		}
+
+		foreach (['status', 'result', 'deadline', 'assignee', 'caseType'] as $organisations) {
+			$this->assertNotContains($organisations, $action['proposable']);
+		}
+
+		$this->assertSame(['proposeCaseChange'], $this->caseCollection()['rowActions']);
+	}//end testAResidentMayProposeOnlyWhatTheySupplied()
+
+	/**
+	 * The case declares portaliq's proposal queue as a linked type, so the
+	 * handler's panel mounts on the case (D2).
+	 *
+	 * @return void
+	 */
+	public function testTheCaseDeclaresTheProposalQueue(): void {
+		$fragment = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/77-portaliq-change-proposals.json'),
+			true
+		);
+		$this->assertSame(
+			['portaliq-change-proposal-queue'],
+			$fragment['components']['schemas']['case']['configuration']['linkedTypes']
+		);
+	}//end testTheCaseDeclaresTheProposalQueue()
+
+	/**
+	 * A company on a municipal portal reads the resident's pages, worded for
+	 * a company, and no procurement page (site-business-and-authorisation D1).
+	 *
+	 * @return void
+	 */
+	public function testACompanyOnAMunicipalPortalReadsTheResidentPagesWordedForACompany(): void {
+		$this->assertContains('business', $this->provider->getAudiences());
+		$business = $this->provider->getContribution(['audience' => 'business']);
+		$client = $this->provider->getContribution(['audience' => 'client']);
+		$this->assertSame(array_column($client['collections'], 'id'), array_column($business['collections'], 'id'));
+		$this->assertSame(array_column($client['actions'], 'id'), array_column($business['actions'], 'id'));
+		$this->assertNotContains('tenders', array_column($business['collections'], 'id'));
+		$this->assertSame('Uw bedrijf', $business['label']);
+
+		$overview = array_values(array_filter($business['pages'], static fn (array $p): bool => $p['id'] === 'overzicht'))[0];
+		$cases = array_values(array_filter($overview['blocks'], static fn (array $b): bool => $b['type'] === 'cases'))[0];
+		$this->assertSame('Lopende zaken van uw bedrijf', $cases['label']);
+
+		$residentOverview = array_values(array_filter($client['pages'], static fn (array $p): bool => $p['id'] === 'overzicht'))[0];
+		$residentCases = array_values(array_filter($residentOverview['blocks'], static fn (array $b): bool => $b['type'] === 'cases'))[0];
+		$this->assertSame('Lopende zaken', $residentCases['label'], 'the resident keeps their own words');
+
+		$this->assertContains('tenders', array_column($this->provider->getContribution(['audience' => 'supplier'])['collections'], 'id'));
+	}//end testACompanyOnAMunicipalPortalReadsTheResidentPagesWordedForACompany()
+
+	/**
+	 * The case list names the party field portaliq's mandate filter reads,
+	 * projects it, and keeps it out of the acknowledgement (D2).
+	 *
+	 * @return void
+	 */
+	public function testTheCaseListNamesThePartyAMandateReaches(): void {
+		$cases = $this->caseCollection();
+		$this->assertSame('portalParty', $cases['mandateField']);
+		$this->assertContains('portalParty', $cases['fields']);
+		$this->assertNotContains('portalParty', $this->provider->citizenCaseFields());
+		$party = $this->properties['case']['portalParty'];
+		$this->assertSame('^(subject:.+|kvk:[0-9]{8})$', $party['pattern']);
+		$this->assertFalse($party['visible']);
+	}//end testTheCaseListNamesThePartyAMandateReaches()
+
 	private function caseCollection(): array {
 		$contribution = $this->provider->getContribution(['audience' => 'client']);
 		$this->assertIsArray($contribution);

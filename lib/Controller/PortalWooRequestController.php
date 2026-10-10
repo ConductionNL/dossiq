@@ -64,7 +64,7 @@ class PortalWooRequestController extends Controller {
 	/**
 	 * The portal audiences this action is offered to (DigiD arrives as client).
 	 */
-	private const AUDIENCES = ['citizen', 'client'];
+	private const AUDIENCES = ['citizen', 'client', 'business'];
 
 	/**
 	 * The form fields the action forwards.

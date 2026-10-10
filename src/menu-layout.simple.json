@@ -1059,6 +1059,11 @@
 									"overflow": true
 								},
 								{
+									"widgetId": "case-change-proposals",
+									"label": "Proposals",
+									"overflow": true
+								},
+								{
 									"widgetId": "case-decisions-panel",
 									"label": "Decisions",
 									"overflow": true

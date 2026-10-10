@@ -816,6 +816,7 @@ $extra = [
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
+    ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
     // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
     // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],

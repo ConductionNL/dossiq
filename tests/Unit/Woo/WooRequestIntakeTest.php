@@ -257,6 +257,7 @@ class WooRequestIntakeTest extends TestCase {
 		$case = $this->store->row(schema: 'case', uuid: $result['caseId']);
 		self::assertSame(WooRequestIntake::CASE_TYPE_ID, $case['caseType']);
 		self::assertSame(self::RESIDENT, $case['portalSubject']);
+		self::assertSame('subject:' . self::RESIDENT, $case['portalParty'], 'the party is the person, typed, never a BSN');
 		self::assertSame('Parkeerbeleid centrum', $case['title']);
 		self::assertSame('Alle stukken over het parkeerbeleid.', $case['description']);
 		self::assertSame('status-ontvangst', $case['status']);
