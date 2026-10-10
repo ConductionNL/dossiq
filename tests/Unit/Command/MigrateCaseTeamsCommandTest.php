@@ -69,7 +69,7 @@ class MigrateCaseTeamsCommandTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function testItAppliesAndListsWhatItLeft(): void {
 		$tester = $this->runCommand(
@@ -107,7 +107,7 @@ class MigrateCaseTeamsCommandTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function testADryRunDoesNotApply(): void {
 		$tester = $this->runCommand(report: $this->report(['converted' => 3]), expectedApply: false, input: ['--dry-run' => true]);

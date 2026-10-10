@@ -945,6 +945,17 @@ declaration, proven by a unit test.
 - **WHEN** `composer.json`, `info.xml` and the README table are parsed
 - **THEN** each SHALL match the declaration
 
+### Requirement: The Credentials text follows the Conduction voice
+
+The Credentials section of the settings dialog SHALL contain no em-dashes, in
+English and in Dutch.
+
+#### Scenario: Reading the Credentials section
+
+- **GIVEN** a person opens the dossiq settings dialog
+- **WHEN** they open the Credentials section
+- **THEN** none of its text contains an em-dash
+
 ### Requirement: The Integrations page lists dossiq's rows from integriq's registry (REQ-ADMIN-025)
 
 This requirement replaces the data source of REQ-ADMIN-018. The page, its

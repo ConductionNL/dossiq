@@ -126,7 +126,7 @@ class CaseRebindController extends Controller {
 	 * @return JSONResponse The options, with the preview when a target is named.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	#[NoAdminRequired]
 	public function options(string $caseId): JSONResponse {
@@ -169,7 +169,7 @@ class CaseRebindController extends Controller {
 	 * @return JSONResponse What was applied, or the refusal naming the rule.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	#[NoAdminRequired]
 	public function rebind(string $caseId): JSONResponse {
@@ -205,7 +205,7 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return array<mixed, mixed> The value.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function arrayParam(string $name): array {
 		$value = $this->request->getParam($name, []);

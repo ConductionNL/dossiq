@@ -202,7 +202,7 @@ class CaseRebindService {
 	 * @throws RefusedException When the case or the target cannot be read, or a remap cannot be made.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(
@@ -272,7 +272,7 @@ class CaseRebindService {
 	 * @throws RefusedException When the rebind is refused, or a write fails.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function rebind(
 		string $caseId,
@@ -369,7 +369,7 @@ class CaseRebindService {
 	 *
 	 * @return array<int, string> Their names.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function unanswered(array $impact): array {
 		$names = [];
@@ -439,7 +439,7 @@ class CaseRebindService {
 	 * @return array<string, mixed> The case, with the entry appended.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function journal(
 		array $case,

@@ -24,3 +24,4 @@ Kind: code. Extends `case-type-rebind`.
   `l10n/en.js`, `l10n/nl.js`).
 - [ ] 3.1 `tests/e2e/case-type-rebind.spec.ts` asserts the list shape of the
   written answer. Written, not run in this lane (no instance assigned).
+  (live pass, decision 139)

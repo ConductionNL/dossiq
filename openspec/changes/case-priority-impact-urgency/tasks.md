@@ -46,7 +46,10 @@ openregister, wave 1, as `field-rules-by-state` and
   - `tests/Unit/Service/DeadlineEscalationServiceTest.php`
 - [x] 6.1 Dutch and English strings for impact, urgency, priority and the
   override reason.
-- [ ] 6.2 Ask the corpus lane for the missing row, in D14's own words:
+- [ ] 6.2 Ask the corpus lane for the missing row, in D14's own words
+  (ask filed 10 Oct by lane L1 in `for-ruben/dossiq-sibling-asks.md`; a
+  recorded hand-over is not done, decision 88, so this stays open until the row
+  exists):
   priority derived from impact and urgency, ordering the working list, and
   raised by a rule as the term approaches; rate every driven column.
   - **NOT DONE HERE, and deliberately not ticked.** The corpus lives in

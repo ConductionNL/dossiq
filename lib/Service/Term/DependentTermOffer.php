@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
@@ -45,13 +45,14 @@ use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Makes and settles the offer a moved term creates for its dependents.
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+ * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
 class DependentTermOffer {
 	/**
@@ -87,6 +88,8 @@ class DependentTermOffer {
 	 * @param DeadlineExtensionService $extension The one way a term moves.
 	 * @param EngineTaskGateway        $tasks     The engine task the offer is.
 	 * @param LoggerInterface          $logger    Logger.
+	 * @param TermijnTimerService|null $timerService The working calendar the
+	 *                                               proposed end date is rolled on.
 	 */
 	public function __construct(
 		private readonly CaseRelationStore $store,
@@ -94,6 +97,7 @@ class DependentTermOffer {
 		private readonly DeadlineExtensionService $extension,
 		private readonly EngineTaskGateway $tasks,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -109,7 +113,7 @@ class DependentTermOffer {
 	 *
 	 * @return array<int, array{caseId: string, title: string}> The waiting cases.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function dependentsOf(string $sourceCaseId): array {
 		if (trim($sourceCaseId) === '') {
@@ -165,7 +169,7 @@ class DependentTermOffer {
 	 *
 	 * @return int How many offers were written.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function offer(string $sourceCaseId, string $sourceTitle, int $daysImpact): int {
 		if ($daysImpact <= 0) {
@@ -208,7 +212,7 @@ class DependentTermOffer {
 	 *
 	 * @return array{refused?: string, event?: array<string, mixed>} The outcome.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function accept(string $taskId, ?string $actor): array {
 		$offer = $this->offerOn(taskId: $taskId);
@@ -227,9 +231,10 @@ class DependentTermOffer {
 		}
 
 		try {
-			$newEnd = (new DateTimeImmutable($current))
-				->modify('+' . $offer['days'] . ' days')
-				->format('Y-m-d');
+			// A statutory end date: rolled onto the working calendar, so an
+			// offer never proposes a Saturday.
+			$end    = (new DateTimeImmutable($current))->modify('+' . $offer['days'] . ' days');
+			$newEnd = ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 		} catch (Throwable $e) {
 			return ['refused' => 'term-has-no-end-date'];
 		}
@@ -265,7 +270,7 @@ class DependentTermOffer {
 	 *
 	 * @return bool True when the task was completed.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function decline(string $taskId, ?string $actor): bool {
 		if ($this->offerOn(taskId: $taskId) === null) {

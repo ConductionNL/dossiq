@@ -74,5 +74,7 @@ failure line in the PR body.
   `npm run lint` and any other leg `code-quality.yml` requires. Then
   `scripts/run-hydra-gates.sh --base origin/development`, count the gates that ran, and paste gate
   23's output: no `search_path` finding, and none of the five deleted paths.
-- [ ] 4.3 One PR, `--base development`, that closes dossiq#2470. Merge development in, never
+- [x] 4.3 One PR, `--base development`, that closes dossiq#2470. PR #3476 merged
+  on `development` 9 Oct 08:29; the issue did not close itself, so the L1 archive
+  PR carries "Closes #2470". Merge development in, never
   rebase. No `Co-Authored-By` on any commit. Done means merged on `development` with CI green.

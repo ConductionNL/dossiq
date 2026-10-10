@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+ * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Run the team migration and list the cases it could not map.
  *
- * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+ * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
  */
 class MigrateCaseTeamsCommand extends Command {
 
@@ -52,7 +52,7 @@ class MigrateCaseTeamsCommand extends Command {
 	 *
 	 * @param CaseTeamMigration $migration The one service that moves a case's team.
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function __construct(
 		private readonly CaseTeamMigration $migration,
@@ -65,7 +65,7 @@ class MigrateCaseTeamsCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:teams:migrate')
@@ -88,7 +88,7 @@ class MigrateCaseTeamsCommand extends Command {
 	 *
 	 * @return int Success when it ran, also when cases were left unmapped; failure when it could not run.
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$dryRun = (bool)$input->getOption('dry-run');

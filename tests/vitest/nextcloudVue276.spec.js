@@ -11,7 +11,7 @@
  * function back untouched. OpenRegister answered 404 and no case was ever
  * locked. The settings dialog's Credentials text also carried em-dashes.
  *
- * @spec openspec/changes/nextcloud-vue-2-76-object-lock/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import fs from 'fs'

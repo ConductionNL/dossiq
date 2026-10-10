@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.4",
+    "version": "1.3.5",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -3898,13 +3898,12 @@
       "caseShare": {
         "slug": "caseShare",
         "icon": "ShareVariant",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:CreativeWork",
         "title": "Case share",
         "description": "Token- or partner-based share over a case for external collaboration",
         "type": "object",
         "required": [
-          "token",
           "caseId",
           "shareType",
           "permissionLevel"

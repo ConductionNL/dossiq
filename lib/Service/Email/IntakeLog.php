@@ -382,7 +382,7 @@ class IntakeLog {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	private function recordOnTimeline(
 		InboundMessage $message,

@@ -57,7 +57,7 @@ Tier: V1. Kind: code. Competitor map row
 
 ## 5. Deliberately not built here
 
-- [ ] 5.1 NOT BUILT: honouring `*` as a real wildcard in
+- Follow-up, not a task of this change (D-5 chose option 2): honouring `*` as a real wildcard in
   `StatusTransitionService` and `Transitions\OfferedTransitions`. That changes
   what every stored template means, including on live instances, so a move that
   has never been offered would start being offered on upgrade. It needs a
