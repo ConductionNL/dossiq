@@ -1,0 +1,173 @@
+{
+  "_note": "woo-review-recall-and-stopping (rows 19.12 and 19.13). A stopping rule declared before review, and elusion samples that estimate the recall. No x-openregister-hierarchy: OpenRegister refuses a parent that references another schema. The private authorization block comes with woo-review-triage section 6, once woo-request-scoped-access sets the grants; declaring it before then would lock the handler out.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "wooStoppingRule",
+          "wooRecallSample"
+        ]
+      }
+    },
+    "schemas": {
+      "wooStoppingRule": {
+        "slug": "wooStoppingRule",
+        "icon": "FlagCheckered",
+        "version": "1.0.0",
+        "title": "Woo stopping rule",
+        "description": "How much of the relevant material a Woo review must find, declared before the first document is marked.",
+        "type": "object",
+        "required": [
+          "case",
+          "targetRecall",
+          "confidence"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case the rule belongs to.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "targetRecall": {
+            "type": "number",
+            "title": "Target recall",
+            "description": "The share of the relevant documents the review must find, between 0.5 and 0.99.",
+            "minimum": 0.5,
+            "maximum": 0.99
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "description": "The confidence the lower bound of the estimate is computed at.",
+            "enum": [
+              0.9,
+              0.95,
+              0.99
+            ]
+          },
+          "declaredBy": {
+            "type": "string",
+            "title": "Declared by",
+            "description": "Who declared the rule."
+          },
+          "declaredAt": {
+            "type": "string",
+            "title": "Declared at",
+            "description": "When the rule was declared.",
+            "format": "date-time"
+          }
+        }
+      },
+      "wooRecallSample": {
+        "slug": "wooRecallSample",
+        "icon": "ChartBoxOutline",
+        "version": "1.0.0",
+        "title": "Woo recall sample",
+        "description": "A random sample from the documents set aside or not yet marked, judged to estimate how much relevant material the review missed.",
+        "type": "object",
+        "required": [
+          "case",
+          "seed",
+          "documents"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case the sample was drawn on.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "seed": {
+            "type": "integer",
+            "title": "Seed",
+            "description": "The seed the sample was drawn with, so the same documents can be drawn again."
+          },
+          "drawnBy": {
+            "type": "string",
+            "title": "Drawn by",
+            "description": "Who drew the sample."
+          },
+          "drawnAt": {
+            "type": "string",
+            "title": "Drawn at",
+            "description": "When the sample was drawn.",
+            "format": "date-time"
+          },
+          "nullSetSize": {
+            "type": "integer",
+            "title": "Null set",
+            "description": "How many documents were out of scope or unmarked when the sample was drawn (N)."
+          },
+          "found": {
+            "type": "integer",
+            "title": "Found",
+            "description": "How many documents were in scope when the sample was drawn."
+          },
+          "documents": {
+            "type": "array",
+            "title": "Documents",
+            "description": "The sampled documents.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "judgements": {
+            "type": "object",
+            "title": "Judgements",
+            "description": "Per sampled document: judged in scope or out of scope. Apart from the document's marking in the review."
+          },
+          "batch": {
+            "type": "string",
+            "title": "Batch",
+            "description": "The review batch the sample is judged in."
+          },
+          "k": {
+            "type": "integer",
+            "title": "Judged in scope",
+            "description": "How many sampled documents were judged in scope (k)."
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "description": "The confidence the bound was computed at."
+          },
+          "elusionRate": {
+            "type": "number",
+            "title": "Elusion rate",
+            "description": "k divided by the sample size."
+          },
+          "elusionUpper": {
+            "type": "number",
+            "title": "Elusion upper bound",
+            "description": "The one-sided Clopper-Pearson upper bound of the elusion rate."
+          },
+          "recallEstimate": {
+            "type": "number",
+            "title": "Recall estimate",
+            "description": "The estimated share of the relevant documents that was found."
+          },
+          "recallLowerBound": {
+            "type": "number",
+            "title": "Recall lower bound",
+            "description": "The lower bound of the recall at the confidence."
+          },
+          "estimatedAt": {
+            "type": "string",
+            "title": "Estimated at",
+            "description": "When the last sampled document was judged and the estimate computed.",
+            "format": "date-time"
+          },
+          "stoppingRuleMetAt": {
+            "type": "string",
+            "title": "Stopping rule met at",
+            "description": "When this sample's estimate met the stopping rule, recorded once.",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

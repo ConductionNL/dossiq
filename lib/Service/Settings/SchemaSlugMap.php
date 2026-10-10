@@ -229,6 +229,9 @@ class SchemaSlugMap {
 		'wooDocumentReview' => 'woo_review_schema',
 		'wooTriageRule' => 'woo_triage_rule_schema',
 		'wooReviewBatch' => 'woo_review_batch_schema',
+		// The recall of a Woo review: the stopping rule and its samples (woo-review-recall-and-stopping).
+		'wooStoppingRule' => 'woo_stopping_rule_schema',
+		'wooRecallSample' => 'woo_recall_sample_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

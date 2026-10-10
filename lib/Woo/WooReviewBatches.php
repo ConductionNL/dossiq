@@ -151,7 +151,7 @@ class WooReviewBatches {
 	public function taken(string $caseId, array $documents): array {
 		$open = [];
 		foreach ($this->rows(caseId: $caseId) as $batch) {
-			if (($batch['status'] ?? 'open') === 'open') {
+			if (($batch['status'] ?? 'open') === 'open' && isset($batch['filter']['recallSample']) === false) {
 				foreach ((array)($batch['documents'] ?? []) as $ref) {
 					$open[(string)$ref] = (string)($batch['name'] ?? '');
 				}
@@ -218,29 +218,10 @@ class WooReviewBatches {
 			$this->reviews->save(review: $review);
 		}
 
-		$taskId = $this->tasks->mirrorImport(
-			task: [
-				'id' => self::TASK_KIND.':'.$batchId,
-				'title' => $this->l10n->t('Review the Woo batch "%s"', [$name]),
-				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [count($documents), $name]),
-				'status' => 'available',
-				'assignee' => $assignee,
-				'priority' => 'normal',
-				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $batchId]],
-			],
-			caseId: $caseId,
-			actor: $userId,
-		);
+		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
 		if ($taskId !== '') {
 			$batch['task'] = $taskId;
 			$batch = $this->save(batch: $batch);
-		}
-
-		if ($taskId === '') {
-			$this->logger->warning(
-				'Dossiq: a Woo review batch was created but the engine did not take its task',
-				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId]
-			);
 		}
 
 		return [
@@ -249,6 +230,47 @@ class WooReviewBatches {
 			'progress' => ['assessed' => 0, 'total' => count($documents)],
 		];
 	}//end create()
+
+	/**
+	 * Create the batch a recall sample is judged in, and give its reviewer a task.
+	 *
+	 * A sample batch takes documents that may sit in another batch or carry
+	 * a marking: it judges them apart from the review, so it writes nothing
+	 * on the reviews and holds no document against the other batches.
+	 *
+	 * @param string $caseId The Woo case UUID.
+	 * @param string $sampleId The recall sample.
+	 * @param string $assignee The reviewer.
+	 * @param list<string> $documents The sampled documents.
+	 * @param string $userId Who drew the sample.
+	 *
+	 * @return array<string, mixed> The batch.
+	 *
+	 * @throws RefusedException When the batch cannot be stored.
+	 *
+	 * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
+	 */
+	public function createSampleBatch(string $caseId, string $sampleId, string $assignee, array $documents, string $userId): array {
+		$name = $this->l10n->t('Recall sample of %d documents', [count($documents)]);
+		$batch = $this->save(
+			batch: [
+				'case' => $caseId,
+				'name' => $name,
+				'documents' => $documents,
+				'filter' => ['recallSample' => $sampleId],
+				'assignee' => $assignee,
+				'status' => 'open',
+			]
+		);
+		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
+		$taskId = $this->handTask(caseId: $caseId, batchId: $batchId, name: $name, assignee: $assignee, count: count($documents), userId: $userId);
+		if ($taskId !== '') {
+			$batch['task'] = $taskId;
+			$batch = $this->save(batch: $batch);
+		}
+
+		return $batch;
+	}//end createSampleBatch()
 
 	/**
 	 * The case's batches, each with its progress: assessed of total.
@@ -312,6 +334,42 @@ class WooReviewBatches {
 
 		return $depth;
 	}//end reviewDepth()
+
+	/**
+	 * Hand the reviewer a task for the batch through the engine; '' when the engine did not take it.
+	 *
+	 * @param string $caseId The Woo case UUID.
+	 * @param string $batchId The batch.
+	 * @param string $name The batch's name.
+	 * @param string $assignee The reviewer.
+	 * @param int $count How many documents the batch holds.
+	 * @param string $userId Who made the batch.
+	 *
+	 * @return string The engine task uuid, or ''.
+	 */
+	private function handTask(string $caseId, string $batchId, string $name, string $assignee, int $count, string $userId): string {
+		$taskId = $this->tasks->mirrorImport(
+			task: [
+				'id' => self::TASK_KIND.':'.$batchId,
+				'title' => $this->l10n->t('Review the Woo batch "%s"', [$name]),
+				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$count, $name]),
+				'status' => 'available',
+				'assignee' => $assignee,
+				'priority' => 'normal',
+				'metadata' => ['dossiq' => ['kind' => self::TASK_KIND, 'batch' => $batchId]],
+			],
+			caseId: $caseId,
+			actor: $userId,
+		);
+		if ($taskId === '') {
+			$this->logger->warning(
+				'Dossiq: a Woo review batch was created but the engine did not take its task',
+				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId]
+			);
+		}
+
+		return $taskId;
+	}//end handTask()
 
 	/**
 	 * Refuse an incomplete batch before anything is written.
