@@ -125,4 +125,56 @@ final class InspectionRunCarryOverTest extends TestCase {
 		$this->assertSame('t-3', $data['templateId']);
 		$this->assertSame('2026-09-03T09:00:00Z', $data['metadata']['legacyCompletedAt']);
 	}//end testAStackCResultWithoutAnOutcomeGetsTheRulesVerdict()
+	/**
+	 * An offline checklistResult: the case, inspector and moments come from the
+	 * fieldInspection it names; the answers arrive in the leaf's words.
+	 *
+	 * @return void
+	 */
+	public function testAnOfflineResultTakesItsCaseFromTheInspectionItNames(): void {
+		$carry = new InspectionRunCarryOver();
+		$result = [
+			'@self' => ['id' => 'o-1'],
+			'inspectionRef' => 'fi-1',
+			'checklistTemplateRef' => 't-5',
+			'items' => [['questionId' => 'q1', 'answer' => 'pass', 'evidenceRefs' => ['ev-1'], 'notes' => 'ok']],
+		];
+		$inspection = ['@self' => ['id' => 'fi-1'], 'caseRef' => 'case-9', 'inspectorRef' => 'u9', 'completedAt' => '2026-10-01T12:00:00Z', 'status' => 'synced', 'gpsLocation' => ['lat' => 52.0, 'lon' => 4.0]];
+		$template = ['@self' => ['id' => 't-5'], 'name' => 'Offline', 'version' => 2, 'sections' => [['items' => [['id' => 'q1', 'responseType' => 'yes_no_na']]]]];
+
+		$this->assertSame(['schema' => 'fieldInspection', 'id' => 'fi-1'], $carry->parentOf(schema: 'checklistResult', object: $result));
+		$this->assertSame(['inspectionChecklist/t-5', 't-5'], $carry->templateKeys(schema: 'checklistResult', object: $result));
+
+		$data = $carry->taskData(schema: 'checklistResult', object: $carry->withParent(schema: 'checklistResult', object: $result, parent: $inspection), template: $template);
+
+		$this->assertSame('case-9', $data['objectUuid']);
+		$this->assertSame('completed', $data['state']);
+		$this->assertSame('conform', $data['outcome']);
+		$this->assertSame('u9', $data['assignee']);
+		$this->assertSame('t-5', $data['templateId']);
+		$this->assertSame(['itemId' => 'q1', 'value' => 'ja', 'comment' => 'ok', 'photos' => ['ev-1']], $data['responses'][0]);
+		$this->assertSame(['ev-1'], $data['evidence']);
+		$this->assertSame('checklistResult/o-1', $data['metadata']['legacyRef']);
+		$this->assertSame('2026-10-01T12:00:00Z', $data['metadata']['legacyCompletedAt']);
+		$this->assertSame(['lat' => 52.0, 'lon' => 4.0], $data['metadata']['location']);
+	}//end testAnOfflineResultTakesItsCaseFromTheInspectionItNames()
+
+	/**
+	 * A still-running inspection gives an active task; no parent, or a source
+	 * without a declared parent, leaves the source as it was.
+	 *
+	 * @return void
+	 */
+	public function testAParentIsOnlyReadWhereTheSourceDeclaresOne(): void {
+		$carry = new InspectionRunCarryOver();
+		$result = ['id' => 'o-2', 'inspectionRef' => 'fi-2', 'checklistTemplateRef' => 't-5', 'items' => []];
+
+		$open = $carry->withParent(schema: 'checklistResult', object: $result, parent: ['caseRef' => 'case-1', 'status' => 'in_progress']);
+		$this->assertSame('active', $carry->taskData(schema: 'checklistResult', object: $open, template: null)['state']);
+
+		$this->assertSame($result, $carry->withParent(schema: 'checklistResult', object: $result, parent: null));
+		$this->assertNull($carry->parentOf(schema: 'checklistResult', object: ['inspectionRef' => ' ']));
+		$this->assertNull($carry->parentOf(schema: 'inspectionResult', object: ['inspectionRef' => 'fi-2']));
+		$this->assertSame(['case' => 'c'], $carry->withParent(schema: 'inspectionResult', object: ['case' => 'c'], parent: ['caseRef' => 'x']));
+	}//end testAParentIsOnlyReadWhereTheSourceDeclaresOne()
 }//end class

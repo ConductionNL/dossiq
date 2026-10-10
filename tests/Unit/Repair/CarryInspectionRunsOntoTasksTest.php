@@ -75,6 +75,36 @@ final class CarryInspectionRunsOntoTasksTest extends TestCase {
 	}//end testEachRunIsCarriedOnceAndARefusalIsCounted()
 
 	/**
+	 * An offline checklistResult is carried onto the case its fieldInspection
+	 * names, against the template the planned item was repointed to.
+	 *
+	 * @return void
+	 */
+	public function testAnOfflineResultIsCarriedOntoTheCaseOfItsInspection(): void {
+		$tasks = self::taskLayer(refuse: '');
+		$store = self::store(
+			[
+				'inspectionChecklistTemplate' => [['@self' => ['id' => 't-5'], 'name' => 'Offline', 'sections' => []]],
+				'fieldInspection' => [['@self' => ['id' => 'fi-1'], 'caseRef' => 'case-9', 'inspectorRef' => 'u9', 'status' => 'synced']],
+				'checklistResult' => [
+					['@self' => ['id' => 'o-1'], 'inspectionRef' => 'fi-1', 'checklistTemplateRef' => 't-5', 'items' => [['questionId' => 'q1', 'answer' => 'ja']]],
+				],
+			]
+		);
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info')->with($this->stringContains('1 carried, 0 already carried, 0 failed'));
+		$this->step(store: $store, tasks: $tasks)->run($output);
+
+		$this->assertCount(1, $tasks->imported);
+		$this->assertSame('case-9', $tasks->imported[0]['objectUuid']);
+		$this->assertSame('u9', $tasks->imported[0]['assignee']);
+		$this->assertSame('t-5', $tasks->imported[0]['templateId']);
+		$this->assertSame('Offline', $tasks->imported[0]['templateSnapshot']['name'], 'the bare template reference found the template');
+		$this->assertSame('checklistResult/o-1', $tasks->imported[0]['metadata']['legacyRef']);
+	}//end testAnOfflineResultIsCarriedOntoTheCaseOfItsInspection()
+
+	/**
 	 * Without the task layer the step says so and does nothing.
 	 *
 	 * @return void

@@ -4,8 +4,10 @@
  * Repair step: carry every older stored inspection run onto a task.
  *
  * Change inspection-checklists-onto-task, task 4.2. Every `inspectieRapport`,
- * `inspectionChecklistRun` and `inspectionResult` becomes one inspection
- * task through OpenRegister's trusted import path, carrying
+ * `inspectionChecklistRun`, `inspectionResult` and offline `checklistResult`
+ * becomes one inspection task through OpenRegister's trusted import path. A
+ * `checklistResult` finds its case through the `fieldInspection` its
+ * `inspectionRef` names. Each task carries
  * `metadata.legacyRef`. A source whose reference already sits on one of its
  * case's inspection tasks is skipped, so a second run creates nothing. The
  * sources are not deleted: step 5 retires their schemas one release later.
@@ -86,6 +88,13 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 	private array $templates = [];
 
 	/**
+	 * Parent objects by schema slug, then by uuid.
+	 *
+	 * @var array<string, array<string, array<string, mixed>>>
+	 */
+	private array $parents = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService  $settingsService Bridge to OpenRegister and config.
@@ -136,6 +145,8 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 				$this->loadTemplates(objects: $objects, register: $register);
 				foreach (array_keys(InspectionRunCarryOver::SOURCES) as $schema) {
 					foreach ($this->read(objects: $objects, register: $register, schema: $schema) as $object) {
+						$parent = $this->parent(objects: $objects, register: $register, schema: $schema, object: $object);
+						$object = $this->carry->withParent(schema: $schema, object: $object, parent: $parent);
 						$this->carryOne(tasks: $tasks, schema: $schema, object: $object, counts: $counts, output: $output);
 					}
 				}
@@ -166,7 +177,13 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 			return;
 		}
 
-		$template = ($this->templates[$this->carry->templateRef(schema: $schema, object: $object)] ?? null);
+		$template = null;
+		foreach ($this->carry->templateKeys(schema: $schema, object: $object) as $key) {
+			if (isset($this->templates[$key]) === true) {
+				$template = $this->templates[$key];
+				break;
+			}
+		}
 		try {
 			$tasks->import(data: $this->withLocation(data: $this->carry->taskData(schema: $schema, object: $object, template: $template)), actor: self::ACTOR);
 		} catch (Throwable $e) {
@@ -215,6 +232,36 @@ class CarryInspectionRunsOntoTasks implements IRepairStep {
 
 		return $refs;
 	}//end carriedFor()
+
+	/**
+	 * The parent a source names (a `checklistResult`'s `fieldInspection`),
+	 * read once per parent schema, or null.
+	 *
+	 * @param object               $objects  The ObjectService.
+	 * @param string               $register The register id.
+	 * @param string               $schema   The source schema slug.
+	 * @param array<string, mixed> $object   The source object.
+	 *
+	 * @return array<string, mixed>|null The parent, when found.
+	 */
+	private function parent(object $objects, string $register, string $schema, array $object): ?array {
+		$ref = $this->carry->parentOf(schema: $schema, object: $object);
+		if ($ref === null) {
+			return null;
+		}
+
+		if (isset($this->parents[$ref['schema']]) === false) {
+			$this->parents[$ref['schema']] = [];
+			foreach ($this->read(objects: $objects, register: $register, schema: $ref['schema']) as $parent) {
+				$id = (string)($parent['@self']['id'] ?? $parent['id'] ?? '');
+				if ($id !== '') {
+					$this->parents[$ref['schema']][$id] = $parent;
+				}
+			}
+		}
+
+		return ($this->parents[$ref['schema']][$ref['id']] ?? null);
+	}//end parent()
 
 	/**
 	 * Add the case's register and schema, so the task is located.

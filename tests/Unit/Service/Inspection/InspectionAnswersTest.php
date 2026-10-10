@@ -69,6 +69,18 @@ final class InspectionAnswersTest extends TestCase {
 	}//end testEveryRequestShapeLeavesInTheTemplatesVocabulary()
 
 	/**
+	 * The offline leaf's words (questionId, answer, evidenceRefs, notes) are aliases.
+	 *
+	 * @return void
+	 */
+	public function testTheOfflineLeafsWordsAreAliases(): void {
+		$o = $this->answers->fromPayload(payload: ['items' => [['questionId' => 'q1', 'answer' => 'no', 'evidenceRefs' => ['e1', 'e2', 'e1'], 'photos' => ['e2', 'e3'], 'notes' => 'lek']]]);
+
+		$this->assertSame(['itemId' => 'q1', 'value' => 'nee', 'comment' => 'lek', 'photos' => ['e2', 'e3', 'e1']], $o[0]);
+		$this->assertSame(['q2'], array_column($this->answers->fromPayload(payload: ['items' => [['itemId' => 'q2', 'questionId' => 'q9']]]), 'itemId'), 'itemId wins over the alias');
+	}//end testTheOfflineLeafsWordsAreAliases()
+
+	/**
 	 * The outcome rule over the answered items that apply.
 	 *
 	 * @return void
