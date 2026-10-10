@@ -17,8 +17,7 @@
  * six VTH case types with not one statusType attached to any of them, and every
  * VTH workflow template skipped for want of a status map it could never build.
  *
- * The same shape three other seeders already use:
- * {@see \OCA\Dossiq\Service\SeedDataService::seedChildTypes()},
+ * The same shape two other seeders already use:
  * {@see \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder::seedChildren()}
  * and {@see \OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep::seedStatuses()}.
  *

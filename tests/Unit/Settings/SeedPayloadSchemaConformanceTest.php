@@ -39,7 +39,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Repair\VthSeedDataRepairStep
  * @covers \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder
- * @covers \OCA\Dossiq\Service\SeedDataService
+ * @covers \OCA\Dossiq\Service\CaseDefinition\PackageInstaller
  *
  * `RegisterFragmentMerger` is declared as USED, not covered: the test reads a
  * merged register to know which properties a schema declares, so it executes
@@ -55,7 +55,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 * Collection key to the schema slug its records are written to.
 	 *
 	 * These are the fan-out points the seeders share: `TemplateBundleSeeder::
-	 * seedChildren()` and `SeedDataService` both take the records under these
+	 * seedChildren()` and the package installer both take the records under these
 	 * keys off the case-type payload and write each one, verbatim plus a
 	 * `caseType` back-reference, into the named schema. A key listed here is
 	 * therefore BOTH a collection of payloads to check AND a key the parent
@@ -120,7 +120,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	private const SEED_FILES = [
 		'vth_seed_data.json',
 		'case_flow_seed_data.json',
-		'bezwaar_seed_data.json',
 		'templates/bvw-college-besluit.json',
 		'templates/bvw-mandaatbesluit.json',
 		'templates/bvw-raadsbesluit.json',
@@ -187,6 +186,21 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 				findings: $findings
 			);
 		}//end foreach
+
+		// Every case definition package's case type file. A package may carry
+		// several case types as a list under `caseType`; walk those as the
+		// `caseTypes` collection so each one is checked.
+		foreach ((array)glob($settingsDir . '/packages/*/case-type.json') as $path) {
+			$data = json_decode((string)file_get_contents((string)$path), true);
+			$relative = substr((string)$path, strlen($settingsDir) + 1);
+			$this->assertIsArray(actual: $data, message: $relative . ' must parse as JSON');
+			if (is_array($data['caseType'] ?? null) === true && array_is_list($data['caseType']) === true) {
+				$data['caseTypes'] = $data['caseType'];
+				unset($data['caseType']);
+			}
+
+			$this->collectFindings(node: $data, pointer: $relative, findings: $findings);
+		}
 
 		$this->assertSame(
 			expected: [],

@@ -212,9 +212,7 @@ class RepairStepRegistrationTest extends TestCase {
 		$dependencies = [
 			// consumer => providers.
 			'SeedVthWorkflowTemplates' => ['VthSeedDataRepairStep'],
-			'SeedBezwaarWorkflowDefinition' => ['SeedBezwaarBeroepData'],
 			'MigrateWorkflowDefinitions' => [
-				'SeedBezwaarBeroepData',
 				'SeedBesluitvormingTemplates',
 				'VthSeedDataRepairStep',
 				'SeedVthWorkflowTemplates',

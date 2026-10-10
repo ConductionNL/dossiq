@@ -80,9 +80,8 @@ class CaseTypeCopyService {
 	/**
 	 * What the copy in progress could not carry.
 	 *
-	 * Held on the instance for the same reason `SeedDataService` holds its
-	 * summary: the refusal becomes visible several frames below the caller that
-	 * reports it.
+	 * Held on the instance because the refusal becomes visible several frames
+	 * below the caller that reports it.
 	 *
 	 * @var array<int, string>
 	 */

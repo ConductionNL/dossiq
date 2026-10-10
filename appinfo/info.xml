@@ -358,8 +358,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- Nextcloud never removes a job info.xml stops naming: parked EmailPdfRetryJob, removed AppointmentReminderJob and BerichtenboxReadStatusJob. -->
             <step>OCA\Dossiq\Repair\RetireUnscheduledBackgroundJobs</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
             <!--
                 REPLACES RegisterOriRegister. dossiq no longer declares an ORI
@@ -425,7 +423,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 case type that has no workflow yet into a published "basis"
                 template, so what it can project is decided entirely by which
                 case types exist when it runs. It sat between
-                SeedBezwaarBeroepData and SeedBesluitvormingTemplates, ahead of
+                the old bezwaar seed and SeedBesluitvormingTemplates, ahead of
                 the besluitvorming, VTH and case-flow seeds, and reported its
                 own emptiness as success.
 
@@ -927,8 +925,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
@@ -1050,7 +1046,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
         <command>OCA\Dossiq\Command\RollbackCasePlansCommand</command>
-        <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
     </commands>
 

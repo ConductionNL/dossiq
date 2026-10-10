@@ -96,7 +96,6 @@ class WorkflowGuardConformanceTest extends TestCase {
 		$paths = array_merge(
 			(array)glob($root . '/templates/*.json'),
 			(array)glob($root . '/vth-templates/*.json'),
-			[$root . '/bezwaar_seed_data.json'],
 		);
 
 		$documents = [];
@@ -106,9 +105,43 @@ class WorkflowGuardConformanceTest extends TestCase {
 			$documents[basename((string)$path)] = $decoded;
 		}
 
+		foreach ((array)glob($root . '/packages/*', GLOB_ONLYDIR) as $dir) {
+			$documents['package:' . basename((string)$dir)] = $this->packageDocument(dir: (string)$dir);
+		}
+
 		$this->assertNotEmpty($documents, 'No shipped workflow JSON found to sweep');
 
 		return $documents;
+	}
+
+	/**
+	 * One case definition package as a single document: its case type file
+	 * plus its flows, with each flow's JSON-encoded steps and transitions
+	 * decoded so their guards are walked like any other.
+	 *
+	 * @param string $dir The package directory.
+	 *
+	 * @return array<string, mixed> The package document.
+	 */
+	private function packageDocument(string $dir): array {
+		$document = [];
+		if (is_file($dir . '/case-type.json') === true) {
+			$document = (array)json_decode((string)file_get_contents($dir . '/case-type.json'), true);
+		}
+
+		foreach ((array)glob($dir . '/flows/*.json') as $path) {
+			$flow = json_decode((string)file_get_contents((string)$path), true);
+			$this->assertIsArray($flow, $path . ' must be valid JSON');
+			foreach (['steps', 'transitions'] as $key) {
+				if (is_string($flow[$key] ?? null) === true) {
+					$flow[$key] = json_decode($flow[$key], true);
+				}
+			}
+
+			$document['flows'][basename((string)$path)] = $flow;
+		}
+
+		return $document;
 	}
 
 	/**
@@ -167,7 +200,7 @@ class WorkflowGuardConformanceTest extends TestCase {
 			array_filter(
 				$this->allShippedGuards(),
 				static fn (array $entry): bool => str_starts_with($entry['path'], 'bvw-') === true
-					|| str_starts_with($entry['path'], 'bezwaar_seed_data.json') === true,
+					|| str_starts_with($entry['path'], 'package:') === true,
 			)
 		);
 	}
@@ -356,17 +389,12 @@ class WorkflowGuardConformanceTest extends TestCase {
 
 		$declaredByCaseType = $this->shippedPropertyDefinitionNames();
 
-		// Scoped to the besluitvorming bundles, the ones a fresh install seeds.
-		// The bezwaar bundle guards on fields that live on its OWN objection,
-		// appealDecision and hearingSession objects rather than on the case,
-		// which is the same defect on a bundle nobody seeds;
-		// {@see testTheBezwaarBundleIsStillParked()} keeps that from going
-		// quiet.
+		// Every bundle and package a PHP loader writes: the besluitvorming
+		// bundles and every case definition package, auto or on-request.
 		$guards = array_values(
 			array_filter(
 				$this->loadedGuards(),
 				static fn (array $entry): bool => ($entry['guard']['type'] ?? '') === 'requiredField'
-					&& str_starts_with($entry['path'], 'bvw-') === true
 			)
 		);
 		$this->assertNotEmpty($guards, 'Expected the seeded bundles to declare requiredField guards');
@@ -580,34 +608,21 @@ class WorkflowGuardConformanceTest extends TestCase {
 	}
 
 	/**
-	 * The bezwaar bundle is still parked, so its orphan guard fields are inert.
+	 * The package flows are part of the sweep, so an orphan guard in one fails.
 	 *
-	 * `SeedDataService` reads the `caseTypes` key; the Dutch bezwaar, beroep
-	 * and subsidie case types sit under `_caseTypes_disabled` and are seeded by
-	 * nothing. Eleven of their requiredField guards name fields the case does
-	 * not carry — `isTimely`, `dispositionType`, `dispositionDetails`,
-	 * `hearingWaived`, `minutesSummary`, `advisoryReport`, `withdrawalReason`,
-	 * `rulingOutcome`, `settlementDetails`, `beschiktBedrag` — which live on
-	 * the objection, appealDecision and hearingSession objects instead. Those
-	 * guards can never pass, exactly as `paraferingCompleet` could not.
-	 * Re-enabling the bundle means declaring them first.
+	 * The positive control for the sweeps above: a package whose flows were
+	 * not walked would pass every one of them by contributing nothing.
 	 *
 	 * @return void
 	 */
-	public function testTheBezwaarBundleIsStillParked(): void {
-		$seed = json_decode(
-			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/bezwaar_seed_data.json'),
-			true
+	public function testThePackageFlowsAreSwept(): void {
+		$fromPackages = array_filter(
+			$this->loadedGuards(),
+			static fn (array $entry): bool => str_starts_with($entry['path'], 'package:') === true
+				&& str_contains($entry['path'], '/flows/') === true
 		);
-		$this->assertIsArray($seed, 'bezwaar_seed_data.json must be valid JSON');
-		$this->assertArrayHasKey('_caseTypes_disabled', $seed, 'The parked bezwaar case types must still be present');
-		$this->assertArrayNotHasKey(
-			'caseTypes',
-			$seed,
-			'The bezwaar bundle is being seeded again. Eleven of its requiredField guards name fields the case '
-			. 'does not carry, so those transitions cannot be taken. Declare them on the case type before '
-			. 'enabling the bundle, and fold the bundle into the requiredField sweep.'
-		);
+
+		$this->assertNotEmpty($fromPackages, 'No guard found in any package flow; the package documents were not walked');
 	}
 
 	/**
