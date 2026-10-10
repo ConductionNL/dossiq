@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 class CasePriorityListenerRegistrar {
 	/**
@@ -60,7 +60,7 @@ class CasePriorityListenerRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {

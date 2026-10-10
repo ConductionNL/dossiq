@@ -46,17 +46,16 @@ openregister, wave 1, as `field-rules-by-state` and
   - `tests/Unit/Service/DeadlineEscalationServiceTest.php`
 - [x] 6.1 Dutch and English strings for impact, urgency, priority and the
   override reason.
-- [ ] 6.2 Ask the corpus lane for the missing row, in D14's own words
-  (ask filed 10 Oct by lane L1 in `for-ruben/dossiq-sibling-asks.md`; a
-  recorded hand-over is not done, decision 88, so this stays open until the row
-  exists):
+- [x] 6.2 Ask the corpus lane for the missing row, in D14's own words. The row
+  exists: ConductionNL/market-intelligence `procest/_round4/tools/corpus-rows.json`
+  on development holds 2.34 "Priority levels administered per case type, derived
+  from impact and urgency" (Case core, pending, all six columns rated). Its dossiq
+  cell still reads "no" from before this change; moving it to yes is the corpus
+  re-rate pass's job, not this row's creation:
   priority derived from impact and urgency, ordering the working list, and
   raised by a rule as the term approaches; rate every driven column.
-  - **NOT DONE HERE, and deliberately not ticked.** The corpus lives in
-    ConductionNL/market-intelligence, not in this repo, and this lane owns
-    no branch there. The ask is recorded verbatim in the PR body so it can
-    be carried by whoever runs the promotion pass. Ticking it from here
-    would claim a row exists that does not.
+  - Was left unticked until the row existed; ticked 10 Oct (lane L1) once
+    row 2.34 was found on market-intelligence development.
 - [x] 6.3 `tests/e2e/case-priority.spec.ts`: derive, override, clear,
   raise on an approaching term, sort the queue;
   `openspec validate case-priority-impact-urgency --strict`.

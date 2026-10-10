@@ -41,7 +41,7 @@ export default {
 	// `priorityOrder` so the server sorts it by the declared order rather than
 	// alphabetically; the cell reads the word back off the row and draws it in
 	// the hue the schema declares.
-	// @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	// @spec openspec/specs/case-priority/spec.md
 	priorityBadge: PriorityBadgeCell,
 
 	// The Status column on the Cases index: the status name in the colour its
