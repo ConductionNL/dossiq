@@ -2,33 +2,34 @@
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
 
-  One item of a delivered Woo set: the original as it came in beside the file
-  that went out (woo-delivered-set-is-a-record REQ-WDS-004).
+  Generic document compare (decision 182): an original beside the file that
+  went out, for any case type that keeps such pairs. The host passes
+  `filesUrl`: GET on it answers `{ original: {fileName, mimeType}, delivered:
+  {...} }` and `<filesUrl>/<side>` answers the bytes. The Woo case type's
+  delivered set is the first user (woo-delivered-set-is-a-record REQ-WDS-004).
 
   The split view is filinq's (`OCA.Filinq.mountCompare`, filinq
   anonymization-review-workbench REQ-DDARW-014), mounted into an element this
-  dialog owns and unmounted when it closes. Both files are read from dossiq's
-  own endpoints behind the case read guard, so the view shows the bytes the
-  set's hashes are about.
+  dialog owns and unmounted when it closes.
 
   Without filinq the dialog says the compare view needs filinq and offers the
   two files as links. It never draws something that looks like a comparison.
 
-  @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+  @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 -->
 <template>
 	<NcDialog
 		:name="t('dossiq', 'Compare with the original')"
 		size="full"
-		data-testid="woo-compare-dialog"
+		data-testid="document-compare-dialog"
 		@closing="$emit('close')">
-		<div class="woo-compare">
+		<div class="document-compare">
 			<NcLoadingIcon v-if="busy" :size="32" />
 
 			<p
 				v-if="error"
-				class="woo-compare__error"
-				data-testid="woo-compare-error"
+				class="document-compare__error"
+				data-testid="document-compare-error"
 				role="alert">
 				{{ error }}
 			</p>
@@ -36,7 +37,7 @@
 			<NcNoteCard
 				v-if="!busy && !error && !viewerFound"
 				type="info"
-				data-testid="woo-compare-needs-filinq">
+				data-testid="document-compare-needs-filinq">
 				{{
 					t(
 						'dossiq',
@@ -47,8 +48,8 @@
 
 			<ul
 				v-if="!busy && !error && !viewerFound"
-				class="woo-compare__links"
-				data-testid="woo-compare-links">
+				class="document-compare__links"
+				data-testid="document-compare-links">
 				<li v-for="side in sides" :key="side.key">
 					<a :href="side.url" download
 						>{{ side.label }}: {{ side.fileName }}</a
@@ -59,12 +60,12 @@
 			<div
 				v-show="viewerFound"
 				ref="compare"
-				class="woo-compare__view"
-				data-testid="woo-compare-view" />
+				class="document-compare__view"
+				data-testid="document-compare-view" />
 		</div>
 
 		<template #actions>
-			<NcButton data-testid="woo-compare-close" @click="$emit('close')">
+			<NcButton data-testid="document-compare-close" @click="$emit('close')">
 				{{ t('dossiq', 'Close') }}
 			</NcButton>
 		</template>
@@ -74,7 +75,6 @@
 <script>
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -82,27 +82,24 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { loadFilinqCompare } from '../utils/filinqCompare.js'
 
 export default {
-	name: 'WooCompareDialog',
+	name: 'DocumentCompareDialog',
 
 	components: { NcButton, NcDialog, NcLoadingIcon, NcNoteCard },
 
 	props: {
-		/** The case the set was delivered from. */
-		caseId: {
+		/**
+		 * Where the pair is described; `<filesUrl>/original` and
+		 * `<filesUrl>/delivered` answer the bytes.
+		 */
+		filesUrl: {
 			type: String,
 			required: true,
 		},
 
-		/** The delivered set. */
-		setId: {
-			type: String,
-			required: true,
-		},
-
-		/** The item's position in the set's `items`. */
-		index: {
-			type: Number,
-			required: true,
+		/** Optional `{ original, delivered }` pane titles. */
+		labels: {
+			type: Object,
+			default: () => ({}),
 		},
 	},
 
@@ -123,27 +120,19 @@ export default {
 		 * Both sides, the original first, with the URL that answers its bytes.
 		 *
 		 * @return {Array<object>} `{ key, label, fileName, mimeType, url }`.
-		 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+		 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 		 */
 		sides() {
 			const labels = {
-				original: t('dossiq', 'Original'),
-				delivered: t('dossiq', 'Delivered'),
+				original: this.labels.original || t('dossiq', 'Original'),
+				delivered: this.labels.delivered || t('dossiq', 'Delivered'),
 			}
 			return ['original', 'delivered'].map((key) => ({
 				key,
 				label: labels[key],
 				fileName: this.files?.[key]?.fileName || '',
 				mimeType: this.files?.[key]?.mimeType || '',
-				url: generateUrl(
-					'/apps/dossiq/api/cases/{caseId}/woo/delivered-sets/{setId}/items/{index}/{side}',
-					{
-						caseId: this.caseId,
-						setId: this.setId,
-						index: this.index,
-						side: key,
-					},
-				),
+				url: `${this.filesUrl}/${key}`,
 			}))
 		},
 	},
@@ -152,20 +141,11 @@ export default {
 	 * Read the item, then mount filinq's view when it is there.
 	 *
 	 * @return {Promise<void>} Nothing.
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	async mounted() {
 		try {
-			const { data } = await axios.get(
-				generateUrl(
-					'/apps/dossiq/api/cases/{caseId}/woo/delivered-sets/{setId}/items/{index}',
-					{
-						caseId: this.caseId,
-						setId: this.setId,
-						index: this.index,
-					},
-				),
-			)
+			const { data } = await axios.get(this.filesUrl)
 			this.files = data
 		} catch {
 			this.error = t('dossiq', 'The files of this item could not be read.')
@@ -205,7 +185,7 @@ export default {
 	 * Remove filinq's view with the dialog.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	beforeUnmount() {
 		this.handle?.unmount()
@@ -219,30 +199,30 @@ export default {
 </script>
 
 <style scoped>
-.woo-compare {
+.document-compare {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
 	min-height: 60vh;
 }
 
-.woo-compare__view {
+.document-compare__view {
 	flex: 1;
 	min-height: 60vh;
 }
 
-.woo-compare__links {
+.document-compare__links {
 	margin: 0;
 	padding-inline-start: 20px;
 	list-style: disc;
 }
 
-.woo-compare__links a {
+.document-compare__links a {
 	color: var(--color-primary-element);
 	text-decoration: underline;
 }
 
-.woo-compare__error {
+.document-compare__error {
 	color: var(--color-error-text);
 }
 </style>

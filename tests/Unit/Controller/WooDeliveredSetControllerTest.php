@@ -25,10 +25,10 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Command\VerifyWooDeliveredSetCommand;
 use OCA\Dossiq\Controller\WooDeliveredSetController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\FileSet\FileSetItemFiles;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooDeliveredSetFiles;
 use OCA\Dossiq\Woo\WooDeliveredSetVerifier;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\Files\IRootFolder;
@@ -49,7 +49,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @uses \OCA\Dossiq\Woo\WooDeliveredSetVerifier
  * @uses \OCA\Dossiq\Woo\WooDeliveredSetWriter
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
- * @uses \OCA\Dossiq\Woo\WooDeliveredSetFiles
+ * @uses \OCA\Dossiq\Service\FileSet\FileSetItemFiles
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooDeliveredSetControllerTest extends TestCase {
@@ -64,9 +64,9 @@ class WooDeliveredSetControllerTest extends TestCase {
 	/**
 	 * Reads both files of an item.
 	 *
-	 * @var WooDeliveredSetFiles
+	 * @var FileSetItemFiles
 	 */
-	private WooDeliveredSetFiles $files;
+	private FileSetItemFiles $files;
 
 	/**
 	 * The set id.
@@ -98,7 +98,7 @@ class WooDeliveredSetControllerTest extends TestCase {
 			sets: $writer,
 			documents: $documents,
 		);
-		$this->files = new WooDeliveredSetFiles(documents: $documents);
+		$this->files = new FileSetItemFiles(documents: $documents);
 	}//end setUp()
 
 	/**

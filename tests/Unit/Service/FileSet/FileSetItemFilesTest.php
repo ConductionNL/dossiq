@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Both files of a delivered set item are read through the document loader, with a name and a type.
+ * Both files of a file set item are read through the document loader, with a name and a type.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Woo
+ * @package  OCA\Dossiq\Tests\Unit\Service\FileSet
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Service\FileSet;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Service\FileSet\FileSetItemFiles;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooDeliveredSetFiles;
 use OCP\Files\IRootFolder;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -33,12 +33,12 @@ use Psr\Log\NullLogger;
 /**
  * REQ-WDS-004: what the compare dialog reads.
  *
- * @covers \OCA\Dossiq\Woo\WooDeliveredSetFiles
+ * @covers \OCA\Dossiq\Woo\FileSetItemFiles
  *
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
-class WooDeliveredSetFilesTest extends TestCase {
+class FileSetItemFilesTest extends TestCase {
 
 	/**
 	 * A set with one redacted item and one item whose original is gone.
@@ -56,9 +56,9 @@ class WooDeliveredSetFilesTest extends TestCase {
 	/**
 	 * The service over an in-memory register with two documents.
 	 *
-	 * @return WooDeliveredSetFiles
+	 * @return FileSetItemFiles
 	 */
-	private function files(): WooDeliveredSetFiles {
+	private function files(): FileSetItemFiles {
 		$store = new InMemoryRegister();
 		$store->seed(schema: 'document', uuid: 'doc-orig', row: ['fileName' => 'besluit.docx', 'content' => base64_encode('origineel')]);
 		$store->seed(schema: 'document', uuid: 'doc-red', row: ['title' => 'besluit-gelakt.pdf', 'format' => 'application/pdf', 'content' => base64_encode('gelakt')]);
@@ -68,7 +68,7 @@ class WooDeliveredSetFilesTest extends TestCase {
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'document_schema' => 'document'][$key] ?? $default)
 		);
 
-		return new WooDeliveredSetFiles(
+		return new FileSetItemFiles(
 			documents: new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: new NullLogger()),
 		);
 	}//end files()

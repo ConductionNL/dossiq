@@ -1,16 +1,18 @@
 <?php
 
 /**
- * Dossiq Woo delivered set files
+ * Dossiq file set item files
  *
- * The two files of one item of a delivered set, for the compare dialog
- * (woo-delivered-set-is-a-record REQ-WDS-004): the original as it came in and
- * the file that went out. Both are read through the same document loader the
- * publish and the re-verification use, so the compare shows the bytes the
- * hashes are about.
+ * The two files of one item of a frozen file set: the original as it came in
+ * and the file that went out (`originalRef` and `deliveredRef` on the item),
+ * for the generic document compare (decision 182). Any case type whose
+ * publication freezes a file set uses it; the Woo case type's delivered set is
+ * the first (woo-delivered-set-is-a-record REQ-WDS-004). Both are read through
+ * the case document loader the publish and the re-verification use, so the
+ * compare shows the bytes the hashes are about.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Service
+ * @package  OCA\Dossiq\Service\FileSet
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+ * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -26,14 +28,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Service\FileSet;
+
+use OCA\Dossiq\Woo\WooCaseDocuments;
 
 /**
- * Reads the original and the delivered file of one set item.
+ * Reads the original and the delivered file of one item of a frozen file set.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+ * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
-class WooDeliveredSetFiles {
+class FileSetItemFiles {
 
 	/**
 	 * The two sides of an item, in reading order.
@@ -58,7 +62,7 @@ class WooDeliveredSetFiles {
 	/**
 	 * Constructor.
 	 *
-	 * @param WooCaseDocuments $documents Reads a document with its file bytes.
+	 * @param WooCaseDocuments $documents Reads a case document with its file bytes (Woo-named, generic in behaviour; refactor programme).
 	 */
 	public function __construct(
 		private readonly WooCaseDocuments $documents,
@@ -73,7 +77,7 @@ class WooDeliveredSetFiles {
 	 *
 	 * @return array<string, array{fileName: string, mimeType: string, readable: bool}>|null
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	public function describe(array $set, int $index): ?array {
 		$item = $this->item(set: $set, index: $index);
@@ -103,7 +107,7 @@ class WooDeliveredSetFiles {
 	 *
 	 * @return array{bytes: string, fileName: string, mimeType: string}|null
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	public function read(array $set, int $index, string $side): ?array {
 		$item = $this->item(set: $set, index: $index);

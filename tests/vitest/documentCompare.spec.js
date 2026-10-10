@@ -3,17 +3,19 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The compare of one delivered Woo set item (woo-delivered-set-is-a-record
- * REQ-WDS-004): the set page offers Compare on a redacted item only; the
- * dialog mounts filinq's split view (`OCA.Filinq.mountCompare`) with both
- * files read from dossiq's own endpoints, and without filinq it says so and
- * offers the two files as links instead of drawing a comparison.
+ * The generic document compare (decision 182, document-compare REQ-DCP-001),
+ * configured by the Woo case type on its delivered set page
+ * (woo-delivered-set-is-a-record REQ-WDS-004). The file set items widget
+ * offers Compare on an item whose file that went out is not its original, and
+ * only when the case type configured where the pair is read. The dialog mounts
+ * filinq's split view with both files; without filinq it says so and offers
+ * the two files as links instead of drawing a comparison.
  *
  * Contract with filinq (anonymization-review-workbench REQ-DDARW-014):
  * `mountCompare(el, { original, delivered, labels })`, each file
  * `{ fileName, mimeType, url }`, returning `{ unmount() }`; no events.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+ * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
 
 import { flushPromises, mount } from '@vue/test-utils'
@@ -65,10 +67,10 @@ vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
 	default: control('NcNoteCard'),
 }))
 
-const { default: WooCompareDialog } =
-	await import('../../src/dialogs/WooCompareDialog.vue')
-const { default: WooDeliveredSetItems } =
-	await import('../../src/components/woo/WooDeliveredSetItems.vue')
+const { default: DocumentCompareDialog } =
+	await import('../../src/dialogs/DocumentCompareDialog.vue')
+const { default: FileSetItems } =
+	await import('../../src/components/fileSet/FileSetItems.vue')
 const { isFilinqInstalled, loadFilinqCompare, resetFilinqCompare } =
 	await import('../../src/utils/filinqCompare.js')
 
@@ -100,33 +102,33 @@ afterEach(() => {
 })
 
 /**
- * Mount the dialog for item 0 of set-1 on case-1.
+ * Mount the dialog for the pair at BASE.
  *
  * @return {object} The wrapper.
  */
 function dialog() {
-	return mount(WooCompareDialog, {
-		props: { caseId: 'case-1', setId: 'set-1', index: 0 },
+	return mount(DocumentCompareDialog, {
+		props: { filesUrl: BASE },
 		attachTo: document.body,
 	})
 }
 
-describe('WooCompareDialog', () => {
+describe('DocumentCompareDialog', () => {
 	it('testWithoutTheViewerItSaysSo', async () => {
 		const wrapper = dialog()
 		await flushPromises()
 
 		expect(mockGet).toHaveBeenCalledWith(BASE)
 		expect(
-			wrapper.find('[data-testid="woo-compare-needs-filinq"]').text(),
+			wrapper.find('[data-testid="document-compare-needs-filinq"]').text(),
 		).toContain('The compare view needs Filinq')
 		const links = wrapper
-			.findAll('[data-testid="woo-compare-links"] a')
+			.findAll('[data-testid="document-compare-links"] a')
 			.map((a) => a.attributes('href'))
 		expect(links).toEqual([BASE + '/original', BASE + '/delivered'])
-		expect(wrapper.find('[data-testid="woo-compare-view"]').isVisible()).toBe(
-			false,
-		)
+		expect(
+			wrapper.find('[data-testid="document-compare-view"]').isVisible(),
+		).toBe(false)
 		expect(document.head.querySelector('script')).toBeNull()
 	})
 
@@ -141,7 +143,9 @@ describe('WooCompareDialog', () => {
 
 		expect(mountCompare).toHaveBeenCalledTimes(1)
 		const [el, options] = mountCompare.mock.calls[0]
-		expect(el).toBe(wrapper.find('[data-testid="woo-compare-view"]').element)
+		expect(el).toBe(
+			wrapper.find('[data-testid="document-compare-view"]').element,
+		)
 		expect(options).toEqual({
 			original: {
 				fileName: 'besluit.docx',
@@ -156,11 +160,27 @@ describe('WooCompareDialog', () => {
 			labels: { original: 'Original', delivered: 'Delivered' },
 		})
 		expect(
-			wrapper.find('[data-testid="woo-compare-needs-filinq"]').exists(),
+			wrapper.find('[data-testid="document-compare-needs-filinq"]').exists(),
 		).toBe(false)
 
 		wrapper.unmount()
 		expect(unmount).toHaveBeenCalledTimes(1)
+	})
+
+	it("uses the host's pane titles when it passes them", async () => {
+		const mountCompare = vi.fn(() => ({ unmount: vi.fn() }))
+		window.OC.appswebroots = { filinq: '/apps/filinq' }
+		window.OCA = { Filinq: { mountCompare } }
+
+		mount(DocumentCompareDialog, {
+			props: { filesUrl: BASE, labels: { delivered: 'Gepubliceerd' } },
+		})
+		await flushPromises()
+
+		expect(mountCompare.mock.calls[0][1].labels).toEqual({
+			original: 'Original',
+			delivered: 'Gepubliceerd',
+		})
 	})
 
 	it('falls back to the links when filinq refuses the call', async () => {
@@ -177,20 +197,20 @@ describe('WooCompareDialog', () => {
 		await flushPromises()
 
 		expect(
-			wrapper.find('[data-testid="woo-compare-needs-filinq"]').exists(),
+			wrapper.find('[data-testid="document-compare-needs-filinq"]').exists(),
 		).toBe(true)
 	})
 
-	it('says so when the item cannot be read, and shows no links', async () => {
+	it('says so when the pair cannot be read, and shows no links', async () => {
 		mockGet.mockRejectedValue(new Error('403'))
 
 		const wrapper = dialog()
 		await flushPromises()
 
-		expect(wrapper.find('[data-testid="woo-compare-error"]').text()).toBe(
+		expect(wrapper.find('[data-testid="document-compare-error"]').text()).toBe(
 			'The files of this item could not be read.',
 		)
-		expect(wrapper.find('[data-testid="woo-compare-links"]').exists()).toBe(
+		expect(wrapper.find('[data-testid="document-compare-links"]').exists()).toBe(
 			false,
 		)
 	})
@@ -231,7 +251,15 @@ describe('loadFilinqCompare', () => {
 	})
 })
 
-describe('WooDeliveredSetItems', () => {
+describe('FileSetItems', () => {
+	const content = {
+		filesUrl:
+			'/apps/dossiq/api/cases/{case}/woo/delivered-sets/{set}/items/{index}',
+		classificationLabels: {
+			openbaar: 'Public',
+			deels_openbaar: 'Disclosed in part',
+		},
+	}
 	const objectData = {
 		case: 'case-1',
 		items: [
@@ -253,37 +281,50 @@ describe('WooDeliveredSetItems', () => {
 	}
 
 	it('lists every item and offers Compare on the redacted one only', () => {
-		const wrapper = mount(WooDeliveredSetItems, {
-			props: { objectId: 'set-1', objectData },
+		const wrapper = mount(FileSetItems, {
+			props: { objectId: 'set-1', objectData, content },
 		})
 
 		expect(wrapper.findAll('tbody tr')).toHaveLength(2)
-		expect(
-			wrapper.find('[data-testid="woo-delivered-set-item-0"]').text(),
-		).toContain('Disclosed in part')
-		expect(wrapper.find('[data-testid="woo-compare-0"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="woo-compare-1"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="file-set-item-0"]').text()).toContain(
+			'Disclosed in part',
+		)
+		expect(wrapper.find('[data-testid="file-set-compare-0"]').exists()).toBe(
+			true,
+		)
+		expect(wrapper.find('[data-testid="file-set-compare-1"]').exists()).toBe(
+			false,
+		)
 	})
 
-	it('opens the compare dialog on that item and closes it again', async () => {
-		const wrapper = mount(WooDeliveredSetItems, {
-			props: { objectId: 'set-1', objectData },
+	it('offers no Compare when the case type configured no files URL', () => {
+		const wrapper = mount(FileSetItems, {
+			props: { objectId: 'set-1', objectData, content: {} },
 		})
 
-		await wrapper.find('[data-testid="woo-compare-0"]').trigger('click')
-		const opened = wrapper.findComponent(WooCompareDialog)
-		expect(opened.props()).toEqual({
-			caseId: 'case-1',
-			setId: 'set-1',
-			index: 0,
+		expect(wrapper.find('[data-testid="file-set-compare-0"]').exists()).toBe(
+			false,
+		)
+		expect(wrapper.find('[data-testid="file-set-item-0"]').text()).toContain(
+			'deels_openbaar',
+		)
+	})
+
+	it('opens the compare dialog on that item with the configured URL and closes it again', async () => {
+		const wrapper = mount(FileSetItems, {
+			props: { objectId: 'set-1', objectData, content },
 		})
+
+		await wrapper.find('[data-testid="file-set-compare-0"]').trigger('click')
+		const opened = wrapper.findComponent(DocumentCompareDialog)
+		expect(opened.props('filesUrl')).toBe(BASE)
 
 		opened.vm.$emit('close')
 		await wrapper.vm.$nextTick()
-		expect(wrapper.findComponent(WooCompareDialog).exists()).toBe(false)
+		expect(wrapper.findComponent(DocumentCompareDialog).exists()).toBe(false)
 	})
 
-	it('is registered and placed on the set detail page', () => {
+	it('is registered, and the Woo case type configures it on the set detail page', () => {
 		const root = path.resolve(__dirname, '../..')
 		const registry = fs.readFileSync(
 			path.join(root, 'src', 'registry.js'),
@@ -293,13 +334,11 @@ describe('WooDeliveredSetItems', () => {
 			fs.readFileSync(path.join(root, 'src', 'manifest.json'), 'utf8'),
 		)
 		expect(registry).toMatch(
-			/'woo-delivered-set-items': \{[\s\S]*?component: WooDeliveredSetItems/,
+			/'file-set-items': \{[\s\S]*?component: FileSetItems/,
 		)
 		const page = manifest.pages.find((p) => p.id === 'WooDeliveredSetDetail')
-		const widget = page.config.widgets.find(
-			(w) => w.type === 'woo-delivered-set-items',
-		)
-		expect(widget).toBeTruthy()
+		const widget = page.config.widgets.find((w) => w.type === 'file-set-items')
+		expect(widget.content.filesUrl).toContain('{index}')
 		expect(page.config.layout.some((l) => l.widgetId === widget.id)).toBe(true)
 	})
 })
