@@ -260,7 +260,10 @@ test.describe('Inbound mail filters', () => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 		const accounts = await mailAccounts(api)
-		test.skip(accounts.length === 0, 'this instance has no Nextcloud Mail account to send through')
+		test.skip(
+			accounts.length === 0,
+			'this instance has no Nextcloud Mail account to send through',
+		)
 
 		const caseType = await ensureCaseType(api, token)
 		const zaak = await seedCase(api, token, {
@@ -270,7 +273,9 @@ test.describe('Inbound mail filters', () => {
 
 		const res = await sendCaseMail(api, token, objectId(zaak), accounts[0].email)
 		test.skip(
-			res.status === 503 && res.body.error === 'mail-account-unavailable' && res.body.state === undefined,
+			res.status === 503
+				&& res.body.error === 'mail-account-unavailable'
+				&& res.body.state === undefined,
 			'no Mail account is picked in the dossiq mail settings',
 		)
 
@@ -292,7 +297,10 @@ test.describe('Inbound mail filters', () => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 		const accounts = await mailAccounts(api)
-		test.skip(accounts.length < 2, 'this needs two Nextcloud Mail accounts: a default one and a team one')
+		test.skip(
+			accounts.length < 2,
+			'this needs two Nextcloud Mail accounts: a default one and a team one',
+		)
 
 		const team = accounts[accounts.length - 1]
 		const caseType = await createObject(api, token, 'caseType', {
@@ -327,7 +335,9 @@ test.describe('Inbound mail filters', () => {
  *
  * @param api Authenticated request context.
  */
-async function mailAccounts(api: APIRequestContext): Promise<Array<{ id: number; email: string }>> {
+async function mailAccounts(
+	api: APIRequestContext,
+): Promise<Array<{ id: number; email: string }>> {
 	const res = await api.get('/index.php/apps/mail/api/accounts')
 	if (!res.ok()) {
 		return []
@@ -335,7 +345,10 @@ async function mailAccounts(api: APIRequestContext): Promise<Array<{ id: number;
 	const body = await res.json()
 	const rows = Array.isArray(body) ? body : (body?.data ?? [])
 	return rows
-		.map((row: any) => ({ id: Number(row.accountId ?? row.id), email: String(row.emailAddress ?? row.email ?? '') }))
+		.map((row: any) => ({
+			id: Number(row.accountId ?? row.id),
+			email: String(row.emailAddress ?? row.email ?? ''),
+		}))
 		.filter((row: { email: string }) => row.email !== '')
 }
 
@@ -354,8 +367,17 @@ async function sendCaseMail(
 	to: string,
 ): Promise<{ status: number; body: any }> {
 	const res = await api.post(`/index.php/apps/dossiq/api/email/${caseId}/send`, {
-		headers: { requesttoken: token, 'OCS-APIRequest': 'true', 'Content-Type': 'application/json' },
-		data: { to, subject: `${RUN_PREFIX} Uw zaak`, body: '<p>Een bericht over uw zaak.</p>', category: 'besluit' },
+		headers: {
+			requesttoken: token,
+			'OCS-APIRequest': 'true',
+			'Content-Type': 'application/json',
+		},
+		data: {
+			to,
+			subject: `${RUN_PREFIX} Uw zaak`,
+			body: '<p>Een bericht over uw zaak.</p>',
+			category: 'besluit',
+		},
 	})
 	return { status: res.status(), body: await res.json().catch(() => ({})) }
 }

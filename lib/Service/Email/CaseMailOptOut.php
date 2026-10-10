@@ -41,6 +41,23 @@ use OCP\Mail\IMessage;
 class CaseMailOptOut {
 
 	/**
+	 * The category a case mail carries when nothing else is said.
+	 */
+	public const CATEGORY_CASE_UPDATE = OptOutGate::CATEGORY_CASE_UPDATE;
+
+	/**
+	 * The categories a case mail can carry. A handler picks the first two;
+	 * a template may also declare `statutory`.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CASE_MAIL_CATEGORIES = [
+		OptOutGate::CATEGORY_CASE_UPDATE,
+		OptOutGate::CATEGORY_BESLUIT,
+		OptOutGate::CATEGORY_STATUTORY,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * The header helper is optional so dossiq still loads against an

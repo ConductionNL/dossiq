@@ -89,7 +89,7 @@ class OutboundCaseMail {
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
 	 */
-	public function senderFor(array $caseData, string $kind): array {
+	public function senderFor(array $caseData, string $kind = MailTransportPolicy::KIND_CASE_MAIL): array {
 		$transport = $this->policy->transportFor(kind: $kind);
 		if ($transport === MailTransportPolicy::TRANSPORT_MAIL_ACCOUNT) {
 			$account = $this->identity->accountForCase(caseData: $caseData);

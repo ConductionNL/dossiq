@@ -48,6 +48,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for EmailController.
  *
  * @covers \OCA\Dossiq\Controller\EmailController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class EmailControllerContractTest extends TestCase {
 

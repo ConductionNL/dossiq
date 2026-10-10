@@ -31,13 +31,10 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
-use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
-use OCA\Dossiq\Service\Email\MailTransportPolicy;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
-use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -46,19 +43,6 @@ use RuntimeException;
 
 /**
  * Service for case-integrated email functionality.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The twelfth and thirteenth
- * types are CaseTimeline and TimelineKinds, and they replaced nothing: a sent
- * mail now also records a line on the case timeline, which is a new fact about
- * this class rather than a new way of doing an old one. Control: per-file phpmd
- * on this file at 43150ddf is clean, and reports thirteen here, so the two are
- * exactly what crossed the threshold. The alternatives are worse than the
- * suppression. Naming the kind as a bare string would drop TimelineKinds and
- * take the drift guard with it, and an undeclared kind is refused, caught and
- * logged rather than shown. Moving the call behind a per-writer method on
- * CaseTimeline would drop TimelineKinds here and make that class know the shape
- * of every writer in the app, which is the coupling this rule exists to stop,
- * moved somewhere it is not measured.
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
@@ -79,16 +63,6 @@ class CaseEmailService {
 	 * Substitution mode that writes resolved values through verbatim.
 	 */
 	private const ESCAPE_NONE = 'none';
-
-	/**
-	 * The categories a case mail can carry. A handler picks the first two;
-	 * a template may also declare `statutory`.
-	 */
-	private const CATEGORIES = [
-		OptOutGate::CATEGORY_CASE_UPDATE,
-		OptOutGate::CATEGORY_BESLUIT,
-		OptOutGate::CATEGORY_STATUTORY,
-	];
 
 	/**
 	 * Constructor.
@@ -127,11 +101,13 @@ class CaseEmailService {
 	 * @param array<string> $attachments File paths to attach
 	 * @param string $category What the mail is: `case-update` (default), `besluit` or `statutory`
 	 *
+	 * OutboundCaseMail's refusals (sender-not-held, mail-account-unavailable,
+	 * mail-transport-unavailable) pass through to the controller unchanged.
+	 *
 	 * @return array<string, mixed> Send result with message ID and `state`
 	 *         (sent, sent-not-filed, or queued when the account took it but could not send it yet)
 	 *
 	 * @throws \RuntimeException If the case cannot be read or the recipient is not allowed
-	 * @throws RefusedException sender-not-held, or mail-account-unavailable when the account took nothing
 	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
 	 * @throws InvalidArgumentException If the category is not one a case mail can carry
 	 *
@@ -145,9 +121,9 @@ class CaseEmailService {
 		string $subject,
 		string $body,
 		array $attachments = [],
-		string $category = OptOutGate::CATEGORY_CASE_UPDATE,
+		string $category = CaseMailOptOut::CATEGORY_CASE_UPDATE,
 	): array {
-		if (in_array($category, self::CATEGORIES, true) === false) {
+		if (in_array($category, CaseMailOptOut::CASE_MAIL_CATEGORIES, true) === false) {
 			throw new InvalidArgumentException('invalid-category');
 		}
 
@@ -166,7 +142,7 @@ class CaseEmailService {
 		// Through the Mail account: the case type's declared account, else the
 		// one an administrator picked; an address no account holds is refused
 		// here, before anything is built (REQ-IMF-12).
-		$sender      = $this->outbound->senderFor(caseData: $caseData, kind: MailTransportPolicy::KIND_CASE_MAIL);
+		$sender      = $this->outbound->senderFor(caseData: $caseData);
 		$fromAddress = $sender['from'];
 
 		// H4: Validate the recipient against the allow-list. This prevents
@@ -239,7 +215,7 @@ class CaseEmailService {
 	 * @param string $to          The recipient.
 	 * @param string $subject     The subject, as sent.
 	 * @param string $body        The body, as sent.
-	 * @param string $delivery    What became of it: sent, sent-not-filed or queued.
+	 * @param string $delivery    What became of it: an OutboundState value (sent, sent-not-filed or queued).
 	 *
 	 * @return string The stored message id.
 	 *
@@ -252,7 +228,7 @@ class CaseEmailService {
 		string $to,
 		string $subject,
 		string $body,
-		string $delivery = OutboundState::SENT,
+		string $delivery = 'sent',
 	): string {
 		// Record the sent email as a case document.
 		$messageId = $this->repository->recordSentEmail(
@@ -413,8 +389,8 @@ class CaseEmailService {
 		// wrongly, is a case-update and respects the opt-out. Never exempt
 		// by accident.
 		$category = (string)($template['messageCategory'] ?? '');
-		if (in_array($category, self::CATEGORIES, true) === false) {
-			$category = OptOutGate::CATEGORY_CASE_UPDATE;
+		if (in_array($category, CaseMailOptOut::CASE_MAIL_CATEGORIES, true) === false) {
+			$category = CaseMailOptOut::CATEGORY_CASE_UPDATE;
 		}
 
 		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
