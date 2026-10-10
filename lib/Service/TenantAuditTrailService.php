@@ -211,7 +211,7 @@ class TenantAuditTrailService {
 	 *
 	 * @return bool True only when OpenRegister says multitenancy is on.
 	 *
-	 * @spec openspec/changes/tenant-isolation-names-the-control-that-runs/specs/tenant-isolation/spec.md
+	 * @spec openspec/specs/tenant-isolation/spec.md
 	 */
 	public function rowFilterEnabled(): bool {
 		$installed = (array)$this->appManager->getInstalledApps();
