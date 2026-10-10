@@ -56,14 +56,14 @@ group lands on `development` as its own PR.
 
 ## 4. Woo on the generic engine (PR 4)
 
-- [ ] 4.1 `WOODeadlineService::calculate()` asks the definitions
+- [x] 4.1 `WOODeadlineService::calculate()` asks the definitions
   (`td-woo-verzoek`) for the end date; no own constants (D-4).
-- [ ] 4.2 `extendDeadline()` goes through `DeadlineExtensionService` on the
+- [x] 4.2 `extendDeadline()` goes through `DeadlineExtensionService::extendStatutoryTermOfCase()` on the
   case's statutory instance; no undeclared keys; 409 on a second extension.
   - `tests/Unit/Service/WOODeadlineServiceTest.php`
-- [ ] 4.3 The T-7 warning reads `deadline` only; drop `verdagingReden` from the
+- [x] 4.3 The T-7 warning reads `deadline` only; drop `verdagingReden` from the
   Woo template's field list where it was written as case data.
-- [ ] 4.4 `woo-term-is-computed-and-reported-right` tasks 1 to 3 marked as moved
+- [x] 4.4 `woo-term-is-computed-and-reported-right` tasks 1 to 3 marked as moved
   here.
 
 ## 5. Verify and deliver
@@ -72,6 +72,6 @@ group lands on `development` as its own PR.
   changed JS, the touched unit tests; once before push
   `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict` with `TMPDIR` inside the
   clone, `npm run lint`, `npm run test:l10n`.
-- [ ] 5.2 Boards: DqMijnWerk's week strip draws the term ending today as late,
+- [x] 5.2 Boards (fixed in ConductionNL/design-system#172): DqMijnWerk's week strip draws the term ending today as late,
   and DqTermijnen's "Verlopen" tile says "Beslis vandaag of verdaag". Reported
-  to the design-system owner; not edited here.
+  to the design-system owner; not edited here. Done in design-system#172.
