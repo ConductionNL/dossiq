@@ -1035,6 +1035,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\RollbackCasePlansCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
+        <command>OCA\Dossiq\Command\DrainIntakeObjectsCommand</command>
     </commands>
 
     <settings>
