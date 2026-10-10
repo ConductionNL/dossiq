@@ -7,6 +7,7 @@ All notable changes to Dossiq are documented in this file.
 ### Changed
 
 - `dossiq-mcp-adoption`: an assistant now reads dossiq through tools OpenRegister derives from the register. Twelve schemas declare a read-only `x-openregister-mcp` block, which gives 20 tools such as `dossiq.case.search` and `dossiq.statusRecord.search`. No tool writes, and none filters on a citizen's BSN or name.
+- `hermiq-ai-tooling`: an assistant can now ask dossiq 6 curated questions (deadline dashboard, lead times, KPI overview, workload, available transitions, overdue complaints without the complainant) and run 9 curated writes (transition, reassign, complete a task, extend, pause or resume a term, book or cancel an appointment, draft a beschikking). Each declares its scope and reach, every write is denied until an operator grants it, and hermiq holds every write the agent was not granted for a person to approve. The derived tools are unchanged.
 - BREAKING (MCP surface): the hand-written tools `dossiq.listProcesses` and `dossiq.getProcessDetails` are removed. Use `dossiq.case.search`, `dossiq.case.get` and `dossiq.statusRecord.search`. OpenRegister RBAC is now the only gate, the same one the dossiq screens use.
 
 ## [0.3.4] - 2026-07-25
