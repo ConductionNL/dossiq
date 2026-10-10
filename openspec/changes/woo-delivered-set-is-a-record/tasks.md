@@ -68,10 +68,10 @@ first and seen red.
 - [x] 4.1 (section `case-woo-delivered-sets` on the Data tab after Woo publication, page `WooDeliveredSetDetail`; check:manifest 0. DqPubliceren does not draw it: paired design-system PR) Add a `Delivered sets` section on the Woo case page and a set detail page in
   `src/manifest.json` listing every item with both files, classification and hash (REQ-WDS-004).
   - `npm run check:manifest` exits 0.
-- [ ] 4.2 (not built: filinq's review workbench viewer does not exist on filinq development 10 Oct (anonymization-review-workbench 3.1 open), and the set page has no per-item action seam yet. Decision 156: build the viewer in filinq first) Add `src/dialogs/WooCompareDialog.vue`. With filinq's viewer resolvable, it mounts the
+- [x] 4.2 (`src/dialogs/WooCompareDialog.vue` over filinq's `OCA.Filinq.mountCompare(el, { original, delivered, labels })` (files `{ fileName, mimeType, url }`, returns `{ unmount() }`, emits nothing), loaded by `src/utils/filinqCompare.js` from `filinq/js/filinq-compare.js`; built in filinq as anonymization-review-workbench REQ-DDARW-014, dependency PR on ConductionNL/filinq branch build/dep-dossiq-compare-view; per-item Compare on a redacted item in `src/components/woo/WooDeliveredSetItems.vue` (registry `woo-delivered-set-items`, placed on `WooDeliveredSetDetail`); both files read from `GET /api/cases/{id}/woo/delivered-sets/{setId}/items/{index}[/{side}]` (`WooDeliveredSetController::item/file`, `lib/Woo/WooDeliveredSetFiles.php`) behind the case read guard. Tests: vitest `tests/vitest/wooCompareDialog.spec.js` (the vitest suite only collects tests/vitest), PHPUnit `WooDeliveredSetFilesTest`, `WooDeliveredSetControllerTest::testTheCompareReadsAnswerBothFiles`. The two panes open on page 1 each and scroll on their own; a synchronised page scroll is not built) Add `src/dialogs/WooCompareDialog.vue`. With filinq's viewer resolvable, it mounts the
   viewer with the original and the delivered file side by side. Without it, it says the compare
   view needs filinq and offers both files as links (REQ-WDS-004).
-  - vitest `src/dialogs/__tests__/WooCompareDialog.spec.js`: `testWithoutTheViewerItSaysSo`,
+  - vitest `tests/vitest/wooCompareDialog.spec.js`: `testWithoutTheViewerItSaysSo`,
     `testItPassesBothFilesToTheViewer`.
   - Contract: name filinq's viewer component, its props and the event it emits in the PR body,
     as read in filinq on `development`. filinq's change must test that same contract.

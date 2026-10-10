@@ -112,6 +112,9 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
+// The items of a delivered Woo set with a per-item compare (woo-delivered-set-is-a-record REQ-WDS-004).
+// @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md
+import WooDeliveredSetItems from './components/woo/WooDeliveredSetItems.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
@@ -650,6 +653,14 @@ const registry = {
 		component: CaseCustodyPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Custody tab: every period this case was held, with both ends of each holding, and the takeover requests beside them with accept and refuse. Fails CLOSED on a refusal: a reader who may not open the case is told so, never shown an empty chain, because "this case never changed hands" and "you may not see this" look identical from an empty list. The panel writes no holding: an accept answers a REQUEST and the move opens the holding server-side.',
+	},
+
+	'woo-delivered-set-items': {
+		// @custom-widget-ratchet exclude the items are an array INSIDE one wooDeliveredSet object, not OpenRegister objects of their own, so an object-list or object-table has nothing to query; and the per-item Compare opens a dialog that mounts filinq's split view, which no declarative row action does. Deleted the day the library renders an embedded array with row actions
+		kind: 'widget',
+		component: WooDeliveredSetItems,
+		...PANEL_WIDGET_META,
+		_note: "WooDeliveredSetDetail: every item of the set with the file that went out, its classification and its SHA-256, and Compare on a redacted item (delivered file is not the original), which opens WooCompareDialog over filinq's OCA.Filinq.mountCompare. Without filinq the dialog says so and offers both files as links; it never draws a comparison it cannot show.",
 	},
 
 	'case-archival-pane': {
