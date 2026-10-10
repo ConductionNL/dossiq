@@ -13,7 +13,7 @@ in the inline editor, a group cell, and the `@myGroups` filter token.
 
 "Your team's queue" on the Dashboard and the queue on the My team view of the
 landing page show the SHARED queue: every unclaimed case of every team.
-REQ-DASH-024 asked for the reader's own team and recorded why it could not be
+REQ-DASH-031 (archived as REQ-DASH-024) asked for the reader's own team and recorded why it could not be
 expressed: no token named the reader's groups. The Team column on the Cases
 index shows the raw group id.
 

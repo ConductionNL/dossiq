@@ -159,6 +159,17 @@ come true at scale.
         change `widgets-my-open-cases-on-the-start-page` (lane L3) reuses **REQ-DASH-023 and
         REQ-DASH-024** for different requirements, so folding the archived pair first would give
         the dashboard spec two requirements per id. Fold after L3 renumbers or lands.
+        **Folded 2026-10-10 (lane L11).** L3's change was not renumbered after all: its open
+        PR #3557 already archives it, folds it into `openspec/specs/dashboard/spec.md` as
+        REQ-DASH-023/024 and cites those ids from `lib/Dashboard/*`. So the archived pair moved
+        instead: it is folded as **REQ-DASH-030 and REQ-DASH-031**, with a comment naming the old
+        ids, and the three prose references to the old REQ-DASH-024 (manifest
+        `_userWidgetsNote`, the e2e comment, `my-teams-queue`) now say 031. The other three
+        drops are folded too: `case-search-via-or-unified-search` (REQ-CTF-01..04),
+        `case-management` (REQ-CM-70..72) and a new canonical `case-hours-via-humaniq-leaf`
+        (REQ-HRS-001..004). Every citation into those four archives (59 lines in 13 files, the
+        15 `@e2e` among them) now points at the canonical spec; anchors are unchanged, because the
+        scenario headings were copied verbatim.
       - **The citation names a requirement or nothing.** `intake-triage-and-refusal.spec.ts`
         (13) cites `requirement-*` anchors, and `lifecycle-acts-on-the-case.spec.ts` (8) cites
         the spec with no anchor. Both requirements are in the canonical specs; each citation
@@ -167,11 +178,15 @@ come true at scale.
         cite both). The one left, `the declaration says the scheme resolves on this instance`,
         proves no scenario under REQ-TRIAGE-02 (it is not the fail-closed scenario), so it keeps
         its dead pointer until someone writes that test or the scenario it proves.
-- [ ] 6.4 Archive integrity, measured while doing 6.2: of the archived changes, 112 carry 719
+- [x] 6.4 Archive integrity, measured while doing 6.2: of the archived changes, 112 carry 719
       ADDED or MODIFIED requirement headings that do not appear verbatim in the canonical spec
       of the same capability. That count is an upper bound, since later changes legitimately
       rename, move or remove requirements, so it is not a defect count. It is the place to
       look, and the four above are confirmed drops. A check in `opsx-archive` that refuses to
       archive while an ADDED heading is absent from the target spec would stop new ones.
+      Done 2026-10-10 for the four confirmed drops (folded under 6.2 above). The remaining
+      upper bound is not a worklist: each heading there was renamed, moved or removed by a later
+      change until someone shows otherwise. The `opsx-archive` refusal is a hydra skill change,
+      not a dossiq task.
 - [ ] 6.3 The 58 citations into changes that are still open stay as they are until their change
       is archived; the archive step of that change carries the repoint (its lane owns the file).
