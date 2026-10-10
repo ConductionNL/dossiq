@@ -34,6 +34,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * Verifies a delivered set for a user who may read its case.
@@ -78,11 +79,16 @@ class WooDeliveredSetController extends Controller {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$set = $this->verifier->find(setId: $setId);
-		if ($set === null || (string)($set['case'] ?? '') !== $id) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
+		try {
+			$set = $this->verifier->find(setId: $setId);
+			if ($set === null || (string)($set['case'] ?? '') !== $id) {
+				return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+			}
 
-		return new JSONResponse($this->verifier->verify(set: $set));
+			return new JSONResponse($this->verifier->verify(set: $set));
+		} catch (Throwable $e) {
+			// An unreadable store is not a verified set: say so, never answer verified.
+			return new JSONResponse(['error' => 'unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 	}//end verify()
 }//end class

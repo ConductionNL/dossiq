@@ -13,6 +13,7 @@
         "slug": "wooDeliveredSet",
         "icon": "PackageVariantClosed",
         "version": "1.0.0",
+        "searchable": false,
         "title": "Woo delivered set",
         "description": "What was delivered for publication on a Woo decision: each document as it went out, with the hash of its bytes, and one hash over the whole set. Frozen once the publication exists, so it shows later what went out.",
         "type": "object",
@@ -90,30 +91,44 @@
               "type": "object",
               "properties": {
                 "assessment": {
-                  "type": "string"
+                  "type": "string",
+                  "title": "Assessment",
+                  "description": "The document assessment this item was delivered under."
                 },
                 "classification": {
                   "type": "string",
                   "enum": [
                     "openbaar",
                     "deels_openbaar"
-                  ]
+                  ],
+                  "title": "Classification",
+                  "description": "Public in full or in part."
                 },
                 "deliveredRef": {
-                  "type": "string"
+                  "type": "string",
+                  "title": "Delivered file",
+                  "description": "The document that went out: the original when public in full, the redaction when public in part."
                 },
                 "originalRef": {
-                  "type": "string"
+                  "type": "string",
+                  "title": "Original",
+                  "description": "The document as it came in."
                 },
                 "fileName": {
-                  "type": "string"
+                  "type": "string",
+                  "title": "File name",
+                  "description": "The name of the delivered file."
                 },
                 "size": {
-                  "type": "integer"
+                  "type": "integer",
+                  "title": "Size",
+                  "description": "The size of the delivered file in bytes."
                 },
                 "sha256": {
                   "type": "string",
-                  "pattern": "^[a-f0-9]{64}$"
+                  "pattern": "^[a-f0-9]{64}$",
+                  "title": "SHA-256",
+                  "description": "The SHA-256 of the delivered file's bytes."
                 }
               }
             }

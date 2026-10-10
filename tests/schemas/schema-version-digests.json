@@ -1513,6 +1513,6 @@
     },
     "lib/Settings/register.d/86-woo-delivered-set.json::wooDeliveredSet": {
         "version": "1.0.0",
-        "digest": "05946b6dd58ae257e1c9104b7ad0c590c5f664c590295dc0937af5ea38e182fd"
+        "digest": "08906df0a02e197dc032ccc50dd85c659698668e6cbf8dba869717ec899108b7"
     }
 }

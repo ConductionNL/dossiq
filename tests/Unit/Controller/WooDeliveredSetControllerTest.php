@@ -138,6 +138,34 @@ class WooDeliveredSetControllerTest extends TestCase {
 	}//end testVerifyAnswersTheItemStatuses()
 
 	/**
+	 * A store that throws answers 503, never a verified set.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableStoreAnswers503(): void {
+		$broken = new class {
+			/**
+			 * Every read fails.
+			 *
+			 * @return never
+			 */
+			public function find(): never {
+				throw new \RuntimeException('database gone');
+			}
+		};
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($broken);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => (['register' => 'dossiq'][$key] ?? $default));
+		$this->verifier = new WooDeliveredSetVerifier(
+			settings: $settings,
+			sets: new WooDeliveredSetWriter(settings: $settings),
+			documents: new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: new NullLogger()),
+		);
+
+		$this->assertSame(503, $this->controller(mayRead: true)->verify(id: 'case-1', setId: 'set-1')->getStatus());
+	}//end testAnUnreadableStoreAnswers503()
+
+	/**
 	 * The occ command prints every item and succeeds only on a verified set.
 	 *
 	 * @return void
