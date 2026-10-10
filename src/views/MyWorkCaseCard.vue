@@ -214,7 +214,7 @@ export default {
 		 *
 		 * @return {string} The class, or '' when there is no pill.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		tierPillClassName() {
 			return deadlineTierPillClass(
@@ -228,7 +228,7 @@ export default {
 		 *
 		 * @return {string} The translated label, or ''.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		tierPillLabel() {
 			return deadlineTierLabel(

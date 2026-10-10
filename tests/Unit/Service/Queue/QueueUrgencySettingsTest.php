@@ -33,7 +33,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @covers \OCA\Dossiq\Service\Queue\UrgencyProfile
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 class QueueUrgencySettingsTest extends TestCase {
 

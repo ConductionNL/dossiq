@@ -8,7 +8,7 @@
  * (`$ref: caseType` and `$ref: statusType`). Every unit test passed, and
  * OpenRegister refused the first real save: "Property 'caseType' should match
  * format 'uuid'". So no DSO intake ever became a case, and nothing ever wrote
- * `dsoStatus`, which is the field DsoDeadlineJob selects on. These tests run
+ * `dsoStatus`, which is the field the DSO term timer arms on. These tests run
  * the real service and hand what it would save to the merged register's own
  * schema, so a value that does not fit its declaration fails here first.
  *
@@ -238,7 +238,7 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'case', payload: $case));
 		$this->assertSame(self::CASE_TYPE_ID, $case['caseType'], 'the case type is the one the mapping row names, by uuid');
 		$this->assertSame(self::INITIAL_STATUS_ID, $case['status'], 'the case opens at its type\'s initial status');
-		$this->assertSame('submitted', $case['dsoStatus'], 'dsoStatus is written, so DsoDeadlineJob finds the case');
+		$this->assertSame('submitted', $case['dsoStatus'], 'dsoStatus is written, so the DSO term timer arms on the case');
 		$this->assertSame(self::VERZOEK_ID, $case['permitApplicationRef']);
 	}//end testTheIntakeCaseFitsTheRealCaseSchema()
 

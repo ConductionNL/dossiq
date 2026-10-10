@@ -17,7 +17,13 @@
   from a server answer, because a second derivation would eventually offer a
   move the write refuses.
 
+  An act that carries a result also offers the result templates of the case's
+  case type. This is the close form a handler reaches, so this is where a
+  standard refusal is not retyped. A template never writes over what the
+  handler already typed.
+
   @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+  @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
 -->
 <template>
 	<NcDialog
@@ -102,6 +108,14 @@
 				{{ explainer(chosen) }}
 			</p>
 
+			<TemplatePicker
+				v-if="inputs.result"
+				kind="result"
+				:caseType="caseType"
+				:caseId="targetCaseId"
+				:label="t('dossiq', 'Result template')"
+				@apply="applyTemplate" />
+
 			<NcTextArea
 				v-if="inputs.reason"
 				v-model="reason"
@@ -155,6 +169,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -162,6 +177,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import TemplatePicker from '../components/TemplatePicker.vue'
 import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
 import {
 	approvalHeading,
@@ -172,13 +188,14 @@ import {
 	buildTransitionPayload,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
+import { failedActionsWarning } from '../utils/transitionOutcome.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
 export default {
 	name: 'CaseLifecycleMenuDialog',
 
-	components: { NcButton, NcDialog, NcTextArea, NcTextField },
+	components: { NcButton, NcDialog, NcTextArea, NcTextField, TemplatePicker },
 
 	props: {
 		/**
@@ -203,6 +220,7 @@ export default {
 			resultTypeId: '',
 			until: '',
 			days: '14',
+			caseType: '',
 			error: '',
 			busy: false,
 		}
@@ -399,6 +417,12 @@ export default {
 				acts: actsBody,
 			})
 			this.awaiting = awaitingApprovals(actsBody)
+			// The case type scopes the result templates. '' is a real answer:
+			// the picker then offers the templates meant for every case type.
+			this.caseType =
+				state.status === 'fulfilled'
+					? String(state.value?.data?.caseType ?? '')
+					: ''
 			this.loading = false
 		},
 
@@ -473,6 +497,27 @@ export default {
 		},
 
 		/**
+		 * Fill the outcome text from a result template.
+		 *
+		 * 🔑 IT DOES NOT OVERWRITE WHAT THE HANDLER ALREADY TYPED. Picking a
+		 * template after writing two paragraphs and losing them is worse than
+		 * having no templates: the handler cannot get the text back, and the
+		 * gesture that destroyed it looked like a convenience.
+		 *
+		 * @param {object} chosen The template, with its body and presets.
+		 * @return {void}
+		 * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+		 */
+		applyTemplate(chosen) {
+			const text = chosen?.body || chosen?.presets?.body || ''
+			if (!text || this.reason.trim() !== '') {
+				return
+			}
+
+			this.reason = text
+		},
+
+		/**
 		 * Go back to the list, or close when already on it.
 		 *
 		 * @return {void}
@@ -502,7 +547,7 @@ export default {
 			const id = encodeURIComponent(this.targetCaseId)
 			try {
 				if (this.chosen.kind === 'transition') {
-					await axios.post(
+					const { data } = await axios.post(
 						generateUrl(`/apps/dossiq/api/case/${id}/transition`),
 						buildTransitionPayload({
 							transitionId: this.chosen.id,
@@ -510,6 +555,10 @@ export default {
 							resultTypeId: this.resultTypeId,
 						}),
 					)
+					// A 200 is not the same as everything having happened: the
+					// status moves before the automatic actions run, and the
+					// engine answers `partial` naming what failed.
+					this.warnAboutFailedActions(data)
 				} else {
 					await axios.post(
 						generateUrl(
@@ -531,6 +580,24 @@ export default {
 				)
 			} finally {
 				this.busy = false
+			}
+		},
+
+		/**
+		 * Tell the handler when the case moved without all of its work.
+		 *
+		 * A warning rather than an error, and the dialog still closes: the move
+		 * itself happened and is recorded, so holding the dialog open would
+		 * offer a retry of something that is already done.
+		 *
+		 * @param {object} data The transition response body.
+		 * @return {void}
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+		 */
+		warnAboutFailedActions(data) {
+			const warning = failedActionsWarning(data)
+			if (warning !== '') {
+				showWarning(warning)
 			}
 		},
 	},

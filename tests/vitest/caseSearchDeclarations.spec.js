@@ -106,6 +106,9 @@ const SILENT = [
 	// there is no input to control.
 	'portalTurn',
 	'assignedGroupPublicName',
+	// The earlier Woo request this one started from: a reference the draft search
+	// plan is copied from, `visible: false`, never a filter (woo-request-corpus-collection).
+	'wooStartFrom',
 ]
 
 /**
