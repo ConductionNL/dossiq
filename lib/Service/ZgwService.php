@@ -1291,12 +1291,12 @@ class ZgwService {
 	 * Map a validated ZGW body to English field names.
 	 *
 	 * `_directFields` bypass the Twig inbound mapping (array fields Twig drops) and are merged
-	 * over the mapped data when the mapping produced an array.
+	 * over the mapped data.
 	 *
 	 * @param array $enrichedBody The body the business rules returned
 	 * @param array $mappingConfig The ZGW mapping
 	 *
-	 * @return array{data: mixed, directFields: array} The mapped data and the direct fields
+	 * @return array{data: array, directFields: array} The mapped data and the direct fields
 	 */
 	private function mapInbound(array $enrichedBody, array $mappingConfig): array {
 		$directFields = $enrichedBody['_directFields'] ?? [];
@@ -1307,7 +1307,7 @@ class ZgwService {
 			mapping: $this->createInboundMapping(mappingConfig: $mappingConfig),
 			mappingConfig: $mappingConfig
 		);
-		if (is_array($data) === true && empty($directFields) === false) {
+		if (empty($directFields) === false) {
 			$data = array_merge($data, $directFields);
 		}
 
