@@ -69,12 +69,15 @@ class DeadlineExtensionService {
 	 *        caller that builds this service by hand keeps working; when it is
 	 *        absent the declared ceiling is simply not enforced, which is the
 	 *        behaviour this change replaces rather than a new silence.
+	 * @param CaseDeadlineMirror|null $mirror Which statutory term decides a case, for an
+	 *        extension asked for by case ({@see extendStatutoryTermOfCase()}).
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermDeclarationReader $declarations = null,
+		private readonly ?CaseDeadlineMirror $mirror = null,
 	) {
 	}//end __construct()
 
@@ -134,13 +137,17 @@ class DeadlineExtensionService {
 	 *         every extension it allows (409), or a declared period refuses it (422).
 	 *
 	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) `CaseDeadlineMirror::decidingInstance()` and
-	 * `endOf()` are pure functions over an array: the one rule for which statutory term
-	 * decides a case, kept in one place.
 	 */
 	public function extendStatutoryTermOfCase(string $caseId, string $rationale, int $days, ?\Closure $baseOf = null): array {
-		$term = CaseDeadlineMirror::decidingInstance(instances: $this->termService->instancesForCase(caseId: $caseId));
+		if ($this->mirror === null) {
+			throw new RefusedException(
+				rule: 'term-engine-unavailable',
+				sentence: 'The term engine is not available, so the term cannot be extended.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			);
+		}
+
+		$term = $this->mirror->decidingInstance(instances: $this->termService->instancesForCase(caseId: $caseId));
 		if ($term === null || (string)($term['status'] ?? '') === 'completed') {
 			throw new RefusedException(
 				rule: 'no-running-statutory-term',
@@ -149,7 +156,7 @@ class DeadlineExtensionService {
 			);
 		}
 
-		$previous = CaseDeadlineMirror::endOf(instance: $term);
+		$previous = $this->mirror->endOf(instance: $term);
 		$base = $previous;
 		if ($baseOf !== null) {
 			$base = $baseOf($term);

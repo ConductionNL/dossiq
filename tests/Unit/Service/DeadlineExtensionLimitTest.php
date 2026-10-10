@@ -22,12 +22,16 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\DeadlineExtensionService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\TermDeclarationReader;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * REQ-TERM-066: the declared extension length is enforced.
@@ -88,8 +92,25 @@ class DeadlineExtensionLimitTest extends TestCase {
 			dates: $this->caseDates(),
 			timerService: null,
 			declarations: $this->declarations,
+			mirror: $this->mirror(),
 		);
 	}//end setUp()
+
+	/**
+	 * The rule for which statutory term decides a case.
+	 *
+	 * @return CaseDeadlineMirror The mirror; its store is never reached here.
+	 */
+	private function mirror(): CaseDeadlineMirror {
+		$settings = $this->createMock(SettingsService::class);
+		$logger = $this->createMock(LoggerInterface::class);
+
+		return new CaseDeadlineMirror(
+			settingsService: $settings,
+			store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+			logger: $logger,
+		);
+	}//end mirror()
 
 	/**
 	 * An extension beyond the declared period is refused with a 4xx that names
@@ -213,6 +234,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 			dates: $this->caseDates(),
 			timerService: $timers,
 			declarations: $this->declarations,
+			mirror: $this->mirror(),
 		);
 
 		$extended = $service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14, static fn (array $term): string => '2026-05-30');
@@ -237,7 +259,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 		$termService->method('getTermijnInstance')->willReturn(
 			['id' => 't1', 'case' => 'c1', 'endDateCurrent' => '2026-09-15', 'countExtensions' => 1, 'deadlineDefinition' => '']
 		);
-		$service = new DeadlineExtensionService(termService: $termService, dates: $this->caseDates());
+		$service = new DeadlineExtensionService(termService: $termService, dates: $this->caseDates(), mirror: $this->mirror());
 
 		try {
 			$service->extendStatutoryTermOfCase('c1', 'Veel documenten', 14);
