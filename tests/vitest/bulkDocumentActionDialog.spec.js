@@ -343,4 +343,38 @@ describe('BulkDocumentActionDialog opened from a file row', () => {
 			{ ids: ['doc-1', 'doc-2'], status: 'final' },
 		)
 	})
+
+	it('resolves a files-browser selection (fileIds) to document ids in one listing read', async () => {
+		// nextcloud-vue files-browser-hosts-a-documents-list: the Files tab's
+		// `bulkActions` open this dialog with `fileIds` (and `files`) for every
+		// selected file. One read of the dossier listing maps them all.
+		mockGet.mockImplementation((url) => {
+			if (String(url).includes('/dossier'))
+				return Promise.resolve({
+					data: {
+						informatieobjecten: [
+							{ id: 'doc-7', fileId: 77 },
+							{ id: 'doc-8', fileId: 88 },
+							{ id: 'doc-9', fileId: 99 },
+						],
+					},
+				})
+			return Promise.resolve({ data: {} })
+		})
+		mockPost.mockResolvedValue({ data: { results: [{ success: true }, { success: true }] } })
+
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: { mode: 'mark-final', fileIds: [77, '99', 5], caseId: 'case-1' },
+		})
+
+		expect(wrapper.text()).toContain('3 document(s) selected')
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockGet).toHaveBeenCalledTimes(1)
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('bulk/status'),
+			{ ids: ['doc-7', 'doc-9'], status: 'final' },
+		)
+	})
 })
