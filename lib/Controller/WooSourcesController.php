@@ -30,7 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Woo\WooCollectionQueries;
 use OCA\Dossiq\Woo\WooGatherAdd;
+use OCA\Dossiq\Woo\WooSearchPlans;
 use OCA\Dossiq\Woo\WooSources;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,6 +60,8 @@ class WooSourcesController extends Controller {
 	 * @param CaseAccessGuard $accessGuard Per-case read and change access, failing closed.
 	 * @param IUserSession    $userSession The caller.
 	 * @param IL10N           $l10n        Refusal sentences.
+	 * @param WooSearchPlans  $plans       The recorded search plan collection waits for (woo-request-corpus-collection).
+	 * @param WooCollectionQueries $queries Stores every search as a query someone else can re-run.
 	 */
 	public function __construct(
 		string $appName,
@@ -67,6 +71,8 @@ class WooSourcesController extends Controller {
 		private readonly CaseAccessGuard $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
+		private readonly WooSearchPlans $plans,
+		private readonly WooCollectionQueries $queries,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -110,6 +116,10 @@ class WooSourcesController extends Controller {
 			return $user;
 		}
 
+		if ($this->plans->recorded(caseId: $id) === null) {
+			return $this->noPlan();
+		}
+
 		$source = (string)$this->request->getParam('source', '');
 		$terms = trim((string)$this->request->getParam('terms', ''));
 		if ($source !== WooSources::SOURCE_MICROSOFT365) {
@@ -123,12 +133,9 @@ class WooSourcesController extends Controller {
 			return new JSONResponse(['error' => 'terms_required', 'message' => $this->l10n->t('Enter what to search for.')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$answer = $this->sources->searchMicrosoft365(
-			terms: $terms,
-			from: $this->dateParam(name: 'from'),
-			to: $this->dateParam(name: 'to'),
-			userId: $user->getUID(),
-		);
+		$from = $this->dateParam(name: 'from');
+		$until = $this->dateParam(name: 'to');
+		$answer = $this->sources->searchMicrosoft365(terms: $terms, from: $from, to: $until, userId: $user->getUID());
 		if ($answer['refusal'] !== '') {
 			return new JSONResponse(
 				['error' => $answer['refusal'], 'message' => $this->l10n->t('SharePoint, Teams and mail cannot be searched now.')],
@@ -136,9 +143,22 @@ class WooSourcesController extends Controller {
 			);
 		}
 
+		$query = $this->queries->store(
+			caseId: $id,
+			search: [
+				'source' => $source,
+				'terms' => $terms,
+				'periodFrom' => (string)$from,
+				'periodTo' => (string)$until,
+				'resultKeys' => array_column($answer['rows'], 'key'),
+			],
+			userId: $user->getUID(),
+		);
+
 		return new JSONResponse(
 			[
 				'source' => $source,
+				'queryId' => (string)($query['id'] ?? ''),
 				'rows' => $answer['rows'],
 				'remaining' => $answer['remaining'],
 				'notices' => $answer['notices'],
@@ -151,7 +171,8 @@ class WooSourcesController extends Controller {
 	 *
 	 * @param string $id The case uuid.
 	 *
-	 * @return JSONResponse `{results, added, refused}`: 200 when at least one was added, 422 when none was.
+	 * @return JSONResponse `{results, added, excluded, refused}`: 200 when at least one was added or recorded as
+	 *         an exclusion, 422 when none was, 409 while the case has no recorded search plan.
 	 *
 	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-picked-results-become-documents-on-the-case-req-woo-013
 	 */
@@ -160,6 +181,11 @@ class WooSourcesController extends Controller {
 		$user = $this->changer(caseId: $id);
 		if ($user instanceof JSONResponse) {
 			return $user;
+		}
+
+		$plan = $this->plans->recorded(caseId: $id);
+		if ($plan === null) {
+			return $this->noPlan();
 		}
 
 		$picks = $this->request->getParam('picks', []);
@@ -176,15 +202,18 @@ class WooSourcesController extends Controller {
 			picks: array_values($picks),
 			terms: trim((string)$this->request->getParam('terms', '')),
 			user: $user,
+			custodians: $this->plans->custodianNames(plan: $plan),
 		);
-		$added = count(array_filter($results, static fn (array $result): bool => $result['status'] === 'added'));
+		$counts = array_count_values(array_column($results, 'status'));
+		$added = ($counts['added'] ?? 0);
+		$excluded = ($counts['excluded'] ?? 0);
 
 		$status = Http::STATUS_OK;
-		if ($added === 0) {
+		if (($added + $excluded) === 0) {
 			$status = Http::STATUS_UNPROCESSABLE_ENTITY;
 		}
 
-		return new JSONResponse(['results' => $results, 'added' => $added, 'refused' => (count($results) - $added)], $status);
+		return new JSONResponse(['results' => $results, 'added' => $added, 'excluded' => $excluded, 'refused' => ($counts['refused'] ?? 0)], $status);
 	}//end add()
 
 	/**
@@ -222,6 +251,17 @@ class WooSourcesController extends Controller {
 
 		return $value;
 	}//end dateParam()
+
+	/**
+	 * The answer while the case has no recorded search plan (REQ-WRC-001).
+	 *
+	 * @return JSONResponse 409.
+	 */
+	private function noPlan(): JSONResponse {
+		$message = $this->l10n->t('Record the search plan before collecting');
+
+		return new JSONResponse(['error' => 'no_search_plan', 'message' => $message], Http::STATUS_CONFLICT);
+	}//end noPlan()
 
 	/**
 	 * The answer for a caller without access to the case.

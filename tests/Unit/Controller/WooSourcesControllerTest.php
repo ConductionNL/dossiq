@@ -27,7 +27,10 @@ use OCA\Dossiq\Controller\WooSourcesController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Woo\WooCollectionQueries;
 use OCA\Dossiq\Woo\WooGatherAdd;
+use OCA\Dossiq\Woo\WooSearchPlans;
 use OCA\Dossiq\Woo\WooSources;
 use OCA\Integriq\Event\DocumentSearchRequestedEvent;
 use OCP\App\IAppManager;
@@ -45,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\WooSourcesController
  * @uses   \OCA\Dossiq\Woo\WooSources
  * @uses   \OCA\Dossiq\Support\FleetAppId
+ * @uses   \OCA\Dossiq\Woo\WooSearchPlans
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooSourcesControllerTest extends TestCase {
 
@@ -69,9 +74,21 @@ class WooSourcesControllerTest extends TestCase {
 
 	private WooGatherAdd&MockObject $gatherAdd;
 
+	private WooCollectionQueries&MockObject $queries;
+
+	private InMemoryRegister $register;
+
 	protected function setUp(): void {
 		$this->dispatcher = new InMemoryEventDispatcher();
 		$this->gatherAdd = $this->createMock(WooGatherAdd::class);
+		$this->queries = $this->createMock(WooCollectionQueries::class);
+		$this->register = new InMemoryRegister();
+		$this->register->seed('wooSearchPlan', 'plan-1', [
+			'case' => self::CASE_ID,
+			'custodians' => [['name' => 'Wethouder Ruimte']],
+			'systems' => ['files', 'microsoft365'],
+			'recordedAt' => '2026-10-01T10:00:00Z',
+		]);
 	}//end setUp()
 
 	/**
@@ -110,6 +127,12 @@ class WooSourcesControllerTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
+		$planSettings = $this->createMock(SettingsService::class);
+		$planSettings->method('getObjectService')->willReturn($this->register);
+		$planSettings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'woo_search_plan_schema' => 'wooSearchPlan'][$key] ?? $default
+		);
+
 		return new WooSourcesController(
 			appName: 'dossiq',
 			request: $request,
@@ -118,6 +141,8 @@ class WooSourcesControllerTest extends TestCase {
 			accessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,
+			plans: new WooSearchPlans(settingsService: $planSettings),
+			queries: $this->queries,
 		);
 	}//end controller()
 
@@ -167,9 +192,18 @@ class WooSourcesControllerTest extends TestCase {
 			}
 		);
 
+		$stored = null;
+		$this->queries->expects(self::once())->method('store')->willReturnCallback(
+			function (string $caseId, array $search, string $userId) use (&$stored): array {
+				$stored = $search;
+				return ['id' => 'query-1'];
+			}
+		);
 		$response = $this->controller()->search(id: self::CASE_ID);
 
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame('query-1', $response->getData()['queryId']);
+		self::assertSame(['message:1'], $stored['resultKeys'], 'the search is stored as a query with its result keys');
 		self::assertSame('microsoft365', $response->getData()['source']);
 		self::assertSame('Re: Stationsweg', $response->getData()['rows'][0]['name']);
 		self::assertSame(0, $response->getData()['remaining']);
@@ -192,7 +226,7 @@ class WooSourcesControllerTest extends TestCase {
 
 	public function testTheAddAnswersEachPickAndRefusesWhenNoneWasAdded(): void {
 		$this->params = ['picks' => json_encode([['source' => 'files', 'key' => '11'], ['source' => 'files', 'key' => '13']]), 'terms' => 'Stationsweg'];
-		$this->gatherAdd->expects(self::exactly(2))->method('addPicks')->willReturnOnConsecutiveCalls(
+		$this->gatherAdd->expects(self::exactly(2))->method('addPicks')->with(self::anything(), self::anything(), 'Stationsweg', self::anything(), ['Wethouder Ruimte'])->willReturnOnConsecutiveCalls(
 			[['key' => '11', 'status' => 'added'], ['key' => '13', 'status' => 'refused']],
 			[['key' => '13', 'status' => 'refused']],
 		);
@@ -219,4 +253,49 @@ class WooSourcesControllerTest extends TestCase {
 		$this->signedIn = false;
 		self::assertSame(Http::STATUS_UNAUTHORIZED, $this->controller()->add(id: self::CASE_ID)->getStatus());
 	}//end testTheAddRefusesNoPicksAndACallerWithoutCaseAccess()
+	/**
+	 * REQ-WRC-001 "No plan, no collection".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
+	 */
+	public function testSearchWithoutAPlanAnswers409(): void {
+		$this->register->rows = [];
+		$this->integriqInstalled = true;
+		$this->params = ['source' => 'microsoft365', 'terms' => 'Stationsweg'];
+
+		$response = $this->controller()->search(id: self::CASE_ID);
+
+		self::assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		self::assertSame('Record the search plan before collecting', $response->getData()['message']);
+		self::assertSame([], $this->dispatcher->dispatched, 'no source is called before the plan is there');
+	}//end testSearchWithoutAPlanAnswers409()
+
+	public function testAddWithoutAPlanAnswers409(): void {
+		$this->register->rows = [];
+		$this->gatherAdd->expects(self::never())->method('addPicks');
+		$this->params = ['picks' => [['source' => 'files', 'key' => '11', 'custodian' => 'Wethouder Ruimte']]];
+
+		self::assertSame(Http::STATUS_CONFLICT, $this->controller()->add(id: self::CASE_ID)->getStatus());
+	}//end testAddWithoutAPlanAnswers409()
+
+	public function testADraftPlanCountsAsNone(): void {
+		$this->register->rows = [];
+		$this->register->seed('wooSearchPlan', 'draft', ['case' => self::CASE_ID, 'custodians' => [['name' => 'A']]]);
+		$this->gatherAdd->expects(self::never())->method('addPicks');
+		$this->params = ['picks' => [['source' => 'files', 'key' => '11', 'custodian' => 'A']]];
+
+		self::assertSame(Http::STATUS_CONFLICT, $this->controller()->add(id: self::CASE_ID)->getStatus());
+	}//end testADraftPlanCountsAsNone()
+
+	public function testAnAddOfOnlyDuplicatesIsNoFailure(): void {
+		$this->params = ['picks' => [['source' => 'files', 'key' => '11', 'custodian' => 'Wethouder Ruimte']]];
+		$this->gatherAdd->method('addPicks')->willReturn([['key' => '11', 'status' => 'excluded', 'reason' => 'duplicate']]);
+
+		$response = $this->controller()->add(id: self::CASE_ID);
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(1, $response->getData()['excluded']);
+	}//end testAnAddOfOnlyDuplicatesIsNoFailure()
 }//end class
