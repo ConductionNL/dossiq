@@ -17,7 +17,7 @@ are where local stubs lie).
 
 ## 1. Receive opencatalogi's shape
 
-- [ ] 1.1 Add `WooRequestIntake::receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array`
+- [x] 1.1 Add `WooRequestIntake::receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array`
   with the mapping of REQ-WTO-001. Add `portal-form` and `opencatalogi` to `ORIGINS`, to
   `INTAKE_CHANNEL` and to the `wooRequest.origin` enum in `register.d/81-woo-verzoek.json`. Make
   `subjectRef` optional in `WooRequestForm::normalise()` for those two origins only. Keep `start()`
@@ -27,7 +27,11 @@ are where local stubs lie).
     `testEveryOutcomeCarriesAllSixKeysAsStrings`, `testThePortalDossierOriginStillNeedsASubject`.
   - Validate the written case against the real schema with `tests/Support/RealSchemaValidator`:
     `testTheReceivedCaseValidatesAgainstTheCaseSchema`.
-- [ ] 1.2 Add `PortalContributionProvider::receiveWooRequest(array $answers, string $receivedAt = ''): array`
+  - Built (10 Oct): `lib/Woo/WooRequestIntake.php` `receive()`, the answer mapping in
+    `lib/Woo/WooReceivedAnswers.php` (test `tests/Unit/Woo/WooReceivedAnswersTest.php`). Decision 179:
+    the submit creates the case directly, no intake object in between. Phone and address go on
+    `wooRequest.verzoekerTelefoon` / `verzoekerAdres` (spec amended: no requester role type is seeded).
+- [x] 1.2 Add `PortalContributionProvider::receiveWooRequest(array $answers, string $receivedAt = ''): array`
   calling `receive()` with origin `portal-form`. Its constructor takes `WooRequestIntake` as an
   optional dependency, as opencatalogi's does, and answers `unavailable` with every key when it is
   null (REQ-WTO-001).
@@ -39,6 +43,10 @@ are where local stubs lie).
   - Through the caller: construct the provider through the real DI container the way portaliq's
     `PortalProviderLocator::locate('dossiq')` does (`OCA\Dossiq\Portal\PortalContributionProvider`),
     and call `receiveWooRequest()` on it: `testTheProviderPortaliqLocatesReceivesARequest`.
+  - Built (10 Oct): `tests/Unit/Portal/PortalContributionProviderTest.php`
+    `testReceiveWooRequestHasOpencatalogisSignature`, `testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey`,
+    `testTheProviderHandsTheRequestToTheIntakeAsAPortalForm`. The real-container construction is not a unit
+    test (no container in phpunit-unit); it is part of the 6.1 e2e (live pass, decision 139).
 
 ## 2. armed means a term runs
 
@@ -49,6 +57,10 @@ are where local stubs lie).
   - **fails today**: `tests/Unit/Woo/WooRequestIntakeReceiveTest.php`
     `testTheTermCountsFromWhenTheRequesterSentIt` (sent 2026-11-27, delivered 2026-11-30, expects
     `dueAt` 2026-12-28), `testARefusedTimerIsNotArmed`, `testNoTermEngineWritesNoCase`.
+  - Built (10 Oct): `lib/Woo/WooReceivedTerm.php` (test `tests/Unit/Woo/WooReceivedTermTest.php`) and the
+    three tests above. The P28D count and Awt roll themselves are the term engine's, bound by
+    `DeadlineCaseCreatedListener` from the case's `receivedAt`; the intake test plays that part.
+    Open: the row 10.8 `AcknowledgementDutyTest` check.
   - Row 10.8: `tests/Unit/Service/AcknowledgementDutyTest.php`
     `testTheAcknowledgementNamesTheStartAndTheDueDate`, on the rendered template text of a case
     written by `receive()`. It may pass already if `intake-says-when-the-term-starts` finished it;

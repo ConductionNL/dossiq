@@ -12,7 +12,10 @@ the case: `requestedInformation` to `wooRequest.omschrijving` and, cut at 120 ch
 boundary, to `wooRequest.onderwerp`; `requesterName` to `wooRequest.verzoekerNaam`;
 `requesterEmail` to `wooRequest.verzoekerEmail`; and `channel` to the case `intakeChannel`
 (`web` to `website`, `email` to `email`, `post` to `post`, `counter` to `balie`, `phone` to
-`phone`). Phone and address SHALL be kept on the requester role. `origin` SHALL be one of
+`phone`). Phone and address SHALL be kept beside the name and e-mail address, as
+`wooRequest.verzoekerTelefoon` and `wooRequest.verzoekerAdres` (amended 10 Oct: the Woo case type
+seeds no requester role type, and a role requires a participant reference an anonymous requester
+does not have). `origin` SHALL be one of
 `portal-form` or `opencatalogi`, and both SHALL be added to `WooRequestIntake::ORIGINS` and to the
 `wooRequest.origin` enum. For these two origins `subjectRef` SHALL be optional.
 

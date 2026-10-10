@@ -36,10 +36,12 @@
                 "type": "string",
                 "enum": [
                   "portal",
-                  "pipelinq"
+                  "pipelinq",
+                  "portal-form",
+                  "opencatalogi"
                 ],
                 "title": "Origin",
-                "description": "Where the request was started."
+                "description": "Where the request was started: a portal dossier, a pipelinq ticket, an anonymous portal form, or a request opencatalogi took in before dossiq owned Woo requests."
               },
               "originReference": {
                 "type": "string",
@@ -89,6 +91,16 @@
                 ],
                 "title": "Requester kind",
                 "description": "Who the resident says they are asking as: burger, journalist or organisatie. It is what they chose, not a judgement we make."
+              },
+              "verzoekerTelefoon": {
+                "type": "string",
+                "title": "Requester phone number",
+                "description": "The phone number the requester gave, kept as given."
+              },
+              "verzoekerAdres": {
+                "type": "string",
+                "title": "Requester address",
+                "description": "The postal address the requester gave, kept as given, for a requester who asked for an answer on paper."
               }
             }
           }
