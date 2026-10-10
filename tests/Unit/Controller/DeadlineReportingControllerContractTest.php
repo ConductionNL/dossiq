@@ -58,6 +58,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\DeadlineReportingService
  * @uses \OCA\Dossiq\Service\Reporting\ReportingAudience
  * @uses \OCA\Dossiq\Service\Term\FirstResponseOutcome
+ * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
+ * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
  */
 class DeadlineReportingControllerContractTest extends TestCase {
 

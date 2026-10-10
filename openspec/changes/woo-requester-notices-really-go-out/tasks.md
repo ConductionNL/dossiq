@@ -84,7 +84,8 @@ failure line in the PR body.
     `testExtendingTellsTheRequesterWithTheReason` and
     `testAnUnsentExtensionNoticeIsReportedButTheExtensionStands`. Drive these through the
     controller. Built in `WOOAssessmentControllerExtensionNoticeTest` (own @covers set), over the real
-    WOODeadlineService, WooTermExtension (which calls `ExtensionNotice`) and the term engine. Red on
+    WOODeadlineService and the one-term-engine extension; the controller calls `ExtensionNotice`
+    once the extension stands. Red on
     the old code: `Failed asserting that null is identical to 'sent'` / `'not-sent'`
     (build-round5/red-3.1.log). The answer carries `noticeStatus`, `noticeReasonCode`, `noticeReason`.
   - Check `TermLetters::render('extension', ...)` (lib/Service/Termijn/TermLetters.php line 78)

@@ -2606,6 +2606,20 @@
                 ]
               }
             },
+            "deadline": {
+              "type": "date",
+              "materialise": true,
+              "expression": {
+                "dateAdd": {
+                  "date": {
+                    "prop": "startDate"
+                  },
+                  "duration": {
+                    "prop": "@ref.caseType.processingDeadline"
+                  }
+                }
+              }
+            },
             "identifier": {
               "type": "string",
               "materialise": true,
@@ -2897,15 +2911,8 @@
             "type": "string",
             "format": "date",
             "readOnly": true,
-            "description": "Processing deadline: the start date plus the case type's processingDeadline, rolled to the first working day on the organisation's calendar (Algemene termijnenwet art. 1). Written by dossiq's case deadline listener, not by a calculation.",
+            "description": "Processing deadline. Computed declaratively by OpenRegister as startDate + the case type's processingDeadline (x-openregister-calculations.deadline).",
             "title": "Deadline"
-          },
-          "deadlineBeforeRoll": {
-            "type": "string",
-            "format": "date",
-            "readOnly": true,
-            "description": "The deadline before the Algemene termijnenwet roll.",
-            "title": "Deadline before the roll"
           },
           "confidentiality": {
             "type": "string",

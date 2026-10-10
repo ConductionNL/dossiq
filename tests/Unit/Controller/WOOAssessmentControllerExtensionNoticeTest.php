@@ -3,8 +3,9 @@
 /**
  * Extending a Woo term tells the requester, with the reason and the new end date.
  *
- * Driven through WOOAssessmentController::extendDeadline(), over the real
- * WOODeadlineService, WooTermExtension and term engine, the real
+ * Driven through WOOAssessmentController::extendDeadline(), which tells the
+ * requester once the extension stands, over the real WOODeadlineService and term engine (DeadlineExtensionService over
+ * CaseDeadlineMirror and the seeded Woo definition), the real
  * ExtensionNotice, TermijnNotificationService and RequesterNoticeSender, and
  * the real e-mail transport. Only the register is a fake.
  *
@@ -27,10 +28,10 @@ use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\CaseDeadlineFollower;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\Termijn\ExtensionNotice;
-use OCA\Dossiq\Service\Termijn\WooTermExtension;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -57,14 +58,12 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
  * @covers \OCA\Dossiq\Service\WOODeadlineService
- * @covers \OCA\Dossiq\Service\Termijn\WooTermExtension
  * @covers \OCA\Dossiq\Service\Termijn\ExtensionNotice
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
- * @uses \OCA\Dossiq\Service\Termijn\TermKindClassifier
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
@@ -75,7 +74,6 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\TermijnTimerService
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
- * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineFollower
  * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
@@ -149,7 +147,8 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 
 		$logger = new NullLogger();
 		$timer = new TermijnTimerService(settingsService: $settings, logger: $logger, dates: $this->caseDates(), fallbackCalendar: new WorkingDayCalculator());
-		$terms = new TermijnService($settings, $logger, follower: new CaseDeadlineFollower($settings, new CaseDeadlineMirror(), $logger));
+		$mirror = new CaseDeadlineMirror(settingsService: $settings, store: new TermInstanceStore(settingsService: $settings, logger: $logger), logger: $logger);
+		$terms = new TermijnService($settings, $logger, timerService: $timer, mirror: $mirror);
 
 		$apps = $this->createMock(IAppManager::class);
 		$apps->method('isInstalled')->willReturnCallback(static fn (string $app): bool => $app === 'portaliq');
@@ -163,17 +162,12 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 		);
 
 		$deadlines = new WOODeadlineService(
-			$settings,
-			$this->createMock(INotificationManager::class),
-			$logger,
-			$this->caseDates(),
-			$timer,
-			new WooTermExtension(
-				termService: $terms,
-				extension: new DeadlineExtensionService(termService: $terms, dates: $this->caseDates(), timerService: $timer),
-				logger: $logger,
-				notice: new ExtensionNotice(settings: $settings, notifications: $notifications, logger: $logger),
-			),
+			settingsService: $settings,
+			notificationManager: $this->createMock(INotificationManager::class),
+			logger: $logger,
+			dates: $this->caseDates(),
+			definitions: new TermDefinitions(settingsService: $settings, logger: $logger, timer: $timer),
+			extensions: new DeadlineExtensionService(termService: $terms, dates: $this->caseDates(), timerService: $timer, mirror: $mirror),
 		);
 
 		$user = $this->createMock(IUser::class);
@@ -197,6 +191,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 			new CaseAccessGuard(settingsService: $settings, groupManager: $groups, logger: $logger),
 			$logger,
 			$this->createMock(IL10N::class),
+			new ExtensionNotice(settings: $settings, notifications: $notifications, logger: $logger),
 		);
 	}//end controller()
 

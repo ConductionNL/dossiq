@@ -7,8 +7,8 @@
  * new end date (Woo art. 4.4 lid 2: the body extends once by two weeks and
  * tells the requester so, with reasons, before the first term ends).
  *
- * Called from the extension itself (WOODeadlineService::extendDeadline(), the
- * path WOOAssessmentController::extendDeadline() takes), never from a listener
+ * Called right after the extension, by WOOAssessmentController::extendDeadline()
+ * once WOODeadlineService::extendDeadline() answered, never from a listener
  * nobody dispatches. The extension stands when the notice cannot go out: the
  * answer says so, and the case carries the not-sent record, so the handler can
  * tell the requester another way before the original term ends (REQ-WRN-005).

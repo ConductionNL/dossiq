@@ -206,7 +206,7 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.3.0",
+        "version": "1.5.0",
         "x-schema-org": "schema:Action",
         "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
@@ -274,13 +274,13 @@
             "type": "string",
             "format": "date",
             "title": "Effective End Date",
-            "description": "Effective deadline after pauses and extensions"
+            "description": "Effective deadline after pauses and extensions. While this is a statutory term, the case's deadline is a copy of this date."
           },
           "endDateBeforeRoll": {
             "type": "string",
             "format": "date",
-            "title": "End date before the roll",
-            "description": "The end date a caller supplied, before the Algemene termijnenwet rolled it past a weekend or holiday. Equal to the effective end date when no roll was needed."
+            "title": "End date as requested",
+            "description": "The end date an extension asked for, before the Algemene termijnenwet moved it off a weekend or holiday. Empty when no extension was asked for, and equal to the effective end date when the requested day was an ordinary one."
           },
           "status": {
             "type": "string",
@@ -324,6 +324,11 @@
             "type": "string",
             "title": "Engine Timer Id",
             "description": "Uuid of the OpenRegister FlowTimer that measures this term"
+          },
+          "timerBreachesAfterLastDay": {
+            "type": "boolean",
+            "title": "Timer breaches after the last day",
+            "description": "Set once the engine timer is anchored at the day after the start day, so it breaches the day after the term's last day and never on it. The upgrade re-arms every running term without it, once."
           },
           "pauseTimerId": {
             "type": "string",

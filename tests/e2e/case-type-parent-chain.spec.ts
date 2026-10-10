@@ -9,7 +9,7 @@
  *
  * WHY THESE NEED A BROWSER
  * ------------------------
- * `CaseTypeParentCycleListenerTest` and `CaseDeadlineListenerTest`
+ * `CaseTypeParentCycleListenerTest` and `CaseInheritedDeadlineListenerTest`
  * pin both rules in PHP. What they cannot show is that the rule is on the
  * path a person actually takes. Before these listeners the refusal existed
  * and only the publish path called it: the case type's Edit dialog saves
