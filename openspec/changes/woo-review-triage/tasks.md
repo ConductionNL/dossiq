@@ -17,7 +17,15 @@ PR, sections 4 to 6 the second.
   Woo case through a repair step (idempotent). Bump the register version (REQ-WRT-001).
   - unit `tests/Unit/Repair/CreateWooDocumentReviewsTest.php` `testEveryDocumentGetsOneReview`,
     `testASecondRunCreatesNothing`.
-- [ ] 1.2 POST `/api/cases/{id}/woo/documents/{documentRef}/relevance` with `{relevance}`, case
+  - Built: schemas in `87-woo-review.json` (register 0.20.23, app version bumped), slug map and config
+    keys, `lib/Woo/WooDocumentReviews.php`, repair `lib/Repair/CreateWooDocumentReviews.php` with
+    `CreateWooDocumentReviewsTest` (`testEveryAssessedDocumentGetsOneInScopeReview`, `testASecondRunCreatesNothing`).
+    The repair marks documents that already carry a verdict in scope (a verdict is a reviewer's judgement that
+    the document is about the request); without that, every existing Woo case would block on unmarked documents.
+    Open: "create one per document at the gather add" belongs in the add that lane L9 builds
+    (`woo-requests-gather-documents-from-sources`). Until then a document without a review reads as unmarked,
+    which is the same state the add would write.
+- [x] 1.2 POST `/api/cases/{id}/woo/documents/{documentRef}/relevance` with `{relevance}`, case
   mutation guard. `getOutstanding()` skips out-of-scope documents. The case summary reports the
   three counts (REQ-WRT-001).
   - **fails today**: `tests/Unit/Service/WOODocumentAssessmentServiceTest.php`
@@ -26,6 +34,10 @@ PR, sections 4 to 6 the second.
     `testTheSummaryReportsRelevanceBesideVerdicts` (the ten-document fixture).
   - `allDocumentsAssessed()` now means every in-scope document has a verdict and none is unmarked.
     Test: `testTheDecisionWaitsForUnmarkedDocuments`.
+  - Built: `WooReviewController` (relevance, summary; mutation and read guard through `CaseAccessGuard`),
+    `lib/Woo/WooReviewSummary.php`, `WooDocumentReviews::outstanding()` behind `getOutstanding()`. The three
+    named service tests failed first (class absent); `WooReviewControllerTest` also covers the overturned rule
+    and `testAUserWithoutAGrantOnTheCaseIsRefused` (6.3 for this controller).
 
 ## 2. Rules
 

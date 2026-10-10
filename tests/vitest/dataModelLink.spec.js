@@ -244,7 +244,7 @@ describe('Manage object types', () => {
 		// passesContextPredicates returns false when runtime is absent, so a
 		// card gated on a dot-path against a manifest with no runtime block is
 		// hidden from everyone and nothing says so.
-		expect(mainSource).toContain('runtime: { user: { isAdmin:')
+		expect(mainSource).toMatch(/runtime: \{\s*user: \{ isAdmin:/)
 		expect(mainSource).toContain("currentPermissions().includes('admin')")
 	})
 })

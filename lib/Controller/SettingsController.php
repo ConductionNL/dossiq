@@ -182,7 +182,19 @@ class SettingsController extends Controller {
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function update(): JSONResponse {
 		$data = $this->request->getParams();
-		$config = $this->settingsService->updateSettings($data);
+		try {
+			$config = $this->settingsService->updateSettings($data);
+		} catch (RuntimeException $e) {
+			// A refusal (RefusedException) names its rule and status; anything else is not ours to answer.
+			if (method_exists($e, 'getRule') === false || method_exists($e, 'getStatus') === false) {
+				throw $e;
+			}
+
+			return new JSONResponse(
+				['success' => false, 'error' => $e->getRule(), 'message' => $this->refusalSentence(rule: $e->getRule())],
+				$e->getStatus()
+			);
+		}
 
 		$this->recordIntegrationSaves(saved: $data);
 
@@ -193,6 +205,23 @@ class SettingsController extends Controller {
 			]
 		);
 	}//end update()
+
+	/**
+	 * The translated sentence for a refused settings save.
+	 *
+	 * @param string $rule The refusal rule.
+	 *
+	 * @return string The sentence.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	private function refusalSentence(string $rule): string {
+		if ($rule === 'woo-throughput-needs-reader-group') {
+			return $this->l10n->t('Name an existing reader group before switching the throughput report on.');
+		}
+
+		return $this->l10n->t('These settings could not be saved.');
+	}//end refusalSentence()
 
 	/**
 	 * Tell the Integrations page what this save means for each connection.

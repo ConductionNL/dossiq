@@ -31,6 +31,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Woo\WooDocumentReviews;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCA\Dossiq\Woo\WooRefusalGroundsUnavailable;
 use OCP\IUserSession;
@@ -82,6 +83,7 @@ class WOODocumentAssessmentService {
 	 * @param WooRefusalGrounds|null $refusalGrounds The settled list a cited ground is checked against.
 	 *        Built over the same settings and logger when left out, because those are its only
 	 *        collaborators and a default built from them is the instance the container wires.
+	 * @param WooDocumentReviews|null $reviews Each document's relevance (woo-review-triage); null keeps every document needing a verdict.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -89,6 +91,7 @@ class WOODocumentAssessmentService {
 		private readonly LoggerInterface $logger,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
 		?WooRefusalGrounds $refusalGrounds = null,
+		private readonly ?WooDocumentReviews $reviews = null,
 	) {
 		$this->refusalGrounds = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
@@ -317,13 +320,38 @@ class WOODocumentAssessmentService {
 			caseId: $caseId,
 		);
 
-		$outstanding = array_keys(array_diff_key($allDocs, $assessedDocIds));
+		$outstanding = $this->outstandingOf(caseId: $caseId, allDocs: $allDocs, assessedDocIds: $assessedDocIds);
 
 		return [
 			'count' => count($outstanding),
 			'documents' => $outstanding,
 		];
 	}//end getOutstanding()
+
+	/**
+	 * The documents that still hold up the decision.
+	 *
+	 * With relevance recorded (woo-review-triage), an out-of-scope document
+	 * needs no verdict, an in-scope one needs a verdict, and an unmarked one
+	 * is outstanding whatever it carries: nobody has said yet whether it is
+	 * about the request. Without the review schema every document needs a
+	 * verdict, as before, which is the stricter reading.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param array<string, bool> $allDocs The case's documents as keys.
+	 * @param array<string, bool> $assessedDocIds The assessed documents as keys.
+	 *
+	 * @return list<string> The outstanding documents.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	private function outstandingOf(string $caseId, array $allDocs, array $assessedDocIds): array {
+		if ($this->reviews === null) {
+			return array_map('strval', array_keys(array_diff_key($allDocs, $assessedDocIds)));
+		}
+
+		return $this->reviews->outstanding(caseId: $caseId, documentIds: array_keys($allDocs), assessed: $assessedDocIds);
+	}//end outstandingOf()
 
 	/**
 	 * Collect the identifiers of every document attached to a case.

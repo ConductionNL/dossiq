@@ -439,6 +439,96 @@ class SettingsServiceTest extends TestCase {
 		$this->assertStringContainsString('setSearchable', $result['message']);
 	}//end testLoadConfigurationReportsAnErrorRatherThanLettingItEscape()
 
+
+	/**
+	 * Both Woo review reports are off on a fresh install, and their keys round-trip.
+	 *
+	 * Fails today: the three keys are not in the allowlist, so getSettings()
+	 * does not report them and a save drops them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function testBothWooReportsAreOffOnAFreshInstall(): void {
+		$this->appConfig->method('getValueString')->willReturn('');
+
+		$settings = $this->service->getSettings();
+
+		$this->assertArrayHasKey('wooReviewerThroughputReport', $settings);
+		$this->assertArrayHasKey('wooCollectionPartiesReport', $settings);
+		$this->assertArrayHasKey('wooReviewerThroughputReaders', $settings);
+		$this->assertSame('', $settings['wooReviewerThroughputReport']);
+		$this->assertSame('', $settings['wooCollectionPartiesReport']);
+
+		$switches = new \OCA\Dossiq\Woo\WooReportSwitches(
+			$this->appConfig,
+			$this->createMock(\OCP\IGroupManager::class)
+		);
+		$this->assertFalse($switches->isOn(\OCA\Dossiq\Woo\WooReportSwitches::THROUGHPUT));
+		$this->assertFalse($switches->isOn(\OCA\Dossiq\Woo\WooReportSwitches::PARTIES));
+	}//end testBothWooReportsAreOffOnAFreshInstall()
+
+	/**
+	 * Switching the throughput report on without an existing reader group is refused, and nothing is written.
+	 *
+	 * Fails today: updateSettings() writes any allowlisted key without a check.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function testThroughputNeedsAReaderGroup(): void {
+		$groupManager = $this->createMock(\OCP\IGroupManager::class);
+		$groupManager->method('groupExists')->willReturnMap([['woo-leiding', true], ['nobody', false]]);
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($groupManager): object {
+				if ($id === \OCP\IGroupManager::class) {
+					return $groupManager;
+				}
+
+				throw new \RuntimeException('not wired: ' . $id);
+			}
+		);
+		$this->appConfig->method('getValueString')->willReturn('');
+		$this->appConfig->expects($this->never())->method('setValueString');
+
+		foreach ([[], ['wooReviewerThroughputReaders' => 'nobody']] as $readers) {
+			try {
+				$this->service->updateSettings(['wooReviewerThroughputReport' => 'true'] + $readers);
+				$this->fail('The throughput report went on without an existing reader group');
+			} catch (\OCA\Dossiq\Exception\RefusedException $e) {
+				$this->assertSame('woo-throughput-needs-reader-group', $e->getRule());
+				$this->assertSame(422, $e->getStatus());
+				$this->assertStringContainsString('reader group', $e->getSentence());
+			}
+		}
+	}//end testThroughputNeedsAReaderGroup()
+
+	/**
+	 * With an existing reader group the throughput report goes on, and both keys are written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function testThroughputGoesOnWithAnExistingReaderGroup(): void {
+		$groupManager = $this->createMock(\OCP\IGroupManager::class);
+		$groupManager->method('groupExists')->with('woo-leiding')->willReturn(true);
+		$this->container->method('get')->willReturn($groupManager);
+		$this->appConfig->method('getValueString')->willReturn('');
+		$written = [];
+		$this->appConfig->method('setValueString')->willReturnCallback(
+			static function (string $app, string $key, string $value) use (&$written): bool {
+				$written[$key] = $value;
+				return true;
+			}
+		);
+
+		$this->service->updateSettings(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding']);
+
+		$this->assertSame(['wooReviewerThroughputReport' => 'true', 'wooReviewerThroughputReaders' => 'woo-leiding'], $written);
+	}//end testThroughputGoesOnWithAnExistingReaderGroup()
 }//end class
 
 /**
