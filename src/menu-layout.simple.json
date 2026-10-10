@@ -140,6 +140,7 @@
 				"label": "New case",
 				"icon": "Plus",
 				"type": "open-form",
+				"formTitle": "New case",
 				"size": "normal",
 				"columns": 1,
 				"includeFields": [
@@ -162,6 +163,18 @@
 					"requester": {
 						"widget": "InitiatorPicker",
 						"label": "Requester"
+					},
+					"confidentiality": {
+						"enumLabels": {
+							"openbaar": "Public",
+								"beperkt_openbaar": "Restricted public",
+								"intern": "Internal",
+								"zaakvertrouwelijk": "Case confidential",
+								"vertrouwelijk": "Confidential",
+								"confidentieel": "Classified confidential",
+								"geheim": "Secret",
+								"zeer_geheim": "Top secret"
+						}
 					}
 				},
 				"register": "dossiq",

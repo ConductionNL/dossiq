@@ -615,6 +615,7 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
+						"formTitle": "New case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
@@ -637,6 +638,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"icon": "Plus",
@@ -1129,6 +1142,7 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
+						"formTitle": "New case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
@@ -1151,6 +1165,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"icon": "Plus",
@@ -1731,7 +1757,8 @@
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
+					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
 				"createSuccessRoute": "CaseDetail",
@@ -1897,7 +1924,8 @@
 				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
+					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
 				"createSuccessRoute": "CaseDetail",
@@ -2289,6 +2317,18 @@
 					"requester": {
 						"widget": "InitiatorPicker",
 						"label": "Requester"
+					},
+					"confidentiality": {
+						"enumLabels": {
+							"openbaar": "Public",
+								"beperkt_openbaar": "Restricted public",
+								"intern": "Internal",
+								"zaakvertrouwelijk": "Case confidential",
+								"vertrouwelijk": "Confidential",
+								"confidentieel": "Classified confidential",
+								"geheim": "Secret",
+								"zeer_geheim": "Top secret"
+						}
 					}
 				},
 				"_transitionsNote": "THE TRANSITION BUTTONS ARE GONE, AND MOVING THE CASE IS NOW A CLICK ON A STAGE. Ruben ruled on 2026-09-12: drop the transition strip and make clicking a status in the timeline widget set that status. So `actionsComponent` no longer names CaseTransitionsWidget, that component is deleted, and the `case-stages` widget carries the gesture. It is the same guarded move it always was, asked for in the same place it is shown: the widget reads OpenRegister /available-actions, dossiq answers that through CaseActionProvider off its own transition engine, and a stage no action reaches is disabled by construction rather than by a check somebody has to remember to write. The strip has been in three places now, and this is the reasoning that survived all three: the status belongs with the status, and the move belongs with the status too. Two things the strip carried have no home on this page any more, and they are named in the page `_note` rather than dropped in silence.",
@@ -2588,6 +2628,18 @@
 												"requester": {
 													"widget": "InitiatorPicker",
 													"label": "Requester"
+												},
+												"confidentiality": {
+													"enumLabels": {
+														"openbaar": "Public",
+															"beperkt_openbaar": "Restricted public",
+															"intern": "Internal",
+															"zaakvertrouwelijk": "Case confidential",
+															"vertrouwelijk": "Confidential",
+															"confidentieel": "Classified confidential",
+															"geheim": "Secret",
+															"zeer_geheim": "Top secret"
+													}
 												}
 											}
 										}
@@ -7487,6 +7539,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"createOverride": "caseCreateWithDuplicateCheck",
@@ -7779,6 +7843,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"createOverride": "caseCreateWithDuplicateCheck",
