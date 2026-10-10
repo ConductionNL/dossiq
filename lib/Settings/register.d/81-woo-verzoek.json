@@ -125,6 +125,11 @@
         "isDraft": false,
         "extensionAllowed": true,
         "extensionPeriod": "P14D",
+        "acknowledgement": {
+          "addressFields": [
+            "wooRequest.verzoekerEmail"
+          ]
+        },
         "recordImports": [
           {
             "key": "opencatalogi-woo-requests",

@@ -329,4 +329,23 @@ class CaseTypeAcknowledgementTest extends TestCase {
 			actual: $this->declaration->languageFor(caseType: ['acknowledgement' => ['language' => 'en']])
 		);
 	}//end testTheLanguageIsDutchUnlessDeclared()
+
+	/**
+	 * A case type names where its sender's address is kept; only addresses
+	 * at declared paths are read, in declared order, and a non-address is skipped.
+	 *
+	 * @return void
+	 */
+	public function testTheAddressIsReadWhereTheCaseTypeDeclaresIt(): void {
+		$caseType = ['acknowledgement' => ['addressFields' => [' request.email ', '', 'request.name', 'other', 'deep.a.b']]];
+		$case = [
+			'request' => ['email' => 'Sanne@Example.org', 'name' => 'Sanne'],
+			'other' => ['not' => 'scalar'],
+			'deep' => ['a' => ['b' => 'second@example.org']],
+		];
+
+		self::assertSame(['request.email', 'request.name', 'other', 'deep.a.b'], $this->declaration->declarationFor(caseType: $caseType)['addressFields']);
+		self::assertSame(['sanne@example.org', 'second@example.org'], $this->declaration->addressesOn(case: $case, caseType: $caseType));
+		self::assertSame([], $this->declaration->addressesOn(case: $case, caseType: []));
+	}//end testTheAddressIsReadWhereTheCaseTypeDeclaresIt()
 }//end class

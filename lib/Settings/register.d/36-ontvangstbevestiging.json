@@ -66,6 +66,15 @@
                 "default": "nl",
                 "title": "Language",
                 "description": "The language the acknowledgement is written in. Dutch unless this case type declares another."
+              },
+              "addressFields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "title": "Address fields",
+                "description": "Where on a case of this type the sender's e-mail address is kept, as dot paths (for example wooRequest.verzoekerEmail). Read before the general contact fields, so a case type that keeps its requester in its own object is still answered."
               }
             }
           },

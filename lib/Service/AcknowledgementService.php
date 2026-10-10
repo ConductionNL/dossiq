@@ -443,7 +443,10 @@ class AcknowledgementService {
 	 * @return string The address, or ''.
 	 */
 	private function addressOn(array $case): string {
-		$addresses = $this->contacts->collectAddresses(caseData: $case);
+		$addresses = array_merge(
+			$this->declaration->addressesOn(case: $case, caseType: $this->caseTypeOf(case: $case)),
+			$this->contacts->collectAddresses(caseData: $case)
+		);
 		if ($addresses !== []) {
 			return (string)reset($addresses);
 		}

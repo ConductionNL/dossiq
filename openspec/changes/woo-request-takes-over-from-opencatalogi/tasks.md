@@ -50,7 +50,7 @@ are where local stubs lie).
 
 ## 2. armed means a term runs
 
-- [ ] 2.1 `receive()` starts the case on `receivedAt`, then reads back the case and its term
+- [x] 2.1 `receive()` starts the case on `receivedAt`, then reads back the case and its term
   instance and answers `armed` only per REQ-WTO-002. On a written case without a running term it
   answers `not-armed` and writes an internal timeline entry. Without OpenRegister, the register,
   the case type or the term engine it answers `unavailable` and writes nothing (REQ-WTO-002).
@@ -60,11 +60,19 @@ are where local stubs lie).
   - Built (10 Oct): `lib/Woo/WooReceivedTerm.php` (test `tests/Unit/Woo/WooReceivedTermTest.php`) and the
     three tests above. The P28D count and Awt roll themselves are the term engine's, bound by
     `DeadlineCaseCreatedListener` from the case's `receivedAt`; the intake test plays that part.
-    Open: the row 10.8 `AcknowledgementDutyTest` check.
+    Row 10.8 done (10 Oct, below).
   - Row 10.8: `tests/Unit/Service/AcknowledgementDutyTest.php`
     `testTheAcknowledgementNamesTheStartAndTheDueDate`, on the rendered template text of a case
     written by `receive()`. It may pass already if `intake-says-when-the-term-starts` finished it;
     say which in the PR body.
+  - Row 10.8 result (10 Oct): it did NOT pass. Red first: `acknowledgement_no_address`, because a case
+    written by `receive()` keeps the requester's address only in `wooRequest.verzoekerEmail` and
+    `CaseContactDirectory` reads `email`/`initiator`/`betrokkenen`/`contacts`, none declared on the case
+    schema. Fixed generically (decision 182): the `acknowledgement` declaration takes `addressFields`
+    (`CaseTypeAcknowledgement::addressesOn()`, tried first by `AcknowledgementService`), and the Woo case
+    type declares `wooRequest.verzoekerEmail` (`specs/burger-notifications/spec.md` REQ-ACK-ADDR-001).
+    Green: `testTheAcknowledgementNamesTheStartAndTheDueDate` and
+    `CaseTypeAcknowledgementTest::testTheAddressIsReadWhereTheCaseTypeDeclaresIt`.
 
 ## 3. Parity on opencatalogi's fixtures
 
