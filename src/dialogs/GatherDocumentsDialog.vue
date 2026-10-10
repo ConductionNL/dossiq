@@ -35,6 +35,22 @@
 				}}
 			</p>
 
+			<p
+				v-if="planLoaded && custodians.length === 0"
+				class="gather-documents__error"
+				data-testid="gather-no-plan"
+				role="alert">
+				{{ t('dossiq', 'Record the search plan before collecting') }}
+			</p>
+
+			<NcSelect
+				v-else-if="custodians.length > 0"
+				v-model="custodian"
+				data-testid="gather-custodian"
+				:options="custodians"
+				:inputLabel="t('dossiq', 'Whose files are these')"
+				:clearable="false" />
+
 			<NcTextField
 				v-model="terms"
 				data-testid="gather-terms"
@@ -177,6 +193,7 @@ import { generateOcsUrl, generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 
 const PAGE_REFRESH = 'cn:page:refresh'
@@ -220,6 +237,7 @@ export default {
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcDialog,
+		NcSelect,
 		NcTextField,
 	},
 
@@ -246,6 +264,9 @@ export default {
 			refusals: [],
 			error: '',
 			busy: false,
+			custodians: [],
+			custodian: '',
+			planLoaded: false,
 		}
 	},
 
@@ -258,13 +279,18 @@ export default {
 
 		/** @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012 */
 		canSearch() {
-			return !this.busy && this.terms.trim() !== '' && this.chosen.length > 0
+			return (
+				!this.busy
+				&& this.custodians.length > 0
+				&& this.terms.trim() !== ''
+				&& this.chosen.length > 0
+			)
 		},
 	},
 
 	/** @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012 */
 	async mounted() {
-		await this.loadSources()
+		await Promise.all([this.loadSources(), this.loadPlan()])
 	},
 
 	methods: {
@@ -288,6 +314,61 @@ export default {
 				this.error =
 					error?.response?.data?.message
 					|| t('dossiq', 'The sources could not be read.')
+			}
+		},
+
+		/**
+		 * The recorded search plan: its custodians, period and terms prefill the search.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
+		 */
+		async loadPlan() {
+			try {
+				const { data } = await axios.get(
+					generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.targetCaseId)}/woo/plan`,
+					),
+				)
+				const plan = data?.recorded ? data.plan : null
+				this.custodians = (plan?.custodians ?? [])
+					.map((custodian) => String(custodian?.name ?? ''))
+					.filter(Boolean)
+				this.custodian = this.custodians[0] ?? ''
+				this.terms = this.terms || String(plan?.terms ?? '')
+				this.from = this.from || String(plan?.periodFrom ?? '')
+				this.to = this.to || String(plan?.periodTo ?? '')
+			} catch {
+				this.custodians = []
+			} finally {
+				this.planLoaded = true
+			}
+		},
+
+		/**
+		 * Store a platform search as a query someone else can re-run.
+		 *
+		 * @param {object} source The source.
+		 * @param {Array<object>} rows The rows it answered.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
+		 */
+		async recordQuery(source, rows) {
+			try {
+				await axios.post(
+					generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.targetCaseId)}/woo/collection/queries`,
+					),
+					{
+						source: source.id,
+						terms: this.searchedTerms,
+						periodFrom: this.from,
+						periodTo: this.to,
+						resultKeys: rows.map((row) => row.key),
+					},
+				)
+			} catch {
+				// The search still answered; a query that could not be stored is not a failed search.
 			}
 		},
 
@@ -429,6 +510,7 @@ export default {
 				group.rows = entries
 					.map((entry) => rowOf(source.id, entry))
 					.filter((row) => row.key !== '')
+				await this.recordQuery(source, group.rows)
 			} catch (error) {
 				group.error =
 					error?.response?.data?.message
@@ -467,6 +549,7 @@ export default {
 			if (on) {
 				this.picks.push({
 					source,
+					custodian: this.custodian,
 					key: row.key,
 					location: row.location,
 					name: row.name,
@@ -493,11 +576,14 @@ export default {
 			try {
 				const { data } = await axios.post(this.endpoint('/add'), {
 					terms: this.searchedTerms,
-					picks: this.picks.map(({ source, key, location }) => ({
-						source,
-						key,
-						location,
-					})),
+					picks: this.picks.map(
+						({ source, custodian, key, location }) => ({
+							source,
+							custodian,
+							key,
+							location,
+						}),
+					),
 				})
 				this.readResults(data, names)
 			} catch (error) {
@@ -534,7 +620,7 @@ export default {
 						result.source === pick.source && result.key === pick.key,
 				),
 			)
-			if (results.some((result) => result.status === 'added')) {
+			if (results.some((result) => result.status !== 'refused')) {
 				emit(PAGE_REFRESH, {})
 			}
 			if (refused.length === 0) {

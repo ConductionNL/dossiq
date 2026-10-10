@@ -64,15 +64,32 @@ const SOURCES = [
 	},
 ]
 
+const RECORDED_PLAN = {
+	recorded: true,
+	plan: {
+		custodians: [
+			{ name: 'Wethouder Ruimte' },
+			{ name: 'Afdeling Vergunningen' },
+		],
+		terms: 'Stationsweg',
+		periodFrom: '2025-01-01',
+		periodTo: '',
+	},
+}
+
 /**
  * Mount the dialog over the given sources.
  *
  * @param {Array<object>} sources What GET /woo/sources answers.
+ * @param {object} plan What GET /woo/plan answers.
  * @return {Promise<{wrapper: object, axios: object}>} The mounted dialog and the axios double.
  */
-async function mountDialog(sources = SOURCES) {
+async function mountDialog(sources = SOURCES, plan = RECORDED_PLAN) {
 	const axios = (await import('@nextcloud/axios')).default
 	axios.get.mockImplementation((url) => {
+		if (String(url).endsWith('/woo/plan')) {
+			return Promise.resolve({ data: plan })
+		}
 		if (String(url).endsWith('/woo/sources')) {
 			return Promise.resolve({ data: { sources } })
 		}
@@ -127,6 +144,9 @@ async function mountDialog(sources = SOURCES) {
 		return Promise.reject(new Error(`unexpected GET ${url}`))
 	})
 	axios.post.mockImplementation((url) => {
+		if (String(url).endsWith('/woo/collection/queries')) {
+			return Promise.resolve({ data: { query: { id: 'q-1' } } })
+		}
 		if (String(url).endsWith('/woo/sources/search')) {
 			return Promise.resolve({
 				data: {
@@ -164,6 +184,12 @@ async function mountDialog(sources = SOURCES) {
 					emits: ['update:modelValue'],
 					template:
 						'<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
+				},
+				NcSelect: {
+					props: ['modelValue', 'options', 'inputLabel'],
+					emits: ['update:modelValue'],
+					template:
+						'<select :aria-label="inputLabel" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="o in options" :key="o" :value="o">{{ o }}</option></select>',
 				},
 				NcCheckboxRadioSwitch: {
 					props: ['modelValue', 'disabled'],
@@ -320,8 +346,18 @@ describe('GatherDocumentsDialog', () => {
 		expect(addCall[1]).toEqual({
 			terms: 'Stationsweg',
 			picks: [
-				{ source: 'files', key: '11', location: '/Team Ruimte/notulen.pdf' },
-				{ source: 'files', key: '12', location: '/Team Verkeer/memo.pdf' },
+				{
+					source: 'files',
+					custodian: 'Wethouder Ruimte',
+					key: '11',
+					location: '/Team Ruimte/notulen.pdf',
+				},
+				{
+					source: 'files',
+					custodian: 'Afdeling Vergunningen',
+					key: '12',
+					location: '/Team Verkeer/memo.pdf',
+				},
 			],
 		})
 		expect(wrapper.find('[data-testid="gather-refusals"]').text()).toBe(
@@ -330,5 +366,42 @@ describe('GatherDocumentsDialog', () => {
 		expect(wrapper.emitted('close')).toBeUndefined()
 		const { emit } = await import('@nextcloud/event-bus')
 		expect(emit).toHaveBeenCalledWith('cn:page:refresh', {})
+	})
+	it('testAPlatformSearchIsRecordedAsAQuery', async () => {
+		const { wrapper, axios } = await mountDialog()
+		await wrapper.find('[data-testid="gather-search"]').trigger('click')
+		await flushPromises()
+
+		const stored = axios.post.mock.calls.filter(([url]) =>
+			String(url).endsWith(`/cases/${CASE_ID}/woo/collection/queries`),
+		)
+		expect(stored.map(([, body]) => body.source).sort()).toEqual([
+			'cases',
+			'files',
+		])
+		const files = stored.find(([, body]) => body.source === 'files')[1]
+		expect(files).toEqual({
+			source: 'files',
+			terms: 'Stationsweg',
+			periodFrom: '2025-01-01',
+			periodTo: '',
+			resultKeys: ['11', '12'],
+		})
+	})
+
+	it('without a recorded plan says so and does not search', async () => {
+		const { wrapper, axios } = await mountDialog(SOURCES, {
+			recorded: false,
+			plan: { custodians: [{ name: 'A' }] },
+		})
+
+		expect(wrapper.find('[data-testid="gather-no-plan"]').text()).toBe(
+			'Record the search plan before collecting',
+		)
+		await wrapper.find('[data-testid="gather-terms"]').setValue('Stationsweg')
+		expect(
+			wrapper.find('[data-testid="gather-search"]').attributes('disabled'),
+		).toBeDefined()
+		expect(axios.post).not.toHaveBeenCalled()
 	})
 })

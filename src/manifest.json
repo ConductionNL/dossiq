@@ -3877,6 +3877,19 @@
 						}
 					},
 					{
+						"id": "woo-search-plan",
+						"type": "open-modal",
+						"label": "Search plan",
+						"icon": "ClipboardTextOutline",
+						"target": "WooSearchPlanDialog",
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "woo-gather-documents",
 						"type": "open-modal",
 						"label": "Gather documents",

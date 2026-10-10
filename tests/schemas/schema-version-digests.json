@@ -1428,12 +1428,32 @@
         "digest": "c6717a0258ebeb74fddf9f8e85ed3be6efa1ed0a0c8ccbf9207140e469125593"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::informatieobject": {
-        "version": "1.3.0",
+        "version": "1.4.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::zaakinformatieobject": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooCollectionQuery": {
+        "version": "1.0.0",
+        "digest": "18010bcefd74ccddbee7957441ce93d711eb333c0cd543736066aac1b954e368"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooExclusion": {
+        "version": "1.0.0",
+        "digest": "89ded5f65e7c9600105980dc27a3b49e5651d480aaf850c3ece61fd410d1b6e1"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooRequestConfiguration": {
+        "version": "1.0.0",
+        "digest": "6bc3a9f64f217d4d61b600ff1bda540a7eb8a3c60a65eaea3dbf0eaec99c7ec7"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooSearchPlan": {
+        "version": "1.0.0",
+        "digest": "8e5bedcf5fb223da48f1d59281e3437f9ef1fa566925a0c5aa09af18db540483"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",
