@@ -215,7 +215,7 @@ class WooPublicationService {
 	 * @return array<string, mixed> The publication payload.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function buildPayload(array $case, array $decision): array {
 		$category = $this->categoryMapper->forDecision($decision);
@@ -263,8 +263,8 @@ class WooPublicationService {
 	 * @throws RuntimeException When the decision or case cannot be loaded.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 */
 	public function publish(string $caseId, string $decisionId = ''): array {
 		$availability = $this->checkAvailability();
@@ -466,7 +466,7 @@ class WooPublicationService {
 	 * @throws RuntimeException When the decision cannot be loaded.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	public function withdraw(string $decisionId, string $caseId = ''): array {
 		$availability = $this->checkAvailability();
@@ -546,7 +546,7 @@ class WooPublicationService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	private function attachDisclosableFile(string $ocRegister, string $ocSchema, string $publicationId, array $document): void {
 		$content = ($document['content'] ?? null);

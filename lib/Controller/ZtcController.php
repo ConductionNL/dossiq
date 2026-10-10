@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Zgw\ZtcCrossReferenceEnricher;
+use OCA\Dossiq\Service\Zgw\ZtcUrlValidityFilter;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -45,10 +47,7 @@ use OCP\IRequest;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -145,6 +144,21 @@ class ZtcController extends ZgwController {
 			return $response;
 		}
 
+		$data = $this->postProcessIndex(resource: $resource, data: $data);
+
+		return new JSONResponse(data: $data, statusCode: Http::STATUS_OK);
+	}//end index()
+
+	/**
+	 * Filter a page of ZTC results by datumGeldigheid, and enrich and filter each result's
+	 * cross-references.
+	 *
+	 * @param string $resource The ZGW resource name.
+	 * @param array $data The page, with its `results` list.
+	 *
+	 * @return array The processed page.
+	 */
+	private function postProcessIndex(string $resource, array $data): array {
 		// ZTC datumGeldigheid: post-filter results by date validity.
 		$dateValidity = $this->request->getParam('datumGeldigheid');
 		if ($dateValidity !== null && $dateValidity !== '') {
@@ -163,8 +177,8 @@ class ZtcController extends ZgwController {
 			}
 		}
 
-		return new JSONResponse(data: $data, statusCode: Http::STATUS_OK);
-	}//end index()
+		return $data;
+	}//end postProcessIndex()
 
 	/**
 	 * Create a new resource of the given type.
@@ -464,24 +478,7 @@ class ZtcController extends ZgwController {
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema']
 			);
-			$existingData = $this->objectToArray(row: $existing);
-			unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
-			$existingData['isDraft'] = false;
-
-			if (isset($existingData['identifier']) === true && is_int($existingData['identifier']) === true) {
-				$existingData['identifier'] = (string)$existingData['identifier'];
-			}
-
-			// Re-encode fields that are stored as JSON strings but auto-decoded
-			// by jsonSerialize. Only string-typed schema fields need re-encoding.
-			// productsOrServices is NOT in this list: it is declared as an array,
-			// so re-encoding it here wrote a string into an array property.
-			$jsonStringFields = ['referenceProcess', 'relatedCaseTypes'];
-			foreach ($jsonStringFields as $field) {
-				if (isset($existingData[$field]) === true && is_array($existingData[$field]) === true) {
-					$existingData[$field] = json_encode($existingData[$field]);
-				}
-			}
+			$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
 
 			$object = $this->zgwService->getObjectService()->saveObject(
 				register: $mappingConfig['sourceRegister'],
@@ -510,6 +507,34 @@ class ZtcController extends ZgwController {
 			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
 		}//end try
 	}//end handlePublish()
+
+	/**
+	 * The stored type as it is saved on publish: concept off, bookkeeping keys gone.
+	 *
+	 * @param array $existingData The stored type
+	 *
+	 * @return array The data to save
+	 */
+	private function publishedCopy(array $existingData): array {
+		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+		$existingData['isDraft'] = false;
+
+		if (isset($existingData['identifier']) === true && is_int($existingData['identifier']) === true) {
+			$existingData['identifier'] = (string)$existingData['identifier'];
+		}
+
+		// Re-encode fields that are stored as JSON strings but auto-decoded
+		// by jsonSerialize. Only string-typed schema fields need re-encoding.
+		// productsOrServices is NOT in this list: it is declared as an array,
+		// so re-encoding it here wrote a string into an array property.
+		foreach (['referenceProcess', 'relatedCaseTypes'] as $field) {
+			if (isset($existingData[$field]) === true && is_array($existingData[$field]) === true) {
+				$existingData[$field] = json_encode($existingData[$field]);
+			}
+		}
+
+		return $existingData;
+	}//end publishedCopy()
 
 	/**
 	 * Publish a zaaktype (set isDraft to false).
@@ -581,446 +606,12 @@ class ZtcController extends ZgwController {
 	 * @return array The enriched response data with cross-reference URLs.
 	 */
 	private function enrichCrossReferences(string $resource, array $data): array {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $data;
-		}
-
 		$baseUrl = $this->request->getServerProtocol() . '://' . $this->request->getServerHost() . '/index.php/apps/dossiq/api/zgw/catalogi/v1';
-		$uuid = $data['uuid'] ?? '';
 
-		if ($resource === 'besluittypen' && $uuid !== '') {
-			$data = $this->enrichBesluittype(
-				data: $data,
-				baseUrl: $baseUrl,
-				objectService: $objectService,
-				uuid: $uuid
-			);
-		}
-
-		if ($resource === 'zaaktypen' && $uuid !== '') {
-			$data = $this->enrichCaseType(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
-
-			// Ensure array fields default to [] instead of null.
-			$arrayFields = [
-				'deelzaaktypen',
-				'gerelateerdeZaaktypen',
-				'besluittypen',
-				'informatieobjecttypen',
-				'eigenschappen',
-				'statustypen',
-				'resultaattypen',
-				'roltypen',
-			];
-			foreach ($arrayFields as $field) {
-				if (isset($data[$field]) === false) {
-					$data[$field] = [];
-				}
-			}
-		}
-
-		return $data;
+		return (new ZtcCrossReferenceEnricher(zgwService: $this->zgwService))->enrich(resource: $resource, data: $data, baseUrl: $baseUrl);
 	}//end enrichCrossReferences()
 
-	/**
-	 * Enrich besluittype with informatieobjecttypen and zaaktypen URLs.
-	 *
-	 * Reads stored UUIDs from the documentTypes/caseTypes fields and
-	 * expands them to full ZGW URLs.
-	 *
-	 * @param array $data The response data.
-	 * @param string $baseUrl The base URL for building ZGW resource URLs.
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $uuid The besluittype UUID.
-	 *
-	 * @return array The enriched response data.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 */
-	private function enrichBesluittype(
-		array $data,
-		string $baseUrl,
-		object $objectService,
-		string $uuid,
-	): array {
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, 'besluittypen');
-		if ($mappingConfig === null) {
-			return $data;
-		}
 
-		try {
-			$object = $objectService->find(
-				id: $uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$objectData = $this->objectToArray(row: $object);
-
-			// Expand documentTypes UUIDs to informatieobjecttypen URLs.
-			$docTypes = $objectData['documentTypes'] ?? '';
-			$docTypeIds = [];
-			if (is_string($docTypes) === true && $docTypes !== '') {
-				$docTypeIds = json_decode($docTypes, true);
-			} elseif (is_array($docTypes) === true) {
-				$docTypeIds = $docTypes;
-			}
-
-			if (empty($docTypeIds) === false) {
-				$urls = [];
-				foreach ($docTypeIds as $iotUuid) {
-					if (is_string($iotUuid) === true && $iotUuid !== '') {
-						$urls[] = $baseUrl . '/informatieobjecttypen/' . $iotUuid;
-					}
-				}
-
-				$data['informatieobjecttypen'] = $urls;
-			}
-
-			// Expand caseTypes to zaaktypen URLs.
-			$caseTypes = $objectData['caseTypes'] ?? '';
-			$caseTypeIds = [];
-			if (is_string($caseTypes) === true && $caseTypes !== '') {
-				$caseTypeIds = json_decode($caseTypes, true);
-			} elseif (is_array($caseTypes) === true) {
-				$caseTypeIds = $caseTypes;
-			}
-
-			if (empty($caseTypeIds) === false) {
-				$urls = [];
-				foreach ($caseTypeIds as $ztUuid) {
-					if (is_string($ztUuid) === true && $ztUuid !== '') {
-						$urls[] = $baseUrl . '/zaaktypen/' . $ztUuid;
-					}
-				}
-
-				$data['zaaktypen'] = $urls;
-			}
-		} catch (\Throwable $e) {
-			// Proceed without enrichment.
-		}//end try
-
-		return $data;
-	}//end enrichBesluittype()
-
-	/**
-	 * Enrich zaaktype with informatieobjecttypen and besluittypen URLs.
-	 *
-	 * Queries ZIOT records to find linked informatieobjecttypen, and
-	 * queries besluittypen by caseType to find linked besluittypen.
-	 *
-	 * @param array $data The response data.
-	 * @param string $baseUrl The base URL for building ZGW resource URLs.
-	 * @param object $objectService The OpenRegister object service.
-	 * @param string $uuid The zaaktype UUID.
-	 *
-	 * @return array The enriched response data.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-	 */
-	private function enrichCaseType(
-		array $data,
-		string $baseUrl,
-		object $objectService,
-		string $uuid,
-	): array {
-		// Populate deelzaaktypen from stored subCaseTypes UUIDs.
-		$ztMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaaktypen');
-		if ($ztMapping !== null) {
-			try {
-				$object = $objectService->find(
-					id: $uuid,
-					register: $ztMapping['sourceRegister'],
-					schema: $ztMapping['sourceSchema']
-				);
-				$objectData = $this->objectToArray(row: $object);
-
-				$subCases = $objectData['subCaseTypes'] ?? [];
-				if (is_array($subCases) === true && empty($subCases) === false) {
-					// Expand each stored UUID to all ZTs with the same identifier.
-					$urls = [];
-					foreach ($subCases as $ztUuid) {
-						if (is_string($ztUuid) === false || $ztUuid === '') {
-							continue;
-						}
-
-						try {
-							$refObj = $objectService->find(
-								id: $ztUuid,
-								register: $ztMapping['sourceRegister'],
-								schema: $ztMapping['sourceSchema']
-							);
-							$refData = $this->objectToArray(row: $refObj);
-
-							$ident = $refData['identifier'] ?? '';
-
-							if ($ident !== '') {
-								$query = $objectService->buildSearchQuery(
-									requestParams: ['identifier' => $ident, '_limit' => 100],
-									register: $ztMapping['sourceRegister'],
-									schema: $ztMapping['sourceSchema']
-								);
-								$result = $objectService->searchObjectsPaginated(query: $query);
-								foreach (($result['results'] ?? []) as $match) {
-									$mData = $this->objectToArray(row: $match);
-
-									$mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
-									if ($mId !== '') {
-										$urls[] = $baseUrl . '/zaaktypen/' . $mId;
-									}
-								}
-							}
-						} catch (\Throwable $e) {
-							$urls[] = $baseUrl . '/zaaktypen/' . $ztUuid;
-						}//end try
-					}//end foreach
-
-					$urls = array_values(array_unique($urls));
-					$data['deelzaaktypen'] = $urls;
-				}//end if
-
-				// Populate besluittypen from stored decisionTypes UUIDs.
-				$decTypes = $objectData['decisionTypes'] ?? [];
-				if (is_array($decTypes) === true && empty($decTypes) === false) {
-					$urls = [];
-					foreach ($decTypes as $btUuid) {
-						if (is_string($btUuid) === true && $btUuid !== '') {
-							$urls[] = $baseUrl . '/besluittypen/' . $btUuid;
-						}
-					}
-
-					$data['besluittypen'] = $urls;
-				}
-			} catch (\Throwable $e) {
-				// Proceed without deelzaaktypen enrichment.
-			}//end try
-		}//end if
-
-		// Expand UUIDs in gerelateerdeZaaktypen to all ZTs with same identifier.
-		// Read from raw object's relatedCaseTypes (JSON-encoded string) since Twig
-		// outbound mapping cannot handle array-of-objects.
-		$relatedRaw = null;
-		if (isset($objectData) === true) {
-			$relatedRaw = $objectData['relatedCaseTypes'] ?? null;
-		}
-
-		if ($relatedRaw === null) {
-			$relatedRaw = $data['gerelateerdeZaaktypen'] ?? null;
-		}
-
-		if (is_string($relatedRaw) === true) {
-			$relatedRaw = json_decode($relatedRaw, true);
-		}
-
-		if (is_array($relatedRaw) === true
-			&& empty($relatedRaw) === false
-			&& $ztMapping !== null
-		) {
-			$expanded = [];
-			foreach ($relatedRaw as $rel) {
-				$ztRef = $rel['caseType'] ?? '';
-				if (is_string($ztRef) === false || $ztRef === '') {
-					continue;
-				}
-
-				// Already a URL — keep as-is.
-				if (str_starts_with($ztRef, 'http') === true) {
-					$expanded[] = $rel;
-					continue;
-				}
-
-				// Look up identifier, find all matching ZTs.
-				try {
-					$refObj = $objectService->find(
-						id: $ztRef,
-						register: $ztMapping['sourceRegister'],
-						schema: $ztMapping['sourceSchema']
-					);
-					$refData = $this->objectToArray(row: $refObj);
-
-					$ident = $refData['identifier'] ?? '';
-
-					if ($ident !== '') {
-						$query = $objectService->buildSearchQuery(
-							requestParams: ['identifier' => $ident, '_limit' => 100],
-							register: $ztMapping['sourceRegister'],
-							schema: $ztMapping['sourceSchema']
-						);
-						$result = $objectService->searchObjectsPaginated(query: $query);
-						foreach (($result['results'] ?? []) as $match) {
-							$mData = $this->objectToArray(row: $match);
-
-							$mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
-							if ($mId !== '') {
-								$entry = $rel;
-								$entry['caseType'] = $baseUrl . '/zaaktypen/' . $mId;
-								$expanded[] = $entry;
-							}
-						}
-					}//end if
-				} catch (\Throwable $e) {
-					$rel['caseType'] = $baseUrl . '/zaaktypen/' . $ztRef;
-					$expanded[] = $rel;
-				}//end try
-			}//end foreach
-
-			// Deduplicate by zaaktype URL.
-			$seen = [];
-			$unique = [];
-			foreach ($expanded as $entry) {
-				$ztUrl = $entry['caseType'] ?? '';
-				if (isset($seen[$ztUrl]) === false) {
-					$seen[$ztUrl] = true;
-					$unique[] = $entry;
-				}
-			}
-
-			$data['gerelateerdeZaaktypen'] = $unique;
-		}//end if
-
-		// Populate informatieobjecttypen from ZIOT records.
-		// For each ZIOT, find the referenced IOT, then find ALL IOTs with the
-		// same name (omschrijving) so filterValidUrls can select the valid ones.
-		$ziotMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'zaaktype-informatieobjecttypen');
-		$iotMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'informatieobjecttypen');
-		if ($ziotMapping !== null && $iotMapping !== null) {
-			try {
-				$query = $objectService->buildSearchQuery(
-					requestParams: ['caseType' => $uuid, '_limit' => 100],
-					register: $ziotMapping['sourceRegister'],
-					schema: $ziotMapping['sourceSchema']
-				);
-				$result = $objectService->searchObjectsPaginated(query: $query);
-
-				$iotUrls = [];
-				foreach (($result['results'] ?? []) as $ziot) {
-					$ziotData = $this->objectToArray(row: $ziot);
-
-					$iotRef = $ziotData['informatieobjecttype'] ?? '';
-					if ($iotRef === '') {
-						continue;
-					}
-
-					// Look up the IOT to get its name, then find all IOTs with that name.
-					try {
-						$iotObj = $objectService->find(
-							id: $iotRef,
-							register: $iotMapping['sourceRegister'],
-							schema: $iotMapping['sourceSchema']
-						);
-						$iotData = $this->objectToArray(row: $iotObj);
-
-						$iotName = $iotData['name'] ?? '';
-
-						if ($iotName !== '') {
-							// Find ALL IOTs with this name.
-							$iotQuery = $objectService->buildSearchQuery(
-								requestParams: ['name' => $iotName, '_limit' => 100],
-								register: $iotMapping['sourceRegister'],
-								schema: $iotMapping['sourceSchema']
-							);
-							$iotResult = $objectService->searchObjectsPaginated(query: $iotQuery);
-							foreach (($iotResult['results'] ?? []) as $matchingIot) {
-								$mData = $this->objectToArray(row: $matchingIot);
-
-								$mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
-								if ($mId !== '') {
-									$iotUrls[] = $baseUrl . '/informatieobjecttypen/' . $mId;
-								}
-							}
-						}//end if
-					} catch (\Throwable $e) {
-						// If IOT lookup fails, fall back to direct UUID.
-						$iotUrls[] = $baseUrl . '/informatieobjecttypen/' . $iotRef;
-					}//end try
-				}//end foreach
-
-				// Deduplicate URLs.
-				$iotUrls = array_values(array_unique($iotUrls));
-				if (empty($iotUrls) === false) {
-					$data['informatieobjecttypen'] = $iotUrls;
-				}
-			} catch (\Throwable $e) {
-				// Proceed without ZIOT enrichment.
-			}//end try
-		}//end if
-
-		// Fallback: populate besluittypen from BT records with caseType = this UUID.
-		// Only if not already populated from stored decisionTypes.
-		$btMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, 'besluittypen');
-		if ($btMapping !== null
-			&& (isset($data['besluittypen']) === false || empty($data['besluittypen']) === true)
-		) {
-			try {
-				$query = $objectService->buildSearchQuery(
-					requestParams: ['caseType' => $uuid, '_limit' => 100],
-					register: $btMapping['sourceRegister'],
-					schema: $btMapping['sourceSchema']
-				);
-				$result = $objectService->searchObjectsPaginated(query: $query);
-
-				$btUrls = [];
-				foreach (($result['results'] ?? []) as $bt) {
-					$btData = $this->objectToArray(row: $bt);
-
-					$btUuid = $btData['id'] ?? ($btData['@self']['id'] ?? '');
-					if ($btUuid !== '') {
-						$btUrls[] = $baseUrl . '/besluittypen/' . $btUuid;
-					}
-				}
-
-				if (empty($btUrls) === false) {
-					$data['besluittypen'] = $btUrls;
-				}
-			} catch (\Throwable $e) {
-				// Proceed without BT enrichment.
-			}//end try
-		}//end if
-
-		// Populate eigenschappen, statustypen, resultaattypen, roltypen
-		// by searching for sub-resources with caseType = this zaaktype UUID.
-		$subResourceTypes = [
-			'eigenschappen' => 'eigenschappen',
-			'statustypen' => 'statustypen',
-			'resultaattypen' => 'resultaattypen',
-			'roltypen' => 'roltypen',
-		];
-		foreach ($subResourceTypes as $zgwField => $resourceName) {
-			$subMapping = $this->zgwService->loadMappingConfig(self::ZGW_API, $resourceName);
-			if ($subMapping === null) {
-				continue;
-			}
-
-			try {
-				$query = $objectService->buildSearchQuery(
-					requestParams: ['caseType' => $uuid, '_limit' => 100],
-					register: $subMapping['sourceRegister'],
-					schema: $subMapping['sourceSchema']
-				);
-				$result = $objectService->searchObjectsPaginated(query: $query);
-
-				$urls = [];
-				foreach (($result['results'] ?? []) as $sub) {
-					$subData = $this->objectToArray(row: $sub);
-
-					$subUuid = $subData['id'] ?? ($subData['@self']['id'] ?? '');
-					if ($subUuid !== '') {
-						$urls[] = $baseUrl . '/' . $resourceName . '/' . $subUuid;
-					}
-				}
-
-				if (empty($urls) === false) {
-					$data[$zgwField] = $urls;
-				}
-			} catch (\Throwable $e) {
-				// Proceed without sub-resource enrichment.
-			}//end try
-		}//end foreach
-
-		return $data;
-	}//end enrichZaaktype()
 
 	/**
 	 * Filter a list of ZTC results by datumGeldigheid (date validity).
@@ -1063,131 +654,15 @@ class ZtcController extends ZgwController {
 	 * @param array $data The outbound-mapped response data.
 	 *
 	 * @return array The filtered response data.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 */
 	private function filterValidUrls(string $resource, array $data): array {
-		$fieldConfigs = self::URL_FILTER_FIELDS[$resource] ?? [];
-		if (empty($fieldConfigs) === true || $this->zgwService->getObjectService() === null) {
-			return $data;
-		}
-
-		$today = date('Y-m-d');
-
-		foreach ($fieldConfigs as $field => $config) {
-			if (isset($data[$field]) === false || is_array($data[$field]) === false) {
-				continue;
-			}
-
-			$schemaKey = $config['schemaKey'];
-			$nested = $config['nested'];
-
-			$filtered = [];
-			foreach ($data[$field] as $item) {
-				if ($nested === true) {
-					// GerelateerdeZaaktypen: array of objects with 'caseType' URL field.
-					$url = $item['caseType'] ?? '';
-					if ($this->isUrlValid(url: $url, schemaKey: $schemaKey, today: $today) === true) {
-						$filtered[] = $item;
-					}
-				}
-
-				if ($nested === false
-					&& is_string($item) === true
-					&& $this->isUrlValid(url: $item, schemaKey: $schemaKey, today: $today) === true
-				) {
-					$filtered[] = $item;
-				}
-			}
-
-			$data[$field] = $filtered;
-		}//end foreach
-
-		return $data;
+		return (new ZtcUrlValidityFilter(zgwService: $this->zgwService))->filter(
+			fieldConfigs: self::URL_FILTER_FIELDS[$resource] ?? [],
+			data: $data,
+			today: date('Y-m-d')
+		);
 	}//end filterValidUrls()
 
-	/**
-	 * Check if a ZGW URL points to a valid, published, and currently active object.
-	 *
-	 * Uses the mapping config's sourceRegister and sourceSchema to look up the object.
-	 * The schemaKey maps to a ZGW resource name for which we load its mapping config.
-	 *
-	 * @param string $url The URL to validate.
-	 * @param string $schemaKey The settings config key identifying the target schema.
-	 * @param string $today Today's date in Y-m-d format.
-	 *
-	 * @return bool True if the referenced object exists, is published, and is date-valid.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 */
-	private function isUrlValid(string $url, string $schemaKey, string $today): bool {
-		if (empty($url) === true) {
-			return false;
-		}
-
-		// Extract UUID from URL.
-		if (preg_match(
-			'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-			$url,
-			$matches
-		) !== 1
-		) {
-			return false;
-		}
-
-		$uuid = $matches[1];
-
-		try {
-			// Map schema config key to ZGW resource name for mapping lookup.
-			$resourceMap = [
-				'document_type_schema' => 'informatieobjecttypen',
-				'decision_type_schema' => 'besluittypen',
-				'case_type_schema' => 'zaaktypen',
-			];
-
-			$targetResource = $resourceMap[$schemaKey] ?? null;
-			if ($targetResource === null) {
-				return true;
-			}
-
-			$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $targetResource);
-			if ($mappingConfig === null) {
-				return true;
-			}
-
-			$object = $this->zgwService->getObjectService()->find(
-				id: $uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-
-			$objectData = $this->objectToArray(row: $object);
-
-			// Must be published (isDraft=false / concept=false).
-			$isDraft = $objectData['isDraft'] ?? ($objectData['draft'] ?? true);
-			if ($isDraft === true || $isDraft === 'true' || $isDraft === '1' || $isDraft === 1) {
-				return false;
-			}
-
-			// Check date validity: beginGeldigheid <= today.
-			$start = $objectData['validFrom'] ?? ($objectData['startValidity'] ?? null);
-			if ($start !== null && $start !== '' && $start > $today) {
-				return false;
-			}
-
-			// Check date validity: eindeGeldigheid >= today (or no end date).
-			$end = $objectData['validUntil'] ?? ($objectData['endValidity'] ?? null);
-			if ($end !== null && $end !== '' && $end < $today) {
-				return false;
-			}
-
-			return true;
-		} catch (\Throwable $e) {
-			// If we can't look up the object, exclude the URL.
-			return false;
-		}//end try
-	}//end isUrlValid()
 
 	/**
 	 * List audit trail entries for a resource.
@@ -1281,8 +756,31 @@ class ZtcController extends ZgwController {
 		}
 
 		try {
+			$iotUuid = $this->findIotUuidByOmschrijving(objectService: $objectService, iotMapping: $iotMapping, omschrijving: $iotValue);
+			if ($iotUuid !== '') {
+				$this->zgwService->updateCachedBodyField('informatieobjecttype', $iotUuid);
+			}
+		} catch (\Throwable $e) {
+			$this->zgwService->getLogger()->debug(
+				'ztc-010m: Failed to resolve IOT by omschrijving: ' . $e->getMessage()
+			);
+		}//end try
+	}//end resolveIotByOmschrijving()
+
+	/**
+	 * The uuid of the informatieobjecttype with this omschrijving, by name and else by full text.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param array $iotMapping The informatieobjecttypen mapping.
+	 * @param string $omschrijving The omschrijving.
+	 *
+	 * @return string The uuid, or '' when nothing matches.
+	 */
+	private function findIotUuidByOmschrijving(object $objectService, array $iotMapping, string $omschrijving): string {
+		$result = ['total' => 0];
+		foreach ([['name' => $omschrijving, '_limit' => 1], ['_search' => $omschrijving, '_limit' => 1]] as $params) {
 			$query = $objectService->buildSearchQuery(
-				requestParams: ['name' => $iotValue, '_limit' => 1],
+				requestParams: $params,
 				register: $iotMapping['sourceRegister'],
 				schema: $iotMapping['sourceSchema']
 			);
@@ -1291,34 +789,17 @@ class ZtcController extends ZgwController {
 				_rbac: false,
 				_multitenancy: false
 			);
-
-			if (($result['total'] ?? 0) === 0) {
-				// Fallback: full-text search.
-				$query = $objectService->buildSearchQuery(
-					requestParams: ['_search' => $iotValue, '_limit' => 1],
-					register: $iotMapping['sourceRegister'],
-					schema: $iotMapping['sourceSchema']
-				);
-				$result = $objectService->searchObjectsPaginated(
-					query: $query,
-					_rbac: false,
-					_multitenancy: false
-				);
+			if (($result['total'] ?? 0) !== 0) {
+				break;
 			}
+		}
 
-			if (($result['total'] ?? 0) > 0) {
-				$iot = $result['results'][0];
-				$iotData = $this->objectToArray(row: $iot);
+		if (($result['total'] ?? 0) <= 0) {
+			return '';
+		}
 
-				$iotUuid = $iotData['id'] ?? ($iotData['@self']['id'] ?? '');
-				if ($iotUuid !== '') {
-					$this->zgwService->updateCachedBodyField('informatieobjecttype', $iotUuid);
-				}
-			}
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->debug(
-				'ztc-010m: Failed to resolve IOT by omschrijving: ' . $e->getMessage()
-			);
-		}//end try
-	}//end resolveIotByOmschrijving()
+		$iotData = $this->objectToArray(row: $result['results'][0]);
+
+		return $iotData['id'] ?? ($iotData['@self']['id'] ?? '');
+	}//end findIotUuidByOmschrijving()
 }//end class

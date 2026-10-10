@@ -1,5 +1,5 @@
 {
-  "_source": "openspec/changes/woo-refusal-grounds-list/design.md D-2, section 2 (decision 133, approved by Ruben 9 Oct 2026). Copied by hand from the table; the seed test compares the register fragment against this file.",
+  "_source": "openspec/changes/archive/2026-10-10-woo-refusal-grounds-list/design.md D-2, section 2 (decision 133, approved by Ruben 9 Oct 2026). Copied by hand from the table; the seed test compares the register fragment against this file.",
   "grounds": [
     {
       "code": "5.1",
