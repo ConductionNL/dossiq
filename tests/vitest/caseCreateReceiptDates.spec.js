@@ -21,6 +21,8 @@ import { describe, expect, it } from 'vitest'
 import wooFragment from '../../lib/Settings/register.d/81-woo-verzoek.json'
 import wooTemplate from '../../lib/Settings/templates/woo-verzoek.json'
 import manifest from '../../src/manifest.json'
+import menuLayout from '../../src/menu-layout.json'
+import simpleMenuLayout from '../../src/menu-layout.simple.json'
 import { caseCreateFormProps } from '../../src/utils/caseCreateForm.js'
 
 /** The page whose form edits an existing case rather than creating one. */
@@ -99,6 +101,23 @@ describe('the create forms leave the receipt to dossiq', () => {
 			.filter((form) => form.includeFields.includes('startDate'))
 			.map((form) => form.where)
 		expect(asking).toEqual([])
+	})
+
+	it('asks for no start date on a New case form a menu layout declares', () => {
+		const navForms = [menuLayout, simpleMenuLayout].flatMap((layout) =>
+			collect(
+				layout,
+				(node) =>
+					node.type === 'open-form'
+					&& Array.isArray(node.includeFields)
+					&& node.includeFields.includes('caseType'),
+			),
+		)
+		// The simple profile's sidebar button; a walk finding none checks nothing.
+		expect(navForms.length).toBeGreaterThanOrEqual(1)
+		for (const form of navForms) {
+			expect(form.includeFields).not.toContain('startDate')
+		}
 	})
 
 	it('asks for no start date on the forms configured from JS', () => {
