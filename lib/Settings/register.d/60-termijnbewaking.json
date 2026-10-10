@@ -16,7 +16,7 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.3.1",
+        "version": "1.4.0",
         "searchable": false,
         "x-schema-org": "schema:DefinedTerm",
         "title": "Term definition",
@@ -40,6 +40,28 @@
             "title": "Legal basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'Wabo 3.9')",
             "maxLength": 255
+          },
+          "legalBasisSources": {
+            "type": "array",
+            "title": "Sources",
+            "description": "Where the legal basis is written: each entry names the article and the address of the official text, so anyone can check the term against the law. Empty for a service norm, which no law sets.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "article": {
+                  "type": "string",
+                  "title": "Article",
+                  "description": "The article and paragraph, e.g. 'Awb art. 9:11 lid 1'",
+                  "maxLength": 500
+                },
+                "url": {
+                  "type": "string",
+                  "title": "Source address",
+                  "description": "The address of the official text, e.g. on wetten.overheid.nl",
+                  "maxLength": 2048
+                }
+              }
+            }
           },
           "standardDurationDays": {
             "type": "integer",
