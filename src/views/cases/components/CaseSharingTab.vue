@@ -210,7 +210,7 @@ export default {
 	 * Load the three surfaces this tab owns: the access links, the partner
 	 * shares and the federated shares, plus what the dialogs need to offer.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
 	mounted() {
 		this.loadShares()
@@ -253,7 +253,7 @@ export default {
 		/**
 		 * Load every access link on this case, each with its state.
 		 *
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 		 */
 		async loadLinks() {
 			if (!this.objectId) {
@@ -287,7 +287,7 @@ export default {
 		 * Mint a link and show the handler the address to send.
 		 *
 		 * @param {object} payload the link payload from CreateAccessLinkDialog.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		async createLink(payload) {
 			try {
@@ -315,7 +315,7 @@ export default {
 		 * created it, so the refusal is shown rather than hidden.
 		 *
 		 * @param {object} link the link row.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		async revokeLink(link) {
 			try {
@@ -339,7 +339,7 @@ export default {
 		 * Switch a link off, or back on.
 		 *
 		 * @param {object} link the link row.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		async pauseLink(link) {
 			try {
@@ -362,7 +362,7 @@ export default {
 		 * Show the handler what the holder of this link reads.
 		 *
 		 * @param {object} link the link row.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 		 */
 		async previewLink(link) {
 			try {

@@ -482,7 +482,7 @@ class PortalContributionProviderTest extends TestCase {
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
 		$this->assertSame(
-			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'proposeCaseChange', 'startWooVerzoek', 'startWooVerzoekAlgemeen', 'changePermitPlate'],
+			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'proposeCaseChange', 'startWooVerzoek', 'startWooVerzoekAlgemeen', 'changePermitPlate', 'beantwoordVraag'],
 			$actionIds
 		);
 	}

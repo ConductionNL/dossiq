@@ -385,6 +385,13 @@ programme and the reason wave 1 goes first.
       decision, which routed the same surfaces through the NC Forms leaf; say
       so explicitly in that change rather than leaving two live answers.
 
+      **State 2026-10-10.** Mapped field by field in its own change,
+      `inspection-checklists-onto-task`. The grade moves from `mechanics only`
+      to partial, run only: the run maps onto `Task`, while the template and
+      its typed items (Ja, Nee, Niet van toepassing, a photo per question) do
+      not fit `Task.checklist`, which holds a checked box and nothing else.
+      Five decisions are open there (Q-dossiq-L5-3).
+
 ## 4. Wave 3 — the independent clusters
 
 Each stands alone. Six already have a dossiq change that stalled; those are
@@ -407,6 +414,12 @@ continued, not replaced.
       wait on that change's task 6.3, a person's dry run on the dev instance
       (Q-dossiq-L5-1); the two onboarding files wait on the `skipped` mapping
       of `remove-casetask` task 7.1 (Q-dossiq-L5-2).
+
+      **Later the same day.** Both questions are answered. The stack
+      dossiq#3575, #3576 and #3577 builds tenancy 6.5 to 6.11, 6.15, 6.16,
+      step 5 and remove-casetask 7.1. On its head gate 23 counts no
+      `Tenant*.php` file. Open after it lands: tenancy 6.4, held for the
+      next release.
 - [ ] 4.2 **Documents** onto `File` + the files leaf (7 schemas, including
       `usageRights`, which is ZGW `gebruiksrechten` and belongs here rather
       than with access control). Existing

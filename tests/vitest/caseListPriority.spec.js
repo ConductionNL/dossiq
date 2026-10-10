@@ -22,7 +22,7 @@
  * `lib/Settings/dossiq_register.json`, which is the declaration, and
  * `CasePriorityDeclarationTest` pins the PHP copy to the same file.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 import { describe, expect, it, vi } from 'vitest'
 import register from '../../lib/Settings/dossiq_register.json'
