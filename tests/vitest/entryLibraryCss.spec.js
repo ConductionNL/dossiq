@@ -11,7 +11,7 @@
  * without its CSS: the channel header read "Notifications Bundle these" on
  * one line, with no borders and no stacking.
  *
- * @spec openspec/changes/r4-tour-menu-labels-and-settings-styles/specs/personal-settings-surface/spec.md
+ * @spec openspec/specs/personal-settings-surface/spec.md
  */
 
 import fs from 'fs'

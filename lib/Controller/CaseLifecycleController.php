@@ -317,7 +317,13 @@ class CaseLifecycleController extends Controller {
 				['exception' => $e->getMessage(), 'caseId' => $caseId],
 			);
 
-			return new JSONResponse(['error' => 'Could not change the case'], Http::STATUS_INTERNAL_SERVER_ERROR);
+			// `code` is what the page translates (`change_failed`); `error` is
+			// the English fallback, worded as the page's own msgid so a page
+			// that has no mapping for the code still shows a known sentence.
+			return new JSONResponse(
+				['error' => 'The case could not be changed.', 'code' => 'change_failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
 		}//end try
 	}//end guarded()
 }//end class

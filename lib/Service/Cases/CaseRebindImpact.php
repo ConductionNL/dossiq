@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 /**
  * Dropped, ported and required: one case onto one target case type.
  *
- * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindImpact {
 
@@ -81,7 +81,7 @@ class CaseRebindImpact {
 	 *
 	 * @throws RefusedException When a remap names an answer or a field that does not exist, is taken, or does not fit.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function compute(
 		array $case,
@@ -239,7 +239,7 @@ class CaseRebindImpact {
 	 *
 	 * @return array<string, mixed> The case, with `properties` as the register's list.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function apply(array $case, array $impact): array {
 		$entries = [];

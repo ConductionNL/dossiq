@@ -20,7 +20,7 @@
 // a themed install repoints one token and every badge follows. `statusColour.js`
 // resolves these names for the whole app; nothing here defines a colour.
 //
-// @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+// @spec openspec/specs/case-priority/spec.md
 
 import { translate as t } from '@nextcloud/l10n'
 
@@ -53,7 +53,7 @@ export const PRIORITY_COLOURS = {
  * @return {string} A name from the NL Design System palette; grey when the
  *   value is not one the schema declares.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 export function priorityColour(priority) {
 	return PRIORITY_COLOURS[String(priority ?? '')] || 'grey'
@@ -65,7 +65,7 @@ export function priorityColour(priority) {
  * @param {unknown} priority The stored `case.priority`.
  * @return {number} The order, 0 when the value is not one the schema declares.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 export function priorityOrder(priority) {
 	return PRIORITY_ORDER[String(priority ?? '')] || 0
@@ -82,7 +82,7 @@ export function priorityOrder(priority) {
  * @return {string} The translated label, or the raw value when it is not one
  *   the schema declares.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 export function priorityLabel(priority) {
 	switch (String(priority ?? '')) {
