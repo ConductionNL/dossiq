@@ -50,7 +50,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+ * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 
 declare(strict_types=1);
@@ -66,7 +66,7 @@ use Throwable;
 /**
  * Opens a case for a routed channel message, or refuses it in writing.
  *
- * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+ * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 class ChannelIntake {
 
@@ -122,7 +122,7 @@ class ChannelIntake {
 	 *
 	 * @return boolean True when it names this app's case schema.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function isForACase(string $targetSchema): bool {
 		$target = strtolower(trim($targetSchema));
@@ -144,7 +144,7 @@ class ChannelIntake {
 	 *
 	 * @return string The case id, or '' when no case was opened.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function caseFor(array $message, array $targetPayload, string $ruleName = ''): string {
 		$channel = trim((string)($message['channelId'] ?? ''));
@@ -236,7 +236,7 @@ class ChannelIntake {
 	 *
 	 * @return string The new case's id, or '' when nothing was written.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	private function write(string $caseTypeId, array $message, array $payload): string {
 		$objectService = $this->settingsService->getObjectService();
@@ -350,7 +350,7 @@ class ChannelIntake {
 	 *
 	 * @return string The case type id, or '' when it names none or none resolves.
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	private function caseTypeIdIn(array $payload): string {
 		$caseTypeId = trim((string)($payload['caseType'] ?? ''));
@@ -423,7 +423,7 @@ class ChannelIntake {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	private function refuse(string $channel, string $externalId, array $message, string $reason): void {
 		$this->logger->warning(
