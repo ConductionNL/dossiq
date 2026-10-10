@@ -28,6 +28,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import { registerCaseSections } from './components/case/registerCaseSections.js'
 import appIcons from './icons.js'
+import { OFFLINE_CHECKLIST_CONFIG } from './integrations/offlineChecklistConfig.js'
 import logger from './logger.js'
 import bundledManifest from './manifest.json'
 import menuLayoutFull from './menu-layout.json'
@@ -134,9 +135,10 @@ function tryLoadTranslations() {
 // `registerIntegration()` call — would collide with that existing entry and
 // `register()` throws synchronously in dev, aborting this whole script before
 // the app ever mounts. Unregister the generic entry first so dossiq's mapping
-// always wins regardless of bootstrap order. The mapping mirrors
-// `DailySyncService` exactly (fieldInspection / inspectionChecklist /
-// checklistResult, filtered by inspectorRef + scheduledAt).
+// always wins regardless of bootstrap order. The mapping lives in
+// `src/integrations/offlineChecklistConfig.js`: planned items from
+// fieldInspection, templates from inspectionChecklistTemplate, and each
+// finished run replayed to the case's inspection result endpoint.
 //
 // @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
 const sharedIntegrationRegistry = getSharedRegistry()
@@ -145,21 +147,7 @@ if (sharedIntegrationRegistry.has('field-inspection')) {
 }
 registerIntegration({
 	...fieldInspectionIntegration,
-	offlineConfig: {
-		// Schema holding today's planned inspections.
-		plannedSchema: 'fieldInspection',
-		// Schema holding the checklist templates referenced by planned items.
-		referenceSchema: 'inspectionChecklist',
-		// Property on a planned item that references its checklist template.
-		templateRefField: 'checklistTemplateRef',
-		// Schema the completed checklist result is written back to.
-		resultSchema: 'checklistResult',
-		// Planning filter: assignee uid property + the scheduled-date field.
-		assigneeField: 'inspectorRef',
-		dateField: 'scheduledAt',
-		// Property on a planned item used as its display title.
-		titleField: 'caseRef',
-	},
+	offlineConfig: OFFLINE_CHECKLIST_CONFIG,
 })
 
 // Apply ADR-037 manifest fragments before routes/app consume the manifest.

@@ -65,14 +65,24 @@ delta specs and validates strictly.
         the updated controller test and `inspectionStore.spec.js`; e2e: two
         new tests in `tests/e2e/vth-inspection-result-authz.spec.ts`, whose
         fixture now seeds a template (written, live pass per decision 139).
-  - [ ] 4.2b The offline field-inspection leaf (nextcloud-vue builtin,
-        configured in `src/main.js`) replays results as object creates on
-        `checklistResult` and reads `inspectionChecklist` with a flat
-        `items[].questionId` shape. It needs a nextcloud-vue change (decision
-        156: build it there): read items from template sections, and replay a
-        finished checklist to a configured endpoint (dossiq's
-        `POST /api/vth/cases/{id}/inspection-result`) instead of an object
-        create. Then repoint `referenceSchema` and drop `checklistResult`.
+  - [ ] 4.2b The offline checklist leaf (nextcloud-vue builtin `field-inspection`).
+        Built, ticks when the nextcloud-vue release ships and dossiq pins it.
+        nextcloud-vue ConductionNL/nextcloud-vue#1454 (change
+        `offline-checklist-reads-sections-and-replays-to-an-endpoint`):
+        `normaliseChecklistTemplate` reads sectioned templates through config,
+        `buildChecklistSubmission` replays a finished run as one POST to a
+        configured `resultEndpoint`. dossiq: the config moved to
+        `src/integrations/offlineChecklistConfig.js` (template schema,
+        sections, `id`/`label`/`responseType`, photo gate `altijd`, endpoint
+        `POST /api/vth/cases/{caseRef}/inspection-result` with `checklistId`
+        and `inspection`, no `resultSchema`), pinned against the register,
+        routes, controller and run service by
+        `tests/vitest/offlineChecklistConfig.spec.js`.
+        `FoldInspectionChecklistTemplates` also repoints
+        `fieldInspection.checklistTemplateRef` from a folded source to its
+        template, since the leaf finds the cached template by id
+        (`testPlannedItemsNamingAFoldedSourceAreRepointed`). Open: bump
+        `@conduction/nextcloud-vue` to the release carrying #1454.
   - [ ] 4.3 Portal inspector on OpenRegister's portal task seam: external
         runs as `performerType: external` tasks; a dossiq endpoint action
         completes one after checking the stored party reference.

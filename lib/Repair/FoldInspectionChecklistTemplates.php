@@ -10,6 +10,11 @@
  * run creates nothing. A stack C checklist naming an item row that cannot be
  * read is reported and left alone, never folded half.
  *
+ * Planned items (`fieldInspection.checklistTemplateRef`) that still name a
+ * folded source are repointed at its template, so the offline leaf finds the
+ * template it caches by id (task 4.2b). A planned item already pointing at a
+ * template is left as it is.
+ *
  * The sources are not deleted here: step 5 retires their schemas one release
  * later.
  *
@@ -56,6 +61,20 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 	 * @var integer
 	 */
 	private const LIMIT = 1000;
+
+	/**
+	 * The planned items the offline leaf downloads.
+	 *
+	 * @var string
+	 */
+	private const PLANNED_SCHEMA = 'fieldInspection';
+
+	/**
+	 * The property on a planned item naming its checklist template.
+	 *
+	 * @var string
+	 */
+	private const PLANNED_REF = 'checklistTemplateRef';
 
 	/**
 	 * Maps every source shape onto the template.
@@ -105,7 +124,7 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 			return;
 		}
 
-		$counts = ['folded' => 0, 'already' => 0, 'unreadable' => 0];
+		$counts = ['folded' => 0, 'already' => 0, 'unreadable' => 0, 'repointed' => 0];
 		$this->runAsSystemIfAvailable(
 			objectService: $objects,
 			operation: function () use ($objects, $register, &$counts, $output): void {
@@ -113,15 +132,18 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 				foreach ($this->candidates(objects: $objects, register: $register) as $candidate) {
 					$this->foldOne(objects: $objects, register: $register, candidate: $candidate, folded: $folded, counts: $counts, output: $output);
 				}
+
+				$counts['repointed'] = $this->repointPlannedItems(objects: $objects, register: $register, output: $output);
 			}
 		);
 
 		$output->info(
 			sprintf(
-				'Checklist template fold: %d folded, %d already folded, %d left for a person to look at.',
+				'Checklist template fold: %d folded, %d already folded, %d left for a person to look at, %d planned items repointed.',
 				$counts['folded'],
 				$counts['already'],
-				$counts['unreadable']
+				$counts['unreadable'],
+				$counts['repointed']
 			)
 		);
 	}//end run()
@@ -190,6 +212,63 @@ class FoldInspectionChecklistTemplates implements IRepairStep {
 		$folded[$ref] = true;
 		$counts['folded']++;
 	}//end foldOne()
+
+	/**
+	 * Point every planned item that names a folded source at its template.
+	 *
+	 * @param object  $objects  The ObjectService.
+	 * @param string  $register The register id.
+	 * @param IOutput $output   The output.
+	 *
+	 * @return integer How many planned items were repointed.
+	 */
+	private function repointPlannedItems(object $objects, string $register, IOutput $output): int {
+		$targets = $this->templatesBySource(objects: $objects, register: $register);
+		if ($targets === []) {
+			return 0;
+		}
+
+		$repointed = 0;
+		foreach ($this->read(objects: $objects, register: $register, schema: self::PLANNED_SCHEMA) as $item) {
+			$ref = (string)($item[self::PLANNED_REF] ?? '');
+			$uuid = (string)($item['@self']['id'] ?? $item['id'] ?? '');
+			if (isset($targets[$ref]) === false || $uuid === '') {
+				continue;
+			}
+
+			$item[self::PLANNED_REF] = $targets[$ref];
+			unset($item['@self']);
+			try {
+				$this->saveObjectAsArray(objectService: $objects, register: $register, schema: self::PLANNED_SCHEMA, object: $item, uuid: $uuid);
+				$repointed++;
+			} catch (Throwable $e) {
+				$output->warning(sprintf('Planned item %s still names checklist %s: %s', $uuid, $ref, $e->getMessage()));
+			}
+		}
+
+		return $repointed;
+	}//end repointPlannedItems()
+
+	/**
+	 * Each folded source's uuid with the template it became.
+	 *
+	 * @param object $objects  The ObjectService.
+	 * @param string $register The register id.
+	 *
+	 * @return array<string, string> Source uuid => template uuid.
+	 */
+	private function templatesBySource(object $objects, string $register): array {
+		$targets = [];
+		foreach ($this->read(objects: $objects, register: $register, schema: InspectionTemplateMapper::SCHEMA) as $template) {
+			$templateId = (string)($template['@self']['id'] ?? $template['id'] ?? '');
+			$parts = explode('/', (string)($template['legacyRef'] ?? ''), 2);
+			if ($templateId !== '' && count($parts) === 2 && $parts[1] !== '') {
+				$targets[$parts[1]] = $templateId;
+			}
+		}
+
+		return $targets;
+	}//end templatesBySource()
 
 	/**
 	 * The legacy references already on a template.

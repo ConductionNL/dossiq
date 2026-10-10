@@ -73,6 +73,40 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 	}//end testEachSourceFoldsOnceAndAHalfReadableOneIsLeft()
 
 	/**
+	 * A planned item naming a folded source is repointed at its template, once.
+	 *
+	 * @return void
+	 */
+	public function testPlannedItemsNamingAFoldedSourceAreRepointed(): void {
+		$store = self::store(
+			[
+				'inspectionChecklist' => [['@self' => ['id' => 'c-1'], 'name' => 'Brand', 'active' => true, 'items' => []]],
+				'inspectionChecklistTemplate' => [],
+				'fieldInspection' => [
+					['@self' => ['id' => 'p-1'], 'caseRef' => 'case-1', 'checklistTemplateRef' => 'c-1'],
+					['@self' => ['id' => 'p-2'], 'caseRef' => 'case-2', 'checklistTemplateRef' => 'unknown'],
+				],
+			]
+		);
+		$step = new FoldInspectionChecklistTemplates($this->settings(store: $store), $this->createMock(LoggerInterface::class));
+
+		$first = $this->createMock(IOutput::class);
+		$first->expects($this->once())->method('info')->with($this->stringContains('1 planned items repointed'));
+		$step->run($first);
+
+		$this->assertSame(['p-1'], array_keys($store->saved));
+		$this->assertSame('tpl-1', $store->saved['p-1']['checklistTemplateRef']);
+		$this->assertSame('case-1', $store->saved['p-1']['caseRef']);
+		$this->assertArrayNotHasKey('@self', $store->saved['p-1']);
+
+		// The saved planned item now names the template, so a second run repoints nothing.
+		$store->rows['fieldInspection'][0]['checklistTemplateRef'] = 'tpl-1';
+		$second = $this->createMock(IOutput::class);
+		$second->expects($this->once())->method('info')->with($this->stringContains('0 planned items repointed'));
+		$step->run($second);
+	}//end testPlannedItemsNamingAFoldedSourceAreRepointed()
+
+	/**
 	 * Without OpenRegister the step says so and does nothing.
 	 *
 	 * @return void
@@ -119,6 +153,13 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 			}//end __construct()
 
 			/**
+			 * Updates by uuid, in order.
+			 *
+			 * @var array<string, array<string, mixed>>
+			 */
+			public array $saved = [];
+
+			/**
 			 * Run the work.
 			 *
 			 * @param callable $operation The work.
@@ -152,12 +193,18 @@ final class FoldInspectionChecklistTemplatesTest extends TestCase {
 			 * @param array<string, mixed> $object   The object.
 			 * @param int|string           $register The register.
 			 * @param int|string           $schema   The schema slug.
-			 * @param string|null          $uuid     Ignored.
+			 * @param string|null          $uuid     The uuid of an update.
 			 *
 			 * @return array<string, mixed> The object.
 			 */
 			public function saveObject(array $object, int|string $register, int|string $schema, ?string $uuid = null): array {
-				unset($register, $uuid);
+				unset($register);
+				if ($uuid !== null) {
+					$this->saved[$uuid] = $object;
+					return $object;
+				}
+
+				$object['@self'] = ['id' => 'tpl-' . (count($this->rows[(string)$schema] ?? []) + 1)];
 				$this->rows[(string)$schema][] = $object;
 
 				return $object;
