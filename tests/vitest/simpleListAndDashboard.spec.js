@@ -450,12 +450,25 @@ describe('the landing page', () => {
 		// The two charts draw as the board's horizontal bars; every other
 		// widget is the full structure's, and the five KPI tiles leave the
 		// grid for the KPI row above it.
+		// Two KPI tiles carry the board's own words: Late (Te laat) and Within
+		// deadline (Binnen termijn).
+		const boardWords = {
+			'kpi-overdue': 'Late',
+			'kpi-sla-compliance': 'Within deadline',
+		}
 		const sameButBars = (list) =>
-			list.map((item) =>
-				item.type === 'chart'
+			list.map((item) => {
+				if (boardWords[item.id]) {
+					return {
+						...item,
+						title: boardWords[item.id],
+						content: { ...item.content, label: boardWords[item.id] },
+					}
+				}
+				return item.type === 'chart'
 					? { ...item, content: { ...item.content, horizontal: true } }
-					: item,
-			)
+					: item
+			})
 		expect(dashboard.config.widgets).toEqual(sameButBars(before.config.widgets))
 		expect(dashboard.config.kpiRow).toEqual([
 			'kpi-open-cases',
