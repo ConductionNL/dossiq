@@ -91,7 +91,7 @@ test.describe('The Prerequisites block', () => {
 		await handlerApi?.dispose()
 	})
 
-	// @e2e openspec/changes/declared-prerequisites/specs/admin-settings/spec.md#scenario-optional-apps-say-what-they-unlock
+	// @e2e openspec/specs/admin-settings/spec.md#optional-apps-say-what-they-unlock
 	test('an optional app that is absent is listed with what it unlocks', async ({
 		page,
 	}) => {
@@ -120,7 +120,7 @@ test.describe('The Prerequisites block', () => {
 		).toBeGreaterThan(0)
 	})
 
-	// @e2e openspec/changes/declared-prerequisites/specs/admin-settings/spec.md#scenario-optional-apps-say-what-they-unlock
+	// @e2e openspec/specs/admin-settings/spec.md#optional-apps-say-what-they-unlock
 	test('the block reports what the server read, not a browser guess', async ({
 		page,
 	}) => {
@@ -144,7 +144,7 @@ test.describe('The Prerequisites block', () => {
 		})
 	})
 
-	// @e2e openspec/changes/declared-prerequisites/specs/admin-settings/spec.md#scenario-optional-apps-say-what-they-unlock
+	// @e2e openspec/specs/admin-settings/spec.md#optional-apps-say-what-they-unlock
 	test('a handler is not given the settings page at all', async () => {
 		const response = await handlerApi!.get(SETTINGS)
 

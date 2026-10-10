@@ -6,14 +6,16 @@
 	A case knows a handler and a team. A teamleider who wants to hear about a
 	sensitive case without taking it over had no way to, so they asked to be
 	copied in by hand, or they read nothing. Following subscribes you to the
-	case's own notifications, puts it under Followed on Cases, and lists you
+	case's own notifications, puts it under Following on Cases, and lists you
 	under Followers on the People tab.
 
-	🔴 FOLLOWING IS NOT STARRING, AND THE TWO STRIPS SIT SIDE BY SIDE ON
-	PURPOSE. The star beside this one is private and silent. Following is a
-	subscription: it produces notifications, and the people who may edit the
-	case can see who took it. Merging them into one control would make one
-	gesture do a visible thing and an invisible thing at once.
+	🔴 THIS IS THE ONE CONTROL. Following and favourites became one feature
+	(openregister `merge-follow-and-favourites`, `one-follow-control` here):
+	the star is gone, and a favourite is a follow with notifications off.
+	While you follow, a bell beside the button turns the notifications of
+	your follow on or off (`PUT .../watch` with `{"notify": bool}`); the case
+	stays under Following either way. The people who may edit the case can
+	see every follower, quiet ones included.
 
 	🔴 WHY THIS IS A WIDGET AND NOT TWO HEADER ACTIONS. `api-call` is the
 	manifest action type that would carry it, and it writes POST or PUT only:
@@ -39,6 +41,7 @@
 	so a double press is not an error.
 
 	@spec openspec/changes/case-followers/specs/case-management/spec.md
+	@spec openspec/changes/one-follow-control/specs/case-management/spec.md
 -->
 <template>
 	<div class="case-follow" data-testid="case-follow">
@@ -54,10 +57,25 @@
 			data-testid="case-follow-toggle"
 			@click="toggle">
 			<template #icon>
-				<BellRing v-if="following" :size="20" />
-				<BellOutline v-else :size="20" />
+				<Eye v-if="following" :size="20" />
+				<EyeOutline v-else :size="20" />
 			</template>
 			{{ label }}
+		</NcButton>
+
+		<NcButton
+			v-if="following"
+			variant="tertiary"
+			:disabled="busy"
+			:pressed="notifying"
+			:aria-label="notifyLabel"
+			:title="notifyLabel"
+			data-testid="case-follow-notify"
+			@click="toggleNotify">
+			<template #icon>
+				<BellRing v-if="notifying" :size="20" />
+				<BellOffOutline v-else :size="20" />
+			</template>
 		</NcButton>
 
 		<span
@@ -73,19 +91,23 @@
 import { showError } from '@nextcloud/dialogs'
 import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import BellOutline from 'vue-material-design-icons/BellOutline.vue'
+import BellOffOutline from 'vue-material-design-icons/BellOffOutline.vue'
 import BellRing from 'vue-material-design-icons/BellRing.vue'
+import Eye from 'vue-material-design-icons/Eye.vue'
+import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 import {
 	followerCountOf,
 	isFollowing,
+	notifiesOf,
 	objectIdOf,
 	setFollowing,
+	setNotify,
 } from '../../services/watcherApi.js'
 
 export default {
 	name: 'CaseFollowStrip',
 
-	components: { BellOutline, BellRing, NcButton },
+	components: { BellOffOutline, BellRing, Eye, EyeOutline, NcButton },
 
 	props: {
 		/** The case this strip belongs to, bound by CnDetailWidgetHost. */
@@ -116,6 +138,8 @@ export default {
 			busy: false,
 			/** null until the first press; the object's own marker until then. */
 			local: null,
+			/** null until the switch is pressed; the object's own switch until then. */
+			localNotify: null,
 			/** How far the local flip has moved the count, in either direction. */
 			delta: 0,
 		}
@@ -154,6 +178,34 @@ export default {
 			}
 
 			return isFollowing(this.objectData)
+		},
+
+		/**
+		 * Whether your follow sends you notifications.
+		 *
+		 * @return {boolean} TRUE when it does.
+		 *
+		 * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+		 */
+		notifying() {
+			if (this.localNotify !== null) {
+				return this.localNotify
+			}
+
+			return notifiesOf(this.objectData)
+		},
+
+		/**
+		 * What the bell says it will do.
+		 *
+		 * @return {string} The label in the reader's language.
+		 *
+		 * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+		 */
+		notifyLabel() {
+			return this.notifying
+				? t('dossiq', 'Turn notifications off')
+				: t('dossiq', 'Turn notifications on')
 		},
 
 		/**
@@ -219,10 +271,44 @@ export default {
 
 			try {
 				await setFollowing(this.caseId, wanted)
+				// A new follow notifies; the switch starts from there.
+				this.localNotify = wanted ? true : null
 				window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
 			} catch (error) {
 				this.local = previous
 				this.delta = previousDelta
+				const refusal = String(error?.response?.data?.message ?? '')
+				showError(
+					refusal !== ''
+						? refusal
+						: t('dossiq', 'This did not work. Try again.'),
+				)
+			} finally {
+				this.busy = false
+			}
+		},
+
+		/**
+		 * Turn the notifications of your follow on or off, and put the bell
+		 * back if the write is refused. The follow itself stays.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+		 */
+		async toggleNotify() {
+			if (this.busy || this.caseId === '' || this.following === false) {
+				return
+			}
+
+			const previous = this.notifying
+			this.localNotify = previous === false
+			this.busy = true
+
+			try {
+				await setNotify(this.caseId, this.localNotify)
+			} catch (error) {
+				this.localNotify = previous
 				const refusal = String(error?.response?.data?.message ?? '')
 				showError(
 					refusal !== ''

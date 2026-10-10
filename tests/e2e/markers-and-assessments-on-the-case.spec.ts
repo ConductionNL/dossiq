@@ -218,7 +218,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 			data: { reason },
 		})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#clearing-without-a-reason-is-refused
+	// @e2e openspec/specs/case-management/spec.md#clearing-without-a-reason-is-refused
 	test('clearing without a reason is refused, and the flag stays raised', async ({
 		playwright,
 		baseURL,
@@ -259,7 +259,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#both-acts-are-attributed-and-kept
+	// @e2e openspec/specs/case-management/spec.md#both-acts-are-attributed-and-kept
 	test('both acts are attributed and kept, and clearing deletes no raising', async ({
 		playwright,
 		baseURL,
@@ -305,7 +305,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#the-work-list-filters-on-the-flag
+	// @e2e openspec/specs/case-management/spec.md#the-work-list-filters-on-the-flag
 	test('the work list filters on the flag and lists exactly the flagged ones', async ({
 		page,
 		playwright,
@@ -355,7 +355,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#the-permitted-reader-sees-the-assessment-and-its-ground
+	// @e2e openspec/specs/case-management/spec.md#the-permitted-reader-sees-the-assessment-and-its-ground
 	test('a reader with the permission sees the level, the ground and the dates', async ({
 		page,
 		playwright,
@@ -380,7 +380,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#reading-the-case-does-not-reveal-the-level
+	// @e2e openspec/specs/case-management/spec.md#reading-the-case-does-not-reveal-the-level
 	test('a handler without the extra permission reads the case and not its level', async ({
 		playwright,
 		baseURL,
@@ -416,7 +416,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#the-level-feeds-impact-not-a-new-priority-word
+	// @e2e openspec/specs/case-management/spec.md#the-level-feeds-impact-not-a-new-priority-word
 	test('a rising level moves the derived priority, and writes no new word', async ({
 		playwright,
 		baseURL,
@@ -446,7 +446,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#a-failed-scan-marks-the-documents-tab
+	// @e2e openspec/specs/case-management/spec.md#a-failed-scan-marks-the-documents-tab
 	test('an overdue advice request marks the Work panel, naming the reason', async ({
 		page,
 		playwright,
@@ -473,7 +473,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#opening-the-tab-does-not-clear-the-marker
+	// @e2e openspec/specs/case-management/spec.md#opening-the-tab-does-not-clear-the-marker
 	test('opening the Work panel leaves the marker exactly where it was', async ({
 		page,
 		playwright,
@@ -510,7 +510,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#handling-the-work-clears-the-marker
+	// @e2e openspec/specs/case-management/spec.md#handling-the-work-clears-the-marker
 	test('recording the advice clears the marker, with nobody dismissing it', async ({
 		playwright,
 		baseURL,
@@ -539,7 +539,7 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#a-stale-assessment-says-so
+	// @e2e openspec/specs/case-management/spec.md#a-stale-assessment-says-so
 	test('an assessment past its review date reads as due for review', async ({
 		page,
 	}) => {
