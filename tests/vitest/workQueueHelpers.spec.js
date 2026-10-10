@@ -7,7 +7,7 @@
  * ranked list the Urgency mode renders.
  *
  * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
@@ -74,8 +74,8 @@ describe('deadlineTierPillClass', () => {
 })
 
 describe('deadlineTierLabel', () => {
-	// @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-overdue-chip
-	// @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-critical-chip
+	// @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-overdue-chip
+	// @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-critical-chip
 	it('labels the tiers as the board does', () => {
 		expect(DEADLINE_TIERS.map(deadlineTierLabel)).toEqual([
 			'Late',
@@ -96,7 +96,7 @@ describe('resolveListMode', () => {
 		expect(resolveListMode('urgency', 'ready')).toBe('ranked')
 	})
 
-	// @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-the-queue-fails-and-the-list-says-it-orders-by-deadline
+	// @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-the-queue-fails-and-the-list-says-it-orders-by-deadline
 	it('falls back to the self-fetch when the queue failed', () => {
 		expect(resolveListMode('urgency', 'failed')).toBe('self')
 		expect(resolveSortConfig('urgency')).toEqual({
@@ -111,7 +111,7 @@ describe('resolveListMode', () => {
 })
 
 describe('rankedCaseRows', () => {
-	// @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-urgency-does-not-follow-the-deadline-alone
+	// @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-urgency-does-not-follow-the-deadline-alone
 	it('keeps the server order, not the deadline order', () => {
 		const items = [
 			{
@@ -161,7 +161,7 @@ describe('filterRankedRows', () => {
 		},
 	]
 
-	// @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-search-narrows-the-ranked-list
+	// @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-search-narrows-the-ranked-list
 	it('narrows by title or case number and keeps the order', () => {
 		expect(filterRankedRows(rows, 'VERGUNNING').map((r) => r.id)).toEqual(['a'])
 		expect(filterRankedRows(rows, '0074').map((r) => r.id)).toEqual(['b'])
