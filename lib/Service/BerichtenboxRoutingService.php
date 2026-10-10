@@ -7,9 +7,13 @@
  * MijnOverheid (burgers, via BSN), eHerkenning OIN (bedrijven), or print-post
  * as a fallback when the addressee has not activated a digital channel.
  *
- * Delivery itself is delegated to the existing BerichtenboxService (which owns
- * the MijnOverheid adapter); this service only resolves the channel and
- * normalises the verzending record.
+ * It ONLY picks the channel. It used to also answer a `messageId` hashed from
+ * the beschikking reference, a `sentOn` of now and a `sentBy` of `systeem`,
+ * while calling no transport at all, and every caller stored that as proof of
+ * dispatch. A requester notice goes out through
+ * {@see \OCA\Dossiq\Service\Notification\RequesterNoticeSender}, which
+ * calls a real transport and answers the transport's own message id; nothing
+ * here may read as a send (REQ-WRN-001).
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -32,13 +36,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 
 /**
- * Resolves the Berichtenbox channel and produces a verzending record.
+ * Resolves the Berichtenbox channel. Sends nothing, and says nothing that reads as a send.
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T15
+ * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 class BerichtenboxRoutingService {
 	/**
@@ -52,38 +56,28 @@ class BerichtenboxRoutingService {
 	}//end __construct()
 
 	/**
-	 * Route a beschikking to the appropriate Berichtenbox channel.
+	 * The Berichtenbox channel a beschikking's addressee is reachable on.
 	 *
 	 * @param array<string, mixed> $decision The beschikking object.
 	 *
-	 * @return array{notificationChannel: string, sentOn: string, sentBy: string, messageId: string} The verzending record.
+	 * @return array{notificationChannel: string} The channel, and nothing that reads as a send.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T15
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function routeToBerichtenbox(array $decision): array {
 		$addressee = (array)($decision['addressee'] ?? []);
 		$channel = $this->resolveChannel(addressee: $addressee);
 
-		// The berichtId is assigned by the downstream Berichtenbox provider; in
-		// the absence of a live channel we derive a stable, non-identifying id
-		// from the beschikking kenmerk so the delivery record is reproducible.
-		$reference = (string)($decision['reference'] ?? ($decision['id'] ?? 'unknown'));
-		$messageId = strtoupper(substr($channel, 0, 2)) . '-' . substr(hash('sha256', $reference . $channel), 0, 12);
-
 		$this->logger->info(
-			'BerichtenboxRoutingService: beschikking gerouteerd',
+			'BerichtenboxRoutingService: channel chosen for a beschikking, nothing sent',
 			[
-				'reference' => $reference,
+				'reference' => (string)($decision['reference'] ?? ($decision['id'] ?? '')),
 				'notificationChannel' => $channel,
 			],
 		);
 
-		return [
-			'notificationChannel' => $channel,
-			'sentOn' => (new DateTimeImmutable())->format('c'),
-			'sentBy' => 'systeem',
-			'messageId' => $messageId,
-		];
+		return ['notificationChannel' => $channel];
 	}//end routeToBerichtenbox()
 
 	/**

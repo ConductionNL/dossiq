@@ -101,6 +101,20 @@ export function relationErrorMessage(reason) {
 }
 
 /**
+ * Whether a value is a bare uuid, which is an id and not a name.
+ *
+ * @param {string} value The value.
+ * @return {boolean} True for a uuid.
+ *
+ * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+ */
+export function isBareUuid(value) {
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+		String(value || '').trim(),
+	)
+}
+
+/**
  * The typed relations of a case, grouped under what they are called from here.
  *
  * One group per label, so the heading IS the direction's word: a sub-case's
@@ -115,6 +129,7 @@ export function relationErrorMessage(reason) {
  * @return {Array} Sections `{key, label, icon, items}`.
  *
  * @spec openspec/specs/related-case-linking/spec.md
+ * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
  */
 export function relationSections(relations) {
 	const groups = new Map()
@@ -125,12 +140,18 @@ export function relationSections(relations) {
 			continue
 		}
 
+		// A row whose far case has no readable title is left out rather than
+		// shown as its uuid: "8afb946b-…" under "Related cases" tells a handler
+		// nothing, and the server resolves the title of every case it can read.
+		const title = String(relation?.title || '').trim()
+		if (title === '' || isBareUuid(title)) {
+			continue
+		}
+
 		const label = relationDisplayLabel(relation)
 		if (!groups.has(label)) {
 			groups.set(label, [])
 		}
-
-		const title = String(relation?.title || '').trim() || caseId
 		const notes = String(relation?.notes || '').trim()
 		groups.get(label).push({
 			id: caseId,
