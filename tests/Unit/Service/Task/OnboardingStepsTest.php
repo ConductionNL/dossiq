@@ -40,6 +40,9 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\Task\OnboardingSteps
  * @covers \OCA\Dossiq\Service\TenantOnboardingService
+ * @uses \OCA\Dossiq\Service\Task\EngineInboxQuery
+ * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Service\TenantService
  */
 class OnboardingStepsTest extends TestCase {
 	use MakesTenantAnchors;

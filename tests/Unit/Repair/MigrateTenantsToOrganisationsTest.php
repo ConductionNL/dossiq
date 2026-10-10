@@ -46,6 +46,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Repair\MigrateTenantsToOrganisations
  *
  * @uses \OCA\Dossiq\Service\TenantMigrationService
+ * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Service\TenantService
  */
 class MigrateTenantsToOrganisationsTest extends TestCase {
 	use MakesTenantMigration;
