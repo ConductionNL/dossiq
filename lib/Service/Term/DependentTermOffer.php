@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\Relation\CaseRelationCodec;
 use OCA\Dossiq\Service\Relation\CaseRelationStore;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -87,6 +88,8 @@ class DependentTermOffer {
 	 * @param DeadlineExtensionService $extension The one way a term moves.
 	 * @param EngineTaskGateway        $tasks     The engine task the offer is.
 	 * @param LoggerInterface          $logger    Logger.
+	 * @param TermijnTimerService|null $timerService The working calendar the
+	 *                                               proposed end date is rolled on.
 	 */
 	public function __construct(
 		private readonly CaseRelationStore $store,
@@ -94,6 +97,7 @@ class DependentTermOffer {
 		private readonly DeadlineExtensionService $extension,
 		private readonly EngineTaskGateway $tasks,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -227,9 +231,10 @@ class DependentTermOffer {
 		}
 
 		try {
-			$newEnd = (new DateTimeImmutable($current))
-				->modify('+' . $offer['days'] . ' days')
-				->format('Y-m-d');
+			// A statutory end date: rolled onto the working calendar, so an
+			// offer never proposes a Saturday.
+			$end    = (new DateTimeImmutable($current))->modify('+' . $offer['days'] . ' days');
+			$newEnd = ($this->timerService?->rollTermEndFor(date: $end) ?? $end)->format('Y-m-d');
 		} catch (Throwable $e) {
 			return ['refused' => 'term-has-no-end-date'];
 		}

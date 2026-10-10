@@ -29,6 +29,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\Dossiq\Service\TermijnTimerService;
+use DateTimeImmutable;
 
 /**
  * A term that moved is offered to the cases waiting on it, and nothing moves
@@ -223,6 +225,51 @@ class DependentTermOfferTest extends TestCase {
 		$this->assertSame('follows case-a', $asked['rationale']);
 		$this->assertSame('2026-10-15', $asked['end']);
 	}//end testAcceptingExtendsByTheOfferedDaysWithTheReason()
+
+	/**
+	 * The proposed end date goes through the working calendar, so an offer
+	 * never proposes a Saturday (every-term-on-the-calendar allowlist entry).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 */
+	public function testTheOfferedEndDateIsRolledOntoTheWorkingCalendar(): void {
+		$this->offerIsOnTheTask();
+		$this->terms->method('getTermijnInstance')
+			->willReturn(['id' => 'term-case-b', 'endDateCurrent' => '2026-10-03']);
+
+		$rolled = [];
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnCallback(
+			static function (DateTimeImmutable $date) use (&$rolled): DateTimeImmutable {
+				$rolled[] = $date->format('Y-m-d');
+				return $date->modify('next monday');
+			}
+		);
+
+		$asked = '';
+		$this->extension->method('requestExtension')->willReturnCallback(
+			static function (string $termInstanceId, string $rationale, string $newEndDate, string $documentLink = '') use (&$asked): array {
+				$asked = $newEndDate;
+				return ['type' => 'verleng'];
+			}
+		);
+
+		$service = new DependentTermOffer(
+			store: $this->store,
+			terms: $this->terms,
+			extension: $this->extension,
+			tasks: $this->tasks,
+			logger: new NullLogger(),
+			timerService: $timers
+		);
+		$outcome = $service->accept(taskId: 'task-1', actor: 'behandelaar');
+
+		$this->assertArrayNotHasKey('refused', $outcome);
+		$this->assertSame(['2026-10-17'], $rolled, 'The computed Saturday is handed to the calendar.');
+		$this->assertSame('2026-10-19', $asked, 'And the extension asks for the day the calendar answers.');
+	}//end testTheOfferedEndDateIsRolledOntoTheWorkingCalendar()
 
 	/**
 	 * Scenario: The ceiling still applies. The refusal is the ordinary one and

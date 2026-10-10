@@ -222,32 +222,18 @@ class CaseRelationService {
 			];
 		}
 
-		$originRelations = $this->codec->decode(case: $target);
 		// A link now has a near end and a far end, so the same type declared
 		// from both cases is two contradictory statements rather than one
 		// relation seen twice: A follows B and B follows A cannot both be
 		// true. The mirror used to make this collide with the duplicate check
 		// by accident; now it is checked on purpose.
-		if ($this->codec->hasPair(relations: $originRelations, caseId: $caseId, natureRelationship: $natureRelationship) === true
-			|| in_array(
-				$caseId,
-				($this->codec->typedLinks(case: $target)[$this->codec->typedProperty(natureRelationship: $natureRelationship) ?? ''] ?? []),
-				true
-			) === true
+		if ($this->holdsLink(holder: $target, otherId: $caseId, natureRelationship: $natureRelationship) === true
+			|| $this->holdsLink(holder: $origin, otherId: $targetId, natureRelationship: $natureRelationship) === true
 		) {
 			return ['ok' => false, 'reason' => 'duplicate'];
 		}
 
 		$originRelations = $this->codec->decode(case: $origin);
-		if ($this->codec->hasPair(relations: $originRelations, caseId: $targetId, natureRelationship: $natureRelationship) === true
-			|| in_array(
-				$targetId,
-				($this->codec->typedLinks(case: $origin)[$this->codec->typedProperty(natureRelationship: $natureRelationship) ?? ''] ?? []),
-				true
-			) === true
-		) {
-			return ['ok' => false, 'reason' => 'duplicate'];
-		}
 
 		// `relatedCases` is ZGW's relevanteAndereZaken. The waits-on pair is not
 		// a ZGW aardRelatie and lives on the relation primitive only.
@@ -277,6 +263,33 @@ class CaseRelationService {
 
 		return ['ok' => true];
 	}//end addRelation()
+
+	/**
+	 * Whether a case already declares a link of this type to another case,
+	 * in its relation list or in the typed property the type names.
+	 *
+	 * @param array<string, mixed> $holder             The case that would hold the link.
+	 * @param string               $otherId            The case the link points at.
+	 * @param string               $natureRelationship Relation type.
+	 *
+	 * @return bool True when the link is already there.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	private function holdsLink(array $holder, string $otherId, string $natureRelationship): bool {
+		if ($this->codec->hasPair(
+			relations: $this->codec->decode(case: $holder),
+			caseId: $otherId,
+			natureRelationship: $natureRelationship
+		) === true
+		) {
+			return true;
+		}
+
+		$property = ($this->codec->typedProperty(natureRelationship: $natureRelationship) ?? '');
+
+		return in_array($otherId, ($this->codec->typedLinks(case: $holder)[$property] ?? []), true);
+	}//end holdsLink()
 
 	/**
 	 * Whether a relation type is carried by the relation primitive alone.
