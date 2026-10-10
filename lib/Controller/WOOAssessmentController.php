@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Termijn\ExtensionNotice;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
@@ -77,6 +78,8 @@ class WOOAssessmentController extends Controller {
 	 * @param CaseAccessGuard $caseAccessGuard Per-case mutation authorization (fails closed)
 	 * @param LoggerInterface $logger Logger
 	 * @param IL10N $l10n Translations for the refusal a header action shows
+	 * @param ExtensionNotice|null $extensionNotice Tells the requester about an extension, with the
+	 *        reason and the new end. Absent, the answer says the requester was not told.
 	 */
 	public function __construct(
 		string $appName,
@@ -90,6 +93,7 @@ class WOOAssessmentController extends Controller {
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly LoggerInterface $logger,
 		private readonly IL10N $l10n,
+		private readonly ?ExtensionNotice $extensionNotice = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -167,7 +171,9 @@ class WOOAssessmentController extends Controller {
 
 		try {
 			$result = $this->deadlineService->extendDeadline(caseId: $id, reason: $reason);
-			return new JSONResponse($result);
+			// The extension stands whatever becomes of the notice: the answer and
+			// the case say whether the requester was told (REQ-WRN-005).
+			return new JSONResponse($result + $this->tellRequester(extended: $result));
 		} catch (RefusedException $e) {
 			// A second extension answers 409 with the rule, not a 500.
 			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
@@ -177,6 +183,45 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end extendDeadline()
+
+	/**
+	 * Tell the requester about the extension, or say why nobody did.
+	 *
+	 * @param array<string, mixed> $extended The extension WOODeadlineService answered.
+	 *
+	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 */
+	private function tellRequester(array $extended): array {
+		// The term engine already told the requester: every statutory
+		// extension does, in DeadlineExtensionService (decision 166). Its
+		// answer is passed on, and the requester is not told twice.
+		if (isset($extended['noticeStatus']) === true) {
+			return [
+				'noticeStatus' => (string)$extended['noticeStatus'],
+				'noticeChannel' => (string)($extended['noticeChannel'] ?? ''),
+				'noticeReasonCode' => (string)($extended['noticeReasonCode'] ?? ''),
+				'noticeReason' => (string)($extended['noticeReason'] ?? ''),
+			];
+		}
+
+		if ($this->extensionNotice === null) {
+			return [
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'notice-not-wired',
+				'noticeReason' => 'No sender is wired, so the requester was not told.',
+			];
+		}
+
+		return $this->extensionNotice->tell(
+			caseId: (string)($extended['caseId'] ?? ''),
+			instanceId: (string)($extended['termInstanceId'] ?? ''),
+			reason: (string)($extended['extensionReason'] ?? ''),
+			newEnd: (string)($extended['deadline'] ?? ''),
+		);
+	}//end tellRequester()
 
 	/**
 	 * Assemble the formal WOO besluit for a case.

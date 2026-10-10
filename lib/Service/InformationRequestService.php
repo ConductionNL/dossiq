@@ -49,6 +49,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
 use Psr\Log\LoggerInterface;
 
@@ -168,12 +169,20 @@ class InformationRequestService {
 				['items' => $asked, 'pauseDeadline' => $due, 'case' => $caseId],
 			);
 		} catch (\Throwable $e) {
+			// Nothing went out, so nothing is suspended (Awb 4:15 lid 1 sub a,
+			// REQ-WRN-004). The sender's not-sent result travels to the handler.
+			$notice = [];
+			if ($e instanceof NoticeNotSentException) {
+				$notice = $e->getDelivery();
+			}
+
 			return $this->recordFailedSend(
 				instanceId: $instanceId,
 				instance: $instance,
 				items: $asked,
 				moment: $now,
 				error: $e->getMessage(),
+				notice: $notice,
 			);
 		}
 
@@ -256,9 +265,13 @@ class InformationRequestService {
 	 * @param array<int, string> $items What was going to be asked for.
 	 * @param DateTimeImmutable $moment When the attempt was made.
 	 * @param string $error What went wrong.
+	 * @param array<string, mixed> $notice The sender's not-sent result, or [] when the failure kept none.
 	 *
 	 * @return array{sent: bool, suspended: bool, instance: array<string, mixed>,
-	 *               record: array<string, mixed>|null, error: string}
+	 *               record: array<string, mixed>|null, error: string, reasonCode: string,
+	 *               notice: array<string, mixed>}
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-term-is-suspended-only-by-a-request-for-information-that-went-out-req-wrn-004
 	 */
 	private function recordFailedSend(
 		string $instanceId,
@@ -266,6 +279,7 @@ class InformationRequestService {
 		array $items,
 		DateTimeImmutable $moment,
 		string $error,
+		array $notice = [],
 	): array {
 		$record = $this->termService->recordEvent(
 			termInstanceId: $instanceId,
@@ -288,6 +302,8 @@ class InformationRequestService {
 			'instance' => $instance,
 			'record' => $record,
 			'error' => $error,
+			'reasonCode' => (string)($notice['reasonCode'] ?? 'send-failed'),
+			'notice' => $notice,
 		];
 	}//end recordFailedSend()
 

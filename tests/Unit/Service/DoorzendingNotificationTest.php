@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\Transfer\DoorzendingNotifier;
+use OCA\Dossiq\Exception\NoticeNotSentException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -39,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Transfer\DoorzendingNotifier
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Exception\NoticeNotSentException
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */
@@ -84,6 +86,29 @@ class DoorzendingNotificationTest extends TestCase {
 
 		self::assertTrue($result['announced']);
 	}//end testADoorzendingTellsTheApplicant()
+
+	/**
+	 * REQ-WRN-001: a doorzending notice no transport took is not announced.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testANotSentNoticeIsNotRecordedAsSent(): void {
+		$notifications = $this->createMock(originalClassName: TermijnNotificationService::class);
+		$notifications->method('sendTermijnNotification')->willThrowException(
+			new NoticeNotSentException(reasonCode: 'mail-failed', reason: 'The mail server did not accept the notice.')
+		);
+
+		$result = $this->notifier(notifications: $notifications)->announce(
+			case: self::CASE_ROW,
+			transfer: ['doorzending' => true, 'targetTeam' => 'toezicht'],
+		);
+
+		self::assertFalse($result['announced']);
+		self::assertSame('dispatch-failed', $result['reason']);
+		self::assertArrayNotHasKey('payload', $result);
+	}//end testANotSentNoticeIsNotRecordedAsSent()
 
 	/**
 	 * An internal move sends nothing at all.

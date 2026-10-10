@@ -33,6 +33,7 @@ use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Exception\NoticeNotSentException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -46,6 +47,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Exception\NoticeNotSentException
  */
 class PauseChaseServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -312,6 +314,30 @@ class PauseChaseServiceTest extends TestCase {
 		$this->assertSame([], $this->events);
 		$this->assertSame([], $this->patches);
 	}//end testAFailedSendCountsNothing()
+
+	/**
+	 * REQ-WRN-001: a reminder the sender answered not-sent for is not counted,
+	 * not recorded on the term and not put on the timeline.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testANotSentNoticeIsNotRecordedAsSent(): void {
+		$this->termService->method('getTermijnInstance')->willReturn($this->instance());
+		$this->notifications->method('sendTermijnNotification')->willThrowException(
+			new NoticeNotSentException(
+				reasonCode: 'opted-out',
+				reason: 'The requester opted out.',
+				delivery: ['status' => 'not-sent', 'reasonCode' => 'opted-out', 'channelsTried' => []]
+			)
+		);
+		$this->timeline->expects($this->never())->method('record');
+
+		$this->assertFalse($this->service()->chaseIfDue(instance: $this->instance(), now: new DateTimeImmutable('2026-09-06')));
+		$this->assertSame([], $this->events);
+		$this->assertSame([], $this->patches);
+	}//end testANotSentNoticeIsNotRecordedAsSent()
 
 	/**
 	 * A case with no address recorded is not chased, and the budget is not

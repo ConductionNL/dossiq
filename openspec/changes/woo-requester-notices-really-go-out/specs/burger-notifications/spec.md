@@ -3,12 +3,16 @@
 ### Requirement: A requester notice goes out through a real channel or is recorded as not sent (REQ-WRN-001)
 
 Every notice dossiq sends to a requester SHALL be handed to a real transport: the portal inbox
-(a `portaalBericht` in dossiq's register), e-mail (`CaseEmailService::sendEmail()`), or digital
-post (`BerichtenboxService::sendMessage()` over `BerichtenboxAdapterInterface`). The send SHALL
+(a `portaalBericht` in dossiq's register), e-mail (`TermNoticeSender::send()`, which asks
+integriq's opt-out first, sends each notice once and needs no signed-in user), or digital post
+(`BerichtenboxService::sendMessage()` over `BerichtenboxAdapterInterface`). The send SHALL
 return a delivery result with `status` either `sent` or `not-sent`. A `sent` result SHALL carry the
 transport's own message id: the `portaalBericht` uuid, the mail's message id, or integriq's tracked
 message id. A `not-sent` result SHALL carry a reason code and a sentence. No code path SHALL
-derive, hash or invent a message id for a notice no transport accepted.
+derive, hash or invent a message id for a notice no transport accepted. A caller of
+`TermijnNotificationService::sendTermijnNotification()` receives a `not-sent` result on the
+`NoticeNotSentException` it throws (`getDelivery()`), so a caller that does not read a status
+cannot record the notice as sent.
 
 #### Scenario: No transport answers, so nothing reads as sent
 - **GIVEN** a Woo case whose requester has only a BSN, and an instance without integriq
@@ -31,8 +35,9 @@ derive, hash or invent a message id for a notice no transport accepted.
 The sender SHALL choose the channel in this order and SHALL record which one it used:
 
 1. the portal inbox, when the case carries a `portalSubject` and portaliq is installed;
-2. digital post, when the requester's BSN (person) or OIN (organisation) is known and the
-   requester confirmed the message box;
+2. digital post, when the requester's BSN is known (a person whose `initiatorSourceId` is nine
+   digits); whether the requester's message box takes it is integriq's answer, which refuses
+   when it does not;
 3. e-mail, when the case carries a requester e-mail address (`verzoekerEmail`, or an address
    `CaseContactDirectory::collectAddresses()` returns);
 4. otherwise `not-sent` with reason code `no-channel` and the sentence that the case has no
@@ -114,6 +119,9 @@ requester. When a Woo term is extended, dossiq SHALL send the requester an `exte
 carrying the reason and the new end date, through REQ-WRN-001 and REQ-WRN-002. The extension SHALL
 stand when the notice is `not-sent`, and the case SHALL show the extension notice as not sent with
 the reason, so the handler can send it another way before the original term ends.
+Every extension of a statutory term SHALL send the same notice, whichever route extended it
+(Awb 4:14 lid 3 asks that the applicant is told; decision 166), and the requester SHALL be told
+once per extension.
 
 #### Scenario: The requester is told about the extension
 - **GIVEN** a Woo case from the portal with a running term
@@ -127,6 +135,22 @@ the reason, so the handler can send it another way before the original term ends
 - **THEN** the term SHALL be extended
 - **AND** the case SHALL store the extension notice with status `not-sent` and reason `no-channel`
 - **AND** the extend response SHALL say the requester was not told
+
+#### Scenario: A statutory extension outside Woo tells the requester too
+@e2e exclude no non-Woo extension flow in the nightly fixtures; unit over the term engine, StatutoryExtensionNoticeTest
+
+- **GIVEN** a vergunning case with a running statutory term
+- **WHEN** the handler extends the term through `termijn#verleng` with a reason
+- **THEN** the requester SHALL get the `extension` notice with that reason and the new end date
+- **AND** a planned or internal term extended the same way SHALL tell nobody
+
+#### Scenario: The requester is told once
+@e2e exclude a second send is only visible in the transport; unit over the controller, WOOAssessmentControllerExtensionNoticeTest
+
+- **GIVEN** a Woo case from the portal with a running term
+- **WHEN** the handler extends the term
+- **THEN** exactly one `portaalBericht` SHALL carry the extension
+- **AND** the case SHALL store one extension record
 
 ### Requirement: Every requester notice is stored on the case with its result (REQ-WRN-006)
 
