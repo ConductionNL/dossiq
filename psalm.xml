@@ -16,6 +16,10 @@
     </projectFiles>
     <stubs>
         <file name="vendor/nextcloud/ocp/OCP/Capabilities/ICapability.php" preloadClasses="true" />
+        <!-- OpenRegister's ADR-063 MCP contracts (hermiq-ai-tooling): the
+             #[McpTool] attribute and IMcpScannableServices, declaration-only. -->
+        <file name="tests/Stubs/Mcp/Attribute/McpTool.php" />
+        <file name="tests/Stubs/Mcp/IMcpScannableServices.php" />
         <!-- Integriq's ADR-041 delivery-seam contract (optional app, resolved
              by FQN string at runtime). Declaration-only stubs mirroring the
              real constructors verbatim, same discipline as the Decidiq event
