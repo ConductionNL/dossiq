@@ -25596,6 +25596,246 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "wooSearchPlan",
+          "slug": "woosearchplan-demo-1",
+          "id": "f65a9bc7-28ad-5e6b-9c3b-edb82ae8332d"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "custodians": [
+          {
+            "name": "Wethouder Ruimte",
+            "function": "Bestuur"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "terms": "Stationsweg",
+        "recordedBy": "admin",
+        "recordedAt": "2026-10-01T10:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooRequestConfiguration",
+          "slug": "woorequestconfiguration-demo-1",
+          "id": "782b6029-20bc-551f-8a80-9f6a9faeefde"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "custodians": [
+          {
+            "name": "Wethouder Ruimte",
+            "function": "Bestuur"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "terms": "Stationsweg"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooExclusion",
+          "slug": "wooexclusion-demo-1",
+          "id": "156c6f75-e8a6-5a8b-9157-897db9c329f6"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "source": "files",
+        "location": "/Team Ruimte",
+        "fileName": "notulen-kopie-1.pdf",
+        "reason": "duplicate",
+        "custodian": "Wethouder Ruimte",
+        "note": "Voorbeeld",
+        "excludedBy": "admin",
+        "excludedAt": "2026-10-02T09:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooCollectionQuery",
+          "slug": "woocollectionquery-demo-1",
+          "id": "52995c2e-e21b-5644-b57b-be35d2e29bc6"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "source": "files",
+        "terms": "Stationsweg",
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "runBy": "admin",
+        "runAt": "2026-10-02T08:30:00Z",
+        "resultKeys": [
+          "101",
+          "201"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooSearchPlan",
+          "slug": "woosearchplan-demo-2",
+          "id": "d89d84df-6da5-5e89-bae9-4663a258ca20"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "custodians": [
+          {
+            "name": "Afdeling Vergunningen",
+            "function": "Vergunningen"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "terms": "Stationsweg",
+        "recordedBy": "admin",
+        "recordedAt": "2026-10-01T10:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooRequestConfiguration",
+          "slug": "woorequestconfiguration-demo-2",
+          "id": "b4e8aa99-f5c9-5232-aae5-76e66d49bc91"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "custodians": [
+          {
+            "name": "Afdeling Vergunningen",
+            "function": "Vergunningen"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "terms": "Stationsweg"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooExclusion",
+          "slug": "wooexclusion-demo-2",
+          "id": "0292a2c7-83de-5933-a1ef-712de75e8594"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "source": "files",
+        "location": "/Team Ruimte",
+        "fileName": "notulen-kopie-2.pdf",
+        "reason": "out-of-period",
+        "custodian": "Afdeling Vergunningen",
+        "note": "Voorbeeld",
+        "excludedBy": "admin",
+        "excludedAt": "2026-10-02T09:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooCollectionQuery",
+          "slug": "woocollectionquery-demo-2",
+          "id": "b1393b7c-c38c-5040-a477-45394e5f4bbf"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "source": "files",
+        "terms": "Stationsweg",
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "runBy": "admin",
+        "runAt": "2026-10-02T08:30:00Z",
+        "resultKeys": [
+          "102",
+          "202"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooSearchPlan",
+          "slug": "woosearchplan-demo-3",
+          "id": "e79e37b9-0e48-5c96-835e-e940cbe9cb54"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "custodians": [
+          {
+            "name": "Team Verkeer",
+            "function": "Mobiliteit"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "terms": "Stationsweg",
+        "recordedBy": "admin",
+        "recordedAt": "2026-10-01T10:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooRequestConfiguration",
+          "slug": "woorequestconfiguration-demo-3",
+          "id": "99a8f9c3-a99f-5dd6-81e6-56c36e18ab3f"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "custodians": [
+          {
+            "name": "Team Verkeer",
+            "function": "Mobiliteit"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "terms": "Stationsweg"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooExclusion",
+          "slug": "wooexclusion-demo-3",
+          "id": "8c8a7941-63e6-5a95-a87b-ba0a5e987f1d"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "source": "files",
+        "location": "/Team Ruimte",
+        "fileName": "notulen-kopie-3.pdf",
+        "reason": "unreadable",
+        "custodian": "Team Verkeer",
+        "note": "Voorbeeld",
+        "excludedBy": "admin",
+        "excludedAt": "2026-10-02T09:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooCollectionQuery",
+          "slug": "woocollectionquery-demo-3",
+          "id": "b42af740-5fd4-5249-8741-e289c6f19a16"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "source": "files",
+        "terms": "Stationsweg",
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "runBy": "admin",
+        "runAt": "2026-10-02T08:30:00Z",
+        "resultKeys": [
+          "103",
+          "203"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "caseBerichtenboxMessage",
           "slug": "caseberichtenboxmessage-1",
           "id": "2c1b9f0e-6a43-4b8e-9f4e-0d7a1f3c5b01"
