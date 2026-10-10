@@ -287,7 +287,27 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `is_array()` guards behind `@phpstan-ignore` went (applyInboundMapping returns `array`
         natively). Characterisation: `tests/Unit/Controller/DrcEioLifecycleTest.php` (8 tests,
         green on the old controller first) beside the existing Drc contract tests.
-- [ ] Slice 6c `ZrcController` (12, plus 15 method findings its class-level suppressions hide)
+- [x] Slice 6c `ZrcController` (12 suppressions gone: the class-level CyclomaticComplexity,
+      NPathComplexity and ExcessiveMethodLength, and the method-level ones on destroyCase,
+      checkReopenScope, checkIndicationGebruiksrechtBeforeClose and handleEindstatusEffect; with
+      them gone no Zrc method crosses a threshold, so the 15 hidden findings are gone too).
+      What a new status or resultaat does to its zaak moved to three new classes:
+      `ZrcStatusEffects` (close on eindstatus, reopen, result-time archiving, the zrc-008c
+      reopen test), `ZrcEindstatus` (own flag, else highest volgnummer; it was written out
+      twice) and `ZrcUsageRights` (zrc-007b settle, zrc-007q check). The controller lost
+      `CaseDateNormaliser` and `ArchivalNominationDeriver` and went from 2,562 to about 1,950
+      lines; `create` (CC 20), `destroyCase` (21), `update`/`patch`, the two read-access
+      checks, the body pre-validation and the inbound related-zaken write each lost their
+      sub-steps to private helpers. The `is_array()` guard behind `@phpstan-ignore` on
+      `applyInboundMapping()` went (it returns `array` natively).
+      Characterisation, green on the old code first: `ZrcStatusEffectsTest` (19; also run
+      against the six original controller methods copied verbatim into a scratch harness, same
+      19 green), `ZrcDestroyCaseTest` (9), `ZrcCaseReadAccessTest` (10), `ZrcWritePathTest` (15).
+      Own tests for the new classes: `ZrcEindstatusTest`, `ZrcUsageRightsTest`.
+      `OneDateWritePathTest` lists `Service/Zgw/ZrcStatusEffects.php` under the ZrcController
+      write path; the swallowing-catch ceiling holds at 259. The class-level ExcessiveClassLength,
+      ExcessiveClassComplexity, TooMany(Public)Methods and CouplingBetweenObjects stay: they need
+      the controller split by resource, not by method.
 - [ ] Slice 7, the singletons
   - [x] `ZgwJwtValidator::validate` (2): token decoding, signature check and user binding
         are their own methods. Characterisation: `tests/Unit/Service/ZgwJwtValidatorTest.php`
