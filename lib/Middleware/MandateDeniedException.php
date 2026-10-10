@@ -44,7 +44,7 @@ class MandateDeniedException extends Exception {
 	 *
 	 * @return self The same exception.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function withLifecycleStatus(string $status): self {
 		$this->lifecycleStatus = $status;
@@ -56,7 +56,7 @@ class MandateDeniedException extends Exception {
 	 *
 	 * @return string The status.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function getLifecycleStatus(): string {
 		return $this->lifecycleStatus;
