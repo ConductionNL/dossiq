@@ -190,10 +190,7 @@ export default {
 					key: entry.widget.id || `${entry.widget.type}-${index}`,
 					// The headings are manifest strings, so they go through the app's
 					// catalogue here: nothing else translates them.
-					label: t(
-						'dossiq',
-						entry.label || entry.widget.title || '',
-					),
+					label: t('dossiq', entry.label || entry.widget.title || ''),
 					widget: unfittedWidget(entry.widget),
 				}))
 		},
