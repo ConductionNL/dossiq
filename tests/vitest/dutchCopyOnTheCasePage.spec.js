@@ -17,10 +17,10 @@
  * @spec openspec/changes/dutch-copy-on-the-case-page/specs/frontend-locale-completeness/spec.md
  */
 
+import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import { refusalMessage } from '../../src/utils/caseLifecycleHelpers.js'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
 import {
@@ -29,8 +29,9 @@ import {
 } from '../../src/utils/translateLensLabels.js'
 
 const ROOT = path.resolve(__dirname, '../..')
-const readJson = (...parts) =>
-	JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
+function readJson(...parts) {
+	return JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
+}
 const nl = readJson('l10n', 'nl.json').translations
 const dutch = (text) => nl[text] ?? text
 
@@ -56,10 +57,11 @@ function translated(layout) {
 	return translateBannerCopy(translateLensLabels(built, dutch), dutch)
 }
 
-const widgetOf = (manifest, pageId, widgetId) =>
-	manifest.pages
+function widgetOf(manifest, pageId, widgetId) {
+	return manifest.pages
 		.find((page) => page.id === pageId)
 		.config.widgets.find((widget) => widget.id === widgetId)
+}
 
 describe.each(['menu-layout.simple.json', 'menu-layout.json'])(
 	'the case page in %s',
@@ -95,9 +97,9 @@ describe('the dashboard captions', () => {
 	const manifest = translated('menu-layout.simple.json')
 
 	it('says in Dutch how many tasks are due today', () => {
-		expect(
-			widgetOf(manifest, 'Dashboard', 'kpi-my-tasks').content.caption,
-		).toBe('{tasksDueToday} vandaag af')
+		expect(widgetOf(manifest, 'Dashboard', 'kpi-my-tasks').content.caption).toBe(
+			'{tasksDueToday} vandaag af',
+		)
 	})
 
 	it('says in Dutch what the SLA share counts', () => {
