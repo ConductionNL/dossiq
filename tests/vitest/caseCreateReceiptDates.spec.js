@@ -18,9 +18,9 @@
  * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/friendly-case-create-form/spec.md
  */
 import { describe, expect, it } from 'vitest'
-import manifest from '../../src/manifest.json'
 import wooFragment from '../../lib/Settings/register.d/81-woo-verzoek.json'
 import wooTemplate from '../../lib/Settings/templates/woo-verzoek.json'
+import manifest from '../../src/manifest.json'
 import { caseCreateFormProps } from '../../src/utils/caseCreateForm.js'
 
 /** The page whose form edits an existing case rather than creating one. */
