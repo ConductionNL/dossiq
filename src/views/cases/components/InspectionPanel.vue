@@ -382,7 +382,7 @@ export default {
 		selectedChecklist(checklist) {
 			if (checklist) {
 				this.formResults = (checklist.items || []).map((item) => ({
-					itemId: item.label,
+					itemId: item.id || item.label,
 					result: null,
 					comment: '',
 					measurement: null,
