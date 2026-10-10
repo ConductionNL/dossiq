@@ -86,6 +86,23 @@
 				@update:modelValue="(v) => $emit('update', 'handlerAction', v)" />
 		</div>
 
+		<!-- Handling teams -->
+		<div class="form-group">
+			<NcSelect
+				:modelValue="selectedHandlingTeams"
+				:options="handlingTeamOptions"
+				:multiple="true"
+				:loading="groupsLoading"
+				:inputLabel="t('dossiq', 'Handling teams')"
+				@update:modelValue="updateHandlingTeams" />
+			<span class="field-hint">{{
+				t(
+					'dossiq',
+					'The teams that handle cases of this type, besides the default group, which always counts. Their members are offered this case type for their menu.',
+				)
+			}}</span>
+		</div>
+
 		<!-- Origin -->
 		<div class="form-group">
 			<label class="required">{{ t('dossiq', 'Origin') }}</label>
@@ -317,6 +334,7 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcCheckboxRadioSwitch, NcSelect, NcTextField } from '@nextcloud/vue'
 import DurationPicker from '../components/DurationPicker.vue'
+import { fetchNextcloudGroups } from '../../../services/nextcloudGroupsApi.js'
 import {
 	getConfidentialityOptions,
 	getOriginOptions,
@@ -353,6 +371,8 @@ export default {
 			iv3TaakveldenLoading: false,
 			/** Bounds messages for the two queue thresholds, per field. */
 			thresholdErrors: {},
+			groups: [],
+			groupsLoading: false,
 		}
 	},
 
@@ -368,6 +388,54 @@ export default {
 			return t(
 				'dossiq',
 				'Leave empty to use the default from the admin settings.',
+			)
+		},
+
+		/**
+		 * The groups an administrator may name as handling teams.
+		 *
+		 * A team the case type already names but the instance no longer has is
+		 * kept as an option under its id, so saving does not drop it in silence.
+		 *
+		 * @return {Array<{id: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		handlingTeamOptions() {
+			const known = new Set(this.groups.map((group) => group.id))
+			const missing = this.handlingTeamIds
+				.filter((id) => !known.has(id))
+				.map((id) => ({ id, label: id }))
+
+			return [...this.groups, ...missing]
+		},
+
+		/**
+		 * The handling teams the case type declares, as group ids.
+		 *
+		 * @return {Array<string>} The ids.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		handlingTeamIds() {
+			const teams = this.form.handling?.teams
+
+			return Array.isArray(teams)
+				? teams.filter((id) => typeof id === 'string' && id !== '')
+				: []
+		},
+
+		/**
+		 * The selected options, in the declared order.
+		 *
+		 * @return {Array<{id: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		selectedHandlingTeams() {
+			return this.handlingTeamIds.map(
+				(id) =>
+					this.handlingTeamOptions.find((option) => option.id === id) || {
+						id,
+						label: id,
+					},
 			)
 		},
 
@@ -469,6 +537,7 @@ export default {
 
 	mounted() {
 		this.loadIv3Taakvelden()
+		this.loadGroups()
 	},
 
 	methods: {
@@ -506,6 +575,41 @@ export default {
 		},
 
 		/**
+		 * Write the chosen handling teams back into the whole handling block.
+		 *
+		 * The other switches of the block are kept: the form saves the block as
+		 * one value, so writing `teams` alone would drop the default group,
+		 * the handler, the messages and the intake screen.
+		 *
+		 * @param {Array<{id: string}>|null} options The chosen options.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		updateHandlingTeams(options) {
+			const teams = (options || []).map((option) => option.id)
+			this.$emit('update', 'handling', {
+				...(this.form.handling || {}),
+				teams,
+			})
+		},
+
+		/**
+		 * Load the instance's groups once, for the handling teams picker.
+		 *
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		async loadGroups() {
+			this.groupsLoading = true
+			try {
+				this.groups = await fetchNextcloudGroups()
+			} catch {
+				// Non-fatal: the picker keeps the declared teams under their ids.
+				this.groups = []
+			} finally {
+				this.groupsLoading = false
+			}
+		},
+
+		/**
 		 * Load the IV3 taakveld reference list once, for the picker's options.
 		 *
 		 * @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/tasks.md#5.3
@@ -517,7 +621,7 @@ export default {
 					generateUrl('/apps/dossiq/api/reports/iv3/taakvelden'),
 				)
 				this.iv3Taakvelden = (res.data && res.data.taakvelden) || []
-			} catch (e) {
+			} catch {
 				// Non-fatal: the picker just shows no options when this fails.
 				this.iv3Taakvelden = []
 			} finally {

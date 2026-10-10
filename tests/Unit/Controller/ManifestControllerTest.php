@@ -29,10 +29,12 @@ use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IConfig;
+use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
@@ -69,6 +71,7 @@ class FakeCaseTypeObjectService {
  * @covers \OCA\Dossiq\Controller\ManifestController
  * @uses \OCA\Dossiq\Service\MenuCaseTypesService
  * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class ManifestControllerTest extends TestCase {
 
@@ -103,10 +106,11 @@ class ManifestControllerTest extends TestCase {
 	 *
 	 * @param string|null $userId The user id, or null for anonymous.
 	 * @param string $stored The stored `menu_case_types` user value.
+	 * @param array<int, string> $groups The Nextcloud groups the user is in.
 	 *
 	 * @return ManifestController
 	 */
-	private function controller(?string $userId='test-user', string $stored=''): ManifestController {
+	private function controller(?string $userId='test-user', string $stored='', array $groups=[]): ManifestController {
 		$userSession = $this->createMock(IUserSession::class);
 		$user = null;
 		if ($userId !== null) {
@@ -127,10 +131,20 @@ class ManifestControllerTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('get')->willReturn($user);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('getUserGroupIds')->willReturn($groups);
+
 		return new ManifestController(
 			appName: 'dossiq',
 			request: $this->request,
-			menuCaseTypes: new MenuCaseTypesService(settingsService: $this->settingsService, config: $this->config),
+			menuCaseTypes: new MenuCaseTypesService(
+				settingsService: $this->settingsService,
+				config: $this->config,
+				groupManager: $groupManager,
+				userManager: $userManager,
+			),
 			userSession: $userSession,
 			urlGenerator: $urlGenerator,
 			l10n: $l10n,
@@ -195,6 +209,24 @@ class ManifestControllerTest extends TestCase {
 		$this->assertSame('ct-uuid-w', $menu[2]['id']);
 		$this->assertSame(32, $menu[2]['order']);
 	}//end testManifestReturnsTheChosenCaseTypesInOrder()
+
+	/**
+	 * manifest: a chosen case type the user's team does not handle is left out.
+	 *
+	 * @return void
+	 */
+	public function testManifestLeavesOutAChosenCaseTypeTheTeamDoesNotHandle(): void {
+		$this->withCaseTypes(
+			[
+				['id' => 'uuid-o', 'title' => 'Omgevingsvergunning', 'handling' => ['defaultGroup' => 'vergunningen']],
+				['id' => 'uuid-w', 'title' => 'Woo-verzoek', 'handling' => ['defaultGroup' => 'woo']],
+			]
+		);
+
+		$menu = $this->controller(stored: '["uuid-w","uuid-o"]', groups: ['vergunningen'])->manifest()->getData()['menu'];
+
+		$this->assertSame(['MyCaseTypesCaption', 'ct-uuid-o'], array_column($menu, 'id'));
+	}//end testManifestLeavesOutAChosenCaseTypeTheTeamDoesNotHandle()
 
 	/**
 	 * manifest: no case type becomes a child of CasesGroup or any group.
