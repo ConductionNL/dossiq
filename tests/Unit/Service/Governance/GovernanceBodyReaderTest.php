@@ -37,6 +37,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Governance\GovernanceBodyReader
  *
  * @uses \OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail
  */
 class GovernanceBodyReaderTest extends TestCase {
 	use MakesBezwaarAuditTrail;
