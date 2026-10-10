@@ -51,6 +51,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -67,6 +68,16 @@ class AanvullingsverzoekService {
 	 * The schema the requests are objects of.
 	 */
 	public const SCHEMA = 'aanvullingsverzoek';
+
+	/**
+	 * A request for missing documents, the ordinary kind.
+	 */
+	public const KIND_DOCUMENTS = 'aanvulling';
+
+	/**
+	 * A request to make a Woo request more precise (Woo art. 4.1 lid 5).
+	 */
+	public const KIND_CLARIFICATION = 'verduidelijking';
 
 	/**
 	 * The states a request can be in, and the only one that is still waiting.
@@ -106,6 +117,8 @@ class AanvullingsverzoekService {
 	 * @param string             $pauseReason  The administered reason that types it.
 	 * @param string             $rationale    Why the case cannot be decided yet.
 	 * @param string             $party        The party being asked.
+	 * @param string|null        $question     The one question of a `verduidelijking` (Woo only), as the
+	 *                                         requester reads it; null asks for documents.
 	 *
 	 * @return array<string, mixed> The written request.
 	 *
@@ -122,7 +135,18 @@ class AanvullingsverzoekService {
 		string $pauseReason = '',
 		string $rationale = '',
 		string $party = '',
+		?string $question = null,
 	): array {
+		$kind = self::KIND_DOCUMENTS;
+		$asked = $items;
+		if ($question !== null) {
+			$kind = self::KIND_CLARIFICATION;
+			$this->assertClarification(caseId: $caseId, items: $items, question: $question);
+			// The letter carries the question as the one thing asked; the
+			// record keeps it as the summary and lists no documents.
+			$asked = [trim($question)];
+		}
+
 		if ($this->openFor(caseId: $caseId) !== null) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-already-open',
@@ -136,7 +160,7 @@ class AanvullingsverzoekService {
 		// written before this would survive a failed send.
 		$outcome = $this->act->ask(
 			caseId: $caseId,
-			items: $items,
+			items: $asked,
 			recipient: $recipient,
 			durationDays: $durationDays,
 			rationale: $rationale,
@@ -156,12 +180,13 @@ class AanvullingsverzoekService {
 
 		$request = [
 			'case' => $caseId,
-			'summary' => $this->summaryOf(items: $items),
+			'summary' => $this->summaryOf(items: $asked),
 			'party' => trim($party),
 			'recipient' => trim($recipient),
 			'pauseReason' => trim($pauseReason),
 			'rationale' => trim($rationale),
 			'missingItems' => $this->itemRows(items: $items),
+			'kind' => $kind,
 			'requestedBy' => $userId,
 			'requestedAt' => $now->format('c'),
 			// The date the applicant is held to is the one the ACT computed and
@@ -194,6 +219,69 @@ class AanvullingsverzoekService {
 
 		return $written;
 	}//end ask()
+
+	/**
+	 * Refuse a clarification the case cannot take, before any letter goes out.
+	 *
+	 * A `verduidelijking` asks one question on a Woo case and lists no
+	 * documents (woo-dossier-shared-with-the-requester REQ-WDS-004).
+	 *
+	 * @param string             $caseId   The case UUID.
+	 * @param array<int, string> $items    The documents asked for.
+	 * @param string             $question The question.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the case is no Woo request, or the request is not one question.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 */
+	private function assertClarification(string $caseId, array $items, string $question): void {
+		if ($this->caseTypeOf(caseId: $caseId) !== WooRequestIntake::CASE_TYPE_ID) {
+			throw new RefusedException(
+				rule: 'aanvullingsverzoek-clarification-woo-only',
+				sentence: 'A clarification can only be asked on a Woo request.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		if (trim($question) === '' || array_filter(array_map('trim', array_map('strval', $items))) !== []) {
+			throw new RefusedException(
+				rule: 'aanvullingsverzoek-clarification-one-question',
+				sentence: 'A clarification asks one question and lists no documents.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+	}//end assertKind()
+
+	/**
+	 * The case's type, or '' when it cannot be read.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return string The case type id.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 */
+	protected function caseTypeOf(string $caseId): string {
+		try {
+			[$objectService, $register] = $this->openRegister();
+			$schema = (string)$this->settingsService->getConfigValue('case_schema');
+			if ($schema === '') {
+				return '';
+			}
+
+			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the case type could not be read for a request',
+				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+			);
+			return '';
+		}
+
+		return trim((string)(($case ?? [])['caseType'] ?? ''));
+	}//end caseTypeOf()
 
 	/**
 	 * The case's portal subject, or '' when it has none or cannot be read.

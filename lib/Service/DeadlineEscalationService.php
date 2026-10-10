@@ -24,7 +24,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 
 declare(strict_types=1);
@@ -71,7 +71,7 @@ class DeadlineEscalationService {
 	 *                                                      the case's priority.
 	 * @param LoggerInterface $logger Logger.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -131,7 +131,7 @@ class DeadlineEscalationService {
 	 * @return bool True if a notification was sent (i.e. not a duplicate).
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function notifyThreshold(array $instance, int $threshold): bool {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -208,7 +208,7 @@ class DeadlineEscalationService {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function matrix(): array {
 		return self::DEFAULT_MATRIX;
