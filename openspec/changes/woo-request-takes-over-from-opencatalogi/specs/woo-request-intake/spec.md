@@ -89,6 +89,15 @@ which no due moment passes, and a resume that puts the term back on the clock; a
 that counts `met`, `missed`, `running` and `suspended` and answers no share when nothing is decided.
 Every scenario SHALL name the opencatalogi test it mirrors.
 
+Nothing in this requirement is code for the procedure (decision 182). The term, its extension, its
+suspension and the report are the generic term engine, for every case type; what is Woo is the
+term definition (28 days, one extension of 14) and the case type the report groups by. The report
+SHALL classify every term instance as `met` (decided on or before its end), `missed` (ran out, or
+decided after its end), `suspended` (paused) or `running`, and SHALL answer `metShare` (also
+published as `binnenTermijnPct`) as met / (met + missed) with one decimal, or null when that sum is
+0. The dashboard snapshot's `withinTermijnPercent` SHALL follow the same rule, and the dashboard
+SHALL show no figure for null.
+
 #### Scenario: One extension, a second refused
 - **GIVEN** a Woo case received 2026-10-05 with `deadline` 2026-11-02
 - **WHEN** the handler extends with the reason "Zienswijzen van derden" and then tries again

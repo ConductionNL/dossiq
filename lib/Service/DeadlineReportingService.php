@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
 
 /**
@@ -46,13 +47,18 @@ use RuntimeException;
 class DeadlineReportingService {
 	use SearchesObjects;
 
+
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings.
+	 * @param TermOutcome $outcomes What a term came to, and the share of decided
+	 *        terms that were met. Defaulted so a caller that builds this service
+	 *        by hand keeps working.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly TermOutcome $outcomes = new TermOutcome(),
 	) {
 	}//end __construct()
 
@@ -113,6 +119,10 @@ class DeadlineReportingService {
 			$byType[$type] ??= [
 				'totaal' => 0,
 				'withinTerm' => 0,
+				'met' => 0,
+				'missed' => 0,
+				'running' => 0,
+				'suspended' => 0,
 				'doorlooptijdenDagen' => [],
 				'verlengingen' => 0,
 				'overschrijdingen' => 0,
@@ -136,11 +146,13 @@ class DeadlineReportingService {
 	 */
 	private function accumulateRow(array $row, array &$bucket): void {
 		$bucket['totaal']++;
-		$status = (string)($row['status'] ?? '');
-		if ($status === 'completed') {
+		$outcome = $this->outcomes->classify(row: $row);
+		$bucket[$outcome]++;
+		if ($outcome === TermOutcome::MET) {
 			$bucket['withinTerm']++;
 		}
 
+		$status = (string)($row['status'] ?? '');
 		if ($status === 'exceeded') {
 			$bucket['overschrijdingen']++;
 		}
@@ -171,7 +183,7 @@ class DeadlineReportingService {
 			// $byType entries are only created when a row is counted, so
 			// 'totaal' is always >= 1 here.
 			$total = $b['totaal'];
-			$binnenPct = round(($b['withinTerm'] / $total) * 100, 1);
+			$binnenPct = $this->outcomes->shareMet(met: $b['met'], missed: $b['missed']);
 
 			$avgDur = 0.0;
 
@@ -182,6 +194,11 @@ class DeadlineReportingService {
 
 			$perType[$type] = [
 				'totaal' => $total,
+				'met' => $b['met'],
+				'missed' => $b['missed'],
+				'running' => $b['running'],
+				'suspended' => $b['suspended'],
+				'metShare' => $binnenPct,
 				'binnenTermijnPct' => $binnenPct,
 				'gemiddeldeDoorlooptijdDagen' => $avgDur,
 				'verlengingen' => $b['verlengingen'],
@@ -274,10 +291,7 @@ class DeadlineReportingService {
 		$overrun = $totals['overrun'];
 		$durations = $totals['durations'];
 
-		$withinTermPercent = 0.0;
-		if ($total > 0) {
-			$withinTermPercent = round(($within / $total) * 100, 1);
-		}
+		$withinTermPercent = $this->outcomes->shareMet(met: $within, missed: $totals['missed']);
 
 		$aantalDuraties = count($durations);
 		$avgDurationDays = 0.0;
@@ -301,11 +315,12 @@ class DeadlineReportingService {
 	 * @param array<int, array<string, mixed>> $rows Instance rows.
 	 * @param array<string, mixed> $filters Optional filters (afdeling, zaaktype).
 	 *
-	 * @return array{total:int,within:int,overrun:int,durations:array<int,int>} Counters plus the collected doorlooptijden.
+	 * @return array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} Counters plus the collected doorlooptijden.
 	 */
 	private function collectKpiTotals(array $rows, array $filters): array {
 		$total = 0;
 		$within = 0;
+		$missed = 0;
 		$overrun = 0;
 		$durations = [];
 		foreach ($rows as $row) {
@@ -314,12 +329,16 @@ class DeadlineReportingService {
 			}
 
 			$total++;
-			$status = (string)($row['status'] ?? '');
-			if ($status === 'completed') {
+			$outcome = $this->outcomes->classify(row: $row);
+			if ($outcome === TermOutcome::MET) {
 				$within++;
 			}
 
-			if ($status === 'exceeded') {
+			if ($outcome === TermOutcome::MISSED) {
+				$missed++;
+			}
+
+			if ((string)($row['status'] ?? '') === 'exceeded') {
 				$overrun++;
 			}
 
@@ -333,6 +352,7 @@ class DeadlineReportingService {
 		return [
 			'total' => $total,
 			'within' => $within,
+			'missed' => $missed,
 			'overrun' => $overrun,
 			'durations' => $durations,
 		];
@@ -363,7 +383,7 @@ class DeadlineReportingService {
 			$line = [
 				$type,
 				(string)($row['totaal'] ?? 0),
-				(string)($row['binnenTermijnPct'] ?? 0),
+				(string)($row['binnenTermijnPct'] ?? ''),
 				(string)($row['gemiddeldeDoorlooptijdDagen'] ?? 0),
 				(string)($row['verlengingen'] ?? 0),
 				(string)($row['overschrijdingen'] ?? 0),

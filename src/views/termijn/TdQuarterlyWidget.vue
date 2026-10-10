@@ -50,9 +50,9 @@
 					<tr v-for="(row, key) in quarterly.perType" :key="key">
 						<td>{{ key }}</td>
 						<td>{{ row.totaal || 0 }}</td>
-						<td>{{ percent(row.binnenTermijnPercent || 0) }}</td>
+						<td>{{ percent(row.binnenTermijnPct) }}</td>
 						<td>{{ row.overschrijdingen || 0 }}</td>
-						<td>{{ row.gemiddeldeDoorlooptijd || 0 }}</td>
+						<td>{{ row.gemiddeldeDoorlooptijdDagen || 0 }}</td>
 						<td>{{ row.verlengingen || 0 }}</td>
 						<td>{{ row.ingebrekestellingen || 0 }}</td>
 						<td>{{ euro(row.dwangsomTotal || 0) }}</td>

@@ -76,7 +76,8 @@ are where local stubs lie).
 
 ## 3. Parity on opencatalogi's fixtures
 
-- [ ] 3.1 Add `tests/Unit/Woo/WooTermParityTest.php`. One test per scenario of REQ-WTO-003, each with
+- [x] 3.1 Add `tests/Unit/Service/Term/StatutoryTermParityTest.php` (named generically, decision 182; it was
+  `tests/Unit/Woo/WooTermParityTest.php`). One test per scenario of REQ-WTO-003, each with
   a docblock line `Mirrors opencatalogi tests/Unit/Service/Woo/<File>::<test>`. Mirror at least
   `StatutoryTermTest::testTheFirstExtensionIsGrantedForTwoWeeks`, `testTheSecondExtensionIsRefused`,
   `testARefusedSecondExtensionChangesNothing`, `testAPauseSuspendsTheTermAndLeavesNoDueMoment`,
@@ -90,6 +91,13 @@ are where local stubs lie).
     in `DeadlineReportingService` here and say so in the PR body.
   - The others may pass on arrival if wave 1 did its work. That is the point of a parity suite.
     State in the PR body which ones were red before and which were green.
+  - Done: the six term scenarios were green on arrival; `testTermsReportCountsEveryOutcome` and
+    `testAShareOfNothingIsNotFullCompliance` were red (no `met`/`missed`/`running`/`suspended`, and
+    the share counted running terms in its denominator and answered 0.0 for nothing decided). Fixed
+    generically: `lib/Service/Termijn/TermOutcome.php` (own test `tests/Unit/Service/Termijn/TermOutcomeTest.php`)
+    classifies every term and computes `metShare` = met / (met + missed), null when nothing is
+    decided; `DeadlineReportingService` reports it per case type and on the dashboard snapshot, and
+    `src/views/termijn/tdWidgetMixin.js` shows a dash for null.
 
 ## 4. The import
 
