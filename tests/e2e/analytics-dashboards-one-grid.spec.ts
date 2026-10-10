@@ -19,10 +19,13 @@
 
 import { expect, test } from '@playwright/test'
 import { navToRoute, trackDossiqErrors } from './helpers/nav.ts'
-import { ProcessMiningDashboard, TermijnDashboard } from './helpers/page-components.ts'
+import {
+	ProcessMiningDashboard,
+	TermijnDashboard,
+} from './helpers/page-components.ts'
 
 /** The three analytics dashboards and the heading each page type supplies. */
-const DASHBOARDS: Array<{ route: string, heading: RegExp }> = [
+const DASHBOARDS: Array<{ route: string; heading: RegExp }> = [
 	{ route: TermijnDashboard, heading: /^(Deadline monitoring|Termijnbewaking)$/ },
 	{ route: '/doorlooptijd', heading: /^(Processing time|Doorlooptijd)$/ },
 	{ route: ProcessMiningDashboard, heading: /^(Process mining|Procesanalyse)$/ },
@@ -31,12 +34,17 @@ const DASHBOARDS: Array<{ route: string, heading: RegExp }> = [
 test.describe('analytics dashboards share one render path', () => {
 	for (const { route, heading } of DASHBOARDS) {
 		// @e2e openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md#a-dashboard-page-renders-exactly-one-page-heading
-		test(`${route} renders one page heading and a grid of several widgets`, async ({ page }) => {
+		test(`${route} renders one page heading and a grid of several widgets`, async ({
+			page,
+		}) => {
 			const errors = trackDossiqErrors(page)
 			await navToRoute(page, route)
 
 			const host = page.getByTestId('cn-dashboard-page')
-			await expect(host, 'one dashboard page host, not one nested in a widget').toHaveCount(1, { timeout: 15000 })
+			await expect(
+				host,
+				'one dashboard page host, not one nested in a widget',
+			).toHaveCount(1, { timeout: 15000 })
 
 			const headings = host.getByRole('heading', { level: 2 })
 			await expect(headings.filter({ hasText: heading })).toHaveCount(1)
@@ -44,10 +52,16 @@ test.describe('analytics dashboards share one render path', () => {
 			await expect(headings).toHaveCount(1)
 
 			const items = host.locator('.cn-dashboard-grid .grid-stack-item')
-			await expect.poll(() => items.count(), { timeout: 15000 }).toBeGreaterThanOrEqual(2)
+			await expect
+				.poll(() => items.count(), { timeout: 15000 })
+				.toBeGreaterThanOrEqual(2)
 
-			await expect(page.locator('body')).not.toContainText('Internal Server Error')
-			expect(errors, 'no dossiq errors while the dashboard rendered').toEqual([])
+			await expect(page.locator('body')).not.toContainText(
+				'Internal Server Error',
+			)
+			expect(errors, 'no dossiq errors while the dashboard rendered').toEqual(
+				[],
+			)
 		})
 	}
 })

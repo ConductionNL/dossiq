@@ -164,11 +164,11 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return WidgetItems The items.
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $since is part of the interface.
-	 *
 	 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-023
 	 */
 	public function getItemsV2(string $userId, ?string $since = null, int $limit = 7): WidgetItems {
+		// The interface passes a cursor this widget has no use for.
+		unset($since);
 		$queue = $this->queue->forPerson(userId: $userId);
 		$queueItems = [];
 		$rows = ($queue['items'] ?? []);
@@ -193,11 +193,11 @@ class MyOpenWorkWidget implements IButtonWidget, IIconWidget, IReloadableWidget 
 	 *
 	 * @return list<WidgetButton> The buttons.
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $userId is part of the interface.
-	 *
 	 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-023
 	 */
 	public function getWidgetButtons(string $userId): array {
+		// The button is the same for everyone.
+		unset($userId);
 		return [
 			new WidgetButton(WidgetButton::TYPE_MORE, $this->items->myWorkUrl(), $this->l10n->t('Open my work')),
 		];

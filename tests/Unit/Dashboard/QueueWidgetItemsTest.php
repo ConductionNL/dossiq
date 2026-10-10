@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
  * Ordering, links and the cut-off of the widget items.
  *
  * @covers \OCA\Dossiq\Dashboard\QueueWidgetItems
+ * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses   \OCA\Dossiq\Service\Queue\QueueItem
  */
 class QueueWidgetItemsTest extends TestCase {
 	use MakesCaseDateNormaliser;

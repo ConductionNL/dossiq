@@ -163,11 +163,11 @@ class MyTasksWidget implements IAPIWidgetV2 {
 	 *
 	 * @return WidgetItems The items.
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $since is part of the interface.
-	 *
 	 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-024
 	 */
 	public function getItemsV2(string $userId, ?string $since = null, int $limit = 7): WidgetItems {
+		// The interface passes a cursor this widget has no use for.
+		unset($since);
 		try {
 			$open = $this->tasks->itemsFor(userId: $userId);
 		} catch (Throwable $e) {

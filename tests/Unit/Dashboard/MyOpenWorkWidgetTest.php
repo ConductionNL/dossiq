@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Dashboard\QueueWidgetItems
  * @uses   \OCA\Dossiq\Service\Queue\QueueItem
  * @uses   \OCA\Dossiq\Service\Queue\Source\EngineTaskSource
+ * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class MyOpenWorkWidgetTest extends TestCase {
 	use MakesCaseDateNormaliser;

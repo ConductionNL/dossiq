@@ -59,9 +59,12 @@ const seededCases: Record<string, string> = {}
  * @return The items.
  */
 async function itemsOf(api: APIRequestContext, widget: string): Promise<Item[]> {
-	const response = await api.get(`${ITEMS_API}?widgets[]=${widget}&limit=${LIMIT}`, {
-		headers: { 'OCS-APIRequest': 'true', Accept: 'application/json' },
-	})
+	const response = await api.get(
+		`${ITEMS_API}?widgets[]=${widget}&limit=${LIMIT}`,
+		{
+			headers: { 'OCS-APIRequest': 'true', Accept: 'application/json' },
+		},
+	)
 	expect(response.status(), `widget items for ${widget}`).toBe(200)
 	const body = await response.json()
 	return (body.ocs.data[widget]?.items ?? []) as Item[]
@@ -107,9 +110,14 @@ test.describe('My open work on the start page', () => {
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#items-reach-a-host-without-dossiqs-bundle
-	test('answers the cases and the task through the item API', async ({ playwright, baseURL }) => {
+	test('answers the cases and the task through the item API', async ({
+		playwright,
+		baseURL,
+	}) => {
 		const api = await playwright.request.newContext({ baseURL })
-		const items = (await itemsOf(api, OPEN_WORK)).filter((item) => item.title.startsWith(RUN_PREFIX))
+		const items = (await itemsOf(api, OPEN_WORK)).filter((item) =>
+			item.title.startsWith(RUN_PREFIX),
+		)
 		await api.dispose()
 
 		const titles = items.map((item) => item.title)
@@ -122,12 +130,18 @@ test.describe('My open work on the start page', () => {
 			titles.indexOf(`${RUN_PREFIX} widget later case`),
 		)
 
-		const soon = items.find((item) => item.title === `${RUN_PREFIX} widget soon case`)
+		const soon = items.find(
+			(item) => item.title === `${RUN_PREFIX} widget soon case`,
+		)
 		expect(soon?.link).toContain(`/apps/dossiq/cases/${seededCases.soon}`)
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#the-start-page-shows-my-cases-and-leads-to-my-work
-	test('an item opens its case, and the button opens My work', async ({ page, playwright, baseURL }) => {
+	test('an item opens its case, and the button opens My work', async ({
+		page,
+		playwright,
+		baseURL,
+	}) => {
 		trackDossiqErrors(page)
 		const api = await playwright.request.newContext({ baseURL })
 		const items = await itemsOf(api, OPEN_WORK)
@@ -137,26 +151,37 @@ test.describe('My open work on the start page', () => {
 		const widget = (await buttons.json()).ocs.data[OPEN_WORK]
 		await api.dispose()
 
-		const open = (widget.buttons ?? []).find((button: { type: string }) => button.type === 'more')
+		const open = (widget.buttons ?? []).find(
+			(button: { type: string }) => button.type === 'more',
+		)
 		expect(open?.text).toMatch(/^(Open my work|Naar mijn werk)$/)
 		expect(open?.link).toMatch(/\/apps\/dossiq\/my-work$/)
 
-		const soon = items.find((item) => item.title === `${RUN_PREFIX} widget soon case`)
+		const soon = items.find(
+			(item) => item.title === `${RUN_PREFIX} widget soon case`,
+		)
 		await page.goto(soon!.link, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByText(`${RUN_PREFIX} widget soon case`).first()).toBeVisible()
+		await expect(
+			page.getByText(`${RUN_PREFIX} widget soon case`).first(),
+		).toBeVisible()
 
 		await page.goto(open.link, PAGE_LOAD)
 		await expect(page).toHaveURL(/\/apps\/dossiq\/my-work/)
 	})
 
 	// @e2e openspec/specs/dashboard/spec.md#a-start-page-that-reads-items-shows-my-tasks
-	test('My tasks answers its open tasks through the item API', async ({ playwright, baseURL }) => {
+	test('My tasks answers its open tasks through the item API', async ({
+		playwright,
+		baseURL,
+	}) => {
 		const api = await playwright.request.newContext({ baseURL })
 		const items = await itemsOf(api, MY_TASKS)
 		await api.dispose()
 
-		const task = items.find((item) => item.title === `${RUN_PREFIX} widget open task`)
+		const task = items.find(
+			(item) => item.title === `${RUN_PREFIX} widget open task`,
+		)
 		expect(task, 'the seeded task is answered').toBeTruthy()
 		expect(task?.link).toMatch(/\/apps\/dossiq\/tasks\/[^/]+$/)
 	})
