@@ -37,13 +37,20 @@ import {
 } from './helpers/fixtures.ts'
 import { clickHeaderAction } from './helpers/nav.ts'
 
-/** The five fields the Log contact action asks a handler to fill. */
+/**
+ * The fields the Log contact dialog asks a handler to fill, by test id.
+ * Since parties-and-contact-moments-consume-pipelinq 2.5 the action opens
+ * LogContactDialog, which posts to dossiq's case route so ContactMomentService
+ * runs (and appends to pipelinq), rather than the manifest form that saved
+ * past it.
+ */
 const FORM_FIELDS = [
-	'notificationChannel',
-	'direction',
-	'startTime',
-	'summary',
-	'callerIdentification',
+	'log-contact-channel-phone',
+	'log-contact-direction-inbound',
+	'log-contact-start',
+	'log-contact-summary',
+	'log-contact-caller',
+	'log-contact-visible',
 ]
 
 /**
@@ -52,7 +59,7 @@ const FORM_FIELDS = [
  * whole point: a handler logging a call does not know what a
  * `identificationMethod` is.
  */
-const KCC_FIELDS = ['identificationMethod', 'nature', 'kccEmployeeId']
+const KCC_FIELDS = ['log-contact-identificationMethod', 'log-contact-nature', 'log-contact-kccEmployeeId', 'log-contact-case']
 
 const EARLIER_SUMMARY = `${RUN_PREFIX} called about the hearing date`
 const LATER_SUMMARY = `${RUN_PREFIX} e-mailed the inspection report`
@@ -284,26 +291,24 @@ test.describe('Case detail — the Communication tab', () => {
 
 		await clickHeaderAction(page, 'cn-action-log-contact')
 
-		const dialog = page.getByRole('dialog').filter({
-			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
-		})
+		const dialog = page.locator('[data-testid="log-contact-dialog"]')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
 		for (const key of FORM_FIELDS) {
 			await expect(
-				dialog.locator(`[data-cn-field="${key}"]`),
-				`the form should ask for ${key}`,
+				dialog.locator(`[data-testid="${key}"]`),
+				`the dialog should ask for ${key}`,
 			).toHaveCount(1)
 		}
+		// The KCC fields and `case` are filled by ContactMomentService and the
+		// route: the handler opened the dialog FROM the case, so being asked
+		// which case it is about would be the dialog forgetting.
 		for (const key of KCC_FIELDS) {
 			await expect(
-				dialog.locator(`[data-cn-field="${key}"]`),
-				`${key} is seeded, never asked`,
+				dialog.locator(`[data-testid="${key}"]`),
+				`${key} is filled by the server, never asked`,
 			).toHaveCount(0)
 		}
-		// `case` is seeded too: the handler opened the form FROM the case, so
-		// being asked which case it is about would be the form forgetting.
-		await expect(dialog.locator('[data-cn-field="case"]')).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#a-contact-logged-on-the-case-carries-the-case
@@ -354,40 +359,20 @@ test.describe('Case detail — the Communication tab', () => {
 
 		await clickHeaderAction(page, 'cn-action-log-contact')
 
-		const dialog = page.getByRole('dialog').filter({
-			has: page.locator('[data-testid-modal="cn-form-dialog"]'),
-		})
+		const dialog = page.locator('[data-testid="log-contact-dialog"]')
 		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		// The enum options are the schema's raw values (`phone`, `inbound`) —
-		// the property declares no `x-enum-labels` — so these choices are the
-		// same in either locale.
+		// Phone and inbound are the dialog's defaults; clicked anyway so the
+		// test does not lean on a default it does not name.
+		await dialog.locator('[data-testid="log-contact-channel-phone"]').click()
+		await dialog.locator('[data-testid="log-contact-direction-inbound"]').click()
 		await dialog
-			.locator('[data-cn-field="notificationChannel"]')
-			.getByRole('combobox')
-			.click()
-		await page
-			.getByRole('option')
-			.filter({ hasText: /^phone$/i })
-			.click()
-
-		await dialog
-			.locator('[data-cn-field="direction"]')
-			.getByRole('combobox')
-			.click()
-		await page
-			.getByRole('option')
-			.filter({ hasText: /^inbound$/i })
-			.click()
-
-		await dialog
-			.locator('[data-cn-field="summary"]')
+			.locator('[data-testid="log-contact-summary"]')
 			.getByRole('textbox')
 			.fill(TYPED_SUMMARY)
 
-		await dialog
-			.getByRole('button', { name: /^(Create|Save|Aanmaken|Opslaan)$/ })
-			.click()
+		await dialog.locator('[data-testid="log-contact-confirm"]').click()
+		await expect(dialog.locator('[data-testid="log-contact-saved"]')).toBeVisible({ timeout: 20_000 })
 
 		// THE SAVED OBJECT, and deliberately not a prefilled field. Seeding the
 		// case through the action's `props` is the shipped mechanism, not a

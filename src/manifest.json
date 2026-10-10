@@ -2935,6 +2935,16 @@
 									}
 								},
 								{
+									"label": "Customer record",
+									"widget": {
+										"id": "case-pipelinq-contact-moments",
+										"type": "case-pipelinq-contact-moments",
+										"title": "Contact moments in the customer record",
+										"icon": "Forum",
+										"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case, with the line saying a moment is also on other cases (a case the reader may not open counted, not named), and the two filing acts. It sits under dossiq's own Communication list rather than replacing it, because that list is dossiq's record and the one an instance without pipelinq has; this section says in words when pipelinq is absent. Rendered by TYPE (registry key case-pipelinq-contact-moments), as a section child resolves from the registry and an unknown type draws nothing."
+									}
+								},
+								{
 									"label": "Receipt confirmation",
 									"widget": {
 										"id": "case-acknowledgement",
@@ -3138,6 +3148,16 @@
 										"title": "Case type, parent & related cases",
 										"icon": "LinkVariant",
 										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3). Waits on and blokkeert appear here with no section of their own: the pair is declared on the case schema as `x-openregister-relation-types`, and this widget groups by the label OpenRegister answers per direction. A hand-written section for either half would list the same links a second time, under a name this file chose rather than the one the schema did."
+									}
+								},
+								{
+									"label": "Programme",
+									"widget": {
+										"id": "case-programme",
+										"type": "case-programme",
+										"title": "Programme",
+										"icon": "BriefcaseOutline",
+										"_note": "parties-and-contact-moments-consume-pipelinq 7.1, board DqZaakPartijen (the Programma card): the pipelinq programme this case hangs under, found by the work item that names it `dossiq:case`, with its progress and the mode that produced it, and the link dialog that shows pipelinq's refusal naming the holding programme. On the Related tab because a programme is a relation upward, like a parent case. Dossiq holds no programme and no budget. Rendered by TYPE (registry key case-programme)."
 									}
 								},
 								{
@@ -3623,31 +3643,12 @@
 					},
 					{
 						"id": "log-contact",
-						"type": "open-form",
+						"type": "open-modal",
 						"label": "Log contact",
 						"icon": "PhonePlusOutline",
-						"register": "dossiq",
-						"schema": "contactmoment",
-						"includeFields": [
-							"notificationChannel",
-							"direction",
-							"startTime",
-							"summary",
-							"callerIdentification",
-							"visibleToApplicant"
-						],
-						"fieldOverrides": {
-							"summary": {
-								"widget": "textarea"
-							}
-						},
-						"successMessage": "Contact logged on this case.",
+						"target": "LogContactDialog",
 						"props": {
-							"case": "@objectId",
-							"relatedCases": ["@objectId"],
-							"kccEmployeeId": "@me",
-							"identificationMethod": "non_geidentificeerd",
-							"nature": "informatieverzoek"
+							"caseId": "@objectId"
 						},
 						"visibleWhen": {
 							"field": "@self.archived",
@@ -7038,6 +7039,13 @@
 						"title": "Portal",
 						"icon": "AccountArrowRightOutline",
 						"_note": "portal-citizen-writes-on-the-case design D3: what the applicant may still do on their own case in the portal (portalWritable, the amendment and document windows, portalWithdrawal). Custom for the reason case-type-blueprint is: every picker offers the type's OWN statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers, and a declared form would offer a free text field for a status uuid. The save goes through OpenRegister's object API, where CaseTypePortalWithdrawalListener refuses a withdrawal the workflow cannot write; the widget shows that sentence. Same LAYOUT placement and same reason as case-type-blueprint above."
+					},
+					{
+						"id": "case-type-party-kinds",
+						"type": "custom",
+						"title": "Party kinds",
+						"icon": "AccountGroupOutline",
+						"_note": "parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype (Partijsoorten): which kinds of party a case of this type accepts, in the order handlers see them, declared into pipelinq as `dossiq:case:<case type uuid>` through PipelinqCaseController and PartyKindConsumer (a re-declaration patches pipelinq's row, never replaces it). Custom because the vocabulary is pipelinq's and the write is a declaration in another app's register, which no declared form can make; without pipelinq it lists dossiq's own three kinds read only and says nothing can be saved."
 					}
 				],
 				"layout": [
@@ -7120,6 +7128,15 @@
 						"gridY": 27,
 						"gridWidth": 12,
 						"gridHeight": 7,
+						"showTitle": true
+					},
+					{
+						"id": "10",
+						"widgetId": "case-type-party-kinds",
+						"gridX": 0,
+						"gridY": 34,
+						"gridWidth": 12,
+						"gridHeight": 6,
 						"showTitle": true
 					}
 				],
@@ -7210,7 +7227,8 @@
 			"slots": {
 				"widget-case-type-blueprint": "CaseTypeBlueprintWidget",
 				"widget-case-type-translations": "CaseTypeTranslationsWidget",
-				"widget-case-type-portal": "CaseTypePortalWidget"
+				"widget-case-type-portal": "CaseTypePortalWidget",
+				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},

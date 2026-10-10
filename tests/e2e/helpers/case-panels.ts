@@ -72,6 +72,11 @@ export const CASE_PANELS = {
 		tab: /^Communication$/,
 		section: 'case-section-case-conversations',
 	},
+	customerRecord: {
+		tab: /^Communication$/,
+		section: 'case-section-case-pipelinq-contact-moments',
+	},
+	programme: { tab: /^Related$/, section: 'case-section-case-programme' },
 	email: { tab: /^Email$/, section: null },
 	tasks: { tab: /^Work$/, section: 'case-section-case-tasks' },
 	appointments: { tab: /^Work$/, section: 'case-section-case-calendar' },

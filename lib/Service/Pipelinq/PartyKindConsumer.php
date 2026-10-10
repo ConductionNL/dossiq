@@ -122,6 +122,65 @@ class PartyKindConsumer {
 	}//end kindsFor()
 
 	/**
+	 * Every kind there is to choose from, for the case type editor.
+	 *
+	 * `kindsFor()` answers what one case type OFFERS, which after a declaration
+	 * is only the declared subset. The editor needs the whole list to let an
+	 * admin add a kind back, so it asks pipelinq's vocabulary itself.
+	 *
+	 * @return array{source: string, kinds: array<int, array<string, mixed>>}
+	 *   Every kind and who answered: `pipelinq` or `dossiq`.
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
+	 */
+	public function vocabulary(): array {
+		$answer = $this->gateway->ask(
+			class: PipelinqGateway::PARTY_KINDS,
+			method: 'vocabulary',
+			arguments: [],
+			fallback: null,
+		);
+
+		if ($answer['answered'] === false || is_array($answer['value']) === false) {
+			return ['source' => 'dossiq', 'kinds' => $this->vocabulary->kinds()];
+		}
+
+		// pipelinq answers a map keyed by code. A list is what a surface walks.
+		return [
+			'source' => 'pipelinq',
+			'kinds' => array_values(array_filter($answer['value'], static fn ($kind): bool => is_array($kind) === true)),
+		];
+	}//end vocabulary()
+
+	/**
+	 * The kinds a case type has DECLARED, in order, or null when it declared none.
+	 *
+	 * Null and an empty list are different answers. Null is "nothing declared,
+	 * so every active kind is offered" or "pipelinq is not here"; an empty list
+	 * would be a declaration that the type accepts no party at all.
+	 *
+	 * @param string $caseType The case type's key.
+	 *
+	 * @return array<int, string>|null The declared codes, or null.
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
+	 */
+	public function acceptanceOf(string $caseType): ?array {
+		$answer = $this->gateway->ask(
+			class: PipelinqGateway::PARTY_KINDS,
+			method: 'acceptanceFor',
+			arguments: ['recordType' => $this->targetFor(caseType: $caseType)],
+			fallback: null,
+		);
+
+		if ($answer['answered'] === false || is_array($answer['value']) === false) {
+			return null;
+		}
+
+		return array_values(array_map(static fn ($code): string => trim((string)$code), $answer['value']));
+	}//end acceptanceOf()
+
+	/**
 	 * Declare what one case type accepts, in the order handlers should see.
 	 *
 	 * The order is part of the declaration: the first kind is the one most

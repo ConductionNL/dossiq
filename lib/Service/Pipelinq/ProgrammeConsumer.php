@@ -46,6 +46,16 @@ class ProgrammeConsumer {
 	public const OBJECT_TYPE = 'dossiq:case';
 
 	/**
+	 * pipelinq's config key for its programme schema (slug `deliveryProgramme`).
+	 */
+	public const PROGRAMME_SCHEMA_KEY = 'programme_schema';
+
+	/**
+	 * pipelinq's config key for the work items that hold a case by reference.
+	 */
+	public const WORK_ITEM_SCHEMA_KEY = 'programmeWorkItem_schema';
+
+	/**
 	 * @param PipelinqGateway $gateway The only seam that names pipelinq.
 	 * @param LoggerInterface $logger Says when a link did not land.
 	 */
@@ -157,6 +167,135 @@ class ProgrammeConsumer {
 			'sentence' => "{$progress} per cent, " . $this->modeSentence(mode: $mode),
 		];
 	}//end progressOf()
+
+	/**
+	 * The programmes a case may be put under, as id and name.
+	 *
+	 * @return array{available: bool, programmes: array<int, array{id: string, name: string}>}
+	 *   `available` false means pipelinq did not answer, which is not the same
+	 *   as an instance that has no programmes.
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
+	 */
+	public function programmes(): array {
+		$rows = $this->read(schemaKey: self::PROGRAMME_SCHEMA_KEY, filters: []);
+		if ($rows === null) {
+			return ['available' => false, 'programmes' => []];
+		}
+
+		$programmes = [];
+		foreach ($rows as $row) {
+			$id = self::idOf(row: $row);
+			if ($id === '') {
+				// A row with no id cannot be linked to, so it is not offered.
+				continue;
+			}
+
+			$programmes[] = ['id' => $id, 'name' => trim((string)($row['name'] ?? ''))];
+		}
+
+		return ['available' => true, 'programmes' => $programmes];
+	}//end programmes()
+
+	/**
+	 * The programme a case hangs under, with its progress, or null.
+	 *
+	 * The case is found BY REFERENCE: the work item pipelinq holds names it as
+	 * `dossiq:case` and its uuid. Dossiq copies nothing of the programme.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array{available: bool, programme: array{id: string, name: string, progress: array<string, mixed>}|null}
+	 *   The programme and its figure; `programme` null with `available` true is
+	 *   a case under no programme.
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
+	 */
+	public function programmeOf(string $caseId): array {
+		$items = $this->read(
+			schemaKey: self::WORK_ITEM_SCHEMA_KEY,
+			filters: ['domainObjectType' => self::OBJECT_TYPE, 'domainObjectRef' => trim($caseId)],
+		);
+
+		if ($items === null) {
+			return ['available' => false, 'programme' => null];
+		}
+
+		$holder = '';
+		foreach ($items as $item) {
+			$holder = trim((string)($item['programme'] ?? ''));
+			if ($holder !== '') {
+				break;
+			}
+		}
+
+		if ($holder === '') {
+			return ['available' => true, 'programme' => null];
+		}
+
+		$record = ['id' => $holder];
+		foreach (($this->read(schemaKey: self::PROGRAMME_SCHEMA_KEY, filters: []) ?? []) as $row) {
+			if (self::idOf(row: $row) === $holder) {
+				$record = $row + ['id' => $holder];
+				break;
+			}
+		}
+
+		$tasks = $this->gateway->ask(
+			class: PipelinqGateway::PROGRAMMES,
+			method: 'tasksOf',
+			arguments: ['programmeId' => $holder],
+			fallback: [],
+		);
+
+		$taskRows = [];
+		if (is_array($tasks['value']) === true) {
+			$taskRows = array_values(array_filter($tasks['value'], static fn ($task): bool => is_array($task) === true));
+		}
+
+		return [
+			'available' => true,
+			'programme' => [
+				'id' => $holder,
+				'name' => trim((string)($record['name'] ?? '')),
+				'progress' => $this->progressOf(programmeId: $holder, programme: $record, tasks: $taskRows),
+			],
+		];
+	}//end programmeOf()
+
+	/**
+	 * Read rows of one of pipelinq's programme schemas, or null when it cannot answer.
+	 *
+	 * @param string $schemaKey The schema config key in pipelinq.
+	 * @param array<string, mixed> $filters The filters.
+	 *
+	 * @return array<int, array<string, mixed>>|null The rows.
+	 */
+	private function read(string $schemaKey, array $filters): ?array {
+		$answer = $this->gateway->ask(
+			class: PipelinqGateway::PROGRAMMES,
+			method: 'read',
+			arguments: ['schemaKey' => $schemaKey, 'filters' => $filters],
+			fallback: null,
+		);
+
+		if ($answer['answered'] === false || is_array($answer['value']) === false) {
+			return null;
+		}
+
+		return array_values(array_filter($answer['value'], static fn ($row): bool => is_array($row) === true));
+	}//end read()
+
+	/**
+	 * The id of a pipelinq row, whichever key carries it.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, '' when it has none.
+	 */
+	private static function idOf(array $row): string {
+		return trim((string)($row['id'] ?? $row['uuid'] ?? ''));
+	}//end idOf()
 
 	/**
 	 * Tell pipelinq that a case reached a terminal status.

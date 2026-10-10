@@ -20,18 +20,20 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
   contact moment through pipelinq's leaf with its direction, the case as host
   and the party when known. Best effort, never blocks the dossiq write.
   - **spec_ref**: `specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02`
-- [ ] 2.2 (not run: no surface reads moments by membership yet; dossiq's Communication tab reads its own contactmoment rows) Read by MEMBERSHIP and carry the shared marker, counting a case the
+- [x] 2.2 (2026-10-10, board DqZaakContactmomenten: `PipelinqCaseController::contactMoments()` over `ContactMomentBridge::onCase()`, rendered by `src/components/case/CasePipelinqContactMoments.vue` as the Customer record section of the Communication tab; `PipelinqCaseControllerTest::testContactMomentsSayWhenPipelinqIsAbsent`, `tests/vitest/pipelinqCaseSurfaces.spec.js`) Read by MEMBERSHIP and carry the shared marker, counting a case the
   reader may not see rather than naming it.
   - **spec_ref**: `specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03`
-- [ ] 2.3 (not run: no surface files or unfiles a moment yet) File and unfile through pipelinq's two acts; write no reference set.
+- [x] 2.3 (2026-10-10: `PipelinqCaseController::fileContactMoment()` (mutation access on BOTH cases) and `::unfileContactMoment()`, `src/dialogs/FileContactMomentDialog.vue` and the row menu; `PipelinqCaseControllerTest::testFilingNeedsBothCasesAndGoesThroughPipelinq`, `::testUnfilingTakesItOffThisCase`) File and unfile through pipelinq's two acts; write no reference set.
 - [x] 2.4 (`ContactMomentService` takes the bridge (constructor, `pipelinqBridge`)) Wire the bridge into `Service\ContactMomentService::createContactMoment()`.
+- [x] 2.5 (2026-10-10, decision 155, board DqZaakContactmomenten: the case page's Log contact action opens `src/dialogs/LogContactDialog.vue`, which posts to `PipelinqCaseController::logContactMoment()` so ContactMomentService runs and appends to pipelinq; the answer carries `pipelinqRefusal` and `pipelinqIndicators` and the dialog shows the refusal with the indicator named while the dossiq record is kept; `PipelinqCaseControllerTest::testALoggedMomentCarriesPipelinqsRefusal`, vitest `the Log contact dialog`) Show pipelinq's refusal of an outbound append to the handler who logged it.
+  - **spec_ref**: `specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02`
 
 ## 3. Party kinds
 
-- [ ] 3.1 (not run: class exists, no caller: a per-case-type party picker is unspecified (Rescue note 6)) `lib/Service/Pipelinq/PartyKindConsumer.php`: read pipelinq's kinds,
+- [x] 3.1 (2026-10-10, board DqZaakPartijen: `PipelinqCaseController::partyKinds()` asks `PartyKindConsumer::kindsFor()` for the case's own type (read server-side); the Roles section (`CasePartiesWidget`) lists the accepted kinds in order with their source, labels a party by pipelinq's label and marks a party of a kind the type does not accept; `PipelinqCaseControllerTest::testPartyKindsAreAskedForTheCasesType`. The spec's "picker" is amended to the board's Roles section) `lib/Service/Pipelinq/PartyKindConsumer.php`: read pipelinq's kinds,
   falling back to `PartyVocabulary`'s three, saying which answered.
   - **spec_ref**: `specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04`
-- [ ] 3.2 (not run: `PartyKindConsumer::declareAcceptance()` exists, no caller (Rescue note 6)) Declare `dossiq:case:<caseType>` acceptances, in the declared order.
+- [x] 3.2 (2026-10-10, board DqZaaktype (Partijsoorten): `src/components/caseType/CaseTypePartyKindsWidget.vue` on CaseTypeDetail, `PipelinqCaseController::caseTypePartyKinds()` / `::declarePartyKinds()` (admin setting) over `PartyKindConsumer::vocabulary()`, `::acceptanceOf()` and `::declareAcceptance()`; `PipelinqSurfaceReadsTest`, vitest `the case type party kinds`) Declare `dossiq:case:<caseType>` acceptances, in the declared order.
 
 ## 4. Indicators
 
@@ -42,7 +44,7 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
 
 ## 5. Correspondence language
 
-- [ ] 5.1 (not run: class exists, no caller: nothing in dossiq chooses a correspondence language (Rescue note 6)) `lib/Service/Pipelinq/CorrespondenceLanguageConsumer.php`: the tag and
+- [x] 5.1 (2026-10-10, board DqZaakPartijen: `PipelinqCaseController::partyLanguage()` over `CorrespondenceLanguageConsumer::forParty()`; the Roles section shows the writing language per party with its reason, an unset preference said as unset; `PipelinqCaseControllerTest::testTheLanguageWithoutPipelinqIsNotAChoice`, vitest `the sentences`) `lib/Service/Pipelinq/CorrespondenceLanguageConsumer.php`: the tag and
   its reason, unset rendered as unset.
   - **spec_ref**: `specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06`
 
@@ -54,7 +56,7 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
 
 ## 7. Programme
 
-- [ ] 7.1 (not run: class exists, no caller: dossiq has no programme surface (Rescue note 6)) `lib/Service/Pipelinq/ProgrammeConsumer.php`: link a case as
+- [x] 7.1 (2026-10-10, board DqZaakPartijen (Programma): `ProgrammeConsumer::programmeOf()` / `::programmes()` / `::linkCase()` through `PipelinqCaseController::programme()`, `::linkProgramme()` (409 naming the holder) and `::programmeOptions()`; `src/components/case/CaseProgrammeSection.vue` on the Related tab and `src/dialogs/LinkProgrammeDialog.vue`; `PipelinqSurfaceReadsTest`, `PipelinqCaseControllerTest::testARefusedLinkNamesTheHolder`) `lib/Service/Pipelinq/ProgrammeConsumer.php`: link a case as
   `dossiq:case`, report the refusal with the holder named, render the progress
   with its mode and an uncomputable figure as uncomputable.
   - **spec_ref**: `specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08`
@@ -70,8 +72,9 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
 
 - [x] 9.1 (`tests/Unit/Service/Pipelinq/` (29 tests) plus `CaseCompletedSatisfactionListenerTest`) PHPUnit over the gateway, the bridge, the kinds, the joined refusal,
   the language, the hand-off and the programme.
-- [ ] 9.2 (not run: no Playwright runner on this lane) `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts`, with
+- [x] 9.2 (2026-10-10: written, four scenarios, each skipping with a reason on an instance without pipelinq) `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts`, with
   a reason-bearing exclusion on every scenario it does not cover, per gate 19.
+- [ ] 9.4 (live pass, decision 139) Run `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts` and `tests/e2e/case-communication.spec.ts` on an instance with dossiq and pipelinq installed (pipelinq with at least two party kinds and two programmes).
 - [ ] 9.3 `openspec validate --strict` exits 0.
 
 ## Rescue, 2026-09-18: the six guards, one at a time
