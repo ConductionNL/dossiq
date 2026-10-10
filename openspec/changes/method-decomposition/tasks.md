@@ -315,4 +315,12 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] `PlanItemCascade::cascadePass` (1): one pass loops `evaluateItem()`, which uses
         `criteriaFire()`/`hasCriteria()` and `completeStageIfDone()`. Covered by the existing
         `tests/Unit/Service/Cmmn/` suite (47 tests, green before and after).
-  - [ ] LoadDefaultZgwMappings (2), ZgwRulesBase (1); ContactMomentService waits on #3563
+  - [x] `ZgwRulesBase::checkFieldUniqueness` (1): the per-hit match (including the coerced
+        "000000000" / 0 / "" cases) is `storedValueMatches()`. Characterisation:
+        `tests/Unit/Service/ZgwRulesBaseUniquenessTest.php` (4 tests, green before and after).
+  - [ ] LoadDefaultZgwMappings (2 method length + class length/complexity): NOT split. The
+        three long methods are mapping DATA (ZGW property templates per resource), not logic;
+        cutting an array literal into pieces to pass a length rule hides nothing. Under decision 182
+        the honest fix is to move the default mappings into a configuration file the repair step
+        reads, which is a refactor-programme decision, not a decomposition slice. Left for that.
+  - [ ] ContactMomentService waits on #3563
