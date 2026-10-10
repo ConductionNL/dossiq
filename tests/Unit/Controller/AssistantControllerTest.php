@@ -48,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\AssistantController
  *
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient
+ * @uses \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
  */
 class AssistantControllerTest extends TestCase {
 	/**

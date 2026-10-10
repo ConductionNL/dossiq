@@ -7,7 +7,9 @@
           "reportGroupId": {
             "type": "string",
             "title": "Report group",
-            "description": "The group of similar reports this case was placed in by hermiq, when its case type groups reports. Grouping does not change the confirmations of receipt: every report still gets its own."
+            "description": "The group of similar reports this case was placed in by hermiq, when its case type groups reports. Grouping does not change the confirmations of receipt: every report still gets its own.",
+            "matchType": "exact",
+            "inputControl": "text"
           }
         }
       }
