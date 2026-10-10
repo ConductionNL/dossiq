@@ -26,6 +26,13 @@ from. An armed window, declared on the pool, is readable before it fires.
 And the take-back is written down: who had it, why it came back, who has it
 now. Otherwise the case looks like it was never routed to the first person.
 
+Accepting is the assignee's first status move or first edit of the case
+(decision 164, Q-dossiq-L7-1). No accept button: nothing new to learn, and
+the window can only take back work nobody touched. The window is
+OpenRegister's `FlowTimerService`, armed when the case is routed and
+cancelled on acceptance; on the breach the case is routed on by the rule it
+came in by, never to the person it came back from.
+
 ## D-5. The area is held on the case, not resolved per query
 
 Resolving a boundary on every routing decision makes routing depend on an

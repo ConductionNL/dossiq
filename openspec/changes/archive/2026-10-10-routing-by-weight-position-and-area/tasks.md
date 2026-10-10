@@ -18,13 +18,31 @@ Tier: V1. Kind: code. Size M. Rows 3.25 and 11.35.
   every senior of every team (D-3). The round-robin cursor is keyed by the
   team too: two rules over one roleType in two teams are two rotations.
   - `tests/Unit/Service/Routing/PositionTargetTest.php`
-- [ ] 3.1 A take-back window on the pool. NOT BUILT, and the spec delta says
-  so where the requirement stands: the window must be an armed timer rather
-  than a sweep (D-4), and timers are openregister's `flow-business-timers`.
-  dossiq arming its own would be the second scheduler ADR-022 exists to
-  prevent. It moves when the case-level timer seam is agreed with the
-  openregister lane.
-- [ ] 3.2 The take-back record, which follows 3.1 and is deferred with it.
+- [x] 3.1 A take-back window on the pool, as an armed engine timer (D-4),
+  now that OpenRegister's `FlowTimerService` is the timer seam the term
+  engine already uses. A rule declares `takeBackAfter` ({value, unit:
+  hours|businessDays|calendarDays}); `POST /api/cases/{id}/route` routes the
+  case to one person, writes `assignee` and `routing` {rule, routedTo,
+  routedAt} and arms the window (`lib/Service/Routing/CaseRouter.php`,
+  `lib/Service/Routing/TakeBackWindow.php`, `RoutingController::route`).
+  Accepting is the assignee's first status move or first edit; there is no
+  accept button (decision 164, Q-dossiq-L7-1).
+  `lib/Listener/RoutedCaseAcceptanceListener.php` stamps
+  `routing.acceptedAt` and cancels the window; a save by anybody else, or a
+  save that only moved the routing, accepts nothing.
+  - `tests/Unit/Service/Routing/TakeBackWindowTest.php`
+  - `tests/Unit/Listener/RoutedCaseAcceptanceListenerTest.php`
+  - `tests/Unit/Controller/RoutingControllerContractTest.php`
+- [x] 3.2 The take-back record. On the breach,
+  `lib/Listener/TakeBackTimerFiredListener.php` (as the background service
+  account) calls `CaseRouter::takeBack()`, which reads the case fresh and
+  acts only when the routing the window was armed for still stands
+  unaccepted on an open case. It routes the case on by the SAME rule, never
+  to the person it came back from, and appends to `routingTakeBacks` who had
+  it, why it came back, who has it now. A pool with nobody else keeps the
+  case and records `outcome: kept`.
+  - `tests/Unit/Service/Routing/TakeBackTest.php`
+  - `tests/Unit/Listener/TakeBackTimerFiredListenerTest.php`
 - [x] 4.1 `lib/Service/Cases/CaseAreaResolver.php`: the wijk and the buurt
   from the address, resolved ONCE and held on the case with the source and
   the moment it was read (D-5, D-7). An address that placed in nothing is

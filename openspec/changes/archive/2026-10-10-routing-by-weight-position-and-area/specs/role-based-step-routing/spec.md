@@ -43,19 +43,19 @@ position SHALL NOT require an organisation-wide role for it.
 
 ### Requirement: Work not taken up returns to the pool (REQ-RTP-03)
 
-> NOT BUILT IN THIS CHANGE, and said here rather than discovered by somebody
-> reading the requirement and looking for the code. Take-back needs an armed
-> window rather than a sweep (D-4), and the window is openregister's
-> `flow-business-timers`: dossiq arming its own timer would be the second
-> scheduler ADR-022 exists to prevent, and a background sweep would be the
-> unpredictable reassignment D-4 rules out. It moves when the case-level timer
-> seam is agreed with the openregister lane; the weight, the position and the
-> area are independent of it and ship now.
+> Built on OpenRegister's timer core (`FlowTimerService`), the same seam
+> the term engine uses, so dossiq runs no scheduler of its own (ADR-022, D-4).
+> Accepting is the assignee's first status move or first edit of the case;
+> there is no accept button (decision 164).
 
 A pool SHALL be able to declare a window within which an assignment must be
 accepted or started. When the window passes, the work SHALL return to the
 pool and be routed on by the same strategy. The return SHALL record who held
-it, why it came back and who holds it now.
+it, why it came back and who holds it now. Accepting SHALL be the first status move or the
+first edit of the case by the person it was routed to; a save by anybody
+else, or a save that only moves the routing, SHALL NOT count as accepting.
+When the pool has nobody else, the case SHALL stay with its holder and the
+record SHALL say so.
 
 #### Scenario: An unaccepted case goes back
 @e2e exclude time-dependent; unit over the timer-fired listener, TakeBackTest
@@ -72,6 +72,22 @@ it, why it came back and who holds it now.
 - **WHEN** the member accepts it the next morning
 - **THEN** it SHALL stay with them
 - **AND** no take-back SHALL be recorded
+
+#### Scenario: Somebody else's edit is not accepting
+@e2e exclude needs a second signed-in user beside the routed one; unit over the save listener, RoutedCaseAcceptanceListenerTest
+
+- **GIVEN** a case routed to a member with a window
+- **WHEN** a colleague edits the case, or the router writes the routing
+- **THEN** the case SHALL still be unaccepted
+- **AND** the window SHALL still be armed
+
+#### Scenario: A pool with nobody else keeps the case
+@e2e exclude time-dependent; unit over the router, TakeBackTest
+
+- **GIVEN** a case routed to the only member of its pool
+- **WHEN** the window passes without acceptance
+- **THEN** the case SHALL stay with that member
+- **AND** the case SHALL record that nobody else was in the pool
 
 ### Requirement: The case holds the area it is in, and routing reads it (REQ-RTP-04)
 
