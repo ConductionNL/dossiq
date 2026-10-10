@@ -81,7 +81,10 @@ test.describe('Publish a Woo decision from the case', () => {
 				headers: headers(token),
 				data: {
 					assessments: [
-						{ documentRef: objectId(document), classification: 'openbaar' },
+						{
+							documentRef: objectId(document),
+							classification: 'openbaar',
+						},
 					],
 				},
 			},
@@ -159,7 +162,10 @@ test.describe('Publish a Woo decision from the case', () => {
 			body?.reason === 'opencatalogi_unavailable',
 			'OpenCatalogi is not installed on this instance',
 		)
-		expect(res.ok(), `publish -> ${res.status()} ${JSON.stringify(body)}`).toBeTruthy()
+		expect(
+			res.ok(),
+			`publish -> ${res.status()} ${JSON.stringify(body)}`,
+		).toBeTruthy()
 
 		const published = await showObject(request, 'case', cases.ready)
 		expect(published.wooPublicationStatus).toBe('published')
@@ -172,15 +178,17 @@ test.describe('Publish a Woo decision from the case', () => {
 		await openHeaderActionsMenu(page)
 		await expect(page.getByTestId('cn-action-woo-publish')).toHaveCount(0)
 		await expect(page.getByTestId('cn-action-woo-withdraw')).toBeVisible()
-		await expect(page.getByTestId('cn-action-woo-publication-open')).toBeVisible()
+		await expect(
+			page.getByTestId('cn-action-woo-publication-open'),
+		).toBeVisible()
 
 		const withdrawn = await request.post(
 			`/index.php/apps/${REGISTER}/api/cases/${cases.ready}/woo/withdraw`,
 			{ headers: headers(token), data: {} },
 		)
 		expect(withdrawn.ok()).toBeTruthy()
-		expect((await showObject(request, 'case', cases.ready)).wooPublicationStatus).toBe(
-			'withdrawn',
-		)
+		expect(
+			(await showObject(request, 'case', cases.ready)).wooPublicationStatus,
+		).toBe('withdrawn')
 	})
 })
