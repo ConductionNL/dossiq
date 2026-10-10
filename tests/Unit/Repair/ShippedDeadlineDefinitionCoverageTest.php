@@ -57,6 +57,43 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	];
 
 	/**
+	 * Case types whose term cannot be stated generically, decided by nobody yet.
+	 *
+	 * Each depends on the gemeente's own Algemene subsidieverordening, and
+	 * Ruben's rule (10 Oct) is that such a term is not invented. Listed here so
+	 * the sweep stays mechanical for everything else, and held to the list by
+	 * testTheOpenQuestionsAreStillOpen(): an entry that gets a definition, or
+	 * stops being shipped, fails until it is taken off.
+	 *
+	 * @var array<string, string>
+	 */
+	private const OPEN_QUESTIONS = [
+		'subsidieaanvraag' => 'P42D plus P28D: Awb title 4.2 sets no beslistermijn and the Awb 4:13 lid 2 fallback is eight weeks, so six weeks can only come from the ASV.',
+		'zaaktype-innovatiefonds-2026' => 'P13W, ASV art. 3: longer than the Awb 4:13 lid 2 fallback allows, so it can only come from the ASV.',
+	];
+
+	/**
+	 * The terms decided for the register's case types (Ruben, 10 Oct).
+	 *
+	 * Keyed by the binding key CaseTypeSlugResolver answers (identifier first).
+	 * Each row: kind, days, extension capacity, number of extensions, and a
+	 * fragment the legal basis must contain.
+	 *
+	 * @var array<string, array{0: string, 1: int, 2: int, 3: int, 4: string}>
+	 */
+	private const DECIDED = [
+		'klacht-behandeling' => ['statutory', 42, 28, 1, 'Awb 9:11'],
+		'evenementenvergunning-2024' => ['statutory', 56, 56, 1, 'APV 1:2'],
+		'evenementenvergunning' => ['statutory', 56, 56, 1, 'APV 1:2'],
+		'zaaktype-cultuur-subsidie-2026' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		'melding-openbare-ruimte' => ['planned', 14, 0, 0, 'Servicenorm'],
+		'building-permit' => ['planned', 56, 0, 0, 'Service norm'],
+		'grant-application' => ['planned', 42, 0, 0, 'Service norm'],
+		'citizen-complaint' => ['planned', 42, 0, 0, 'Service norm'],
+		'foi-request' => ['planned', 30, 0, 0, 'Service norm'],
+	];
+
+	/**
 	 * Read and decode one shipped settings file.
 	 *
 	 * @param string $relative The path relative to this file.
@@ -88,8 +125,48 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 			}
 		}
 
-		return $caseTypes;
+		return array_merge($caseTypes, $this->registerCaseTypes());
 	}//end shippedCaseTypes()
+
+	/**
+	 * Every case type the register ships, keyed the way a case resolves it.
+	 *
+	 * A case carries its case type as a uuid, and CaseTypeSlugResolver turns
+	 * that into the binding key: the `identifier` first, then `@self.slug`.
+	 * Keying by the seed slug instead would let a definition pass this test
+	 * and bind to nothing, because `building-permit-type` is not what a case
+	 * of that type resolves to (`building-permit` is).
+	 *
+	 * @return array<string, array<string, mixed>> The case types.
+	 */
+	private function registerCaseTypes(): array {
+		$files = array_merge(
+			[__DIR__ . '/../../../lib/Settings/dossiq_register.json'],
+			(glob(__DIR__ . '/../../../lib/Settings/register.d/*.json') ?: [])
+		);
+
+		$caseTypes = [];
+		foreach ($files as $file) {
+			$decoded = json_decode((string)file_get_contents($file), true);
+			self::assertIsArray($decoded, 'The shipped file ' . basename($file) . ' must parse.');
+			foreach (($decoded['components']['objects'] ?? []) as $object) {
+				if (($object['@self']['schema'] ?? '') !== 'caseType') {
+					continue;
+				}
+
+				$key = trim((string)($object['identifier'] ?? ''));
+				if ($key === '') {
+					$key = trim((string)($object['@self']['slug'] ?? ''));
+				}
+
+				if ($key !== '') {
+					$caseTypes[$key] = $object;
+				}
+			}
+		}
+
+		return $caseTypes;
+	}//end registerCaseTypes()
 
 	/**
 	 * The shipped TermijnDefinities, keyed by the case-type slug they bind to.
@@ -111,15 +188,22 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	}//end shippedDefinitions()
 
 	/**
-	 * Whole days in an ISO-8601 `P{n}D` duration, or null.
+	 * Whole days in an ISO-8601 `P{n}D` or `P{n}W` duration, or null.
+	 *
+	 * Weeks count: the subsidy schemes and the event permits declare P8W and
+	 * P13W, and reading only days let them through the sweep unseen.
 	 *
 	 * @param mixed $duration The declared duration.
 	 *
 	 * @return int|null The days.
 	 */
 	private function days(mixed $duration): ?int {
-		if (is_string($duration) !== true || preg_match('/^P(\d+)D$/', trim($duration), $matches) !== 1) {
+		if (is_string($duration) !== true || preg_match('/^P(\d+)([DW])$/', trim($duration), $matches) !== 1) {
 			return null;
+		}
+
+		if ($matches[2] === 'W') {
+			return ((int)$matches[1] * 7);
 		}
 
 		return (int)$matches[1];
@@ -145,7 +229,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 				continue;
 			}
 
-			if (array_key_exists($slug, $definitions) === true) {
+			if (array_key_exists($slug, $definitions) === true || array_key_exists($slug, self::OPEN_QUESTIONS) === true) {
 				continue;
 			}
 
@@ -187,7 +271,12 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 				$mismatched[] = $slug . ': case type says ' . $declared . ' days, definition says ' . $configured;
 			}
 
-			$extension = $this->days($caseType['extensionDuration'] ?? null);
+			// A service norm has no statutory extension to agree with.
+			if (($definition['kind'] ?? 'statutory') !== 'statutory') {
+				continue;
+			}
+
+			$extension = $this->days($caseType['extensionDuration'] ?? ($caseType['extensionPeriod'] ?? null));
 			if ($extension !== null && (int)($definition['extensionCapacity'] ?? 0) !== $extension) {
 				$mismatched[] = $slug . ': case type allows ' . $extension . ' extension days, definition allows '
 					. (int)($definition['extensionCapacity'] ?? 0);
@@ -243,5 +332,83 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		self::assertSame($this->days($caseType['processingDeadline'] ?? null), (int)$definition['standardDurationDays']);
 		self::assertSame($this->days($caseType['extensionPeriod'] ?? null), (int)$definition['extensionCapacity']);
 	}//end testTheRegistersOmgevingsvergunningHasATermijnDefinitie()
+
+	/**
+	 * Each decided register case type carries the term Ruben decided.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function testEachDecidedCaseTypeCarriesItsDecidedTerm(): void {
+		$caseTypes = $this->shippedCaseTypes();
+		$definitions = $this->shippedDefinitions();
+
+		foreach (self::DECIDED as $key => [$kind, $days, $extension, $extensions, $basis]) {
+			self::assertArrayHasKey($key, $caseTypes, 'No shipped case type resolves to ' . $key . ', so its definition binds to nothing.');
+			self::assertArrayHasKey($key, $definitions, 'No shipped TermijnDefinitie binds to ' . $key . '.');
+
+			$definition = $definitions[$key];
+			self::assertSame($kind, $definition['kind'] ?? null, $key . ': kind');
+			self::assertSame($days, (int)($definition['standardDurationDays'] ?? 0), $key . ': days');
+			self::assertSame($this->days($caseTypes[$key]['processingDeadline'] ?? null), $days, $key . ': the case type\'s own deadline');
+			self::assertSame($extension, (int)($definition['extensionCapacity'] ?? 0), $key . ': extension capacity');
+			self::assertSame($extensions, (int)($definition['countExtensions'] ?? 0), $key . ': number of extensions');
+			self::assertSame('calendarDays', $definition['countingMode'] ?? null, $key . ': counting mode');
+			self::assertStringContainsString($basis, (string)($definition['legalBasis'] ?? ''), $key . ': legal basis');
+		}
+	}//end testEachDecidedCaseTypeCarriesItsDecidedTerm()
+
+	/**
+	 * Every citation names an article and an official source.
+	 *
+	 * A statutory row added for the register's case types must say where its
+	 * rule is written, and a service norm must not pretend to have a source.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function testEveryShippedCitationNamesAnArticleAndAnOfficialSource(): void {
+		$definitions = $this->shippedDefinitions();
+
+		foreach (self::DECIDED as $key => [$kind]) {
+			$sources = ($definitions[$key]['legalBasisSources'] ?? null);
+			self::assertIsArray($sources, $key . ': legalBasisSources must be a list.');
+
+			if ($kind !== 'statutory') {
+				self::assertSame([], $sources, $key . ': a service norm cites no law.');
+				continue;
+			}
+
+			self::assertNotSame([], $sources, $key . ': a statutory term must cite its source.');
+			foreach ($sources as $source) {
+				self::assertNotSame('', trim((string)($source['article'] ?? '')), $key . ': a citation names its article.');
+				self::assertMatchesRegularExpression(
+					'#^https://(wetten\.overheid\.nl|vng\.nl)/#',
+					(string)($source['url'] ?? ''),
+					$key . ': a citation points at an official text.'
+				);
+			}
+		}
+	}//end testEveryShippedCitationNamesAnArticleAndAnOfficialSource()
+
+	/**
+	 * The open questions are still shipped, still deadline-bearing, still open.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function testTheOpenQuestionsAreStillOpen(): void {
+		$caseTypes = $this->shippedCaseTypes();
+		$definitions = $this->shippedDefinitions();
+
+		foreach (array_keys(self::OPEN_QUESTIONS) as $key) {
+			self::assertArrayHasKey($key, $caseTypes, $key . ' is no longer shipped; take it off OPEN_QUESTIONS.');
+			self::assertNotNull($this->days($caseTypes[$key]['processingDeadline'] ?? null), $key . ' no longer declares a deadline; take it off OPEN_QUESTIONS.');
+			self::assertArrayNotHasKey($key, $definitions, $key . ' has a definition now; take it off OPEN_QUESTIONS.');
+		}
+	}//end testTheOpenQuestionsAreStillOpen()
 
 }//end class
