@@ -180,4 +180,24 @@ interface MailGatewayInterface {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	public function unpackSynchronisation(object $event): ?array;
+
+	/**
+	 * Send one message through a mail account, on that account's own authentication.
+	 *
+	 * The mail app holds the credential, opens the connection and files the
+	 * sent copy in the account's sent folder. A message it took but could not
+	 * send stays in its outbox and is retried there, so it is never dropped.
+	 *
+	 * Message keys: `to` (list of addresses), `subject`, `html`, `plain`, and
+	 * optionally `attachments` (paths in the sending user's own files).
+	 *
+	 * @param integer              $accountId The account the message leaves from.
+	 * @param array<string, mixed> $message   What to send.
+	 *
+	 * @return array{state: string, outboxId: int|null}
+	 *         `state` is one of the OutboundState constants.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function sendMessage(int $accountId, array $message): array;
 }//end interface

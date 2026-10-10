@@ -25,14 +25,19 @@
  * cannot take a lesser role in a browser.
  */
 
+import type { APIRequestContext } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureCaseType,
 	getRequestToken,
 	objectId,
 	RUN_PREFIX,
+	seedCase,
 	showObject,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { navToRoute, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
@@ -116,7 +121,7 @@ test.describe('Inbound mail filters', () => {
 	test.afterAll(async ({ playwright, baseURL }) => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
-		await cleanupRunObjects(api, token, [ENTRY_SCHEMA])
+		await cleanupRunObjects(api, token, [ENTRY_SCHEMA, 'case', 'caseType'])
 		await api.dispose()
 	})
 
@@ -136,6 +141,12 @@ test.describe('Inbound mail filters', () => {
 		).toHaveCount(0)
 		await expect(
 			page.locator('.email-settings #email_imap_password'),
+		).toHaveCount(0)
+		// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#nothing-in-dossiq-holds-a-sending-password
+		// Nor an outbound one: case mail leaves on the Mail account's own
+		// authentication (REQ-IMF-11).
+		await expect(
+			page.locator('.email-settings #email_smtp_password'),
 		).toHaveCount(0)
 
 		expect(errors, `console errors: ${errors.join(' | ')}`).toEqual([])
@@ -238,4 +249,113 @@ test.describe('Inbound mail filters', () => {
 		expect(String(entry.releasedAt ?? ''), 'and when').not.toBe('')
 		await api.dispose()
 	})
+
+	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-case-mail-goes-out-on-the-accounts-own-authentication
+	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#sent-mail-is-filed-in-the-mailbox
+	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-case-type-with-no-declaration-uses-the-default-account
+	test('a case mail leaves through the picked Mail account and is filed', async ({
+		playwright,
+		baseURL,
+	}) => {
+		const api = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(api)
+		const accounts = await mailAccounts(api)
+		test.skip(accounts.length === 0, 'this instance has no Nextcloud Mail account to send through')
+
+		const caseType = await ensureCaseType(api, token)
+		const zaak = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Mail through the account`,
+			caseType: caseType.id,
+		})
+
+		const res = await sendCaseMail(api, token, objectId(zaak), accounts[0].email)
+		test.skip(
+			res.status === 503 && res.body.error === 'mail-account-unavailable' && res.body.state === undefined,
+			'no Mail account is picked in the dossiq mail settings',
+		)
+
+		expect(res.status, JSON.stringify(res.body)).toBe(200)
+		// `sent` is only answered after Mail filed the copy in the sent folder;
+		// a send that could not be filed answers `sent-not-filed`.
+		expect(res.body.state).toBe('sent')
+		expect(accounts.map((a) => a.email.toLowerCase())).toContain(
+			String(res.body.from).toLowerCase(),
+		)
+		await api.dispose()
+	})
+
+	// @e2e openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#a-bezwaar-goes-out-from-juridische-zaken
+	test('a case type that names a team account sends from that account', async ({
+		playwright,
+		baseURL,
+	}) => {
+		const api = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(api)
+		const accounts = await mailAccounts(api)
+		test.skip(accounts.length < 2, 'this needs two Nextcloud Mail accounts: a default one and a team one')
+
+		const team = accounts[accounts.length - 1]
+		const caseType = await createObject(api, token, 'caseType', {
+			title: `${RUN_PREFIX} Bezwaar`,
+			identifier: `${RUN_PREFIX.toLowerCase()}-bezwaar`,
+			isDraft: false,
+			mailAccount: team.email,
+		})
+		const zaak = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Bezwaar from the team`,
+			caseType: objectId(caseType),
+		})
+
+		const res = await sendCaseMail(api, token, objectId(zaak), team.email)
+
+		expect([200, 503], JSON.stringify(res.body)).toContain(res.status)
+		expect(String(res.body.from).toLowerCase()).toBe(team.email.toLowerCase())
+
+		// An address no Mail account holds is refused, never rerouted to the default account.
+		await updateObject(api, token, 'caseType', objectId(caseType), {
+			mailAccount: `${RUN_PREFIX.toLowerCase()}-nobody@voorbeeld.nl`,
+		})
+		const refused = await sendCaseMail(api, token, objectId(zaak), team.email)
+		expect(refused.status).toBe(422)
+		expect(refused.body.error).toBe('sender-not-held')
+		await api.dispose()
+	})
 })
+
+/**
+ * The Nextcloud Mail accounts the signed-in user can see.
+ *
+ * @param api Authenticated request context.
+ */
+async function mailAccounts(api: APIRequestContext): Promise<Array<{ id: number; email: string }>> {
+	const res = await api.get('/index.php/apps/mail/api/accounts')
+	if (!res.ok()) {
+		return []
+	}
+	const body = await res.json()
+	const rows = Array.isArray(body) ? body : (body?.data ?? [])
+	return rows
+		.map((row: any) => ({ id: Number(row.accountId ?? row.id), email: String(row.emailAddress ?? row.email ?? '') }))
+		.filter((row: { email: string }) => row.email !== '')
+}
+
+/**
+ * Send one case mail through dossiq's own endpoint.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param caseId The case.
+ * @param to     The recipient, inside the sender's own domain so the allow-list passes.
+ */
+async function sendCaseMail(
+	api: APIRequestContext,
+	token: string,
+	caseId: string,
+	to: string,
+): Promise<{ status: number; body: any }> {
+	const res = await api.post(`/index.php/apps/dossiq/api/email/${caseId}/send`, {
+		headers: { requesttoken: token, 'OCS-APIRequest': 'true', 'Content-Type': 'application/json' },
+		data: { to, subject: `${RUN_PREFIX} Uw zaak`, body: '<p>Een bericht over uw zaak.</p>', category: 'besluit' },
+	})
+	return { status: res.status(), body: await res.json().catch(() => ({})) }
+}

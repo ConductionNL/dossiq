@@ -60,21 +60,37 @@ Waits on nothing: Nextcloud Mail already holds the account and the OAuth
   quarantined bezwaar released by hand, an unmappable message in the
   inbox, and the log found by sender;
   `openspec validate inbound-mail-filters --strict`.
-- [ ] 8.1 Outbound mail leaves through the selected Nextcloud Mail
-  account, with no dossiq SMTP password, no dossiq OAuth flow and no
-  dossiq SMTP connection; the stored outbound credential is deleted on
-  upgrade (wave 4, C-integrations-42, REQ-IMF-11).
-  - `tests/unit/Service/Email/OutboundThroughMailAccountTest.php`
+- [x] 8.1 Handler-written case mail (`CaseEmailService`) leaves through the
+  selected Nextcloud Mail account (Mail's `OutboxService`), with no dossiq
+  SMTP password, no dossiq OAuth flow and no dossiq SMTP connection; term
+  notices and service mail keep Nextcloud's `IMailer` with their RFC 8058
+  `List-Unsubscribe` headers (decision 165, amended 10 Oct); the stored
+  outbound credential (`email_smtp_*`) is deleted on upgrade (wave 4,
+  C-integrations-42, REQ-IMF-11). Moving all mail to the Mail account waits
+  on the nextcloud/mail headers issue (decision 147, change
+  `case-mail-through-the-mail-account-with-rfc-8058`).
+  - `lib/Service/Email/NextcloudMailGateway.php` `sendMessage()`,
+    `lib/Service/Email/OutboundCaseMail.php`, `lib/Service/Email/OutboundState.php`,
+    `lib/Repair/RetireImapCredentials.php` (SMTP keys)
+  - `tests/Unit/Service/Email/OutboundThroughMailAccountTest.php`
   - `@spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md`
-- [ ] 8.2 File sent mail in the account's sent folder, and report
+- [x] 8.2 File sent mail in the account's sent folder, and report
   unavailable rather than dropping a message when the account cannot be
-  reached (wave 4, C-integrations-8, REQ-IMF-11).
-- [ ] 8.3 `caseType`: declare the sending account, so a team's mail
+  reached (wave 4, C-integrations-8, REQ-IMF-11). Mail's send chain files the
+  copy; a message Mail took but could not send stays in its outbox (retried by
+  Mail) and is recorded on the case as `queued` (timeline `delivery`), and the
+  endpoint answers 503 `mail-account-unavailable`.
+  - `tests/Unit/Service/CaseEmailServiceTest.php`, `tests/Unit/Controller/EmailControllerTest.php`
+- [x] 8.3 `caseType`: declare the sending account, so a team's mail
   carries that team's sender identity; refuse publication on an
   unresolvable account and refuse a From address no selected account holds
   (wave 4, C-configuration-63 and integriq
   `outbound-sender-identity-and-deliverability` integriq#2012, REQ-IMF-12).
-  - `tests/unit/Service/Email/SenderIdentityPerCaseTypeTest.php`
+  `caseType.mailAccount` (the account's address, register.d/36-mail-intake.json),
+  `lib/Service/Email/SenderIdentity.php`, `PublicationChecks::validate()`.
+  The case type editor field waits on its board (decision 162).
+  - `tests/Unit/Service/Email/SenderIdentityPerCaseTypeTest.php`
 - [ ] 8.4 Extend `tests/e2e/inbound-mail-filters.spec.ts`: no outbound
   password field, a case mail sent on the account's own authentication and
   filed in its sent folder, and a bezwaar going out from Juridische Zaken.
+  Written; run owed (live pass, decision 139).

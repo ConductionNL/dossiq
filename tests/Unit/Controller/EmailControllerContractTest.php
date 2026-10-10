@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailController;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -159,21 +160,30 @@ class EmailControllerContractTest extends TestCase {
 	}//end testSendForwardsTheRouteCaseIdAndDefaultsTheAbsentBodyFields()
 
 	/**
-	 * A transport failure answers 500 with ONLY the sentinel — never the
-	 * exception text, which carries the SMTP host and credentials.
+	 * A Mail account that cannot be reached answers 503 with dossiq's own rule
+	 * and sentence, never Mail's or the SMTP server's exception text
+	 * (inbound-mail-filters REQ-IMF-11; the old `email_send_failed` sentinel
+	 * went with dossiq's own SMTP send).
 	 *
 	 * @return void
 	 */
-	public function testSendAnswers500WithTheSentinelAndNoTransportDetail(): void {
+	public function testSendAnswers503WithTheRuleAndNoTransportDetail(): void {
 		$this->signIn();
 		$this->emailService->method('sendEmail')
-			->willThrowException(new \RuntimeException('email_send_failed'));
+			->willThrowException(new RefusedException(
+				rule: 'mail-account-unavailable',
+				sentence: 'The mail account cannot be reached.',
+				status: RefusedException::STATUS_INDETERMINATE
+			));
 
 		$response = $this->controller->send(caseId: 'case-1');
 
-		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
-		$this->assertSame(['error' => 'email_send_failed'], $response->getData());
-	}//end testSendAnswers500WithTheSentinelAndNoTransportDetail()
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame(
+			['error' => 'mail-account-unavailable', 'message' => 'The mail account cannot be reached.', 'sent' => false],
+			$response->getData()
+		);
+	}//end testSendAnswers503WithTheRuleAndNoTransportDetail()
 
 	/**
 	 * A caller-fixable validation failure takes the OTHER arm: 400 carrying the
@@ -215,7 +225,7 @@ class EmailControllerContractTest extends TestCase {
 	}//end testSendFromTemplateUsesTheTemplateSendPathWithTheRouteCaseId()
 
 	/**
-	 * sendFromTemplate maps the sentinel to 500 and a missing template to 400,
+	 * sendFromTemplate maps an unreachable account to 503 and a missing template to 400,
 	 * exactly like send() — the two arms are separate here as well.
 	 *
 	 * @return void
@@ -223,15 +233,15 @@ class EmailControllerContractTest extends TestCase {
 	public function testSendFromTemplateSplitsTransportFailuresFromValidationFailures(): void {
 		$this->signIn();
 		$this->emailService->method('sendFromTemplate')->willReturnOnConsecutiveCalls(
-			$this->throwException(new \RuntimeException('email_send_failed')),
+			$this->throwException(new RefusedException(rule: 'mail-account-unavailable', sentence: 'Unreachable.', status: 503)),
 			$this->throwException(new \RuntimeException('Email template not found')),
 		);
 
 		$transport = $this->controller->sendFromTemplate(caseId: 'case-2');
 		$validation = $this->controller->sendFromTemplate(caseId: 'case-2');
 
-		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $transport->getStatus());
-		$this->assertSame(['error' => 'email_send_failed'], $transport->getData());
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $transport->getStatus());
+		$this->assertSame('mail-account-unavailable', $transport->getData()['error']);
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $validation->getStatus());
 		$this->assertSame(['error' => 'Email template not found'], $validation->getData());
 	}//end testSendFromTemplateSplitsTransportFailuresFromValidationFailures()

@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Email\SenderIdentity;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use Throwable;
@@ -66,6 +67,7 @@ class PublicationChecks {
 	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
+	 * @param SenderIdentity          $senders          Whether the mail account this type names exists.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypeResolver,
@@ -76,6 +78,7 @@ class PublicationChecks {
 		private readonly RemedyClauseDeclaration $remedy,
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseTypeReachability $reachability,
+		private readonly SenderIdentity $senders,
 	) {
 	}//end __construct()
 
@@ -162,6 +165,9 @@ class PublicationChecks {
 		return array_merge(
 			$findings,
 			$this->handlingFindings(caseType: $caseType),
+			// A case type naming a mail account Nextcloud Mail does not hold
+			// would send its team's mail nowhere (REQ-IMF-12).
+			$this->senders->publicationFindings(caseType: $caseType),
 			$this->reachabilityFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses)
 		);
 	}//end validate()

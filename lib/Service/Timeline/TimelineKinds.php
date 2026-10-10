@@ -210,6 +210,11 @@ final class TimelineKinds {
 				'recipient' => ['type' => 'string'],
 				'subject' => ['type' => 'string'],
 				'documentId' => ['type' => 'string'],
+				// Delivery is sent, sent-not-filed or queued (inbound-mail-filters REQ-IMF-11):
+				// a message the mail account took but could not send yet stays
+				// visible on the case as queued, never silently dropped.
+				'delivery' => ['type' => 'string'],
+				'sender' => ['type' => 'string'],
 			],
 			'required' => ['recipient'],
 			'followUp' => false,

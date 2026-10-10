@@ -31,26 +31,29 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailController;
 use OCA\Dossiq\Service\CaseEmailService;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
-use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
+use OCA\Dossiq\Service\Email\IntakeAccount;
+use OCA\Dossiq\Service\Email\OutboundCaseMail;
+use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Email\SenderIdentity;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
+use OCA\Dossiq\Tests\Support\FakeMailGateway;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCA\Dossiq\Tests\Support\PhpInputStream;
-use OCA\Dossiq\Tests\Support\RecordingMessage;
 use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
-use OCP\Mail\IMailer;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -63,14 +66,14 @@ class EmailControllerTest extends TestCase {
 
 	private FakeIntegriqOptOuts $optOuts;
 
-	private int $sends = 0;
+	private FakeMailGateway $gateway;
 
 	private string $gateRelative = OptOutGate::DECISION_EVENT;
 
 	protected function setUp(): void {
 		$this->dispatcher = new InMemoryEventDispatcher();
 		$this->optOuts = FakeIntegriqOptOuts::on($this->dispatcher);
-		$this->sends = 0;
+		$this->gateway = new FakeMailGateway();
 		$this->gateRelative = OptOutGate::DECISION_EVENT;
 	}//end setUp()
 
@@ -78,18 +81,9 @@ class EmailControllerTest extends TestCase {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => match ($key) {
-				'email_from_address' => 'zaken@gemeente.nl',
+				IntakeAccount::ACCOUNT_KEY => '7',
 				'email_recipient_allowlist' => '*',
 				default => $default,
-			}
-		);
-
-		$mailer = $this->createMock(IMailer::class);
-		$mailer->method('createMessage')->willReturnCallback(static fn (): RecordingMessage => new RecordingMessage());
-		$mailer->method('send')->willReturnCallback(
-			function (): array {
-				$this->sends++;
-				return [];
 			}
 		);
 
@@ -102,13 +96,19 @@ class EmailControllerTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
+		$caseTypes = $this->createMock(CaseTypeResolver::class);
+		$caseTypes->method('effectiveCaseType')->willReturn([]);
+		$store = $this->createMock(CaseTypeStore::class);
+		$store->method('referenceId')->willReturn('');
+
 		$service = new CaseEmailService(
-			$mailer,
-			$appConfig,
 			new NullLogger(),
 			$repository,
 			new CaseContactDirectory(),
-			new CaseEmailAttachmentResolver($this->createMock(IRootFolder::class), $this->createMock(IUserSession::class), new NullLogger()),
+			new OutboundCaseMail(
+				$this->gateway,
+				new SenderIdentity($this->gateway, new IntakeAccount($appConfig), $caseTypes, $store)
+			),
 			new RecipientAllowlist($appConfig),
 			$this->createMock(CaseTimeline::class),
 			new CaseMailOptOut(
@@ -142,7 +142,7 @@ class EmailControllerTest extends TestCase {
 
 		$this->assertSame(409, $response->getStatus());
 		$this->assertSame('opted-out', $response->getData()['error']);
-		$this->assertSame(0, $this->sends);
+		$this->assertSame(0, count($this->gateway->sent));
 	}//end testAnOptedOutRecipientIsA409WithTheCode()
 
 	public function testWithoutIntegriqACaseUpdateIsA409AuthorityUnavailable(): void {
@@ -152,7 +152,7 @@ class EmailControllerTest extends TestCase {
 
 		$this->assertSame(409, $response->getStatus());
 		$this->assertSame('authority-unavailable', $response->getData()['error']);
-		$this->assertSame(0, $this->sends);
+		$this->assertSame(0, count($this->gateway->sent));
 	}//end testWithoutIntegriqACaseUpdateIsA409AuthorityUnavailable()
 
 	public function testABesluitIsSentToAnOptedOutRecipient(): void {
@@ -161,7 +161,7 @@ class EmailControllerTest extends TestCase {
 		$response = $this->send(['to' => 'burger@example.nl', 'subject' => 'S', 'body' => 'B', 'category' => 'besluit']);
 
 		$this->assertSame(200, $response->getStatus());
-		$this->assertSame(1, $this->sends);
+		$this->assertSame(1, count($this->gateway->sent));
 		$this->assertSame('besluit', $this->optOuts->log[0]['category']);
 	}//end testABesluitIsSentToAnOptedOutRecipient()
 
@@ -170,7 +170,7 @@ class EmailControllerTest extends TestCase {
 
 		$this->assertSame(400, $response->getStatus());
 		$this->assertSame('invalid-category', $response->getData()['error']);
-		$this->assertSame(0, $this->sends);
+		$this->assertSame(0, count($this->gateway->sent));
 		$this->assertSame([], $this->optOuts->log);
 	}//end testAHandlerCannotPickMarketing()
 
@@ -178,7 +178,7 @@ class EmailControllerTest extends TestCase {
 		$response = $this->send(['to' => 'burger@example.nl', 'subject' => 'S', 'body' => 'B', 'category' => 'statutory']);
 
 		$this->assertSame(400, $response->getStatus());
-		$this->assertSame(0, $this->sends);
+		$this->assertSame(0, count($this->gateway->sent));
 	}//end testAHandlerCannotPickStatutoryEither()
 
 	public function testATemplateSendToAnOptedOutRecipientIsA409(): void {
@@ -192,6 +192,37 @@ class EmailControllerTest extends TestCase {
 
 		$this->assertSame(409, $response->getStatus());
 		$this->assertSame('opted-out', $response->getData()['error']);
-		$this->assertSame(0, $this->sends);
+		$this->assertSame(0, count($this->gateway->sent));
 	}//end testATemplateSendToAnOptedOutRecipientIsA409()
+
+	/**
+	 * A message the Mail account took but could not send is a 503 that says it is queued.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function testAQueuedSendIsA503ThatSaysQueued(): void {
+		$this->gateway->sendState = OutboundState::QUEUED;
+
+		$response = $this->send(['to' => 'burger@example.nl', 'subject' => 'S', 'body' => 'B', 'category' => 'besluit']);
+
+		$this->assertSame(503, $response->getStatus());
+		$this->assertSame('mail-account-unavailable', $response->getData()['error']);
+		$this->assertSame(OutboundState::QUEUED, $response->getData()['state']);
+		$this->assertSame('msg-1', $response->getData()['messageId']);
+	}//end testAQueuedSendIsA503ThatSaysQueued()
+
+	/**
+	 * An account the mail app cannot reach takes nothing and answers 503.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function testAnUnreachableAccountIsA503(): void {
+		$this->gateway->sendState = OutboundState::UNAVAILABLE;
+
+		$response = $this->send(['to' => 'burger@example.nl', 'subject' => 'S', 'body' => 'B', 'category' => 'besluit']);
+
+		$this->assertSame(503, $response->getStatus());
+		$this->assertSame('mail-account-unavailable', $response->getData()['error']);
+		$this->assertSame([], $this->gateway->sent);
+	}//end testAnUnreachableAccountIsA503()
 }//end class

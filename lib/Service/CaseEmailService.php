@@ -31,16 +31,15 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RecipientOptedOutException;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
-use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
+use OCA\Dossiq\Service\Email\OutboundCaseMail;
+use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
-use OCP\IAppConfig;
-use OCP\Mail\IMailer;
-use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -93,23 +92,25 @@ class CaseEmailService {
 	/**
 	 * Constructor.
 	 *
-	 * @param IMailer $mailer Nextcloud mailer
-	 * @param IAppConfig $appConfig Nextcloud app config
+	 * 🔴 NO IMailer HERE ANY MORE (inbound-mail-filters 8.1, decision 165). A
+	 * case mail a handler writes leaves through the case's Nextcloud Mail
+	 * account, on that account's own authentication, and is filed in its sent
+	 * folder. Term notices and service mail keep Nextcloud's IMailer for their
+	 * RFC 8058 headers; they never come through this class.
+	 *
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseEmailRepository $repository OpenRegister reads/writes for case email
 	 * @param CaseContactDirectory $contactDirectory Contact addresses registered on a case
-	 * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
+	 * @param OutboundCaseMail $outbound The case's Mail account, which sends and files the message
 	 * @param RecipientAllowlist $allowlist Outbound recipient policy
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
 	 * @param CaseMailOptOut $optOut Asks integriq first and places its unsubscribe link
 	 */
 	public function __construct(
-		private readonly IMailer $mailer,
-		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 		private readonly CaseEmailRepository $repository,
 		private readonly CaseContactDirectory $contactDirectory,
-		private readonly CaseEmailAttachmentResolver $attachmentResolver,
+		private readonly OutboundCaseMail $outbound,
 		private readonly RecipientAllowlist $allowlist,
 		private readonly CaseTimeline $timeline,
 		private readonly CaseMailOptOut $optOut,
@@ -126,14 +127,17 @@ class CaseEmailService {
 	 * @param array<string> $attachments File paths to attach
 	 * @param string $category What the mail is: `case-update` (default), `besluit` or `statutory`
 	 *
-	 * @return array<string, mixed> Send result with message ID
+	 * @return array<string, mixed> Send result with message ID and `state`
+	 *         (sent, sent-not-filed, or queued when the account took it but could not send it yet)
 	 *
-	 * @throws \RuntimeException If sending fails
+	 * @throws \RuntimeException If the case cannot be read or the recipient is not allowed
+	 * @throws RefusedException sender-not-held, or mail-account-unavailable when the account took nothing
 	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
 	 * @throws InvalidArgumentException If the category is not one a case mail can carry
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function sendEmail(
 		string $caseId,
@@ -147,16 +151,6 @@ class CaseEmailService {
 			throw new InvalidArgumentException('invalid-category');
 		}
 
-		// H6 / C4: Fail loudly if from-address is not configured — never fall back to
-		// the reserved example.nl domain which would cause bounces and expose config errors.
-		$fromAddress = $this->resolveFromAddress();
-
-		$fromName = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'email_from_name',
-			'Dossiq',
-		);
-
 		// C4 IDOR: Load the case via OR with RBAC enabled to verify the current user
 		// has read access. If the case is not found (or the user has no access), OR
 		// returns null — we treat that as 403.
@@ -167,6 +161,12 @@ class CaseEmailService {
 		if (empty($caseData) === true) {
 			throw new RuntimeException('Zaak niet gevonden of geen toegang.');
 		}
+
+		// The account decides the sender: the case type's declared account,
+		// else the one an administrator picked. An address no account holds
+		// is refused here, before anything is built (REQ-IMF-12).
+		$account     = $this->outbound->accountFor(caseData: $caseData);
+		$fromAddress = (string)$account['email'];
 
 		// H4: Validate the recipient against the allow-list. This prevents
 		// open-relay abuse where any email address could be supplied.
@@ -188,19 +188,20 @@ class CaseEmailService {
 			throw new RecipientOptedOutException(reasonCode: $decision['code'], reason: $decision['reason']);
 		}
 
-		$unsubscribe = $decision['unsubscribe'];
+		// The Mail account builds its own headers, so the unsubscribe link
+		// travels in the body only (decision 165).
+		$bodies = $this->optOut->bodies(body: $body, unsubscribe: $decision['unsubscribe']);
 
-		$message = $this->mailer->createMessage();
-		$message->setFrom([$fromAddress => $fromName]);
-		$message->setTo([$to]);
-		$message->setSubject($subject);
-		$this->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe);
-
-		// H5: Resolve attachments via IUserFolder to restrict file access to the
-		// calling user's own files and prevent path traversal outside their folder.
-		$this->attachmentResolver->attach(message: $message, attachments: $attachments, caseId: $caseId);
-
-		$this->dispatchMessage(message: $message, caseId: $caseId);
+		// H5: attachments are paths in the sending user's own files; Nextcloud
+		// Mail reads them from that folder and checks the download permission.
+		$delivery = $this->outbound->send(
+			account: $account,
+			to: $to,
+			subject: $subject,
+			html: $bodies['html'],
+			plain: $bodies['plain'],
+			attachments: $attachments,
+		);
 
 		$messageId = $this->recordSentEmail(
 			caseId: $caseId,
@@ -208,17 +209,20 @@ class CaseEmailService {
 			to: $to,
 			subject: $subject,
 			body: $body,
+			delivery: $delivery['state'],
 		);
 
 		$this->logger->info(
-			'Email sent for case {caseId}',
-			['app' => Application::APP_ID, 'caseId' => $caseId],
+			'Email for case {caseId} handed to the Mail account: {state}',
+			['app' => Application::APP_ID, 'caseId' => $caseId, 'state' => $delivery['state']],
 		);
 
 		return [
 			'messageId' => $messageId,
 			'to' => $to,
+			'from' => $fromAddress,
 			'subject' => $subject,
+			'state' => $delivery['state'],
 			'sentAt' => date('Y-m-d\TH:i:s'),
 		];
 	}//end sendEmail()
@@ -236,12 +240,21 @@ class CaseEmailService {
 	 * @param string $to          The recipient.
 	 * @param string $subject     The subject, as sent.
 	 * @param string $body        The body, as sent.
+	 * @param string $delivery    What became of it: sent, sent-not-filed or queued.
 	 *
 	 * @return string The stored message id.
 	 *
 	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
-	public function recordSentEmail(string $caseId, string $fromAddress, string $to, string $subject, string $body): string {
+	public function recordSentEmail(
+		string $caseId,
+		string $fromAddress,
+		string $to,
+		string $subject,
+		string $body,
+		string $delivery = OutboundState::SENT,
+	): string {
 		// Record the sent email as a case document.
 		$messageId = $this->repository->recordSentEmail(
 			caseId: $caseId,
@@ -262,38 +275,14 @@ class CaseEmailService {
 				'recipient' => $to,
 				'subject' => $subject,
 				'documentId' => (string)$messageId,
+				'delivery' => $delivery,
+				'sender' => $fromAddress,
 			],
 			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 
 		return (string)$messageId;
 	}//end recordSentEmail()
-
-	/**
-	 * Resolve the configured envelope from-address.
-	 *
-	 * H6 / C4: fails loudly when the address is unset or still points at the
-	 * reserved example.nl domain, rather than silently sending mail that bounces.
-	 *
-	 * @return string The configured from-address
-	 *
-	 * @throws \RuntimeException If no usable from-address is configured
-	 */
-	private function resolveFromAddress(): string {
-		$fromAddress = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'email_from_address',
-			'',
-		);
-		if ($fromAddress === '' || str_ends_with($fromAddress, '@example.nl') === true) {
-			throw new RuntimeException(
-				'E-mail afzenderadres is niet geconfigureerd. '
-				. 'Stel email_from_address in via de beheerdersinstellingen.'
-			);
-		}
-
-		return $fromAddress;
-	}//end resolveFromAddress()
 
 	/**
 	 * Assert that a recipient address is well-formed and allowed.
@@ -356,37 +345,6 @@ class CaseEmailService {
 			. 'Voeg het adres of het domein toe bij de e-mailinstellingen.'
 		);
 	}//end assertRecipientAllowed()
-
-	/**
-	 * Hand a fully-built message to the mailer.
-	 *
-	 * M4: the full exception is logged server-side while the caller receives a
-	 * generic message, so internal mail-server details (hostnames, credentials)
-	 * are never leaked.
-	 *
-	 * @param IMessage $message The message to send
-	 * @param string $caseId The case UUID (logging context)
-	 *
-	 * @return void
-	 *
-	 * @throws \RuntimeException If the mailer rejects the message
-	 */
-	private function dispatchMessage(IMessage $message, string $caseId): void {
-		try {
-			$this->mailer->send($message);
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Failed to send email for case {caseId}: {error}',
-				[
-					'app' => Application::APP_ID,
-					'caseId' => $caseId,
-					'error' => $e->getMessage(),
-					'exception' => $e,
-				],
-			);
-			throw new RuntimeException('email_send_failed');
-		}
-	}//end dispatchMessage()
 
 	/**
 	 * Send an email using a template.

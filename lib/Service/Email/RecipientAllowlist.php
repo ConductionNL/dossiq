@@ -14,9 +14,9 @@
  * envelope from-address's own domain: dossiq may mail the organisation it sends
  * as, and any recipient outside that domain is an explicit operator decision.
  *
- * `email_from_address` is already mandatory — `CaseEmailService` refuses to send
- * without it — so the default is always derivable on any instance that can send
- * at all.
+ * The from-address is always known on an instance that can send at all:
+ * `CaseEmailService` passes the address of the Nextcloud Mail account the case
+ * mail leaves from, and refuses to send when no account is usable.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Email
