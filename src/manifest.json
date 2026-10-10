@@ -876,14 +876,14 @@
 					{
 						"id": "favourite-cases",
 						"type": "object-table",
-						"title": "Your favourites",
-						"_note": "case-number-and-favourites, row 2.19. The cases this reader starred, over OpenRegister's `_favourite` lens (favourites-and-recent, openregister#3766). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the star sits on the case row. No `isFinalStatus` filter: a case you starred and then closed is exactly the one you want back. View all leads to the Favourites chip on Cases, which is the same lens, so the tile and the list cannot show different sets.",
+						"title": "Cases you follow",
+						"_note": "one-follow-control. The cases this reader follows, over OpenRegister's `_watching` lens. This tile was Your favourites over `_favourite`; a favourite became a follow with notifications off (openregister merge-follow-and-favourites, Ruben 9 October on DqMijnWerk), so the tile asks the one lens and the board DqDashboard draws it as Zaken die u volgt. The widget id stays `favourite-cases` because a reader's own dashboard layout stores it, and a renamed id would drop the tile from every saved layout. No `isFinalStatus` filter: a case you follow and that just closed is exactly the one you want back. View all leads to the Following chip on Cases, the same lens.",
 						"content": {
 							"source": {
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
-									"_favourite": true
+									"_watching": true
 								},
 								"limit": 5
 							},
@@ -901,13 +901,13 @@
 							"viewAllRoute": {
 								"name": "Cases",
 								"query": {
-									"_favourite": "true"
+									"_watching": "true"
 								}
 							},
 							"viewAllLabel": "View all",
 							"hideHeader": true,
 							"borderless": true,
-							"emptyText": "Star a case to find it here"
+							"emptyText": "Follow a case to find it here"
 						}
 					},
 					{
@@ -1757,10 +1757,10 @@
 						"type": "handler"
 					},
 					{
-						"id": "favourite",
-						"label": "Add to or remove from favourites",
-						"icon": "StarOutline",
-						"handler": "toggleCaseFavourite",
+						"id": "follow",
+						"label": "Follow or stop following",
+						"icon": "EyeOutline",
+						"handler": "toggleCaseFollow",
 						"type": "handler"
 					}
 				],
@@ -1954,10 +1954,10 @@
 						"type": "handler"
 					},
 					{
-						"id": "favourite",
-						"label": "Add to or remove from favourites",
-						"icon": "StarOutline",
-						"handler": "toggleCaseFavourite",
+						"id": "follow",
+						"label": "Follow or stop following",
+						"icon": "EyeOutline",
+						"handler": "toggleCaseFollow",
 						"type": "handler"
 					}
 				],
@@ -2001,17 +2001,8 @@
 						}
 					},
 					{
-						"label": "Favourites",
-						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
-						"filter": {
-							"_favourite": true,
-							"statusHiddenInLists": false,
-							"isDraft": false
-						}
-					},
-					{
-						"label": "Followed",
-						"_note": "case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for. It sits beside Favourites, behind the '⋯' chip rather than in the strip: the four pills are the lenses a handler reaches for every morning, and this one answers which cases you chose to keep an eye on.",
+						"label": "Following",
+						"_note": "one-follow-control: the ONE lens for the cases you keep an eye on. The Favourites chip that sat beside it is gone, because a favourite is a follow with notifications off (openregister merge-follow-and-favourites), and `_favourite` now answers exactly what `_watching` answers. case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for. It sits beside Favourites, behind the '⋯' chip rather than in the strip: the four pills are the lenses a handler reaches for every morning, and this one answers which cases you chose to keep an eye on.",
 						"filter": {
 							"_watching": true,
 							"statusHiddenInLists": false,
@@ -3267,7 +3258,7 @@
 						"type": "case-banner-stack",
 						"title": "Case banners",
 						"icon": "FlagOutline",
-						"_note": "Archived, Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
+						"_note": "Archived, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
 					},
 					{
 						"id": "family-plan",
