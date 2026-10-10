@@ -434,10 +434,11 @@ describe('the simple profile', () => {
 		}
 	})
 
-	it('builds the same 69 pages as the full profile, so every route stays', () => {
+	// 69 -> 67: tenancy step 5 retires the Tenants and TenantDetail pages.
+	it('builds the same 67 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(69)
+		expect(built.pages).toHaveLength(67)
 	})
 })
 

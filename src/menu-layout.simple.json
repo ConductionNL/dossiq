@@ -14,7 +14,6 @@
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
-		"TenantsMenu",
 		"SubstitutionAdminMenu",
 		"BezwaarCommitteesMenu",
 		"PersonalQueueMenu",
@@ -28,12 +27,10 @@
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",
-		"TenantsMenu": "openregister:organisation",
 		"SubstitutionAdminMenu": "Cases",
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
 	"settingsSection": [
-		"TenantsMenu",
 		"WmsLayersMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
