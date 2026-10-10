@@ -28,6 +28,7 @@ const axios = (await import('@nextcloud/axios')).default
 const {
 	PORTAL_AUDIENCES,
 	WRITABLE_CEILING,
+	identityKinds,
 	portalPayload,
 	portalStateFrom,
 	refusalSentence,
@@ -212,5 +213,53 @@ describe('the Portal section of the case type editor', () => {
 			'A case in Ontvangen cannot move to Ingetrokken.',
 		)
 		expect(refusalSentence(new Error('network'))).toBe('')
+	})
+})
+
+describe('the ways in a case type admits (portal-case-list-declarations D4)', () => {
+	const declared = JSON.parse(
+		fs.readFileSync(
+			path.join(
+				ROOT,
+				'lib',
+				'Settings',
+				'register.d',
+				'75-portal-case-declarations.json',
+			),
+			'utf8',
+		),
+	).components.schemas.caseType.properties.portalIdentityKind
+
+	it('offers exactly the kinds the register declares', () => {
+		expect(identityKinds({}).map((kind) => kind.id)).toEqual(declared.items.enum)
+	})
+
+	it('shows an account as the way in, and the case number disabled with its reason', () => {
+		const [account, reference] = identityKinds({})
+		expect(account).toMatchObject({
+			id: 'account',
+			checked: true,
+			disabled: true,
+		})
+		expect(reference).toMatchObject({
+			id: 'reference',
+			checked: false,
+			disabled: true,
+			reason: 'address-not-checked',
+		})
+	})
+
+	it('keeps the case number disabled even on a type that stored it', () => {
+		const reference = identityKinds({
+			portalIdentityKind: ['account', 'reference'],
+		})[1]
+		expect(reference.disabled).toBe(true)
+		expect(reference.checked).toBe(true)
+	})
+
+	it('never writes the ways in', () => {
+		expect(
+			portalPayload(portalStateFrom({ portalIdentityKind: ['reference'] })),
+		).not.toHaveProperty('portalIdentityKind')
 	})
 })

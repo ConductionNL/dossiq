@@ -130,6 +130,33 @@
 				</template>
 			</section>
 
+			<section
+				class="case-type-portal__section"
+				data-testid="case-type-portal-ways-in">
+				<h4>{{ t('dossiq', 'How the applicant opens the case') }}</h4>
+				<div
+					v-for="kind in waysIn"
+					:key="kind.id"
+					class="case-type-portal__field">
+					<NcCheckboxRadioSwitch
+						:modelValue="kind.checked"
+						:disabled="kind.disabled"
+						:data-testid="`case-type-portal-way-in-${kind.id}`">
+						{{ wayInLabel(kind.id) }}
+					</NcCheckboxRadioSwitch>
+					<p
+						v-if="kind.reason === 'address-not-checked'"
+						class="case-type-portal__note">
+						{{
+							t(
+								'dossiq',
+								'Available once the portal checks the address against the case.',
+							)
+						}}
+					</p>
+				</div>
+			</section>
+
 			<p v-if="refusal" class="case-type-portal__refusal" role="alert">
 				{{ refusal }}
 			</p>
@@ -156,6 +183,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import {
+	identityKinds,
 	portalStateFrom,
 	readCaseType,
 	refusalSentence,
@@ -182,6 +210,7 @@ export default {
 			refusal: '',
 			statuses: [],
 			state: portalStateFrom({}),
+			waysIn: identityKinds({}),
 		}
 	},
 
@@ -250,6 +279,19 @@ export default {
 		},
 
 		/**
+		 * The label for a way into the portal.
+		 *
+		 * @param {string} id The kind.
+		 * @return {string} The label.
+		 * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md
+		 */
+		wayInLabel(id) {
+			return id === 'reference'
+				? t('dossiq', 'With the case number and an e-mail address')
+				: t('dossiq', 'With an account (DigiD or eHerkenning)')
+		},
+
+		/**
 		 * The options for a list of status ids, keeping an unknown id visible.
 		 *
 		 * @param {string[]} ids The ids.
@@ -297,6 +339,7 @@ export default {
 					),
 				])
 				this.state = portalStateFrom(caseType)
+				this.waysIn = identityKinds(caseType)
 				this.statuses = blueprint?.data?.statusTypes ?? []
 				this.error = false
 			} catch {
@@ -346,7 +389,8 @@ export default {
 }
 
 .case-type-portal__intro,
-.case-type-portal__empty {
+.case-type-portal__empty,
+.case-type-portal__note {
 	color: var(--color-text-maxcontrast);
 }
 

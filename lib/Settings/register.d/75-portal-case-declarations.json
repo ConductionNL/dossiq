@@ -1,0 +1,31 @@
+{
+  "_note": "portal-case-list-declarations, design D3 and D4. portalBranch is the vestigingsnummer of the company branch a case was filed under; portaliq's branch scope reads it through mijnZaken.branchField, so a session restricted to one branch sees only that branch's cases. portalIdentityKind says how a resident may reach a case of this type in the portal; absent means account only. No case type is seeded with reference, because portaliq does not yet check the e-mail address against the case.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "portalBranch": {
+            "type": "string",
+            "pattern": "^[0-9]{12}$",
+            "visible": false,
+            "title": "Branch number",
+            "description": "The branch number (vestigingsnummer) of the company that filed the case in the portal."
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "portalIdentityKind": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["account", "reference"]
+            },
+            "title": "Ways in to the portal",
+            "description": "How an applicant may open a case of this type in the portal. Empty means with an account only."
+          }
+        }
+      }
+    }
+  }
+}

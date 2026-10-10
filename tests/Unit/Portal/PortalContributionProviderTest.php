@@ -451,12 +451,19 @@ class PortalContributionProviderTest extends TestCase {
 		// supplier's payment record and showed it to nobody, least of all the
 		// supplier it was about. The order is asserted because the portal
 		// renders the collections in it.
+		// `mijnZaken` comes last: a company on eHerkenning follows its own
+		// cases beside procurement (portal-case-list-declarations D1).
 		$this->assertSame(
-			['tenders', 'contracts', 'invoices', 'performance', 'messages'],
+			['tenders', 'contracts', 'invoices', 'performance', 'messages', 'mijnZaken'],
 			$ids
 		);
 		foreach ($contribution['collections'] as $collection) {
-			$this->assertSame('supplierRef', $collection['scopeField']);
+			$expected = 'supplierRef';
+			if ($collection['id'] === 'mijnZaken') {
+				$expected = 'portalSubject';
+			}
+
+			$this->assertSame($expected, $collection['scopeField']);
 		}
 	}
 

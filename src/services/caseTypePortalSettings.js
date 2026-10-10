@@ -207,6 +207,33 @@ export async function savePortalSettings(id, state) {
 }
 
 /**
+ * The ways in a case type admits, as the editor shows them
+ * (portal-case-list-declarations D4).
+ *
+ * An account is the way in for every case type. A case number with an e-mail
+ * address stays disabled whatever the case type stored: portaliq does not yet
+ * check the address against the case, so admitting it would let anyone who
+ * knows a case number read that case. The editor never writes
+ * `portalIdentityKind`.
+ *
+ * @param {object} caseType The case type as OpenRegister stores it.
+ * @return {Array<{id: string, checked: boolean, disabled: boolean, reason: string}>} One entry per kind.
+ * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md
+ */
+export function identityKinds(caseType = {}) {
+	const stored = ids(caseType?.portalIdentityKind)
+	return [
+		{ id: 'account', checked: true, disabled: true, reason: '' },
+		{
+			id: 'reference',
+			checked: stored.includes('reference'),
+			disabled: true,
+			reason: 'address-not-checked',
+		},
+	]
+}
+
+/**
  * The case type as OpenRegister stores it.
  *
  * @param {string} id The case type's id.

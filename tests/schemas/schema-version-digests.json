@@ -1387,6 +1387,14 @@
         "version": "1.0.1",
         "digest": "c9cb5476773b810eacc2d827e4958ee9b83e8f30ebde5c142e8780bc926f8b95"
     },
+    "lib/Settings/register.d/75-portal-case-declarations.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/75-portal-case-declarations.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/76-portal-citizen-writes.json::case": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"

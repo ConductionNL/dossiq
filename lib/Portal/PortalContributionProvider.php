@@ -636,6 +636,12 @@ class PortalContributionProvider {
 			'actions' => [],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
+		// A COMPANY THAT SIGNS IN WITH eHERKENNING GETS `supplier` from
+		// portaliq's preset, and follows its own permit case there too. The
+		// case collection is the resident's declaration, scoped by the same
+		// `portalSubject`, so a company reads only what it filed itself
+		// (portal-case-list-declarations D1).
+		$contribution['collections'][] = (new CitizenManifest())->caseCollection();
 		$contribution['pages'] = $this->pages->forCollections(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
 
 		return $contribution;

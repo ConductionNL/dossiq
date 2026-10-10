@@ -139,6 +139,14 @@ class PortalWooRequestController extends Controller {
 		}
 
 		$request = ['subjectRef' => (string)$claims['sub']];
+		// The branch a company session is restricted to comes from the signed
+		// assertion only, like the subject; a branch in the body is never read
+		// (portal-case-list-declarations D3).
+		$branch = trim((string)($claims['branch'] ?? ''));
+		if ($branch !== '') {
+			$request['branch'] = $branch;
+		}
+
 		foreach (self::FIELDS as $field) {
 			$request[$field] = $this->request->getParam($field);
 		}

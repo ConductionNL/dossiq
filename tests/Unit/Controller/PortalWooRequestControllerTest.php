@@ -165,6 +165,41 @@ class PortalWooRequestControllerTest extends TestCase {
 	}//end testTheNewAnswersReachTheIntakeAndTheCaseNumberComesBack()
 
 	/**
+	 * The branch a company session carries on the assertion reaches the
+	 * intake; a branch in the body is never read (portal-case-list-declarations D3).
+	 *
+	 * @return void
+	 */
+	public function testTheAssertedBranchReachesTheIntakeAndTheBodysIsIgnored(): void {
+		$controller = $this->controller(
+			PortalAssertionVerifierTest::mint(['branch' => '000012345678']),
+			['onderwerp' => 'Parkeerbeleid', 'branch' => '999999999999']
+		);
+		$this->intake->expects(self::once())->method('start')->with(
+			self::callback(static fn (array $request): bool => $request['branch'] === '000012345678')
+		)->willReturn(['caseId' => 'case-1', 'caseUrl' => 'https://x/case-1']);
+
+		self::assertSame(201, $controller->start()->getStatus());
+	}//end testTheAssertedBranchReachesTheIntakeAndTheBodysIsIgnored()
+
+	/**
+	 * Without a branch on the assertion the request names none, whatever the body says.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAnAssertedBranchTheRequestNamesNone(): void {
+		$controller = $this->controller(
+			PortalAssertionVerifierTest::mint(),
+			['onderwerp' => 'Parkeerbeleid', 'branch' => '999999999999']
+		);
+		$this->intake->expects(self::once())->method('start')->with(
+			self::callback(static fn (array $request): bool => array_key_exists('branch', $request) === false)
+		)->willReturn(['caseId' => 'case-1', 'caseUrl' => 'https://x/case-1']);
+
+		self::assertSame(201, $controller->start()->getStatus());
+	}//end testWithoutAnAssertedBranchTheRequestNamesNone()
+
+	/**
 	 * No assertion, no request.
 	 *
 	 * @return void

@@ -278,6 +278,27 @@ class WooRequestIntakeTest extends TestCase {
 	}//end testARequestOpensAWooCaseForTheResident()
 
 	/**
+	 * A request filed for a company branch stamps the branch on the case, so a
+	 * session restricted to that branch lists it (portal-case-list-declarations D3).
+	 * A request without one, or with something that is no branch number,
+	 * writes none.
+	 *
+	 * @return void
+	 */
+	public function testTheBranchAFiledRequestCarriesLandsOnTheCase(): void {
+		$withBranch = $this->intake->start($this->request(['branch' => '000012345678']));
+		$case = $this->store->row(schema: 'case', uuid: $withBranch['caseId']);
+		self::assertSame('000012345678', $case['portalBranch']);
+		self::assertArrayNotHasKey('branch', $case['wooRequest'], 'the branch is the case\'s, not the request\'s');
+
+		$plain = $this->intake->start($this->request(['collectionId' => null]));
+		self::assertArrayNotHasKey('portalBranch', $this->store->row(schema: 'case', uuid: $plain['caseId']));
+
+		$malformed = $this->intake->start($this->request(['collectionId' => null, 'branch' => '12-34']));
+		self::assertArrayNotHasKey('portalBranch', $this->store->row(schema: 'case', uuid: $malformed['caseId']));
+	}//end testTheBranchAFiledRequestCarriesLandsOnTheCase()
+
+	/**
 	 * The new answers are kept on the request, and the requester details also
 	 * answer the case type's own questions.
 	 *
