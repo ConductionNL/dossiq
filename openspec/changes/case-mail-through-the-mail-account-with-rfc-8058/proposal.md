@@ -14,7 +14,7 @@ Ruben posts the nextcloud/mail issue asking for a headers option on the send pat
 
 - Once Nextcloud Mail accepts custom headers (the reserved `$options` on `OCP\Mail\Provider` `sendMessage()`, or a `headers` field on its send API), every dossiq mail leaves through the Mail account: case mail, term notices and other service mail.
 - `CaseMailOptOut::dress()` hands its RFC 8058 headers to the Mail send instead of to `IMailer`.
-- `TermNoticeSender` sends through `OutboundCaseMail`, from the account the case type names or the default account.
+- The notice sender (today `TermNoticeSender`) sends through `OutboundCaseMail` with kind `notice`, so `mail_transport_by_kind` decides its transport like every other kind; flipping `notice` and `service` to `mail-account` is then a configuration change, not a code change (decision 182).
 - `IMailer` is no longer used for any case or service mail.
 
 ## Impact

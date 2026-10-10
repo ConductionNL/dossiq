@@ -29,17 +29,23 @@ namespace OCA\Dossiq\Tests\Unit\Service\Email;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Repair\RetireImapCredentials;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\IntakeAccount;
 use OCA\Dossiq\Service\Email\MailMessageSource;
+use OCA\Dossiq\Service\Email\MailTransportPolicy;
 use OCA\Dossiq\Service\Email\NextcloudMailGateway;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
 use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Tests\Support\FakeMailGateway;
+use OCA\Dossiq\Tests\Support\RecordingMessage;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCP\IL10N;
+use OCP\Mail\IMailer;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -56,6 +62,8 @@ require_once __DIR__ . '/../../../Support/Mail/LocalMessage.php';
  *
  * @uses \OCA\Dossiq\Service\Email\NextcloudMailGateway
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
+ * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
+ * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
@@ -255,39 +263,128 @@ class OutboundThroughMailAccountTest extends TestCase {
 	}//end testAnUnreachableAccountIsUnavailable()
 
 	/**
+	 * OutboundCaseMail over the fake gateway, with a configurable transport map.
+	 *
+	 * @param FakeMailGateway $gateway    The fake Mail app.
+	 * @param string          $transports The `mail_transport_by_kind` JSON.
+	 * @param IMailer|null    $mailer     Nextcloud's mailer.
+	 * @param string          $from       The configured IMailer sender.
+	 *
+	 * @return OutboundCaseMail The outbound path.
+	 */
+	private function outbound(FakeMailGateway $gateway, string $transports = '', ?IMailer $mailer = null, string $from = 'zaken@gemeente.nl'): OutboundCaseMail {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static fn (string $app, string $key, string $default = ''): string => match ($key) {
+				IntakeAccount::ACCOUNT_KEY => '7',
+				MailTransportPolicy::CONFIG_KEY => $transports,
+				'email_from_address' => $from,
+				default => $default,
+			}
+		);
+		$store = $this->createMock(CaseTypeStore::class);
+		$store->method('referenceId')->willReturn('');
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		return new OutboundCaseMail(
+			$gateway,
+			new SenderIdentity($gateway, new IntakeAccount($appConfig), $this->createMock(CaseTypeResolver::class), $store),
+			new MailTransportPolicy($appConfig),
+			new CaseMailOptOut($this->createMock(OptOutGate::class), $l10n),
+			($mailer ?? $this->createMock(IMailer::class)),
+			$appConfig,
+			new NullLogger()
+		);
+	}//end outbound()
+
+	/**
 	 * OutboundCaseMail refuses as unavailable when the account took nothing, and passes the rest through.
 	 *
 	 * @return void
 	 */
 	public function testOutboundCaseMailRefusesOnlyWhenNothingWasTaken(): void {
-		$gateway = new FakeMailGateway();
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			static fn (string $app, string $key, string $default = ''): string => ($key === IntakeAccount::ACCOUNT_KEY ? '7' : $default)
-		);
-		$store = $this->createMock(CaseTypeStore::class);
-		$store->method('referenceId')->willReturn('');
-		$outbound = new OutboundCaseMail(
-			$gateway,
-			new SenderIdentity($gateway, new IntakeAccount($appConfig), $this->createMock(CaseTypeResolver::class), $store)
-		);
+		$gateway  = new FakeMailGateway();
+		$outbound = $this->outbound(gateway: $gateway);
 
-		$account = $outbound->accountFor(['title' => 'Dakkapel']);
-		self::assertSame('zaken@gemeente.nl', $account['email']);
+		$sender = $outbound->senderFor(['title' => 'Dakkapel'], MailTransportPolicy::KIND_CASE_MAIL);
+		self::assertSame(MailTransportPolicy::TRANSPORT_MAIL_ACCOUNT, $sender['transport']);
+		self::assertSame('zaken@gemeente.nl', $sender['from']);
 
 		$gateway->sendState = OutboundState::QUEUED;
-		self::assertSame(OutboundState::QUEUED, $outbound->send($account, 'burger@example.nl', 'S', '<p>B</p>', 'B')['state']);
+		self::assertSame(OutboundState::QUEUED, $outbound->send($sender, 'burger@example.nl', 'S', '<p>B</p>', null)['state']);
 		self::assertSame(['burger@example.nl'], $gateway->sent[0]['message']['to']);
+		self::assertSame('<p>B</p>', $gateway->sent[0]['message']['html']);
 
 		$gateway->sendState = OutboundState::UNAVAILABLE;
 		try {
-			$outbound->send($account, 'burger@example.nl', 'S', '<p>B</p>', 'B');
+			$outbound->send($sender, 'burger@example.nl', 'S', '<p>B</p>', null);
 			self::fail('A send nothing took must be refused.');
 		} catch (RefusedException $e) {
 			self::assertSame('mail-account-unavailable', $e->getRule());
 			self::assertSame(503, $e->getStatus());
 		}
 	}//end testOutboundCaseMailRefusesOnlyWhenNothingWasTaken()
+
+	/**
+	 * Case mail configured to IMailer leaves through Nextcloud's mailer, from the configured sender.
+	 *
+	 * @return void
+	 */
+	public function testAKindConfiguredToTheMailerLeavesThroughIt(): void {
+		$gateway = new FakeMailGateway();
+		$message = new RecordingMessage();
+		$mailer  = $this->createMock(IMailer::class);
+		$mailer->method('createMessage')->willReturn($message);
+		$mailer->expects(self::once())->method('send')->with($message);
+		$outbound = $this->outbound(gateway: $gateway, transports: '{"case-mail":"imailer"}', mailer: $mailer, from: 'service@gemeente.nl');
+
+		$sender = $outbound->senderFor([], MailTransportPolicy::KIND_CASE_MAIL);
+		self::assertSame(MailTransportPolicy::TRANSPORT_IMAILER, $sender['transport']);
+		self::assertSame('service@gemeente.nl', $sender['from']);
+
+		$result = $outbound->send($sender, 'burger@example.nl', 'S', '<p>B</p>', null);
+
+		self::assertSame(OutboundState::SENT, $result['state']);
+		self::assertSame([], $gateway->sent, 'nothing went through the Mail account');
+		self::assertSame('<p>B</p>', $message->htmlBody);
+	}//end testAKindConfiguredToTheMailerLeavesThroughIt()
+
+	/**
+	 * Through the mailer: no sender configured, attachments, or a refusing server each refuse visibly.
+	 *
+	 * @return void
+	 */
+	public function testTheMailerPathRefusesWhatItCannotSend(): void {
+		$gateway = new FakeMailGateway();
+		try {
+			$this->outbound(gateway: $gateway, transports: '{"case-mail":"imailer"}', from: '')->senderFor([], MailTransportPolicy::KIND_CASE_MAIL);
+			self::fail('No sender address must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('mail-sender-not-configured', $e->getRule());
+		}
+
+		$mailer = $this->createMock(IMailer::class);
+		$mailer->method('createMessage')->willReturn(new RecordingMessage());
+		$mailer->method('send')->willThrowException(new RuntimeException('smtp.internal:25 refused'));
+		$outbound = $this->outbound(gateway: $gateway, transports: '{"case-mail":"imailer"}', mailer: $mailer);
+		$sender   = $outbound->senderFor([], MailTransportPolicy::KIND_CASE_MAIL);
+
+		try {
+			$outbound->send($sender, 'burger@example.nl', 'S', 'B', null, ['brief.pdf']);
+			self::fail('Attachments through the mailer must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('attachments-need-mail-account', $e->getRule());
+		}
+
+		try {
+			$outbound->send($sender, 'burger@example.nl', 'S', 'B', null);
+			self::fail('A refusing mail server must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('mail-transport-unavailable', $e->getRule());
+			self::assertStringNotContainsString('smtp.internal', $e->getSentence());
+		}
+	}//end testTheMailerPathRefusesWhatItCannotSend()
 
 	/**
 	 * The upgrade deletes the stored outbound SMTP credential, in both app namespaces.

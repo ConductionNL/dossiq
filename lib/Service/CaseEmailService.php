@@ -35,6 +35,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
+use OCA\Dossiq\Service\Email\MailTransportPolicy;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
 use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
@@ -92,11 +93,10 @@ class CaseEmailService {
 	/**
 	 * Constructor.
 	 *
-	 * 🔴 NO IMailer HERE ANY MORE (inbound-mail-filters 8.1, decision 165). A
-	 * case mail a handler writes leaves through the case's Nextcloud Mail
-	 * account, on that account's own authentication, and is filed in its sent
-	 * folder. Term notices and service mail keep Nextcloud's IMailer for their
-	 * RFC 8058 headers; they never come through this class.
+	 * 🔴 NO TRANSPORT HERE (inbound-mail-filters 8.1, decisions 165 and 182).
+	 * OutboundCaseMail sends through the transport configured for case mail:
+	 * by default the case's Nextcloud Mail account, on that account's own
+	 * authentication, filed in its sent folder.
 	 *
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseEmailRepository $repository OpenRegister reads/writes for case email
@@ -162,11 +162,12 @@ class CaseEmailService {
 			throw new RuntimeException('Zaak niet gevonden of geen toegang.');
 		}
 
-		// The account decides the sender: the case type's declared account,
-		// else the one an administrator picked. An address no account holds
-		// is refused here, before anything is built (REQ-IMF-12).
-		$account     = $this->outbound->accountFor(caseData: $caseData);
-		$fromAddress = (string)$account['email'];
+		// The configured transport decides the sender (decisions 165, 182).
+		// Through the Mail account: the case type's declared account, else the
+		// one an administrator picked; an address no account holds is refused
+		// here, before anything is built (REQ-IMF-12).
+		$sender      = $this->outbound->senderFor(caseData: $caseData, kind: MailTransportPolicy::KIND_CASE_MAIL);
+		$fromAddress = $sender['from'];
 
 		// H4: Validate the recipient against the allow-list. This prevents
 		// open-relay abuse where any email address could be supplied.
@@ -188,18 +189,16 @@ class CaseEmailService {
 			throw new RecipientOptedOutException(reasonCode: $decision['code'], reason: $decision['reason']);
 		}
 
-		// The Mail account builds its own headers, so the unsubscribe link
-		// travels in the body only (decision 165).
-		$bodies = $this->optOut->bodies(body: $body, unsubscribe: $decision['unsubscribe']);
-
 		// H5: attachments are paths in the sending user's own files; Nextcloud
 		// Mail reads them from that folder and checks the download permission.
+		// Through the Mail account the unsubscribe link travels in the body
+		// only, because Mail builds its own headers.
 		$delivery = $this->outbound->send(
-			account: $account,
+			sender: $sender,
 			to: $to,
 			subject: $subject,
-			html: $bodies['html'],
-			plain: $bodies['plain'],
+			body: $body,
+			unsubscribe: $decision['unsubscribe'],
 			attachments: $attachments,
 		);
 

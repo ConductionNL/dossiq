@@ -69,6 +69,9 @@ Waits on nothing: Nextcloud Mail already holds the account and the OAuth
   C-integrations-42, REQ-IMF-11). Moving all mail to the Mail account waits
   on the nextcloud/mail headers issue (decision 147, change
   `case-mail-through-the-mail-account-with-rfc-8058`).
+  The split is configuration, not code (decision 182): `mail_transport_by_kind`
+  read by `lib/Service/Email/MailTransportPolicy.php`
+  (`tests/Unit/Service/Email/MailTransportPolicyTest.php`).
   - `lib/Service/Email/NextcloudMailGateway.php` `sendMessage()`,
     `lib/Service/Email/OutboundCaseMail.php`, `lib/Service/Email/OutboundState.php`,
     `lib/Repair/RetireImapCredentials.php` (SMTP keys)

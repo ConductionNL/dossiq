@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\IntakeAccount;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\Email\MailTransportPolicy;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
 use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
@@ -46,6 +47,7 @@ use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
 use OCP\IL10N;
+use OCP\Mail\IMailer;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -59,6 +61,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -689,7 +692,12 @@ class CaseEmailServiceTest extends TestCase {
 
 		return new OutboundCaseMail(
 			$this->mailer,
-			new SenderIdentity($this->mailer, new IntakeAccount($this->appConfig), $caseTypes, $store)
+			new SenderIdentity($this->mailer, new IntakeAccount($this->appConfig), $caseTypes, $store),
+			new MailTransportPolicy($this->appConfig),
+			new CaseMailOptOut($this->gate(), $this->l10n(), new UnsubscribeHeaders(new NullLogger())),
+			$this->createMock(IMailer::class),
+			$this->appConfig,
+			new NullLogger()
 		);
 	}//end outbound()
 

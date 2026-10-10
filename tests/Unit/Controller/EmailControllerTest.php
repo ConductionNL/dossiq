@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\IntakeAccount;
+use OCA\Dossiq\Service\Email\MailTransportPolicy;
 use OCA\Dossiq\Service\Email\OutboundCaseMail;
 use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
@@ -54,6 +55,7 @@ use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCP\Mail\IMailer;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -107,7 +109,12 @@ class EmailControllerTest extends TestCase {
 			new CaseContactDirectory(),
 			new OutboundCaseMail(
 				$this->gateway,
-				new SenderIdentity($this->gateway, new IntakeAccount($appConfig), $caseTypes, $store)
+				new SenderIdentity($this->gateway, new IntakeAccount($appConfig), $caseTypes, $store),
+				new MailTransportPolicy($appConfig),
+				new CaseMailOptOut(new OptOutGate($this->dispatcher, $appConfig, new NullLogger(), $this->gateRelative), $l10n),
+				$this->createMock(IMailer::class),
+				$appConfig,
+				new NullLogger()
 			),
 			new RecipientAllowlist($appConfig),
 			$this->createMock(CaseTimeline::class),
