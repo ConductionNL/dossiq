@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCA\Dossiq\Service\TenantBillingService;
 use OCA\Dossiq\Service\TenantOnboardingService;
@@ -226,7 +227,14 @@ class OnboardingStepsTest extends TestCase {
 	public function testWithoutTheEngineNothingIsOpened(): void {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn(false);
-		$absent = new OnboardingSteps(settings: $settings, container: $this->createMock(ContainerInterface::class), logger: $this->createMock(LoggerInterface::class));
+		$container = $this->createMock(ContainerInterface::class);
+		$logger = $this->createMock(LoggerInterface::class);
+		$absent = new OnboardingSteps(
+			settings: $settings,
+			container: $container,
+			logger: $logger,
+			inboxQuery: new EngineInboxQuery(settings: $settings, container: $container, logger: $logger)
+		);
 
 		$this->assertSame('', $absent->open(tenantId: self::ORG, step: 'contract', title: 'contract', status: 'pending', actor: 'a'));
 		$this->assertSame([], $absent->forTenant(tenantId: self::ORG, actor: 'a'));
