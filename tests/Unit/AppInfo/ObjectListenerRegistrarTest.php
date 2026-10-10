@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -54,6 +55,25 @@ class ObjectListenerRegistrarTest extends TestCase {
 			message: 'the guard must be registered, or every delete succeeds and nothing says why',
 		);
 	}//end testTheCaseDeleteGuardIsRegistered()
+
+	/**
+	 * A created contact moment reaches the pipelinq append, on the post-persist
+	 * create event that both the KCC werkplek and the case page's Log contact
+	 * form cross.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
+	 */
+	public function testTheContactMomentAppendIsOnTheCreateEvent(): void {
+		$registered = $this->registrations();
+
+		$this->assertContains(
+			needle: ContactMomentPipelinqListener::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),
+			message: 'without it a moment logged on a case never reaches pipelinq',
+		);
+	}//end testTheContactMomentAppendIsOnTheCreateEvent()
 
 	/**
 	 * It is NOT registered on the post-persist event, which cannot refuse.

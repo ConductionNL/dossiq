@@ -24,7 +24,8 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
   reader may not see rather than naming it.
   - **spec_ref**: `specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03`
 - [ ] 2.3 (not run: no surface files or unfiles a moment yet) File and unfile through pipelinq's two acts; write no reference set.
-- [x] 2.4 (`ContactMomentService` takes the bridge (constructor, `pipelinqBridge`)) Wire the bridge into `Service\ContactMomentService::createContactMoment()`.
+- [x] 2.4 (2026-10-10, lane L4: REWIRED. The bridge sat in `ContactMomentService::createContactMoment()`, which the case page's Log contact form never runs: it is an `open-form` action that saves straight to OpenRegister. The only path through the service, the KCC werkplek, carries no case, so no moment could reach the bridge. Now `lib/Listener/ContactMomentPipelinqListener.php` on `ObjectCreatedEvent`, registered in `ContactListenerRegistrar`, is the one writer, the way `ContactMomentTimelineListener` already is; the service no longer calls the bridge. Tests: `tests/Unit/Listener/ContactMomentPipelinqListenerTest.php` (real bridge and gateway, a recorder with pipelinq's `create(hostId, payload)` signature), `ObjectListenerRegistrarTest::testTheContactMomentAppendIsOnTheCreateEvent`) Wire the bridge so every logged moment on a case reaches it.
+- [ ] 2.5 (not run: no surface has a return channel; an `open-form` save cannot show a refusal from a listener, see Q-dossiq-L4-3) Report an OUTBOUND append that pipelinq refuses for an indicator to the handler, with the indicator named (REQ-PLQ-02, third paragraph). Today the bridge logs it with its reason.
 
 ## 3. Party kinds
 
@@ -72,7 +73,7 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
   the language, the hand-off and the programme.
 - [ ] 9.2 (not run: no Playwright runner on this lane) `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts`, with
   a reason-bearing exclusion on every scenario it does not cover, per gate 19.
-- [ ] 9.3 `openspec validate --strict` exits 0.
+- [x] 9.3 `openspec validate --strict` exits 0. (2026-10-10, lane L4: `openspec validate parties-and-contact-moments-consume-pipelinq --strict` is valid)
 
 ## Rescue, 2026-09-18: the six guards, one at a time
 

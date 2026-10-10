@@ -68,7 +68,7 @@ function reading(overrides = {}) {
 				{ id: 'openregister', unlocks: 'Stores every case.', present: true },
 			],
 			optional: [
-				{ id: 'hrmq', unlocks: 'Books the hours.', present: false },
+				{ id: 'humaniq', unlocks: 'Books the hours.', present: false },
 				{ id: 'hermiq', unlocks: 'Answers the AI steps.', present: true },
 			],
 		},
@@ -125,7 +125,7 @@ describe('The Prerequisites block', () => {
 
 	it('lists an absent optional app with what it would have added', () => {
 		const wrapper = open(reading())
-		const hours = row(wrapper, 'prerequisite-app-hrmq')
+		const hours = row(wrapper, 'prerequisite-app-humaniq')
 
 		expect(hours).toContain('missing')
 		expect(hours).toContain('Books the hours.')

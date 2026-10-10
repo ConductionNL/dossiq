@@ -103,7 +103,7 @@ test.describe('The Prerequisites block', () => {
 		// The server decided this row. An empty fallback renders the block and
 		// no rows at all, so a row carrying an app id is what separates "the
 		// state arrived" from "the state was never provided".
-		const hours = page.getByTestId('prerequisite-app-hrmq')
+		const hours = page.getByTestId('prerequisite-app-humaniq')
 		await expect(
 			hours,
 			'the hours app must be listed among the optional ones',
