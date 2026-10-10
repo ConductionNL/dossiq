@@ -37,7 +37,6 @@ namespace OCA\Dossiq\Service\Inspection;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineInboxQuery;
-use ReflectionClass;
 use RuntimeException;
 use Throwable;
 
@@ -62,6 +61,24 @@ class InspectionRunService {
 	 * @var string
 	 */
 	public const TASK_SERVICE = 'OCA\\OpenRegister\\Service\\Task\\TaskService';
+
+	/**
+	 * The portal action that completes a checklist task, as dossiq's
+	 * contribution declares it.
+	 *
+	 * @var string
+	 */
+	public const PORTAL_ACTION = 'completeChecklistTask';
+
+	/**
+	 * What a checklist task for an external party carries in
+	 * `metadata.completeVia`: OpenRegister's portal seam then refuses a direct
+	 * completion and the portal opens this action, so the checklist rule
+	 * cannot be skipped.
+	 *
+	 * @var array{app: string, action: string}
+	 */
+	public const COMPLETE_VIA = ['app' => 'dossiq', 'action' => self::PORTAL_ACTION];
 
 	/**
 	 * OpenRegister's portal task seam, by name.
@@ -159,7 +176,8 @@ class InspectionRunService {
 	 * only a task whose performer type is external and whose stored assignee
 	 * is this subject's party reference, and `complete()` checks it again
 	 * inside the task layer, audits a denial and refuses a closed task. What
-	 * this adds is the checklist's own rule: the answers are checked against
+	 * this adds is the checklist's own rule, which is why the task names
+	 * dossiq in `metadata.completeVia` and the seam refuses anyone else: the answers are checked against
 	 * the template frozen on the task, and the outcome is the rule's verdict,
 	 * never a word the caller sends.
 	 *
@@ -175,13 +193,14 @@ class InspectionRunService {
 	 */
 	public function completeForParty(string $subjectRef, string $taskUuid, array $payload): array {
 		$portal = $this->settingsService->getOpenRegisterClass(class: self::PORTAL_TASK_SERVICE);
-		if ($portal === null || class_exists(self::PORTAL_SUBJECT) === false) {
+		$subjectClass = self::PORTAL_SUBJECT;
+		if ($portal === null || class_exists($subjectClass) === false) {
 			throw new RuntimeException('The OpenRegister portal task layer is not available');
 		}
 
 		// Built by name: OpenRegister is optional, so its value object cannot
 		// be named as a type here.
-		$subject = (new ReflectionClass(self::PORTAL_SUBJECT))->newInstance($subjectRef);
+		$subject = new $subjectClass($subjectRef);
 		$task = $portal->show($subject, $taskUuid);
 		$snapshot = $task->jsonSerialize()['templateSnapshot'] ?? null;
 		if (is_array($snapshot) === false || $snapshot === []) {
@@ -200,7 +219,10 @@ class InspectionRunService {
 			$answers,
 			$this->stringOrNull(value: ($payload['remarks'] ?? null)),
 			[],
-			$this->answers->outcome(snapshot: $snapshot, answers: $answers)
+			$this->answers->outcome(snapshot: $snapshot, answers: $answers),
+			// The viaApp: the task names dossiq as the app that completes it, so
+			// the seam takes the completion from dossiq alone.
+			self::COMPLETE_VIA['app']
 		);
 
 		return $this->asRun(task: $completed->jsonSerialize());

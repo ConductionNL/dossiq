@@ -105,6 +105,7 @@ final class InspectionRunCarryOverTest extends TestCase {
 		$this->assertSame('Brand', $data['templateSnapshot']['name']);
 		$this->assertSame(['lat' => 52.1, 'lon' => 5.3], $data['metadata']['location']);
 		$this->assertSame('insp-1', $data['metadata']['inspection']);
+		$this->assertSame(['app' => 'dossiq', 'action' => 'completeChecklistTask'], $data['metadata']['completeVia'], 'an external run is completed through dossiq alone');
 	}//end testAStackBDraftRunArrivesActiveAndExternal()
 
 	/**
@@ -151,6 +152,7 @@ final class InspectionRunCarryOverTest extends TestCase {
 		$this->assertSame('completed', $data['state']);
 		$this->assertSame('conform', $data['outcome']);
 		$this->assertSame('u9', $data['assignee']);
+		$this->assertArrayNotHasKey('completeVia', $data['metadata'], 'an internal run names no portal action');
 		$this->assertSame('t-5', $data['templateId']);
 		$this->assertSame(['itemId' => 'q1', 'value' => 'ja', 'comment' => 'ok', 'photos' => ['ev-1']], $data['responses'][0]);
 		$this->assertSame(['ev-1'], $data['evidence']);

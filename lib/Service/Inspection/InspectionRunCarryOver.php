@@ -271,7 +271,7 @@ class InspectionRunCarryOver {
 			$data['comment'] = $remarks;
 		}
 
-		return array_merge($data, $this->performer(object: $object));
+		return array_replace_recursive($data, $this->performer(object: $object));
 	}//end taskData()
 
 	/**
@@ -279,7 +279,7 @@ class InspectionRunCarryOver {
 	 *
 	 * @param array<string, mixed> $object The source object.
 	 *
-	 * @return array<string, string> `assignee`, and `performerType` for an external one.
+	 * @return array<string, mixed> `assignee`, and for an external one `performerType` and `metadata.completeVia`.
 	 */
 	private function performer(array $object): array {
 		$inspector = trim((string)($object['inspector'] ?? $object['completedBy'] ?? ''));
@@ -296,7 +296,9 @@ class InspectionRunCarryOver {
 				$external = 'party:' . $external;
 			}
 
-			return ['assignee' => $external, 'performerType' => 'external'];
+			// The portal seam takes the completion from dossiq alone, so the
+			// checklist rule cannot be skipped.
+			return ['assignee' => $external, 'performerType' => 'external', 'metadata' => ['completeVia' => InspectionRunService::COMPLETE_VIA]];
 		}
 
 		return [];

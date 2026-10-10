@@ -98,10 +98,14 @@ delta specs and validates strictly.
         external runs to `party:` + `assignedInspectorRef`. Tests:
         `PortalChecklistTaskControllerTest`, `InspectionRunPortalTest`,
         `testInspectorContributionShape`, `InspectionRunCarryOverTest`. The
-        two read collections stay until step 5. Open outside dossiq: portaliq
-        has no way yet to open an app's endpoint action from a task in
-        "Mijn taken" (its proxy completes through OpenRegister's seam
-        directly, which skips the checklist rule).
+        two read collections stay until step 5. The gap where portaliq's
+        "Mijn taken" completed through OpenRegister's seam directly, skipping
+        the checklist rule, is closed generically: every external checklist
+        task carries `metadata.completeVia` (`InspectionRunService::COMPLETE_VIA`,
+        set by the carry-over), OpenRegister's seam refuses a direct completion
+        of such a task (ConductionNL/openregister#4569), portaliq opens the
+        named action instead (ConductionNL/portaliq#1482), and
+        `completeForParty()` completes naming dossiq as `viaApp`.
   - [ ] 4.4 Live pass (decision 139).
 - [ ] 5 **Remove.** One release after step 4. Retire the six schemas and `checklistResult`, the
       immutability listener, the stack C template paths and the portal

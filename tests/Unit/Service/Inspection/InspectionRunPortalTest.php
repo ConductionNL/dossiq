@@ -60,6 +60,7 @@ final class InspectionRunPortalTest extends TestCase {
 		$this->assertSame('party:insp-7', $seam->completed[0]['subject']->partyReference());
 		$this->assertSame('partly_conform', $seam->completed[0]['outcome']);
 		$this->assertSame('Hoek', $seam->completed[0]['comment']);
+		$this->assertSame('dossiq', $seam->completed[0]['viaApp'], 'dossiq names itself as the app the task is completed through');
 		$this->assertSame('task-1', $run['id'] ?? $seam->completed[0]['uuid']);
 	}//end testTheAssignedPartyCompletesWithTheRulesOutcome()
 
@@ -205,9 +206,9 @@ final class InspectionRunPortalTest extends TestCase {
 			 *
 			 * @return object The completed task.
 			 */
-			public function complete(object $subject, string $uuid, array $answers = [], ?string $comment = null, array $files = [], string $outcome = 'completed'): object {
+			public function complete(object $subject, string $uuid, array $answers = [], ?string $comment = null, array $files = [], string $outcome = 'completed', string $viaApp = ''): object {
 				unset($files);
-				$this->completed[] = ['subject' => $subject, 'uuid' => $uuid, 'answers' => $answers, 'comment' => $comment, 'outcome' => $outcome];
+				$this->completed[] = ['subject' => $subject, 'uuid' => $uuid, 'answers' => $answers, 'comment' => $comment, 'outcome' => $outcome, 'viaApp' => $viaApp];
 
 				return self::task(['uuid' => $uuid, 'kind' => 'inspection', 'state' => 'completed', 'outcome' => $outcome, 'responses' => $answers, 'templateSnapshot' => $this->snapshot]);
 			}

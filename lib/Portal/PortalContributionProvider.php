@@ -61,6 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Service\Inspection\InspectionRunService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use Throwable;
@@ -829,7 +830,7 @@ class PortalContributionProvider {
 					// against the checklist frozen on the task and completes it
 					// with the rule's outcome. No `type`, `register` or
 					// `schema`: the flat writer never takes it for its own.
-					'id' => 'completeChecklistTask',
+					'id' => InspectionRunService::PORTAL_ACTION,
 					'label' => 'Checklist indienen',
 					'endpoint' => '/index.php/apps/dossiq/api/portal/checklist-tasks',
 					'method' => 'POST',
