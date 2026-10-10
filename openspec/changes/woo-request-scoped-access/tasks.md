@@ -36,7 +36,7 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   `WOODocumentAssessmentServiceTest::testACreatedAssessmentReconcilesTheCase`. Open: the batch
   creation of `woo-review-triage` (L8's `ReviewBatches`, not on development) calls
   `CaseReviewerAccess::reconcile()` when it lands.
-- [ ] 2.3 Add `lib/Listener/WooCaseReassignGuardListener.php` on OpenRegister's `ObjectUpdatingEvent`
+- [x] 2.3 Add `lib/Listener/WooCaseReassignGuardListener.php` on OpenRegister's `ObjectUpdatingEvent`
   (refuse per REQ-WSA-005 with `setErrors()` and `stopPropagation()`, as `CaseDeleteGuardListener`
   does on delete) and on `ObjectUpdatedEvent` (run `reconcile()`). Read both event classes in
   openregister first; `ObjectUpdatingEvent` has `getNewObject()` and `getOldObject()`. Register
@@ -47,6 +47,15 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   - Through the caller: Newman folder `reassign` in the collection of 1.2: a PUT on the case by the
     handler answers the refusal, a PUT by a coordinator succeeds and the former handler then reads
     no assessment.
+  - done, generic (decision 182): `lib/Listener/CaseReassignGuardListener.php` (refuses with
+    `reassign-needs-supervisor` via `CaseReviewerAccess::reassignRefusal()`, reconciles after the
+    save), bound by `lib/AppInfo/Registrar/CaseAccessListenerRegistrar.php` from `ListenerRegistrar`.
+    Tests: `tests/Unit/Listener/CaseReassignGuardListenerTest.php` (the three named tests plus
+    administrator, unchanged assignee, no session, other schema, undeclared case type, with the
+    real event classes and the real `CaseReviewerAccess`; its unscoped reads moved to `lib/Service/Access/CaseRecordLookup.php` with `CaseRecordLookupTest`), `tests/Unit/AppInfo/CaseAccessListenerRegistrarTest.php`,
+    `CaseReviewerAccessTest::testOnlyASupervisorHandsOnACaseWithPrivateRecords`. A write without a
+    signed-in user (job, import, flow) is let through and still reconciled. The Newman folder stays
+    open with 1.2.
 
 ## 3. A reviewer edits only their own
 
@@ -54,11 +63,17 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   the caller supervises (`CaseReviewerAccess::mayChange`), error `owned-by-another-reviewer` without
   author or verdict; the existing-assessment lookup runs unscoped (REQ-CRA-003).
   - done: `WOODocumentAssessmentServiceTest::testASecondReviewerCannotOverwrite`.
-- [ ] 3.2 Apply the same rule to `saveRedactionProposal()` and the redaction proposal review
+- [x] 3.2 Apply the same rule to `saveRedactionProposal()` and the redaction proposal review
   (REQ-WSA-003).
   - **fails today**: `tests/Unit/Service/WOOAnonymisationAssistServiceTest.php`
     `testAnotherReviewersProposalCannotBeChanged`; through the caller
     `WOOAssessmentControllerTest::testReviewRedactionProposalRefusesAnotherReviewersProposal`.
+  - done: the rule sits in `WOODocumentAssessmentService::saveRedactionProposal()`, which proposing
+    and reviewing both write through: 403 `owned-by-another-reviewer` via `CaseReviewerAccess::assertMayChange`,
+    no author named. Test `WOODocumentAssessmentServiceTest::testAnotherReviewersProposalCannotBeChanged`
+    (in the service that holds the rule, not the assist service, which is doubled there);
+    `WOOAssessmentControllerTest::testReviewRedactionProposalRefusesAnotherReviewersProposal` and
+    `testProposeRedactionRefusesAnotherReviewersAssessment` (403 with the rule, was a 400).
 - [ ] 3.3 Newman folder `ownership` in the collection of 1.2: reviewer A assesses a document,
   reviewer B posts another verdict for it through `/api/cases/{id}/woo/assessment` and through the
   OpenRegister object API; both are refused and the verdict is unchanged; a coordinator's change is
@@ -66,9 +81,11 @@ red; put the failing line in the PR body. Double OpenRegister classes with
 
 ## 4. Hiding another reviewer's verdict
 
-- [ ] 4.1 Decision 182: hiding is the case type's `reviewerAccess.hideOthers` (default off), not an
+- [x] 4.1 Decision 182: hiding is the case type's `reviewerAccess.hideOthers` (default off), not an
   app setting; `reconcile()` honours it (`CaseReviewerAccessTest::testHidingLeavesOnlyTheAssigneeAsReader`).
-  Open: `getOutstanding()` counting a document with an unreadable assessment as assessed.
+  - done: `getOutstanding()` reads the assessments unscoped (document references only), so a
+    document with an unreadable assessment counts as assessed:
+    `WOODocumentAssessmentServiceTest::testAnUnreadableAssessmentStillCountsAsAssessed`.
 - [ ] 4.2 The case's Woo assessment section (added by `woo-case-screens-and-objections`) shows a
   document that is not outstanding and has no readable assessment as "Assessed by another
   reviewer", with no classification, grounds or author (REQ-WSA-004). If that section is not on
@@ -78,6 +95,8 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   - e2e `tests/e2e/woo-blind-review.spec.ts`: hiding on, two reviewer users, four documents
     assessed by the first; the second sees ten documents, four of them "Assessed by another
     reviewer". Cite REQ-WSA-004.
+  - Waits on a board (decision 162): no board shows this state, so it is on the design backlog as
+    `DqBeoordelingAfgeschermd`. The backend half (the count) is 4.1.
 
 ## 5. Existing assessments and the redaction half
 

@@ -36,10 +36,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Access;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 
 /**
@@ -49,12 +49,17 @@ use OCP\IGroupManager;
  */
 class CaseReviewerAccess {
 
-	use SearchesObjects;
-
 	/**
 	 * The supervising group when the case type names none.
 	 */
 	public const DEFAULT_SUPERVISORS = 'dossiq-coordinators';
+
+	/**
+	 * The case, its case type and the rows that belong to it, read regardless of the caller.
+	 *
+	 * @var CaseRecordLookup
+	 */
+	private readonly CaseRecordLookup $lookup;
 
 	/**
 	 * Constructor.
@@ -74,6 +79,7 @@ class CaseReviewerAccess {
 		private readonly ObjectReadGrants $grants,
 		private readonly IGroupManager $groupManager,
 	) {
+		$this->lookup = new CaseRecordLookup(settingsService: $settingsService, caseTypes: $caseTypes, resolver: $resolver);
 	}//end __construct()
 
 	/**
@@ -140,8 +146,8 @@ class CaseReviewerAccess {
 	 */
 	public function reconcile(string $caseId): array {
 		$answer = ['status' => 'not-declared', 'granted' => 0, 'revoked' => 0, 'refused' => 0];
-		$case = $this->caseRow(caseId: $caseId);
-		$declaration = $this->declarationFor(caseType: $this->caseTypeOf(case: $case));
+		$case = $this->lookup->caseRow(caseId: $caseId);
+		$declaration = $this->declarationFor(caseType: $this->lookup->caseTypeOf(case: $case));
 		if ($case === [] || $declaration['records'] === []) {
 			return $answer;
 		}
@@ -155,7 +161,7 @@ class CaseReviewerAccess {
 		$answer['status'] = 'reconciled';
 		foreach ($declaration['records'] as $declared) {
 			$schema = $this->settingsService->getConfigValue($declared['schemaKey']);
-			foreach ($this->rowsOf(schema: $schema, field: $declared['caseField'], caseId: $caseId) as $row) {
+			foreach ($this->lookup->rowsOf(schema: $schema, field: $declared['caseField'], caseId: $caseId) as $row) {
 				$result = $this->grants->reconcile(
 					schema: $schema,
 					uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
@@ -192,7 +198,7 @@ class CaseReviewerAccess {
 				continue;
 			}
 
-			foreach ($this->rowsOf(schema: $caseSchema, field: 'caseType', caseId: $caseTypeId) as $case) {
+			foreach ($this->lookup->rowsOf(schema: $caseSchema, field: 'caseType', caseId: $caseTypeId) as $case) {
 				$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 				$result = $this->reconcile(caseId: $caseId);
 				$answer['cases']++;
@@ -222,7 +228,7 @@ class CaseReviewerAccess {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function mayChange(string $caseId, array $record, string $userId): bool {
-		$declaration = $this->declarationFor(caseType: $this->caseTypeOf(case: $this->caseRow(caseId: $caseId)));
+		$declaration = $this->declarationFor(caseType: $this->lookup->caseTypeOf(case: $this->lookup->caseRow(caseId: $caseId)));
 		if ($declaration['records'] === []) {
 			return true;
 		}
@@ -259,6 +265,33 @@ class CaseReviewerAccess {
 	}//end refusalFor()
 
 	/**
+	 * Refuse a change to someone else's record of the case, for a writer that changes one record.
+	 *
+	 * The sentence names neither the author nor the content.
+	 *
+	 * @param string               $caseId The case uuid.
+	 * @param array<string, mixed> $record The stored record.
+	 * @param string               $userId The caller.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException (403 `owned-by-another-reviewer`) When the caller may not change it.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function assertMayChange(string $caseId, array $record, string $userId): void {
+		if ($this->mayChange(caseId: $caseId, record: $record, userId: $userId) === true) {
+			return;
+		}
+
+		throw new RefusedException(
+			rule: 'owned-by-another-reviewer',
+			sentence: 'Another reviewer made this record. Only they or a supervisor can change it.',
+			status: RefusedException::STATUS_FORBIDDEN,
+		);
+	}//end assertMayChange()
+
+	/**
 	 * Reconcile the case when a writer created declared records; nothing when it created none.
 	 *
 	 * @param string $caseId  The case uuid.
@@ -275,6 +308,54 @@ class CaseReviewerAccess {
 
 		return $this->reconcile(caseId: $caseId);
 	}//end reconcileAfterCreate()
+
+	/**
+	 * The refusal of a change of hands by someone who does not supervise, or null when it may go ahead.
+	 *
+	 * Only a case whose case type keeps records private, and that has such
+	 * records, is guarded: the assignee reads every one of them, so handing the
+	 * case on hands those records on. A supervisor or an administrator may.
+	 *
+	 * @param array<string, mixed> $case   The case as it stood before the change, with its `id`
+	 *                                     (a case without one has no records to guard).
+	 * @param string               $userId The caller.
+	 *
+	 * @return array{error: string, message: string}|null
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-with-private-records-changes-hands-only-through-a-supervisor-req-cra-005
+	 */
+	public function reassignRefusal(array $case, string $userId): ?array {
+		$declaration = $this->declarationFor(caseType: $this->lookup->caseTypeOf(case: $case));
+		if ($this->hasDeclaredRecords(caseId: (string)($case['id'] ?? ''), declaration: $declaration) === false
+			|| $this->isSupervisor(userId: $userId, group: $declaration['supervisorGroup']) === true
+		) {
+			return null;
+		}
+
+		return [
+			'error' => 'reassign-needs-supervisor',
+			'message' => 'This case holds records private to the people on it. Only a supervisor can hand it on.',
+		];
+	}//end reassignRefusal()
+
+	/**
+	 * Whether the case has at least one record its case type keeps private.
+	 *
+	 * @param string               $caseId      The case uuid.
+	 * @param array<string, mixed> $declaration The normalised declaration.
+	 *
+	 * @return bool
+	 */
+	private function hasDeclaredRecords(string $caseId, array $declaration): bool {
+		foreach ($declaration['records'] as $declared) {
+			$schema = $this->settingsService->getConfigValue($declared['schemaKey']);
+			if ($this->lookup->rowsOf(schema: $schema, field: $declared['caseField'], caseId: $caseId) !== []) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end hasDeclaredRecords()
 
 	/**
 	 * Whether the user supervises: a member of the group, or an administrator.
@@ -308,7 +389,7 @@ class CaseReviewerAccess {
 		if ($declaration['hideOthers'] === false) {
 			foreach ($declaration['reviewers'] as $source) {
 				$schema = $this->settingsService->getConfigValue($source['schemaKey']);
-				foreach ($this->rowsOf(schema: $schema, field: $source['caseField'], caseId: $caseId) as $row) {
+				foreach ($this->lookup->rowsOf(schema: $schema, field: $source['caseField'], caseId: $caseId) as $row) {
 					foreach ((array)($row[$source['userField']] ?? []) as $user) {
 						$readers[] = trim((string)$user);
 					}
@@ -318,66 +399,4 @@ class CaseReviewerAccess {
 
 		return array_values(array_unique(array_filter($readers, static fn (string $user): bool => $user !== '')));
 	}//end readersOf()
-
-	/**
-	 * The rows of a schema whose field holds the value, read regardless of the caller.
-	 *
-	 * @param string $schema The schema slug; '' answers none.
-	 * @param string $field  The field.
-	 * @param string $caseId The value.
-	 *
-	 * @return list<array<string, mixed>>
-	 */
-	private function rowsOf(string $schema, string $field, string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
-			return [];
-		}
-
-		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: [$field => $caseId, '_limit' => 1000]
-		);
-
-		return array_values(
-			array_filter($rows, fn (array $row): bool => $this->caseTypes->referenceId(value: ($row[$field] ?? '')) === $caseId)
-		);
-	}//end rowsOf()
-
-	/**
-	 * The case row, or [].
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function caseRow(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_schema');
-		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
-			return [];
-		}
-
-		return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId) ?? []);
-	}//end caseRow()
-
-	/**
-	 * The effective case type of a case row, or [].
-	 *
-	 * @param array<string, mixed> $case The case row.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function caseTypeOf(array $case): array {
-		$reference = $this->caseTypes->referenceId(value: ($case['caseType'] ?? ''));
-		if ($reference === '') {
-			return [];
-		}
-
-		return $this->resolver->effectiveCaseType(caseTypeId: $reference);
-	}//end caseTypeOf()
 }//end class

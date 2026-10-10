@@ -697,4 +697,63 @@ class WOOAssessmentControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 	}//end testReviewRedactionProposalMapsRuntimeFailureTo400()
+
+	/**
+	 * Another reviewer's proposal is refused with 403 and its rule, not a 400 (REQ-CRA-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testReviewRedactionProposalRefusesAnotherReviewersProposal(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('p.bakker');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['decision', '', 'approve'],
+			['spans', null, null],
+		]);
+
+		$this->anonymisationAssist->method('reviewProposal')->willThrowException(
+			new \OCA\Dossiq\Exception\RefusedException(
+				rule: 'owned-by-another-reviewer',
+				sentence: 'Another reviewer assessed this document.',
+				status: Http::STATUS_FORBIDDEN,
+			)
+		);
+
+		$response = $this->controller->reviewRedactionProposal('case-uuid-001', 'doc-uuid-001');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('owned-by-another-reviewer', $response->getData()['error']);
+	}//end testReviewRedactionProposalRefusesAnotherReviewersProposal()
+
+	/**
+	 * Proposing on another reviewer's assessment is refused the same way.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testProposeRedactionRefusesAnotherReviewersAssessment(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('p.bakker');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['text', '', 'Jan Jansen woont hier']]);
+
+		$this->anonymisationAssist->method('proposeSpans')->willThrowException(
+			new \OCA\Dossiq\Exception\RefusedException(
+				rule: 'owned-by-another-reviewer',
+				sentence: 'Another reviewer assessed this document.',
+				status: Http::STATUS_FORBIDDEN,
+			)
+		);
+
+		$response = $this->controller->proposeRedaction('case-uuid-001', 'doc-uuid-001');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('owned-by-another-reviewer', $response->getData()['error']);
+	}//end testProposeRedactionRefusesAnotherReviewersAssessment()
 }//end class

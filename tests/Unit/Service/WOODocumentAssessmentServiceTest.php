@@ -546,4 +546,88 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->assertSame([], $result['errors']);
 		$this->assertCount(1, $register->all('wooDocumentAssessment'));
 	}//end testACreatedAssessmentReconcilesTheCase()
+
+	/**
+	 * REQ-CRA-003 on the redaction half: another reviewer's assessment keeps its proposal.
+	 *
+	 * Proposing and reviewing both write through saveRedactionProposal(), so
+	 * the rule there covers both.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testAnotherReviewersProposalCannotBeChanged(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-7', ['caseRef' => 'case-1', 'documentRef' => 'doc-7', 'redactionProposal' => ['status' => 'pending_review', 'spans' => []], '@self' => ['owner' => 'j.devries']]);
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->method('assertMayChange')->willReturnCallback(
+			static function (string $caseId, array $record, string $userId): void {
+				if ($userId !== ($record['@self']['owner'] ?? '')) {
+					throw new RefusedException(rule: 'owned-by-another-reviewer', sentence: 'Another reviewer made this record.', status: RefusedException::STATUS_FORBIDDEN);
+				}
+			}
+		);
+
+		try {
+			$this->serviceWithAccess(register: $register, access: $access, userId: 'p.bakker')
+				->saveRedactionProposal('case-1', 'doc-7', ['status' => 'approved', 'spans' => []]);
+			$this->fail('Another reviewer must not change the proposal.');
+		} catch (RefusedException $refusal) {
+			$this->assertSame('owned-by-another-reviewer', $refusal->getRule());
+			$this->assertSame(RefusedException::STATUS_FORBIDDEN, $refusal->getStatus());
+		}
+
+		$this->assertSame('pending_review', $register->row('wooDocumentAssessment', 'a-7')['redactionProposal']['status']);
+		$this->assertSame(0, $register->writes);
+
+		$saved = $this->serviceWithAccess(register: $register, access: $access, userId: 'j.devries')
+			->saveRedactionProposal('case-1', 'doc-7', ['status' => 'approved', 'spans' => []]);
+		$this->assertSame('approved', $saved['redactionProposal']['status'], 'the author may');
+	}//end testAnotherReviewersProposalCannotBeChanged()
+
+	/**
+	 * A document whose assessment the caller may not read is assessed, not outstanding (REQ-WSA-004).
+	 *
+	 * The register hides another reviewer's assessment from a scoped read, as
+	 * OpenRegister's private scope does; the count must still see it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/woo-request-scoped-access/spec.md
+	 */
+	public function testAnUnreadableAssessmentStillCountsAsAssessed(): void {
+		$register = new class extends InMemoryRegister {
+			public function searchObjectsBySlug(
+				string $register,
+				string $schema,
+				array $filters = [],
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				if ($_rbac === true && $schema === 'wooDocumentAssessment') {
+					return [];
+				}
+
+				return parent::searchObjectsBySlug($register, $schema, $filters, $_rbac, $_multitenancy);
+			}
+		};
+		foreach (['doc-1', 'doc-2'] as $doc) {
+			$register->seed('document', $doc, ['case' => 'case-1']);
+		}
+		$register->seed('wooDocumentAssessment', 'a-1', ['caseRef' => 'case-1', 'documentRef' => 'doc-1', '@self' => ['owner' => 'j.devries']]);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => [
+				'register' => 'dossiq',
+				'document_schema' => 'document',
+				'woo_assessment_schema' => 'wooDocumentAssessment',
+			][$key] ?? $default
+		);
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+
+		$this->assertSame(['count' => 1, 'documents' => ['doc-2']], $service->getOutstanding('case-1'));
+	}//end testAnUnreadableAssessmentStillCountsAsAssessed()
 }//end class

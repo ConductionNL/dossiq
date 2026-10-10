@@ -403,7 +403,11 @@ class WOODocumentAssessmentService {
 			return [];
 		}
 
-		$assessed = $this->searchObjectsAsArrays(
+		// Read regardless of the caller (REQ-WSA-004): a document assessed by a
+		// reviewer whose assessment this caller may not read is still assessed,
+		// not outstanding. Only the document reference is used; nothing of the
+		// assessment itself is answered.
+		$assessed = $this->searchObjectsAsArraysUnscoped(
 			objectService: $objectService,
 			register: $register,
 			schema: $assessmentSchema,
@@ -532,8 +536,11 @@ class WOODocumentAssessmentService {
 	 *
 	 * @throws RuntimeException When OpenRegister is unavailable or the document has not
 	 *                          yet been assessed.
+	 * @throws RefusedException (403 `owned-by-another-reviewer`) When the case type keeps
+	 *                          assessments private and the caller neither made this one nor supervises.
 	 *
 	 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function saveRedactionProposal(string $caseId, string $documentRef, array $proposal): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -547,6 +554,15 @@ class WOODocumentAssessmentService {
 				'Document ' . $documentRef . ' must be assessed before requesting redaction assistance'
 			);
 		}
+
+		// The redaction proposal is part of the assessment, so the same rule
+		// holds as for the verdict (REQ-CRA-003): its author, a supervisor or
+		// an administrator. Proposing and reviewing both write here.
+		$this->reviewerAccess?->assertMayChange(
+			caseId: $caseId,
+			record: $existing,
+			userId: (string)$this->userSession->getUser()?->getUID()
+		);
 
 		$register = $this->settingsService->getConfigValue('register');
 		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');

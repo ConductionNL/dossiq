@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Exception\RefusedException
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
@@ -214,4 +216,36 @@ class CaseReviewerAccessTest extends TestCase {
 		self::assertSame([], $this->calls);
 		self::assertSame('reconciled', $this->access->reconcileAfterCreate(caseId: self::CASE_ID, created: 1)['status']);
 	}//end testNothingCreatedReconcilesNothing()
+
+	public function testOnlyASupervisorHandsOnACaseWithPrivateRecords(): void {
+		$this->declare();
+		$case = ['id' => self::CASE_ID, 'caseType' => self::CASE_TYPE, 'assignee' => 'handler'];
+
+		self::assertSame('reassign-needs-supervisor', $this->access->reassignRefusal(case: $case, userId: 'handler')['error'] ?? null);
+		self::assertNull($this->access->reassignRefusal(case: $case, userId: 'coordinator'));
+		self::assertNull($this->access->reassignRefusal(case: $case, userId: 'admin'));
+
+		unset($this->register->rows['assessment']);
+		self::assertNull($this->access->reassignRefusal(case: $case, userId: 'handler'), 'no private records, nothing to guard');
+	}//end testOnlyASupervisorHandsOnACaseWithPrivateRecords()
+
+	public function testAnUndeclaredCaseTypeChangesHandsAsBefore(): void {
+		self::assertNull($this->access->reassignRefusal(case: ['id' => self::CASE_ID, 'caseType' => self::CASE_TYPE], userId: 'handler'));
+	}//end testAnUndeclaredCaseTypeChangesHandsAsBefore()
+
+	public function testAssertMayChangeRefusesWithoutNamingTheAuthor(): void {
+		$this->declare();
+		$record = $this->register->row('assessment', 'a-1');
+
+		$this->access->assertMayChange(caseId: self::CASE_ID, record: $record, userId: 'reviewer1');
+
+		try {
+			$this->access->assertMayChange(caseId: self::CASE_ID, record: $record, userId: 'reviewer2');
+			self::fail('Another reviewer must be refused.');
+		} catch (\OCA\Dossiq\Exception\RefusedException $refusal) {
+			self::assertSame('owned-by-another-reviewer', $refusal->getRule());
+			self::assertSame(403, $refusal->getStatus());
+			self::assertStringNotContainsString('reviewer1', $refusal->getSentence());
+		}
+	}//end testAssertMayChangeRefusesWithoutNamingTheAuthor()
 }//end class
