@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Documents;
 
 use OCP\App\IAppManager;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
 
@@ -148,7 +149,66 @@ class ScanVerdictReader {
 			return $this->notScanned(present: true);
 		}
 
-		$row = $this->recordedRow(fileId: $fileId);
+		return $this->verdictFromRow(row: $this->recordedRow(fileId: $fileId));
+	}//end verdictFor()
+
+	/**
+	 * The verdicts for many files at once: one read of the scanner's table.
+	 *
+	 * The dossier listing puts a verdict on every row, and forty rows read one
+	 * at a time is forty queries to draw one column. A file the scanner never
+	 * recorded, and every file on an instance without a scanner, reads Not
+	 * scanned, exactly as {@see verdictFor()} answers it.
+	 *
+	 * @param array<int, int> $fileIds The Nextcloud file ids.
+	 *
+	 * @return array<int, array{state: string, scannedAt: string|null, scannerPresent: bool}>
+	 *         The verdict per file id, one entry for every id asked.
+	 *
+	 * @spec openspec/changes/documents-on-the-case/tasks.md#2.2
+	 */
+	public function verdictsFor(array $fileIds): array {
+		$wanted = array_values(array_unique(array_filter(array_map('intval', $fileIds), static fn (int $id): bool => $id > 0)));
+		$present = $this->scannerPresent();
+
+		$rows = [];
+		if ($present === true && $wanted !== []) {
+			try {
+				$rows = $this->recordedRows(fileIds: $wanted);
+			} catch (\Throwable $e) {
+				// The scanner is optional and its table goes with it: a read
+				// that throws leaves every row Not scanned, never a failed listing.
+				$this->logger->debug(
+					'dossiq could not read the recorded virus scans for a listing',
+					['count' => count($wanted), 'exception' => $e],
+				);
+			}
+		}
+
+		$verdicts = [];
+		foreach ($fileIds as $fileId) {
+			$fileId = (int)$fileId;
+			if ($present === false) {
+				$verdicts[$fileId] = $this->notScanned(present: false);
+				continue;
+			}
+
+			$verdicts[$fileId] = $this->verdictFromRow(row: ($rows[$fileId] ?? null));
+		}
+
+		return $verdicts;
+	}//end verdictsFor()
+
+	/**
+	 * The verdict one recorded scanner row stands for.
+	 *
+	 * @param array<string, mixed>|null $row The recorded row, or null when there is none.
+	 *
+	 * @return array{state: string, scannedAt: string|null, scannerPresent: bool} The verdict.
+	 *
+	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 */
+	private function verdictFromRow(?array $row): array {
 		if ($row === null) {
 			return $this->notScanned(present: true);
 		}
@@ -169,7 +229,7 @@ class ScanVerdictReader {
 			'scannedAt' => $this->checkedAt(raw: ($row['check_time'] ?? null)),
 			'scannerPresent' => true,
 		];
-	}//end verdictFor()
+	}//end verdictFromRow()
 
 	/**
 	 * The row the scanner wrote for this file, or null when there is none.
@@ -209,6 +269,36 @@ class ScanVerdictReader {
 			return null;
 		}
 	}//end recordedRow()
+
+	/**
+	 * The rows the scanner wrote for these files, by file id.
+	 *
+	 * A read that throws is caught by {@see verdictsFor()}, which renders
+	 * every row Not scanned.
+	 *
+	 * @param array<int, int> $fileIds The Nextcloud file ids, all positive.
+	 *
+	 * @return array<int, array<string, mixed>> The recorded rows by file id.
+	 *
+	 * @spec openspec/changes/documents-on-the-case/tasks.md#2.2
+	 */
+	private function recordedRows(array $fileIds): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('fileid', 'status', 'check_time')
+			->from('files_antivirus')
+			->where($qb->expr()->in('fileid', $qb->createNamedParameter($fileIds, IQueryBuilder::PARAM_INT_ARRAY)));
+
+		$result = $qb->executeQuery();
+		$rows = [];
+		while (($row = $result->fetch()) !== false) {
+			if (is_array($row) === true && isset($rows[(int)$row['fileid']]) === false) {
+				$rows[(int)$row['fileid']] = $row;
+			}
+		}
+
+		$result->closeCursor();
+		return $rows;
+	}//end recordedRows()
 
 	/**
 	 * The check time as an ISO 8601 moment, or null when there is not one.

@@ -48,11 +48,14 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DossierRowAnnotator;
 
 /**
  * Wire-contract tests for ZaakdossierController.
  *
  * @covers \OCA\Dossiq\Controller\ZaakdossierController
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DossierRowAnnotator
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance
  * @uses \OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions
  */
 class ZaakdossierControllerContractTest extends TestCase {
@@ -100,6 +103,13 @@ class ZaakdossierControllerContractTest extends TestCase {
 	private DocumentApprovalClearance $approvals;
 
 	/**
+	 * The row annotator mock (scan verdict and approval marker per row).
+	 *
+	 * @var DossierRowAnnotator
+	 */
+	private DossierRowAnnotator $rows;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var ZaakdossierController
@@ -124,7 +134,21 @@ class ZaakdossierControllerContractTest extends TestCase {
 		// document (#3004). It is mocked rather than left out because every
 		// test in this file builds the controller in setUp(), so one missing
 		// argument reads as the whole contract being unreachable.
-		$this->approvals = $this->createMock(DocumentApprovalClearance::class);
+		// Partial: the decidiq reads are doubled, the marker shape is the real one.
+		$this->approvals = $this->getMockBuilder(DocumentApprovalClearance::class)
+			->setConstructorArgs([
+				$this->createMock(\Psr\Container\ContainerInterface::class),
+				$this->createMock(\Psr\Log\LoggerInterface::class),
+			])
+			->onlyMethods(['forDocument', 'forDocuments', 'describe'])
+			->getMock();
+
+				// A REAL annotator over the approvals double above, so approvalMarkers()
+		// is pinned through the marker shape the Files tab reads.
+		$this->rows = new DossierRowAnnotator(
+			verdicts: $this->createMock(\OCA\Dossiq\Service\Documents\ScanVerdictReader::class),
+			approvals: $this->approvals,
+		);
 
 		$this->controller = new ZaakdossierController(
 			appName: 'dossiq',
@@ -133,7 +157,6 @@ class ZaakdossierControllerContractTest extends TestCase {
 			reader: $this->reader,
 			uploadHandler: $this->uploadHandler,
 			userSession: $this->userSession,
-			approvals: $this->approvals,
 			// A REAL bulk actions object over the SAME reader and dossier
 			// service the assertions read through. Only the wiring line moved
 			// when one act over many documents was split out.
@@ -141,6 +164,7 @@ class ZaakdossierControllerContractTest extends TestCase {
 				reader: $this->reader,
 				fileService: $this->fileService,
 			),
+			rows: $this->rows,
 		);
 	}//end setUp()
 

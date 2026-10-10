@@ -170,30 +170,46 @@ describe('the Files tab declares its columns', () => {
 		return panels.caseWidget('case-files')
 	}
 
-	it('binds each column to a property something answers', () => {
-		const columns = filesTab().props.columns
+	it('binds each column to a field the dossier listing answers', () => {
+		const props = filesTab().props
+		const columns = props.columns
 
-		// 🔴 The property, not the label. A column bound to a key nothing
-		// answers renders blank forever and raises nothing anywhere: the
-		// dossier listing carries senderName and recipientNames, and
-		// scan-verdict-on-the-row added scanVerdict, which the scan endpoint
-		// answers rather than the listing. Those three names are what this
-		// asserts.
-		expect(columns.map((column) => column.property)).toEqual([
+		// 🔴 The key, not the label. A `source: row` column reads its key off
+		// the dossier listing row for the file, so a key the listing does not
+		// carry renders blank forever and raises nothing anywhere. The listing
+		// carries informatieobjecttype, keywords, senderName and
+		// recipientNames, and (documents-on-the-case 2.2) scanVerdict and
+		// approvalMarker, which DossierRowAnnotator puts on every row.
+		expect(columns.map((column) => column.key)).toEqual([
+			'informatieobjecttype',
 			'senderName',
 			'recipientNames',
+			'keywords',
 			'scanVerdict',
-			// #3004: where a document sits in decidiq's approval route. Read
-			// from the approval leaf rather than the listing, same as
-			// scanVerdict above it.
 			'approvalMarker',
 		])
+		for (const column of columns) {
+			expect(column.source).toBe('row')
+		}
+		expect(props.rowDataUrl).toBe('/apps/dossiq/api/cases/{objectId}/dossier')
+		expect(props.rowDataPath).toBe('informatieobjecten')
+		expect(props.rowDataKey).toBe('fileId')
+	})
+
+	it('groups and filters on declared columns only', () => {
+		const props = filesTab().props
+		const keys = props.columns.map((column) => column.key)
+
+		expect(props.groupBy).toBe('informatieobjecttype')
+		expect(props.facets).toEqual(['keywords'])
+		expect(keys).toContain(props.groupBy)
+		props.facets.forEach((facet) => expect(keys).toContain(facet))
 	})
 
 	it('labels them in sentence case with no em-dash', () => {
 		const labels = filesTab().props.columns.map((column) => column.label)
 
-		expect(labels).toEqual(['Sender', 'Recipients', 'Scan', 'Approval'])
+		expect(labels).toEqual(['Type', 'Sender', 'Recipients', 'Keywords', 'Scan', 'Approval'])
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}

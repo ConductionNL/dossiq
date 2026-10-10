@@ -100,6 +100,31 @@ class DocumentApprovalClearance {
 			return self::NOT_ROUTED;
 		}
 
+		return ($this->forDocuments(documentIds: [$documentId], schema: $schema)[$documentId] ?? self::NOT_ROUTED);
+	}//end forDocument()
+
+	/**
+	 * What decidiq says about many documents, with decidiq looked up once.
+	 *
+	 * The dossier listing marks every row, so the duck-typed lookup of
+	 * decidiq's two services happens once for the listing rather than once
+	 * per row. Each document still gets its own answer, and a document whose
+	 * read throws costs only its own marker.
+	 *
+	 * @param array<int, string> $documentIds The informatieobject UUIDs.
+	 * @param string $schema The subject schema slug decidiq knows them under.
+	 *
+	 * @return array<string, array{routed: bool, cleared: bool, waitingOn: array<int, array<string, mixed>>}>
+	 *         The answer per non-empty document id.
+	 *
+	 * @spec openspec/changes/documents-on-the-case/tasks.md#2.2
+	 */
+	public function forDocuments(array $documentIds, string $schema = 'informatieobject'): array {
+		$ids = array_values(array_unique(array_filter(array_map(static fn (mixed $id): string => trim((string)$id), $documentIds))));
+		if ($ids === []) {
+			return [];
+		}
+
 		$routeService = FleetAppId::getService(
 			container: $this->container,
 			canonical: 'decidiq',
@@ -111,12 +136,64 @@ class DocumentApprovalClearance {
 			relative: 'Service\\SubjectClearanceService'
 		);
 
-		if ($routeService === null || $clearanceService === null) {
-			// No decidiq on this instance. Every document is unrouted, which
-			// is the state every document was in before this change.
-			return self::NOT_ROUTED;
+		$answers = [];
+		foreach ($ids as $documentId) {
+			if ($routeService === null || $clearanceService === null) {
+				// No decidiq on this instance. Every document is unrouted, which
+				// is the state every document was in before this change.
+				$answers[$documentId] = self::NOT_ROUTED;
+				continue;
+			}
+
+			$answers[$documentId] = $this->askDecidiq(
+				routeService: $routeService,
+				clearanceService: $clearanceService,
+				documentId: $documentId,
+				schema: $schema,
+			);
 		}
 
+		return $answers;
+	}//end forDocuments()
+
+	/**
+	 * The marker a document row carries, or null for a document nobody routed.
+	 *
+	 * Null rather than a word: "no marker" and "approved" are different rows.
+	 *
+	 * @param array{routed: bool, cleared: bool, waitingOn: array<int, array<string, mixed>>} $clearance The answer.
+	 *
+	 * @return array{routed: true, cleared: bool, waitingOn: array<int, array<string, mixed>>, reason: string}|null
+	 *         The marker, or null.
+	 *
+	 * @spec openspec/changes/documents-on-the-case/tasks.md#2.2
+	 */
+	public function markerFor(array $clearance): ?array {
+		if (($clearance['routed'] ?? false) !== true) {
+			return null;
+		}
+
+		return [
+			'routed' => true,
+			'cleared' => (($clearance['cleared'] ?? false) === true),
+			'waitingOn' => (array)($clearance['waitingOn'] ?? []),
+			'reason' => $this->describe(clearance: $clearance),
+		];
+	}//end markerFor()
+
+	/**
+	 * Ask decidiq's two services about one document.
+	 *
+	 * @param object $routeService decidiq's ApprovalRouteService.
+	 * @param object $clearanceService decidiq's SubjectClearanceService.
+	 * @param string $documentId The informatieobject UUID.
+	 * @param string $schema The subject schema slug.
+	 *
+	 * @return array{routed: bool, cleared: bool, waitingOn: array<int, array<string, mixed>>} The answer.
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
+	 */
+	private function askDecidiq(object $routeService, object $clearanceService, string $documentId, string $schema): array {
 		try {
 			$routes = $routeService->routesWithStagesFor(subject: $documentId);
 			if (is_array($routes) === false || $routes === []) {
@@ -138,7 +215,7 @@ class DocumentApprovalClearance {
 			'cleared' => (($clearance['cleared'] ?? false) === true),
 			'waitingOn' => (array)($clearance['waitingOn'] ?? []),
 		];
-	}//end forDocument()
+	}//end askDecidiq()
 
 	/**
 	 * The sentence a refusal carries: the route and the step it waits on.

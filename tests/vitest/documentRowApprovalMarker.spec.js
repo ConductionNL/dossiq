@@ -80,10 +80,10 @@ describe('the column is declared where the rows are', () => {
 	const columns = (files.props || files.content || {}).columns || []
 
 	it('declares an Approval column over the marker, with its formatter', () => {
-		const column = columns.find((c) => c.id === 'approval-chain')
+		const column = columns.find((c) => c.key === 'approvalMarker')
 
 		expect(column, 'the Files tab declares no approval column').toBeTruthy()
-		expect(column.property).toBe('approvalMarker')
+		expect(column.source).toBe('row')
 		expect(column.formatter).toBe('approvalChain')
 	})
 

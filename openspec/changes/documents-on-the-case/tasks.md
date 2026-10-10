@@ -115,16 +115,21 @@ criteria under a task are plain bullets.
   `bulkActions` Mark as final and Change confidentiality on
   `BulkDocumentActionDialog` (takes the selection's `fileIds`), `visibleIf`
   `{extension: [eml, msg]}` on Read as a message, and the orphan
-  `src/components/tabs/CaseDocumentsTab.vue` removed. OPEN: the columns. The
-  library reads `{key, label, source: "row", formatter}` with row data from
-  `rowDataUrl` (`/apps/dossiq/api/cases/{objectId}/dossier`, path
-  `informatieobjecten`, key `fileId`), and `groupBy`/`facets` name declared
-  columns (`informatieobjecttype`, `keywords`). The Scan and Approval columns
-  read `scanVerdict` and `approvalMarker`, which the dossier listing does not
-  carry (they come from `/api/files/{fileId}/scan` and
-  `/api/informatieobjecten/approval-markers`), so the listing has to add them before the
-  columns move to the library shape, or two shipped columns go blank. Tick after
-  that and after dossiq pins the release.
+  `src/components/tabs/CaseDocumentsTab.vue` removed. Columns (same branch,
+  10 Oct round 4): the dossier listing now carries `scanVerdict` and
+  `approvalMarker` on every row (`lib/Service/Zaakdossier/DossierRowAnnotator.php`,
+  one scanner query through `ScanVerdictReader::verdictsFor()` and one decidiq
+  lookup through `DocumentApprovalClearance::forDocuments()`, after the
+  clearance filter; tests `tests/Unit/Service/Zaakdossier/DossierRowAnnotatorTest.php`,
+  `DocumentApprovalClearanceTest.php`, `tests/Unit/Service/Documents/ScanVerdictReaderTest.php`),
+  and the case-files columns are `{key, label, source: "row", formatter}`:
+  Type, Sender, Recipients, Keywords, Scan, Approval, with `rowDataUrl`
+  `/apps/dossiq/api/cases/{objectId}/dossier`, `rowDataPath` informatieobjecten,
+  `rowDataKey` fileId, `groupBy` informatieobjecttype, `facets` [keywords],
+  `preferenceApp` dossiq (vitest pins in `tests/vitest/partyCorrespondence.spec.js`,
+  `scanVerdict.spec.js`, `documentRowApprovalMarker.spec.js`). OPEN: pin the
+  nextcloud-vue release that carries #1428 and #1433 (not released on
+  10 Oct; dossiq pins 2.76.0, which ignores these keys). Tick after that.
 
 - [x] 2.3 `src/views/cases/components/DossierTab.vue`: render the Direction
   and Keywords columns (chips), add the keyword filter (facet on

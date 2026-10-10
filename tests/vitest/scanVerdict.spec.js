@@ -53,15 +53,15 @@ function filesWidget() {
 describe('the column is declared where the browser will read it', () => {
 	it('adds Scan beside Sender and Recipients', () => {
 		const columns = filesWidget().props.columns
-		const scan = columns.find((column) => column.id === 'scan')
+		const scan = columns.find((column) => column.key === 'scanVerdict')
 		expect(scan).toBeTruthy()
 		expect(scan.label).toBe('Scan')
-		expect(scan.property).toBe('scanVerdict')
+		expect(scan.source).toBe('row')
 	})
 
 	it('names a formatter, or the cell renders a raw object', () => {
 		const scan = filesWidget().props.columns.find(
-			(column) => column.id === 'scan',
+			(column) => column.key === 'scanVerdict',
 		)
 		expect(scan.formatter).toBe('scanVerdict')
 	})

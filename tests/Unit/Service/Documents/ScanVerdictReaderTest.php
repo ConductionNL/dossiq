@@ -102,6 +102,100 @@ class ScanVerdictReaderTest extends TestCase {
 	}//end reader()
 
 	/**
+	 * A connection whose one SELECT answers these rows in turn, and counts
+	 * how many query builders were asked for.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The recorded rows.
+	 * @param int $builders Incremented once per query builder handed out.
+	 *
+	 * @return IDBConnection&\PHPUnit\Framework\MockObject\MockObject The connection.
+	 */
+	private function dbRows(array $rows, int &$builders) {
+		$result = $this->createMock(IResult::class);
+		$result->method('fetch')->willReturnOnConsecutiveCalls(...[...$rows, false]);
+
+		$expr = $this->createMock(IExpressionBuilder::class);
+		$expr->method('in')->willReturn('fileid IN (:ids)');
+
+		$qb = $this->createMock(IQueryBuilder::class);
+		$qb->method('select')->willReturnSelf();
+		$qb->method('from')->willReturnSelf();
+		$qb->method('where')->willReturnSelf();
+		$qb->method('expr')->willReturn($expr);
+		$qb->method('createNamedParameter')->willReturn(':ids');
+		$qb->method('executeQuery')->willReturn($result);
+
+		$db = $this->createMock(IDBConnection::class);
+		$db->method('getQueryBuilder')->willReturnCallback(
+			static function () use ($qb, &$builders) {
+				$builders++;
+				return $qb;
+			}
+		);
+
+		return $db;
+	}//end dbRows()
+
+	/**
+	 * A listing reads every verdict in ONE query, and a file the scanner never
+	 * recorded reads not scanned beside the ones it did.
+	 *
+	 * @return void
+	 */
+	public function testAListingReadsEveryVerdictInOneQuery(): void {
+		$builders = 0;
+		$reader = $this->reader(
+			true,
+			$this->dbRows(
+				[
+					['fileid' => 11, 'status' => 0, 'check_time' => 1757923200],
+					['fileid' => 12, 'status' => 1, 'check_time' => 1757923200],
+				],
+				$builders
+			)
+		);
+
+		$verdicts = $reader->verdictsFor(fileIds: [11, 12, 13]);
+
+		self::assertSame(1, $builders, 'one read for the whole listing');
+		self::assertSame([11, 12, 13], array_keys($verdicts));
+		self::assertSame(ScanVerdictReader::STATE_CLEAN, $verdicts[11]['state']);
+		self::assertSame(ScanVerdictReader::STATE_INFECTED, $verdicts[12]['state']);
+		self::assertSame(ScanVerdictReader::STATE_NOT_SCANNED, $verdicts[13]['state']);
+		self::assertTrue($verdicts[13]['scannerPresent']);
+	}//end testAListingReadsEveryVerdictInOneQuery()
+
+	/**
+	 * Without a scanner nothing is read, and every file says the scanner is absent.
+	 *
+	 * @return void
+	 */
+	public function testAListingWithoutAScannerReadsNothing(): void {
+		$builders = 0;
+		$reader = $this->reader(false, $this->dbRows([], $builders));
+
+		$verdicts = $reader->verdictsFor(fileIds: [11, 0]);
+
+		self::assertSame(0, $builders);
+		self::assertFalse($verdicts[11]['scannerPresent']);
+		self::assertSame(ScanVerdictReader::STATE_NOT_SCANNED, $verdicts[0]['state']);
+	}//end testAListingWithoutAScannerReadsNothing()
+
+	/**
+	 * A listing whose read throws reads not scanned on every row.
+	 *
+	 * @return void
+	 */
+	public function testAListingWhoseReadThrowsReadsNotScanned(): void {
+		$reader = $this->reader(true, $this->brokenDb());
+
+		$verdicts = $reader->verdictsFor(fileIds: [11]);
+
+		self::assertSame(ScanVerdictReader::STATE_NOT_SCANNED, $verdicts[11]['state']);
+		self::assertTrue($verdicts[11]['scannerPresent']);
+	}//end testAListingWhoseReadThrowsReadsNotScanned()
+
+	/**
 	 * A file the scanner cleared reads clean, with the moment of the check.
 	 *
 	 * @return void

@@ -48,6 +48,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
+use OCA\Dossiq\Service\Zaakdossier\DossierRowAnnotator;
 
 /**
  * Wire-contract tests for ZaakdossierController::listDossier().
@@ -100,6 +101,13 @@ class ZaakdossierListContractTest extends TestCase {
 	private DocumentApprovalClearance $approvals;
 
 	/**
+	 * The row annotator mock (scan verdict and approval marker per row).
+	 *
+	 * @var DossierRowAnnotator|MockObject
+	 */
+	private DossierRowAnnotator $rows;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var ZaakdossierController
@@ -126,6 +134,11 @@ class ZaakdossierListContractTest extends TestCase {
 		// argument reads as the whole contract being unreachable.
 		$this->approvals = $this->createMock(DocumentApprovalClearance::class);
 
+		// The listing's rows pass through the annotator unchanged here; its own
+		// suite (DossierRowAnnotatorTest) pins what it adds.
+		$this->rows = $this->createMock(DossierRowAnnotator::class);
+		$this->rows->method('annotate')->willReturnArgument(0);
+
 		$this->controller = new ZaakdossierController(
 			appName: 'dossiq',
 			request: $this->request,
@@ -133,7 +146,6 @@ class ZaakdossierListContractTest extends TestCase {
 			reader: $this->reader,
 			uploadHandler: $this->uploadHandler,
 			userSession: $this->userSession,
-			approvals: $this->approvals,
 			// A REAL bulk actions object over the SAME reader and dossier
 			// service the assertions read through. Only the wiring line moved
 			// when one act over many documents was split out.
@@ -141,6 +153,7 @@ class ZaakdossierListContractTest extends TestCase {
 				reader: $this->reader,
 				fileService: $this->fileService,
 			),
+			rows: $this->rows,
 		);
 	}//end setUp()
 
