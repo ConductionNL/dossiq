@@ -62,13 +62,19 @@
 				class="case-parties__accepted"
 				:data-source="caseKinds.source"
 				data-testid="case-parties-accepted">
-				<span class="case-parties__accepted-label">{{ t('dossiq', 'This case type accepts') }}</span>
+				<span class="case-parties__accepted-label">{{
+					t('dossiq', 'This case type accepts')
+				}}</span>
 				<span
 					v-for="(kind, index) in caseKinds.kinds"
 					:key="kindCode(kind)"
 					class="case-parties__accepted-kind"
-					data-testid="case-parties-accepted-kind">{{ index + 1 }}. {{ kind.label || kindCode(kind) }}</span>
-				<span class="case-parties__accepted-source">{{ acceptedSource }}</span>
+					data-testid="case-parties-accepted-kind"
+					>{{ index + 1 }}. {{ kind.label || kindCode(kind) }}</span
+				>
+				<span class="case-parties__accepted-source">{{
+					acceptedSource
+				}}</span>
 			</div>
 			<div
 				v-if="verdicts.length > 0"
@@ -262,7 +268,10 @@ export default {
 		acceptedSource() {
 			return this.caseKinds?.source === 'pipelinq'
 				? t('dossiq', 'Kinds from pipelinq, in the order of the case type')
-				: t('dossiq', 'Dossiq\'s own kinds: pipelinq is not installed on this instance')
+				: t(
+						'dossiq',
+						"Dossiq's own kinds: pipelinq is not installed on this instance",
+					)
 		},
 
 		kindLabels() {
@@ -400,7 +409,9 @@ export default {
 			}
 
 			const answers = await Promise.all(
-				uuids.map((uuid) => fetchPartyLanguage(this.caseId, uuid).catch(() => null)),
+				uuids.map((uuid) =>
+					fetchPartyLanguage(this.caseId, uuid).catch(() => null),
+				),
 			)
 			const languages = {}
 			uuids.forEach((uuid, index) => {
@@ -437,7 +448,9 @@ export default {
 				return false
 			}
 
-			return !this.caseKinds.kinds.some((kind) => kindCode(kind) === party.partyKind)
+			return !this.caseKinds.kinds.some(
+				(kind) => kindCode(kind) === party.partyKind,
+			)
 		},
 
 		kindCode,
@@ -489,8 +502,12 @@ export default {
 			if (!party.partyKind) {
 				return ''
 			}
-			const offered = (this.caseKinds?.kinds || []).find((kind) => kindCode(kind) === party.partyKind)
-			return offered?.label || this.kindLabels[party.partyKind] || party.partyKind
+			const offered = (this.caseKinds?.kinds || []).find(
+				(kind) => kindCode(kind) === party.partyKind,
+			)
+			return (
+				offered?.label || this.kindLabels[party.partyKind] || party.partyKind
+			)
 		},
 
 		/**
@@ -661,7 +678,8 @@ export default {
 		flex-wrap: wrap;
 		gap: calc(var(--default-grid-baseline) * 2);
 		align-items: center;
-		padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+		padding: calc(var(--default-grid-baseline) * 2)
+			calc(var(--default-grid-baseline) * 3);
 		border-radius: var(--border-radius-large);
 		background-color: var(--color-background-hover);
 	}

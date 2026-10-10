@@ -59,7 +59,12 @@ const FORM_FIELDS = [
  * whole point: a handler logging a call does not know what a
  * `identificationMethod` is.
  */
-const KCC_FIELDS = ['log-contact-identificationMethod', 'log-contact-nature', 'log-contact-kccEmployeeId', 'log-contact-case']
+const KCC_FIELDS = [
+	'log-contact-identificationMethod',
+	'log-contact-nature',
+	'log-contact-kccEmployeeId',
+	'log-contact-case',
+]
 
 const EARLIER_SUMMARY = `${RUN_PREFIX} called about the hearing date`
 const LATER_SUMMARY = `${RUN_PREFIX} e-mailed the inspection report`
@@ -372,7 +377,9 @@ test.describe('Case detail — the Communication tab', () => {
 			.fill(TYPED_SUMMARY)
 
 		await dialog.locator('[data-testid="log-contact-confirm"]').click()
-		await expect(dialog.locator('[data-testid="log-contact-saved"]')).toBeVisible({ timeout: 20_000 })
+		await expect(
+			dialog.locator('[data-testid="log-contact-saved"]'),
+		).toBeVisible({ timeout: 20_000 })
 
 		// THE SAVED OBJECT, and deliberately not a prefilled field. Seeding the
 		// case through the action's `props` is the shipped mechanism, not a

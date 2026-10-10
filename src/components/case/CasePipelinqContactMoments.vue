@@ -23,7 +23,12 @@
 <template>
 	<div class="case-pipelinq-moments" data-testid="case-pipelinq-moments">
 		<p class="case-pipelinq-moments__lead">
-			{{ t('dossiq', 'From pipelinq: every contact moment on this case, also when it is on more cases. Newest first.') }}
+			{{
+				t(
+					'dossiq',
+					'From pipelinq: every contact moment on this case, also when it is on more cases. Newest first.',
+				)
+			}}
 		</p>
 
 		<NcLoadingIcon v-if="loading" :size="24" />
@@ -31,18 +36,30 @@
 		<NcEmptyContent
 			v-else-if="failed"
 			:name="t('dossiq', 'The customer record could not be read')"
-			:description="t('dossiq', 'Nothing was changed. Try again in a moment.')" />
+			:description="
+				t('dossiq', 'Nothing was changed. Try again in a moment.')
+			" />
 
 		<NcEmptyContent
 			v-else-if="!available"
 			data-testid="case-pipelinq-moments-absent"
 			:name="t('dossiq', 'Pipelinq is not installed on this instance')"
-			:description="t('dossiq', 'There is no customer record here. The contact moments dossiq logs itself are in the Communication list.')" />
+			:description="
+				t(
+					'dossiq',
+					'There is no customer record here. The contact moments dossiq logs itself are in the Communication list.',
+				)
+			" />
 
 		<NcEmptyContent
 			v-else-if="moments.length === 0"
 			data-testid="case-pipelinq-moments-empty"
-			:name="t('dossiq', 'No contact moments in the customer record for this case yet')" />
+			:name="
+				t(
+					'dossiq',
+					'No contact moments in the customer record for this case yet',
+				)
+			" />
 
 		<ul v-else class="case-pipelinq-moments__list">
 			<li
@@ -53,12 +70,22 @@
 				<span class="case-pipelinq-moments__when">{{ whenOf(moment) }}</span>
 				<span class="case-pipelinq-moments__body">
 					<span class="case-pipelinq-moments__chips">
-						<span v-if="moment.channel" class="case-pipelinq-moments__chip">{{ moment.channel }}</span>
-						<span v-if="moment.direction" class="case-pipelinq-moments__chip">{{ directionOf(moment) }}</span>
+						<span
+							v-if="moment.channel"
+							class="case-pipelinq-moments__chip"
+							>{{ moment.channel }}</span
+						>
+						<span
+							v-if="moment.direction"
+							class="case-pipelinq-moments__chip"
+							>{{ directionOf(moment) }}</span
+						>
 						<span
 							v-if="sharedLine(moment)"
 							class="case-pipelinq-moments__chip case-pipelinq-moments__chip--shared"
-							data-testid="case-pipelinq-moment-shared">{{ sharedLine(moment) }}</span>
+							data-testid="case-pipelinq-moment-shared"
+							>{{ sharedLine(moment) }}</span
+						>
 					</span>
 					<span>{{ moment.summary || moment.subject }}</span>
 					<span
@@ -66,28 +93,53 @@
 						class="case-pipelinq-moments__also"
 						data-testid="case-pipelinq-moment-also">
 						{{ t('dossiq', 'Also on:') }}
-						<template v-for="(other, index) in moment.alsoOnCases" :key="other">
-							<RouterLink :to="{ name: 'CaseDetail', params: { id: other } }">{{ caseLabels[other] || t('dossiq', 'case') }}</RouterLink><span v-if="index < moment.alsoOnCases.length - 1">, </span>
+						<template
+							v-for="(other, index) in moment.alsoOnCases"
+							:key="other">
+							<RouterLink
+								:to="{ name: 'CaseDetail', params: { id: other } }"
+								>{{
+									caseLabels[other] || t('dossiq', 'case')
+								}}</RouterLink
+							><span v-if="index < moment.alsoOnCases.length - 1"
+								>,
+							</span>
 						</template>
 					</span>
 				</span>
-				<NcActions :aria-label="t('dossiq', 'Actions for this contact moment')">
-					<NcActionButton data-testid="case-pipelinq-moment-file" @click="filing = moment">
+				<NcActions
+					:aria-label="t('dossiq', 'Actions for this contact moment')">
+					<NcActionButton
+						data-testid="case-pipelinq-moment-file"
+						@click="filing = moment">
 						{{ t('dossiq', 'Also file on another case') }}
 					</NcActionButton>
-					<NcActionButton data-testid="case-pipelinq-moment-unfile" @click="unfile(moment)">
+					<NcActionButton
+						data-testid="case-pipelinq-moment-unfile"
+						@click="unfile(moment)">
 						{{ t('dossiq', 'Take off this case') }}
 					</NcActionButton>
 				</NcActions>
 			</li>
 		</ul>
 
-		<p v-if="actionError" class="case-pipelinq-moments__error" role="alert" data-testid="case-pipelinq-moments-error">
+		<p
+			v-if="actionError"
+			class="case-pipelinq-moments__error"
+			role="alert"
+			data-testid="case-pipelinq-moments-error">
 			{{ actionError }}
 		</p>
 
-		<p v-if="available && moments.length > 0" class="case-pipelinq-moments__lead">
-			{{ t('dossiq', 'One conversation about three cases is one contact moment. Filing and taking off go through pipelinq, which records who did it and when.') }}
+		<p
+			v-if="available && moments.length > 0"
+			class="case-pipelinq-moments__lead">
+			{{
+				t(
+					'dossiq',
+					'One conversation about three cases is one contact moment. Filing and taking off go through pipelinq, which records who did it and when.',
+				)
+			}}
 		</p>
 
 		<FileContactMomentDialog
@@ -118,7 +170,13 @@ import {
 export default {
 	name: 'CasePipelinqContactMoments',
 
-	components: { FileContactMomentDialog, NcActionButton, NcActions, NcEmptyContent, NcLoadingIcon },
+	components: {
+		FileContactMomentDialog,
+		NcActionButton,
+		NcActions,
+		NcEmptyContent,
+		NcLoadingIcon,
+	},
 
 	props: {
 		objectId: {
@@ -197,23 +255,32 @@ export default {
 		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03
 		 */
 		async labelOtherCases() {
-			const wanted = [...new Set(this.moments.flatMap((m) => m.alsoOnCases || []))]
+			const wanted = [
+				...new Set(this.moments.flatMap((m) => m.alsoOnCases || [])),
+			]
 				.filter((id) => !this.caseLabels[id])
 				.slice(0, 10)
 
-			await Promise.all(wanted.map(async (id) => {
-				try {
-					const { data } = await axios.get(
-						generateUrl('/apps/openregister/api/objects/dossiq/case/{id}', { id }),
-					)
-					const label = [data?.identifier, data?.title].filter(Boolean).join(' ')
-					if (label !== '') {
-						this.caseLabels = { ...this.caseLabels, [id]: label }
+			await Promise.all(
+				wanted.map(async (id) => {
+					try {
+						const { data } = await axios.get(
+							generateUrl(
+								'/apps/openregister/api/objects/dossiq/case/{id}',
+								{ id },
+							),
+						)
+						const label = [data?.identifier, data?.title]
+							.filter(Boolean)
+							.join(' ')
+						if (label !== '') {
+							this.caseLabels = { ...this.caseLabels, [id]: label }
+						}
+					} catch {
+						// The link still opens the case; only its text stays plain.
 					}
-				} catch {
-					// The link still opens the case; only its text stays plain.
-				}
-			}))
+				}),
+			)
 		},
 
 		/**
@@ -229,7 +296,13 @@ export default {
 				await unfileContactMoment(this.caseId, String(moment?.id || ''))
 				await this.load()
 			} catch (error) {
-				this.actionError = refusalOf(error, t('dossiq', 'The contact moment could not be taken off this case.'))
+				this.actionError = refusalOf(
+					error,
+					t(
+						'dossiq',
+						'The contact moment could not be taken off this case.',
+					),
+				)
 			}
 		},
 
@@ -246,7 +319,12 @@ export default {
 				return ''
 			}
 
-			return at.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+			return at.toLocaleString(undefined, {
+				day: 'numeric',
+				month: 'short',
+				hour: '2-digit',
+				minute: '2-digit',
+			})
 		},
 
 		/**

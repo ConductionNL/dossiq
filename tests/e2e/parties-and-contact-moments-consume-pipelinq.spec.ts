@@ -49,10 +49,23 @@ test.describe('pipelinq on the case', () => {
 		token = await getRequestToken(api)
 		const types = await adoptableCaseTypes(api)
 		caseTypeId = objectId(types[0])
-		caseA = objectId(await seedCase(api, token, { title: `${RUN_PREFIX} pipelinq A`, caseType: caseTypeId }))
-		caseB = objectId(await seedCase(api, token, { title: `${RUN_PREFIX} pipelinq B`, caseType: caseTypeId }))
+		caseA = objectId(
+			await seedCase(api, token, {
+				title: `${RUN_PREFIX} pipelinq A`,
+				caseType: caseTypeId,
+			}),
+		)
+		caseB = objectId(
+			await seedCase(api, token, {
+				title: `${RUN_PREFIX} pipelinq B`,
+				caseType: caseTypeId,
+			}),
+		)
 
-		const probe = await api.get(`${BASE}/cases/${caseA}/pipelinq/contact-moments`, { headers: { requesttoken: token } })
+		const probe = await api.get(
+			`${BASE}/cases/${caseA}/pipelinq/contact-moments`,
+			{ headers: { requesttoken: token } },
+		)
 		pipelinqHere = probe.ok() && (await probe.json())?.available === true
 	})
 
@@ -62,65 +75,115 @@ test.describe('pipelinq on the case', () => {
 	})
 
 	// @e2e openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#a-logged-call-reaches-both-records
-	test('a call logged from the case page reaches dossiq and pipelinq', async ({ page }) => {
+	test('a call logged from the case page reaches dossiq and pipelinq', async ({
+		page,
+	}) => {
 		test.skip(!pipelinqHere, 'pipelinq is not installed on this instance')
 		const summary = `${RUN_PREFIX} rang about the stukken`
 
 		await page.goto(`/apps/${REGISTER}/cases/${caseA}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 		await clickHeaderAction(page, 'cn-action-log-contact')
 		const dialog = page.locator('[data-testid="log-contact-dialog"]')
-		await dialog.locator('[data-testid="log-contact-summary"]').getByRole('textbox').fill(summary)
+		await dialog
+			.locator('[data-testid="log-contact-summary"]')
+			.getByRole('textbox')
+			.fill(summary)
 		await dialog.locator('[data-testid="log-contact-confirm"]').click()
-		await expect(dialog.locator('[data-testid="log-contact-saved"]')).toBeVisible({ timeout: 20_000 })
+		await expect(
+			dialog.locator('[data-testid="log-contact-saved"]'),
+		).toBeVisible({ timeout: 20_000 })
 
 		await expect(async () => {
-			const res = await api.get(`${BASE}/cases/${caseA}/pipelinq/contact-moments`, { headers: { requesttoken: token } })
+			const res = await api.get(
+				`${BASE}/cases/${caseA}/pipelinq/contact-moments`,
+				{ headers: { requesttoken: token } },
+			)
 			const body = await res.json()
-			const found = (body.moments || []).find((m: any) => String(m.summary || '').includes(summary))
-			expect(found, 'pipelinq holds the same moment, hosted on the case').toBeTruthy()
+			const found = (body.moments || []).find((m: any) =>
+				String(m.summary || '').includes(summary),
+			)
+			expect(
+				found,
+				'pipelinq holds the same moment, hosted on the case',
+			).toBeTruthy()
 			expect(found.direction).toBe('inbound')
 		}).toPass({ timeout: 30_000 })
 	})
 
 	// @e2e openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#one-call-on-three-cases-appears-on-each
-	test('a moment filed on a second case shows on both, with the shared line', async ({ page }) => {
+	test('a moment filed on a second case shows on both, with the shared line', async ({
+		page,
+	}) => {
 		test.skip(!pipelinqHere, 'pipelinq is not installed on this instance')
 
-		const before = await (await api.get(`${BASE}/cases/${caseA}/pipelinq/contact-moments`, { headers: { requesttoken: token } })).json()
-		const moment = (before.moments || []).find((m: any) => String(m.summary || '').startsWith(RUN_PREFIX))
+		const before = await (
+			await api.get(`${BASE}/cases/${caseA}/pipelinq/contact-moments`, {
+				headers: { requesttoken: token },
+			})
+		).json()
+		const moment = (before.moments || []).find((m: any) =>
+			String(m.summary || '').startsWith(RUN_PREFIX),
+		)
 		test.skip(!moment, 'the previous test logged no moment to file')
 
-		const filed = await api.post(`${BASE}/cases/${caseA}/pipelinq/contact-moments/${moment.id}/file`, {
-			headers: { requesttoken: token },
-			data: { targetCaseId: caseB },
-		})
+		const filed = await api.post(
+			`${BASE}/cases/${caseA}/pipelinq/contact-moments/${moment.id}/file`,
+			{
+				headers: { requesttoken: token },
+				data: { targetCaseId: caseB },
+			},
+		)
 		expect(filed.status(), await filed.text()).toBe(200)
 
 		await page.goto(`/apps/${REGISTER}/cases/${caseB}`)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 		const panel = await openCasePanel(page, 'customerRecord')
-		const row = panel.locator('[data-testid="case-pipelinq-moment"]').filter({ hasText: moment.summary })
+		const row = panel
+			.locator('[data-testid="case-pipelinq-moment"]')
+			.filter({ hasText: moment.summary })
 		await expect(row).toHaveCount(1, { timeout: 20_000 })
-		await expect(row.locator('[data-testid="case-pipelinq-moment-shared"]')).toBeVisible()
+		await expect(
+			row.locator('[data-testid="case-pipelinq-moment-shared"]'),
+		).toBeVisible()
 	})
 
 	// @e2e openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#a-subsidy-case-type-declares-two-kinds
 	test('a case type declares its kinds in order and pipelinq holds them', async () => {
 		test.skip(!pipelinqHere, 'pipelinq is not installed on this instance')
 
-		const vocabulary = await (await api.get(`${BASE}/case-types/${caseTypeId}/pipelinq/party-kinds`, { headers: { requesttoken: token } })).json()
-		const codes = (vocabulary.kinds || []).map((k: any) => String(k.code || '')).filter(Boolean)
-		test.skip(codes.length < 2, 'pipelinq holds fewer than two party kinds on this instance')
+		const vocabulary = await (
+			await api.get(`${BASE}/case-types/${caseTypeId}/pipelinq/party-kinds`, {
+				headers: { requesttoken: token },
+			})
+		).json()
+		const codes = (vocabulary.kinds || [])
+			.map((k: any) => String(k.code || ''))
+			.filter(Boolean)
+		test.skip(
+			codes.length < 2,
+			'pipelinq holds fewer than two party kinds on this instance',
+		)
 
 		const declared = [codes[1], codes[0]]
-		const put = await api.put(`${BASE}/case-types/${caseTypeId}/pipelinq/party-kinds`, {
-			headers: { requesttoken: token },
-			data: { kinds: declared },
-		})
+		const put = await api.put(
+			`${BASE}/case-types/${caseTypeId}/pipelinq/party-kinds`,
+			{
+				headers: { requesttoken: token },
+				data: { kinds: declared },
+			},
+		)
 		expect(put.status(), await put.text()).toBe(200)
 
-		const after = await (await api.get(`${BASE}/case-types/${caseTypeId}/pipelinq/party-kinds`, { headers: { requesttoken: token } })).json()
+		const after = await (
+			await api.get(`${BASE}/case-types/${caseTypeId}/pipelinq/party-kinds`, {
+				headers: { requesttoken: token },
+			})
+		).json()
 		expect(after.accepted, 'read back in the declared order').toEqual(declared)
 	})
 
@@ -128,9 +191,16 @@ test.describe('pipelinq on the case', () => {
 	test('a case already under a programme is refused with the holder named', async () => {
 		test.skip(!pipelinqHere, 'pipelinq is not installed on this instance')
 
-		const options = await (await api.get(`${BASE}/pipelinq/programmes`, { headers: { requesttoken: token } })).json()
+		const options = await (
+			await api.get(`${BASE}/pipelinq/programmes`, {
+				headers: { requesttoken: token },
+			})
+		).json()
 		const programmes = options.programmes || []
-		test.skip(programmes.length < 2, 'pipelinq holds fewer than two programmes on this instance')
+		test.skip(
+			programmes.length < 2,
+			'pipelinq holds fewer than two programmes on this instance',
+		)
 
 		const first = await api.post(`${BASE}/cases/${caseA}/pipelinq/programme`, {
 			headers: { requesttoken: token },

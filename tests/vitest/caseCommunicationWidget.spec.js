@@ -141,7 +141,10 @@ describe('the Log contact action', () => {
 		expect(logContact).toBeTruthy()
 		expect(logContact.type).toBe('open-modal')
 		expect(logContact.target).toBe('LogContactDialog')
-		expect(logContact.register, 'an open-modal action writes nothing itself').toBeUndefined()
+		expect(
+			logContact.register,
+			'an open-modal action writes nothing itself',
+		).toBeUndefined()
 	})
 
 	it('hands the dialog the case it was opened from', () => {
@@ -163,7 +166,11 @@ describe('the Log contact action', () => {
 		)
 
 		expect(dialog).toContain('logContactMoment(')
-		expect(api).toContain("axios.post(caseUrl(caseId, '/contact-moments'), moment)")
-		expect(routes).toMatch(/pipelinqCase#logContactMoment'[^\n]*\/api\/cases\/\{caseId\}\/pipelinq\/contact-moments'[^\n]*'POST'/)
+		expect(api).toContain(
+			"axios.post(caseUrl(caseId, '/contact-moments'), moment)",
+		)
+		expect(routes).toMatch(
+			/pipelinqCase#logContactMoment'[^\n]*\/api\/cases\/\{caseId\}\/pipelinq\/contact-moments'[^\n]*'POST'/,
+		)
 	})
 })

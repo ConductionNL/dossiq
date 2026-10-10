@@ -88,13 +88,20 @@
 				{{ t('dossiq', 'Visible to the applicant') }}
 			</NcCheckboxRadioSwitch>
 
-			<p v-if="error" class="log-contact__error" role="alert" data-testid="log-contact-error">
+			<p
+				v-if="error"
+				class="log-contact__error"
+				role="alert"
+				data-testid="log-contact-error">
 				{{ error }}
 			</p>
 		</div>
 
 		<div v-else class="log-contact">
-			<p class="log-contact__saved" role="status" data-testid="log-contact-saved">
+			<p
+				class="log-contact__saved"
+				role="status"
+				data-testid="log-contact-saved">
 				{{ t('dossiq', 'The contact moment is on this case.') }}
 			</p>
 			<div
@@ -102,14 +109,22 @@
 				class="log-contact__refusal"
 				role="alert"
 				data-testid="log-contact-refusal">
-				<strong>{{ t('dossiq', 'Pipelinq did not put it in the customer record') }}</strong>
+				<strong>{{
+					t('dossiq', 'Pipelinq did not put it in the customer record')
+				}}</strong>
 				<span>{{ refusal }}</span>
 			</div>
 			<dl class="log-contact__summary">
 				<dt>{{ t('dossiq', 'Channel') }}</dt>
 				<dd>{{ channelLabel }}</dd>
 				<dt>{{ t('dossiq', 'Direction') }}</dt>
-				<dd>{{ direction === 'outbound' ? t('dossiq', 'Outbound') : t('dossiq', 'Inbound') }}</dd>
+				<dd>
+					{{
+						direction === 'outbound'
+							? t('dossiq', 'Outbound')
+							: t('dossiq', 'Inbound')
+					}}
+				</dd>
 				<dt>{{ t('dossiq', 'Summary') }}</dt>
 				<dd>{{ summary }}</dd>
 			</dl>
@@ -147,7 +162,11 @@ import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { logContactMoment, refusalOf, refusalSentence } from '../services/pipelinqCaseApi.js'
+import {
+	logContactMoment,
+	refusalOf,
+	refusalSentence,
+} from '../services/pipelinqCaseApi.js'
 
 export default {
 	name: 'LogContactDialog',
@@ -214,12 +233,19 @@ export default {
 
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02 */
 		channelLabel() {
-			return this.channels.find((option) => option.value === this.channel)?.label || this.channel
+			return (
+				this.channels.find((option) => option.value === this.channel)?.label
+				|| this.channel
+			)
 		},
 
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02 */
 		canSave() {
-			return this.busy === false && this.targetCaseId !== '' && this.summary.trim() !== ''
+			return (
+				this.busy === false
+				&& this.targetCaseId !== ''
+				&& this.summary.trim() !== ''
+			)
 		},
 	},
 
@@ -236,7 +262,10 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				const start = this.startTime instanceof Date ? this.startTime.toISOString() : ''
+				const start =
+					this.startTime instanceof Date
+						? this.startTime.toISOString()
+						: ''
 				const answer = await logContactMoment(this.targetCaseId, {
 					notificationChannel: this.channel,
 					direction: this.direction,
@@ -246,9 +275,15 @@ export default {
 					visibleToApplicant: this.visibleToApplicant,
 				})
 				this.saved = answer?.contactmoment || {}
-				this.refusal = refusalSentence(answer?.pipelinqRefusal, answer?.pipelinqIndicators)
+				this.refusal = refusalSentence(
+					answer?.pipelinqRefusal,
+					answer?.pipelinqIndicators,
+				)
 			} catch (error) {
-				this.error = refusalOf(error, t('dossiq', 'The contact moment could not be saved.'))
+				this.error = refusalOf(
+					error,
+					t('dossiq', 'The contact moment could not be saved.'),
+				)
 			} finally {
 				this.busy = false
 			}

@@ -27,10 +27,18 @@
 			v-else-if="!available"
 			data-testid="case-programme-absent"
 			:name="t('dossiq', 'Pipelinq is not installed on this instance')"
-			:description="t('dossiq', 'A case can only hang under a programme when pipelinq is here.')" />
+			:description="
+				t(
+					'dossiq',
+					'A case can only hang under a programme when pipelinq is here.',
+				)
+			" />
 
 		<template v-else>
-			<div v-if="programme" class="case-programme__current" data-testid="case-programme-current">
+			<div
+				v-if="programme"
+				class="case-programme__current"
+				data-testid="case-programme-current">
 				<strong>{{ programme.name || programme.id }}</strong>
 				<span
 					v-if="computable"
@@ -40,9 +48,13 @@
 					aria-valuemin="0"
 					aria-valuemax="100"
 					:aria-label="t('dossiq', 'Progress of the programme')">
-					<span class="case-programme__fill" :style="{ width: programme.progress.progress + '%' }" />
+					<span
+						class="case-programme__fill"
+						:style="{ width: programme.progress.progress + '%' }" />
 				</span>
-				<span data-testid="case-programme-progress">{{ progressLine(programme.progress) }}</span>
+				<span data-testid="case-programme-progress">{{
+					progressLine(programme.progress)
+				}}</span>
 			</div>
 			<template v-else>
 				<p class="case-programme__hint" data-testid="case-programme-none">
@@ -113,7 +125,10 @@ export default {
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08 */
 		computable() {
 			const progress = this.programme?.progress
-			return progress?.computable === true && typeof progress.progress === 'number'
+			return (
+				progress?.computable === true
+				&& typeof progress.progress === 'number'
+			)
 		},
 	},
 
