@@ -8,7 +8,6 @@
 <template>
 	<div class="mandaat-matrix-tab">
 		<div class="mandaat-matrix-tab__header">
-			<h3>{{ t('dossiq', 'Mandate Matrix') }}</h3>
 			<p class="mandaat-matrix-tab__description">
 				{{
 					t(

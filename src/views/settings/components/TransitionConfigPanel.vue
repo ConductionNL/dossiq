@@ -1,7 +1,7 @@
 <template>
 	<div class="transition-config-panel">
 		<div class="transition-config-panel__header">
-			<h4>{{ t('dossiq', 'Transition Configuration') }}</h4>
+			<h4>{{ t('dossiq', 'Transition configuration') }}</h4>
 			<NcButton
 				type="tertiary"
 				:aria-label="t('dossiq', 'Close transition configuration')"

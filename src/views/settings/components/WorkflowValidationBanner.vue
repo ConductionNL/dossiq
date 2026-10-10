@@ -51,11 +51,11 @@ export default {
 }
 
 .workflow-validation__item--error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .workflow-validation__item--warning {
-	color: var(--color-warning);
+	color: var(--color-warning-text);
 }
 
 .workflow-validation__icon {
@@ -71,12 +71,12 @@ export default {
 
 .workflow-validation__item--error .workflow-validation__icon {
 	background: var(--color-error);
-	color: white;
+	color: var(--color-error-text);
 }
 
 .workflow-validation__item--warning .workflow-validation__icon {
 	background: var(--color-warning);
-	color: white;
+	color: var(--color-warning-text);
 }
 
 .workflow-validation__dismiss {
