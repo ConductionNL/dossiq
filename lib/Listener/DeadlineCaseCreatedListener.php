@@ -113,6 +113,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
@@ -154,14 +155,17 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		// for five municipalities with five agreed norms. The resolution is
 		// made here, where the case's own values are in hand, and is recorded
 		// on the instance so a disputed date can be explained a year later.
-		$resolution = $this->resolution?->resolve(
-			caseType: $caseType,
-			context: [
-				'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
-				'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
-				'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
-			]
-		);
+		$context = [
+			'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
+			'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
+			'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
+		];
+		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
+
+		// The service norm, resolved by the same rule. A case type with no
+		// statutory term (a melding, a demo type) still has a clock the team
+		// works to, and it is bound beside the statutory term rather than as it.
+		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
 
 		try {
 			// The term counts from receipt, not from the moment this row was
@@ -173,7 +177,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 				$this->intake?->termStartFor(case: $payload),
 				$resolution
 			);
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
 		} catch (NoTermijnDefinitieException $e) {
 			// NOT debug. A case that matched no definition at all has no
 			// statutory clock running, which is exactly the state that hid a
@@ -190,7 +194,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			// has no TermijnDefinitie and a refusal here is the ordinary path
 			// rather than the broken one. The other clocks still bind, and the
 			// fixed date still becomes the statutory term.
-			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
+			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload, plannedDefinition: $plannedDefinition);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq termijn: could not bind a term to case ' . $caseId . ': ' . $e->getMessage(),
@@ -211,13 +215,21 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @param string $caseTypeRef The case type as the case carries it.
 	 * @param array<string, mixed> $payload The created case. Its clocks start where the
 	 *        statutory term starts, so the three clocks of one case count from one day.
+	 * @param array<string, mixed>|null $plannedDefinition The `planned` definition that resolved
+	 *        for the case, bound when the case type declares no planned lead time of its own.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
 	 */
-	private function bindTheOtherClocks(string $caseId, string $caseTypeRef, array $payload): void {
+	private function bindTheOtherClocks(
+		string $caseId,
+		string $caseTypeRef,
+		array $payload,
+		?array $plannedDefinition = null,
+	): void {
 		if ($this->caseTerms === null) {
 			return;
 		}
@@ -228,6 +240,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 				caseTypeId: $caseTypeRef,
 				start: $this->intake?->termStartFor(case: $payload),
 				plannedStart: trim((string)($payload['plannedStartDate'] ?? '')),
+				plannedDefinition: $plannedDefinition,
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(

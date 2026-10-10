@@ -254,24 +254,24 @@ test.describe('The case number and the follows that replaced the star', () => {
 		await dismissSupportDialog(page)
 
 		await expect(page.getByTestId('case-favourite-toggle')).toHaveCount(0)
-		const toggle = page.getByTestId('case-follow-toggle')
+		const toggle = page.getByTestId('cn-follow-toggle-button')
 		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
-		await expect(page.getByTestId('case-follow-notify')).toHaveCount(0)
+		await expect(page.getByTestId('cn-follow-toggle-notify')).toHaveCount(0)
 
 		await toggle.click()
 		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
-		const bell = page.getByTestId('case-follow-notify')
+		const bell = page.getByTestId('cn-follow-toggle-notify')
 		await expect(bell).toHaveAttribute('aria-pressed', 'true')
 		await bell.click()
 		await expect(bell).toHaveAttribute('aria-pressed', 'false')
 
 		await page.reload(PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-follow-toggle')).toHaveAttribute(
+		await expect(page.getByTestId('cn-follow-toggle-button')).toHaveAttribute(
 			'aria-pressed',
 			'true',
 		)
-		await expect(page.getByTestId('case-follow-notify')).toHaveAttribute(
+		await expect(page.getByTestId('cn-follow-toggle-notify')).toHaveAttribute(
 			'aria-pressed',
 			'false',
 		)
