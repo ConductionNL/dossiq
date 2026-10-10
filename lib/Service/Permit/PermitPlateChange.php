@@ -70,6 +70,29 @@ class PermitPlateChange {
 			throw new PermitChangeRefused(PermitChangeRefused::UNAVAILABLE, 'OpenRegister or the dossiq register is missing.');
 		}
 
+		try {
+			return $this->openFor(objectService: $objectService, register: $register, subjectRef: $subjectRef, permitId: $permitId, plate: $plate);
+		} catch (PermitChangeRefused $refused) {
+			throw $refused;
+		} catch (Throwable $e) {
+			throw new PermitChangeRefused(PermitChangeRefused::UNAVAILABLE, 'The register could not be read: ' . $e->getMessage());
+		}
+	}//end request()
+
+	/**
+	 * Check the permit and open the change case.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register.
+	 * @param string $subjectRef    The resident.
+	 * @param string $permitId      The permit.
+	 * @param string $plate         The new plate, normalised.
+	 *
+	 * @return array{caseId: string, identifier: string} The case opened.
+	 *
+	 * @throws PermitChangeRefused When the permit is not the resident's, not in force, or has no change type.
+	 */
+	private function openFor(object $objectService, string $register, string $subjectRef, string $permitId, string $plate): array {
 		$permit = $this->read(objectService: $objectService, register: $register, schema: 'permit', id: $permitId);
 		if ($permit === null || (string)($permit['portalSubject'] ?? '') !== $subjectRef) {
 			// Someone else's permit answers exactly like a missing one.
@@ -91,7 +114,7 @@ class PermitPlateChange {
 			permitId: $permitId,
 			plate: $plate
 		);
-	}//end request()
+	}//end openFor()
 
 	/**
 	 * A plate as stored: upper case, no dashes or spaces.
@@ -218,19 +241,15 @@ class PermitPlateChange {
 			return [];
 		}
 
-		try {
-			$rows = $this->runAsSystemIfAvailable(
+		$rows = $this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): array => $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
-				operation: fn (): array => $this->searchObjectsAsArraysUnscoped(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					filters: ['caseType' => $caseTypeId],
-				)
-			);
-		} catch (Throwable) {
-			return [];
-		}
+				register: $register,
+				schema: $schema,
+				filters: ['caseType' => $caseTypeId],
+			)
+		);
 
 		$entries = [];
 		foreach ((array)$rows as $row) {
@@ -259,14 +278,12 @@ class PermitPlateChange {
 			return null;
 		}
 
-		try {
-			$found = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id)
-			);
-		} catch (Throwable) {
-			return null;
-		}
+		// A missing object answers null (findObjectAsArray); any other failure
+		// reaches request(), which refuses as unavailable.
+		$found = $this->runAsSystemIfAvailable(
+			objectService: $objectService,
+			operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id)
+		);
 
 		if (is_array($found) === false) {
 			return null;

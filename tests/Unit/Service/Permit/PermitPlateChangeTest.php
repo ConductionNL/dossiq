@@ -43,6 +43,9 @@ class PermitPlateChangeTest extends TestCase {
 			/** @var array<int, array<string, mixed>> Every save as schema and object. */
 			public array $saved = [];
 
+			/** @var bool Whether every read fails. */
+			public bool $broken = false;
+
 			/**
 			 * @param string $id The id.
 			 * @param string $register The register.
@@ -53,6 +56,10 @@ class PermitPlateChangeTest extends TestCase {
 			 * @throws DoesNotExistException When there is none.
 			 */
 			public function find(string $id, string $register = '', string $schema = ''): array {
+				if ($this->broken === true) {
+					throw new \RuntimeException('database gone');
+				}
+
 				if (isset($this->store[$schema][$id]) === false) {
 					throw new DoesNotExistException('none');
 				}
@@ -175,6 +182,24 @@ class PermitPlateChangeTest extends TestCase {
 
 		$this->assertSame([], $this->objects->saved);
 	}//end testARefusalWritesNothing()
+
+	/**
+	 * A register that fails is a refusal the portal can show, never a 500 or a silent nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFailingRegisterIsUnavailable(): void {
+		$this->objects->broken = true;
+		try {
+			$this->change->request(subjectRef: 'subj-sanne', permitId: 'permit-1', plate: 'HX901B');
+			$this->fail('refused');
+		} catch (PermitChangeRefused $refused) {
+			$this->assertSame(PermitChangeRefused::UNAVAILABLE, $refused->getReason());
+			$this->assertStringContainsString('database gone', $refused->getDetail());
+		}
+
+		$this->assertSame([], $this->objects->saved);
+	}//end testAFailingRegisterIsUnavailable()
 
 	/**
 	 * A permit whose case type names no change type cannot be changed from the portal.
