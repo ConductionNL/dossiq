@@ -11,12 +11,13 @@
  *   DELETE /apps/openregister/api/objects/{register}/{schema}/{id}/watch
  *   GET    /apps/openregister/api/objects/{register}/{schema}/{id}/watchers
  *
- * 🔴 A FOLLOWER IS NOT A FAVOURITE, AND THE TWO ARE DELIBERATELY SEPARATE.
- * A star is private and silent. A subscription produces notifications and its
- * list is visible to the people who may edit the case. They share a storage
- * shape and nothing else, so OpenRegister gives them separate tables and
- * separate verbs, and this file sits beside `favouriteApi.js` rather than
- * inside it.
+ * 🔴 A FAVOURITE IS A FOLLOW WITH NOTIFICATIONS OFF. Following and starring
+ * were two features with two tables; since openregister
+ * `merge-follow-and-favourites` (Ruben, 9 October, reviewing DqMijnWerk) they
+ * are one. Every follow carries a notifications switch, `PUT .../watch` with
+ * `{"notify": false}` turns it off and keeps the follow, and the star is gone
+ * from dossiq (`one-follow-control`). The follower list stays visible to the
+ * people who may edit the case, quiet follows included.
  *
  * 🔴 THE STATE IS READ OFF THE OBJECT, NOT FETCHED. `@self.watching` rides
  * every object read and every list row, so a page renders the button from
@@ -41,6 +42,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -106,6 +108,34 @@ export async function unfollow(id, register = CASE_REGISTER, schema = CASE_SCHEM
 }
 
 /**
+ * Turn the notifications of your follow on or off, and keep following.
+ *
+ * A follow with notifications off is what a favourite used to be
+ * (openregister `merge-follow-and-favourites`): the case stays under
+ * Following and on the tile, and nothing about it reaches your notifications.
+ *
+ * @param {string}  id       The object uuid.
+ * @param {boolean} notify   TRUE to hear about changes, FALSE for a quiet follow.
+ * @param {string}  register The register slug.
+ * @param {string}  schema   The schema slug.
+ * @return {Promise<object>} The subscription row the write answered.
+ *
+ * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+ */
+export async function setNotify(
+	id,
+	notify,
+	register = CASE_REGISTER,
+	schema = CASE_SCHEMA,
+) {
+	const { data } = await axios.put(`${objectUrl(id, register, schema)}/watch`, {
+		notify: notify === true,
+	})
+
+	return data ?? {}
+}
+
+/**
  * Follow or unfollow, whichever the wanted state asks for.
  *
  * @param {string}  id       The object uuid.
@@ -166,6 +196,22 @@ export async function listFollowers(
  */
 export function isFollowing(row) {
 	return row?.['@self']?.watching === true
+}
+
+/**
+ * Whether this reader's follow of a row sends notifications.
+ *
+ * `@self.watchNotify` rides every read next to `@self.watching`. An older
+ * OpenRegister sends no switch, and every follow then notified, so an absent
+ * switch reads as on.
+ *
+ * @param {object} row The object as the store holds it.
+ * @return {boolean} TRUE when the follow notifies.
+ *
+ * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+ */
+export function notifiesOf(row) {
+	return row?.['@self']?.watchNotify !== false
 }
 
 /**
