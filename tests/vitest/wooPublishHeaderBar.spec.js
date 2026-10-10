@@ -16,7 +16,7 @@
  * own said "hidden" the whole time. So every case here holds the endpoint
  * requests open and reads the menu while they are pending.
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
  */
 
 import CnActionButtons from '@conduction/nextcloud-vue/dist/esm/components/CnActionButtons/CnActionButtons.vue.js'
