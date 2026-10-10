@@ -257,9 +257,9 @@ class WooRequestIntake {
 			'title' => $wooRequest['onderwerp'],
 			'description' => $wooRequest['omschrijving'],
 			'caseType' => self::CASE_TYPE_ID,
-			// The statutory clock starts today: `deadline` is startDate plus
-			// the type's processingDeadline (P28D).
-			'startDate' => date('Y-m-d'),
+			// No startDate: a case opened by a submit takes the date its term
+			// starts (decision 181, Q11), stamped inside the create, so a
+			// request sent on Sunday does not count its P28D from Sunday.
 			'portalSubject' => $subjectRef,
 			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
 			'wooRequest' => $wooRequest,

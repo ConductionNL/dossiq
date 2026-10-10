@@ -172,14 +172,15 @@ class CitizenManifest {
 	private const WOO_DRAFT = ['retentionDays' => 30];
 
 	/**
-	 * What the resident reads once the request is in. `{identifier}` and
-	 * `{deadline}` come from the answer the route gives, and a sentence whose
+	 * What the resident reads once the request is in. `{identifier}`,
+	 * `{termStartsAt}` and `{deadline}` come from the answer the route gives
+	 * (decision 179: the case is stamped inside its create), and a sentence whose
 	 * placeholder has no value is left out, so a case whose deadline is not
 	 * computed yet promises no date.
 	 */
 	private const WOO_CONFIRMATION = [
 		'title' => 'Wij hebben uw Woo-verzoek ontvangen',
-		'body' => 'Uw zaaknummer is {identifier}. U krijgt uiterlijk {deadline} antwoord.',
+		'body' => 'Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsAt}. U krijgt uiterlijk {deadline} antwoord.',
 		'next' => 'U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten.',
 	];
 	/**
