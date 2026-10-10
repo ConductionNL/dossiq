@@ -170,7 +170,7 @@ class CaseLifecycleService {
 			),
 		);
 
-		$this->journal(case: $case, entry: ['type' => 'suspend', 'reason' => $reason, 'days' => $duration]);
+		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'suspend', 'reason' => $reason, 'days' => $duration]);
 
 		return $this->state(caseId: $caseId);
 	}//end suspend()
@@ -203,7 +203,7 @@ class CaseLifecycleService {
 			),
 		);
 
-		$this->journal(case: $case, entry: ['type' => 'resume', 'reason' => $reason]);
+		$this->journal(caseId: $caseId, changes: [], entry: ['type' => 'resume', 'reason' => $reason]);
 
 		return $this->state(caseId: $caseId);
 	}//end resume()
@@ -260,9 +260,14 @@ class CaseLifecycleService {
 			),
 		);
 
-		$case['plannedEndDate'] = $newEnd;
-		$case['extensionCount'] = ((int)($case['extensionCount'] ?? 0) + 1);
-		$this->journal(case: $case, entry: ['type' => 'extend', 'reason' => $reason, 'newEndDate' => $newEnd]);
+		$this->journal(
+			caseId: $caseId,
+			changes: [
+				'plannedEndDate' => $newEnd,
+				'extensionCount' => ((int)($case['extensionCount'] ?? 0) + 1),
+			],
+			entry: ['type' => 'extend', 'reason' => $reason, 'newEndDate' => $newEnd]
+		);
 
 		return $this->state(caseId: $caseId);
 	}//end extend()
@@ -316,17 +321,19 @@ class CaseLifecycleService {
 		// and written into the reopen entry rather than left to be inferred.
 		$ending = $this->endings->endingOf(case: $case);
 
-		$case['status'] = $initial;
-		$case['endDate'] = '';
-		// Zrc-008: reopening withdraws the archival claim as well as the end
-		// date. A case that is open again is not nominated for anything and has
-		// no destruction date; leaving either standing would hand an archivist a
-		// due date for a case still being worked, which is the shape of mistake
-		// that gets a record destroyed early.
-		$case['archiveNomination'] = null;
-		$case['archiveActionDate'] = null;
 		$this->journal(
-			case: $case,
+			caseId: $caseId,
+			// Zrc-008: reopening withdraws the archival claim as well as the end
+			// date. A case that is open again is not nominated for anything and has
+			// no destruction date; leaving either standing would hand an archivist a
+			// due date for a case still being worked, which is the shape of mistake
+			// that gets a record destroyed early.
+			changes: [
+				'status' => $initial,
+				'endDate' => '',
+				'archiveNomination' => null,
+				'archiveActionDate' => null,
+			],
 			entry: [
 				'type' => 'reopen',
 				'reason' => $reason,
@@ -409,16 +416,35 @@ class CaseLifecycleService {
 	}//end readJournal()
 
 	/**
-	 * Append one entry to the journal and save the case.
+	 * Apply the gesture's own changes, append one entry to the journal and save the case.
 	 *
-	 * @param array<string, mixed> $case The loaded case (already carrying any other change)
+	 * THE CASE IS READ AGAIN HERE, NOT PASSED IN. The term gesture that ran
+	 * before this (registerPauze, requestExtension, resumeAfterPauze) saves
+	 * the TermijnInstance, and the deadline mirror then writes the new end
+	 * date onto the case: `statutoryDeadline`, and `deadline` inside that
+	 * save. A case array read before the gesture still carries the OLD
+	 * values. Saving it sent a `deadline` that differs from the stored one,
+	 * and OpenRegister refuses any change to a readOnly property, so the
+	 * gesture answered 500 while the pause or extension had already been
+	 * applied (and a stale `statutoryDeadline` would have been written back
+	 * silently). Reading the case after the term moved, and applying only
+	 * the fields this gesture owns, saves exactly what the store holds plus
+	 * the gesture.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param array<string, mixed> $changes The case fields this gesture sets
 	 * @param array<string, mixed> $entry The entry to append
 	 *
 	 * @return void
 	 *
+	 * @throws RuntimeException When the case can no longer be read
+	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
 	 */
-	private function journal(array $case, array $entry): void {
+	private function journal(string $caseId, array $changes, array $entry): void {
+		$case = array_merge($this->requireCase(caseId: $caseId), $changes);
+
 		$entries = $this->readJournal(case: $case);
 		$entry['at'] = (new DateTimeImmutable())->format('c');
 		$entries[] = $entry;
