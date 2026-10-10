@@ -8,9 +8,11 @@
  *   - Automatic detection: extract applicant BSN from the case, walk a
  *     relationship lookup (BRP integration — pluggable here, stub by
  *     default) for the userId's BSN.
- *   - Manual registration: caseworker can register a conflict reason
- *     against a case; subsequent isAuthorized() checks see it and
- *     return belangenconflict.
+ *
+ * There is no manual registration. `registerConflict()`/`clearConflict()`
+ * filled and emptied a request-scoped in-memory map that nothing ever called
+ * (dossiq#1302); an override that cannot outlive the request it was set in is
+ * no escape hatch. A real one needs a persisted, per-case-authorised record.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -51,13 +53,6 @@ class ConflictOfInterestService {
 	 * conflict-of-interest check must never report "no conflict".
 	 */
 	public const REASON_IDENTITY_INDETERMINATE = 'identiteit_onbepaald';
-
-	/**
-	 * Manually-registered conflicts keyed by zaakId.
-	 *
-	 * @var array<string, string>
-	 */
-	private array $registered = [];
 
 	/**
 	 * In-memory relationship index for tests; production wires a BRP
@@ -184,11 +179,6 @@ class ConflictOfInterestService {
 	 */
 	public function checkConflict(string $userId, string $caseId, array $caseProperties = []): array {
 		$this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'caseId' => $caseId]);
-
-		// Manual registration trumps automatic detection.
-		if (isset($this->registered[$caseId]) === true) {
-			return ['conflict' => true, 'reason' => $this->registered[$caseId]];
-		}
 
 		// The applicant identity is authoritative ONLY because the caller
 		// (MandaatMatrixController::probe) re-derives it server-side from the
@@ -332,28 +322,4 @@ class ConflictOfInterestService {
 
 		return null;
 	}//end lookupRelationViaBrp()
-
-	/**
-	 * Manually register a belangenconflict on a case.
-	 *
-	 * @param string $caseId Case id.
-	 * @param string $reason Reason.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
-	 */
-	public function registerConflict(string $caseId, string $reason): void {
-		$this->registered[$caseId] = $reason;
-	}//end registerConflict()
-
-	/*
-	 * NO clearConflict() HERE.
-	 *
-	 * It removed an entry from the in-memory `$registered` map above and had
-	 * no caller. Neither has `registerConflict()`, which fills that map — the
-	 * manual-override pair is unreached from either end, and the map is
-	 * request-scoped, so an entry cannot survive long enough to need clearing.
-	 * `checkConflict()`, the live method, is unaffected.
-	 */
 }//end class
