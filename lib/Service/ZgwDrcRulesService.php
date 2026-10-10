@@ -81,44 +81,22 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array {
 		// Drc-001: Validate informatieobjecttype is published (not concept).
 		$iotUrl = $body['informatieobjecttype'] ?? '';
-		if ($iotUrl !== '' && $this->objectService !== null) {
-			$error = $this->validateTypeUrl(
-				typeUrl: $iotUrl,
-				fieldName: 'informatieobjecttype',
-				schemaKey: 'document_type_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
+		$error  = $this->checkInformatieobjecttype(iotUrl: $iotUrl);
+		if ($error !== null) {
+			return $error;
 		}
 
-		// Drc-005: Derive vertrouwelijkheidaanduiding from informatieobjecttype if not set.
-		if (empty($body['vertrouwelijkheidaanduiding']) === true && $iotUrl !== '') {
-			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, iotUrl: $iotUrl);
-		}
-
-		// Drc-006a: Default indicatieGebruiksrecht to null on creation.
-		if (array_key_exists('indicatieGebruiksrecht', $body) === false
-			|| $body['indicatieGebruiksrecht'] === false
-		) {
-			$body['indicatieGebruiksrecht'] = null;
-		}
+		$body = $this->applyCreateDefaults(body: $body, iotUrl: $iotUrl);
 
 		// Drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
-		// No null-check on the result: validateIndicationGebruiksrechtTrue()
-		// returns `array` unconditionally — on create the document does not yet
-		// exist, so indicatieGebruiksrecht=true is ALWAYS an error. The old
-		// `if ($error !== null)` could never be false.
+		// On create the document does not yet exist, so indicatieGebruiksrecht=true is ALWAYS an error.
 		if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
-			return $this->validateIndicationGebruiksrechtTrue(body: $body);
+			return $this->validateIndicationGebruiksrechtTrue();
 		}
 
 		// Drc-008: Check unique identificatie + bronorganisatie.
@@ -142,6 +120,50 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 
 		return $this->isValid(body: $body);
 	}//end rulesEnkelvoudiginformatieobjectenCreate()
+
+	/**
+	 * Drc-001: the informatieobjecttype URL points at a published type.
+	 *
+	 * @param mixed $iotUrl The informatieobjecttype from the body
+	 *
+	 * @return array|null The refusal, or null when acceptable or nothing can be looked up
+	 */
+	private function checkInformatieobjecttype(mixed $iotUrl): ?array {
+		if ($iotUrl === '' || $this->objectService === null) {
+			return null;
+		}
+
+		return $this->validateTypeUrl(
+			typeUrl: $iotUrl,
+			fieldName: 'informatieobjecttype',
+			schemaKey: 'document_type_schema'
+		);
+	}//end checkInformatieobjecttype()
+
+	/**
+	 * The defaults a new document gets before its rules run (drc-005, drc-006a).
+	 *
+	 * The confidentiality comes from the informatieobjecttype when the body has none, and an
+	 * absent or false indicatieGebruiksrecht becomes null.
+	 *
+	 * @param array $body The request body
+	 * @param mixed $iotUrl The informatieobjecttype from the body
+	 *
+	 * @return array The body with its defaults
+	 */
+	private function applyCreateDefaults(array $body, mixed $iotUrl): array {
+		if (empty($body['vertrouwelijkheidaanduiding']) === true && $iotUrl !== '') {
+			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, iotUrl: $iotUrl);
+		}
+
+		if (array_key_exists('indicatieGebruiksrecht', $body) === false
+			|| $body['indicatieGebruiksrecht'] === false
+		) {
+			$body['indicatieGebruiksrecht'] = null;
+		}
+
+		return $body;
+	}//end applyCreateDefaults()
 
 	/**
 	 * Rules for updating an EnkelvoudigInformatieObject (PUT).
@@ -265,14 +287,32 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesObjectinformatieobjectenCreate(array $body): array {
-		// Drc-002: Validate informatieobject URL.
-		$ioUrl = $body['informatieobject'] ?? '';
+		$ioUrl      = $body['informatieobject'] ?? '';
+		$objectUrl  = $body['object'] ?? '';
+		$objectType = $body['objectType'] ?? '';
+
+		$error = $this->checkOioUrls(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType)
+			?? $this->checkOioRelations(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+		if ($error !== null) {
+			return $error;
+		}
+
+		return $this->isValid(body: $body);
+	}//end rulesObjectinformatieobjectenCreate()
+
+	/**
+	 * Drc-002: the informatieobject URL and the object URL are valid, when given.
+	 *
+	 * @param mixed $ioUrl The informatieobject URL
+	 * @param mixed $objectUrl The object URL
+	 * @param mixed $objectType The objectType
+	 *
+	 * @return array|null The refusal, or null when acceptable
+	 */
+	private function checkOioUrls(mixed $ioUrl, mixed $objectUrl, mixed $objectType): ?array {
 		if ($ioUrl !== '') {
 			$error = $this->validateInformatieobjectUrl(ioUrl: $ioUrl);
 			if ($error !== null) {
@@ -280,44 +320,36 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 			}
 		}
 
-		// Drc-002: Validate object URL.
-		$objectUrl = $body['object'] ?? '';
-		$objectType = $body['objectType'] ?? '';
-		if ($objectUrl !== '') {
-			$error = $this->validateObjectUrl(objectUrl: $objectUrl, objectType: $objectType);
-			if ($error !== null) {
-				return $error;
-			}
+		if ($objectUrl === '') {
+			return null;
 		}
 
-		// Drc-003 (VNG): Validate uniqueness of object + informatieobject + objectType.
-		// Must run BEFORE cross-register check so duplicate errors take priority.
-		if ($ioUrl !== '' && $objectUrl !== '' && $this->objectService !== null) {
-			$error = $this->checkOioUniqueness(
-				ioUrl: $ioUrl,
-				objectUrl: $objectUrl,
-				objectType: $body['objectType'] ?? ''
-			);
-			if ($error !== null) {
-				return $error;
-			}
+		return $this->validateObjectUrl(objectUrl: $objectUrl, objectType: $objectType);
+	}//end checkOioUrls()
+
+	/**
+	 * Drc-003 then drc-004: the relation is not a duplicate, and its ZIO/BIO exists.
+	 *
+	 * Uniqueness runs first so a duplicate error takes priority over the cross-register check.
+	 *
+	 * @param mixed $ioUrl The informatieobject URL
+	 * @param mixed $objectUrl The object URL
+	 * @param mixed $objectType The objectType
+	 *
+	 * @return array|null The refusal, or null when acceptable or nothing can be looked up
+	 */
+	private function checkOioRelations(mixed $ioUrl, mixed $objectUrl, mixed $objectType): ?array {
+		if ($ioUrl === '' || $objectUrl === '' || $this->objectService === null) {
+			return null;
 		}
 
-		// Drc-004 (VNG): Cross-register validation — ZIO/BIO must exist in ZRC/BRC.
-		$objectType = $body['objectType'] ?? '';
-		if ($ioUrl !== '' && $objectUrl !== '' && $objectType !== '' && $this->objectService !== null) {
-			$error = $this->validateOioCrossRegister(
-				ioUrl: $ioUrl,
-				objectUrl: $objectUrl,
-				objectType: $objectType
-			);
-			if ($error !== null) {
-				return $error;
-			}
+		$error = $this->checkOioUniqueness(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+		if ($error !== null || $objectType === '') {
+			return $error;
 		}
 
-		return $this->isValid(body: $body);
-	}//end rulesObjectinformatieobjectenCreate()
+		return $this->validateOioCrossRegister(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
+	}//end checkOioRelations()
 
 	/**
 	 * Find OIO relations for a document UUID (drc-007/drc-008a).
@@ -381,15 +413,9 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	/**
 	 * Validate that indicatieGebruiksrecht=true requires existing gebruiksrechten (drc-006b).
 	 *
-	 * @param array $body The request body
-	 *
 	 * @return array Validation error
-	 *
-	 * @psalm-suppress UnusedParam — $body reserved for future gebruiksrechten lookup
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $body reserved for future gebruiksrechten lookup
 	 */
-	private function validateIndicationGebruiksrechtTrue(array $body): array {
+	private function validateIndicationGebruiksrechtTrue(): array {
 		// On create, the document does not yet exist so there can be no gebruiksrechten.
 		return $this->error(
 			status: 400,
