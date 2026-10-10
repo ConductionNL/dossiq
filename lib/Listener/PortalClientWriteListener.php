@@ -104,11 +104,17 @@ class PortalClientWriteListener implements IEventListener {
 				$occurredAt = (string)$event->getOccurredAt();
 			}
 
+			$mandate = [];
+			if (method_exists($event, 'getMandate') === true) {
+				$mandate = (array)$event->getMandate();
+			}
+
 			$this->acts->recordWrite(
 				(string)$event->getCaseId(),
 				(string)$event->getAct(),
 				$fields,
 				$occurredAt,
+				$mandate,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

@@ -14,9 +14,12 @@
 		}}</span>
 		<span class="mywork-card__meta">
 			<span v-if="identifier" class="mywork-card__ref">{{ identifier }}</span>
-			<span v-if="caseTypeLabel" class="mywork-card__chip">{{
-				caseTypeLabel
-			}}</span>
+			<span
+				v-if="caseTypeLabel"
+				class="mywork-card__chip"
+				:title="caseTypeLabel"
+				>{{ caseTypeLabel }}</span
+			>
 			<span
 				v-if="statusLabel"
 				class="mywork-card__chip mywork-card__chip--status"
@@ -60,6 +63,7 @@ import {
  * reference_ncvue-manifest-feature-version-gating).
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/changes/my-work-cards-and-team-tiles-read-right/specs/my-work/spec.md
  */
 export default {
 	name: 'MyWorkCaseCard',
@@ -282,6 +286,7 @@ export default {
 	align-items: center;
 	gap: 6px;
 	margin-top: 4px;
+	min-width: 0;
 }
 
 .mywork-card__ref {
@@ -291,6 +296,12 @@ export default {
 }
 
 .mywork-card__chip {
+	// A long case type name ("Omgevingsvergunning kleine bouwactiviteit") ran
+	// past the card's edge on a four-column grid. The chip stays one line and
+	// ends in an ellipsis inside the card; the full name is its `title`.
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	padding: 1px 8px;
 	border-radius: var(--border-radius-pill, 16px);
 	background: var(--color-background-dark);
@@ -317,8 +328,11 @@ export default {
 	color: var(--color-text-maxcontrast);
 	font-size: 0.8rem;
 
+	// `--color-error-text`, not `--color-error`: a theme may map the latter to
+	// a background tint (#FFE7E7 under the NL Design System set, 1.2:1 on
+	// white), and this is text. The board draws late text in dark red (#a30000).
 	&--overdue {
-		color: var(--color-error);
+		color: var(--color-error-text, var(--color-error));
 		font-weight: 600;
 	}
 }

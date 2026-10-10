@@ -235,6 +235,16 @@ class CrossAppListenerRegistrar {
 			\OCA\Dossiq\Listener\PortalClientWriteListener::class
 		);
 
+		// The contact channel a resident picks in the portal reaches their
+		// running cases (portal-contact-channel-follows-the-resident). FQN
+		// strings, no `class_exists` guard, the same as the two above; the
+		// listener is named as a string too, so the registrar's coupling stays
+		// under phpmd's ceiling (PortalContactDetailsChangedListener::EVENT).
+		$context->registerEventListener(
+			'OCA\\Portaliq\\Event\\PortalContactDetailsChangedEvent',
+			'OCA\\Dossiq\\Listener\\PortalContactDetailsChangedListener'
+		);
+
 		$context->registerEventListener(
 			\OCA\Dossiq\Listener\PortalClientWithdrawalListener::EVENT,
 			\OCA\Dossiq\Listener\PortalClientWithdrawalListener::class

@@ -217,7 +217,7 @@ const menuLayout =
  * @return {object} Nextcloud's theming block plus `emblem` from thematiq's
  *   `nldesign.logos.emblem`, or '' when the set ships none.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 function navTheming(capabilities) {
 	const theming = capabilities?.theming ?? {}
@@ -229,7 +229,15 @@ const profiledManifest = {
 	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {
 		theming: navTheming(getCapabilities()),
 	}),
-	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
+	runtime: {
+		user: { isAdmin: currentPermissions().includes('admin') },
+		// Which Woo review reports the page controller offers this user
+		// (woo-review-reports): the menu entry's `visibleIf` reads it.
+		woo: {
+			throughputReader:
+				loadState('dossiq', 'woo_reports', {}).throughput === true,
+		},
+	},
 }
 const builtManifest = markRaw(
 	translateBannerCopy(
