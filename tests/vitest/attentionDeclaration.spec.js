@@ -16,7 +16,7 @@
  * number than the app does, and a string without a translation is shown in
  * English. So every one of those is held here.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

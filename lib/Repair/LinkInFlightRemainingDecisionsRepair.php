@@ -34,12 +34,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceDelegationService;
 use OCA\Dossiq\Service\BezwaarDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -279,7 +279,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			// slugs: see SURFACE_SCHEMA_SLUGS for what mixing them cost.
 			$objects = $this->searchObjectsAsArrays(
 				objectService: $objectService,
-				register: TenantSaasService::REGISTER,
+				register: Application::REGISTER_SLUG,
 				schema: $schemaSlug,
 				filters: ['_limit' => 500],
 			);
@@ -356,7 +356,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					updates: ['decisionRef' => $newRef],
 					schemaSlug: $schemaSlug,
 				),
-				register: TenantSaasService::REGISTER,
+				register: Application::REGISTER_SLUG,
 				schema: $schemaSlug,
 				uuid: $objUuid,
 			);

@@ -24,7 +24,8 @@
  *
  * THE CATEGORY. `service` for every notice (integriq#2543: the `service`
  * purpose covers case updates and reminders), except the ontvangstbevestiging,
- * which is `statutory` because the dossiq opt-out design names it so. A
+ * which is `statutory` because the dossiq opt-out design names it so, and the
+ * beschikking, whose announcement is a legal duty (Awb 3:41, decision 158). A
  * statutory notice reaches a person who opted out and carries no link.
  *
  * ONCE PER NOTICE. A key per notice is claimed in {@see TermNoticeLedger}
@@ -77,9 +78,10 @@ class TermNoticeSender {
 	public const CATEGORY_DEFAULT = 'service';
 
 	/**
-	 * Notices the law requires. Exempt from opt-outs, sent without a link.
+	 * Notices the law requires. Exempt from opt-outs, sent without a link: the
+	 * ontvangstbevestiging (Awb 4:3a) and the beschikking (Awb 3:41).
 	 */
-	public const STATUTORY = ['ontvangstbevestiging'];
+	public const STATUTORY = ['ontvangstbevestiging', 'beschikking'];
 
 	/**
 	 * After this many seconds a claim that never settled is taken as abandoned.

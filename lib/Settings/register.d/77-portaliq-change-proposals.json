@@ -1,0 +1,14 @@
+{
+  "_note": "portal-change-proposals-on-the-case D2. The handler accepts or rejects a resident's proposed correction on the case page, through portaliq's portaliq-change-proposal-queue leaf (portaliq RegisterProposalLeavesListener::QUEUE_LEAF_ID). linkedTypes is a LIST and fragments concatenate lists, so this adds the one id. Without portaliq the leaf is never registered and the panel is absent.",
+  "components": {
+    "schemas": {
+      "case": {
+        "configuration": {
+          "linkedTypes": [
+            "portaliq-change-proposal-queue"
+          ]
+        }
+      }
+    }
+  }
+}
