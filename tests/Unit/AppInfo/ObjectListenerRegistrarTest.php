@@ -37,6 +37,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
 
