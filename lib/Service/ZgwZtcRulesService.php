@@ -224,28 +224,13 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypenCreate(array $body): array {
 		// Ztc-001: Validate selectielijstProcestype URL.
-		$procesTypeUrl = $body['selectielijstProcestype'] ?? '';
-		if (empty($procesTypeUrl) === false) {
-			$procesTypeData = $this->fetchExternalUrl(url: $procesTypeUrl);
-			if ($procesTypeData === null || isset($procesTypeData['nummer']) === false) {
-				return $this->error(
-					status: 400,
-					detail: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.',
-					invalidParams: [$this->fieldError(
-						fieldName: 'selectielijstProcestype',
-						code: 'invalid-resource',
-						reason: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.'
-					)
-					]
-				);
-			}
+		$error = $this->checkSelectielijstProcestype(procesTypeUrl: $body['selectielijstProcestype'] ?? '');
+		if ($error !== null) {
+			return $error;
 		}
 
 		// Resolve reference arrays by omschrijving/identificatie to UUIDs.
@@ -270,28 +255,69 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 		$body = $this->resolveGerelateerdeZaaktypen(body: $body);
 
 		// Store resolved array fields via _directFields (bypasses Twig mapping).
+		// RelatedCaseTypes is JSON-encoded since it is a string field in the schema.
+		$body = $this->withDirectFields(
+			body: $body,
+			map: ['deelzaaktypen' => 'subCaseTypes', 'besluittypen' => 'decisionTypes', 'gerelateerdeZaaktypen' => 'relatedCaseTypes'],
+			jsonFields: ['relatedCaseTypes']
+		);
+
+		return $this->isValid(body: $body);
+	}//end rulesZaaktypenCreate()
+
+	/**
+	 * Ztc-001: a selectielijstProcestype must resolve to a procestype resource.
+	 *
+	 * @param mixed $procesTypeUrl The selectielijstProcestype from the body
+	 *
+	 * @return array|null The refusal, or null when absent or valid
+	 */
+	private function checkSelectielijstProcestype(mixed $procesTypeUrl): ?array {
+		if (empty($procesTypeUrl) === true) {
+			return null;
+		}
+
+		$procesTypeData = $this->fetchExternalUrl(url: $procesTypeUrl);
+		if ($procesTypeData !== null && isset($procesTypeData['nummer']) === true) {
+			return null;
+		}
+
+		$detail = 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.';
+		return $this->error(
+			status: 400,
+			detail: $detail,
+			invalidParams: [$this->fieldError(fieldName: 'selectielijstProcestype', code: 'invalid-resource', reason: $detail)]
+		);
+	}//end checkSelectielijstProcestype()
+
+	/**
+	 * Copy resolved reference arrays into `_directFields`, which bypasses the Twig mapping.
+	 *
+	 * @param array $body The request body
+	 * @param array<string, string> $map Body field => direct field; only array values are copied
+	 * @param array<string> $jsonFields Direct fields stored JSON-encoded (string fields in the schema)
+	 *
+	 * @return array The body, with `_directFields` set when anything was copied
+	 */
+	private function withDirectFields(array $body, array $map, array $jsonFields=[]): array {
 		$directFields = [];
-		if (isset($body['deelzaaktypen']) === true && is_array($body['deelzaaktypen']) === true) {
-			$directFields['subCaseTypes'] = $body['deelzaaktypen'];
-		}
+		foreach ($map as $field => $directField) {
+			if (isset($body[$field]) === false || is_array($body[$field]) === false) {
+				continue;
+			}
 
-		if (isset($body['besluittypen']) === true && is_array($body['besluittypen']) === true) {
-			$directFields['decisionTypes'] = $body['besluittypen'];
-		}
-
-		if (isset($body['gerelateerdeZaaktypen']) === true
-			&& is_array($body['gerelateerdeZaaktypen']) === true
-		) {
-			// JSON-encode since relatedCaseTypes is a string field in the schema.
-			$directFields['relatedCaseTypes'] = json_encode($body['gerelateerdeZaaktypen']);
+			$directFields[$directField] = $body[$field];
+			if (in_array($directField, $jsonFields, true) === true) {
+				$directFields[$directField] = json_encode($body[$field]);
+			}
 		}
 
 		if (empty($directFields) === false) {
 			$body['_directFields'] = $directFields;
 		}
 
-		return $this->isValid(body: $body);
-	}//end rulesZaaktypenCreate()
+		return $body;
+	}//end withDirectFields()
 
 	/**
 	 * Rules for creating a besluittype (POST /catalogi/v1/besluittypen).
@@ -321,18 +347,10 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 		);
 
 		// Store resolved arrays as _directFields (bypass Twig mapping for array fields).
-		$directFields = [];
-		if (isset($body['informatieobjecttypen']) === true && is_array($body['informatieobjecttypen']) === true) {
-			$directFields['documentTypes'] = $body['informatieobjecttypen'];
-		}
-
-		if (isset($body['zaaktypen']) === true && is_array($body['zaaktypen']) === true) {
-			$directFields['caseTypes'] = $body['zaaktypen'];
-		}
-
-		if (empty($directFields) === false) {
-			$body['_directFields'] = $directFields;
-		}
+		$body = $this->withDirectFields(
+			body: $body,
+			map: ['informatieobjecttypen' => 'documentTypes', 'zaaktypen' => 'caseTypes']
+		);
 
 		return $this->isValid(body: $body);
 	}//end rulesBesluittypenCreate()
@@ -347,50 +365,50 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW resolution of omschrijving/UUID/URL
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array {
 		// Resolve informatieobjecttype: omschrijving → UUID, or bare UUID → verify.
 		$iotRef = $body['informatieobjecttype'] ?? '';
-		if ($iotRef !== '' && $this->objectService !== null) {
-			$register = $this->mappingConfig['sourceRegister'] ?? '';
-			$schema = $this->settingsService->getConfigValue(key: 'document_type_schema');
+		$schema = $this->settingsService->getConfigValue(key: 'document_type_schema');
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+		if ($iotRef === '' || $this->objectService === null || empty($register) === true || empty($schema) === true
+			|| $this->needsNameLookup(iotRef: $iotRef) === false
+		) {
+			return $this->isValid(body: $body);
+		}
 
-			if (empty($register) === false && empty($schema) === false) {
-				$uuid = $this->extractUuid(url: $iotRef);
-
-				// If the value is a URL containing a UUID, keep as-is (reverse mapping extracts it).
-				$isUrl = (str_starts_with($iotRef, 'http://') === true
-					|| str_starts_with($iotRef, 'https://') === true);
-
-				$needsNameLookup = false;
-				if ($isUrl === true) {
-					// URL — let reverse mapping handle UUID extraction.
-				} elseif ($uuid !== null) {
-					// Bare UUID — verify it exists; if not, treat as omschrijving.
-					$existing = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
-					$needsNameLookup = ($existing === null);
-				}
-
-				if ($isUrl === false && ($uuid === null || $needsNameLookup === true)) {
-					// Not a URL, or bare UUID that didn't resolve — resolve by name.
-					$found = $this->findObjectByField(
-						register: $register,
-						schema: $schema,
-						field: 'name',
-						value: $iotRef
-					);
-					if ($found !== null) {
-						$body['informatieobjecttype'] = $found;
-					}
-				}//end if
-			}//end if
-		}//end if
+		// Not a URL, or bare UUID that didn't resolve — resolve by name.
+		$found = $this->findObjectByField(register: $register, schema: $schema, field: 'name', value: $iotRef);
+		if ($found !== null) {
+			$body['informatieobjecttype'] = $found;
+		}
 
 		return $this->isValid(body: $body);
 	}//end rulesZaaktypeinformatieobjecttypenCreate()
+
+	/**
+	 * Whether an informatieobjecttype reference must be resolved by name.
+	 *
+	 * A URL is left to the reverse mapping, which extracts its uuid. A bare uuid is kept when it
+	 * names an existing type. Anything else, including a bare uuid that names nothing, is a name.
+	 *
+	 * @param string $iotRef The informatieobjecttype reference
+	 *
+	 * @return bool True when the reference is resolved by name
+	 */
+	private function needsNameLookup(string $iotRef): bool {
+		if (str_starts_with($iotRef, 'http://') === true || str_starts_with($iotRef, 'https://') === true) {
+			return false;
+		}
+
+		$uuid = $this->extractUuid(url: $iotRef);
+		if ($uuid === null) {
+			return true;
+		}
+
+		return $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema') === null;
+	}//end needsNameLookup()
 
 	/**
 	 * Check if a direct concept resource is published (ztc-009).
@@ -471,8 +489,6 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The body with resolved references
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 */
 	private function resolveTypeReferences(
 		array $body,
@@ -480,16 +496,8 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 		string $schemaKey,
 		string $lookupField,
 	): array {
-		if (isset($body[$field]) === false || is_array($body[$field]) === false
-			|| $this->objectService === null
-		) {
-			return $body;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
-
-		if (empty($register) === true || empty($schema) === true) {
+		$scope = $this->getLookupScope(list: $body[$field] ?? null, schemaKey: $schemaKey);
+		if ($scope === null) {
 			return $body;
 		}
 
@@ -499,38 +507,8 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 				continue;
 			}
 
-			// If it's a URL containing a UUID, extract and store just the UUID.
-			if (str_starts_with($ref, 'http://') === true
-				|| str_starts_with($ref, 'https://') === true
-			) {
-				$urlUuid = $this->extractUuid(url: $ref);
-				if ($urlUuid !== null) {
-					$resolved[] = $urlUuid;
-					continue;
-				}
-			}
-
-			// Search by omschrijving/identificatie in OpenRegister.
-			$foundIds = $this->findAllObjectsByField(
-				register: $register,
-				schema: $schema,
-				field: $lookupField,
-				value: $ref
-			);
-			if (empty($foundIds) === false) {
-				foreach ($foundIds as $id) {
-					$resolved[] = $id;
-				}
-
-				continue;
-			}
-
-			// Fallback: if name lookup found nothing and it looks like a UUID, use as-is.
-			$bareUuid = $this->extractUuid(url: $ref);
-			if ($bareUuid !== null) {
-				$resolved[] = $bareUuid;
-			}
-		}//end foreach
+			array_push($resolved, ...$this->resolveReference(ref: $ref, scope: $scope, lookupField: $lookupField));
+		}
 
 		$body[$field] = $resolved;
 
@@ -538,27 +516,77 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	}//end resolveTypeReferences()
 
 	/**
+	 * Resolve one type reference to the uuids it names.
+	 *
+	 * A URL holding a uuid gives that uuid. Otherwise every object whose lookup field matches is
+	 * taken; when none matches, a reference that holds a uuid is used as-is, and anything else
+	 * resolves to nothing.
+	 *
+	 * @param string $ref The reference
+	 * @param array{0: string, 1: string} $scope The register and schema to search
+	 * @param string $lookupField The OpenRegister field to search by
+	 *
+	 * @return array<string> The resolved uuids
+	 */
+	private function resolveReference(string $ref, array $scope, string $lookupField): array {
+		// If it's a URL containing a UUID, extract and store just the UUID.
+		if (str_starts_with($ref, 'http://') === true || str_starts_with($ref, 'https://') === true) {
+			$urlUuid = $this->extractUuid(url: $ref);
+			if ($urlUuid !== null) {
+				return [$urlUuid];
+			}
+		}
+
+		// Search by omschrijving/identificatie in OpenRegister.
+		$foundIds = $this->findAllObjectsByField(register: $scope[0], schema: $scope[1], field: $lookupField, value: $ref);
+		if (empty($foundIds) === false) {
+			return array_values($foundIds);
+		}
+
+		// Fallback: if name lookup found nothing and it looks like a UUID, use as-is.
+		$bareUuid = $this->extractUuid(url: $ref);
+		if ($bareUuid === null) {
+			return [];
+		}
+
+		return [$bareUuid];
+	}//end resolveReference()
+
+	/**
+	 * The register and schema a reference list is resolved in, or null when it cannot be.
+	 *
+	 * @param mixed $list The reference list from the body; anything but an array is skipped
+	 * @param string $schemaKey The settings config key for the target schema
+	 *
+	 * @return array{0: string, 1: string}|null The register and schema
+	 */
+	private function getLookupScope(mixed $list, string $schemaKey): ?array {
+		if (is_array($list) === false || $this->objectService === null) {
+			return null;
+		}
+
+		$register = $this->mappingConfig['sourceRegister'] ?? '';
+		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
+
+		return [$register, $schema];
+	}//end getLookupScope()
+
+	/**
 	 * Resolve gerelateerdeZaaktypen references (nested objects with zaaktype field).
+	 *
+	 * A relation naming its zaaktype by URL is kept; one naming it by identificatie becomes one
+	 * relation per matching zaaktype; anything else is dropped.
 	 *
 	 * @param array $body The request body
 	 *
 	 * @return array The body with resolved zaaktype references
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — nested object resolution
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — nested object resolution
 	 */
 	private function resolveGerelateerdeZaaktypen(array $body): array {
-		if (isset($body['gerelateerdeZaaktypen']) === false
-			|| is_array($body['gerelateerdeZaaktypen']) === false
-			|| $this->objectService === null
-		) {
-			return $body;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
+		$scope = $this->getLookupScope(list: $body['gerelateerdeZaaktypen'] ?? null, schemaKey: 'case_type_schema');
+		if ($scope === null) {
 			return $body;
 		}
 
@@ -569,19 +597,12 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 				continue;
 			}
 
-			if (str_starts_with($caseTypeRef, 'http://') === true
-				|| str_starts_with($caseTypeRef, 'https://') === true
-			) {
+			if (str_starts_with($caseTypeRef, 'http://') === true || str_starts_with($caseTypeRef, 'https://') === true) {
 				$resolved[] = $rel;
 				continue;
 			}
 
-			$foundIds = $this->findAllObjectsByField(
-				register: $register,
-				schema: $schema,
-				field: 'identifier',
-				value: $caseTypeRef
-			);
+			$foundIds = $this->findAllObjectsByField(register: $scope[0], schema: $scope[1], field: 'identifier', value: $caseTypeRef);
 			foreach ($foundIds as $id) {
 				$entry = $rel;
 				$entry['caseType'] = $id;

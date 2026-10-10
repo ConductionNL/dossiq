@@ -225,7 +225,12 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
       repeated lookups, JSON decoding and the duplicated over-long message. Characterisation:
       `tests/Unit/Service/ZgwBrcRulesServiceTest.php` (15 tests). Class complexity is 89 against
       50, so its class-level suppression stays.
-- [ ] Slice 3, `ZgwZtcRulesService` (7)
+- [x] Slice 3, `ZgwZtcRulesService` (7 complexity suppressions gone): ztc-001 is
+      `checkSelectielijstProcestype()`; both type create rules write their `_directFields` through
+      one `withDirectFields()` map; the ZIOT rule asks `needsNameLookup()`; the reference arrays
+      resolve one reference at a time through `resolveReference()` inside a shared
+      `getLookupScope()` guard. Characterisation: `tests/Unit/Service/ZgwZtcReferenceRulesTest.php`
+      (7 tests) beside the existing `ZgwZtcRulesServiceTest`.
 - [x] Slice 4, `ZgwDrcRulesService` (4 complexity + 1 unused-parameter suppressions gone):
       the document create rules run `checkInformatieobjecttype()` and `applyCreateDefaults()`;
       the ObjectInformatieObject create rules are `checkOioUrls()` then `checkOioRelations()`;
