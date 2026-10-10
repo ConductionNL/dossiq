@@ -57,6 +57,8 @@ class ImportCaseRecordsCommand extends Command {
 	 * Name, argument and options.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:case:import-records')

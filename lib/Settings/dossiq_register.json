@@ -306,27 +306,33 @@
                             ],
                             "properties": {
                                 "key": {
+                                    "title": "Key",
                                     "type": "string",
                                     "maxLength": 64,
                                     "description": "Names this import, for --import."
                                 },
                                 "sourceApp": {
+                                    "title": "Source app",
                                     "type": "string",
                                     "description": "The app id whose records are imported; nothing runs when it is not installed."
                                 },
                                 "sourceRegister": {
+                                    "title": "Source register",
                                     "type": "string",
                                     "description": "The source register, by slug."
                                 },
                                 "sourceSchema": {
+                                    "title": "Source schema",
                                     "type": "string",
                                     "description": "The source schema, by slug."
                                 },
                                 "statusField": {
+                                    "title": "Status field",
                                     "type": "string",
                                     "description": "The source field holding its status. Defaults to status."
                                 },
                                 "statuses": {
+                                    "title": "Statuses",
                                     "type": "object",
                                     "description": "Source status onto {status, term, result}: the case status uuid, the term state running, suspended or closed, and an optional result type uuid.",
                                     "additionalProperties": {
@@ -336,6 +342,7 @@
                                                 "type": "string"
                                             },
                                             "term": {
+                                                "title": "Term fields",
                                                 "type": "string",
                                                 "enum": [
                                                     "running",
@@ -350,6 +357,7 @@
                                     }
                                 },
                                 "fields": {
+                                    "title": "Fields",
                                     "type": "array",
                                     "description": "Each {to, from | value, as, maxLength, values, default, required}. from @id reads the record's uuid; as is text, date, dateTime or integer.",
                                     "items": {
@@ -360,10 +368,12 @@
                                     }
                                 },
                                 "matchField": {
+                                    "title": "Match field",
                                     "type": "string",
                                     "description": "The case field (dot path) that holds the source uuid, so a second run finds the case it wrote."
                                 },
                                 "formerReference": {
+                                    "title": "Former reference",
                                     "type": "object",
                                     "description": "{application, from}: the source number kept in formerReferences."
                                 },
@@ -372,10 +382,12 @@
                                     "description": "Source field names for endDate, extensions, extensionReason and closedOn."
                                 },
                                 "stamp": {
+                                    "title": "Stamp fields",
                                     "type": "object",
                                     "description": "{caseId, at}: the source fields written once the case and its timer exist."
                                 },
                                 "sourceTimerField": {
+                                    "title": "Source timer field",
                                     "type": "string",
                                     "description": "The source field naming its own timer, answered so the caller can stop it; the import never touches it."
                                 }
