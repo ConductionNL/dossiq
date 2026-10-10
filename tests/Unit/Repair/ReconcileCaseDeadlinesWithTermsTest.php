@@ -114,4 +114,87 @@ class ReconcileCaseDeadlinesWithTermsTest extends TestCase {
 		$this->step->run($output);
 		self::assertSame(['Case deadlines from their statutory terms: 0 written, 2 already right, 0 failed.'], $messages);
 	}//end testACaseWhoseListDateDisagreedIsRepairedOnce()
+
+	/**
+	 * Without OpenRegister the step warns and does nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 */
+	public function testWithoutOpenRegisterTheStepSkips(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('isOpenRegisterAvailable')->willReturn(false);
+		$logger = $this->createMock(LoggerInterface::class);
+		$step = new ReconcileCaseDeadlinesWithTerms(
+			settingsService: $settings,
+			mirror: new CaseDeadlineMirror(
+				settingsService: $settings,
+				store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+				logger: $logger,
+			),
+			logger: $logger,
+		);
+		$output = $this->createMock(IOutput::class);
+		$output->expects(self::once())->method('warning')->with(self::stringContains('OpenRegister is not available'));
+		$output->expects(self::never())->method('info');
+
+		$step->run($output);
+	}//end testWithoutOpenRegisterTheStepSkips()
+
+	/**
+	 * Terms that cannot be listed skip the repair with a warning, not a green count.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-existing-cases-are-repaired-once-req-ote-08
+	 */
+	public function testAnUnreadableTermListSkipsWithAWarning(): void {
+		$broken = new class extends FakeTermijnStore {
+			/**
+			 * @param mixed ...$args Anything.
+			 *
+			 * @return never
+			 */
+			public function findObjects(mixed ...$args): never {
+				throw new \RuntimeException('database gone');
+			}
+
+			/**
+			 * @param mixed ...$args Anything.
+			 *
+			 * @return never
+			 */
+			public function searchObjects(mixed ...$args): never {
+				throw new \RuntimeException('database gone');
+			}
+		};
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('isOpenRegisterAvailable')->willReturn(true);
+		$settings->method('getObjectService')->willReturn($broken);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				'termijn_instance_schema' => 'deadlineInstance',
+				default => '',
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::once())->method('error');
+		$step = new ReconcileCaseDeadlinesWithTerms(
+			settingsService: $settings,
+			mirror: new CaseDeadlineMirror(
+				settingsService: $settings,
+				store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+				logger: $logger,
+			),
+			logger: $logger,
+		);
+		$output = $this->createMock(IOutput::class);
+		$output->expects(self::once())->method('warning')->with(self::stringContains('not readable'));
+		$output->expects(self::never())->method('info');
+
+		$step->run($output);
+	}//end testAnUnreadableTermListSkipsWithAWarning()
 }//end class
