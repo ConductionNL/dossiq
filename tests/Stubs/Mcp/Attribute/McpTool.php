@@ -56,6 +56,7 @@ if (class_exists(McpTool::class, false) === false) {
 			public readonly ?string $scope = null,
 			public readonly ?string $subject = null,
 			public readonly ?string $action = null,
+			public readonly ?string $reach = null,
 		) {
 		}//end __construct()
 	}//end class

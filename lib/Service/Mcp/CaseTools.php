@@ -69,6 +69,7 @@ class CaseTools {
 		description: 'The status a case is in and the status changes the current user may make on it now, with any guard that blocks one.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'case',
 		action: 'listTransitions'
 	)]

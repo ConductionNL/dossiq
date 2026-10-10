@@ -82,6 +82,7 @@ class ReportingTools {
 		description: 'Statutory deadline figures for the organisation: cases running, at risk or past their deadline. Counts only, no case rows.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'deadline',
 		action: 'report'
 	)]
@@ -110,6 +111,7 @@ class ReportingTools {
 		description: 'Lead times (doorlooptijden) of cases against their statutory deadline, per month and per case type. Aggregates only.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'leadTime',
 		action: 'report'
 	)]
@@ -148,6 +150,7 @@ class ReportingTools {
 		description: 'The current user\'s case figures as the dashboard shows them: open, overdue, due this week and completed. Counts only.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'kpi',
 		action: 'report'
 	)]
@@ -173,6 +176,7 @@ class ReportingTools {
 		description: 'Open cases per handler, for a coordinator who divides the work. Counts only.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'workload',
 		action: 'report'
 	)]

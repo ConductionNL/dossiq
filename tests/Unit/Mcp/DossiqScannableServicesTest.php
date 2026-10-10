@@ -62,6 +62,22 @@ class DossiqScannableServicesTest extends TestCase {
 	];
 
 	/**
+	 * The reach every curated tool declares (design D2, REQ-MCP-205). A
+	 * two-segment id carries no verb, so an undeclared reach resolves to
+	 * `external` in OpenRegister's ToolReachResolver and over-gates the tool.
+	 *
+	 * @var array<string, string>
+	 */
+	private const REACH = [
+		'getDeadlineDashboard' => 'user',
+		'getDoorlooptijdMetrics' => 'user',
+		'getKpiOverview' => 'user',
+		'getWorkload' => 'user',
+		'listAvailableTransitions' => 'user',
+		'listOverdueComplaints' => 'user',
+	];
+
+	/**
 	 * The listed classes are exactly the lib/ classes that carry #[McpTool].
 	 *
 	 * @return void
@@ -97,6 +113,7 @@ class DossiqScannableServicesTest extends TestCase {
 			$this->assertNotEmpty($tool->subject, $where . ' has no subject.');
 			$this->assertNotEmpty($tool->action, $where . ' has no action.');
 			$this->assertStringNotContainsString('.', (string)$tool->name, $where . ': the id is dossiq.<name>, two segments.');
+			$this->assertSame((self::REACH[$tool->name] ?? 'undeclared in REACH'), $tool->reach, $where . ' reach (REQ-MCP-205).');
 
 			if (in_array($tool->name, self::READ_TOOLS, true) === true) {
 				$this->assertSame('read', $tool->scope, $where);
