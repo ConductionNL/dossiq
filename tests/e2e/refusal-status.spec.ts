@@ -71,7 +71,7 @@ test.describe('A refusal carries a status', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md#a-refused-transition-tells-the-caller
+	// @e2e openspec/specs/quality-gates/spec.md#a-refused-transition-tells-the-caller
 	test('a closing move the case cannot take answers 409 naming the rule', async ({
 		playwright,
 		baseURL,
@@ -114,7 +114,7 @@ test.describe('A refusal carries a status', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md#a-refused-transition-tells-the-caller
+	// @e2e openspec/specs/quality-gates/spec.md#a-refused-transition-tells-the-caller
 	test('a move the template never declared is a 404, not the same 409', async ({
 		playwright,
 		baseURL,
