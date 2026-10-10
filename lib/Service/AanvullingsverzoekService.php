@@ -251,14 +251,10 @@ class AanvullingsverzoekService {
 		}
 
 		$id = trim((string)($written['id'] ?? ($written['uuid'] ?? '')));
-		$items = [];
-		foreach ((array)($written['missingItems'] ?? []) as $row) {
-			if (is_array($row) === true) {
-				$row = ($row['item'] ?? '');
-			}
-
-			$items[] = (string)$row;
-		}
+		$items = array_map(
+			static fn (mixed $row): string => (string)(((array)$row)['item'] ?? (((array)$row)[0] ?? '')),
+			(array)($written['missingItems'] ?? [])
+		);
 
 		$task = $this->portalTask->raise(
 			question: [
