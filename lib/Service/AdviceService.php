@@ -204,7 +204,7 @@ class AdviceService {
 	 * Dispatch a reminder notification to the adviseur WITHOUT an
 	 * authorization check.
 	 *
-	 * TRUST BOUNDARY: this is the system/cron seam (`AdviceDeadlineJob`), which
+	 * TRUST BOUNDARY: this is the system seam (`AdviceTimerFiredListener`, on the engine timer's fire), which
 	 * runs with no user session. It must only be called from
 	 * {@see self::dispatchReminderAsUser()} (which authorizes first) or from a
 	 * code-driven background job. Never call it with user-supplied intent that
@@ -289,7 +289,7 @@ class AdviceService {
 	/**
 	 * Mark an advice request as expired (status -> verlopen).
 	 *
-	 * SYSTEM/CRON PATH — called by AdviceDeadlineJob, which runs with NO user
+	 * SYSTEM PATH — called by AdviceTimerFiredListener and AdviceTimerListener, which may run with NO user
 	 * session. It therefore goes straight to applyTransition() and deliberately
 	 * bypasses assertAdviceTransitionAuthorized(): that guard requires a session
 	 * and would reject the cron with 'Not authenticated', silently breaking

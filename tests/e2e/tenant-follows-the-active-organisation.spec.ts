@@ -196,7 +196,7 @@ test.describe('The tenant follows the active organisation', () => {
 		await admin?.dispose()
 	})
 
-	// @e2e openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md#scenario-the-mandate-check-follows-the-organisation-set-active-in-openregister
+	// @e2e openspec/specs/tenant-organisation-boundary/spec.md#scenario-the-mandate-check-follows-the-organisation-set-active-in-openregister
 	test('a dossiq write is checked against the matrix of the organisation set active in OpenRegister', async () => {
 		await setActive(orgB)
 		const asHandler = await write()
@@ -215,7 +215,7 @@ test.describe('The tenant follows the active organisation', () => {
 		expect(String(asViewer.body?.error ?? '')).toContain('viewer')
 	})
 
-	// @e2e openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md#scenario-a-suspended-organisation-cannot-work-in-dossiq
+	// @e2e openspec/specs/tenant-organisation-boundary/spec.md#scenario-a-suspended-organisation-cannot-work-in-dossiq
 	test('suspending the active organisation refuses the next dossiq write', async () => {
 		await setActive(orgB)
 		const suspended = await admin!.put(`${OR}/organisations/${orgB}/suspend`)
@@ -236,7 +236,7 @@ test.describe('The tenant follows the active organisation', () => {
 		}
 	})
 
-	// @e2e openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md#scenario-the-tenant-routes-are-gone
+	// @e2e openspec/specs/tenant-organisation-boundary/spec.md#scenario-the-tenant-routes-are-gone
 	test("an admin reads an organisation's usage from OpenRegister, and dossiq answers no tenant route", async () => {
 		const usage = await admin!.get(`${OR}/organisations/${orgB}/usage`)
 		expect(usage.status(), `usage: ${await usage.text()}`).toBe(200)

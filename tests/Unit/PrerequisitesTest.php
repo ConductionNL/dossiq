@@ -343,4 +343,72 @@ class PrerequisitesTest extends TestCase {
 			'the README said 28, which is a Nextcloud that does not run PHP 8.3'
 		);
 	}//end testTheReadmeTableAgrees()
+
+	/**
+	 * The Nextcloud row says whether this instance is in range, like PHP does.
+	 *
+	 * Before, the row carried only the range, so it was the one row on the
+	 * page without a present or missing mark (round-4 cloud check).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 */
+	public function testTheNextcloudRowSaysWhetherThisInstanceIsInRange(): void {
+		$prerequisites = new Prerequisites();
+		$apps = $this->appManager(['openregister']);
+
+		$inRange = $prerequisites->check($apps, null, null, 34)['nextcloud'];
+		$this->assertTrue($inRange['present'], '34 lies within 32 to 35');
+		$this->assertSame('34', $inRange['running']);
+
+		$this->assertFalse(
+			$prerequisites->check($apps, null, null, 31)['nextcloud']['present'],
+			'31 is below the range'
+		);
+		$this->assertFalse(
+			$prerequisites->check($apps, null, null, 36)['nextcloud']['present'],
+			'36 is above the range'
+		);
+		$this->assertTrue(
+			$prerequisites->check($apps, null, null, (int)Prerequisites::NEXTCLOUD_MAX)['nextcloud']['present'],
+			'the top of the range is inside it'
+		);
+	}//end testTheNextcloudRowSaysWhetherThisInstanceIsInRange()
+
+	/**
+	 * A renamed app reads its new name and is still looked up by its old id.
+	 *
+	 * 🔴 THE LOOKUP IS THE HALF THAT MUST NOT MOVE. `isInstalled()` answers
+	 * false for an id nothing answers to, so a key renamed ahead of the app
+	 * would report every installed sibling as missing. The double below only
+	 * knows the OLD ids, which is what an instance answers today.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 */
+	public function testARenamedAppShowsItsNewNameAndKeepsItsLookupId(): void {
+		$report = (new Prerequisites())->check(
+			$this->appManager(['openregister', 'openconnector', 'docudesk', 'hrmq', 'decidesk', 'nldesign'])
+		);
+		$rows = array_column($report['apps']['optional'], null, 'id');
+
+		$expected = [
+			'openconnector' => 'integriq',
+			'docudesk' => 'filinq',
+			'hrmq' => 'humaniq',
+			'decidesk' => 'decidiq',
+			'nldesign' => 'thematiq',
+		];
+		foreach ($expected as $id => $name) {
+			$this->assertArrayHasKey($id, $rows, sprintf('"%s" stays the lookup id', $id));
+			$this->assertSame($name, $rows[$id]['name'], sprintf('"%s" reads as "%s"', $id, $name));
+			$this->assertTrue($rows[$id]['present'], sprintf('"%s" is looked up by its old id', $id));
+		}
+
+		// An app whose name did not move reads as its id.
+		$this->assertSame('portaliq', $rows['portaliq']['name']);
+		$this->assertSame('openregister', $report['apps']['required'][0]['name']);
+	}//end testARenamedAppShowsItsNewNameAndKeepsItsLookupId()
 }//end class
