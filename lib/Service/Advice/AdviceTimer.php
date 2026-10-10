@@ -49,6 +49,8 @@ use Throwable;
 
 /**
  * Keeps one engine timer per open advice request in step with the request.
+ *
+ * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class AdviceTimer {
 

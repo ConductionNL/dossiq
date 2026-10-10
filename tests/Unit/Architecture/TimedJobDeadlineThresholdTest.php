@@ -74,7 +74,6 @@ class TimedJobDeadlineThresholdTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWLIST = [
-		'AdviceDeadlineJob' => 'advice deadline engine; moves to armed FlowTimers in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.5)',
 		'WOODeadlineCheckJob' => 'WOO deadline engine; moves to armed FlowTimers in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.1)',
 		'BezwaarTermijnJob' => 'bezwaartermijn scheduler; moves to anchor-shaped FlowTimers in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.2)',
 		'DsoDeadlineJob' => 'DSO deadline engine advancing case status from cron; becomes a FlowTimerFiredEvent consumer in phase 2 of openspec/changes/termijnbewaking-op-engine-timers (tasks 2.3)',

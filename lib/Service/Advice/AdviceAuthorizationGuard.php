@@ -22,7 +22,7 @@
  *                  received.
  *   - aangevraagd: the handler of the linked case, or the `adviseur`.
  *   - verlopen:    nobody. Expiry is a system transition owned by
- *                  AdviceDeadlineJob, which reaches the write without
+ *                  AdviceTimerFiredListener, which reaches the write without
  *                  passing through this guard.
  *   - default:     denied.
  *

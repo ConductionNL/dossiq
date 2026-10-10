@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261009150000</version>
+    <version>0.4.47-unstable.20261010120000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -149,7 +149,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
     </dependencies>
 
     <background-jobs>
-        <job>OCA\Dossiq\BackgroundJob\AdviceDeadlineJob</job>
+        <!--
+            AdviceDeadlineJob is RETIRED: an open advice request now carries
+            an armed OpenRegister FlowTimer (Service/Advice/AdviceTimer.php),
+            whose reminder and breach rungs AdviceTimerFiredListener turns into
+            the reminder and the expiry (termijnbewaking-op-engine-timers 2.5).
+        -->
         <!--
             VergaderingDeadlineJob is RETIRED as dead machinery: it scanned
             for cases with a literal status 'planned', which case.status
@@ -615,6 +620,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 POST-MIGRATION only: a fresh install has no instances to arm.
             -->
             <step>OCA\Dossiq\Repair\ArmTermijnEngineTimers</step>
+            <!-- Arms the advice timer of every request open before
+                 AdviceDeadlineJob retired, expiring the overdue ones.
+                 Supersedes, so a second run arms nothing twice. -->
+            <step>OCA\Dossiq\Repair\ArmAdviceTimers</step>
             <!-- Rewrites stored flows that still name a retired node type
                  (RetiredNodeMap). Post-migration only: a fresh install has
                  no stored flow to rewrite. -->
@@ -752,6 +761,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateAiOversightToHermiq        replays existing audit history
               MigrateCommitteesToDecidiq        raises existing committees; none are seeded
               ArmTermijnEngineTimers            arms existing TermijnInstances; none exist yet
+              ArmAdviceTimers                   arms existing open advice requests; none exist yet
               RetireOriRegister                 retires a register a fresh install never had
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents

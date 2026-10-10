@@ -30,8 +30,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\AdviceTimerFiredListener;
+use OCA\Dossiq\Listener\AdviceTimerListener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Listener\TermStatusClockListener;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -60,6 +63,21 @@ class TermijnTimerRegistrar {
 		$context->registerEventListener(
 			event: FlowTimerFiredEvent::class,
 			listener: TermijnTimerFiredListener::class
+		);
+
+		// The advice deadline: its fire is the reminder and the expiry, and
+		// every save that moves a request's status or deadline re-syncs it.
+		$context->registerEventListener(
+			event: FlowTimerFiredEvent::class,
+			listener: AdviceTimerFiredListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: AdviceTimerListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: AdviceTimerListener::class
 		);
 
 		// A term runs only in the statuses it declares, so the clock is
