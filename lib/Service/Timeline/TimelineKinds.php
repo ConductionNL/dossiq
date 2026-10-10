@@ -329,7 +329,7 @@ final class TimelineKinds {
 			'properties' => [
 				'act' => [
 					'type' => 'string',
-					'enum' => ['amendment', 'document', 'task-answer', 'withdrawal'],
+					'enum' => ['amendment', 'document', 'task-answer', 'answer', 'withdrawal'],
 				],
 				'fields' => ['type' => 'string'],
 				'status' => ['type' => 'string'],
