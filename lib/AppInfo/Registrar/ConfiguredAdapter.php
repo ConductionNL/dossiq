@@ -162,7 +162,7 @@ final class ConfiguredAdapter {
 	 *
 	 * @return string The class to bind, or '' for the mock with its warning.
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private static function named(ContainerInterface $container, string $configKey, string $mockClass, ?string $defaultClass): string {
 		$named = trim($container->get(IAppConfig::class)->getValueString(Application::APP_ID, $configKey, ''));

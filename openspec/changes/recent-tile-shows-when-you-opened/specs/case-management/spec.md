@@ -34,15 +34,15 @@ relative date read from OpenRegister's `@self.viewedAt`.
 - **AND** the Recently opened tile SHALL name the case you opened
 
 #### Scenario: The Recently opened tile says when you opened each case
-@e2e exclude the moment comes from OpenRegister's read history, which the e2e instance does not log yet; the column binding and formatter are asserted in tests/vitest/caseFavourite.spec.js
+@e2e exclude the moment comes from OpenRegister's read history, which the e2e instance does not log yet; the column binding and formatter are asserted in tests/vitest/recentTileViewedAt.spec.js
 
 - **GIVEN** a case you opened today and a case you opened three days ago
 - **WHEN** you open the Dashboard
 - **THEN** each row of the Recently opened tile SHALL show the relative date of your last opening, read from `@self.viewedAt`
-- **AND** the case opened today SHALL read "Today"
+- **AND** the case opened today SHALL read "today" ("vandaag" in Dutch), and the case opened three days ago "3 days ago" ("3 dagen geleden")
 
 #### Scenario: The Recently opened tile says why it is empty when reads are not logged
-@e2e exclude depends on the instance's audit trail setting and on nextcloud-vue#1421; the reason texts and their Dutch translations are asserted in tests/vitest/caseFavourite.spec.js
+@e2e exclude depends on the instance's audit trail setting and on nextcloud-vue#1421; the reason texts and their Dutch translations are asserted in tests/vitest/recentTileViewedAt.spec.js
 
 - **GIVEN** an instance whose audit trail is off, so OpenRegister reports `@self.lenses.recent.available` false with reason `audit-trail-disabled`
 - **WHEN** you open the Dashboard

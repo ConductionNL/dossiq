@@ -79,6 +79,8 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateAiOversightToHermiq' => 'replays existing audit history into hermiq',
 		'MigrateCommitteesToDecidiq' => 'raises existing committees; a fresh install seeds none',
 		'ArmTermijnEngineTimers' => 'arms existing TermijnInstances; none exist yet',
+		'ReconcileCaseDeadlinesWithTerms' => 'writes existing case deadlines from their terms; none exist yet',
+		'RearmBeslistermijnTimers' => 're-arms existing running term timers; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',
 		'RewriteRetiredFlowNodes' => 'rewrites stored flows; a fresh install has none',
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
@@ -87,6 +89,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'CopyEmbeddedBezwaarAuditTrail' => 'copies embedded bezwaar audit entries; a fresh install has none',
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
 		'MapWooRefusalGroundCodes' => 'rewrites refusal ground codes on existing Woo assessments and decisions; a fresh install has none',
+		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
 		// INHERITED from the family-plan lane, which shipped this step with no

@@ -11,10 +11,25 @@
   - component DO move, because those name this app to Nextcloud.
 -->
 <template>
+	<!-- Two lists behind one sort toggle. Urgency renders the work queue the
+	     server ranked (`listMode` 'ranked'): CnIndexPage cannot reorder rows it
+	     fetched itself, so the order has to arrive in the rows. Newest, and
+	     Urgency when the queue failed, keep the self-fetch ('self'). The
+	     `:key` remounts the index when the mode flips, because CnIndexPage
+	     decides between self-fetch and handed-in rows once, at setup. -->
 	<CnIndexPage
-		:title="t('dossiq', 'My Work')"
-		register="dossiq"
-		schema="case"
+		:key="listMode"
+		:title="t('dossiq', 'Assigned to me')"
+		:showTitle="true"
+		:headerButtons="headerButtons"
+		:countText="t('dossiq', '{total} cases in your name, most urgent first')"
+		:footerNote="
+			t(
+				'dossiq',
+				'Urgency follows from the deadline, the priority and how long a case has been idle.',
+			)
+		"
+		v-bind="listBinding"
 		:filter="filter"
 		viewMode="cards"
 		:viewModes="['cards', 'table']"
@@ -22,8 +37,6 @@
 		:sidebar="sidebar"
 		:showViewAction="false"
 		:rowClickToView="true"
-		:sortKey="sortConfig.key"
-		:sortOrder="sortConfig.order"
 		:excludeFields="caseForm.excludeFields"
 		:includeFields="caseForm.includeFields"
 		:fieldOverrides="caseForm.fieldOverrides"
@@ -35,7 +48,11 @@
 		editOpensDetail
 		@view="openCase"
 		@rowClick="openCase"
-		@editOpen="openCase">
+		@editOpen="openCase"
+		@search="onRankedSearch"
+		@filterChange="onRankedFilter"
+		@pageChanged="onRankedPage"
+		@clearFilters="onRankedClear">
 		<template #below-header>
 			<WorkloadSummaryBar :handlers="workloadHandlers" />
 			<div
@@ -53,6 +70,17 @@
 					{{ t('dossiq', 'Newest') }}
 				</NcButton>
 			</div>
+			<p
+				v-if="urgencyFellBack"
+				class="mywork-fallback"
+				data-testid="urgency-fallback">
+				{{
+					t(
+						'dossiq',
+						'Ordered by deadline: the urgency could not be computed.',
+					)
+				}}
+			</p>
 		</template>
 		<!-- Work routed here by an active substitution, above the reader's own
 		     list and marked with whose it is. It is a group of its own because
@@ -131,7 +159,17 @@ import {
 	substitutedUntil,
 	writeShowSubstituted,
 } from '../utils/substitutionHelpers.js'
-import { buildUrgencyMap, resolveSortConfig } from '../utils/workQueueHelpers.js'
+import {
+	buildUrgencyMap,
+	filterRankedRows,
+	pageOfRows,
+	rankedCaseRows,
+	resolveListMode,
+	resolveSortConfig,
+} from '../utils/workQueueHelpers.js'
+
+/** Cards per page in the ranked list. */
+const RANKED_PAGE_SIZE = 20
 
 /**
  * My Work — the current user's assigned cases, rendered as a standard
@@ -154,8 +192,18 @@ export default {
 			statusMap: {},
 			/** 'urgency' (default) or 'newest' — drives the sort toggle. */
 			sortMode: 'urgency',
-			/** { caseId: { tier, score, daysUntilDeadline } } from GET /api/work-queue. */
+			/** { caseId: { deadlineTier, score, daysUntilDeadline } } from GET /api/work-queue. */
 			urgencyMap: {},
+			/** The work queue: 'loading', 'ready' or 'failed'. */
+			queueState: 'loading',
+			/** The reader's open cases, highest score first. */
+			rankedRows: [],
+			/** The case schema object, so the ranked list keeps its filter sidebar. */
+			caseSchema: null,
+			/** The ranked list's search term, filters and page. */
+			rankedSearch: '',
+			rankedFilters: {},
+			rankedPage: 1,
 			/**
 			 * Per-handler open-case counts from GET /api/work-queue/workload.
 			 * Stays empty (no error UI) for non-coordinators, who get a 403.
@@ -172,12 +220,133 @@ export default {
 
 	computed: {
 		/**
+		 * The header buttons of the board: Download, Actions, New case.
+		 *
+		 * @return {Array<object>} CnIndexPage headerButtons.
+		 *
+		 * @spec openspec/specs/my-work/spec.md
+		 */
+		headerButtons() {
+			return [
+				{
+					action: 'export',
+					label: this.t('dossiq', 'Download'),
+					icon: 'TrayArrowDown',
+				},
+				{ action: 'actions-menu', label: this.t('dossiq', 'Actions') },
+				{
+					action: 'add',
+					label: this.t('dossiq', 'New case'),
+					variant: 'primary',
+					icon: 'Plus',
+				},
+			]
+		},
+
+		/**
 		 * CnIndexPage sortKey/sortOrder for the active sort mode.
 		 *
 		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		sortConfig() {
 			return resolveSortConfig(this.sortMode)
+		},
+
+		/**
+		 * Which list renders: the ranked work queue or the self-fetch.
+		 *
+		 * @return {string} 'ranked' or 'self'.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		listMode() {
+			return resolveListMode(this.sortMode, this.queueState)
+		},
+
+		/**
+		 * Whether Urgency had to fall back to the deadline order.
+		 *
+		 * @return {boolean} True when the queue failed while Urgency is chosen.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		urgencyFellBack() {
+			return this.sortMode === 'urgency' && this.queueState === 'failed'
+		},
+
+		/**
+		 * Field filters a link carries in its query (`?title=...`), which the
+		 * self-fetch applies too, so a link narrows both lists alike. Keys
+		 * starting with `_` are the index's own state, not filters.
+		 *
+		 * @return {{[key: string]: Array<string>}} The filters.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		routeFilters() {
+			const query = (this.$route && this.$route.query) || {}
+			const filters = {}
+			for (const [key, value] of Object.entries(query)) {
+				if (
+					key.startsWith('_')
+					|| value === null
+					|| value === undefined
+					|| value === ''
+				) {
+					continue
+				}
+				filters[key] = (Array.isArray(value) ? value : [value]).map(String)
+			}
+			return filters
+		},
+
+		/**
+		 * The ranked rows after search and filters, one page of them.
+		 *
+		 * @return {{rows: Array<object>, pagination: object}} The page.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		rankedPageView() {
+			return pageOfRows(
+				filterRankedRows(this.rankedRows, this.rankedSearch, {
+					...this.routeFilters,
+					...this.rankedFilters,
+				}),
+				this.rankedPage,
+				RANKED_PAGE_SIZE,
+			)
+		},
+
+		/**
+		 * The props that differ between the two lists.
+		 *
+		 * The self-fetch gets the register and schema slugs and a sort key.
+		 * The ranked list gets the rows and NO register, because a register
+		 * and a schema slug together switch CnIndexPage to self-fetch; it gets
+		 * the schema as an object instead, which keeps the filter sidebar.
+		 *
+		 * @return {object} Props for CnIndexPage.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		listBinding() {
+			if (this.listMode === 'self') {
+				return {
+					register: 'dossiq',
+					schema: 'case',
+					sortKey: this.sortConfig.key,
+					sortOrder: this.sortConfig.order,
+				}
+			}
+			return {
+				schema: this.caseSchema,
+				objects: this.rankedPageView.rows,
+				pagination: this.rankedPageView.pagination,
+				loading: this.queueState === 'loading',
+				searchValue: this.rankedSearch,
+				activeFilters: this.rankedFilters,
+			}
 		},
 
 		/**
@@ -283,13 +452,14 @@ export default {
 			])
 			this.caseTypeMap = this.buildNameMap(caseTypes)
 			this.statusMap = this.buildNameMap(statuses)
-		} catch (e) {
+		} catch {
 			// Names simply fall back to hidden chips; never block the list.
 		}
 
 		// Urgency chips, coordinator workload and substituted work never block
 		// the list rendering.
 		this.fetchWorkQueue()
+		this.fetchCaseSchema(store)
 		this.fetchWorkload()
 		this.loadSubstitutedWork()
 	},
@@ -313,22 +483,101 @@ export default {
 		},
 
 		/**
-		 * Fetch the current user's urgency-scored work queue and build the
-		 * caseId → { tier, score, daysUntilDeadline } chip map. Never blocks
-		 * the card list on failure.
+		 * Fetch the current user's ranked work queue: the pill map, and the
+		 * ranked case rows the Urgency list renders. A failure moves Urgency
+		 * to the self-fetching list ordered by deadline, and says so.
 		 *
 		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		async fetchWorkQueue() {
 			try {
 				const response = await axios.get(
 					generateUrl('/apps/dossiq/api/work-queue'),
 				)
-				this.urgencyMap = buildUrgencyMap(
-					response.data && response.data.items,
-				)
-			} catch (e) {
-				// Chips simply stay hidden; never block the list.
+				const items = (response.data && response.data.items) || []
+				this.urgencyMap = buildUrgencyMap(items)
+				this.rankedRows = rankedCaseRows(items)
+				this.queueState = 'ready'
+			} catch {
+				this.queueState = 'failed'
+			}
+		},
+
+		/**
+		 * Load the case schema, so the ranked list's sidebar offers the same
+		 * filters as the self-fetching one.
+		 *
+		 * @param {object} store The object store.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		async fetchCaseSchema(store) {
+			try {
+				this.caseSchema = (await store.fetchSchema('case')) || null
+			} catch {
+				this.caseSchema = null
+			}
+		},
+
+		/**
+		 * The ranked list's search box.
+		 *
+		 * @param {string} value The search term.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		onRankedSearch(value) {
+			if (this.listMode !== 'ranked') {
+				return
+			}
+			this.rankedSearch = value || ''
+			this.rankedPage = 1
+		},
+
+		/**
+		 * The ranked list's sidebar filters.
+		 *
+		 * @param {{key: string, values: unknown}} payload The changed filter.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		onRankedFilter(payload) {
+			if (this.listMode !== 'ranked' || !payload || !payload.key) {
+				return
+			}
+			this.rankedFilters = {
+				...this.rankedFilters,
+				[payload.key]: payload.values,
+			}
+			this.rankedPage = 1
+		},
+
+		/**
+		 * The ranked list's Clear all: search and every filter.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		onRankedClear() {
+			if (this.listMode !== 'ranked') {
+				return
+			}
+			this.rankedSearch = ''
+			this.rankedFilters = {}
+			this.rankedPage = 1
+		},
+
+		/**
+		 * The ranked list's page.
+		 *
+		 * @param {number} page The 1-based page.
+		 *
+		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 */
+		onRankedPage(page) {
+			if (this.listMode === 'ranked') {
+				this.rankedPage = Number(page) || 1
 			}
 		},
 
@@ -345,7 +594,7 @@ export default {
 				)
 				this.workloadHandlers =
 					(response.data && response.data.handlers) || []
-			} catch (e) {
+			} catch {
 				this.workloadHandlers = []
 			}
 		},
@@ -444,6 +693,11 @@ export default {
 	display: flex;
 	gap: 8px;
 	margin-bottom: 8px;
+}
+
+.mywork-fallback {
+	margin: 0 0 8px;
+	color: var(--color-text-maxcontrast);
 }
 
 .mywork-substituted {

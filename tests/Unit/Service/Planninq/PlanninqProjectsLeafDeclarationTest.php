@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  *
- * @spec openspec/changes/projects-from-planninq-on-the-case/specs/case-linked-projects/spec.md#requirement-the-case-page-shows-the-projects-planninq-links-to-the-case-req-clp-001
+ * @spec openspec/specs/case-linked-projects/spec.md#requirement-the-case-page-shows-the-projects-planninq-links-to-the-case-req-clp-001
  */
 class PlanninqProjectsLeafDeclarationTest extends TestCase {
 

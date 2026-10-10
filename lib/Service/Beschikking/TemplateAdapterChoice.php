@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\App\IAppManager;
  * mock. The probe goes through FleetAppId, never a literal app id: filinq
  * renamed from docudesk and both names are in the field.
  *
- * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class TemplateAdapterChoice {
 
@@ -58,7 +58,7 @@ class TemplateAdapterChoice {
 	 *
 	 * @return string The adapter class.
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function adapterFor(string $named): string {
 		$named = trim($named);

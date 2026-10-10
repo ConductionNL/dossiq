@@ -2,10 +2,10 @@
 	"_meta": {
 		"spdx-license": "EUPL-1.2",
 		"spdx-copyright": "2026 Conduction B.V.",
-		"description": "The SIMPLE structure profile, and the default one (openspec/changes/simple-structure-profile). `menu-layout.json` is the FULL profile and is untouched: an administrator brings it back with the setting `menu_structure`. Both profiles are built from the same manifest and the same fragments, so nothing is deleted and every page stays routable; this file only decides what the navigation offers first. THE FOUR STANDARD KEYS (`relocations`, `removals`, `settingsSection`, `integrationsSection`) go to the library's buildManifest exactly as the full file's do. `relocations` is ABSENT on purpose, and must stay absent rather than become `{}`. The simple menu is flat, nine entries, the first group without a caption and the other two under one each, as DqZijbalk draws them, so nothing moves under a parent. And the library's relocation step ends by dropping every entry that has no route, no href, no action and no children, which is what a caption is: with any `relocations` object at all, the captions disappear. THE TWO PROFILE KEYS are read by src/utils/structureProfile.js, because buildManifest's layout has no word for either. `menu` is merged BEFORE the manifest's own menu. buildManifest merges entries by id and the FIRST definition of a key wins, so an entry here that carries only `id` and `order` takes its label, icon and route from the manifest and keeps the order written here, and an entry the manifest does not know (the two captions, Woo requests) is simply added. `pages` holds page overlays: `configAppend` appends items to a list in the page's config, by key. It is how My work and the dashboard gain the links that replace the three entries this profile takes out of the menu. A link, not a waiver: tests/vitest/structureProfile.spec.js fails when an entry is removed here and no reachable page links to its route.",
+		"description": "The SIMPLE structure profile, and the default one (openspec/changes/simple-structure-profile). `menu-layout.json` is the FULL profile and is untouched: an administrator brings it back with the setting `menu_structure`. Both profiles are built from the same manifest and the same fragments, so nothing is deleted and every page stays routable; this file only decides what the navigation offers first. THE FOUR STANDARD KEYS (`relocations`, `removals`, `settingsSection`, `integrationsSection`) go to the library's buildManifest exactly as the full file's do. `relocations` is ABSENT on purpose, and must stay absent rather than become `{}`. The simple menu is flat, eight entries, the first group without a caption and the others under one each, as DqZijbalk draws them, plus the case types each user chose under My case types, so nothing moves under a parent. And the library's relocation step ends by dropping every entry that has no route, no href, no action and no children, which is what a caption is: with any `relocations` object at all, the captions disappear. THE TWO PROFILE KEYS are read by src/utils/structureProfile.js, because buildManifest's layout has no word for either. `menu` is merged BEFORE the manifest's own menu. buildManifest merges entries by id and the FIRST definition of a key wins, so an entry here that carries only `id` and `order` takes its label, icon and route from the manifest and keeps the order written here, and an entry the manifest does not know (the three captions) is simply added. `pages` holds page overlays: `configAppend` appends items to a list in the page's config, by key. It is how My work and the dashboard gain the links that replace the three entries this profile takes out of the menu. A link, not a waiver: tests/vitest/structureProfile.spec.js fails when an entry is removed here and no reachable page links to its route.",
 		"removalsNote": "The first eight are the full profile's own removals, repeated because buildManifest takes ONE list; the spec fails when the two drift. The last three are this profile's: `PersonalQueueMenu` (Your queue) and `MyWork` (Assigned to me) are reached from the My work page, and `EndOfDayMenu` (Close out your day) from My work and from the dashboard. `SettingsGroup` is an empty shell in the manifest (a label and no route). The full profile loses it to the relocation step's clean-up; this profile has no relocation step, so it is removed by name.",
 		"settingsNote": "The first six are the full profile's. `CasesDeletedMenu`, `CaseObjectsMenu` and `MailIntakeLogMenu` join them here: a recycle bin, an object register and an intake log are set-up and inspection, not daily work.",
-		"wooNote": "`WooRequestsMenu` opens the Cases page narrowed to the Woo request case type. The uuid is the FIXED one lib/Settings/register.d/81-woo-verzoek.json seeds and WooRequestIntake opens requests on, so it is the same on every instance. The spec fails when the two disagree.",
+		"myCaseTypesNote": "`MyCaseTypesCaption` is the heading the case types each user chose stand under (openspec/changes/case-types-in-my-menu, board DqZijbalk). It replaces the fixed Woo requests entry: the entries come from the backend `/api/manifest` delta, in the user's order, at orders 31 to 60, which is why Relations, Contacts and Organisations sit at 80, 82 and 84. The delta repeats the caption whole, with `href` to the Dossiq section of Nextcloud's personal settings, so the heading stands in the full profile too. Declared here as well so the simple menu has its heading on the first paint.",
 		"footerNote": "The footer keeps Reports, Documentation, Store and Features & roadmap. The library's navigation has no help menu to move them under (nextcloud-vue development, 2026-10-05: CnAppNav renders main, footer and settings, and `actionsMenu.showHelpLinks` belongs to a detail page)."
 	},
 	"removals": [
@@ -101,28 +101,24 @@
 			"order": 26
 		},
 		{
-			"id": "WooRequestsMenu",
-			"label": "Woo requests",
-			"icon": "FileEyeOutline",
-			"route": "Cases",
-			"query": {
-				"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
-			},
-			"order": 28
+			"id": "MyCaseTypesCaption",
+			"type": "caption",
+			"label": "My case types",
+			"order": 30
 		},
 		{
 			"id": "RelationsCaption",
 			"type": "caption",
 			"label": "Relations",
-			"order": 40
+			"order": 80
 		},
 		{
 			"id": "Contacts",
-			"order": 42
+			"order": 82
 		},
 		{
 			"id": "OrganisationsMenu",
-			"order": 44
+			"order": 84
 		},
 		{
 			"id": "Documentation",
@@ -447,7 +443,7 @@
 									"metaFields": ["identifier"],
 									"itemRoute": "CaseDetail",
 									"lateWhen": {
-										"op": "lte",
+										"op": "lt",
 										"value": 0
 									},
 									"emptyText": "No deadlines"
@@ -1240,7 +1236,7 @@
 		},
 		{
 			"id": "Cases",
-			"_note": "The cases list in the simple structure (openspec/changes/simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day it ends (`lte 0`), the same rule the board uses.",
+			"_note": "The cases list in the simple structure (openspec/changes/simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
@@ -1277,7 +1273,7 @@
 						"widgetProps": {
 							"variantWhen": [
 								{
-									"op": "lte",
+									"op": "lt",
 									"value": 0,
 									"variant": "error"
 								},
@@ -1357,13 +1353,13 @@
 		},
 		{
 			"id": "WorkflowBoard",
-			"_note": "The board is dossiq's own component, not the library's board, so the library's `dueRule` does not reach it by itself. CaseCard reads this rule and decides with it. Today counts as late here (`lte 0`). Without a rule, which is the full structure, a card is late only after its deadline.",
+			"_note": "The board is dossiq's own component, not the library's board, so the library's `dueRule` does not reach it by itself. CaseCard reads this rule and decides with it. A card is late from the day after its deadline (`lt 0`) and amber from three days before it, today included (one-term-engine, REQ-OTE-05). Without a rule, which is the full structure, a card is late only after its deadline too.",
 			"config": {
 				"dueRule": {
 					"field": "deadline",
 					"variantWhen": [
 						{
-							"op": "lte",
+							"op": "lt",
 							"value": 0,
 							"variant": "error"
 						},
@@ -1471,6 +1467,32 @@
 					}
 				],
 				"footerNote": "click a column header to sort"
+			}
+		},
+		{
+			"id": "Queue",
+			"title": "Team queue",
+			"config": {
+				"showTitle": true,
+				"countText": "{shown} of {total} open cases without a handler, oldest first",
+				"footerNote": "a case leaves the queue as soon as someone picks it up",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "New case",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				]
 			}
 		}
 	]

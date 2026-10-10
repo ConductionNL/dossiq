@@ -219,7 +219,7 @@ class PersonalQueueService {
 		}
 
 		if ($groupBy === 'due') {
-			return (string)($item['tier'] ?? 'normal');
+			return (string)($item['deadlineTier'] ?? 'normal');
 		}
 
 		return (string)($item['source'] ?? '');
