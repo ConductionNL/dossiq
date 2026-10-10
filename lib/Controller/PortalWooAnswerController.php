@@ -137,23 +137,7 @@ class PortalWooAnswerController extends Controller {
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
 	 */
 	private function attachments(): ?array {
-		$uploaded = $this->request->getUploadedFile(CitizenManifest::ANSWER_FILES_FIELD);
-		if (is_array($uploaded) === false || isset($uploaded['tmp_name']) === false) {
-			return [];
-		}
-
-		$entries = [$uploaded];
-		if (is_array($uploaded['tmp_name']) === true) {
-			$entries = [];
-			foreach (array_keys($uploaded['tmp_name']) as $key) {
-				$entries[] = [
-					'name' => ($uploaded['name'][$key] ?? ''),
-					'tmp_name' => $uploaded['tmp_name'][$key],
-					'size' => ($uploaded['size'][$key] ?? 0),
-				];
-			}
-		}
-
+		$entries = $this->uploadEntries(uploaded: $this->request->getUploadedFile(CitizenManifest::ANSWER_FILES_FIELD));
 		if (count($entries) > CitizenManifest::ANSWER_FILES_MAX) {
 			return null;
 		}
@@ -164,21 +148,62 @@ class PortalWooAnswerController extends Controller {
 				return null;
 			}
 
-			$path = (string)($entry['tmp_name'] ?? '');
-			if ($path === '' || is_readable($path) === false) {
-				continue;
+			$content = $this->readUpload(path: (string)($entry['tmp_name'] ?? ''));
+			if ($content !== null) {
+				$files[] = ['name' => basename((string)($entry['name'] ?? 'bijlage')), 'content' => $content];
 			}
-
-			$content = file_get_contents($path);
-			if ($content === false) {
-				continue;
-			}
-
-			$files[] = ['name' => basename((string)($entry['name'] ?? 'bijlage')), 'content' => $content];
 		}
 
 		return $files;
 	}//end attachments()
+
+	/**
+	 * One upload or PHP's parallel-array shape, as a list of entries.
+	 *
+	 * @param mixed $uploaded What `IRequest::getUploadedFile()` answered.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function uploadEntries(mixed $uploaded): array {
+		if (is_array($uploaded) === false || isset($uploaded['tmp_name']) === false) {
+			return [];
+		}
+
+		if (is_array($uploaded['tmp_name']) === false) {
+			return [$uploaded];
+		}
+
+		$entries = [];
+		foreach (array_keys($uploaded['tmp_name']) as $key) {
+			$entries[] = [
+				'name' => ($uploaded['name'][$key] ?? ''),
+				'tmp_name' => $uploaded['tmp_name'][$key],
+				'size' => ($uploaded['size'][$key] ?? 0),
+			];
+		}
+
+		return $entries;
+	}//end uploadEntries()
+
+	/**
+	 * The bytes of an uploaded file, or null when it cannot be read.
+	 *
+	 * @param string $path The temporary path.
+	 *
+	 * @return string|null
+	 */
+	private function readUpload(string $path): ?string {
+		if ($path === '' || is_readable($path) === false) {
+			return null;
+		}
+
+		$content = file_get_contents($path);
+		if ($content === false) {
+			return null;
+		}
+
+		return $content;
+	}//end readUpload()
 
 	/**
 	 * A request param as a string, or '' when it is absent or not a string.
