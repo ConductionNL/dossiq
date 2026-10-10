@@ -39,6 +39,7 @@ import CaseFollowStrip from '../../src/components/case/CaseFollowStrip.vue'
 import {
 	followerCountOf,
 	isFollowing,
+	notifiesOf,
 	objectIdOf,
 } from '../../src/services/watcherApi.js'
 import { pageGrids, pageWidgets } from './helpers/pageViews.js'
@@ -89,7 +90,9 @@ async function mountStrip(objectData) {
 						+ '<slot name="icon" /><slot /></button>',
 				},
 				BellRing: { template: '<i class="bell-ring" />' },
-				BellOutline: { template: '<i class="bell-outline" />' },
+				BellOffOutline: { template: '<i class="bell-off" />' },
+				Eye: { template: '<i class="eye" />' },
+				EyeOutline: { template: '<i class="eye-outline" />' },
 			},
 		},
 	})
@@ -166,7 +169,7 @@ describe('the strip reads off the object it was given', () => {
 			'@self': { watching: true },
 		})
 
-		expect(wrapper.find('.bell-ring').exists()).toBe(true)
+		expect(wrapper.find('.eye').exists()).toBe(true)
 		expect(wrapper.text()).toContain('Stop following')
 		// The state reaches a screen reader, not only the glyph.
 		expect(wrapper.find('button').attributes('aria-pressed')).toBe('true')
@@ -178,7 +181,7 @@ describe('the strip reads off the object it was given', () => {
 			'@self': { watching: false },
 		})
 
-		expect(wrapper.find('.bell-outline').exists()).toBe(true)
+		expect(wrapper.find('.eye-outline').exists()).toBe(true)
 		expect(wrapper.text()).toContain('Follow this case')
 		expect(wrapper.find('button').attributes('aria-pressed')).toBe('false')
 	})
@@ -277,7 +280,7 @@ describe('the two verbs', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(mockShowError).toHaveBeenCalledWith('Not yours to follow.')
-		expect(wrapper.find('.bell-outline').exists()).toBe(true)
+		expect(wrapper.find('.eye-outline').exists()).toBe(true)
 		expect(wrapper.text()).toContain('Follow this case')
 		expect(wrapper.find('[data-testid="case-follow-count"]').text()).toBe(
 			'2 followers',
@@ -288,6 +291,70 @@ describe('the two verbs', () => {
 		expect(objectIdOf({ id: 'a' })).toBe('a')
 		expect(objectIdOf({ '@self': { id: 'b' } })).toBe('b')
 		expect(objectIdOf({})).toBe('')
+	})
+})
+
+describe('the notifications switch of your follow', () => {
+	// one-follow-control: a favourite is a follow with notifications off, so
+	// the switch is how a reader keeps a case close without hearing about it.
+	it('is offered only while you follow', async () => {
+		const not = await mountStrip({ '@self': { watching: false } })
+		expect(not.find('[data-testid="case-follow-notify"]').exists()).toBe(false)
+
+		const on = await mountStrip({
+			'@self': { watching: true, watchNotify: true },
+		})
+		const bell = on.find('[data-testid="case-follow-notify"]')
+		expect(bell.exists()).toBe(true)
+		expect(bell.attributes('aria-pressed')).toBe('true')
+		expect(bell.attributes('aria-label')).toBe('Turn notifications off')
+	})
+
+	it('turns notifications off with a PUT carrying notify false, and keeps the follow', async () => {
+		const wrapper = await mountStrip({
+			'@self': { watching: true, watchNotify: true },
+		})
+		await wrapper.find('[data-testid="case-follow-notify"]').trigger('click')
+		await wrapper.vm.$nextTick()
+
+		expect(axios.put).toHaveBeenCalledWith(
+			expect.stringContaining('/objects/dossiq/case/case-7/watch'),
+			{ notify: false },
+		)
+		expect(axios.delete).not.toHaveBeenCalled()
+		expect(
+			wrapper
+				.find('[data-testid="case-follow-toggle"]')
+				.attributes('aria-pressed'),
+		).toBe('true')
+		expect(
+			wrapper
+				.find('[data-testid="case-follow-notify"]')
+				.attributes('aria-pressed'),
+		).toBe('false')
+	})
+
+	it('puts the bell back and says what the server said when the write is refused', async () => {
+		axios.put.mockRejectedValueOnce({ response: { data: { message: 'Nope' } } })
+		const wrapper = await mountStrip({
+			'@self': { watching: true, watchNotify: false },
+		})
+		await wrapper.find('[data-testid="case-follow-notify"]').trigger('click')
+		await new Promise((r) => setTimeout(r, 0))
+
+		expect(
+			wrapper
+				.find('[data-testid="case-follow-notify"]')
+				.attributes('aria-pressed'),
+		).toBe('false')
+		expect(mockShowError).toHaveBeenCalledWith('Nope')
+	})
+
+	it('reads an absent switch as on, the way every follow notified before', () => {
+		expect(notifiesOf({ '@self': { watching: true } })).toBe(true)
+		expect(notifiesOf({ '@self': { watching: true, watchNotify: false } })).toBe(
+			false,
+		)
 	})
 })
 
@@ -374,21 +441,23 @@ describe('following is declared on the case page', () => {
 		expect(banners.sizeToContent).toBe(true)
 	})
 
-	it('follows the star in the banner stack', () => {
-		// Beside the star and directly after it: both are per-reader state,
-		// where every strip under them is about the case rather than about you.
+	it('is the one per-reader control in the banner stack, with no star beside it', () => {
+		// Directly after the archived strip: following is per-reader state,
+		// where every strip under it is about the case rather than about you.
+		// The star is gone (one-follow-control): a favourite is a quiet follow.
 		const stack = fs.readFileSync(
 			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
 			'utf8',
 		)
-		const star = stack.indexOf('<CaseFavouriteStrip')
+		const archived = stack.indexOf('<CaseArchivedStrip')
 		const follow = stack.indexOf('<CaseFollowStrip')
 		const unread = stack.indexOf('<CaseUnreadPanel')
 
 		expect(follow, 'the follow strip is missing from the stack').toBeGreaterThan(
 			-1,
 		)
-		expect(follow).toBeGreaterThan(star)
+		expect(stack).not.toContain('CaseFavouriteStrip')
+		expect(follow).toBeGreaterThan(archived)
 		expect(follow).toBeLessThan(unread)
 		// `objectData` and NOT `object`: the strip reads `@self.watching` off
 		// the case the host already loaded, and an unbound prop would leave
@@ -441,10 +510,11 @@ describe('following is declared on the case page', () => {
 })
 
 describe('the lens and the tile', () => {
-	it('offers a Followed chip on Cases over the platform lens', () => {
-		const chip = page('Cases').config.quickFilters.find(
-			(c) => c.label === 'Followed',
-		)
+	it('offers one Following chip on Cases over the platform lens, and no Favourites chip', () => {
+		const chips = page('Cases').config.quickFilters
+		const chip = chips.find((c) => c.label === 'Following')
+		expect(chips.some((c) => c.label === 'Favourites')).toBe(false)
+		expect(chips.some((c) => c.filter && '_favourite' in c.filter)).toBe(false)
 
 		expect(chip).toBeTruthy()
 		// `_watching` is resolved INSIDE the query the way `_unread` and

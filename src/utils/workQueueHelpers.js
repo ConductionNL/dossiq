@@ -9,7 +9,7 @@
  * mounting the Vue component (mirrors src/utils/caseRelationHelpers.js).
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 import { translate as t } from '@nextcloud/l10n'
@@ -56,7 +56,7 @@ export const DEADLINE_TIERS = ['overdue', 'critical', 'warning', 'normal']
  * @param {string} tier 'overdue' | 'critical' | 'warning' | 'normal' | falsy.
  * @return {string} CSS class name, '' for an unknown or falsy value (no pill).
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export function deadlineTierPillClass(tier) {
 	return DEADLINE_TIERS.includes(tier) ? `mywork-card__tier-pill--${tier}` : ''
@@ -68,7 +68,7 @@ export function deadlineTierPillClass(tier) {
  * @param {string} tier 'overdue' | 'critical' | 'warning' | 'normal' | falsy.
  * @return {string} The translated label (Te laat, Kritiek, Bijna, Normaal), or '' for no pill.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export function deadlineTierLabel(tier) {
 	switch (tier) {
@@ -121,7 +121,7 @@ export function buildUrgencyMap(items) {
  * @param {string} queueState 'loading' | 'ready' | 'failed'.
  * @return {string} 'ranked' or 'self'.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export function resolveListMode(sortMode, queueState) {
 	if (sortMode === 'newest' || queueState === 'failed') {
@@ -136,7 +136,7 @@ export function resolveListMode(sortMode, queueState) {
  * @param {Array<object>} items Work-queue response `items` array, ranked.
  * @return {Array<object>} The case rows, highest score first.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export function rankedCaseRows(items) {
 	const rows = []
@@ -216,7 +216,7 @@ function passesFilter(row, key, wanted) {
  * @param {{[key: string]: unknown}} filters The sidebar's active filters.
  * @return {Array<object>} The rows that pass, in ranked order.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export function filterRankedRows(rows, search = '', filters = {}) {
 	const needle = String(search || '')
@@ -246,7 +246,7 @@ export function filterRankedRows(rows, search = '', filters = {}) {
  * @param {number} limit Rows per page.
  * @return {{rows: Array<object>, pagination: {page: number, pages: number, total: number, limit: number}}}
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export function pageOfRows(rows, page = 1, limit = 20) {
 	const list = rows || []

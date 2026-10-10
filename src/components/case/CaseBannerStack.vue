@@ -3,7 +3,7 @@
 <!--
 	The case's banner strips, in one grid row instead of six.
 
-	Archived, Favourite, Follow, New since you last looked, What this status
+	Archived, Follow, New since you last looked, What this status
 	asks for and Attention were six `gridWidth: 12, gridHeight: 1` widgets
 	stacked down the page. Four of the six render conditionally —
 	`CaseArchivedStrip`, `CaseUnreadPanel`, `CaseStatusDeclarationPanel` and
@@ -23,9 +23,10 @@
 	whether this is a record or work, what I marked, what I am watching, what
 	changed, what the status wants, what is wrong. Archived comes first because
 	it changes how everything under it should be read (archived-cases-leave-
-	the-lenses REQ-CM-43). The star and the Follow strip sit together after it
-	because both are per-reader state, where every strip under them is about
-	the case rather than about you.
+	the-lenses REQ-CM-43). The Follow strip sits after it because it is
+	per-reader state, where every strip under it is about the case rather than
+	about you. The star that sat beside it is gone: a favourite is a follow
+	with notifications off (one-follow-control).
 
 	Each panel keeps its own `v-if`, its own fetch and its own tests. This adds
 	no conditions of its own: it is a container, and a sixth strip belongs here
@@ -38,7 +39,6 @@
 <template>
 	<div class="case-banner-stack" data-testid="case-banner-stack">
 		<CaseArchivedStrip :objectData="objectData" />
-		<CaseFavouriteStrip :objectId="objectId" />
 		<CaseFollowStrip :objectId="objectId" :objectData="objectData" />
 		<CaseUnreadPanel :objectId="objectId" />
 		<CaseStatusDeclarationPanel :objectId="objectId" :objectData="objectData" />
@@ -49,7 +49,6 @@
 <script>
 import CaseArchivedStrip from './CaseArchivedStrip.vue'
 import CaseAttentionPanel from './CaseAttentionPanel.vue'
-import CaseFavouriteStrip from './CaseFavouriteStrip.vue'
 import CaseFollowStrip from './CaseFollowStrip.vue'
 import CaseStatusDeclarationPanel from './CaseStatusDeclarationPanel.vue'
 import CaseUnreadPanel from './CaseUnreadPanel.vue'
@@ -60,7 +59,6 @@ export default {
 	components: {
 		CaseArchivedStrip,
 		CaseAttentionPanel,
-		CaseFavouriteStrip,
 		CaseFollowStrip,
 		CaseStatusDeclarationPanel,
 		CaseUnreadPanel,

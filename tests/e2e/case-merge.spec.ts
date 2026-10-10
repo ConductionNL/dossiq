@@ -99,7 +99,7 @@ test.describe('Merge two cases into one', () => {
 			.map((row: any) => String(row?.name ?? ''))
 			.sort()
 
-	// @e2e openspec/changes/case-merge/specs/case-management/spec.md#scenario-a-duplicate-is-merged
+	// @e2e openspec/specs/case-management/spec.md#a-duplicate-is-merged
 	test('The duplicate is merged and the survivor carries both parties', async ({
 		page,
 		playwright,
@@ -154,7 +154,7 @@ test.describe('Merge two cases into one', () => {
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-merge/specs/case-management/spec.md#scenario-the-old-public-link
+	// @e2e openspec/specs/case-management/spec.md#the-old-public-link
 	test('The merged case’s public link shows the survivor’s status', async ({
 		page,
 		playwright,

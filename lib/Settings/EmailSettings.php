@@ -3,11 +3,14 @@
 /**
  * Dossiq Email (shared-mailbox) Admin Settings
  *
- * Registers the case-email-integration admin settings surface inside the
- * Dossiq settings section. The form mounts the same settings SPA
- * (`settings/admin`); the email-specific panel is rendered by
- * `src/views/settings/EmailSettings.vue` inside `AdminRoot`. This class
- * scopes the shared-mailbox IMAP config keys for delegated admins.
+ * Scopes the shared-mailbox config keys for delegated admins. The mailbox
+ * panel itself is `src/views/settings/EmailSettings.vue`, drawn ONCE, as the
+ * "Case email: shared mailbox" section of `AdminRoot`.
+ *
+ * 🔴 THIS FORM DRAWS NOTHING. It used to mount a bundle of its own that
+ * repeated the section at the bottom of the page, in a wider box, holding
+ * only the application information (round-4 cloud check). The registration
+ * stays for `getAuthorizedAppConfig()`; the form is an empty template.
  *
  * @category Settings
  * @package  OCA\Dossiq\Settings
@@ -29,9 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Settings;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
-use OCP\AppFramework\Services\IInitialState;
 use OCP\Settings\IDelegatedSettings;
 
 /**
@@ -72,32 +73,17 @@ class EmailSettings implements IDelegatedSettings {
 	];
 
 	/**
-	 * Constructor.
-	 *
-	 * @param IAppManager $appManager The app manager.
-	 * @param IInitialState $initialState The initial state service.
-	 */
-	public function __construct(
-		private IAppManager $appManager,
-		private IInitialState $initialState,
-	) {
-	}//end __construct()
-
-	/**
 	 * Get the settings form template.
 	 *
-	 * Renders the shared Dossiq settings SPA; the email panel is mounted
-	 * by AdminRoot. The app version is published for the version card.
+	 * An empty template: the email panel is a section of AdminRoot, and a
+	 * second copy here is the duplicate section this change removed.
 	 *
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/specs/case-email-integration/spec.md
+	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
 	 */
 	public function getForm(): TemplateResponse {
-		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
-
-		$this->initialState->provideInitialState('version', $version);
-
 		return new TemplateResponse(
 			Application::APP_ID,
 			'settings/email',

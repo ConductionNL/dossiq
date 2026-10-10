@@ -911,7 +911,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		)
 	})
 
-	// @e2e openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md#a-colleagues-change-appears
+	// @e2e openspec/specs/realtime-updates-ui/spec.md#a-colleagues-change-appears
 	// @e2e realtime-updates-ui::a-colleagues-change-appears
 	test('a change made in another session appears without a reload', async ({
 		page,

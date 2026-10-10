@@ -291,21 +291,21 @@ export default {
 
 .stuf-audit-log__status--bevestigd {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .stuf-audit-log__status--fout {
 	background: var(--color-error);
-	color: white;
+	color: var(--color-error-text);
 }
 
 .stuf-audit-log__status--wacht_op_retry {
 	background: var(--color-warning);
-	color: white;
+	color: var(--color-warning-text);
 }
 
 .stuf-audit-log__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 </style>
