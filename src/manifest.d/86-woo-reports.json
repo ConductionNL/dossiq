@@ -1,0 +1,34 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "woo-review-reports",
+		"why-custom": "The throughput report is a per-person figure that only the reader group the organisation named may read, and every read is recorded on the audit trail. That check and that record live in WooReportController. An index page would read the generic OpenRegister object endpoint, which applies the register's own permissions and records nothing, so this is a custom page over the dossiq endpoint."
+	},
+	"menu": [
+		{
+			"id": "WooReportsMenu",
+			"label": "Woo reports",
+			"icon": "ChartBoxOutline",
+			"route": "WooReports",
+			"section": "footer",
+			"order": 96,
+			"visibleIf": {
+				"woo.throughputReader": true
+			}
+		}
+	],
+	"pages": [
+		{
+			"id": "WooReports",
+			"route": "/woo-reports",
+			"type": "custom",
+			"component": "WooReportsView",
+			"_note": "Shown in the menu only while the throughput report is switched on and the user is in its reader group (initial state woo_reports, runtime woo.throughputReader). The route stays reachable by URL, and WooReportController refuses a read from anyone else.",
+			"title": "Woo reports",
+			"config": {
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}

@@ -228,7 +228,15 @@ const profiledManifest = {
 	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {
 		theming: navTheming(getCapabilities()),
 	}),
-	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
+	runtime: {
+		user: { isAdmin: currentPermissions().includes('admin') },
+		// Which Woo review reports the page controller offers this user
+		// (woo-review-reports): the menu entry's `visibleIf` reads it.
+		woo: {
+			throughputReader:
+				loadState('dossiq', 'woo_reports', {}).throughput === true,
+		},
+	},
 }
 const builtManifest = markRaw(
 	translateBannerCopy(
