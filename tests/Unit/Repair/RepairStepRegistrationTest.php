@@ -80,6 +80,8 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateAiOversightToHermiq' => 'replays existing audit history into hermiq',
 		'MigrateCommitteesToDecidiq' => 'raises existing committees; a fresh install seeds none',
 		'ArmTermijnEngineTimers' => 'arms existing TermijnInstances; none exist yet',
+		'ReconcileCaseDeadlinesWithTerms' => 'writes existing case deadlines from their terms; none exist yet',
+		'RearmBeslistermijnTimers' => 're-arms existing running term timers; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',
 		'RewriteRetiredFlowNodes' => 'rewrites stored flows; a fresh install has none',
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
