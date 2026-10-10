@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Listener\OrganisationStatusAuditListener;
+use OCA\Dossiq\Listener\OrganisationStatusChangeListener;
 use OCA\Dossiq\Service\ShillinqIntegrationService;
 use OCA\OpenRegister\Event\OrganisationUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -82,7 +82,7 @@ class SaasServiceRegistrar {
 		// when a tenant ends.
 		$context->registerEventListener(
 			event: OrganisationUpdatedEvent::class,
-			listener: OrganisationStatusAuditListener::class
+			listener: OrganisationStatusChangeListener::class
 		);
 	}//end register()
 }//end class

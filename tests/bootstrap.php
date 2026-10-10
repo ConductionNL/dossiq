@@ -672,7 +672,7 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
 }
 
 // tenancy-onto-openregister-organisation 6.9: the organisation update event,
-// so OrganisationStatusAuditListenerTest can drive handle() with the real shape.
+// so OrganisationStatusChangeListenerTest can drive handle() with the real shape.
 if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php';
 }

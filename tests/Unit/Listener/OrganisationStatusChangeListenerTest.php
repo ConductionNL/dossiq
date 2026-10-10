@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\Listener\OrganisationStatusAuditListener;
+use OCA\Dossiq\Listener\OrganisationStatusChangeListener;
 use OCA\Dossiq\Service\TenantBillingService;
 use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use OCA\OpenRegister\Db\Organisation;
@@ -40,9 +40,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Dossiq\Listener\OrganisationStatusAuditListener
+ * @covers \OCA\Dossiq\Listener\OrganisationStatusChangeListener
  */
-class OrganisationStatusAuditListenerTest extends TestCase {
+class OrganisationStatusChangeListenerTest extends TestCase {
 	use MakesTenantAnchors;
 
 	/**
@@ -66,15 +66,15 @@ class OrganisationStatusAuditListenerTest extends TestCase {
 	 *
 	 * @param TenantBillingService $billing The billing reader.
 	 *
-	 * @return OrganisationStatusAuditListener The listener.
+	 * @return OrganisationStatusChangeListener The listener.
 	 */
-	private function listener(TenantBillingService $billing): OrganisationStatusAuditListener {
+	private function listener(TenantBillingService $billing): OrganisationStatusChangeListener {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn('beheerder');
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		return new OrganisationStatusAuditListener(
+		return new OrganisationStatusChangeListener(
 			auditTrail: $this->realTenantAuditTrail(),
 			billing: $billing,
 			userSession: $session,

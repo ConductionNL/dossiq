@@ -62,10 +62,10 @@
 					:key="step.step"
 					class="tenant-onboarding__step"
 					:class="{
-						'tenant-onboarding__step--done': step.status === 'complete',
+						'tenant-onboarding__step--done': step.status === 'completed',
 					}">
 					<div class="tenant-onboarding__step-icon">
-						<CheckCircle v-if="step.status === 'complete'" :size="22" />
+						<CheckCircle v-if="step.status === 'completed'" :size="22" />
 						<CircleOutline v-else :size="22" />
 					</div>
 					<div class="tenant-onboarding__step-body">
@@ -84,7 +84,7 @@
 						</div>
 					</div>
 					<NcButton
-						v-if="step.status !== 'complete'"
+						v-if="step.status !== 'completed'"
 						size="small"
 						variant="primary"
 						:disabled="markingStep === step.step"
@@ -227,7 +227,7 @@ export default {
 
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		completedSteps() {
-			return this.steps.filter((s) => s.status === 'complete').length
+			return this.steps.filter((s) => s.status === 'completed').length
 		},
 
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
@@ -268,20 +268,31 @@ export default {
 			if (this.tenantId) this.loadProgress()
 		},
 
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/**
+		 * List the tenants to onboard: OpenRegister's organisations.
+		 *
+		 * A tenant is an OpenRegister Organisation, and its uuid is the tenant
+		 * id the onboarding routes take. dossiq's own tenant list retired
+		 * with the tenant admin store.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+		 */
 		async loadTenants() {
 			this.loading = true
 			try {
 				const res = await axios.get(
-					generateUrl('/apps/dossiq/api/saas/tenants'),
+					generateUrl('/apps/openregister/api/organisations'),
 				)
 				const list = Array.isArray(res.data)
 					? res.data
 					: res.data?.results || []
-				this.tenantOptions = list.map((tn) => ({
-					id: tn.id || tn.tenantId,
-					label: tn.name || tn.label || tn.id,
-				}))
+				this.tenantOptions = list
+					.filter((org) => org && org.uuid)
+					.map((org) => ({
+						id: org.uuid,
+						label: org.name || org.slug || org.uuid,
+					}))
 			} catch (e) {
 				this.error =
 					e?.response?.data?.message

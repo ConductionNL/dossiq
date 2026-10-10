@@ -336,7 +336,7 @@ class TenantAuditTrailService {
 				'description' => 'Mandate decisions and tenant status changes, provisioning included, each write a hash-chained OpenRegister audit row',
 				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry '
 					. '(probed live); MandateValidationMiddleware::logDecision; '
-					. 'OrganisationStatusAuditListener on OpenRegister\'s OrganisationUpdatedEvent',
+					. 'OrganisationStatusChangeListener on OpenRegister\'s OrganisationUpdatedEvent',
 				'status' => $auditStatus,
 			],
 			[

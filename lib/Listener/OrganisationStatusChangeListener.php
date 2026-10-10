@@ -46,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
  */
-class OrganisationStatusAuditListener implements IEventListener {
+class OrganisationStatusChangeListener implements IEventListener {
 	/**
 	 * The statuses that end a tenant's access. After either, nobody invoices
 	 * the month that just ran, so the unsettled billing count is taken.

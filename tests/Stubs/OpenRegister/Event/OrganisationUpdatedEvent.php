@@ -5,7 +5,7 @@
  *
  * Declaration-only mirror of OpenRegister's event, dispatched by
  * `OrganisationMapper::update()` with the organisation after and before the
- * write. `OrganisationStatusAuditListener` listens to it and is analysed and tested
+ * write. `OrganisationStatusChangeListener` listens to it and is analysed and tested
  * without the openregister runtime present.
  *
  * NOT psr-4 autoloadable, like the stubs beside it: tests/bootstrap.php
