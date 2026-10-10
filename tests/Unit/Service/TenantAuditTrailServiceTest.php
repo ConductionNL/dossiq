@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
+use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -31,6 +32,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\TenantAuditTrailService
  */
 class TenantAuditTrailServiceTest extends TestCase {
+	use MakesTenantAnchors;
+
 	private TenantAuditTrailService $svc;
 
 	/**
@@ -69,7 +72,7 @@ class TenantAuditTrailServiceTest extends TestCase {
 			 *
 			 * @return object
 			 */
-			public function find(string $id, string $register = '', string $schema = ''): object {
+			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): object {
 				return (object)['uuid' => $id, 'register' => $register, 'schema' => $schema];
 			}
 		};
@@ -345,4 +348,22 @@ class TenantAuditTrailServiceTest extends TestCase {
 			}
 		}
 	}
+
+	/**
+	 * A tenant with no anchor gets no row, an error, and persisted false (REQ-TOO-006).
+	 *
+	 * Built on the real service over an empty store: no tenant object exists
+	 * for the Organisation, so nothing can be anchored.
+	 *
+	 * @return void
+	 */
+	public function testAnEntryForATenantWithNoAnchorIsNotPersistedAndLogged(): void {
+		$this->startAnchorStore();
+
+		$entry = $this->realTenantAuditTrail()->emit(['action' => 'mandate.create.allowed', 'actor' => 'alice', 'tenantId' => 'b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e']);
+
+		$this->assertFalse($entry['persisted']);
+		$this->assertSame([], $this->anchorTrail->rows);
+		$this->assertNotSame([], $this->anchorErrors);
+	}//end testAnEntryForATenantWithNoAnchorIsNotPersistedAndLogged()
 }

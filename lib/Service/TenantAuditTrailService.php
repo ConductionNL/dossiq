@@ -234,6 +234,11 @@ class TenantAuditTrailService {
 	/**
 	 * Resolve the tenant ObjectEntity an audit row anchors to.
 	 *
+	 * The anchor is a system record (decision Q6), so it is read without RBAC
+	 * and without the caller's organisation filter: whoever's request writes
+	 * the entry, the anchor of the bound tenant must be found. No anchor means
+	 * no row, and the caller logs that.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return mixed The ObjectEntity, or null.
@@ -241,7 +246,13 @@ class TenantAuditTrailService {
 	private function resolveTenantEntity(string $tenantId): mixed {
 		try {
 			$objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-			return $objectService->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
+			return $objectService->find(
+				$tenantId,
+				register: self::REGISTER,
+				schema: self::SCHEMA_TENANT,
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq AUDIT: could not resolve tenant ObjectEntity',

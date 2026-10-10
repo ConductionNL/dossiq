@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Middleware;
 
+use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantService;
@@ -92,6 +93,7 @@ class MandateValidationMiddleware extends Middleware {
 	 * @param TenantAuthenticationService $authService Auth service.
 	 * @param TenantService $tenantService Platform admin check.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TenantAuditTrailService $auditTrail Writes each decision to the tenant's audit trail.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
@@ -100,6 +102,7 @@ class MandateValidationMiddleware extends Middleware {
 		private readonly TenantAuthenticationService $authService,
 		private readonly TenantService $tenantService,
 		private readonly LoggerInterface $logger,
+		private readonly TenantAuditTrailService $auditTrail,
 	) {
 	}//end __construct()
 
@@ -257,14 +260,30 @@ class MandateValidationMiddleware extends Middleware {
 	/**
 	 * Audit-log a mandate decision (allow + deny).
 	 *
+	 * The decision becomes a row on OpenRegister's audit trail of the tenant's
+	 * anchor (REQ-TOO-006), written by `TenantAuditTrailService`, which writes
+	 * no row and logs an error when the tenant has no anchor. The log line
+	 * stays for the SIEM stream.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $userId NC user ID.
 	 * @param string $action Action.
 	 * @param array{allowed:bool,reason:string} $decision Decision.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	private function logDecision(string $tenantId, string $userId, string $action, array $decision): void {
+		$this->auditTrail->emit(
+			[
+				'action' => 'mandate.'.$action.'.'.($decision['allowed'] === true ? 'allowed' : 'denied'),
+				'actor' => $userId,
+				'resource' => $this->request->getRequestUri(),
+				'tenantId' => $tenantId,
+			]
+		);
+
 		$this->logger->info(
 			'Dossiq mandate decision',
 			[
