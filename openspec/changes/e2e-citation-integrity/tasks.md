@@ -131,3 +131,47 @@ Without these, the same 149 come back. Each is a hydra-side or convention-side d
       so the headline overstates how much of the old debt was paid. And half of the gate-credit
       gain is the gate: on the 2026-09-11 tree the current gate already credits
       184 of 330 without a line of dossiq changing.
+
+## Re-measured 2026-10-10 (lane L11), and the archive-path repair
+
+Same extractor, current gate (`.github` `origin/main` extracted to a scratch dir, not the
+vendored 1.17 copy, which lacks `spec_files` and `covering_ref`), `development` @`3a715bb7c`:
+**613 citations, 357 credited onto 300 distinct scenarios.** The suite has doubled since 09-12
+and the dominant defect moved: **220 citations point into `openspec/changes/**`**, 146 of them
+at a file that no longer exists because its change was archived. That is task 5.3's prediction
+come true at scale.
+
+- [x] 6.1 Repoint every citation into an archived or vanished change at the canonical
+      `openspec/specs/<capability>/spec.md#<slug>` when the canonical spec carries that
+      scenario (133 citations, 30 files; comment lines only, no test body touched). After:
+      **490 credited onto 395 distinct scenarios** (+95 scenarios), 13 citations still at a
+      vanished file. 13 of the 133 now land on a scenario the spec marks `@e2e exclude`, which
+      gate-19 reports as a contradiction to settle under 5.4 rather than hiding it.
+- [ ] 6.2 The 29 archive-path citations whose slug the canonical spec does not carry. Read on
+      2026-10-10, and they are not one defect but two:
+      - **The archive dropped the requirement.** Four archives of 18 to 20 September folded
+        nothing into `openspec/specs/`: `hours-onto-humaniq-leaf` (REQ-HRS-001..004; the
+        capability `case-hours-via-humaniq-leaf` has no canonical spec at all),
+        `a-dashboard-the-reader-arranges` (REQ-DASH-023/024), `case-type-fields-filter-the-case-list`
+        (REQ-CTF-01..04; `case-search-and-lists` cites CTF-01/02 in prose but holds other
+        scenarios) and `columns-follow-the-case-type` (REQ-CM-70..72). 15 citations rest on
+        them. The fix is to fold those deltas in, and it is blocked on one collision: the open
+        change `widgets-my-open-cases-on-the-start-page` (lane L3) reuses **REQ-DASH-023 and
+        REQ-DASH-024** for different requirements, so folding the archived pair first would give
+        the dashboard spec two requirements per id. Fold after L3 renumbers or lands.
+      - **The citation names a requirement or nothing.** `intake-triage-and-refusal.spec.ts`
+        (13) cites `requirement-*` anchors, and `lifecycle-acts-on-the-case.spec.ts` (8) cites
+        the spec with no anchor. Both requirements are in the canonical specs; each citation
+        needs the scenario under that requirement that its test actually proves. **Done for
+        20 of the 21** (read against each test's assertions; four tests prove two scenarios and
+        cite both). The one left, `the declaration says the scheme resolves on this instance`,
+        proves no scenario under REQ-TRIAGE-02 (it is not the fail-closed scenario), so it keeps
+        its dead pointer until someone writes that test or the scenario it proves.
+- [ ] 6.4 Archive integrity, measured while doing 6.2: of the archived changes, 112 carry 719
+      ADDED or MODIFIED requirement headings that do not appear verbatim in the canonical spec
+      of the same capability. That count is an upper bound, since later changes legitimately
+      rename, move or remove requirements, so it is not a defect count. It is the place to
+      look, and the four above are confirmed drops. A check in `opsx-archive` that refuses to
+      archive while an ADDED heading is absent from the target spec would stop new ones.
+- [ ] 6.3 The 58 citations into changes that are still open stay as they are until their change
+      is archived; the archive step of that change carries the repoint (its lane owns the file).

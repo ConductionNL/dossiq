@@ -27,7 +27,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -167,7 +167,7 @@ class WorkQueueService {
 	 *
 	 * @return UrgencyProfile The admin profile.
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function adminProfile(): UrgencyProfile {
 		return $this->urgencySettings->profile();
@@ -414,7 +414,7 @@ class WorkQueueService {
 	 * } Score result.
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function scoreItem(
 		?string $deadline,
@@ -484,7 +484,7 @@ class WorkQueueService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	private function queueCaseItems(
 		object $objectService,
@@ -576,7 +576,7 @@ class WorkQueueService {
 	 *
 	 * @return string|null The moment, or null when the case carries none.
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	private function lastActivityOf(array $case): ?string {
 		$latest = null;
@@ -661,7 +661,7 @@ class WorkQueueService {
 	 *
 	 * @return UrgencyProfile The profile for that type.
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	private function profileForCaseType(object $objectService, string $register, string $caseTypeId, UrgencyProfile $profile): UrgencyProfile {
 		$caseTypeSchema = (string)$this->settingsService->getConfigValue('case_type_schema');
@@ -823,7 +823,7 @@ class WorkQueueService {
 	 *
 	 * @return string One of the DEADLINE_TIER_* constants.
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	private function deadlineTierFor(int $daysUntilDeadline, UrgencyProfile $profile): string {
 		if ($daysUntilDeadline < 0) {

@@ -5,7 +5,7 @@
  *
  * The case type's own queue thresholds on the General tab.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
@@ -51,7 +51,7 @@ describe('readThresholdOverride', () => {
 })
 
 describe('GeneralTab queue thresholds', () => {
-	// @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md#scenario-the-editor-offers-both-fields-empty-by-default
+	// @spec openspec/specs/case-types/spec.md#scenario-the-editor-offers-both-fields-empty-by-default
 	it('shows an unset threshold as an empty field', () => {
 		expect(GeneralTab.methods.thresholdText(undefined)).toBe('')
 		expect(GeneralTab.methods.thresholdText(null)).toBe('')

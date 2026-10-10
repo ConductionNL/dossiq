@@ -67,6 +67,7 @@ interface WOODeadlineObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class WOODeadlineServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

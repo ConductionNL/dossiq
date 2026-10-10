@@ -2981,7 +2981,8 @@
                         "description": "Nextcloud user ID of the primary handler",
                         "title": "Assignee",
                         "facetable": true,
-                        "order": 5
+                        "order": 5,
+                        "x-openregister-role": "assignee"
                     },
                     "assignedGroup": {
                         "type": "string",

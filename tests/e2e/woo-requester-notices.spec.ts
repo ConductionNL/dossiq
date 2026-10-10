@@ -38,7 +38,10 @@ test.describe('A Woo requester hears from us, or the case says they did not', ()
 	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-no-address-at-all
 	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-the-duty-is-not-recorded-as-met-when-nothing-went-out
 	// @e2e openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#scenario-the-extension-notice-could-not-go-out
-	test('A Woo case with no address never reads as told', async ({ playwright, baseURL }) => {
+	test('A Woo case with no address never reads as told', async ({
+		playwright,
+		baseURL,
+	}) => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
@@ -68,13 +71,21 @@ test.describe('A Woo requester hears from us, or the case says they did not', ()
 
 		// The acknowledgement runs from a queued job: wait for its first attempt.
 		await expect
-			.poll(async () => (await showObject(api, 'case', caseId)).acknowledgementDuty?.status, { timeout: 150_000 })
+			.poll(
+				async () =>
+					(await showObject(api, 'case', caseId)).acknowledgementDuty
+						?.status,
+				{ timeout: 150_000 },
+			)
 			.toMatch(/^(pending|unmet)$/)
 
-		const extend = await api.post(`/index.php/apps/dossiq/api/cases/${caseId}/woo/extend-deadline`, {
-			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
-			data: { reason: 'Veel documenten van derden, zienswijzen nodig' },
-		})
+		const extend = await api.post(
+			`/index.php/apps/dossiq/api/cases/${caseId}/woo/extend-deadline`,
+			{
+				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+				data: { reason: 'Veel documenten van derden, zienswijzen nodig' },
+			},
+		)
 		expect(extend.status(), await extend.text()).toBe(200)
 		const extended = await extend.json()
 		expect(extended.countExtensions).toBe(1)
@@ -83,16 +94,21 @@ test.describe('A Woo requester hears from us, or the case says they did not', ()
 
 		const stored = await showObject(api, 'case', caseId)
 		expect(stored.acknowledgementDuty.status).not.toBe('met')
-		const records = (stored.outboundCommunications ?? []) as Array<Record<string, unknown>>
+		const records = (stored.outboundCommunications ?? []) as Array<
+			Record<string, unknown>
+		>
 		expect(records.length).toBeGreaterThanOrEqual(2)
 		for (const record of records) {
 			expect(record.status).toBe('not-sent')
 			expect(record.messageId).toBeUndefined()
 		}
 
-		const timeline = await api.get(`/index.php/apps/dossiq/api/cases/${caseId}/timeline`, {
-			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
-		})
+		const timeline = await api.get(
+			`/index.php/apps/dossiq/api/cases/${caseId}/timeline`,
+			{
+				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+			},
+		)
 		if (timeline.ok()) {
 			const entries = JSON.stringify(await timeline.json())
 			expect(entries).not.toContain('Ontvangstbevestiging verzonden')
