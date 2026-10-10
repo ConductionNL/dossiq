@@ -30,4 +30,4 @@ Tier: V1. Kind: code. Halves: portaliq `cases-my-cases-page`,
 
 ## 5. Validation
 
-- [ ] 5.1 `openspec validate portal-case-list-declarations --strict`, `npm run lint`, `composer check:strict` once before push.
+- [x] 5.1 (10 Oct, lane L2: validate 0, check:strict ALL PASSED, npm legs all 0; dq-l2-logs/strict-cp1.log, npm-cp1.txt) `openspec validate portal-case-list-declarations --strict`, `npm run lint`, `composer check:strict` once before push.
