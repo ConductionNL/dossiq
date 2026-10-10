@@ -25,10 +25,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
+use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCP\App\IAppManager;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -55,19 +57,23 @@ class TenantOnboardingService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TenantSaasService $tenantSaasService Tenant SaaS service.
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
 	 * @param TenantBillingService $billingService Billing-event emitter.
+	 * @param TenantService $tenantService Creates the tenant's audit anchor before onboarding starts.
+	 * @param OnboardingSteps $steps The onboarding steps, as engine tasks.
+	 * @param IUserSession $userSession The acting user.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
-		private readonly TenantSaasService $tenantSaasService,
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly TenantBillingService $billingService,
+		private readonly TenantService $tenantService,
+		private readonly OnboardingSteps $steps,
+		private readonly IUserSession $userSession,
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
@@ -75,36 +81,44 @@ class TenantOnboardingService {
 	/**
 	 * Fork the default 7-step template into the tenant's onboarding list.
 	 *
-	 * @param string $tenantId Tenant UUID.
+	 * The tenant's audit anchor is made first (decision Q6), and without it no
+	 * step is written: a tenant whose audit entries have nowhere to land must
+	 * not look onboarded. Each step is then one task in OpenRegister's task
+	 * engine (remove-casetask 7.1). A step that is already there is not opened
+	 * twice, so initialising again only fills in what is missing.
 	 *
-	 * @return array<int, array<string, mixed>> Created task rows.
+	 * @param string $tenantId Tenant UUID, which is the Organisation's uuid.
+	 *
+	 * @return array<int, array<string, mixed>> The steps opened by this call.
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function createOnboarding(string $tenantId): array {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
+		if ($this->getObjectService() === null) {
 			$this->logger->info('Dossiq: createOnboarding skipped — OR unavailable');
 			return [];
 		}
 
+		if ($this->tenantService->ensureAuditAnchor(organisationUuid: $tenantId) === false) {
+			$this->logger->error(
+				'Dossiq: onboarding not started, the tenant has no audit anchor',
+				['tenantId' => $tenantId]
+			);
+			return [];
+		}
+
+		$actor = $this->actor();
+		$existing = $this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $actor);
 		$created = [];
 		foreach (self::STEPS as $step) {
-			try {
-				$row = $objectService->saveObject(
-					object: ['tenantRef' => $tenantId, 'step' => $step, 'status' => 'pending'],
-					register: TenantSaasService::REGISTER,
-					schema: 'tenantOnboardingTask',
-					uuid: null
-				);
-				if (is_array($row) === true) {
-					$created[] = $row;
-				}
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: createOnboarding step write failed',
-					['tenantId' => $tenantId, 'step' => $step, 'exception' => $e->getMessage()]
-				);
+			if (array_key_exists($step, $existing) === true) {
+				continue;
+			}
+
+			$uuid = $this->steps->open(tenantId: $tenantId, step: $step, title: $step, status: 'pending', actor: $actor);
+			if ($uuid !== '') {
+				$created[] = ['id' => $uuid, 'tenantRef' => $tenantId, 'step' => $step, 'status' => 'pending'];
 			}
 		}
 
@@ -121,53 +135,11 @@ class TenantOnboardingService {
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
 	 */
 	public function getProgress(string $tenantId): array {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return ['steps' => [], 'completed' => 0, 'total' => count(self::STEPS), 'fraction' => 0.0];
-		}
-
-		try {
-			// ObjectService::findAll() takes a single $config array — the previous
-			// named-argument form threw "Unknown named parameter $register" and
-			// was swallowed by the catch below. Register/schema are read from
-			// inside `filters`.
-			$rows = $objectService->findAll(
-				[
-					'filters' => [
-						'register' => TenantSaasService::REGISTER,
-						'schema' => 'tenantOnboardingTask',
-						'tenantRef' => $tenantId,
-					],
-					'limit' => 100,
-					'offset' => 0,
-				]
-			);
-		} catch (Throwable $e) {
-			$rows = [];
-		}
-
-		if (is_array($rows) === false) {
-			$rows = [];
-		}
-
-		// `findAll()` returns ObjectEntity objects. Indexing one as an array is
-		// an Error, and this loop sits outside the catch above, so the progress
-		// endpoint answered 500 for every tenant that had any step at all.
-		// Each row is read as an array first; a row that carries nothing
-		// readable is dropped rather than counted as a step with no status.
-		$steps = [];
-		foreach ($rows as $row) {
-			$step = $this->rowNormaliser->normalise(row: $row)['data'];
-			if ($step === []) {
-				continue;
-			}
-
-			$steps[] = $step;
-		}
+		$steps = array_values($this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $this->actor()));
 
 		$completed = 0;
 		foreach ($steps as $step) {
-			if ((string)($step['status'] ?? '') === 'completed') {
+			if ($step['status'] === 'completed') {
 				$completed++;
 			}
 		}
@@ -185,13 +157,13 @@ class TenantOnboardingService {
 	}//end getProgress()
 
 	/**
-	 * Mark a step as completed.
+	 * Mark a step as completed, through the engine's completion verb.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param string $step Step name.
+	 * @param string $tenantId    Tenant UUID.
+	 * @param string $step        Step name.
 	 * @param string $completedBy NC user ID who completed it.
 	 *
-	 * @return array<string,mixed>|null Updated task row.
+	 * @return array<string,mixed>|null The step after completion, or null when there is no such step or the engine refused.
 	 *
 	 * @throws InvalidArgumentException On invalid step.
 	 *
@@ -202,67 +174,123 @@ class TenantOnboardingService {
 			throw new InvalidArgumentException('Unknown onboarding step: ' . $step);
 		}
 
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
+		$current = ($this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $completedBy)[$step] ?? null);
+		if ($current === null) {
 			return null;
 		}
 
+		if ($this->steps->complete(taskId: $current['id'], actor: $completedBy) === false) {
+			return null;
+		}
+
+		return ($this->steps->forTenant(tenantId: $tenantId, actor: $completedBy)[$step] ?? null);
+	}//end markStepComplete()
+
+	/**
+	 * The tenant's steps on the engine, moving its legacy rows there first.
+	 *
+	 * Before remove-casetask 7.1 a step was a `tenantOnboardingTask` object.
+	 * A tenant whose steps are still only those rows gets them moved onto the
+	 * engine the first time an admin reads or changes its onboarding, with the
+	 * status mapped by decision 144 (`skipped` becomes terminated with the
+	 * outcome skipped) and the row's uuid, completedBy, completedAt and
+	 * blockedReason kept in the task's metadata, because the engine sets
+	 * those through its verbs and does not accept them as assertions. The
+	 * rows stay as they were written. A tenant with engine steps is never
+	 * touched again, so this runs once per tenant.
+	 *
+	 * @param string $tenantId The Organisation's uuid.
+	 * @param string $actor    The admin acting.
+	 *
+	 * @return array<string, array<string, string>> The steps, keyed by step.
+	 */
+	private function stepsCarryingLegacyRows(string $tenantId, string $actor): array {
+		$steps = $this->steps->forTenant(tenantId: $tenantId, actor: $actor);
+		if ($steps !== []) {
+			return $steps;
+		}
+
+		$carried = 0;
+		foreach ($this->legacyRows(tenantId: $tenantId) as $row) {
+			$step = (string) ($row['data']['step'] ?? '');
+			$status = (string) ($row['data']['status'] ?? 'pending');
+			if (in_array($step, self::STEPS, true) === false) {
+				continue;
+			}
+
+			$metadata = ['onboardingRow' => $row['uuid']];
+			foreach (['completedBy', 'completedAt', 'blockedReason'] as $field) {
+				if ((string) ($row['data'][$field] ?? '') !== '') {
+					$metadata[$field] = (string) $row['data'][$field];
+				}
+			}
+
+			if ($this->steps->open(tenantId: $tenantId, step: $step, title: $step, status: $status, actor: $actor, metadata: $metadata) !== '') {
+				$carried++;
+			}
+		}
+
+		if ($carried === 0) {
+			return [];
+		}
+
+		return $this->steps->forTenant(tenantId: $tenantId, actor: $actor);
+	}//end stepsCarryingLegacyRows()
+
+	/**
+	 * The tenant's legacy `tenantOnboardingTask` rows, each as uuid and data.
+	 *
+	 * @param string $tenantId The Organisation's uuid.
+	 *
+	 * @return array<int, array{uuid: string, data: array<string, mixed>}> The rows.
+	 */
+	private function legacyRows(string $tenantId): array {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
+
 		try {
-			// ObjectService::findAll() takes a single $config array — see the
-			// note in getProgress(); register/schema live inside `filters`.
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantOnboardingTask',
 						'tenantRef' => $tenantId,
-						'step' => $step,
 					],
-					'limit' => 1,
+					'limit' => 100,
 					'offset' => 0,
 				]
 			);
-			if (is_array($rows) === false || count($rows) === 0) {
-				return null;
-			}
-
-			// `findAll()` returns ObjectEntity objects, so this used to assign
-			// into an object, throw, and be caught below as "step not found" —
-			// no step could ever be completed. The row is read as an array
-			// first, and its uuid comes off the row itself, so the step is
-			// written back in place instead of creating a second task.
-			$row = $this->rowNormaliser->normalise(row: $rows[0]);
-			$task = $row['data'];
-			if ($task === []) {
-				return null;
-			}
-
-			$task['status'] = 'completed';
-			$task['completedBy'] = $completedBy;
-			$task['completedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
-
-			$uuid = $row['uuid'];
-			$uuidArg = null;
-			if ($uuid !== '') {
-				$uuidArg = $uuid;
-			}
-
-			$row = $objectService->saveObject(
-				object: $task,
-				register: TenantSaasService::REGISTER,
-				schema: 'tenantOnboardingTask',
-				uuid: $uuidArg
-			);
-			if (is_array($row) === true) {
-				return $row;
-			}
-
-			return $task;
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: markStepComplete failed', ['exception' => $e->getMessage()]);
-			return null;
-		}//end try
-	}//end markStepComplete()
+			$this->logger->warning('Dossiq: could not read the legacy onboarding rows', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
+			return [];
+		}
+
+		$out = [];
+		foreach ((array) $rows as $row) {
+			$normalised = $this->rowNormaliser->normalise(row: $row);
+			if ($normalised['data'] !== [] && (string) ($normalised['data']['tenantRef'] ?? '') === $tenantId) {
+				$out[] = $normalised;
+			}
+		}
+
+		return $out;
+	}//end legacyRows()
+
+	/**
+	 * The signed-in user, or `admin` for a call without a session.
+	 *
+	 * @return string The acting uid.
+	 */
+	private function actor(): string {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return 'admin';
+		}
+
+		return $user->getUID();
+	}//end actor()
 
 	/**
 	 * Validate that the tenant is ready to go live.
@@ -303,13 +331,19 @@ class TenantOnboardingService {
 	}//end validateGoLive()
 
 	/**
-	 * Trigger the activation flow when go-live validates.
+	 * Complete go-live when it validates.
+	 *
+	 * Writes no tenant status (task 6.8). The Organisation is `active` from the
+	 * start (decision 2f) and OpenRegister's TenantLifecycleService governs its
+	 * status; the onboarding steps are dossiq's own state. What go-live still
+	 * does here is emit the first billing line.
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array{activated: bool, missing?: array<int, string>}
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function activate(string $tenantId): array {
 		$check = $this->validateGoLive(tenantId: $tenantId);
@@ -317,17 +351,10 @@ class TenantOnboardingService {
 			return ['activated' => false, 'missing' => $check['missing']];
 		}
 
-		try {
-			$tenant = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: activation transition failed', ['exception' => $e->getMessage()]);
-			return ['activated' => false, 'missing' => ['transition_failed']];
-		}
-
 		// Go-live emits the first billing line (the tier subscription). Without
 		// a real usage event no invoice ever has a non-zero amount — this is
 		// the wiring the metered-billing pipeline lacked (procest#223 finding 2).
-		$tier = (string)($tenant['tier'] ?? 'basic');
+		$tier = $this->tierOf(tenantId: $tenantId);
 		$unitPrice = $this->billingService->tierMonthlyPrice(tier: $tier);
 		$this->billingService->emitEvent(
 			tenantId: $tenantId,
@@ -339,6 +366,38 @@ class TenantOnboardingService {
 
 		return ['activated' => true];
 	}//end activate()
+
+	/**
+	 * The tenant's subscription tier, read, never written.
+	 *
+	 * A migrated tenant's tier is on its stored tenant object, the read-only
+	 * audit anchor. A tenant onboarded after the migration has an anchor
+	 * without one and bills at `basic` until its tier is set (decision 2a puts
+	 * the tier on `tenantConfiguration`).
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return string The tier.
+	 */
+	private function tierOf(string $tenantId): string {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return 'basic';
+		}
+
+		try {
+			$anchor = $objectService->find($tenantId, register: Application::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			return 'basic';
+		}
+
+		$tier = (string)($this->rowNormaliser->normalise(row: $anchor)['data']['tier'] ?? '');
+		if ($tier === '') {
+			return 'basic';
+		}
+
+		return $tier;
+	}//end tierOf()
 
 	/**
 	 * Count rows in a schema with a filter.
@@ -357,7 +416,7 @@ class TenantOnboardingService {
 				[
 					'filters' => array_merge(
 						[
-							'register' => TenantSaasService::REGISTER,
+							'register' => Application::REGISTER_SLUG,
 							'schema' => $schema,
 						],
 						$filters

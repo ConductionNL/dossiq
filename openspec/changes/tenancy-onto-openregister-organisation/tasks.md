@@ -70,7 +70,7 @@ Build rules: `openspec/woo-build-rules.md`.
   every app's routes fleet-wide. If the unguarded routes later matter, that is
   the change to make, and it belongs upstream in OpenRegister rather than in a
   second dossiq middleware.
-- [ ] 5 **Remove the surface.** The `Tenants` and `TenantDetail` pages are
+- [x] 5 (the `Tenants` and `TenantDetail` pages, the `TenantsMenu` entry, the tenant deep link and both menu layouts' waivers are gone; `NoRetiredTenantStoreTest::testNoManifestPageOrMenuNamesTheTenantsRoute`. The DqTenant board draws an organisation page over the Organisation and its satellites: that is a new page, owed as a follow-up, not these schema-bound ones) **Remove the surface.** The `Tenants` and `TenantDetail` pages are
   both still in `src/manifest.json`. They go once the store they administer is
   gone, not before.
   Runs after task 6.9. Remove `Tenants`, `TenantDetail` and the `TenantsMenu`
@@ -475,7 +475,7 @@ and seen red; note the failure line in the PR body.
     `testTheDryRunReportsTheCollisionsTheRealRunWouldRefuse`. Drive both
     through the command's `execute()`, with `TenantMigrationService` real and
     the two OpenRegister seams doubled after reading their real signatures.
-- [ ] 6.2 Add `lib/Repair/MigrateTenantsToOrganisations.php`, registered under
+- [x] 6.2 (dossiq#3486 built the step; the anchor clause in this PR: `anchorMemberOrganisations()`, pinned by `tests/Unit/Repair/MigrateTenantsToOrganisationsTest.php` `testAMemberOrganisationWithoutAnAnchorGetsOne` and `testAfterTheRealRunEverySatelliteRowResolves`) Add `lib/Repair/MigrateTenantsToOrganisations.php`, registered under
   `<post-migration>` in `appinfo/info.xml`. It runs
   `TenantMigrationService::migrate()` on every upgrade and reports
   `unmigrated`: the number of stored tenants with no Organisation of the same
@@ -492,7 +492,7 @@ and seen red; note the failure line in the PR body.
     `TenantMigrationService`, and `testAMemberOrganisationWithoutAnAnchorGetsOne`.
   - Through the caller: `testTheMigrationStepIsRegistered`, reading
     `appinfo/info.xml`.
-- [ ] 6.3 Held for a person, and a build session stops here: run
+- [x] 6.3 (run on a throwaway Nextcloud 34 + Postgres instance with demo data and posted on https://github.com/ConductionNL/dossiq/issues/3466#issuecomment-6095883350: 3 tenants, would migrate 3, collisions 0, refused 0, failed 0; 15 satellite orphans, all pointing at the 3 tenants without an Organisation yet, which the real run resolves) Held for a person, and a build session stops here: run
   `occ dossiq:migrate-tenants --dry-run` on the dev instance, read the
   collision and orphan report, and paste the output into this change's issue
   (REQ-TOO-001). Evidence: the pasted output.
@@ -506,7 +506,7 @@ and seen red; note the failure line in the PR body.
 
 ### The schema, the resolver and the store
 
-- [ ] 6.5 Keep the `tenant` schema as the read-only audit anchor (decision Q4).
+- [x] 6.5 (`tests/Unit/Settings/NoPropertyRefsTheTenantSchemaTest.php`, `AutomaticActionFlowMigratorTest::testAnActionWhoseTenantIdIsAnOrganisationUuidStillMigrates`, `MandateValidationMiddlewareTest::testAMandateDecisionForAMigratedTenantStillAnchorsToItsTenantObject`; register 0.20.22, tenant schema 1.1.0) Keep the `tenant` schema as the read-only audit anchor (decision Q4).
   Re-point `automaticAction.tenantId` and `tenantOnboardingTask.tenantRef` from
   `$ref: tenant` to `$ref: nc-organisation` in both
   `lib/Settings/dossiq_register.json` and `lib/Settings/dossiq_mock_register.json`,
@@ -526,7 +526,7 @@ and seen red; note the failure line in the PR body.
     `testAMandateDecisionForAMigratedTenantStillAnchorsToItsTenantObject`,
     built on the real `TenantAuditTrailService` with `TenantSaasService` absent
     from the container.
-- [ ] 6.6 Remove the legacy fallback in `TenantOrganisationResolver::resolve()`.
+- [x] 6.6 (`TenantOrganisationResolverTest::testATenantIdWithNoOrganisationResolvesToNothing`, `OrganisationQuotaLimitsTest::testAQuotaForATenantWithNoOrganisationHasNoLimitFromTheLegacyStore`) Remove the legacy fallback in `TenantOrganisationResolver::resolve()`.
   A tenant id with no Organisation resolves to `null`, and `TenantSaasService`
   is no longer injected (REQ-TOO-003).
   - **fails today**: `tests/Unit/Service/TenantOrganisationResolverTest.php`
@@ -535,7 +535,7 @@ and seen red; note the failure line in the PR body.
   - Through the caller: `tests/Unit/Service/OrganisationQuotaLimitsTest.php`
     `testAQuotaForATenantWithNoOrganisationHasNoLimitFromTheLegacyStore`,
     built on the real resolver.
-- [ ] 6.7 Move the register slug constant off `TenantSaasService`. Its eight
+- [x] 6.7 (`Application::REGISTER_SLUG`; no shared register constant existed, so it was added beside `APP_ID`; `NoRetiredTenantStoreTest::testNoClassUnderLibNamesTenantSaasService`) Move the register slug constant off `TenantSaasService`. Its eight
   readers (`ResetMonthlyQuotasJob`, `LinkInFlightContractDecisionsRepair`,
   `LinkInFlightRemainingDecisionsRepair`, `TenantOnboardingService`,
   `TenantBillingService`, `TenantConfigurationService`, `TenantQuotaService`,
@@ -544,14 +544,14 @@ and seen red; note the failure line in the PR body.
   - **fails today**: `NoRetiredTenantStoreTest`
     `testNoClassUnderLibNamesTenantSaasService`. The existing suites of the
     eight classes stay green.
-- [ ] 6.8 `TenantOnboardingService::activate()` stops writing a tenant status.
+- [x] 6.8 (`TenantOnboardingServiceTest::testActivateWritesNoTenantStatus`, `TenantOnboardingControllerTest::testActivatingAfterGoLiveAnswersOkWithoutAStatusWrite`) `TenantOnboardingService::activate()` stops writing a tenant status.
   The Organisation is `active` from the start (decision 2f), and the completed
   onboarding steps are dossiq's onboarding state (REQ-TOO-004).
   - **fails today**: `tests/Unit/Service/TenantOnboardingServiceTest.php`
     `testActivateWritesNoTenantStatus`.
   - Through the caller: `TenantOnboardingController` `activate` route test
     `testActivatingAfterGoLiveAnswersOkWithoutAStatusWrite`.
-- [ ] 6.9 Retire `TenantSaasService`, `TenantSaasController`, the `tenantSaas#*`
+- [x] 6.9 (`NoRetiredTenantStoreTest`; the status-change audit row and the unsettled billing count moved to `OrganisationStatusChangeListener` on OpenRegister's `OrganisationUpdatedEvent`, and the two billing routes to `TenantBillingController` at the same URLs, both with their own unit test) Retire `TenantSaasService`, `TenantSaasController`, the `tenantSaas#*`
   routes in `appinfo/routes.php`, their tests, and the `/api/saas/tenants` paths
   in `docs/openapi/tenant-saas.yaml`. Its `LIFECYCLE_TRANSITIONS` goes with it:
   OpenRegister's `TenantLifecycleService::STATE_TRANSITIONS` governs the
@@ -561,7 +561,7 @@ and seen red; note the failure line in the PR body.
     `testNoRouteNamesTheTenantSaasController` and
     `testOnlyTheAnchorCreationWritesATenantObjectAndNothingDeletesOne`. The hydra route-reachability gate
     must show no dangling route.
-- [ ] 6.10 `src/views/settings/tabs/TenantOnboardingTab.vue` lists tenants from
+- [x] 6.10 (`tests/vitest/TenantOnboardingTab.spec.js` `lists organisations from openregister`) `src/views/settings/tabs/TenantOnboardingTab.vue` lists tenants from
   OpenRegister's `GET /apps/openregister/api/organisations` instead of
   `/apps/dossiq/api/saas/tenants`. Its onboarding calls stay until
   `remove-casetask` task 7.1 lands (REQ-TOO-004).
@@ -571,7 +571,7 @@ and seen red; note the failure line in the PR body.
 
 ### The audit anchor (decision Q6)
 
-- [ ] 6.15 Add `TenantService::ensureAuditAnchor(string $organisationUuid): bool`.
+- [x] 6.15 (`TenantOnboardingControllerTest::testInitialisingOnboardingForANewOrganisationCreatesItsAnchor`, `::testASecondInitialiseCreatesNoSecondAnchor`, `tests/Unit/Service/TenantServiceTest.php`) Add `TenantService::ensureAuditAnchor(string $organisationUuid): bool`.
   It creates, once, a tenant object whose uuid is the Organisation's, with
   `slug`, `displayName` and `createdAt` from the Organisation, and answers true
   when the anchor exists afterwards. It never updates or deletes one.
@@ -585,7 +585,7 @@ and seen red; note the failure line in the PR body.
     `TenantOnboardingService` and `TenantService`.
   - When `remove-casetask` task 7.1 moves onboarding onto the engine `Task`,
     this call moves with it. Say so in a comment at the call.
-- [ ] 6.16 `TenantAuditTrailService::emit()` anchors a new tenant's entries on
+- [x] 6.16 (`MandateValidationMiddlewareTest::testAMandateDecisionForANewTenantAnchorsOnItsOnboardingAnchor`, `TenantAuditTrailServiceTest::testAnEntryForATenantWithNoAnchorIsNotPersistedAndLogged`; the middleware now hands each decision to the audit writer) `TenantAuditTrailService::emit()` anchors a new tenant's entries on
   the anchor of 6.15, and keeps its fail-closed path: no anchor means no row,
   an error log and `persisted: false` (REQ-TOO-006).
   - **fails today**, through the caller:
@@ -597,7 +597,7 @@ and seen red; note the failure line in the PR body.
 
 ### Close out
 
-- [ ] 6.11 Update `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`
+- [x] 6.11 (gate 23 on this branch: `TenantOrganisationResolver.php`, `TenantMigrationService.php` and `TenantBillingController.php` printed as suppressed for rule 4; the only finding left is the two onboarding files, which `remove-casetask` 7.1 owns) Update `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`
   for this change: add `lib/Service/TenantOrganisationResolver.php` under
   "Already consuming OpenRegister" with `(gate 23 rules: 4)`; add
   `lib/Service/TenantMigrationService.php` with `(gate 23 rules: 4)` under a

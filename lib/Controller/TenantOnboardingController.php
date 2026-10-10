@@ -130,15 +130,26 @@ class TenantOnboardingController extends Controller {
 	/**
 	 * POST /api/saas/tenants/{tenantId}/onboarding/initialise
 	 *
+	 * Answers 409 when no step was written: OpenRegister is unavailable, or the
+	 * Organisation has no audit anchor and none could be made.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function initialise(string $tenantId): JSONResponse {
 		$rows = $this->onboarding->createOnboarding($tenantId);
+		if ($rows === []) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'Onboarding could not start for this organisation'],
+				Http::STATUS_CONFLICT
+			);
+		}
+
 		return new JSONResponse(['success' => true, 'tasks' => $rows]);
 	}//end initialise()
 }//end class

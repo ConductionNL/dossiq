@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.23"
+        "version": "0.20.24"
     },
     "x-openregister": {
         "type": "application",
@@ -5244,7 +5244,7 @@
                     "tenantId": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
+                        "$ref": "nc-organisation",
                         "description": "Owning tenant: cross-tenant resolution is rejected by the registry",
                         "title": "Tenant ID"
                     },
@@ -8601,18 +8601,17 @@
             "tenant": {
                 "slug": "tenant",
                 "icon": "OfficeBuildingOutline",
-                "version": "1.0.1",
+                "version": "1.1.1",
                 "deprecated": true,
-                "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantContext and MandateValidationMiddleware consume them directly. Run `occ dossiq:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
+                "searchable": false,
+                "deprecationNote": "Retired as the tenant admin store (ADR-022, consume-or-tenant-fleet-wide): identity, lifecycle status and quotas live on OpenRegister's Organisation, and `occ dossiq:migrate-tenants` plus the MigrateTenantsToOrganisations repair step project the legacy rows onto Organisations. The schema stays as the read-only anchor of the tenant audit trail. The only write left is creating an anchor; nothing updates or deletes a tenant object.",
                 "x-schema-org": "schema:Organization",
                 "title": "Tenant",
-                "description": "DEPRECATED (migrate-tenant-to-or-tenant): legacy SaaS tenant record. Tenant identity now lives on OpenRegister's Organisation entity; this schema is retained only so pre-migration rows remain readable until sunset. Originally: a single municipality / customer of the dossiq platform, carrying lifecycle status, tier, and isolation mode.",
+                "description": "The read-only anchor of the tenant audit trail. Tenant identity, status and quotas live on OpenRegister's Organisation, and every tenant uuid is the uuid of its Organisation. A tenant object stays only so that every tenant audit entry has an object to hang on (decision Q4): dossiq creates one, once, when onboarding starts for an Organisation, and never updates or deletes one (decision Q6).",
                 "type": "object",
                 "required": [
                     "slug",
-                    "displayName",
-                    "status",
-                    "tier"
+                    "displayName"
                 ],
                 "properties": {
                     "slug": {
@@ -11188,10 +11187,10 @@
             "tenantOnboardingTask": {
                 "slug": "tenantOnboardingTask",
                 "icon": "CheckboxMarkedCircleOutline",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "title": "Tenant Onboarding Task",
-                "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
+                "description": "Frozen record of a tenant onboarding step as it was before the steps moved onto OpenRegister's task engine (remove-casetask task 7.1). New steps are engine tasks; a tenant's rows here are carried onto the engine the first time an admin opens its onboarding, and are kept as written.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -11202,8 +11201,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "The OpenRegister Organisation this step belongs to. Its uuid is the tenant uuid.",
                         "title": "Tenant Reference"
                     },
                     "step": {

@@ -26,8 +26,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\Controller\TenantSaasController;
-use OCA\Dossiq\Service\TenantSaasService;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -60,7 +58,6 @@ class TenantRoutesTest extends TestCase {
 
 		self::assertNotSame([], $tenantRoutes, 'no tenant route was found, so the assertion below proves nothing');
 		self::assertSame([], $deleting, 'a tenant route uses DELETE (REQ-TIS-003)');
-		self::assertFalse(method_exists(TenantSaasController::class, 'destroy'), 'TenantSaasController::destroy() must be gone');
-		self::assertFalse(method_exists(TenantSaasService::class, 'delete'), 'TenantSaasService::delete() must be gone');
+		self::assertFileDoesNotExist(__DIR__.'/../../../lib/Controller/TenantSaasController.php', 'the tenant admin store retired with its delete');
 	}//end testNoRouteDeletesATenant()
 }//end class

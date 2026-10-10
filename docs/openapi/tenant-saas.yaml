@@ -2,8 +2,10 @@ openapi: 3.0.0
 info:
   title: Dossiq Tenant SaaS API
   description: |
-    Tenant SaaS chain (tenant-zaaksysteem-saas-01..12) endpoints — CRUD,
-    onboarding, configuration, quotas, billing, lifecycle. All endpoints are
+    Tenant SaaS chain (tenant-zaaksysteem-saas-01..12) endpoints: onboarding,
+    configuration, quotas, billing. The tenant itself is an OpenRegister
+    Organisation, created, listed and moved through OpenRegister's organisation
+    endpoints, so the former tenant CRUD paths are gone. All endpoints are
     admin-only (#[AuthorizedAdminSetting]) unless documented otherwise.
   version: '0.1.0'
 servers:
@@ -26,19 +28,6 @@ components:
           example: false
         error:
           type: string
-    Tenant:
-      type: object
-      required: [slug, displayName, status, tier]
-      properties:
-        slug: { type: string, maxLength: 64 }
-        displayName: { type: string, maxLength: 255 }
-        legalName: { type: string }
-        kvkNumber: { type: string }
-        status: { type: string, enum: [onboarding, active, suspended, terminated] }
-        tier: { type: string, enum: [basic, standard, enterprise] }
-        createdAt: { type: string, format: date-time }
-        activatedAt: { type: string, format: date-time }
-        terminatedAt: { type: string, format: date-time }
     OnboardingProgress:
       type: object
       properties:
@@ -58,78 +47,6 @@ security:
   - bearerAuth: []
 
 paths:
-  /api/saas/tenants:
-    get:
-      summary: List tenants (admin)
-      parameters:
-        - in: query
-          name: status
-          schema: { type: string, enum: [onboarding, active, suspended, terminated] }
-        - in: query
-          name: limit
-          schema: { type: integer, default: 100 }
-        - in: query
-          name: offset
-          schema: { type: integer, default: 0 }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  results:
-                    type: array
-                    items: { $ref: '#/components/schemas/Tenant' }
-        '401': { description: Unauthorised, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-        '403': { description: Forbidden (not admin), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-    post:
-      summary: Create a tenant (admin)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, kvkNumber, tier]
-              properties:
-                name: { type: string }
-                kvkNumber: { type: string }
-                tier: { type: string, enum: [basic, standard, enterprise] }
-      responses:
-        '201': { description: Created }
-        '400': { description: Missing required field, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-        '409': { description: Duplicate slug or invalid tier, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
-
-  /api/saas/tenants/{tenantId}:
-    parameters:
-      - in: path
-        name: tenantId
-        required: true
-        schema: { type: string }
-    get:
-      summary: Show a tenant (admin)
-      responses:
-        '200': { description: OK }
-        '404': { description: Not found }
-    patch:
-      summary: Update a tenant's status (admin)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [status]
-              properties:
-                status: { type: string, enum: [active, suspended, terminated] }
-      responses:
-        '200': { description: OK }
-        '404': { description: Tenant not found }
-        '409': { description: Illegal lifecycle transition }
-
   /api/saas/tenants/{tenantId}/onboarding/progress:
     parameters:
       - in: path

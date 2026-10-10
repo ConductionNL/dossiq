@@ -37,7 +37,6 @@ namespace OCA\Dossiq\Tests\Support;
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantOrganisationResolver;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCA\Dossiq\Service\TenantSessionService;
 use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
@@ -131,13 +130,10 @@ trait MakesActiveOrganisationContext {
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('getInstalledApps')->willReturn($installed);
 
-		$legacy = $this->createMock(TenantSaasService::class);
-		$legacy->method('getById')->willReturn(null);
 
 		$resolver = new TenantOrganisationResolver(
 			appManager: $appManager,
 			container: $container,
-			tenantSaas: $legacy,
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

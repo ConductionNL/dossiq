@@ -44,10 +44,20 @@ interface QuotaLimitMapperStub {
 	 * @return Organisation The organisation.
 	 */
 	public function update(Organisation $organisation): Organisation;
+
+	/**
+	 * Find one Organisation by uuid, as the real mapper does: it throws when there is none.
+	 *
+	 * @param string $uuid The uuid.
+	 *
+	 * @return Organisation The organisation.
+	 */
+	public function findByUuid(string $uuid): Organisation;
 }
 
 /**
  * @covers \OCA\Dossiq\Service\OrganisationQuotaLimits
+ * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
  */
 class OrganisationQuotaLimitsTest extends TestCase {
 	/**
@@ -224,6 +234,33 @@ class OrganisationQuotaLimitsTest extends TestCase {
 		$this->assertNull($limits->read(tenantId: 'ghost', quotaType: 'api_calls_per_hour'));
 		$this->assertFalse($limits->write(tenantId: 'ghost', quotaType: 'api_calls_per_hour', limit: 10));
 		$this->assertSame([], $this->updated);
+	}
+
+	/**
+	 * Through the real resolver, a tenant with no Organisation has no limit, and no legacy store answers (REQ-TOO-003).
+	 *
+	 * @return void
+	 */
+	public function testAQuotaForATenantWithNoOrganisationHasNoLimitFromTheLegacyStore(): void {
+		$mapper = $this->createMock(QuotaLimitMapperStub::class);
+		$mapper->method('findByUuid')->willThrowException(new \RuntimeException('no such organisation'));
+
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('getInstalledApps')->willReturn(['openregister']);
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($mapper);
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$limits = new OrganisationQuotaLimits(
+			appManager: $appManager,
+			container: $container,
+			organisations: new TenantOrganisationResolver(appManager: $appManager, container: $container, logger: $logger),
+			logger: $logger,
+		);
+
+		$this->assertNull($limits->read(tenantId: 'not-migrated', quotaType: 'storage_gb'));
+		$this->assertFalse($limits->write(tenantId: 'not-migrated', quotaType: 'storage_gb', limit: 5));
 	}
 
 	/**

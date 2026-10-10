@@ -336,15 +336,6 @@
 			"order": 92
 		},
 		{
-			"id": "TenantsMenu",
-			"label": "Organisations",
-			"icon": "OfficeBuildingOutline",
-			"route": "Tenants",
-			"section": "settings",
-			"order": 98,
-			"permission": "admin"
-		},
-		{
 			"id": "WmsLayersMenu",
 			"label": "Map layers",
 			"icon": "LayersOutline",
@@ -5072,51 +5063,6 @@
 			}
 		},
 		{
-			"id": "Tenants",
-			"route": "/settings/tenants",
-			"type": "index",
-			"title": "Tenants",
-			"permission": "admin",
-			"_note": "`TenantsMenu` has always declared `permission: \"admin\"`, so the nav entry was already hidden from an ordinary account. The PAGE declared nothing, and until the router guard in main.js there was nothing to declare it to — so the entry was hidden and the route rendered. The two declarations are the same claim and have to agree.",
-			"config": {
-				"register": "dossiq",
-				"schema": "tenant",
-				"columns": [
-					"displayName",
-					"slug",
-					"legalName",
-					"kvkNumber",
-					"status",
-					"tier"
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "provision",
-						"label": "Provision",
-						"icon": "Plus",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
-					},
-					{
-						"id": "view",
-						"label": "View usage",
-						"icon": "EyeOutline",
-						"permission": "admin",
-						"handler": "navigate",
-						"route": "TenantDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
 			"id": "WmsLayers",
 			"route": "/settings/wms-layers",
 			"type": "index",
@@ -5324,86 +5270,6 @@
 									"type": "audit"
 								}
 							]
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "TenantDetail",
-			"route": "/settings/tenants/:id",
-			"type": "detail",
-			"title": "Tenant",
-			"permission": "admin",
-			"config": {
-				"register": "dossiq",
-				"schema": "tenant",
-				"_note": "CONFIG/TECHNICAL archetype (multi-tenant provisioning record — legacy, superseded by OR Organisation). Admin-only, no comms. The Data widget carries identity + provisioning clock (slug, displayName, legalName, kvkNumber, tier, createdAt, activatedAt, terminatedAt). contractRef, isolationMode and dataResidency were dropped: none had a reader, isolationMode was a pure function of tier and dataResidency a hardcoded constant. The Provision + Refresh-usage admin actions are preserved as page actions, and lifecycleActions drive the status (onboarding → active → suspended → terminated). No object-lists or content leaves — a legacy provisioning record carries none. Audit history (provisioning events) is a sidebar tab.",
-				"actions": [
-					{
-						"id": "provision",
-						"label": "Provision",
-						"icon": "Plus",
-						"permission": "admin",
-						"primary": true,
-						"handler": "emit",
-						"type": "handler"
-					},
-					{
-						"id": "refresh-usage",
-						"label": "Refresh usage",
-						"icon": "Refresh",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
-					}
-				],
-				"documentationUrl": "https://dossiq.conduction.nl",
-				"widgets": [
-					{
-						"id": "tenant-data",
-						"type": "data",
-						"title": "Tenant",
-						"icon": "OfficeBuilding",
-						"content": {
-							"title": "Tenant",
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "tenant-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
-					}
-				],
-				"lifecycleActions": {
-					"field": "status"
-				},
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
 						}
 					]
 				}
@@ -8131,12 +7997,6 @@
 			"schemaSlug": "wmsLayer",
 			"urlTemplate": "/apps/dossiq/settings/wms-layers/{uuid}",
 			"displayName": "Map layer"
-		},
-		{
-			"registerSlug": "dossiq",
-			"schemaSlug": "tenant",
-			"urlTemplate": "/apps/dossiq/settings/tenants/{uuid}",
-			"displayName": "Tenant"
 		},
 		{
 			"registerSlug": "dossiq",
