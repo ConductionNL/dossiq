@@ -2,7 +2,7 @@
   "_meta": {
     "spdx-license": "EUPL-1.2",
     "spdx-copyright": "2026 Conduction B.V.",
-    "description": "Mandate matrix schemas, plus two organisatieRol rows (parties-on-the-case task 3.2) so the Team picker on a case and a task, and the Team facet on both indexes, have something to show on a fresh instance. Without them the field renders an empty picker, which reads exactly like a broken reference rather than an instance that has no teams yet. The e2e seeds its own rows and does not read these."
+    "description": "Mandate matrix schemas, plus two example organisatieRol rows (parties-on-the-case task 3.2). Since one-team-model a case's team is a Nextcloud group and the Team picker lists groups, so these rows no longer feed it; they stay as examples of a role. They carry no ncGroupId on purpose: no group of that name is provisioned, and a binding to a group that does not exist is exactly what occ dossiq:teams:migrate reports as unmapped."
   },
   "components": {
     "registers": {
@@ -77,7 +77,7 @@
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
-        "version": "1.2.1",
+        "version": "1.3.0",
         "searchable": false,
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
@@ -93,6 +93,7 @@
           "parentRoleId":     {"type": "string", "title": "Parent Role ID", "description": "Hierarchical parent OrganisatieRol id"},
           "department":        {"type": "string", "title": "Department", "description": "Department to which this role belongs.", "facetable": true, "maxLength": 255},
           "team":            {"type": "string", "title": "Team", "description": "Team to which this role belongs.", "maxLength": 255},
+          "ncGroupId":       {"type": "string", "referenceType": "nextcloud-group", "title": "Nextcloud group", "description": "The Nextcloud group this role belongs to. Cases of this role move to this group. Leave it empty and nothing is guessed.", "maxLength": 255},
           "mandateLevel":    {"type": "integer", "title": "Mandate Level", "description": "Numeric tier: used for next-higher resolution"},
           "publicName":      {"type": "string", "title": "Public name", "description": "What a resident may be told this team is called, for example Team Vergunningen. Leave it empty and the resident is told no team at all, which is better than a name they cannot place. The team's own name stays internal, because it may name a person or a code.", "inputControl": "text"}
         }
