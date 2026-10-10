@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCP\IUserSession;
 /**
  * Accept or decline a followed term move.
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+ * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
 class CaseTermFollowController extends Controller {
 	/**
@@ -93,7 +93,7 @@ class CaseTermFollowController extends Controller {
 	 *
 	 * @return JSONResponse The recorded term event, or the rule that refused it.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	#[NoAdminRequired]
 	public function accept(string $caseId, string $taskId): JSONResponse {
@@ -126,7 +126,7 @@ class CaseTermFollowController extends Controller {
 	 *
 	 * @return JSONResponse Whether the offer was closed.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	#[NoAdminRequired]
 	public function decline(string $caseId, string $taskId): JSONResponse {

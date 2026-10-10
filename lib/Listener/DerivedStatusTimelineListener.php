@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class DerivedStatusTimelineListener implements IEventListener {
 
@@ -89,7 +89,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectUpdatedEvent === false) {

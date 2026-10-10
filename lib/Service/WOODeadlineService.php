@@ -211,7 +211,8 @@ class WOODeadlineService {
 			'extensionReason' => $reason,
 			'countExtensions' => (int)($term['countExtensions'] ?? 0),
 			'extensionCount' => (int)($term['countExtensions'] ?? 0),
-		];
+			'termInstanceId' => (string)($term['id'] ?? ''),
+		] + (array)($extended['notice'] ?? []);
 	}//end extendDeadline()
 
 	/**

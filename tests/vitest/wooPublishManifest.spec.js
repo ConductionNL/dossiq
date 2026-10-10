@@ -9,7 +9,7 @@
  * `wooPublicationStatus`, and use icons the app registers, because a button
  * that 404s or renders without its icon looks fine in a manifest.
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
  */
 
 import fs from 'fs'
