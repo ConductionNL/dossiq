@@ -1,6 +1,7 @@
 OC.L10N.register(
     "dossiq",
     {
+        "How the team is doing": "Hoe het team ervoor staat",
         "\"{doc}\" is {class} but has no weigeringsgrond selected.": "\"{doc}\" is {class} maar heeft geen weigeringsgrond geselecteerd.",
         "#": "#",
         "%n case selected": "%n zaak geselecteerd",
@@ -3976,6 +3977,7 @@ OC.L10N.register(
         "Minutes Document": "Verslagdocument",
         "Minutes Summary": "Samenvatting van het verslag",
         "Minutes Summary (Verslag)": "Samenvatting notulen (Verslag)",
+        "met their deadline": "haalden hun termijn, naar doorlooptijd",
         "missing": "ontbreekt",
         "Missing fields": "Ontbrekende velden",
         "Missing required fields: {fields}": "Ontbrekende verplichte velden: {fields}",

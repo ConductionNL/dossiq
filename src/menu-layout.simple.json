@@ -1170,7 +1170,54 @@
 				]
 			},
 			"configPatch": {
+				"description": "How the team is doing",
 				"widgets": {
+					"kpi-overdue": {
+						"title": "Late",
+						"content": {
+							"label": "Late",
+							"caption": "action needed",
+							"route": {
+								"name": "Cases",
+								"query": {
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
+									"deadline[lt]": "@today"
+								}
+							},
+							"icon": "AlertCircleOutline",
+							"variant": "error",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "overdueCount"
+						}
+					},
+					"kpi-sla-compliance": {
+						"title": "Within deadline",
+						"content": {
+							"label": "Within deadline",
+							"caption": "met their deadline",
+							"icon": "ChartLine",
+							"route": {
+								"name": "Doorlooptijd"
+							},
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": "%"
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "slaCompliance"
+						}
+					},
 					"cases-by-status": {
 						"content": {
 							"chartKind": "bar",
@@ -1248,23 +1295,27 @@
 				"columns": [
 					{
 						"key": "title",
+						"width": "328px",
 						"label": "Case",
 						"cellClass": "cn-cell--strong",
 						"secondary": "{identifier} · {initiatorDisplayName}"
 					},
 					{
 						"key": "caseType",
+						"width": "179px",
 						"label": "Type",
 						"formatter": "caseTypeName"
 					},
 					{
 						"key": "status",
+						"width": "171px",
 						"label": "Status",
 						"formatter": "statusTypeName",
 						"widget": "statusBadge"
 					},
 					{
 						"key": "assignee",
+						"width": "178px",
 						"label": "Handler",
 						"widget": "avatar",
 						"widgetProps": {
@@ -1273,6 +1324,7 @@
 					},
 					{
 						"key": "deadline",
+						"width": "141px",
 						"label": "Deadline",
 						"widget": "date",
 						"widgetProps": {
