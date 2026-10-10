@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  */
 
 declare(strict_types=1);
@@ -257,6 +257,7 @@ class WooRequestIntakeTest extends TestCase {
 		$case = $this->store->row(schema: 'case', uuid: $result['caseId']);
 		self::assertSame(WooRequestIntake::CASE_TYPE_ID, $case['caseType']);
 		self::assertSame(self::RESIDENT, $case['portalSubject']);
+		self::assertSame('subject:' . self::RESIDENT, $case['portalParty'], 'the party is the person, typed, never a BSN');
 		self::assertSame('Parkeerbeleid centrum', $case['title']);
 		self::assertSame('Alle stukken over het parkeerbeleid.', $case['description']);
 		self::assertSame('status-ontvangst', $case['status']);
@@ -276,6 +277,27 @@ class WooRequestIntakeTest extends TestCase {
 		);
 		self::assertSame('https://gemeente.test/index.php/apps/dossiq/cases/' . $result['caseId'], $result['caseUrl']);
 	}//end testARequestOpensAWooCaseForTheResident()
+
+	/**
+	 * A request filed for a company branch stamps the branch on the case, so a
+	 * session restricted to that branch lists it (portal-case-list-declarations D3).
+	 * A request without one, or with something that is no branch number,
+	 * writes none.
+	 *
+	 * @return void
+	 */
+	public function testTheBranchAFiledRequestCarriesLandsOnTheCase(): void {
+		$withBranch = $this->intake->start($this->request(['branch' => '000012345678']));
+		$case = $this->store->row(schema: 'case', uuid: $withBranch['caseId']);
+		self::assertSame('000012345678', $case['portalBranch']);
+		self::assertArrayNotHasKey('branch', $case['wooRequest'], 'the branch is the case\'s, not the request\'s');
+
+		$plain = $this->intake->start($this->request(['collectionId' => null]));
+		self::assertArrayNotHasKey('portalBranch', $this->store->row(schema: 'case', uuid: $plain['caseId']));
+
+		$malformed = $this->intake->start($this->request(['collectionId' => null, 'branch' => '12-34']));
+		self::assertArrayNotHasKey('portalBranch', $this->store->row(schema: 'case', uuid: $malformed['caseId']));
+	}//end testTheBranchAFiledRequestCarriesLandsOnTheCase()
 
 	/**
 	 * The new answers are kept on the request, and the requester details also
@@ -452,7 +474,7 @@ class WooRequestIntakeTest extends TestCase {
 	 * register and schema itself and checks the owner, so it reads and writes
 	 * unscoped, and the request goes through.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 *
 	 * @return void
 	 */
@@ -477,7 +499,7 @@ class WooRequestIntakeTest extends TestCase {
 	 * Unscoped reads do not weaken the owner check: without a Nextcloud user,
 	 * someone else's dossier is still not found.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 *
 	 * @return void
 	 */
@@ -498,7 +520,7 @@ class WooRequestIntakeTest extends TestCase {
 	/**
 	 * Someone else's dossier is refused as not found, and nothing is written.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 *
 	 * @return void
 	 */

@@ -5,7 +5,7 @@
  * The board narrowed to one case type (DqWerkbord): the columns of that type
  * and only its cases, while the merged board underneath keeps every case.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+ * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
  */
 
 import fs from 'fs'

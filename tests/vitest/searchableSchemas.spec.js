@@ -82,6 +82,7 @@ const PENDING_CASE_LINK = [
 	'milestoneRecord',
 	'objection',
 	'obligation',
+	'permit',
 	'plannedAction',
 	'portaalBericht',
 	'reIntegratieTraject',
