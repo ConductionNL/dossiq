@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261010162553</version>
+    <version>0.4.47-unstable.20261010201000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -405,6 +405,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <!--
+                AFTER THE CASE TYPE SEEDS. Thirteen shipped case types were seeded
+                without isDraft and stored as drafts (the default), so the new
+                case form could not offer them. Sets isDraft false on exactly
+                those, once per instance; see the class for why once.
+            -->
+            <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
+            <!--
                 AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
                 BEFORE THEM ALL. This step projects the implicit lifecycle of a
                 case type that has no workflow yet into a published "basis"
@@ -675,6 +682,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  changes nothing. Unmapped codes are kept, listed on the row and in
                  the output. Post-migration only: a fresh install has none. -->
             <step>OCA\Dossiq\Repair\MapWooRefusalGroundCodes</step>
+            <!-- woo-publish-decision-from-the-case: copies each Woo decision's
+                 publication state onto its case, so existing Woo cases show it.
+                 Idempotent (app config key woo_publication_state_backfill),
+                 non-fatal. Post-migration only: a fresh install has no Woo
+                 cases. -->
+            <step>OCA\Dossiq\Repair\BackfillWooPublicationState</step>
             <!-- simple-case-page: existing cases get `statusRole`, the role of
                  the status they sit in. OpenRegister computes it on save, so a
                  case saved before the field existed has none. Writes one field
@@ -809,6 +822,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
+              BackfillWooPublicationState       shows the publication state on existing Woo cases; a fresh install has none
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
@@ -915,6 +929,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!-- LAST OF THE SEEDS, because it projects a basis workflow onto
                  every case type the steps above just created. See the
                  post-migration block for what its old position cost. -->

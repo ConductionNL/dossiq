@@ -195,6 +195,53 @@ class PreferencesControllerTest extends TestCase {
 	}//end testAnOverlongKeyIsRefused()
 
 	/**
+	 * The page-view key nextcloud-vue sends is read and stored as spelled.
+	 *
+	 * Round 5: GET /api/preferences/cn_page_view:MyWorkHome answered 400 on
+	 * every visit to the landing page, because the colon is outside the safe
+	 * charset.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 */
+	public function testThePageViewKeyIsAccepted(): void {
+		$this->signIn();
+		$this->config->expects($this->once())
+			->method('getUserValue')
+			->with('alice', 'dossiq', 'pref_cn_page_view:MyWorkHome', '')
+			->willReturn('team');
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', 'dossiq', 'pref_cn_page_view:MyWorkHome', 'mine');
+
+		$read = $this->controller->getPreference(key: 'cn_page_view:MyWorkHome');
+		$this->assertSame(Http::STATUS_OK, $read->getStatus());
+		$this->assertSame(['value' => 'team'], $read->getData());
+
+		$write = $this->controller->setPreference(key: 'cn_page_view:MyWorkHome', value: 'mine');
+		$this->assertSame(Http::STATUS_OK, $write->getStatus());
+	}//end testThePageViewKeyIsAccepted()
+
+	/**
+	 * A colon anywhere else is still refused: the page-view prefix is the one
+	 * exception, not a wider charset.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 */
+	public function testAColonOutsideThePageViewPrefixIsRefused(): void {
+		$this->signIn();
+		$this->config->expects($this->never())->method('getUserValue');
+
+		foreach (['other:key', 'cn_page_view:', 'cn_page_view:a:b', 'cn_page_view:../x', 'cn_page_view:'.str_repeat('a', 47)] as $key) {
+			$response = $this->controller->getPreference(key: $key);
+			$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus(), sprintf('"%s" is refused', $key));
+		}
+	}//end testAColonOutsideThePageViewPrefixIsRefused()
+
+	/**
 	 * An anonymous caller is refused before anything is read.
 	 *
 	 * @return void
