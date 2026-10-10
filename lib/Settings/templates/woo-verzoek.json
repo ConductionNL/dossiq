@@ -134,13 +134,6 @@
       "propertyType": "string",
       "isRequired": false,
       "defaultValue": "digitaal"
-    },
-    {
-      "name": "verdagingReden",
-      "definition": "Reden verdaging",
-      "description": "Reden voor de verlenging van de beslistermijn",
-      "propertyType": "string",
-      "isRequired": false
     }
   ],
   "documentTypes": [

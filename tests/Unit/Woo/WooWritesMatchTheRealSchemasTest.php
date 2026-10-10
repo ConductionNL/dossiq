@@ -144,7 +144,9 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 			$checked++;
 		}
 
-		self::assertGreaterThanOrEqual(24, $checked, 'the type, its statuses, results, properties and decision type');
+		// 23 since one-term-engine dropped `verdagingReden`: the reason for an
+		// extension is the term's `verleng` rationale, not a case property.
+		self::assertGreaterThanOrEqual(23, $checked, 'the type, its statuses, results, properties and decision type');
 	}//end testEveryWooSeedRowFitsItsSchema()
 
 	/**

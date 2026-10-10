@@ -1208,7 +1208,7 @@
         "digest": "c1d14c4fca22a09246ac620e4f8e01c478d93728d92f9c8399fd1bf15cb92332"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::deadlineInstance": {
-        "version": "1.4.0",
+        "version": "1.5.0",
         "digest": "aa19ac3744c9c3128a7f5c7c744c5572187cc349748247f72eb78ef9d2da8f0d"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::dwangsomUitbetaling": {
