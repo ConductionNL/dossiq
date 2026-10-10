@@ -108,7 +108,7 @@ class WOOAssessmentController extends Controller {
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	#[NoAdminRequired]
 	public function bulkAssess(string $id): JSONResponse {
@@ -194,6 +194,18 @@ class WOOAssessmentController extends Controller {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function tellRequester(array $extended): array {
+		// The term engine already told the requester: every statutory
+		// extension does, in DeadlineExtensionService (decision 166). Its
+		// answer is passed on, and the requester is not told twice.
+		if (isset($extended['noticeStatus']) === true) {
+			return [
+				'noticeStatus' => (string)$extended['noticeStatus'],
+				'noticeChannel' => (string)($extended['noticeChannel'] ?? ''),
+				'noticeReasonCode' => (string)($extended['noticeReasonCode'] ?? ''),
+				'noticeReason' => (string)($extended['noticeReason'] ?? ''),
+			];
+		}
+
 		if ($this->extensionNotice === null) {
 			return [
 				'noticeStatus' => 'not-sent',
@@ -415,7 +427,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	private function publicationResponse(array $result): JSONResponse {
 		if (($result['available'] ?? false) === true) {
@@ -438,7 +450,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return array{0: int, 1: string}
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
 	 */
 	private function refusal(string $reason): array {
 		return match ($reason) {

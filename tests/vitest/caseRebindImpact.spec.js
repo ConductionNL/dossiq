@@ -18,7 +18,7 @@
  * environment does not have. The stubs still render slots and emit, so the
  * bindings under test run.
  *
- * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 import { mount } from '@vue/test-utils'

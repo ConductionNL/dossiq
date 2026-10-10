@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
 class ConsultationLinkController extends Controller {
 	/**
@@ -78,7 +78,7 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function externalLink(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -108,7 +108,7 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function collectAdvice(string $id): JSONResponse {
 		$access = $this->accessGuard->authorize(consultationId: $id);
@@ -135,7 +135,7 @@ class ConsultationLinkController extends Controller {
 	 *
 	 * @return string|null The password, or null
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function optionalPassword(mixed $value): ?string {
 		if ($value === null) {

@@ -237,7 +237,7 @@ class WOODecisionService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
 	 */
 	private function markCaseReady(object $objectService, string $register, string $caseId): void {
 		try {
