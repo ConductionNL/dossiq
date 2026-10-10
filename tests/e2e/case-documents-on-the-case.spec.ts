@@ -332,7 +332,9 @@ test.describe('Documents live on the case', () => {
 
 	// @e2e openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md#add-files-is-a-button
 	// @e2e openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md#dragging-files-over-the-list-shows-the-drop-state
-	test('Add files is a button, and a drag shows the drop state on the list', async ({ page }) => {
+	test('Add files is a button, and a drag shows the drop state on the list', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseA}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		const strip = page.locator('.cn-tabs-widget')
