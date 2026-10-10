@@ -461,6 +461,12 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 	include_once __DIR__ . '/Stubs/Decidiq/Event/DecisionStateRequestedEvent.php';
 }
 
+// The read half of the governance-body contract (decidiq#1694), which
+// GovernanceBodyReader dispatches. One spelling only, for the same reason.
+if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/GovernanceBodyStateRequestedEvent.php';
+}
+
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
 // The connection-registry events (adopt-connection-registry) ride the same loop:
 // IntegrationStatusService sends them by name, exactly like the delivery seam.
