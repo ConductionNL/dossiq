@@ -132,9 +132,13 @@ class PipelinqCaseController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function partyLanguage(string $caseId, string $partyId): JSONResponse {
-		$refused = $this->refuseUnlessReader(caseId: $caseId);
-		if ($refused !== null) {
-			return $refused;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->access->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return $this->forbidden();
 		}
 
 		return new JSONResponse($this->languages->forParty(partyId: $partyId));
@@ -147,6 +151,8 @@ class PipelinqCaseController extends Controller {
 	 *
 	 * @return JSONResponse `{source, kinds, accepted, available}`; `accepted` null means none declared.
 	 *
+	 * @no-admin-idor-exempt Reads one case type's declared party kinds: configuration every
+	 * signed-in user already reads to fill in a case form, with no case or party data in it.
 	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
 	 */
 	#[NoAdminRequired]

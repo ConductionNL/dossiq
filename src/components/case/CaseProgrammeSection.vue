@@ -135,6 +135,7 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
+			/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08 */
 			handler() {
 				this.load()
 			},

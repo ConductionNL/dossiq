@@ -85,9 +85,13 @@ class PipelinqProgrammeController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function programme(string $caseId): JSONResponse {
-		$refused = $this->refuseUnlessReader(caseId: $caseId);
-		if ($refused !== null) {
-			return $refused;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->access->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return $this->forbidden();
 		}
 
 		return new JSONResponse($this->programmes->programmeOf(caseId: $caseId));
@@ -110,9 +114,13 @@ class PipelinqProgrammeController extends Controller {
 			return new JSONResponse(['error' => $this->l10n->t('Choose a programme.')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$refused = $this->refuseUnlessEditor(caseId: $caseId);
-		if ($refused !== null) {
-			return $refused;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->access->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return $this->forbidden();
 		}
 
 		$outcome = $this->programmes->linkCase(programmeId: $programmeId, caseId: $caseId, title: $title);

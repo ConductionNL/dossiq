@@ -410,6 +410,36 @@ class PipelinqCaseControllerTest extends TestCase {
 	}//end testARefusedLinkNamesTheHolder()
 
 	/**
+	 * Without pipelinq the programme of a case is "cannot be read", not "none", and a
+	 * caller who may not read the case is refused before pipelinq is asked.
+	 *
+	 * @return void
+	 */
+	public function testTheProgrammeOfACaseNeedsReadAccessAndSaysWhenPipelinqIsAbsent(): void {
+		$data = $this->programmeController()->programme(caseId: 'case-b')->getData();
+
+		$this->assertFalse($data['available']);
+		$this->assertNull($data['programme']);
+
+		$refusing = $this->createMock(CaseAccessGuard::class);
+		$refusing->method('hasCaseReadAccess')->willReturn(false);
+		$this->access = $refusing;
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->programmeController()->programme(caseId: 'case-b')->getStatus());
+	}//end testTheProgrammeOfACaseNeedsReadAccessAndSaysWhenPipelinqIsAbsent()
+
+	/**
+	 * The programmes on offer are none, and say so, when pipelinq is absent.
+	 *
+	 * @return void
+	 */
+	public function testNoProgrammesAreOfferedWithoutPipelinq(): void {
+		$data = $this->programmeController()->programmeOptions()->getData();
+
+		$this->assertFalse($data['available']);
+		$this->assertSame([], $data['programmes']);
+	}//end testNoProgrammesAreOfferedWithoutPipelinq()
+
+	/**
 	 * A caller who may not change the case cannot put it under a programme.
 	 *
 	 * @return void

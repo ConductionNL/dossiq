@@ -94,9 +94,13 @@ class PipelinqContactMomentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function contactMoments(string $caseId): JSONResponse {
-		$refused = $this->refuseUnlessReader(caseId: $caseId);
-		if ($refused !== null) {
-			return $refused;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->access->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return $this->forbidden();
 		}
 
 		return new JSONResponse($this->moments->onCase(caseId: $caseId));
@@ -179,13 +183,16 @@ class PipelinqContactMomentController extends Controller {
 			);
 		}
 
-		$refused = $this->refuseUnlessEditor(caseId: $caseId);
-		if ($refused === null) {
-			$refused = $this->refuseUnlessEditor(caseId: $targetCaseId);
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
 		}
 
-		if ($refused !== null) {
-			return $refused;
+		if (
+			$this->access->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
+			|| $this->access->hasCaseMutationAccess(caseId: $targetCaseId, user: $user) === false
+		) {
+			return $this->forbidden();
 		}
 
 		return $this->act(outcome: $this->moments->fileOnAlsoCase(momentId: $momentId, caseId: $targetCaseId));
@@ -203,9 +210,13 @@ class PipelinqContactMomentController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function unfileContactMoment(string $caseId, string $momentId): JSONResponse {
-		$refused = $this->refuseUnlessEditor(caseId: $caseId);
-		if ($refused !== null) {
-			return $refused;
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return $this->notSignedIn();
+		}
+
+		if ($this->access->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return $this->forbidden();
 		}
 
 		return $this->act(outcome: $this->moments->unfileFromCase(momentId: $momentId, caseId: $caseId));

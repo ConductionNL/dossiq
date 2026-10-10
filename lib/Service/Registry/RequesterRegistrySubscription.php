@@ -49,7 +49,7 @@ use Throwable;
  * 🔴 BEST EFFORT. Everything here is answered, never thrown: a case save must
  * not fail because OpenRegister predates the capability or a row has no BSN.
  *
- * @spec openspec/changes/contacts-domain/tasks.md#4-integrations
+ * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
  */
 class RequesterRegistrySubscription {
 
@@ -89,7 +89,7 @@ class RequesterRegistrySubscription {
 	 *
 	 * @return array{requested: bool, reason: string} Whether a request went out, and why not.
 	 *
-	 * @spec openspec/changes/contacts-domain/tasks.md#4-integrations
+	 * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
 	 */
 	public function subscribe(string $objectUuid): array {
 		$objectUuid = trim($objectUuid);
@@ -142,7 +142,7 @@ class RequesterRegistrySubscription {
 	 *
 	 * @return bool True when a request is already requested or active.
 	 *
-	 * @spec openspec/changes/contacts-domain/tasks.md#4-integrations
+	 * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
 	 */
 	private function isLive(mixed $state): bool {
 		return is_array($state) === true
