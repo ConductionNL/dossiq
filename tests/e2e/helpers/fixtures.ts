@@ -625,38 +625,73 @@ export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]>
 }
 
 /**
- * Seed one team and return the uuid `case.assignedGroup` wants.
+ * The Nextcloud groups this run created as teams, so teardown removes them.
+ */
+const teamsCreated: string[] = []
+
+/**
+ * Seed one team and return the group id `case.assignedGroup` holds.
  *
- * 🔴 A TEAM NAME IS NOT A TEAM. `case.assignedGroup` is declared
- * `{"type":"string","format":"uuid","$ref":"organisatieRol"}`, and the Cases
- * index reads `assignedGroup.roleName` off the expanded reference. A fixture
- * that handed it the word `vergunningen` got
- * `400 Property 'assignedGroup' should match format 'uuid'`, in beforeAll,
- * and every test in the file died there without reaching an assertion. Six
- * custody scenarios and five handover scenarios were lost that way.
+ * A TEAM IS A NEXTCLOUD GROUP (one-team-model). `case.assignedGroup` used to
+ * be a `$ref` to an `organisatieRol` row, and this fixture seeded one of those
+ * to satisfy the uuid format, while the custody chain and the handover asked
+ * Nextcloud who was in the team: a uuid nobody could be a member of. It now
+ * creates a group, tagged with RUN_PREFIX, and `removeTeams` deletes them.
  *
- * Each call seeds its own row, tagged with RUN_PREFIX so `cleanupRunObjects`
- * removes it.
+ * The group id is lower case and carries no spaces, so it reads the same in
+ * a URL, a filter and a column.
  *
- * @param api        Authenticated request context.
- * @param token      CSRF request-token.
+ * @param api        Authenticated request context (an administrator).
+ * @param token      CSRF request-token, unused: OCS takes the OCS header.
  * @param department The department the team belongs to, in words.
- * @return The organisatieRol uuid and the name it shows under.
+ * @return The group id and the display name it shows under.
  */
 export async function ensureTeam(
 	api: APIRequestContext,
 	token: string,
 	department: string,
 ): Promise<{ id: string; name: string }> {
+	void token
+	const id = `${RUN_PREFIX}-${department}`
+		.toLowerCase()
+		.replace(/[^a-z0-9_.-]+/g, '-')
 	const name = `${RUN_PREFIX} ${department}`
-	const team = await createObject(api, token, 'organisatieRol', {
-		roleName: name,
-		roleType: 'ambtelijk',
-		department,
-		team: department,
+	const created = await api.post('/ocs/v2.php/cloud/groups?format=json', {
+		headers: { 'OCS-APIRequest': 'true' },
+		form: { groupid: id, displayname: name },
 	})
+	const status = Number(
+		(await created.json().catch(() => ({})))?.ocs?.meta?.statuscode ?? -1,
+	)
+	// 200 is created, 102 is "group exists", which a retry of beforeAll meets.
+	if (status !== 200 && status !== 102) {
+		throw new Error(
+			`ensureTeam: creating group ${id} answered OCS status ${status}`,
+		)
+	}
+	teamsCreated.push(id)
 
-	return { id: objectId(team), name }
+	return { id, name }
+}
+
+/**
+ * Delete the groups `ensureTeam` created in this process.
+ *
+ * @param api Authenticated request context (an administrator).
+ * @return Nothing.
+ */
+export async function removeTeams(api: APIRequestContext): Promise<void> {
+	while (teamsCreated.length > 0) {
+		const id = teamsCreated.pop() as string
+		await api
+			.delete(
+				`/ocs/v2.php/cloud/groups/${encodeURIComponent(id)}?format=json`,
+				{
+					headers: { 'OCS-APIRequest': 'true' },
+				},
+			)
+			.catch(() => undefined)
+	}
 }
 
 /** The informatieobjecttype this process files its documents under. */

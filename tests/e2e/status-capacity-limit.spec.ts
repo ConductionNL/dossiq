@@ -129,7 +129,7 @@ test.describe('A status that holds a limit', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md#scenario-the-status-type-stores-the-limit
+	// @e2e openspec/specs/status-transition-engine/spec.md#the-status-type-stores-the-limit
 	test('the status type stored the limit it was given', async () => {
 		// An unknown configuration key is dropped in silence, and a register
 		// whose version did not move is not imported at all. Reading the number
@@ -140,7 +140,7 @@ test.describe('A status that holds a limit', () => {
 		expect(Number(stored?.capacity ?? 0)).toBe(CAPACITY)
 	})
 
-	// @e2e openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md#scenario-the-case-at-the-limit-is-allowed
+	// @e2e openspec/specs/status-transition-engine/spec.md#the-case-at-the-limit-is-allowed
 	test('the cases up to the limit are allowed in', async () => {
 		// The control for the refusal below. Without it a refused fourth case
 		// could equally mean the transition is refused for every case, which is
@@ -155,7 +155,7 @@ test.describe('A status that holds a limit', () => {
 		}
 	})
 
-	// @e2e openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md#scenario-the-case-past-the-limit-is-refused
+	// @e2e openspec/specs/status-transition-engine/spec.md#the-case-past-the-limit-is-refused
 	test('the case past the limit is refused, and stays where it was', async () => {
 		const result = await executeTransition(api!, token, overflowing, INTO_CAPPED)
 
@@ -178,7 +178,7 @@ test.describe('A status that holds a limit', () => {
 		expect(said, 'the refusal must name the limit').toContain(String(CAPACITY))
 	})
 
-	// @e2e openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md#scenario-the-refusal-is-on-the-offered-move
+	// @e2e openspec/specs/status-transition-engine/spec.md#the-refusal-is-on-the-offered-move
 	test('the offered move says why, before anybody presses it', async () => {
 		// Seeing the number is what stops the attempt; the refusal is the
 		// backstop. The engine answers the move with `guardsPassed: false` and
@@ -198,7 +198,7 @@ test.describe('A status that holds a limit', () => {
 		expect(JSON.stringify(move.failedGuards ?? [])).toMatch(/full|vol/i)
 	})
 
-	// @e2e openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md#scenario-a-full-status-can-always-be-emptied
+	// @e2e openspec/specs/status-transition-engine/spec.md#a-full-status-can-always-be-emptied
 	test('a full status can always be emptied, and then takes the next case', async () => {
 		// The move OUT is a transition into some other status, and the guard
 		// never looks where a case came from. Without that rule the first
@@ -228,7 +228,7 @@ test.describe('A status that holds a limit', () => {
 		expect(await statusOf(overflowing)).toBe(statusInProgress)
 	})
 
-	// @e2e openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md#scenario-a-status-without-a-capacity-is-unchanged
+	// @e2e openspec/specs/status-transition-engine/spec.md#a-status-without-a-capacity-is-unchanged
 	test('a status carrying no capacity takes as many as arrive', async () => {
 		// Every status shipped today is this one, so this is the assertion that
 		// the change is additive rather than a new rule over the whole fleet.

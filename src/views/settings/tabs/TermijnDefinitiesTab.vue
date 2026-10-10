@@ -5,7 +5,6 @@
 <template>
 	<div class="termijn-definities-tab">
 		<div class="termijn-definities-tab__header">
-			<h3>{{ t('dossiq', 'AWB Term definitions') }}</h3>
 			<p class="termijn-definities-tab__description">
 				{{
 					t(
@@ -436,7 +435,7 @@ export default {
 
 .termijn-definities-tab__badge--active {
 	background: var(--color-success);
-	color: var(--color-main-background);
+	color: var(--color-success-text);
 }
 
 .termijn-definities-tab__badge--inactive {

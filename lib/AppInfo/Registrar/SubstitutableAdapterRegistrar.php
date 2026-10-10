@@ -208,7 +208,7 @@ class SubstitutableAdapterRegistrar {
 	 *
 	 * @return string The adapter class.
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#1-the-default
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public static function defaultTemplateAdapter(ContainerInterface $container): string {
 		return (new TemplateAdapterChoice(appManager: $container->get(IAppManager::class)))->adapterFor(named: '');

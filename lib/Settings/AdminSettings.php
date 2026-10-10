@@ -27,10 +27,12 @@ namespace OCA\Dossiq\Settings;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Prerequisites;
 use OCA\Dossiq\Service\Settings\MenuStructure;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\ServerVersion;
 use OCP\Settings\IDelegatedSettings;
 
 /**
@@ -49,11 +51,15 @@ class AdminSettings implements IDelegatedSettings {
 	 * @param IAppManager $appManager The app manager.
 	 * @param IInitialState $initialState The initial state service.
 	 * @param SettingsService $settingsService Reads the stored config values.
+	 * @param QueueUrgencySettings $queueUrgency The queue thresholds and weights.
+	 * @param ServerVersion        $serverVersion The Nextcloud this instance runs.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
 		private IInitialState $initialState,
 		private SettingsService $settingsService,
+		private QueueUrgencySettings $queueUrgency,
+		private ServerVersion $serverVersion,
 	) {
 	}//end __construct()
 
@@ -70,6 +76,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getForm(): TemplateResponse {
 		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
@@ -80,7 +87,10 @@ class AdminSettings implements IDelegatedSettings {
 		// just installed the extension the block told them about.
 		$this->initialState->provideInitialState(
 			'prerequisites',
-			(new Prerequisites())->check($this->appManager)
+			(new Prerequisites())->check(
+				appManager: $this->appManager,
+				nextcloudMajor: $this->serverVersion->getMajorVersion()
+			)
 		);
 		$this->initialState->provideInitialState(
 			'consultationSettings',
@@ -89,6 +99,12 @@ class AdminSettings implements IDelegatedSettings {
 		$this->initialState->provideInitialState(
 			'mandaatSettings',
 			$this->mandateSettings()
+		);
+		// What the queue scores with now, already normalised, so a stored
+		// value out of bounds shows as the number the queue actually uses.
+		$this->initialState->provideInitialState(
+			'queueUrgencySettings',
+			$this->queueUrgency->profile()->toArray()
 		);
 		// The structure tab reads what is stored now, already normalised, so a
 		// mistyped stored value shows as the simple structure it behaves as.

@@ -431,4 +431,18 @@ class CaseLifecycleServiceTest extends TestCase {
 		$this->assertFalse($state['canSuspend']);
 		$this->assertFalse($state['canExtend']);
 	}//end testAClosedCaseOffersOnlyReopen()
+
+	/**
+	 * The state names the case type, so the close form can scope its result
+	 * templates without a second read of the case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+	 */
+	public function testTheStateNamesTheCaseType(): void {
+		$state = $this->service->state(caseId: 'case-1');
+
+		$this->assertSame(expected: 'ct-1', actual: $state['caseType']);
+	}//end testTheStateNamesTheCaseType()
 }//end class

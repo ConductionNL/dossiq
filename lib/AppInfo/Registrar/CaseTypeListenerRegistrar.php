@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
@@ -57,6 +58,16 @@ class CaseTypeListenerRegistrar {
 	public const INHERITED_DEADLINE_PRIORITY = -100;
 
 	/**
+	 * Where the statutory term's deadline is put back into a case save.
+	 *
+	 * BELOW the inherited deadline listener and the calculation, because it
+	 * overrides both: while a case has a statutory term, that term's end date
+	 * is the deadline (one term engine, REQ-OTE-01), and a listener that ran
+	 * before them would have its value replaced by the calculated one.
+	 */
+	public const TERM_DEADLINE_PRIORITY = -110;
+
+	/**
 	 * Register the case type inheritance listeners.
 	 *
 	 * @param IRegistrationContext $context The registration context.
@@ -64,6 +75,7 @@ class CaseTypeListenerRegistrar {
 	 * @return void
 	 *
 	 * @spec openspec/specs/case-types/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
@@ -89,6 +101,14 @@ class CaseTypeListenerRegistrar {
 				listener: CaseInheritedDeadlineListener::class,
 				priority: self::INHERITED_DEADLINE_PRIORITY
 			);
-		}
+		}//end foreach
+
+		// UPDATE ONLY. No term exists before the case does; the bind that
+		// follows the create writes the date back through the mirror.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: CaseDeadlineFollowsTermListener::class,
+			priority: self::TERM_DEADLINE_PRIORITY
+		);
 	}//end register()
 }//end class

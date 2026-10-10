@@ -17,7 +17,7 @@
  * to stop exactly this class of quiet untruth, so the guard has to be here
  * rather than in a reviewer's eye.
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'

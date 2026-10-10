@@ -25,7 +25,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dso-single-intake-path/specs/vth-dso-integration/spec.md
+ * @spec openspec/specs/vth-dso-integration/spec.md
  */
 
 declare(strict_types=1);

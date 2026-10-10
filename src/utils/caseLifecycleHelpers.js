@@ -10,8 +10,8 @@
  *  - which stages the stepper shows, and in what order (the case type's
  *    status types, which arrive unordered and carry `order` as a number,
  *    a numeric string, or not at all);
- *  - whether a transition closes the case, which decides whether the
- *    confirm dialog asks for a result and whether it may be confirmed;
+ *  - what body a transition POST carries, shared by the lifecycle menu and
+ *    the workflow board so both post the same move;
  *  - what a refusal from the server means in words. The endpoints answer
  *    with a short static code on purpose — a message a server writes is a
  *    message no translator ever sees — so turning the code into a sentence
@@ -71,61 +71,6 @@ export function toStages(rows) {
 		label: String(row.name ?? row.title ?? ''),
 		subtitle: String(row.description ?? ''),
 	}))
-}
-
-/**
- * Whether the status a transition targets closes the case.
- *
- * @param {Array<object>} statusRows The case type's statusType rows.
- * @param {string} toStatus The target status id.
- * @return {boolean} True when that status carries isFinal.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function isClosingTransition(statusRows, toStatus) {
-	if (!toStatus) {
-		return false
-	}
-	const target = (Array.isArray(statusRows) ? statusRows : []).find(
-		(row) => rowId(row) === String(toStatus),
-	)
-	if (!target) {
-		return false
-	}
-	return (
-		target.isFinal === true
-		|| target.isFinal === 1
-		|| target.isFinal === '1'
-		|| target.isFinal === 'true'
-	)
-}
-
-/**
- * Whether the confirm button may be pressed.
- *
- * A closing transition on a case type that offers result types cannot be
- * confirmed until one is picked — the server refuses it anyway, and a button
- * that submits a request it knows will be refused is a worse answer than a
- * disabled one.
- *
- * @param {object} params The dialog's current state.
- * @param {boolean} params.closing Whether the target status is final.
- * @param {Array<object>} params.resultTypes The result types on offer.
- * @param {string} params.resultTypeId The picked result type, if any.
- * @param {boolean} params.busy Whether a request is already in flight.
- * @return {boolean} True when the transition may be confirmed.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function canConfirmTransition({ closing, resultTypes, resultTypeId, busy }) {
-	if (busy === true) {
-		return false
-	}
-	if (closing !== true) {
-		return true
-	}
-	if (!Array.isArray(resultTypes) || resultTypes.length === 0) {
-		return true
-	}
-	return Boolean(resultTypeId)
 }
 
 /**
