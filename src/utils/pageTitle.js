@@ -44,7 +44,7 @@ export function pageForRoute(manifest, route) {
  * @param {object}   manifest  The built manifest.
  * @param {object}   route     The route being shown.
  * @param {string}   baseTitle The title the server rendered ("Dossiq - Nextcloud").
- * @param {Function} translate Translates a manifest label.
+ * @param {(label: string) => string} translate Translates a manifest label.
  * @return {string} "<page> - <baseTitle>", or `baseTitle` when the route names no page.
  * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/page-titles/spec.md
  */
@@ -69,7 +69,7 @@ export function pageTitleFor(manifest, route, baseTitle, translate = (s) => s) {
  *
  * @param {object}   router    The vue-router instance.
  * @param {object}   manifest  The built manifest.
- * @param {Function} translate Translates a manifest label.
+ * @param {(label: string) => string} translate Translates a manifest label.
  * @param {object}   doc       The document (injectable for tests).
  * @return {void}
  * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/page-titles/spec.md

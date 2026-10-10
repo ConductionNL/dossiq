@@ -125,9 +125,9 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CasePlanFollowUpDialog from '../../dialogs/CasePlanFollowUpDialog.vue'
 import logger from '../../logger.js'
+import { useObjectStore } from '../../store/modules/object.js'
 import { caseActionRefusal, plannedRows } from '../../utils/caseActionsHelpers.js'
 import { isBareUuid, relationSections } from '../../utils/caseRelationHelpers.js'
-import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
 	name: 'CasePlannedWidget',
@@ -256,6 +256,7 @@ export default {
 				this.loadParent(parentId)
 			},
 		},
+
 		objectId: {
 			immediate: true,
 			/**

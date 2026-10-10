@@ -52,7 +52,12 @@ const UUID = '8afb946b-68b4-4618-940e-fecb640fdc41'
  */
 function mountCard(objectData = null, router = undefined) {
 	return mount(CasePlannedWidget, {
-		props: { objectId: 'case-1', objectData, register: 'dossiq', schema: 'case' },
+		props: {
+			objectId: 'case-1',
+			objectData,
+			register: 'dossiq',
+			schema: 'case',
+		},
 		global: {
 			mocks: router ? { $router: router } : {},
 			stubs: {
@@ -102,7 +107,9 @@ describe('Related cases card', () => {
 
 	it('shows the parent case by its title', async () => {
 		answer([])
-		cases = { 'parent-1': { id: 'parent-1', title: 'Omgevingsvergunning Kerkstraat' } }
+		cases = {
+			'parent-1': { id: 'parent-1', title: 'Omgevingsvergunning Kerkstraat' },
+		}
 		const wrapper = mountCard({ id: 'case-1', parentCase: 'parent-1' })
 		await flushPromises()
 

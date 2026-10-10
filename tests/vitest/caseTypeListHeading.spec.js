@@ -76,7 +76,10 @@ const { default: CaseTypeList } =
 	await import('../../src/views/settings/CaseTypeList.vue')
 
 const here = dirname(fileURLToPath(import.meta.url))
-const LIB = resolve(here, '../../node_modules/@conduction/nextcloud-vue/src/components')
+const LIB = resolve(
+	here,
+	'../../node_modules/@conduction/nextcloud-vue/src/components',
+)
 
 describe('CaseTypeList heading', () => {
 	it('heads the list with an h3 under its h2 section, never an h1', async () => {
@@ -106,8 +109,14 @@ describe('CaseTypeList heading', () => {
 	})
 
 	it('relies on a rule the library still has: without #header the title is an h1', () => {
-		const indexPage = readFileSync(resolve(LIB, 'CnIndexPage/CnIndexPage.vue'), 'utf8')
-		const pageHeader = readFileSync(resolve(LIB, 'CnPageHeader/CnPageHeader.vue'), 'utf8')
+		const indexPage = readFileSync(
+			resolve(LIB, 'CnIndexPage/CnIndexPage.vue'),
+			'utf8',
+		)
+		const pageHeader = readFileSync(
+			resolve(LIB, 'CnPageHeader/CnPageHeader.vue'),
+			'utf8',
+		)
 
 		expect(indexPage).toMatch(/<slot\s+name="header"[\s\S]*?<CnPageHeader/)
 		expect(pageHeader).toMatch(/<h1 class="cn-page-header__title"/)

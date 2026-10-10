@@ -24,9 +24,9 @@ const BASE = 'Dossiq - Conduction Nextcloud'
 
 describe('pageTitleFor', () => {
 	it('puts the page name in front of the server title', () => {
-		expect(
-			pageTitleFor(manifest, { meta: { cnPageId: 'Cases' } }, BASE),
-		).toBe('Cases - Dossiq - Conduction Nextcloud')
+		expect(pageTitleFor(manifest, { meta: { cnPageId: 'Cases' } }, BASE)).toBe(
+			'Cases - Dossiq - Conduction Nextcloud',
+		)
 	})
 
 	it('translates the page name', () => {
@@ -73,9 +73,24 @@ describe('installPageTitles', () => {
 		const router = createRouter({
 			history: createMemoryHistory(),
 			routes: [
-				{ path: '/', name: 'MyWorkHome', component: {}, meta: { cnPageId: 'MyWorkHome' } },
-				{ path: '/cases', name: 'Cases', component: {}, meta: { cnPageId: 'Cases' } },
-				{ path: '/cases/:id', name: 'CaseDetail', component: {}, meta: { cnPageId: 'CaseDetail' } },
+				{
+					path: '/',
+					name: 'MyWorkHome',
+					component: {},
+					meta: { cnPageId: 'MyWorkHome' },
+				},
+				{
+					path: '/cases',
+					name: 'Cases',
+					component: {},
+					meta: { cnPageId: 'Cases' },
+				},
+				{
+					path: '/cases/:id',
+					name: 'CaseDetail',
+					component: {},
+					meta: { cnPageId: 'CaseDetail' },
+				},
 			],
 		})
 		installPageTitles(router, manifest, (s) => s, doc)
