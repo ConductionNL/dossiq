@@ -1581,7 +1581,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.37.0",
+                "version": "1.38.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1786,6 +1786,14 @@
                             "schema": "result",
                             "mode": "relatedObject",
                             "field": "result"
+                        },
+                        "team": {
+                            "_note": "one-team-model D-4. `assignedGroup` is a Nextcloud group id, so the organisation role that carries the team's public name is found by its `ncGroupId`, not followed as a reference. The calculation below only trusts the row when its `ncGroupId` equals the case's group: a lookup on an empty team must not hand this case another team's name.",
+                            "schema": "organisatieRol",
+                            "mode": "lookup",
+                            "filters": {
+                                "ncGroupId": "@self.assignedGroup"
+                            }
                         }
                     },
                     "x-openregister-calculations": {
@@ -1960,13 +1968,51 @@
                         "assignedGroupPublicName": {
                             "type": "string",
                             "materialise": true,
-                            "description": "The handling team's public name, copied onto the case so the portal's detail block reads it without following a reference. Empty when the team declares none; the internal name is never used, because it is written for a colleague.",
+                            "description": "The handling team's public name, copied onto the case so the portal's detail block reads it without following a reference. Read from the organisation role bound to the case's Nextcloud group (`organisatieRol.ncGroupId`). Empty when no role is bound to the group, the role declares no public name, or the case has no team; the internal name is never used, because it is written for a colleague.",
                             "expression": {
-                                "coalesce": [
+                                "if": [
                                     {
-                                        "prop": "@ref.assignedGroup.publicName"
+                                        "eq": [
+                                            {
+                                                "coalesce": [
+                                                    {
+                                                        "prop": "assignedGroup"
+                                                    },
+                                                    ""
+                                                ]
+                                            },
+                                            ""
+                                        ]
                                     },
-                                    ""
+                                    "",
+                                    {
+                                        "if": [
+                                            {
+                                                "eq": [
+                                                    {
+                                                        "coalesce": [
+                                                            {
+                                                                "prop": "@ref.team.ncGroupId"
+                                                            },
+                                                            "-none-"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "prop": "assignedGroup"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "coalesce": [
+                                                    {
+                                                        "prop": "@ref.team.publicName"
+                                                    },
+                                                    ""
+                                                ]
+                                            },
+                                            ""
+                                        ]
+                                    }
                                 ]
                             }
                         },
@@ -2932,9 +2978,8 @@
                     },
                     "assignedGroup": {
                         "type": "string",
-                        "format": "uuid",
-                        "$ref": "organisatieRol",
-                        "description": "The team handling this case. Assignment, not permission: a case can carry a team, a personal assignee, or both.",
+                        "referenceType": "nextcloud-group",
+                        "description": "The team handling this case, a Nextcloud group. A team is an assignment, not a permission. A case can have a team, a handler, or both.",
                         "title": "Team",
                         "facetable": true,
                         "order": 6
