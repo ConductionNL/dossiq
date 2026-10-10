@@ -20,7 +20,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use OCA\Dossiq\Portal\ResidentQuestionTask;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -112,7 +115,14 @@ class ResidentQuestionTaskTest extends TestCase {
 			$container->method('get')->with(ResidentQuestionTask::TASK_SERVICE)->willReturn($tasks);
 		}
 
-		return new ResidentQuestionTask(container: $container, logger: new NullLogger());
+		$dates = $this->createMock(CaseDateNormaliser::class);
+		$dates->method('tryParse')->willReturnCallback(
+			static fn (mixed $value): ?DateTimeImmutable => is_string($value) === true && $value !== ''
+				? new DateTimeImmutable($value, new DateTimeZone('Europe/Amsterdam'))
+				: null
+		);
+
+		return new ResidentQuestionTask(container: $container, dates: $dates, logger: new NullLogger());
 	}//end unit()
 
 	/**

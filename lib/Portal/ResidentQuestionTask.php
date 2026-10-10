@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use DateTimeImmutable;
-use DateTimeZone;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -64,18 +64,15 @@ class ResidentQuestionTask {
 	public const PARTY_PREFIX = 'party:';
 
 	/**
-	 * The time zone a due date is a day in.
-	 */
-	private const ZONE = 'Europe/Amsterdam';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The container OpenRegister's task service is resolved from.
+	 * @param CaseDateNormaliser $dates     Reads a due date as a day in the administrator's time zone.
 	 * @param LoggerInterface    $logger    Structured logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
+		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -200,10 +197,9 @@ class ResidentQuestionTask {
 		}
 
 		$due = $this->readableDate(date: (string)($question['due'] ?? ''));
+		$lines[] = 'Open de zaak om te zien hoe u het aanlevert.';
 		if ($due !== '') {
-			$lines[] = sprintf('Stuur het ons uiterlijk %s. Open de zaak om te zien hoe.', $due);
-		} else {
-			$lines[] = 'Open de zaak om te zien hoe u het aanlevert.';
+			$lines[count($lines) - 1] = sprintf('Stuur het ons uiterlijk %s. Open de zaak om te zien hoe.', $due);
 		}
 
 		return implode("\n", $lines);
@@ -242,7 +238,7 @@ class ResidentQuestionTask {
 	}//end readableDate()
 
 	/**
-	 * A date string as a day in the Netherlands, or null.
+	 * A date string as a day in the administrator's time zone, or null.
 	 *
 	 * @param string $date The date (`Y-m-d`, or an ISO instant).
 	 *
@@ -254,10 +250,6 @@ class ResidentQuestionTask {
 			return null;
 		}
 
-		try {
-			return new DateTimeImmutable(substr($date, 0, 10), new DateTimeZone(self::ZONE));
-		} catch (Throwable) {
-			return null;
-		}
+		return $this->dates->tryParse(value: substr($date, 0, 10));
 	}//end day()
 }//end class
