@@ -361,6 +361,10 @@ $extra = [
     ['name' => 'caseRelation#create',  'url' => '/api/cases/{caseId}/relations',                          'verb' => 'POST'],
         // {aardRelatie} bound nothing: the method signs $natureRelationship. HTTP 400.
     ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{natureRelationship}', 'verb' => 'DELETE'],
+        // Linked case with a role (C11, ADR-118): the roles a case type declares, linking with one, and the configured outcome cascades.
+    ['name' => 'caseLink#roles',   'url' => '/api/cases/{caseId}/links',                 'verb' => 'GET'],
+    ['name' => 'caseLink#link',    'url' => '/api/cases/{caseId}/links/{role}',          'verb' => 'POST'],
+    ['name' => 'caseLink#cascade', 'url' => '/api/links/cascades/{name}/{targetId}',     'verb' => 'POST'],
         // Live conversation on the case — Talk rooms, captures and the major declaration.
     ['name' => 'caseConversation#availability',       'url' => '/api/conversations/availability',        'verb' => 'GET'],
     ['name' => 'caseConversation#start',              'url' => '/api/cases/{caseId}/conversations',      'verb' => 'POST'],

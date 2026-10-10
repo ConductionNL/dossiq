@@ -65,6 +65,7 @@ class ListenerRegistrar {
 		(new WorkflowListenerRegistrar())->register(context: $context);
 		(new TermijnTimerRegistrar())->register(context: $context);
 		(new CaseMergeRegistrar())->register(context: $context);
+		(new CaseLinkListenerRegistrar())->register(context: $context);
 		(new BulkActionRegistrar())->register(context: $context);
 		(new CrossAppListenerRegistrar())->register(context: $context);
 	}//end register()
