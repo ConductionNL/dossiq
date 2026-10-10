@@ -1,5 +1,9 @@
 <template>
-	<CnAdminSettingsShell appId="dossiq" appName="Dossiq" @reimported="onReimported">
+	<CnAdminSettingsShell
+		appId="dossiq"
+		appName="Dossiq"
+		:title="t('dossiq', 'Dossiq settings')"
+		@reimported="onReimported">
 		<Settings />
 
 		<CnSettingsSection
@@ -37,7 +41,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Case Type Management')"
+			:name="t('dossiq', 'Case type management')"
 			:description="t('dossiq', 'Manage case types and their configurations')"
 			:loading="!storesReady">
 			<CaseTypeAdmin v-if="storesReady" />
@@ -45,7 +49,7 @@
 
 		<CnSettingsSection
 			id="section-zgw"
-			:name="t('dossiq', 'ZGW API Mapping')"
+			:name="t('dossiq', 'ZGW API mapping')"
 			:description="
 				t(
 					'dossiq',
@@ -57,7 +61,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'VTH Inspection Checklists')"
+			:name="t('dossiq', 'VTH inspection checklists')"
 			:description="
 				t(
 					'dossiq',
@@ -69,7 +73,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'AI-Assisted Processing')"
+			:name="t('dossiq', 'AI-assisted processing')"
 			:description="
 				t(
 					'dossiq',
@@ -81,7 +85,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'AWB Term Definitions')"
+			:name="t('dossiq', 'AWB term definitions')"
 			:description="
 				t(
 					'dossiq',
@@ -93,7 +97,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Mandate Matrix: Administration')"
+			:name="t('dossiq', 'Mandate matrix: administration')"
 			:description="
 				t(
 					'dossiq',
@@ -105,7 +109,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Mandate Matrix: System Settings')"
+			:name="t('dossiq', 'Mandate matrix: system settings')"
 			:description="
 				t(
 					'dossiq',
@@ -130,7 +134,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'Consultation Management')"
+			:name="t('dossiq', 'Consultation management')"
 			:description="
 				t(
 					'dossiq',
@@ -181,7 +185,7 @@
 
 		<CnSettingsSection
 			id="section-mailbox"
-			:name="t('dossiq', 'Case Email: Shared Mailbox')"
+			:name="t('dossiq', 'Case email: shared mailbox')"
 			:description="
 				t(
 					'dossiq',
@@ -194,7 +198,7 @@
 
 		<CnSettingsSection
 			id="section-kcc"
-			:name="t('dossiq', 'KCC-werkplek Integration')"
+			:name="t('dossiq', 'KCC-werkplek integration')"
 			:description="
 				t(
 					'dossiq',
@@ -207,7 +211,7 @@
 
 		<CnSettingsSection
 			id="section-dmn"
-			:name="t('dossiq', 'Decision Tables (DMN)')"
+			:name="t('dossiq', 'Decision tables (DMN)')"
 			:description="
 				t(
 					'dossiq',
@@ -220,7 +224,7 @@
 
 		<CnSettingsSection
 			id="section-financial"
-			:name="t('dossiq', 'Financial Integration: Dwangsom Callback')"
+			:name="t('dossiq', 'Financial integration: dwangsom callback')"
 			:description="
 				t(
 					'dossiq',
@@ -246,7 +250,7 @@
 
 		<CnSettingsSection
 			id="section-stuf"
-			:name="t('dossiq', 'StUF-ZKN Endpoints')"
+			:name="t('dossiq', 'StUF-ZKN endpoints')"
 			:description="
 				t(
 					'dossiq',
@@ -270,7 +274,7 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('dossiq', 'StUF-ZKN Audit Log')"
+			:name="t('dossiq', 'StUF-ZKN audit log')"
 			:description="
 				t(
 					'dossiq',
