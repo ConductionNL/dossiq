@@ -569,7 +569,7 @@
 								"columns": [
 									{ "key": "identifier", "label": "Number" },
 									{ "key": "title", "label": "Title" },
-									{ "key": "deadline", "label": "Deadline" }
+									{ "key": "deadline", "label": "Deadline", "format": "date" }
 								],
 								"rowRoute": "CaseDetail",
 								"emptyText": "Follow a case to keep an eye on it here"
@@ -599,7 +599,7 @@
 								"columns": [
 									{ "key": "identifier", "label": "Number" },
 									{ "key": "title", "label": "Title" },
-									{ "key": "deadline", "label": "Deadline" }
+									{ "key": "deadline", "label": "Deadline", "format": "date" }
 								],
 								"rowRoute": "CaseDetail",
 								"emptyText": "Nothing is waiting for your teams",
@@ -926,18 +926,22 @@
 								},
 								"limit": 5
 							},
+							"_columnsNote": "my-work-cards-and-team-tiles-read-right, finding F7. The tile is four grid columns (about 340px) and the three columns asked for about 490px, so the date, the one column that says when, was cut off on the right. `fixedLayout` makes the declared widths authoritative: the number and the date keep theirs, and the title takes what is left and ends in an ellipsis (`cn-cell--truncate`, full title in its tooltip). nextcloud-vue makes narrow object tables shrink their title on its own as well; these widths say which column gives way when it does.",
+							"fixedLayout": true,
 							"columns": [
 								{
 									"key": "identifier",
+									"width": "6.5em",
 									"cellClass": "cn-cell--muted"
 								},
 								{
 									"key": "title",
-									"cellClass": "cn-cell--strong"
+									"cellClass": "cn-cell--strong cn-cell--truncate"
 								},
 								{
 									"key": "@self.viewedAt",
 									"formatter": "daysSince",
+									"width": "8.5em",
 									"cellClass": "cn-cell--muted cn-cell--end"
 								}
 							],
@@ -1422,7 +1426,8 @@
 										},
 										{
 											"key": "deadline",
-											"label": "Deadline"
+											"label": "Deadline",
+											"format": "date"
 										}
 									],
 									"rowRoute": "CaseDetail",
