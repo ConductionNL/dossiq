@@ -512,8 +512,8 @@
         "digest": "2404948ba37696b476399596c854ead6caa3fa519916c29b282291f4d4f29651"
     },
     "lib/Settings/dossiq_mock_register.json::tenantOnboardingTask": {
-        "version": "1.0.0",
-        "digest": "0789128b4882a4cd06a88cf9fecad905eb94a6daee043ac4c14356a0351a6db4"
+        "version": "1.1.0",
+        "digest": "594bca51d2235e1b107ed935e4a4d15e541390f92ea53400fe5259edb2974019"
     },
     "lib/Settings/dossiq_mock_register.json::tenantQuota": {
         "version": "1.0.0",
@@ -872,8 +872,8 @@
         "digest": "6ae741c469adc96fdf48e48b1506ba2952e506c5edb3b7454729521aefd76589"
     },
     "lib/Settings/dossiq_register.json::tenantOnboardingTask": {
-        "version": "1.0.1",
-        "digest": "b67c47479cb92d83b7b0a259c3f507a96ddb013c6962f30cf848b56f1706d6a3"
+        "version": "1.1.0",
+        "digest": "c6877aaa569fd345aa49ae761b6a8205fa9efa13038e5335319a9657e42842a9"
     },
     "lib/Settings/dossiq_register.json::tenantQuota": {
         "version": "1.0.1",

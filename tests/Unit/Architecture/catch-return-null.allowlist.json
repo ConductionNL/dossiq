@@ -3,6 +3,7 @@
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-10-10, openspec/changes/remove-casetask task 7.1: onboarding steps moved onto the engine. OnboardingSteps reads through EngineInboxQuery and resolves its services inside each verb's own try block, so it adds no site; TenantOnboardingService::markStepComplete went, legacyRows (the one-off carry of the old rows) arrived. The ceiling stays 257.",
     "2026-10-10, openspec/changes/tenancy-onto-openregister-organisation tasks 6.9 and 6.15: TenantSaasService retired with the tenant admin store, taking its three sites (getById, getObjectService, listActive). TenantService::getObjectService arrived with the audit anchor. The ceiling went 259 to 257.",
     "Every catch (\\Throwable) under lib/Service that answers null or [] within its first three statements. ServiceCatchReturnsNullTest fails on a site that is not here, on an entry whose site is gone, and when the count passes the ceiling. The ceiling only goes down.",
     "This is a debt list with a ceiling, not an endorsement. The class and the reason on each entry were written by the triage that seeded this file on 2026-09-13 from the site's own evidence: what it returns, and whether and how it logs. They say what the site does, not that the site is right.",
@@ -1375,10 +1376,10 @@
     },
     {
       "file": "lib/Service/TenantOnboardingService.php",
-      "method": "markStepComplete",
+      "method": "legacyRows",
       "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`markStepComplete()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: markStepComplete failed\"), so a failed read and an absent record are the same answer."
+      "class": "degradation",
+      "reason": "`legacyRows()` answers `return []` when the legacy `tenantOnboardingTask` rows cannot be read; the catch logs at warning naming the tenant (\"could not read the legacy onboarding rows\"). Nothing is carried onto the engine that run; the carry runs again on the next read, because the tenant still has no engine steps."
     },
     {
       "file": "lib/Service/TenantOrganisationResolver.php",

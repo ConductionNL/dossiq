@@ -11385,10 +11385,10 @@
             "tenantOnboardingTask": {
                 "slug": "tenantOnboardingTask",
                 "icon": "CheckboxMarkedCircleOutline",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "title": "Tenant Onboarding Task",
-                "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
+                "description": "Frozen record of a tenant onboarding step as it was before the steps moved onto OpenRegister's task engine (remove-casetask task 7.1). New steps are engine tasks; a tenant's rows here are carried onto the engine the first time an admin opens its onboarding, and are kept as written.",
                 "type": "object",
                 "required": [
                     "tenantRef",
