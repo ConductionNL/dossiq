@@ -1,5 +1,5 @@
 {
-  "ceiling": 259,
+  "ceiling": 265,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -1847,6 +1847,48 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`registry()` answers `return null` when OpenRegister's node catalogue cannot be resolved; the catch logs at warning (\"OpenRegister node catalogue unavailable for a retired action\") and the caller records the action as failed with `retired_action_needs_openregister`, never as run."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "sources",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`sources()` answers `return null` when the source register of a declared record import cannot be read; the catch logs at error naming the import key. CaseRecordImport reads null as a failure (\"The source records could not be read.\") and imports nothing, so a failed read is never reported as zero records."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "casesBySource",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`casesBySource()` answers `return null` when the existing cases of the case type cannot be read; the catch logs at warning. CaseRecordImport stops the run and lists the failure, because importing over an unread list would write a half-finished case a second time."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "caseType",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`caseType()` answers `return null` when the case type named to the import cannot be read; the catch logs at warning naming it, and the import answers no case type and runs nothing."
+    },
+    {
+      "file": "lib/Service/Term/TermCarryOver.php",
+      "method": "statutoryInstance",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`statutoryInstance()` answers `return null` when the case's term instances cannot be read; `carry()` then answers the outcome `missing` and changes no term, so the case keeps the term its create bound. It does not log; the import reports the outcome."
+    },
+    {
+      "file": "lib/Service/Access/ObjectReadGrants.php",
+      "method": "find",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`find()` answers `return null` when the record to reconcile cannot be read; `reconcile()` counts it as refused, so a record that could not be read is never reported as reconciled (REQ-CRA-002)."
+    },
+    {
+      "file": "lib/Service/Access/ObjectReadGrants.php",
+      "method": "service",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`service()` answers `return null` when OpenRegister's sharing or ownership service cannot be resolved from the container; `available()` then answers false and the reconciler answers `unavailable` and writes nothing (REQ-CRA-002)."
     }
   ]
 }
