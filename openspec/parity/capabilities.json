@@ -19597,7 +19597,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/ZrcController.php; ZtcController.php; DrcController.php; BrcController.php; lib/Service/External/Zgw/*",
+				"evidence": "lib/Controller/ZrcController.php; ZtcController.php; DrcController.php; BrcController.php; lib/Service/Notes/NotePush.php (outbound through integriq's delivery seam)",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [

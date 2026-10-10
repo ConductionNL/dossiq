@@ -9,7 +9,7 @@
  * anything leaves the building.
  *
  * @category Test
- * @package  OCA\Dossiq\Tests\Unit\Service\External\Zgw
+ * @package  OCA\Dossiq\Tests\Unit\Service\Notes
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,16 +24,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\External\Zgw;
+namespace OCA\Dossiq\Tests\Unit\Service\Notes;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Service\External\Zgw\NoteEnvelope;
+use OCA\Dossiq\Service\Notes\NoteEnvelope;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Tests the note-to-document mapping.
  *
- * @covers \OCA\Dossiq\Service\External\Zgw\NoteEnvelope
+ * @covers \OCA\Dossiq\Service\Notes\NoteEnvelope
  */
 class NoteEnvelopeTest extends TestCase {
 	/**
