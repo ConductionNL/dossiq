@@ -152,7 +152,7 @@ class WooThroughputReport {
 	 * @return array{rows: list<array<string, int|string>>, cases: list<string>, truncated: bool} The report.
 	 */
 	private function report(array $filters, ?string $from, ?string $to): array {
-		$groups = [];
+		$tally = [];
 		$cases = [];
 		$read = $this->readAssessments(filters: $filters);
 		foreach ($read['rows'] as $assessment) {
@@ -161,23 +161,38 @@ class WooThroughputReport {
 				continue;
 			}
 
-			[$reviewer, $day, $verdict] = $counted;
-			$key = $reviewer . "\0" . $day;
-			$groups[$key] ??= ['reviewer' => $reviewer, 'day' => $day] + array_fill_keys(self::VERDICTS, 0) + ['total' => 0];
-			$groups[$key][$verdict]++;
-			$groups[$key]['total']++;
+			$this->add(tally: $tally, counted: $counted);
 			$cases[(string)($assessment['caseRef'] ?? '')] = true;
 		}
 
 		unset($cases['']);
-		ksort($groups);
+		ksort($tally);
 		$rows = [];
-		foreach ($groups as $group) {
-			$rows[] = ['reviewer' => $group['reviewer'], 'displayName' => $this->displayName(userId: $group['reviewer'])] + $group;
+		foreach ($tally as $group) {
+			$rows[] = ['reviewer' => $group['reviewer'], 'displayName' => $this->displayName(userId: $group['reviewer']), 'day' => $group['day']]
+				+ $group['counts'] + ['total' => array_sum($group['counts'])];
 		}
 
 		return ['rows' => $rows, 'cases' => array_map('strval', array_keys($cases)), 'truncated' => $read['truncated']];
 	}//end report()
+
+	/**
+	 * Count one assessment under its reviewer and day.
+	 *
+	 * @param array<string, array{reviewer: string, day: string, counts: array<string, int>}> $tally The tally so far.
+	 * @param array{0: string, 1: string, 2: string} $counted The reviewer, day and verdict.
+	 *
+	 * @return void
+	 */
+	private function add(array &$tally, array $counted): void {
+		[$reviewer, $day, $verdict] = $counted;
+		$key = $reviewer . "\0" . $day;
+		if (isset($tally[$key]) === false) {
+			$tally[$key] = ['reviewer' => $reviewer, 'day' => $day, 'counts' => array_fill_keys(self::VERDICTS, 0)];
+		}
+
+		$tally[$key]['counts'][$verdict] = ((int)($tally[$key]['counts'][$verdict] ?? 0) + 1);
+	}//end add()
 
 	/**
 	 * The reviewer, day and verdict an assessment counts under, or null when it counts nowhere.
