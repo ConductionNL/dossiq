@@ -7,7 +7,7 @@
 
 ### Requirement: The case create MUST carry its term fields
 
-`receivedAt`, `termStartsAt` and `receivedOutsideWorkingHours` SHALL be set before the case is saved, so the create result holds them. For a case opened through a form submit, `startDate` SHALL be the date of `termStartsAt`.
+`receivedAt`, `termStartsAt` and `receivedOutsideWorkingHours` SHALL be set before the case is saved, so the create result holds them. A case in OpenRegister status `draft` SHALL carry none of them; they SHALL be set on the save that moves the case out of `draft` (decision 180). For a case opened through a form submit, `startDate` SHALL be the date of `termStartsAt`.
 
 #### Scenario: A Sunday request returns its term in the submit response
 
@@ -15,6 +15,18 @@
 - **WHEN** a resident submits it on Sunday 11 October 2026 at 21:40
 - **THEN** the submit response carries the case `identifier`, `receivedAt` 2026-10-11T21:40, `termStartsAt` 2026-10-12 and `deadline` 2026-12-07
 - **AND** the case audit trail holds one create, not a create and an update
+
+#### Scenario: A draft case starts no term
+- **GIVEN** a resident who saves a request form as a draft on Friday
+- **WHEN** the case is read
+- **THEN** it is in status `draft` with no `receivedAt`, `termStartsAt` or `deadline`
+- **AND** no acknowledgement is queued
+
+#### Scenario: Sending the draft starts the term
+- **GIVEN** that draft, completed and sent on Sunday 11 October 2026 at 21:40
+- **WHEN** the case leaves `draft`
+- **THEN** `receivedAt` is 2026-10-11T21:40 and `termStartsAt` is 2026-10-12
+- **AND** the acknowledgement is queued once
 
 ### Requirement: The confirmation fields MUST be marked on the case schema
 

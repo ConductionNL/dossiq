@@ -2,7 +2,7 @@
 
 ## D-1. The term is stamped inside the create
 
-`IntakeTermStartListener` listens to `ObjectCreatingEvent` instead of `ObjectCreatedEvent`. It sets the three fields on the object before it is saved. One save, one audit entry, and the create result carries the fields. `IntakeTermStart::firstWorkingMomentAtOrAfter` is unchanged.
+`IntakeTermStartListener` listens to `ObjectCreatingEvent` instead of `ObjectCreatedEvent`, and to the update that moves a case out of OpenRegister status `draft` (decision 180). It sets the three fields on the object before it is saved, and only when the case is not a draft. One save, one audit entry, and the create result carries the fields. `IntakeTermStart::firstWorkingMomentAtOrAfter` is unchanged.
 
 ## D-2. `startDate` follows the term start for a submitted case
 
@@ -11,6 +11,10 @@ A case opened through a form submit gets `startDate` = the date of `termStartsAt
 ## D-3. bezwaar and klacht are cases from the first request
 
 The portal actions `createBezwaar` and `createKlacht` change destination from `portaalVerzoek` to `case`, with `caseType` fixed per action and `tegenZaak` and `tegenBesluit` as cross-references. `withinTerm` is computed by the bezwaar case type's timeliness rule, already on the case, instead of on the request object. Attachments become case documents.
+
+## D-3b. A draft case is not received
+
+A saved form is a case in status `draft`. Receipt-time listeners (term start, acknowledgement, routing) skip a draft and run on the move out of `draft`, which is the moment of receipt. `IntakeRequirementsListener` checks `requiredBeforeCreation` on that move too, not on the draft save, because a draft may miss required data.
 
 ## D-4. Drain
 

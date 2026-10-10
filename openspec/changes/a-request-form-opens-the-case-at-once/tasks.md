@@ -2,13 +2,16 @@
 
 ## 1. Term fields on create
 
-- [ ] 1.1 Move `IntakeTermStartListener` to `ObjectCreatingEvent`; one save
+- [ ] 1.1 Move `IntakeTermStartListener` to `ObjectCreatingEvent` and the move out of `draft`; one save; skip draft cases
   - Spec ref: specs/case-intake-destination/spec.md, "The case create MUST carry its term fields"
   - Files: lib/Listener/IntakeTermStartListener.php, lib/AppInfo/Application.php
   - Test: unit test asserting the fields on the creating object; a control asserting no second save
-- [ ] 1.2 `startDate` = date of `termStartsAt` for submit-opened cases (Q11)
+- [ ] 1.2 `startDate` = date of `termStartsAt` for submit-opened cases (decision 181)
 - [ ] 1.3 Schema markers `x-openregister.confirmation` and `x-openregister.serverSet` on the case properties
   - Files: lib/Settings/dossiq_register.json
+
+- [ ] 1.4 Receipt listeners (`AcknowledgementOnCreateListener`, routing, `IntakeRequirementsListener`) skip `draft` cases and run on the move out of `draft` (decision 180)
+  - Test: a draft create queues no acknowledgement; leaving draft queues exactly one
 
 ## 2. Intake requirement D-5 (intake-says-when-the-term-starts task 2.1)
 
@@ -25,7 +28,7 @@
 ## 4. Other intake paths
 
 - [ ] 4.1 `WooRequestIntake::writeCase` returns `receivedAt` and `termStartsAt` with the identifier and deadline; the confirmation template gains the term start
-- [ ] 4.2 `FormsIntakeService`: binding maps answers to typed properties, checked at bind time through OpenRegister's validator (Q6)
+- [ ] 4.2 `FormsIntakeService`: binding maps answers to typed properties, checked at bind time through OpenRegister's validator (decision 181)
 - [ ] 4.3 Case-type publish re-checks bound forms (`caseType.intakeFormRef` and portaliq bindings), including `requiredBeforeCreation`
 
 ## 5. Verification
