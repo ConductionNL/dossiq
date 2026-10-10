@@ -16,7 +16,7 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.3.1",
+        "version": "1.4.0",
         "searchable": false,
         "x-schema-org": "schema:DefinedTerm",
         "title": "Term definition",
@@ -153,6 +153,15 @@
             "description": "The statuses this clock runs in. In any other status the engine timer is suspended, and resuming moves the end date by what was banked, so a case sitting with an external adviser does not burn the same clock as one on a handler's desk. An empty list means the clock runs in every status, which is how every term behaved before this was declarable.",
             "items": {
               "type": "string"
+            }
+          },
+          "tellHandlerAt": {
+            "type": "array",
+            "title": "Tell the handler at",
+            "description": "The escalation rungs, in days before the end of the term, on which the handler of the case gets a notification. 0 is the day the term runs out. Leave it empty and the escalation is recorded without telling anyone, which is how every term behaved before this was declarable.",
+            "items": {
+              "type": "integer",
+              "minimum": 0
             }
           },
           "escalationLadder": {

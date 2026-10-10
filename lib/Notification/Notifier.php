@@ -122,6 +122,16 @@ class Notifier implements INotifier {
 	public const SUBJECT_DSO_DEADLINE_OVERDUE = 'dso_deadline_overdue';
 
 	/**
+	 * A case's statutory term reached a rung its term definition tells the handler about.
+	 */
+	public const SUBJECT_TERM_NEARING = 'term_nearing';
+
+	/**
+	 * A case's statutory term ran out, and its term definition tells the handler about that.
+	 */
+	public const SUBJECT_TERM_EXCEEDED = 'term_exceeded';
+
+	/**
 	 * A StUF endpoint was taken out of service by the circuit breaker.
 	 */
 	public const SUBJECT_STUF_CIRCUIT_OPEN = 'stuf_circuit_open';
@@ -175,6 +185,8 @@ class Notifier implements INotifier {
 		self::SUBJECT_DSO_DEADLINE_WARNING,
 		self::SUBJECT_DSO_DEADLINE_CRITICAL,
 		self::SUBJECT_DSO_DEADLINE_OVERDUE,
+		self::SUBJECT_TERM_NEARING,
+		self::SUBJECT_TERM_EXCEEDED,
 		self::SUBJECT_STUF_CIRCUIT_OPEN,
 		self::SUBJECT_STUF_TIMEOUT,
 		self::SUBJECT_STUF_PERMANENT_ERROR,
@@ -259,7 +271,9 @@ class Notifier implements INotifier {
 			self::SUBJECT_WOO_DEADLINE_OVERDUE,
 			self::SUBJECT_DSO_DEADLINE_WARNING,
 			self::SUBJECT_DSO_DEADLINE_CRITICAL,
-			self::SUBJECT_DSO_DEADLINE_OVERDUE => $this->deadlineText(
+			self::SUBJECT_DSO_DEADLINE_OVERDUE,
+			self::SUBJECT_TERM_NEARING,
+			self::SUBJECT_TERM_EXCEEDED => $this->deadlineText(
 				subjectKey: $subjectKey,
 				subjectRaw: $subjectRaw,
 				l: $l,
@@ -515,6 +529,20 @@ class Notifier implements INotifier {
 			}
 
 			return [$subject, $l->t('Open the request and plan the decision.')];
+		}
+
+		if ($subjectKey === self::SUBJECT_TERM_EXCEEDED) {
+			return [
+				$l->t('A case deadline has passed'),
+				$l->t('The legal term has run out. Decide on this case now.'),
+			];
+		}
+
+		if ($subjectKey === self::SUBJECT_TERM_NEARING) {
+			return [
+				$l->t('A case is nearing its deadline'),
+				$l->t('Days left to decide: %s. Open the case.', [(int)($subjectRaw['daysRemaining'] ?? 0)]),
+			];
 		}
 
 		if ($subjectKey === self::SUBJECT_DSO_DEADLINE_OVERDUE) {
