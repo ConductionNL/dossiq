@@ -335,7 +335,7 @@ require_once __DIR__ . '/Unit/Fixtures/SchemaAwareStufRegister.php';
 
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
-// (PublicationService, MandaatValidationService) cannot be mocked without these.
+// (PublicationService and others) cannot be mocked without these.
 // Guarded by interface_exists() so they no-op under a real Nextcloud runtime.
 require_once __DIR__ . '/Stubs/HttpClientStubs.php';
 
