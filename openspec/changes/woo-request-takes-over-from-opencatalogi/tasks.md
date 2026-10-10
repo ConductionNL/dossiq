@@ -105,6 +105,12 @@ are where local stubs lie).
   - Use opencatalogi's real `wooRequest` shape as the fixture: copy one object of each status
     from `lib/Settings/opencatalogi_mock_register.json` at 35999c29 into
     `tests/Fixtures/opencatalogi-woo-requests.json` and cite the source line.
+  - Part built (10 Oct): the per-request mapping `lib/Woo/OpenCatalogiWooCase.php` (status to stage,
+    start, requester, channel, `formerReferences`, extension count, end date, withdrawn result) with
+    `tests/Unit/Woo/OpenCatalogiWooCaseTest.php` (`testEveryStatusMapsToItsStage` and four more) on the
+    fixture (rows 1-3 from the mock register lines 1903-1966; rows 4-5 constructed, the mock has no
+    `awaiting_clarification` or `withdrawn` request). The stamp it needs is opencatalogi#1897. Open: `run()`
+    itself (find, write, carry the term, stamp), the term carry over `TermijnService`/`TermijnTimerService`.
 - [ ] 4.3 Add `lib/Command/ImportOpenCatalogiWooRequests.php` (`dossiq:woo:import-opencatalogi`,
   `--dry-run`) and register it in `appinfo/info.xml` (REQ-WTO-004).
   - Through the caller: `tests/Unit/Command/ImportOpenCatalogiWooRequestsTest.php`
