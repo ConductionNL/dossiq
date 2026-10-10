@@ -71,8 +71,6 @@ class AppointmentTools {
 	 *
 	 * @return array<string, mixed> The booked appointment, or an error envelope.
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) The appointment fields the controller takes, one scalar each, so the scanner can describe them.
-	 *
 	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
 	 */
 	#[McpTool(
