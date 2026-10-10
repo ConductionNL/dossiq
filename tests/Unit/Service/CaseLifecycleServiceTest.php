@@ -445,4 +445,110 @@ class CaseLifecycleServiceTest extends TestCase {
 
 		$this->assertSame(expected: 'ct-1', actual: $state['caseType']);
 	}//end testTheStateNamesTheCaseType()
+
+	/**
+	 * A service whose store refuses a readOnly change the way OpenRegister
+	 * does, and whose term gestures move the case's deadline the way the
+	 * deadline mirror does.
+	 *
+	 * The mirror runs INSIDE the term gesture: the TermijnInstance is saved,
+	 * and the case gets the term's new end as `statutoryDeadline` and, in
+	 * that same save, `deadline`. A gesture that then saves a case it read
+	 * BEFORE the term moved sends the old `deadline`, and OpenRegister
+	 * answers "Cannot modify readOnly property: deadline". That is the 500
+	 * the review found on pause, extend and resume (B1, 10 Oct).
+	 *
+	 * @return CaseLifecycleService The service, wired to the mirroring fakes.
+	 */
+	private function serviceWithTheDeadlineMirror(): CaseLifecycleService {
+		$this->case['deadline'] = '2026-09-01';
+		$this->case['statutoryDeadline'] = '2026-09-01';
+
+		$store = $this->createMock(CaseStatusStore::class);
+		$store->method('loadCase')->willReturnCallback(fn (): array => $this->case);
+		$store->method('lookupStatusName')->willReturn('In behandeling');
+		$store->method('saveCase')->willReturnCallback(
+			function (array $case): array {
+				if (array_key_exists('deadline', $case) === true && $case['deadline'] !== ($this->case['deadline'] ?? null)) {
+					// OpenRegister's ValidationException; a plain exception
+					// keeps the test independent of the OpenRegister classes.
+					throw new \Exception('Cannot modify readOnly property: deadline');
+				}
+
+				$this->case = $case;
+				return $case;
+			}
+		);
+
+		$mirror = function (string $end): array {
+			$this->case['statutoryDeadline'] = $end;
+			$this->case['deadline'] = $end;
+			return ['id' => 'ti-1', 'endDateCurrent' => $end];
+		};
+
+		$termService = $this->createMock(TermijnService::class);
+		$termService->method('getTermijnInstanceForZaak')->willReturn(['id' => 'ti-1']);
+
+		$pauseService = $this->createMock(DeadlinePauseService::class);
+		$pauseService->method('registerPauze')->willReturnCallback(fn (): array => $mirror('2026-09-15'));
+		$pauseService->method('resumeAfterPauze')->willReturnCallback(fn (): array => $mirror('2026-09-12'));
+
+		$extensionService = $this->createMock(DeadlineExtensionService::class);
+		$extensionService->method('requestExtension')->willReturnCallback(
+			fn (string $termInstanceId, string $rationale, string $newEndDate): array => $mirror($newEndDate)
+		);
+
+		return new CaseLifecycleService(
+			store: $store,
+			caseTypes: $this->caseTypes,
+			termService: $termService,
+			pauseService: $pauseService,
+			extensionService: $extensionService,
+			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
+		);
+	}//end serviceWithTheDeadlineMirror()
+
+	/**
+	 * Pausing a case with a statutory term saves the case as the mirror left
+	 * it: no readOnly refusal, and the term's new end is kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 */
+	public function testPauseOnATermSavesTheCaseTheMirrorWrote(): void {
+		$service = $this->serviceWithTheDeadlineMirror();
+
+		$state = $service->suspend(caseId: 'case-1', reason: 'Aanvulling gevraagd', days: 14);
+
+		$this->assertTrue($state['suspended']);
+		$this->assertSame('2026-09-15', $this->case['deadline']);
+		$this->assertSame('2026-09-15', $this->case['statutoryDeadline'], 'a stale payload must not write the old date back');
+
+		$resumed = $service->resume(caseId: 'case-1', reason: 'Aanvulling ontvangen');
+
+		$this->assertFalse($resumed['suspended']);
+		$this->assertSame('2026-09-12', $this->case['statutoryDeadline']);
+	}//end testPauseOnATermSavesTheCaseTheMirrorWrote()
+
+	/**
+	 * Extending a case with a statutory term saves the gesture's own fields
+	 * on top of what the mirror wrote.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/lifecycle-gesture-saves-the-case-as-stored/specs/status-transition-engine/spec.md
+	 */
+	public function testExtendOnATermSavesTheCaseTheMirrorWrote(): void {
+		$service = $this->serviceWithTheDeadlineMirror();
+
+		$state = $service->extend(caseId: 'case-1', reason: 'Meer onderzoek nodig');
+
+		$this->assertSame('2026-09-15', $state['deadline']);
+		$this->assertSame(1, $state['extensionCount']);
+		$this->assertSame('2026-09-15', $this->case['deadline']);
+		$this->assertSame('2026-09-15', $this->case['statutoryDeadline']);
+		$this->assertStringContainsString('"type":"extend"', (string)$this->case['activity']);
+	}//end testExtendOnATermSavesTheCaseTheMirrorWrote()
 }//end class
