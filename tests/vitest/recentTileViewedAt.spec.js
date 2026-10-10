@@ -148,4 +148,22 @@ describe('the Recently opened tile', () => {
 		expect(CnWidgetObjectTable.props).toHaveProperty('lensReasonTexts')
 		expect(CnDataTable.props).toHaveProperty('lensReasonTexts')
 	})
+
+	/**
+	 * The date column stays inside the tile (my-work-cards-and-team-tiles-read-right,
+	 * finding F7). The tile is about 340px wide and its three columns asked for
+	 * about 490px, so the date was cut off. Fixed layout makes the declared
+	 * widths hold; the title gives way and ends in an ellipsis.
+	 */
+	it('keeps the number and the date at their width, and lets the title give way', () => {
+		const content = recentTile().content
+		const [number, title, when] = content.columns
+
+		expect(content.fixedLayout).toBe(true)
+		expect(CnDataTable.props).toHaveProperty('fixedLayout')
+		expect(number.width).toBeTruthy()
+		expect(when.width).toBeTruthy()
+		expect(title.width).toBeUndefined()
+		expect(title.cellClass.split(' ')).toContain('cn-cell--truncate')
+	})
 })
