@@ -162,7 +162,7 @@ describe('the two lists a handler wants are offered by name', () => {
 		}
 	})
 
-	it('narrows the team queue to the reader\'s own teams, unclaimed', () => {
+	it("narrows the team queue to the reader's own teams, unclaimed", () => {
 		// my-teams-queue: a team is a Nextcloud group and `@myGroups` is the
 		// reader's group ids, an IN filter. While they load, or for a reader
 		// in no group, the list waits and shows its prompt.
