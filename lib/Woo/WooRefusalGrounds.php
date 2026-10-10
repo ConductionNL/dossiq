@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use Throwable;
 /**
  * Reads the refusal grounds as the system, and never answers an empty list.
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
  */
 class WooRefusalGrounds {
 
@@ -95,7 +95,7 @@ class WooRefusalGrounds {
 	 *
 	 * @throws WooRefusalGroundsUnavailable When the register cannot be read or holds no grounds.
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
 	 */
 	public function list(): array {
 		return array_values(
@@ -113,7 +113,7 @@ class WooRefusalGrounds {
 	 *
 	 * @throws WooRefusalGroundsUnavailable When the register cannot be read or holds no grounds.
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
 	 */
 	public function listWithRetired(): array {
 		$grounds = [];
@@ -143,7 +143,7 @@ class WooRefusalGrounds {
 	 *
 	 * @throws WooRefusalGroundsUnavailable When the register cannot be read or holds no grounds.
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
 	 */
 	public function byCode(string $code): ?array {
 		$code = trim($code);

@@ -104,7 +104,7 @@ class WOOAssessmentController extends Controller {
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	#[NoAdminRequired]
 	public function bulkAssess(string $id): JSONResponse {
