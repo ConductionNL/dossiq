@@ -73,18 +73,21 @@ Tier: V1. Kind: code. Size M. Rows 2.37, 2.38 and 13.28.
   - `escalated` is still OPEN and the test says so: a request that quietly
     expired would be indexed the same as one somebody refused, and the two
     are not the same fact.
-- [ ] 2.4 [partial] Declare who may accept or refuse on behalf of a unit as an
-  action mapping under ADR-023, not a group check in the service.
-  - WHAT SHIPPED, so nobody has to read the code to find out: there is NO
-    group check in the service, which is the half of this task that was a
-    defect. `CaseTakeoverController` answers on `CaseAccessGuard`, per case
-    and failing closed, and the guards differ per verb on purpose: asking
-    needs READ access, because the asker does not hold the case and requiring
-    mutation access would refuse exactly the people the request exists for,
-    while answering needs MUTATION access, because an accept moves the case.
-  - WHAT DID NOT: the answer is not yet a declared action in OpenRegister's
-    action vocabulary, so an administrator cannot rebind who answers for a
-    unit without a code change. That is the ADR-023 half and it stays open.
+- [x] 2.4 Who may accept or refuse on behalf of a unit: whoever has mutation access on the
+  case (decision 168, Q-dossiq-L1-3). No action registry and no group check in the service.
+  - Evidence: `CaseTakeoverController` answers on `CaseAccessGuard`, per case and failing closed.
+    Asking needs READ access, because the asker does not hold the case; answering needs MUTATION
+    access (`writerOf()`), because an accept moves the case. Covered by the new
+    `tests/Unit/Controller/CaseTakeoverControllerTest.php`.
+  - FOUND AND FIXED while collecting that evidence: `accept()` and `refuse()` looked the request up
+    by its id alone, while the controller authorised the caller on the case in the URL, so anyone
+    who could change one case could answer (and on accept, move) a request on another. Both now
+    take the authorised `caseId` and treat a request on another case as unknown.
+    `CaseTakeoverAnswerTest::testARequestOnAnotherCaseCannotBeAnsweredFromThisOne` (mutation-checked:
+    dropping the case comparison reddens it).
+  - The ADR-023 action mapping (`case.takeover.answer`) is not built, by decision: its safe default
+    (`["admin"]`) would have stopped every current handler from answering, and per-case access
+    already fails closed. REQ-CUS-02 now says so.
 - [x] 3.1 `lib/Settings/register.d/50-sociaal-domein.json`: read the declared
   `toestemming`, with the sharing scope and the period it covers (D-5, D-6).
   - `@spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md`

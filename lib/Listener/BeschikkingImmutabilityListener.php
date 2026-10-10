@@ -255,7 +255,8 @@ class BeschikkingImmutabilityListener implements IEventListener {
 	 */
 	private function changedContentFields(array $stored, array $incoming): array {
 		$changed = [];
-		foreach (StateMachineService::CONTENT_FIELDS as $field) {
+		$guarded = array_merge(StateMachineService::CONTENT_FIELDS, StateMachineService::WRITE_ONCE_FIELDS);
+		foreach ($guarded as $field) {
 			if (array_key_exists($field, $incoming) === false) {
 				continue;
 			}

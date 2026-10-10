@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
+use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
@@ -58,19 +59,43 @@ use RuntimeException;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T14
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the
- * threshold, and the one that crossed it is `CoordinatorRequirement`: the seat
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Fourteen, two over the
+ * threshold. The last to join is `DocumentSeriesNumberer` (decision 167): the
+ * number is written by compose() itself, so no composed beschikking can exist
+ * without one. The one that first crossed it is `CoordinatorRequirement`: the seat
  * a case type may insist on before its besluit is signed. The alternatives
  * were both worse. Checking it in the controller instead leaves the rule on
  * ONE door, so a second caller of `onderteken()` signs without it, and a rule
  * that can be walked around is not a rule. Folding the collaborators into a
  * parameter object hides the dependency list rather than shortening it, which
  * is the reasoning {@see AcknowledgementService} already records for the same
- * trade. The thirteen are each injected and each named, so the class is
+ * trade. The fourteen are each injected and each named, so the class is
  * readable even where it is wide.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Same list, same reason.
  */
 class BeschikkingService {
+
+	/**
+	 * The document series beschikkingen are numbered in (decision 167).
+	 *
+	 * @var string
+	 */
+	public const NUMBER_SERIES = 'beschikking';
+
+	/**
+	 * The prefix when the case type configures none under
+	 * `documentSeries.beschikking.prefix`.
+	 *
+	 * @var string
+	 */
+	public const NUMBER_PREFIX = 'B';
+
+	/**
+	 * The kinds a successor may be: a wijzigingsbeschikking or an intrekkingsbeschikking.
+	 *
+	 * @var array<int, string>
+	 */
+	public const SUCCESSOR_KINDS = ['amendment', 'withdrawal'];
 
 	/**
 	 * Constructor.
@@ -87,6 +112,7 @@ class BeschikkingService {
 	 * @param CoordinatorRequirement $coordinator The second seat a case type may insist on before signing.
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
 	 * @param CaseRemedy $remedy The remedy this case's decisions carry, and the clock they start.
+	 * @param DocumentSeriesNumberer $numberer Issues the beschikking's number from its document series (decision 167).
 	 *
 	 * @return void
 	 */
@@ -103,6 +129,7 @@ class BeschikkingService {
 		private readonly CoordinatorRequirement $coordinator,
 		private readonly CaseTimeline $timeline,
 		private readonly CaseRemedy $remedy,
+		private readonly DocumentSeriesNumberer $numberer,
 	) {
 	}//end __construct()
 
@@ -115,7 +142,10 @@ class BeschikkingService {
 	 *
 	 * @return array<string, mixed> The created beschikking, with `_required` flags on missing fields.
 	 *
+	 * @throws RefusedException 503 when no number can be reserved for it.
+	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function compose(string $caseId, ?string $templateId = null, array $overrides = []): array {
 		if ($caseId === '') {
@@ -133,6 +163,14 @@ class BeschikkingService {
 
 		$decision = [
 			'caseId' => $caseId,
+			// THE NUMBER IS WRITTEN HERE, AT BIRTH (decision 167). It was
+			// declared and never written, so the first beschikking served would
+			// have reached the Berichtenbox and its audit packet with an empty
+			// reference. Reserved before the save: a save that then fails
+			// spends a number, which leaves a gap, and a gap is allowed where a
+			// repeat is not. A correction is composed here too, so it gets its
+			// own new number rather than a suffix on the one it replaces.
+			'reference' => $this->numberer->issue(caseId: $caseId, series: self::NUMBER_SERIES, defaultPrefix: self::NUMBER_PREFIX),
 			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
 			// The resolved version is STORED, not just resolved. It was
@@ -146,8 +184,6 @@ class BeschikkingService {
 			'draftVersion' => 1,
 			'currentStatus' => 'draft',
 			'compositeContent' => $composition,
-			'addressee' => (array)($overrides['addressee'] ?? []),
-			'decision' => (array)($overrides['decision'] ?? []),
 			'rationale' => ($overrides['rationale'] ?? null),
 			// 🔴 THE CLAUSE COMES FROM THE CASE TYPE, NOT FROM THE TEMPLATE
 			// (REQ-DEC-03). Two case types sharing one template print
@@ -159,6 +195,23 @@ class BeschikkingService {
 			// has to act on.
 			'legalRemediesClause' => $this->remedy->clauseFor(caseId: $caseId),
 		];
+
+		// Only when there is something in them. Both are `type: object`, and
+		// an empty PHP array is saved as the JSON LIST `[]`, which the
+		// schema refuses: a compose with no addressee yet was a failed save.
+		foreach (['addressee', 'decision'] as $objectField) {
+			$value = (array)($overrides[$objectField] ?? []);
+			if ($value !== []) {
+				$decision[$objectField] = $value;
+			}
+		}
+
+		// The successor's backward pointer (REQ-BES-012), set only by
+		// issueSuccessor(). The create route never forwards it.
+		$supersedes = trim((string)($overrides['supersedes'] ?? ''));
+		if ($supersedes !== '') {
+			$decision['supersedes'] = $supersedes;
+		}
 
 		$saved = $this->repository->save(decision: $decision);
 		return $this->markRequiredFields(decision: $saved);
@@ -534,6 +587,139 @@ class BeschikkingService {
 
 		return $saved;
 	}//end archive()
+
+	/**
+	 * Issue a successor to a signed beschikking.
+	 *
+	 * @param string               $originalId The beschikking being corrected or withdrawn.
+	 * @param string               $kind       `amendment` or `withdrawal`.
+	 * @param array<string, mixed> $overrides  Content of the successor: rationale, decision, addressee.
+	 * @param string|null          $templateId The template; the original's when null.
+	 *
+	 * @return array<string, mixed> The successor, a draft with its own number.
+	 *
+	 * @throws RefusedException 422 for an unknown kind; 409 when the original is
+	 *                          still a draft or has already been replaced.
+	 * @throws \RuntimeException 'not_found' when the original does not exist.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/specs/numbered-document-series/spec.md
+	 */
+	public function issueSuccessor(string $originalId, string $kind, array $overrides = [], ?string $templateId = null): array {
+		if (in_array($kind, self::SUCCESSOR_KINDS, true) === false) {
+			throw new RefusedException(
+				rule: 'successor-kind-unknown',
+				sentence: 'A correction is either a wijzigingsbeschikking or an intrekkingsbeschikking.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		$original = $this->repository->requireBeschikking(decisionId: $originalId);
+
+		if ($this->stateMachine->isImmutable(status: (string)($original['currentStatus'] ?? '')) === false) {
+			throw new RefusedException(
+				rule: 'successor-of-a-draft',
+				sentence: 'This beschikking has not been signed yet. Change the draft instead of issuing a correction.',
+			);
+		}
+
+		$this->refuseASecondSuccessor(original: $original);
+
+		$successor = $this->compose(
+			caseId: $this->successorCaseIdOf(original: $original),
+			templateId: ($templateId ?? $this->successorTemplateOf(original: $original)),
+			overrides: $this->successorFields(original: $original, kind: $kind, overrides: $overrides, originalId: $originalId),
+		);
+
+		$original['id'] = $originalId;
+		$original['supersededBy'] = (string)($successor['id'] ?? '');
+		$this->repository->save(decision: $original);
+
+		return $successor;
+	}//end issueSuccessor()
+
+	/**
+	 * Refuse when the original already names a successor, and name that one.
+	 *
+	 * @param array<string, mixed> $original The stored original.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException 409 naming the successor to correct instead.
+	 */
+	private function refuseASecondSuccessor(array $original): void {
+		$successorId = trim((string)($original['supersededBy'] ?? ''));
+		if ($successorId === '') {
+			return;
+		}
+
+		$successor = $this->repository->find(decisionId: $successorId);
+		$reference = trim((string)($successor['reference'] ?? ''));
+		if ($reference === '') {
+			$reference = $successorId;
+		}
+
+		throw new RefusedException(
+			rule: 'already-superseded',
+			sentence: 'This beschikking has already been replaced by '.$reference.'. Correct that beschikking instead.',
+		);
+	}//end refuseASecondSuccessor()
+
+	/**
+	 * The fields the successor is composed with.
+	 *
+	 * The addressee carries over unless the correction names another: the
+	 * person who received the original is who the correction is for.
+	 *
+	 * @param array<string, mixed> $original   The stored original.
+	 * @param string               $kind       The successor kind.
+	 * @param array<string, mixed> $overrides  What the handler wrote.
+	 * @param string               $originalId The original's id.
+	 *
+	 * @return array<string, mixed> The compose overrides.
+	 */
+	private function successorFields(array $original, string $kind, array $overrides, string $originalId): array {
+		$fields = [
+			'decisionType' => $kind,
+			'supersedes' => $originalId,
+			'addressee' => (array)($overrides['addressee'] ?? ($original['addressee'] ?? [])),
+		];
+
+		foreach (['rationale', 'decision'] as $field) {
+			if (array_key_exists($field, $overrides) === true) {
+				$fields[$field] = $overrides[$field];
+			}
+		}
+
+		return $fields;
+	}//end successorFields()
+
+	/**
+	 * The case the original belongs to, which the successor belongs to as well.
+	 *
+	 * @param array<string, mixed> $original The stored original.
+	 *
+	 * @return string The case id.
+	 */
+	private function successorCaseIdOf(array $original): string {
+		return (string)($original['caseId'] ?? '');
+	}//end successorCaseIdOf()
+
+	/**
+	 * The template the original was written from, or null to let compose choose.
+	 *
+	 * @param array<string, mixed> $original The stored original.
+	 *
+	 * @return string|null The template id.
+	 */
+	private function successorTemplateOf(array $original): ?string {
+		$templateId = trim((string)($original['templateId'] ?? ''));
+		if ($templateId === '') {
+			return null;
+		}
+
+		return $templateId;
+	}//end successorTemplateOf()
 
 	/**
 	 * Flag required-but-empty fields with `_required` markers.

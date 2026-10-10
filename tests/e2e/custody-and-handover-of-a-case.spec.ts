@@ -27,8 +27,8 @@
  * CaseCustodyChainTest, CaseTakeoverAnswerTest and PartnerShareScopeTest, which
  * is where a regression would be caught before this file next runs.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/case-management/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'

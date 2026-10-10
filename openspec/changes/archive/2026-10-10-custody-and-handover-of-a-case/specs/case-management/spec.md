@@ -39,6 +39,17 @@ with a reason. The request SHALL reach the holder as a task. The holder
 SHALL accept or refuse, and a refusal SHALL carry a reason. Both answers
 SHALL be recorded on the case.
 
+Who may answer for a unit SHALL be decided per case: whoever has mutation
+access on the case may accept or refuse, and asking needs read access
+(decision 168). There is no separate action registry for this answer.
+
+#### Scenario: Only someone who may change the case answers the request
+
+- **GIVEN** a takeover request on a case
+- **WHEN** a user with read access but no mutation access tries to accept it
+- **THEN** the answer SHALL be refused with HTTP 403
+- **AND** the case SHALL stay where it is
+
 #### Scenario: The holder refuses with a reason
 @e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
 

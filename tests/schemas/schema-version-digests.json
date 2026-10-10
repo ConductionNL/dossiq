@@ -52,7 +52,7 @@
         "digest": "30aa210ecb3ff7ef763a8ba27c22bb11c2bc18f27c3d637c8c03805250b9c934"
     },
     "lib/Settings/dossiq_mock_register.json::beschikking": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/dossiq_mock_register.json::besluitinformatieobject": {
@@ -912,7 +912,7 @@
         "digest": "5a27de522f28af73f334da9c91e35a1581da03180cd5cf7a2d5031095257d3ea"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/register.d/30-beschikking.json::bezwaarTrigger": {
@@ -1502,5 +1502,9 @@
     "lib/Settings/register.d/dso-omgevingsloket.json::samenwerkverzoek": {
         "version": "1.1.0",
         "digest": "aa75d2bf31629280d12b2258bbb78e3246c534cffef9ae31b3216e4f5e7e7082"
+    },
+    "lib/Settings/register.d/39-document-series.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
 }

@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Ask, accept, refuse, and read what was asked.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTakeoverController extends Controller {
 
@@ -69,7 +69,7 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -89,7 +89,7 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The request, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function ask(string $caseId): JSONResponse {
@@ -123,7 +123,7 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The answered request, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function accept(string $caseId, string $takeoverId): JSONResponse {
@@ -134,7 +134,7 @@ class CaseTakeoverController extends Controller {
 
 		try {
 			return new JSONResponse(
-				$this->takeovers->accept(takeoverId: $takeoverId, acceptedBy: $user->getUID())
+				$this->takeovers->accept(takeoverId: $takeoverId, acceptedBy: $user->getUID(), caseId: $caseId)
 			);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'takeover accept', e: $e);
@@ -149,7 +149,7 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The answered request, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $caseId, string $takeoverId): JSONResponse {
@@ -168,7 +168,7 @@ class CaseTakeoverController extends Controller {
 
 		try {
 			return new JSONResponse(
-				$this->takeovers->refuse(takeoverId: $takeoverId, reason: $reason, refusedBy: $user->getUID())
+				$this->takeovers->refuse(takeoverId: $takeoverId, reason: $reason, refusedBy: $user->getUID(), caseId: $caseId)
 			);
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'takeover refuse', e: $e);
@@ -182,7 +182,7 @@ class CaseTakeoverController extends Controller {
 	 *
 	 * @return JSONResponse The requests, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
 	public function onCase(string $caseId): JSONResponse {

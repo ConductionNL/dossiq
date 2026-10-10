@@ -25,7 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Custody\TakeoverStore
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTakeoverEscalationTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -95,7 +95,7 @@ class CaseTakeoverEscalationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAnUnansweredRequestGoesToTheUnit(): void {
 		$engine = $this->createMock(originalClassName: EngineTaskGateway::class);
@@ -120,7 +120,7 @@ class CaseTakeoverEscalationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testTheCaseTypeSaysHowLongTheHolderHas(): void {
 		$takeovers = $this->takeovers();
@@ -143,7 +143,7 @@ class CaseTakeoverEscalationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAnEscalatedRequestCanStillBeAnswered(): void {
 		$takeovers = $this->takeovers();
@@ -154,6 +154,7 @@ class CaseTakeoverEscalationTest extends TestCase {
 			takeoverId: $escalated[0]['id'],
 			reason: 'De teamleider houdt hem bij Jan',
 			refusedBy: 'teamleider',
+			caseId: 'case-1',
 		);
 
 		self::assertSame('refused', $answered['status'], 'Escalated is the absence of an answer, not an answer.');
@@ -165,12 +166,12 @@ class CaseTakeoverEscalationTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAnAnsweredRequestDoesNotEscalate(): void {
 		$takeovers = $this->takeovers();
 		$record = $takeovers->request(caseId: 'case-1', requestedBy: 'sofie', reason: 'Mijn wijk');
-		$takeovers->refuse(takeoverId: $record['id'], reason: 'Nee', refusedBy: 'jan');
+		$takeovers->refuse(takeoverId: $record['id'], reason: 'Nee', refusedBy: 'jan', caseId: 'case-1');
 
 		self::assertSame([], $takeovers->escalateOverdue(now: $this->inDays(days: 30)));
 	}//end testAnAnsweredRequestDoesNotEscalate()

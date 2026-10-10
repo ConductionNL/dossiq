@@ -26,7 +26,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Custody\TakeoverStore
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTakeoverAnswerTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -115,10 +115,10 @@ class CaseTakeoverAnswerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAcceptingOpensAHoldingNamingTheAsker(): void {
-		$answered = $this->takeovers()->accept(takeoverId: $this->request['id'], acceptedBy: 'jan');
+		$answered = $this->takeovers()->accept(takeoverId: $this->request['id'], acceptedBy: 'jan', caseId: 'case-1');
 
 		self::assertSame('accepted', $answered['status']);
 		self::assertSame('jan', $answered['answeredBy']);
@@ -138,13 +138,14 @@ class CaseTakeoverAnswerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testRefusingKeepsTheCaseAndRecordsWhy(): void {
 		$answered = $this->takeovers()->refuse(
 			takeoverId: $this->request['id'],
 			reason: 'Ik ben er al mee bezig, de hoorzitting is volgende week',
 			refusedBy: 'jan',
+			caseId: 'case-1',
 		);
 
 		self::assertSame('refused', $answered['status']);
@@ -167,12 +168,12 @@ class CaseTakeoverAnswerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testARefusalWithoutAReasonIsNotAnAnswer(): void {
 		$this->expectException(RefusedException::class);
 
-		$this->takeovers()->refuse(takeoverId: $this->request['id'], reason: '  ', refusedBy: 'jan');
+		$this->takeovers()->refuse(takeoverId: $this->request['id'], reason: '  ', refusedBy: 'jan', caseId: 'case-1');
 	}//end testARefusalWithoutAReasonIsNotAnAnswer()
 
 	/**
@@ -180,14 +181,14 @@ class CaseTakeoverAnswerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAnAnsweredRequestIsNotAnsweredTwice(): void {
 		$takeovers = $this->takeovers();
-		$takeovers->refuse(takeoverId: $this->request['id'], reason: 'Nee', refusedBy: 'jan');
+		$takeovers->refuse(takeoverId: $this->request['id'], reason: 'Nee', refusedBy: 'jan', caseId: 'case-1');
 
 		$this->expectException(RefusedException::class);
-		$takeovers->accept(takeoverId: $this->request['id'], acceptedBy: 'jan');
+		$takeovers->accept(takeoverId: $this->request['id'], acceptedBy: 'jan', caseId: 'case-1');
 	}//end testAnAnsweredRequestIsNotAnsweredTwice()
 
 	/**
@@ -195,13 +196,45 @@ class CaseTakeoverAnswerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAnUnknownRequestIsRefused(): void {
 		$this->expectException(RefusedException::class);
 
-		$this->takeovers()->accept(takeoverId: 'takeover-404', acceptedBy: 'jan');
+		$this->takeovers()->accept(takeoverId: 'takeover-404', acceptedBy: 'jan', caseId: 'case-1');
 	}//end testAnUnknownRequestIsRefused()
+
+	/**
+	 * A request answered under ANOTHER case's id is unknown, and nothing moves.
+	 *
+	 * The controller authorises the caller on the case in the URL. Answering by
+	 * the request id alone let someone who may change one case move another
+	 * (decision 168 rests on the per-case check holding).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 */
+	public function testARequestOnAnotherCaseCannotBeAnsweredFromThisOne(): void {
+		$takeovers = $this->takeovers();
+
+		foreach (['accept', 'refuse'] as $verb) {
+			try {
+				if ($verb === 'accept') {
+					$takeovers->accept(takeoverId: $this->request['id'], acceptedBy: 'jan', caseId: 'case-2');
+				} else {
+					$takeovers->refuse(takeoverId: $this->request['id'], reason: 'Nee', refusedBy: 'jan', caseId: 'case-2');
+				}
+
+				self::fail($verb.' must refuse a request that is not on the authorised case.');
+			} catch (RefusedException $refusal) {
+				self::assertSame(CaseTakeoverRequest::REQUEST_UNKNOWN, $refusal->getRule());
+			}
+		}
+
+		self::assertSame('pending', $this->store->row(schema: 'caseTakeover', uuid: $this->request['id'])['status']);
+		self::assertSame('jan', $this->store->row(schema: 'case', uuid: 'case-1')['assignee'], 'The case did not move.');
+	}//end testARequestOnAnotherCaseCannotBeAnsweredFromThisOne()
 
 	/**
 	 * The takeover service under test.

@@ -14,7 +14,7 @@
       "beschikking": {
         "slug": "beschikking",
         "icon": "FileCertificateOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:GovernmentPermit",
         "title": "Beschikking",
         "description": "Formal decision (Awb besluit) with full lifecycle: ontwerp -> akkoord-mandaat -> ondertekend -> verzonden -> ontvangen-bevestiging -> gearchiveerd. Immutable once ondertekend. State transitions are guarded by mandaat-verificatie (akkoord) and TSP-handtekening (onderteken) and logged via stateMachineLog.",
@@ -53,7 +53,19 @@
             "type": "string",
             "title": "Reference Mark",
             "maxLength": 255,
-            "description": "User-visible decision number (e.g. Z/2026/04832/B01)"
+            "description": "The decision number, e.g. B-2026-000123: one running number per organisation per year. A correction gets its own number."
+          },
+          "supersedes": {
+            "type": "string",
+            "title": "Replaces",
+            "description": "The beschikking this one corrects or withdraws. Empty for a first decision.",
+            "facetable": true
+          },
+          "supersededBy": {
+            "type": "string",
+            "title": "Replaced by",
+            "description": "The beschikking that corrected or withdrew this one. Written once, and empty while this one is in force.",
+            "facetable": true
           },
           "templateId": {
             "type": "string",
