@@ -41,9 +41,7 @@ class AdminSettingsPrerequisitesTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheFormPassesTheRunningNextcloud(): void {
-		// The real class: it is readonly and cannot be doubled, and the real
-		// one is what the container hands the form.
-		$serverVersion = new ServerVersion();
+		$serverVersion = $this->serverVersion(major: 34);
 		$major = $serverVersion->getMajorVersion();
 
 		$provided = [];
@@ -66,11 +64,34 @@ class AdminSettingsPrerequisitesTest extends TestCase {
 		$settings->getForm();
 
 		$this->assertArrayHasKey('prerequisites', $provided);
-		$this->assertGreaterThan(0, $major);
-		$this->assertSame((string)$major, $provided['prerequisites']['nextcloud']['running']);
-		$this->assertSame(
-			($major >= 32 && $major <= 35),
-			$provided['prerequisites']['nextcloud']['present']
-		);
+		$this->assertSame(34, $major);
+		$this->assertSame('34', $provided['prerequisites']['nextcloud']['running']);
+		$this->assertTrue($provided['prerequisites']['nextcloud']['present']);
 	}//end testTheFormPassesTheRunningNextcloud()
+
+	/**
+	 * A real ServerVersion that reports a given major.
+	 *
+	 * The class is readonly, so PHPUnit cannot double it, and its constructor
+	 * reads the server's version.php, which the OCP stubs CI runs against do
+	 * not ship. So the instance is made without the constructor and its
+	 * version filled from inside the class scope, which a readonly property
+	 * allows once.
+	 *
+	 * @param int $major The major version to report.
+	 *
+	 * @return ServerVersion The instance.
+	 */
+	private function serverVersion(int $major): ServerVersion {
+		$instance = (new \ReflectionClass(ServerVersion::class))->newInstanceWithoutConstructor();
+		\Closure::bind(
+			function () use ($major): void {
+				$this->version = [$major, 0, 0];
+			},
+			$instance,
+			ServerVersion::class
+		)();
+
+		return $instance;
+	}//end serverVersion()
 }//end class
