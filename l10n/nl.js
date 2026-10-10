@@ -3646,6 +3646,7 @@ OC.L10N.register(
         "LHS Matrix": "LHS-matrix",
         "LHS Matrix Cell": "Cel in de LHS-matrix",
         "LHS Recommendation": "LHS-advies",
+        "LHS recommendation": "LHS-aanbeveling",
         "LHS Recommendations": "LHS-adviezen",
         "LHS recommendations": "LHS-aanbevelingen",
         "LibreSign is not installed or enabled. Digital signing falls back to the built-in stub adapter. Install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.": "LibreSign is niet geïnstalleerd of ingeschakeld. Digitaal ondertekenen valt terug op de ingebouwde stub-adapter. Installeer en schakel de LibreSign-app in om beschikkingen te ondertekenen met een echte eIDAS-conforme handtekening.",

@@ -58,6 +58,22 @@ class PreferencesController extends Controller {
 	private const MAX_VALUE_LENGTH = 8192;
 
 	/**
+	 * Longest key accepted, so `pref_` plus the key fits IConfig's
+	 * 64-character key column.
+	 *
+	 * @var int
+	 */
+	private const MAX_KEY_LENGTH = 59;
+
+	/**
+	 * The prefix nextcloud-vue's page views put before a page id
+	 * (`PAGE_VIEW_PREFERENCE_PREFIX` in its `mixins/pageViews.js`).
+	 *
+	 * @var string
+	 */
+	private const PAGE_VIEW_PREFIX = 'cn_page_view:';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
@@ -167,20 +183,35 @@ class PreferencesController extends Controller {
 	 * A key outside it is refused rather than rewritten: stripping would let
 	 * `case.view` and `caseview` silently share one stored value. The charset
 	 * covers the keys the library sends (`cn_landing_page`,
-	 * `dashboard-layout.{pageId}`), and the length leaves room for `pref_`
-	 * within IConfig's 64-character key column.
+	 * `dashboard-layout.{pageId}`, and `cn_page_view:{pageId}` with its one
+	 * colon), and the length leaves room for `pref_` within IConfig's
+	 * 64-character key column.
 	 *
 	 * @param string $key The raw key.
 	 *
 	 * @return string The key unchanged, or '' when it is refused.
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
 	 */
 	private function sanitizeKey(string $key): string {
-		if (preg_match(pattern: '/^[A-Za-z0-9._-]{1,59}$/', subject: $key) !== 1) {
+		if (strlen(string: $key) > self::MAX_KEY_LENGTH) {
 			return '';
 		}
 
-		return $key;
+		if (preg_match(pattern: '/^[A-Za-z0-9._-]{1,59}$/', subject: $key) === 1) {
+			return $key;
+		}
+
+		// The one key with a colon: nextcloud-vue's page views store the chosen
+		// view under `cn_page_view:<pageId>` (PAGE_VIEW_PREFERENCE_PREFIX), and
+		// a refused key made every visit to the landing page answer 400. The
+		// colon is allowed after that exact prefix and nowhere else, and the
+		// page id after it keeps the safe charset.
+		if (preg_match(pattern: '/^'.preg_quote(self::PAGE_VIEW_PREFIX, '/').'[A-Za-z0-9._-]+$/', subject: $key) === 1) {
+			return $key;
+		}
+
+		return '';
 	}//end sanitizeKey()
 }//end class
