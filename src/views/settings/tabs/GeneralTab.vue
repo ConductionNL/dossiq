@@ -150,7 +150,9 @@
 				:helperText="thresholdErrors.queueCriticalDays || thresholdHint"
 				inputmode="numeric"
 				data-testid="case-type-queue-critical-days"
-				@update:modelValue="(v) => updateThreshold('queueCriticalDays', v, 60)" />
+				@update:modelValue="
+					(v) => updateThreshold('queueCriticalDays', v, 60)
+				" />
 			<NcTextField
 				:modelValue="thresholdText(form.queueWarningDays)"
 				:label="t('dossiq', 'Almost due from, working days left')"
@@ -158,7 +160,9 @@
 				:helperText="thresholdErrors.queueWarningDays || thresholdHint"
 				inputmode="numeric"
 				data-testid="case-type-queue-warning-days"
-				@update:modelValue="(v) => updateThreshold('queueWarningDays', v, 120)" />
+				@update:modelValue="
+					(v) => updateThreshold('queueWarningDays', v, 120)
+				" />
 		</div>
 
 		<!-- Extension Allowed -->
@@ -361,7 +365,10 @@ export default {
 		 * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
 		 */
 		thresholdHint() {
-			return t('dossiq', 'Leave empty to use the default from the admin settings.')
+			return t(
+				'dossiq',
+				'Leave empty to use the default from the admin settings.',
+			)
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */

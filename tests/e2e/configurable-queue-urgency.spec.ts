@@ -52,7 +52,11 @@ let token: string
  */
 async function writeSettings(values: Record<string, string>): Promise<void> {
 	const res = await api.post('/index.php/apps/dossiq/api/settings', {
-		headers: { requesttoken: token, 'Content-Type': 'application/json', 'OCS-APIREQUEST': 'true' },
+		headers: {
+			requesttoken: token,
+			'Content-Type': 'application/json',
+			'OCS-APIREQUEST': 'true',
+		},
 		data: values,
 	})
 	expect(res.ok(), 'the settings write must answer 2xx').toBeTruthy()
@@ -66,9 +70,15 @@ async function writeSettings(values: Record<string, string>): Promise<void> {
 async function openMyWork(page: Page): Promise<void> {
 	await page.goto(`/index.php/apps/dossiq${MyWorkCards}`)
 	await dismissSupportDialog(page)
-	await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({ timeout: 60_000 })
-	await expect(page.locator('.mywork-card', { hasText: HIGH })).toBeVisible({ timeout: 60_000 })
-	await expect(page.locator('.mywork-card', { hasText: LOW })).toBeVisible({ timeout: 60_000 })
+	await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
+		timeout: 60_000,
+	})
+	await expect(page.locator('.mywork-card', { hasText: HIGH })).toBeVisible({
+		timeout: 60_000,
+	})
+	await expect(page.locator('.mywork-card', { hasText: LOW })).toBeVisible({
+		timeout: 60_000,
+	})
 }
 
 /**
@@ -79,7 +89,9 @@ async function openMyWork(page: Page): Promise<void> {
  */
 async function seededOrder(page: Page): Promise<string[]> {
 	const titles = await page.locator('.mywork-card__title').allInnerTexts()
-	return titles.map((title) => title.trim()).filter((title) => title === HIGH || title === LOW)
+	return titles
+		.map((title) => title.trim())
+		.filter((title) => title === HIGH || title === LOW)
 }
 
 test.describe('configurable-queue-urgency', () => {
@@ -91,7 +103,9 @@ test.describe('configurable-queue-urgency', () => {
 		await writeSettings(DEFAULTS)
 		const caseType = await ensureCaseType(api, token)
 		const today = new Date().toISOString().slice(0, 10)
-		const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+		const yesterday = new Date(Date.now() - 86_400_000)
+			.toISOString()
+			.slice(0, 10)
 		await seedCase(api, token, {
 			title: HIGH,
 			caseType: caseType.id,
@@ -121,7 +135,10 @@ test.describe('configurable-queue-urgency', () => {
 		await openMyWork(page)
 
 		await expect(page.locator('[data-testid="urgency-fallback"]')).toHaveCount(0)
-		expect(await seededOrder(page), 'the earlier, higher-priority case must rank first').toEqual([HIGH, LOW])
+		expect(
+			await seededOrder(page),
+			'the earlier, higher-priority case must rank first',
+		).toEqual([HIGH, LOW])
 	})
 
 	// @e2e openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-toggling-to-newest-re-sorts
@@ -129,18 +146,26 @@ test.describe('configurable-queue-urgency', () => {
 		await openMyWork(page)
 
 		await page.getByRole('button', { name: 'Newest' }).click()
-		await expect(page.locator('.mywork-card', { hasText: LOW })).toBeVisible({ timeout: 60_000 })
-		await expect.poll(() => seededOrder(page), { timeout: 30_000 }).toEqual([LOW, HIGH])
+		await expect(page.locator('.mywork-card', { hasText: LOW })).toBeVisible({
+			timeout: 60_000,
+		})
+		await expect
+			.poll(() => seededOrder(page), { timeout: 30_000 })
+			.toEqual([LOW, HIGH])
 	})
 
 	// @e2e openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-normal-tier-shows-no-chip
-	test('every seeded card carries a pill, and the normal tier is no coloured chip', async ({ page }) => {
+	test('every seeded card carries a pill, and the normal tier is no coloured chip', async ({
+		page,
+	}) => {
 		await openMyWork(page)
 
 		// The seeded type's own term decides the tier, so the pill text is read
 		// rather than assumed; what the scenario fixes is that a pill is there,
 		// and that a normal-tier pill is the neutral one.
-		const pill = page.locator('.mywork-card', { hasText: LOW }).locator('[data-testid="deadline-tier-pill"]')
+		const pill = page
+			.locator('.mywork-card', { hasText: LOW })
+			.locator('[data-testid="deadline-tier-pill"]')
 		await expect(pill).toBeVisible({ timeout: 60_000 })
 		const text = (await pill.innerText()).trim()
 		if (text === 'Normal' || text === 'Normaal') {
@@ -154,10 +179,18 @@ test.describe('configurable-queue-urgency', () => {
 		const section = page.locator('[data-testid="queue-urgency-settings"]')
 		await expect(section).toBeVisible({ timeout: 60_000 })
 
-		await expect(section.locator('[data-testid="queue-urgency-criticalDays"] input')).toHaveValue('3')
-		await expect(section.locator('[data-testid="queue-urgency-warningDays"] input')).toHaveValue('7')
-		await expect(section.locator('[data-testid="queue-urgency-priorityWeight"] input')).toHaveValue('10')
-		await expect(section.locator('[data-testid="queue-urgency-idleWeight"] input')).toHaveValue('0.5')
+		await expect(
+			section.locator('[data-testid="queue-urgency-criticalDays"] input'),
+		).toHaveValue('3')
+		await expect(
+			section.locator('[data-testid="queue-urgency-warningDays"] input'),
+		).toHaveValue('7')
+		await expect(
+			section.locator('[data-testid="queue-urgency-priorityWeight"] input'),
+		).toHaveValue('10')
+		await expect(
+			section.locator('[data-testid="queue-urgency-idleWeight"] input'),
+		).toHaveValue('0.5')
 	})
 
 	// @e2e openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md#scenario-a-saved-threshold-comes-back-after-a-reload
@@ -166,14 +199,20 @@ test.describe('configurable-queue-urgency', () => {
 		const section = page.locator('[data-testid="queue-urgency-settings"]')
 		await expect(section).toBeVisible({ timeout: 60_000 })
 
-		await section.locator('[data-testid="queue-urgency-criticalDays"] input').fill('5')
+		await section
+			.locator('[data-testid="queue-urgency-criticalDays"] input')
+			.fill('5')
 		await section.locator('[data-testid="queue-urgency-save"]').click()
-		await expect(section.getByText(/^(Saved|Opgeslagen)$/)).toBeVisible({ timeout: 30_000 })
+		await expect(section.getByText(/^(Saved|Opgeslagen)$/)).toBeVisible({
+			timeout: 30_000,
+		})
 
 		// Nextcloud's app config is cached per request for a few seconds; the
 		// reload reads the initial state the server renders.
 		await page.waitForTimeout(4_000)
 		await page.reload()
-		await expect(section.locator('[data-testid="queue-urgency-criticalDays"] input')).toHaveValue('5', { timeout: 60_000 })
+		await expect(
+			section.locator('[data-testid="queue-urgency-criticalDays"] input'),
+		).toHaveValue('5', { timeout: 60_000 })
 	})
 })

@@ -29,8 +29,14 @@ function typeInto(field, raw, max) {
 
 describe('readThresholdOverride', () => {
 	it('reads empty as no override', () => {
-		expect(readThresholdOverride('', 60)).toEqual({ value: undefined, error: '' })
-		expect(readThresholdOverride(undefined, 60)).toEqual({ value: undefined, error: '' })
+		expect(readThresholdOverride('', 60)).toEqual({
+			value: undefined,
+			error: '',
+		})
+		expect(readThresholdOverride(undefined, 60)).toEqual({
+			value: undefined,
+			error: '',
+		})
 	})
 
 	it('reads a whole number in bounds', () => {
@@ -38,7 +44,9 @@ describe('readThresholdOverride', () => {
 	})
 
 	it('refuses a number out of bounds', () => {
-		expect(readThresholdOverride('61', 60).error).toBe('Enter a whole number from 0 to 60.')
+		expect(readThresholdOverride('61', 60).error).toBe(
+			'Enter a whole number from 0 to 60.',
+		)
 	})
 })
 
@@ -51,16 +59,22 @@ describe('GeneralTab queue thresholds', () => {
 	})
 
 	it('emits the number for the case type form', () => {
-		expect(typeInto('queueCriticalDays', '10', 60).emitted).toEqual([['update', 'queueCriticalDays', 10]])
+		expect(typeInto('queueCriticalDays', '10', 60).emitted).toEqual([
+			['update', 'queueCriticalDays', 10],
+		])
 	})
 
 	it('emits undefined for an empty field, so the default applies', () => {
-		expect(typeInto('queueWarningDays', '', 120).emitted).toEqual([['update', 'queueWarningDays', undefined]])
+		expect(typeInto('queueWarningDays', '', 120).emitted).toEqual([
+			['update', 'queueWarningDays', undefined],
+		])
 	})
 
 	it('emits nothing for a refused value and shows why', () => {
 		const result = typeInto('queueWarningDays', '500', 120)
 		expect(result.emitted).toEqual([])
-		expect(result.errors.queueWarningDays).toBe('Enter a whole number from 0 to 120.')
+		expect(result.errors.queueWarningDays).toBe(
+			'Enter a whole number from 0 to 120.',
+		)
 	})
 })

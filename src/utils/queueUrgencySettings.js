@@ -18,10 +18,34 @@ import { translate as t } from '@nextcloud/l10n'
  * @type {Array<{field: string, key: string, default: number, max: number, whole: boolean}>}
  */
 export const QUEUE_URGENCY_FIELDS = [
-	{ field: 'criticalDays', key: 'queue_critical_days', default: 3, max: 60, whole: true },
-	{ field: 'warningDays', key: 'queue_warning_days', default: 7, max: 120, whole: true },
-	{ field: 'priorityWeight', key: 'queue_priority_weight', default: 10, max: 50, whole: false },
-	{ field: 'idleWeight', key: 'queue_idle_weight', default: 0.5, max: 1.5, whole: false },
+	{
+		field: 'criticalDays',
+		key: 'queue_critical_days',
+		default: 3,
+		max: 60,
+		whole: true,
+	},
+	{
+		field: 'warningDays',
+		key: 'queue_warning_days',
+		default: 7,
+		max: 120,
+		whole: true,
+	},
+	{
+		field: 'priorityWeight',
+		key: 'queue_priority_weight',
+		default: 10,
+		max: 50,
+		whole: false,
+	},
+	{
+		field: 'idleWeight',
+		key: 'queue_idle_weight',
+		default: 0.5,
+		max: 1.5,
+		whole: false,
+	},
 ]
 
 /**
@@ -65,7 +89,12 @@ function boundsMessage(spec) {
  */
 export function checkQueueValue(raw, spec) {
 	const value = readNumber(raw)
-	if (value === null || value < 0 || value > spec.max || (spec.whole && !Number.isInteger(value))) {
+	if (
+		value === null
+		|| value < 0
+		|| value > spec.max
+		|| (spec.whole && !Number.isInteger(value))
+	) {
 		return { value: null, error: boundsMessage(spec) }
 	}
 	return { value, error: '' }
@@ -130,5 +159,7 @@ export function readThresholdOverride(raw, max) {
 		return { value: undefined, error: '' }
 	}
 	const checked = checkQueueValue(raw, { max, whole: true })
-	return checked.error ? { value: undefined, error: checked.error } : { value: checked.value, error: '' }
+	return checked.error
+		? { value: undefined, error: checked.error }
+		: { value: checked.value, error: '' }
 }

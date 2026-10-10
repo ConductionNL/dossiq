@@ -17,18 +17,39 @@ import {
 
 describe('initialQueueUrgencyValues', () => {
 	it('starts from the defaults when nothing was provided', () => {
-		expect(initialQueueUrgencyValues({})).toEqual({ criticalDays: 3, warningDays: 7, priorityWeight: 10, idleWeight: 0.5 })
+		expect(initialQueueUrgencyValues({})).toEqual({
+			criticalDays: 3,
+			warningDays: 7,
+			priorityWeight: 10,
+			idleWeight: 0.5,
+		})
 	})
 
 	it('reads the stored values', () => {
-		expect(initialQueueUrgencyValues({ criticalDays: 5, warningDays: 10, priorityWeight: 20, idleWeight: 1 }))
-			.toEqual({ criticalDays: 5, warningDays: 10, priorityWeight: 20, idleWeight: 1 })
+		expect(
+			initialQueueUrgencyValues({
+				criticalDays: 5,
+				warningDays: 10,
+				priorityWeight: 20,
+				idleWeight: 1,
+			}),
+		).toEqual({
+			criticalDays: 5,
+			warningDays: 10,
+			priorityWeight: 20,
+			idleWeight: 1,
+		})
 	})
 })
 
 describe('buildQueueUrgencyPayload', () => {
 	it('writes the four app config keys as strings, accepting a decimal comma', () => {
-		const { errors, payload } = buildQueueUrgencyPayload({ criticalDays: '5', warningDays: 10, priorityWeight: '12', idleWeight: '0,75' })
+		const { errors, payload } = buildQueueUrgencyPayload({
+			criticalDays: '5',
+			warningDays: 10,
+			priorityWeight: '12',
+			idleWeight: '0,75',
+		})
 		expect(errors).toEqual({})
 		expect(payload).toEqual({
 			queue_critical_days: '5',
@@ -40,13 +61,23 @@ describe('buildQueueUrgencyPayload', () => {
 
 	// @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md#scenario-an-out-of-bounds-weight-is-refused-in-the-form
 	it('refuses a weight out of bounds, names the bounds and sends nothing', () => {
-		const { errors, payload } = buildQueueUrgencyPayload({ criticalDays: 3, warningDays: 7, priorityWeight: 80, idleWeight: 0.5 })
+		const { errors, payload } = buildQueueUrgencyPayload({
+			criticalDays: 3,
+			warningDays: 7,
+			priorityWeight: 80,
+			idleWeight: 0.5,
+		})
 		expect(payload).toBeNull()
 		expect(errors).toEqual({ priorityWeight: 'Enter a number from 0 to 50.' })
 	})
 
 	it('refuses a fraction of a day and an empty field', () => {
-		const { errors } = buildQueueUrgencyPayload({ criticalDays: 2.5, warningDays: '', priorityWeight: 10, idleWeight: 0.5 })
+		const { errors } = buildQueueUrgencyPayload({
+			criticalDays: 2.5,
+			warningDays: '',
+			priorityWeight: 10,
+			idleWeight: 0.5,
+		})
 		expect(errors.criticalDays).toBe('Enter a whole number from 0 to 60.')
 		expect(errors.warningDays).toBe('Enter a whole number from 0 to 120.')
 	})

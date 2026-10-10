@@ -141,7 +141,12 @@ export function resolveListMode(sortMode, queueState) {
 export function rankedCaseRows(items) {
 	const rows = []
 	for (const item of items || []) {
-		if (item && item.itemType === 'case' && item.case && typeof item.case === 'object') {
+		if (
+			item
+			&& item.itemType === 'case'
+			&& item.case
+			&& typeof item.case === 'object'
+		) {
 			rows.push(item.case)
 		}
 	}
@@ -181,7 +186,9 @@ function passesFilter(row, key, wanted) {
 		if (wanted.length === 0) {
 			return true
 		}
-		const values = (Array.isArray(actual) ? actual : [actual]).map(comparable).map(String)
+		const values = (Array.isArray(actual) ? actual : [actual])
+			.map(comparable)
+			.map(String)
 		return wanted.some((w) => values.includes(String(comparable(w))))
 	}
 	if (typeof wanted === 'object') {
@@ -212,7 +219,9 @@ function passesFilter(row, key, wanted) {
  * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export function filterRankedRows(rows, search = '', filters = {}) {
-	const needle = String(search || '').trim().toLowerCase()
+	const needle = String(search || '')
+		.trim()
+		.toLowerCase()
 	return (rows || []).filter((row) => {
 		if (needle) {
 			const haystack = [row.title, row.identifier, row.description]
@@ -223,7 +232,9 @@ export function filterRankedRows(rows, search = '', filters = {}) {
 				return false
 			}
 		}
-		return Object.entries(filters || {}).every(([key, wanted]) => passesFilter(row, key, wanted))
+		return Object.entries(filters || {}).every(([key, wanted]) =>
+			passesFilter(row, key, wanted),
+		)
 	})
 }
 

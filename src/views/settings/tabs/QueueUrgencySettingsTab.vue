@@ -108,12 +108,18 @@ export default {
 				{
 					field: 'priorityWeight',
 					label: t('dossiq', 'Weight of the priority'),
-					hint: t('dossiq', 'Points per step from low to urgent, 0 to 50. Default 10.'),
+					hint: t(
+						'dossiq',
+						'Points per step from low to urgent, 0 to 50. Default 10.',
+					),
 				},
 				{
 					field: 'idleWeight',
 					label: t('dossiq', 'Weight of the time lying still'),
-					hint: t('dossiq', 'Points per day without activity, 0 to 1.5. Default 0.5.'),
+					hint: t(
+						'dossiq',
+						'Points per day without activity, 0 to 1.5. Default 0.5.',
+					),
 				},
 			]
 		},
@@ -154,7 +160,9 @@ export default {
 				if (res.ok) {
 					this.saved = true
 				} else {
-					this.saveError = t('dossiq', 'Saving failed ({status})', { status: res.status })
+					this.saveError = t('dossiq', 'Saving failed ({status})', {
+						status: res.status,
+					})
 				}
 			} catch (e) {
 				this.saveError = e.message || t('dossiq', 'Saving failed')
