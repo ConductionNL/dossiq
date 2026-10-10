@@ -1,5 +1,5 @@
 {
-  "ceiling": 263,
+  "ceiling": 265,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -1875,6 +1875,20 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`statutoryInstance()` answers `return null` when the case's term instances cannot be read; `carry()` then answers the outcome `missing` and changes no term, so the case keeps the term its create bound. It does not log; the import reports the outcome."
+    },
+    {
+      "file": "lib/Service/Access/ObjectReadGrants.php",
+      "method": "find",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`find()` answers `return null` when the record to reconcile cannot be read; `reconcile()` counts it as refused, so a record that could not be read is never reported as reconciled (REQ-CRA-002)."
+    },
+    {
+      "file": "lib/Service/Access/ObjectReadGrants.php",
+      "method": "service",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`service()` answers `return null` when OpenRegister's sharing or ownership service cannot be resolved from the container; `available()` then answers false and the reconciler answers `unavailable` and writes nothing (REQ-CRA-002)."
     }
   ]
 }
