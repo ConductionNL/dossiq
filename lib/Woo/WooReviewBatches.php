@@ -52,6 +52,11 @@ class WooReviewBatches {
 	public const SCHEMA_KEY = 'woo_review_batch_schema';
 
 	/**
+	 * The app config key of the Woo request configuration schema, which carries `reviewDepth`.
+	 */
+	public const CONFIGURATION_KEY = 'woo_request_configuration_schema';
+
+	/**
 	 * The kind dossiq stamps on the reviewer's task, read back from `metadata.dossiq.kind`.
 	 */
 	public const TASK_KIND = 'woo-review-batch';
@@ -76,6 +81,7 @@ class WooReviewBatches {
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
 	 * @param WooDocumentReviews $reviews The reviews the batch is written on.
 	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
+	 * @param WooReviewDepth $depth The review depth per document type.
 	 * @param EngineTaskGateway $tasks The task seam that hands the reviewer the batch.
 	 * @param IUserManager $userManager Whether the reviewer exists.
 	 * @param IL10N $l10n The translations, for the task's title.
@@ -87,6 +93,7 @@ class WooReviewBatches {
 		private readonly SettingsService $settingsService,
 		private readonly WooDocumentReviews $reviews,
 		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooReviewDepth $depth,
 		private readonly EngineTaskGateway $tasks,
 		private readonly IUserManager $userManager,
 		private readonly IL10N $l10n,
@@ -194,9 +201,20 @@ class WooReviewBatches {
 		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
 
 		$reviews = $this->reviews->forCase(caseId: $caseId);
+		$reviewDepth = $this->reviewDepth(caseId: $caseId);
 		foreach ($documents as $ref) {
 			$review = ($reviews[$ref] ?? ['case' => $caseId, 'documentRef' => $ref, 'relevance' => WooDocumentReviews::UNMARKED]);
 			$review['batch'] = $batchId;
+			$review['depth'] = $this->depth->depthFor(
+				reviewDepth: $reviewDepth,
+				type: $this->depth->typeOf(document: ($this->caseDocuments->meta(documentId: $ref) ?? [])),
+			);
+			$pageCount = null;
+			if (isset($review['pageCount']) === true && is_numeric($review['pageCount']) === true) {
+				$pageCount = (int)$review['pageCount'];
+			}
+
+			$review['pagesRequired'] = $this->depth->pagesRequired(depth: $review['depth'], pageCount: $pageCount);
 			$this->reviews->save(review: $review);
 		}
 
@@ -253,6 +271,47 @@ class WooReviewBatches {
 
 		return $listed;
 	}//end forCase()
+
+	/**
+	 * The case's `reviewDepth`, from its Woo request configuration; empty means every page for every type.
+	 *
+	 * @param string $caseId The Woo case UUID.
+	 *
+	 * @return array<string, mixed> The depth by document type.
+	 */
+	private function reviewDepth(string $caseId): array {
+		$schema = $this->settingsService->getConfigValue(self::CONFIGURATION_KEY);
+		if ($schema === '') {
+			return [];
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $this->settingsService->getObjectService(),
+				register: $this->settingsService->getConfigValue('register'),
+				schema: $schema,
+				filters: ['case' => $caseId, '_limit' => 1],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the Woo request configuration could not be read, so every page is required',
+				['case' => $caseId, 'exception' => $e->getMessage()]
+			);
+			return [];
+		}
+
+		$first = reset($rows);
+		$depth = [];
+		if (is_array($first) === true) {
+			$depth = ($first['reviewDepth'] ?? []);
+		}
+
+		if (is_array($depth) === false) {
+			return [];
+		}
+
+		return $depth;
+	}//end reviewDepth()
 
 	/**
 	 * Refuse an incomplete batch before anything is written.

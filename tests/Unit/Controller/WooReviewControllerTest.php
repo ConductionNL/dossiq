@@ -29,6 +29,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooDocumentReviews;
 use OCA\Dossiq\Woo\WooReviewBatches;
+use OCA\Dossiq\Woo\WooReviewDepth;
 use OCA\Dossiq\Woo\WooReviewSummary;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -123,6 +124,7 @@ class WooReviewControllerTest extends TestCase {
 				settingsService: $settings,
 				reviews: $reviews,
 				caseDocuments: $caseDocuments,
+				depth: new WooReviewDepth(),
 				tasks: $tasks,
 				userManager: $userManager,
 				l10n: $l10n,
@@ -251,4 +253,31 @@ class WooReviewControllerTest extends TestCase {
 		$this->assertSame(403, $this->controller(read: false, mutate: false)->batches(id: 'case-x')->getStatus());
 		$this->assertSame($writes, $this->store->writes);
 	}//end testCreateBatchRefusesWithoutMutationAccess()
+
+	/**
+	 * Displayed pages are appended with the reviewer and the time, once per reviewer and page; the first page count sets the required pages.
+	 *
+	 * @return void
+	 */
+	public function testPagesSeenAreAppendedWithTheReviewer(): void {
+		$this->store->rows['wooDocumentReview']['review-4']['depth'] = ['mode' => 'every-page'];
+
+		$first = $this->controller(read: true, mutate: false, params: ['pages' => [1, 2], 'pageCount' => 3])->pagesSeen(id: 'case-x', documentRef: 'doc-4');
+		$this->assertSame(200, $first->getStatus());
+		$this->assertSame([3], $first->getData()['unseen']);
+
+		$this->controller(params: ['pages' => [2, 3]])->pagesSeen(id: 'case-x', documentRef: 'doc-4');
+		$saved = $this->store->rows['wooDocumentReview']['review-4'];
+		$this->assertSame(3, $saved['pageCount']);
+		$this->assertSame([1, 2, 3], $saved['pagesRequired']);
+		$this->assertSame([1, 2, 3], array_column($saved['pagesSeen'], 'page'));
+		$this->assertSame(['reviewer-a'], array_values(array_unique(array_column($saved['pagesSeen'], 'by'))));
+		$this->assertNotEmpty($saved['pagesSeen'][0]['at']);
+		$this->assertSame([], (new WooDocumentReviews(settingsService: $this->createMock(SettingsService::class), logger: $this->createMock(LoggerInterface::class)))->unseenPages(review: $saved));
+
+		$empty = $this->controller(params: ['pages' => []])->pagesSeen(id: 'case-x', documentRef: 'doc-4');
+		$this->assertSame(422, $empty->getStatus());
+		$this->assertSame('woo-pages-required', $empty->getData()['error']);
+		$this->assertSame(403, $this->controller(read: false, mutate: false, params: ['pages' => [1]])->pagesSeen(id: 'case-x', documentRef: 'doc-4')->getStatus());
+	}//end testPagesSeenAreAppendedWithTheReviewer()
 }//end class

@@ -108,6 +108,24 @@ class WooCaseDocuments {
 	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function load(string $documentId): ?array {
+		$document = $this->meta(documentId: $documentId);
+		if ($document === null) {
+			return null;
+		}
+
+		return $this->withContent(document: $document);
+	}//end load()
+
+	/**
+	 * One document's row, without reading its file, or null.
+	 *
+	 * @param string $documentId An informatieobject id, or a legacy document id.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+	 */
+	public function meta(string $documentId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '' || $documentId === '') {
@@ -122,12 +140,12 @@ class WooCaseDocuments {
 
 			$document = $this->find(objectService: $objectService, register: $register, schema: $schema, id: $documentId);
 			if ($document !== null) {
-				return $this->withContent(document: $document);
+				return $document;
 			}
 		}
 
 		return null;
-	}//end load()
+	}//end meta()
 
 	/**
 	 * The rows of one schema that name the case.

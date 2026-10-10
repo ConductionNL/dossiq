@@ -201,6 +201,45 @@ class WooReviewController extends Controller {
 	}//end createBatch()
 
 	/**
+	 * The review viewer reports the pages a reviewer displayed, and the page count when it knows it.
+	 *
+	 * Read access is enough: a reviewer reads, and seeing a page is reading it.
+	 *
+	 * @param string $id The Woo case UUID.
+	 * @param string $documentRef The document.
+	 *
+	 * @return JSONResponse The saved review with its unseen required pages, or the refusal.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 */
+	#[NoAdminRequired]
+	public function pagesSeen(string $id, string $documentRef): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+			return $this->noAccess();
+		}
+
+		$pages = array_values(array_map('intval', array_filter((array)$this->request->getParam('pages', []), 'is_numeric')));
+		$reported = $this->request->getParam('pageCount');
+		$pageCount = null;
+		if (is_numeric($reported) === true) {
+			$pageCount = (int)$reported;
+		}
+
+		try {
+			$review = $this->reviews->recordPagesSeen(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
+		} catch (RefusedException $e) {
+			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+		}
+
+		return new JSONResponse($review + ['unseen' => $this->reviews->unseenPages(review: $review)]);
+	}//end pagesSeen()
+
+	/**
 	 * The refusal of a user without access to the case.
 	 *
 	 * @return JSONResponse The refusal.
@@ -228,6 +267,7 @@ class WooReviewController extends Controller {
 			'woo-batch-empty' => $this->l10n->t('Put at least one document in the batch.'),
 			'woo-batch-document-unknown' => $this->l10n->t('A batch only holds documents of this case.'),
 			'woo-batch-document-taken' => $this->l10n->t('A document is already in another open batch.'),
+			'woo-pages-required' => $this->l10n->t('Name the pages that were displayed.'),
 			'woo-batch-unavailable' => $this->l10n->t('The Woo review batch cannot be stored, so nothing was assigned.'),
 			default => $this->l10n->t('The Woo review cannot be stored, so nothing was marked.'),
 		};

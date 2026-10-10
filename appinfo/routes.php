@@ -820,6 +820,7 @@ $extra = [
     ['name' => 'wooReview#relevance', 'url' => '/api/cases/{id}/woo/documents/{documentRef}/relevance', 'verb' => 'POST'],
     ['name' => 'wooReview#batches',     'url' => '/api/cases/{id}/woo/batches', 'verb' => 'GET'],
     ['name' => 'wooReview#createBatch', 'url' => '/api/cases/{id}/woo/batches', 'verb' => 'POST'],
+    ['name' => 'wooReview#pagesSeen',   'url' => '/api/cases/{id}/woo/documents/{documentRef}/pages-seen', 'verb' => 'POST'],
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],

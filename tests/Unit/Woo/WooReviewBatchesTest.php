@@ -27,6 +27,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooDocumentReviews;
 use OCA\Dossiq\Woo\WooReviewBatches;
+use OCA\Dossiq\Woo\WooReviewDepth;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IUserManager;
@@ -38,6 +39,8 @@ use Psr\Log\LoggerInterface;
  * Batches through the real review store and case documents, with the engine task seam doubled.
  *
  * @covers \OCA\Dossiq\Woo\WooReviewBatches
+ * @covers \OCA\Dossiq\Woo\WooReviewDepth
+ * @covers \OCA\Dossiq\Woo\WooCaseDocuments
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
@@ -100,7 +103,7 @@ class WooReviewBatchesTest extends TestCase {
 	 * @return WooReviewBatches The service.
 	 */
 	private function batches(array $users = ['reviewer-a', 'reviewer-b']): WooReviewBatches {
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_review_schema' => 'wooDocumentReview', 'woo_review_batch_schema' => 'wooReviewBatch'];
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_review_schema' => 'wooDocumentReview', 'woo_review_batch_schema' => 'wooReviewBatch', 'woo_request_configuration_schema' => 'wooRequestConfiguration'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -114,6 +117,7 @@ class WooReviewBatchesTest extends TestCase {
 			settingsService: $settings,
 			reviews: new WooDocumentReviews(settingsService: $settings, logger: $logger),
 			caseDocuments: new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger),
+			depth: new WooReviewDepth(),
 			tasks: $this->tasks,
 			userManager: $userManager,
 			l10n: $l10n,
@@ -294,4 +298,32 @@ class WooReviewBatchesTest extends TestCase {
 		$this->assertSame('reviewer-a', $listed[0]['assignee']);
 		$this->assertSame(['assessed' => 1, 'total' => 25], $listed[0]['progress']);
 	}//end testTheBatchesListShowsProgress()
+
+	/**
+	 * The scenario: a sampled 200-page export records sample 5 with its seed, a 3-page letter every page 1 to 3.
+	 *
+	 * @return void
+	 */
+	public function testTheBatchRecordsTheDepthPerReview(): void {
+		$this->store->seed(schema: 'wooRequestConfiguration', uuid: 'config-x', row: ['case' => 'case-x', 'reviewDepth' => ['export' => ['mode' => 'sample', 'sampleSize' => 5]]]);
+		$this->store->rows['document']['doc-0']['informatieobjecttype'] = 'export';
+		$this->store->rows['document']['doc-1']['informatieobjecttype'] = 'brief';
+		$this->store->rows['wooDocumentReview']['review-0']['pageCount'] = 200;
+		$this->store->rows['wooDocumentReview']['review-1']['pageCount'] = 3;
+
+		$this->batches()->create(caseId: 'case-x', name: 'Exports', assignee: 'reviewer-a', documents: ['doc-0', 'doc-1', 'doc-2'], userId: 'handler-h');
+
+		$export = $this->store->row('wooDocumentReview', 'review-0');
+		$this->assertSame('sample', $export['depth']['mode']);
+		$this->assertSame(5, $export['depth']['sampleSize']);
+		$this->assertIsInt($export['depth']['seed']);
+		$this->assertCount(5, $export['pagesRequired']);
+		$this->assertSame($export['pagesRequired'], (new WooReviewDepth())->pagesRequired(depth: $export['depth'], pageCount: 200));
+
+		$letter = $this->store->row('wooDocumentReview', 'review-1');
+		$this->assertSame(['mode' => 'every-page'], $letter['depth']);
+		$this->assertSame([1, 2, 3], $letter['pagesRequired']);
+
+		$this->assertSame([1], $this->store->row('wooDocumentReview', 'review-2')['pagesRequired']);
+	}//end testTheBatchRecordsTheDepthPerReview()
 }//end class
