@@ -23,15 +23,18 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\WooReviewController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Woo\WooReviewBatches;
 use OCA\Dossiq\Woo\WooReviewSummary;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -42,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\WooReviewController
  * @covers \OCA\Dossiq\Woo\WooReviewSummary
  * @covers \OCA\Dossiq\Woo\WooDocumentReviews
+ * @covers \OCA\Dossiq\Woo\WooReviewBatches
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
@@ -77,12 +81,12 @@ class WooReviewControllerTest extends TestCase {
 	 *
 	 * @param bool $read Whether the user may read the case.
 	 * @param bool $mutate Whether the user may change the case.
-	 * @param array<string, string> $params The request parameters.
+	 * @param array<string, mixed> $params The request parameters.
 	 *
 	 * @return WooReviewController The controller.
 	 */
 	private function controller(bool $read = true, bool $mutate = true, array $params = []): WooReviewController {
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview'];
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview', 'woo_review_batch_schema' => 'wooReviewBatch'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -99,7 +103,12 @@ class WooReviewControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($params[$key] ?? $default));
 		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
+		$caseDocuments = new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger);
+		$tasks = $this->createMock(EngineTaskGateway::class);
+		$tasks->method('mirrorImport')->willReturn('engine-task-1');
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('userExists')->willReturn(true);
 
 		return new WooReviewController(
 			request: $request,
@@ -108,7 +117,16 @@ class WooReviewControllerTest extends TestCase {
 				settingsService: $settings,
 				reviews: $reviews,
 				assessments: $assessments,
-				caseDocuments: new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger),
+				caseDocuments: $caseDocuments,
+			),
+			batches: new WooReviewBatches(
+				settingsService: $settings,
+				reviews: $reviews,
+				caseDocuments: $caseDocuments,
+				tasks: $tasks,
+				userManager: $userManager,
+				l10n: $l10n,
+				logger: $logger,
 			),
 			caseAccessGuard: $guard,
 			userSession: $session,
@@ -181,4 +199,56 @@ class WooReviewControllerTest extends TestCase {
 		$this->assertSame(403, $this->controller(read: true, mutate: false, params: ['relevance' => 'in-scope'])->relevance(id: 'case-x', documentRef: 'doc-1')->getStatus());
 		$this->assertSame($writes, $this->store->writes);
 	}//end testAUserWithoutAGrantOnTheCaseIsRefused()
+
+	/**
+	 * A batch is created through the route, its reviewer gets the task, and the list shows its progress.
+	 *
+	 * @return void
+	 */
+	public function testCreateBatchAssignsTheReviewerAndListsProgress(): void {
+		$params = ['name' => 'Mail 2025', 'assignee' => 'reviewer-b', 'documents' => ['doc-0', 'doc-1', 'doc-5']];
+		$created = $this->controller(params: $params)->createBatch(id: 'case-x');
+
+		$this->assertSame(201, $created->getStatus());
+		$this->assertSame('engine-task-1', $created->getData()['batch']['task']);
+		$this->assertTrue($created->getData()['taskCreated']);
+
+		$listed = $this->controller()->batches(id: 'case-x')->getData()['results'];
+		$this->assertCount(1, $listed);
+		$this->assertSame(['assessed' => 2, 'total' => 3], $listed[0]['progress']);
+	}//end testCreateBatchAssignsTheReviewerAndListsProgress()
+
+	/**
+	 * A document already in an open batch answers 409 naming that batch.
+	 *
+	 * @return void
+	 */
+	public function testCreateBatchNamesTheBatchADocumentIsIn(): void {
+		$this->controller(params: ['name' => 'Mail 2025', 'assignee' => 'reviewer-b', 'documents' => ['doc-0']])->createBatch(id: 'case-x');
+
+		$refused = $this->controller(params: ['name' => 'Notities', 'assignee' => 'reviewer-a', 'documents' => ['doc-0', 'doc-1']])->createBatch(id: 'case-x');
+
+		$this->assertSame(409, $refused->getStatus());
+		$this->assertSame('woo-batch-document-taken', $refused->getData()['error']);
+		$this->assertSame(['doc-0' => 'Mail 2025'], $refused->getData()['taken']);
+		$this->assertCount(1, $this->store->all('wooReviewBatch'));
+
+		$unknown = $this->controller(params: ['name' => 'Map', 'assignee' => 'reviewer-a', 'filter' => ['custodian' => 'j.devries']])->createBatch(id: 'case-x');
+		$this->assertSame(422, $unknown->getStatus());
+		$this->assertSame('woo-batch-filter-unknown', $unknown->getData()['error']);
+	}//end testCreateBatchNamesTheBatchADocumentIsIn()
+
+	/**
+	 * Creating a batch needs mutation access to the case, listing them needs read access; nothing is written otherwise.
+	 *
+	 * @return void
+	 */
+	public function testCreateBatchRefusesWithoutMutationAccess(): void {
+		$writes = $this->store->writes;
+
+		$params = ['name' => 'Mail 2025', 'assignee' => 'reviewer-b', 'documents' => ['doc-0']];
+		$this->assertSame(403, $this->controller(read: true, mutate: false, params: $params)->createBatch(id: 'case-x')->getStatus());
+		$this->assertSame(403, $this->controller(read: false, mutate: false)->batches(id: 'case-x')->getStatus());
+		$this->assertSame($writes, $this->store->writes);
+	}//end testCreateBatchRefusesWithoutMutationAccess()
 }//end class

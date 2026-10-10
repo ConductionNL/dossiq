@@ -61,6 +61,13 @@ PR, sections 4 to 6 the second.
   - **fails today**: `tests/Unit/Woo/WooReviewBatchesTest.php` `testEachBatchGetsATaskForItsReviewer`,
     `testADocumentCannotBeInTwoOpenBatches`, `testABatchByFilterTakesTheMatchingDocuments`.
   - Through the caller: `WooReviewControllerTest::testCreateBatchRefusesWithoutMutationAccess`.
+  - Built: `lib/Woo/WooReviewBatches.php` (select, taken, create, forCase) with `WooReviewBatchesTest`
+    (the three named tests plus closed-batch release, unknown filter, incomplete batch, engine refusal, progress);
+    `WooReviewController::createBatch` (201, 409 with `taken` naming the batch, mutation guard) and `::batches`
+    (read guard, progress assessed of total), routes `GET|POST /api/cases/{id}/woo/batches`. The task goes through
+    `EngineTaskGateway::mirrorImport()` with `metadata.dossiq.kind` `woo-review-batch`.
+    Open: the filter takes `rule` today. `custodian` and `sourceSystem` are refused (`woo-batch-filter-unknown`)
+    until the collected documents carry them (lane L9, woo-request-corpus-collection).
 - [ ] 3.2 A `Batches` section on the case page with assignee and progress (REQ-WRT-003).
   - `npm run check:manifest` exits 0.
 

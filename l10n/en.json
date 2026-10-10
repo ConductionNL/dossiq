@@ -9130,6 +9130,15 @@
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "A batch can be taken by the rule that marked its documents, or by a list of documents.": "A batch can be taken by the rule that marked its documents, or by a list of documents.",
+        "Give the batch a name.": "Give the batch a name.",
+        "Choose the reviewer of the batch.": "Choose the reviewer of the batch.",
+        "Put at least one document in the batch.": "Put at least one document in the batch.",
+        "A batch only holds documents of this case.": "A batch only holds documents of this case.",
+        "A document is already in another open batch.": "A document is already in another open batch.",
+        "The Woo review batch cannot be stored, so nothing was assigned.": "The Woo review batch cannot be stored, so nothing was assigned.",
+        "Review the Woo batch \"%s\"": "Review the Woo batch \"%s\"",
+        "%1$d documents to review in the batch \"%2$s\".": "%1$d documents to review in the batch \"%2$s\"."
     }
 }

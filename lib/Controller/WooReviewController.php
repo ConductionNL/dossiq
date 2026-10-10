@@ -26,6 +26,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Woo\WooReviewBatches;
 use OCA\Dossiq\Woo\WooReviewSummary;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -36,7 +37,8 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Marks a Woo document in or out of scope, and reports the case by relevance beside the verdicts.
+ * Marks a Woo document in or out of scope, reports the case by relevance beside the verdicts,
+ * and assigns batches of documents to reviewers.
  *
  * Every route checks the case through CaseAccessGuard in its body: reading
  * the summary needs read access to the case, marking needs mutation access.
@@ -51,6 +53,7 @@ class WooReviewController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param WooDocumentReviews $reviews The relevance store.
 	 * @param WooReviewSummary $summary The case summary.
+	 * @param WooReviewBatches $batches The review batches.
 	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
 	 * @param IL10N $l10n The translations.
@@ -61,6 +64,7 @@ class WooReviewController extends Controller {
 		IRequest $request,
 		private readonly WooDocumentReviews $reviews,
 		private readonly WooReviewSummary $summary,
+		private readonly WooReviewBatches $batches,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
@@ -127,6 +131,76 @@ class WooReviewController extends Controller {
 	}//end relevance()
 
 	/**
+	 * The case's review batches, each with its reviewer and its progress.
+	 *
+	 * @param string $id The Woo case UUID.
+	 *
+	 * @return JSONResponse `{results: [...]}`, or the refusal.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	#[NoAdminRequired]
+	public function batches(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+			return $this->noAccess();
+		}
+
+		return new JSONResponse(['results' => $this->batches->forCase(caseId: $id, assessed: $this->summary->assessed(caseId: $id))]);
+	}//end batches()
+
+	/**
+	 * Create a review batch from a list of documents or a filter, and give its reviewer a task.
+	 *
+	 * @param string $id The Woo case UUID.
+	 *
+	 * @return JSONResponse The batch (201), or the refusal; a taken document answers 409 with `taken`.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	#[NoAdminRequired]
+	public function createBatch(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
+			return $this->noAccess();
+		}
+
+		$filter = array_map('strval', array_filter((array)$this->request->getParam('filter', []), 'is_scalar'));
+		$listed = array_values(array_map('strval', array_filter((array)$this->request->getParam('documents', []), 'is_scalar')));
+		try {
+			$documents = $this->batches->select(caseId: $id, documents: $listed, filter: $filter);
+			$taken = $this->batches->taken(caseId: $id, documents: $documents);
+			if ($taken !== []) {
+				return new JSONResponse(
+					['error' => 'woo-batch-document-taken', 'message' => $this->sentence(rule: 'woo-batch-document-taken'), 'taken' => $taken],
+					Http::STATUS_CONFLICT
+				);
+			}
+
+			$made = $this->batches->create(
+				caseId: $id,
+				name: (string)$this->request->getParam('name', ''),
+				assignee: (string)$this->request->getParam('assignee', ''),
+				documents: $documents,
+				userId: $user->getUID(),
+				filter: $filter,
+			);
+		} catch (RefusedException $e) {
+			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
+		}
+
+		return new JSONResponse($made, Http::STATUS_CREATED);
+	}//end createBatch()
+
+	/**
 	 * The refusal of a user without access to the case.
 	 *
 	 * @return JSONResponse The refusal.
@@ -146,10 +220,16 @@ class WooReviewController extends Controller {
 	 * @return string The sentence.
 	 */
 	private function sentence(string $rule): string {
-		if ($rule === 'woo-relevance-unknown') {
-			return $this->l10n->t('Mark the document in scope, out of scope or unmarked.');
-		}
-
-		return $this->l10n->t('The Woo review cannot be stored, so nothing was marked.');
+		return match ($rule) {
+			'woo-relevance-unknown' => $this->l10n->t('Mark the document in scope, out of scope or unmarked.'),
+			'woo-batch-filter-unknown' => $this->l10n->t('A batch can be taken by the rule that marked its documents, or by a list of documents.'),
+			'woo-batch-name-required' => $this->l10n->t('Give the batch a name.'),
+			'woo-batch-assignee-unknown' => $this->l10n->t('Choose the reviewer of the batch.'),
+			'woo-batch-empty' => $this->l10n->t('Put at least one document in the batch.'),
+			'woo-batch-document-unknown' => $this->l10n->t('A batch only holds documents of this case.'),
+			'woo-batch-document-taken' => $this->l10n->t('A document is already in another open batch.'),
+			'woo-batch-unavailable' => $this->l10n->t('The Woo review batch cannot be stored, so nothing was assigned.'),
+			default => $this->l10n->t('The Woo review cannot be stored, so nothing was marked.'),
+		};
 	}//end sentence()
 }//end class

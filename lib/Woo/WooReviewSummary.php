@@ -83,6 +83,27 @@ class WooReviewSummary {
 	}//end forCase()
 
 	/**
+	 * The case's documents that carry a verdict, as keys.
+	 *
+	 * @param string $caseId The Woo case UUID.
+	 *
+	 * @return array<string, bool> The assessed documents.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function assessed(string $caseId): array {
+		$assessed = [];
+		foreach ($this->assessmentRows(caseId: $caseId) as $assessment) {
+			$ref = (string)($assessment['documentRef'] ?? '');
+			if ($ref !== '' && (string)($assessment['classification'] ?? '') !== '') {
+				$assessed[$ref] = true;
+			}
+		}
+
+		return $assessed;
+	}//end assessed()
+
+	/**
 	 * The case's assessments the caller may read.
 	 *
 	 * @param string $caseId The Woo case UUID.

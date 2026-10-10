@@ -9116,7 +9116,16 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "A batch can be taken by the rule that marked its documents, or by a list of documents.": "Kies de documenten van een partij uit een lijst, of op de regel die ze markeerde.",
+        "Give the batch a name.": "Geef de partij een naam.",
+        "Choose the reviewer of the batch.": "Kies de beoordelaar van de partij.",
+        "Put at least one document in the batch.": "Zet minstens één document in de partij.",
+        "A batch only holds documents of this case.": "Een partij bevat alleen documenten van deze zaak.",
+        "A document is already in another open batch.": "Een document zit al in een andere open partij.",
+        "The Woo review batch cannot be stored, so nothing was assigned.": "De partij kon niet worden opgeslagen, dus er is niets toegewezen.",
+        "Review the Woo batch \"%s\"": "Beoordeel de Woo-partij \"%s\"",
+        "%1$d documents to review in the batch \"%2$s\".": "%1$d documenten te beoordelen in de partij \"%2$s\"."
     },
     "nplurals=2; plural=(n != 1);"
 )
