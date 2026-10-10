@@ -34,7 +34,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use Throwable;
 /**
  * Copies every embedded bezwaar audit entry onto its record's OpenRegister trail, once.
  *
- * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 
@@ -98,7 +98,7 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function getName(): string {
 		return 'Copy the embedded bezwaar audit entries onto OpenRegister\'s audit trail';
@@ -111,7 +111,7 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();

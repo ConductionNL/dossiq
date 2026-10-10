@@ -19,7 +19,7 @@ Ruben, reviewing the board DqMijnWerk on 9 October 2026: "Following cases is com
 - **Cases.** The Favourites chip goes. Followed is renamed Following (Volgend), over `_watching`.
 - **Row actions.** Add to or remove from favourites becomes Follow or stop following (`toggleCaseFollow`), on Cases and on the Queue.
 - **Dashboard.** The tile Your favourites becomes Cases you follow (Zaken die u volgt) over `_watching`. Its widget id stays `favourite-cases`, because a reader's saved layout stores it.
-- **Assignment follows.** The case schema marks `assignee` with `x-openregister-role: assignee`, so OpenRegister's `AssigneeFollowListener` makes the assignee follow the case with notifications on. Register 0.20.21, case schema 1.38.0.
+- **Assignment follows.** The case schema marks `assignee` with `x-openregister-role: assignee`, so OpenRegister's `AssigneeFollowListener` makes the assignee follow the case with notifications on. Register 0.20.23, case schema 1.40.0.
 - **Specs.** REQ-CM-40 and REQ-ACC-09 are amended to one control with a notifications switch and to assignment following. REQ-FAV-01 (a private star) and REQ-FAV-02 (Favourites and Recently opened) are removed; REQ-FAV-03 adds Following and Recently opened.
 
 ## Out of scope

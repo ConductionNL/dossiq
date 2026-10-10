@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 
 declare(strict_types=1);
