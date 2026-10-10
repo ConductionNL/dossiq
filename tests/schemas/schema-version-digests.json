@@ -1441,11 +1441,11 @@
     },
     "lib/Settings/register.d/86-woo-corpus.json::wooCollectionQuery": {
         "version": "1.0.0",
-        "digest": "18010bcefd74ccddbee7957441ce93d711eb333c0cd543736066aac1b954e368"
+        "digest": "3c82b2857a71d749fe69d064c44961c7a48881daba54ec032c50f657f439603e"
     },
     "lib/Settings/register.d/86-woo-corpus.json::wooExclusion": {
         "version": "1.0.0",
-        "digest": "89ded5f65e7c9600105980dc27a3b49e5651d480aaf850c3ece61fd410d1b6e1"
+        "digest": "95596547780794d238024e0920605dc23eb7fec24e714b9ed5e4a534dccd14ef"
     },
     "lib/Settings/register.d/86-woo-corpus.json::wooRequestConfiguration": {
         "version": "1.0.0",

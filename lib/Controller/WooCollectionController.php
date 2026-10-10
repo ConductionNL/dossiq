@@ -82,6 +82,8 @@ class WooCollectionController extends Controller {
 	 *
 	 * @return JSONResponse `{plan, recorded}`.
 	 *
+	 * @throws \RuntimeException Never past run(): it answers 503 when OpenRegister is not configured.
+	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
 	#[NoAdminRequired]
