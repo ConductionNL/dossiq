@@ -43,6 +43,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
+use OCA\Dossiq\Service\Beschikking\BeschikkingNumberer;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
@@ -58,15 +59,17 @@ use RuntimeException;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T14
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the
- * threshold, and the one that crossed it is `CoordinatorRequirement`: the seat
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Fourteen, two over the
+ * threshold. The last to join is `BeschikkingNumberer` (decision 167): the
+ * number is written by compose() itself, so no composed beschikking can exist
+ * without one. The one that first crossed it is `CoordinatorRequirement`: the seat
  * a case type may insist on before its besluit is signed. The alternatives
  * were both worse. Checking it in the controller instead leaves the rule on
  * ONE door, so a second caller of `onderteken()` signs without it, and a rule
  * that can be walked around is not a rule. Folding the collaborators into a
  * parameter object hides the dependency list rather than shortening it, which
  * is the reasoning {@see AcknowledgementService} already records for the same
- * trade. The thirteen are each injected and each named, so the class is
+ * trade. The fourteen are each injected and each named, so the class is
  * readable even where it is wide.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Same list, same reason.
  */
@@ -87,6 +90,7 @@ class BeschikkingService {
 	 * @param CoordinatorRequirement $coordinator The second seat a case type may insist on before signing.
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
 	 * @param CaseRemedy $remedy The remedy this case's decisions carry, and the clock they start.
+	 * @param BeschikkingNumberer $numberer Issues the beschikking's own number (decision 167).
 	 *
 	 * @return void
 	 */
@@ -103,6 +107,7 @@ class BeschikkingService {
 		private readonly CoordinatorRequirement $coordinator,
 		private readonly CaseTimeline $timeline,
 		private readonly CaseRemedy $remedy,
+		private readonly BeschikkingNumberer $numberer,
 	) {
 	}//end __construct()
 
@@ -115,7 +120,10 @@ class BeschikkingService {
 	 *
 	 * @return array<string, mixed> The created beschikking, with `_required` flags on missing fields.
 	 *
+	 * @throws RefusedException 503 when no number can be reserved for it.
+	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function compose(string $caseId, ?string $templateId = null, array $overrides = []): array {
 		if ($caseId === '') {
@@ -133,6 +141,14 @@ class BeschikkingService {
 
 		$decision = [
 			'caseId' => $caseId,
+			// THE NUMBER IS WRITTEN HERE, AT BIRTH (decision 167). It was
+			// declared and never written, so the first beschikking served would
+			// have reached the Berichtenbox and its audit packet with an empty
+			// reference. Reserved before the save: a save that then fails
+			// spends a number, which leaves a gap, and a gap is allowed where a
+			// repeat is not. A correction is composed here too, so it gets its
+			// own new number rather than a suffix on the one it replaces.
+			'reference' => $this->numberer->issue(caseId: $caseId),
 			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
 			// The resolved version is STORED, not just resolved. It was
@@ -146,8 +162,6 @@ class BeschikkingService {
 			'draftVersion' => 1,
 			'currentStatus' => 'draft',
 			'compositeContent' => $composition,
-			'addressee' => (array)($overrides['addressee'] ?? []),
-			'decision' => (array)($overrides['decision'] ?? []),
 			'rationale' => ($overrides['rationale'] ?? null),
 			// 🔴 THE CLAUSE COMES FROM THE CASE TYPE, NOT FROM THE TEMPLATE
 			// (REQ-DEC-03). Two case types sharing one template print
@@ -159,6 +173,23 @@ class BeschikkingService {
 			// has to act on.
 			'legalRemediesClause' => $this->remedy->clauseFor(caseId: $caseId),
 		];
+
+		// Only when there is something in them. Both are `type: object`, and
+		// an empty PHP array is saved as the JSON LIST `[]`, which the
+		// schema refuses: a compose with no addressee yet was a failed save.
+		foreach (['addressee', 'decision'] as $objectField) {
+			$value = (array)($overrides[$objectField] ?? []);
+			if ($value !== []) {
+				$decision[$objectField] = $value;
+			}
+		}
+
+		// The successor's backward pointer (REQ-BES-012), set only by
+		// BeschikkingSuccession. The create route never forwards it.
+		$supersedes = trim((string)($overrides['supersedes'] ?? ''));
+		if ($supersedes !== '') {
+			$decision['supersedes'] = $supersedes;
+		}
 
 		$saved = $this->repository->save(decision: $decision);
 		return $this->markRequiredFields(decision: $saved);

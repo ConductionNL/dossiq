@@ -187,24 +187,61 @@ After the bezwaar term expires (or bezwaar is denied/withdrawn), the beschikking
 
 ### Requirement: Niet-wijzigbare beschikking na ondertekening (REQ-BES-008)
 
-A beschikking with status `ondertekend` or later SHALL NOT be edited substantively; only process events (delivery, receipt confirmation, bezwaar linking) are allowed.
+A beschikking with status `signed` or later SHALL NOT be edited substantively; only process
+events (delivery, receipt confirmation, bezwaar linking) are allowed.
+
+The freeze SHALL be enforced at the persistence boundary, not in a single service method. Any
+write that reaches the object store SHALL be refused, whichever route it arrived on: the
+dossiq API, OpenRegister's generic object API, or an import. The stored state decides whether
+a write is refused, never the incoming payload.
+
+A refused write SHALL name the successor as the way forward, so a handler who is told no is
+also told what to do instead.
 
 **Feature tier**: V1
 
 #### Scenario: Substantive edit is rejected after ondertekend
 
-- **GIVEN** a beschikking with status `ondertekend`
-- **WHEN** an attempt is made to modify `motivering` or `beslissing.omvang`
+- **GIVEN** a beschikking with status `signed`
+- **WHEN** an attempt is made to modify `rationale` or `decision`
 - **THEN** the system SHALL reject the PATCH with HTTP 409
-- **AND** the response SHALL include a message that a new wijzigingsbeschikking or intrekkingsbeschikking must be created
+- **AND** the response SHALL include a message that a wijzigingsbeschikking or an
+  intrekkingsbeschikking must be created instead
+
+#### Scenario: The generic object API is refused the same edit
+
+- **GIVEN** a beschikking with status `sent`
+- **WHEN** a client writes `rationale` through OpenRegister's object API, bypassing the dossiq
+  beschikking routes
+- **THEN** the write SHALL be refused before the row is changed
+- **AND** the stored beschikking SHALL be byte-identical to what it was before the attempt
+
+#### Scenario: A signed beschikking cannot be deleted
+
+- **GIVEN** a beschikking with status `archived`
+- **WHEN** a delete is attempted through any route
+- **THEN** the delete SHALL be refused before the row is removed
+
+#### Scenario: Process events stay allowed after signing
+
+- **GIVEN** a beschikking with status `signed`
+- **WHEN** the dispatch record, the receipt confirmation or the bezwaar link is written
+- **THEN** the write SHALL succeed
+- **AND** the decision content SHALL be unchanged
+
+#### Scenario: A draft is still editable
+
+- **GIVEN** a beschikking with status `draft` or `approved-mandate`
+- **WHEN** `rationale` is modified
+- **THEN** the write SHALL succeed
 
 #### Scenario: Wijzigingsbeschikking references the original
 
-- **GIVEN** a handler decides to correct an ondertekend beschikking
-- **WHEN** they initiate "wijzigingsbeschikking opstellen"
-- **THEN** a new Beschikking SHALL be created with `beschikkingType: wijziging`
-- **AND** the new beschikking SHALL explicitly reference the original beschikking ID
-- **AND** the original SHALL remain ondertekend and unmodified
+- **GIVEN** a handler decides to correct a signed beschikking
+- **WHEN** they issue a wijzigingsbeschikking
+- **THEN** a new beschikking SHALL be created that references the original
+- **AND** the original SHALL remain signed and unmodified
+- **AND** the successor SHALL follow REQ-BES-012 for its number and its chain pointers
 
 ### Requirement: Audit-bewijs voor juridische verificatie (REQ-BES-009)
 
@@ -257,22 +294,26 @@ Beschikking templates in Docudesk SHALL be versioned with an effective date (`in
 
 ### Requirement: Data Model for Beschikking (REQ-BES-011)
 
-The Dossiq register SHALL define the `Beschikking`, `StateMachineLog`, `BezwaarTrigger`, and `MandaatRegeling` entities with all required properties, constraints, and relations per the data model in design.md.
+The Dossiq register SHALL define the `beschikking`, `stateMachineLog`, `bezwaarTrigger`, and
+`mandateArrangement` entities with all required properties, constraints, and relations per the
+data model in design.md.
 
 **Feature tier**: V1
 
 #### Scenario: Beschikking entity is fully queryable
 
 - **GIVEN** a Dossiq instance with seeded beschikkingen
-- **WHEN** the system queries `GET /api/beschikkingen?huidigeStatus=ondertekend`
-- **THEN** the response SHALL include all ondertekend beschikkingen with their full payloads
+- **WHEN** the system queries `GET /api/beschikkingen?currentStatus=signed`
+- **THEN** the response SHALL include all signed beschikkingen with their full payloads
 
 #### Scenario: Immutability of ondertekend beschikking is enforced at schema level
 
-- **GIVEN** the `Beschikking` schema definition in `dossiq_register.json`
-- **WHEN** the schema is inspected
-- **THEN** it SHALL include a `readOnlyFields` array or equivalent guard that lists `motivering`, `beslissing`, `geadresseerde`, etc.
-- **AND** these fields SHALL be immutable once `huidigeStatus ∈ {ondertekend, verzonden, ontvangen-bevestiging, gearchiveerd}`
+- **GIVEN** the `beschikking` schema, whose content fields must stay editable while the
+  beschikking is a draft
+- **WHEN** immutability is enforced
+- **THEN** it SHALL be enforced by a guard that reads the stored `currentStatus` at write time
+- **AND** it SHALL NOT be expressed as a `readOnly` property flag, because that freezes a
+  property from creation onward and would make a draft unwritable
 
 ### Requirement: The template seam SHALL say whether a real renderer is behind it
 
@@ -373,3 +414,108 @@ from the case without arithmetic.
 - **GIVEN** a decision sent 50 days ago with a 42 day remedy term
 - **WHEN** a handler opens the case
 - **THEN** it SHALL read that the remedy term has expired
+
+### Requirement: A schema a service resolves SHALL have a configured key
+
+Every OpenRegister schema that dossiq code resolves through an appconfig key SHALL have that
+slug registered in the schema slug map and that key in the settings allowlist. A key nothing
+writes leaves the service that reads it dead, and a dead service reports no error until a user
+calls it.
+
+**Feature tier**: V1
+
+#### Scenario: Every resolved schema key is reconciled
+
+- **WHEN** the schema key reconciler runs after the register is imported
+- **THEN** every appconfig key that app code passes to the config resolver SHALL have been
+  written with a live schema id
+
+#### Scenario: The beschikking lifecycle resolves its four schemas
+
+- **GIVEN** a Dossiq instance with the register imported
+- **WHEN** a beschikking, a state machine log entry, a bezwaar trigger or a mandate
+  arrangement is saved
+- **THEN** the save SHALL resolve its schema and succeed
+- **AND** it SHALL NOT fail with a not-configured error
+
+### Requirement: A correction is a numbered successor, never an edit (REQ-BES-012)
+
+A handler who must correct a signed beschikking SHALL do so by issuing a new beschikking that
+references the one it replaces. The original SHALL remain exactly as it was served.
+
+The successor SHALL carry its own reference number, distinct from the original's, and SHALL
+record which beschikking it replaces. The original SHALL record which beschikking replaced it,
+so the chain reads in both directions without a query.
+
+A beschikking that has already been replaced SHALL NOT be replaced a second time. The chain is
+linear: the correction of a correction succeeds the correction, not the original.
+
+Every beschikking SHALL be numbered when it is composed, with one running number per
+organisation per calendar year, in the form `B-<year>-<six digits>` (decision 167). The
+organisation is the one the case belongs to. A number SHALL never be issued twice; a gap left by a
+failed save is allowed. When no number can be reserved the beschikking SHALL NOT be composed, and
+the refusal SHALL say the request can be retried.
+
+Who may issue a successor is whoever may change the case the beschikking belongs to.
+
+**Feature tier**: V1
+
+#### Scenario: A correction is issued as a successor
+
+- **GIVEN** a beschikking with status `sent` and reference `B-2026-000123`
+- **WHEN** a handler issues a correction
+- **THEN** a new beschikking SHALL be created with `decisionType: amendment`
+- **AND** the new beschikking SHALL record the original's id
+- **AND** the new beschikking SHALL carry its own reference, the next number of its
+  organisation's year, distinct from `B-2026-000123`
+- **AND** the original SHALL still read `sent`, with its content unchanged
+
+#### Scenario: The original points forward to its successor
+
+- **GIVEN** a beschikking that has been replaced by a correction
+- **WHEN** the original is read
+- **THEN** it SHALL name the beschikking that replaced it
+- **AND** that pointer SHALL be the only field the freeze allows a successor to write on it
+
+#### Scenario: A withdrawal is a successor too
+
+- **GIVEN** a signed beschikking a handler must withdraw
+- **WHEN** an intrekkingsbeschikking is issued
+- **THEN** it SHALL be created with `decisionType: withdrawal` and reference the original
+- **AND** the original SHALL remain readable in the form it was served
+
+#### Scenario: A superseded beschikking cannot be superseded twice
+
+- **GIVEN** a beschikking that already names a successor
+- **WHEN** a second correction of that same beschikking is attempted
+- **THEN** the attempt SHALL be refused
+- **AND** the refusal SHALL name the successor to correct instead
+
+#### Scenario: A draft is changed, not succeeded
+
+- **GIVEN** a beschikking with status `draft`
+- **WHEN** a handler tries to issue a correction of it
+- **THEN** the attempt SHALL be refused with HTTP 409
+- **AND** the refusal SHALL say to change the draft instead
+
+#### Scenario: Each organisation numbers its own year
+
+- **GIVEN** organisation A has issued `B-2026-000041` and organisation B has issued `B-2026-000007`
+- **WHEN** a beschikking is composed on a case of organisation A
+- **THEN** it SHALL be numbered `B-2026-000042`
+- **AND** organisation B's next beschikking SHALL be numbered `B-2026-000008`
+- **AND** on 1 January the next beschikking of either SHALL be numbered `B-<new year>-000001`
+
+#### Scenario: No number, no beschikking
+
+- **GIVEN** the counter cannot be reached
+- **WHEN** a beschikking is composed
+- **THEN** nothing SHALL be saved
+- **AND** the response SHALL be HTTP 503, naming the rule `beschikking-number-unavailable`
+
+#### Scenario: Only a case handler may issue a successor
+
+- **GIVEN** a user without mutation access on the case of a signed beschikking
+- **WHEN** they request a correction of it
+- **THEN** the request SHALL be refused with HTTP 403
+- **AND** no beschikking SHALL be composed

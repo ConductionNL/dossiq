@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BerichtenboxRoutingService;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
+use OCA\Dossiq\Service\Beschikking\BeschikkingNumberer;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
@@ -41,6 +42,7 @@ use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -145,7 +147,9 @@ class FakeObjectService {
  *
  * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
  * @uses \OCA\Dossiq\Service\Beschikking\AuditPacketBuilder
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingNumberer
  * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingSuccession
  * @uses \OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler
  * @uses \OCA\Dossiq\Service\Beschikking\MandaatVerifier
  * @uses \OCA\Dossiq\Service\Beschikking\MockSigningAdapter
@@ -185,6 +189,20 @@ class BeschikkingServiceTest extends TestCase {
 	private BeschikkingService $service;
 
 	/**
+	 * The settings double the graph reads its keys from.
+	 *
+	 * @var SettingsService&MockObject
+	 */
+	private SettingsService $settings;
+
+	/**
+	 * The repository over the in-memory store.
+	 *
+	 * @var BeschikkingRepository
+	 */
+	private BeschikkingRepository $repository;
+
+	/**
 	 * The remedy the case's decisions carry, driven per test.
 	 *
 	 * A double answers '' and 0 unless told otherwise, which is exactly a case
@@ -222,6 +240,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->remedy = $this->createMock(originalClassName: CaseRemedy::class);
 
 		$settings = $this->createMock(SettingsService::class);
+		$this->settings = $settings;
 		$settings->method('getObjectService')->willReturn($this->objects);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
@@ -248,13 +267,18 @@ class BeschikkingServiceTest extends TestCase {
 			new MockTemplateEngineAdapter(),
 			$signingAdapter,
 			new OpenRegisterArchivalAdapter($this->createMock(ContainerInterface::class), $logger),
-			new BeschikkingRepository($settings, $logger),
+			$this->repository = new BeschikkingRepository($settings, $logger),
 			new MandaatVerifier($settings, $logger),
 			new AuditPacketBuilder($settings, $signingAdapter, $logger),
 			new BezwaarTermijnScheduler($settings, $logger),
 			$this->createMock(CoordinatorRequirement::class),
 			$this->timeline,
 			$this->remedy,
+			new BeschikkingNumberer(
+				$this->createMock(CaseStatusStore::class),
+				$this->sequencesContainer(),
+				$logger,
+			),
 		);
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
@@ -271,6 +295,84 @@ class BeschikkingServiceTest extends TestCase {
 			]
 		);
 	}//end setUp()
+
+	/**
+	 * A container answering OpenRegister's SequenceService with an in-memory counter.
+	 *
+	 * @return ContainerInterface
+	 */
+	private function sequencesContainer(): ContainerInterface {
+		$sequences = new class {
+			/**
+			 * Next value per scope key.
+			 *
+			 * @var array<string, int>
+			 */
+			private array $next = [];
+
+			/**
+			 * Reserve the next value for a scope.
+			 *
+			 * @param int    $registerId The register.
+			 * @param int    $schemaId   The schema.
+			 * @param string $scopeKey   The scope key.
+			 *
+			 * @return int The reserved value.
+			 */
+			public function reserveNext(int $registerId, int $schemaId, string $scopeKey): int {
+				$value = ($this->next[$scopeKey] ?? 1);
+				$this->next[$scopeKey] = ($value + 1);
+
+				return $value;
+			}//end reserveNext()
+		};
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($sequences);
+
+		return $container;
+	}//end sequencesContainer()
+
+	/**
+	 * Compose writes the beschikking's own running number, and the next one takes the next (decision 167).
+	 *
+	 * @return void
+	 */
+	public function testComposeWritesTheNextRunningNumber(): void {
+		$year = (new \DateTimeImmutable())->format('Y');
+
+		$first = $this->service->compose('zaak-2026-wmo-1', 'tpl-wmo-v1', []);
+		$second = $this->service->compose('zaak-2026-wmo-2', 'tpl-wmo-v1', []);
+
+		self::assertSame('B-' . $year . '-000001', $first['reference']);
+		self::assertSame('B-' . $year . '-000002', $second['reference']);
+		self::assertSame('B-' . $year . '-000001', $this->objects->store['beschikking'][$first['id']]['reference'], 'The number is stored, not only answered.');
+		self::assertArrayNotHasKey('supersedes', $first, 'A first beschikking points at nothing.');
+	}//end testComposeWritesTheNextRunningNumber()
+
+	/**
+	 * What compose() and a successor write fits the real `beschikking` schema, pointer included.
+	 *
+	 * @return void
+	 */
+	public function testTheNumberedSuccessorFitsTheRealSchema(): void {
+		$validator = new \OCA\Dossiq\Tests\Support\RealSchemaValidator();
+		$succession = new \OCA\Dossiq\Service\Beschikking\BeschikkingSuccession(
+			$this->service,
+			$this->repository,
+			new StateMachineService($this->settings, $this->createMock(LoggerInterface::class)),
+		);
+
+		$original = $this->composeWmo();
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$successor = $succession->issue($original['id'], 'amendment', ['rationale' => 'Herzien na bezwaar.']);
+
+		$strip = static fn (array $row): array => array_diff_key($row, array_flip(['id', 'motivering_required', 'geadresseerde_required']));
+		self::assertSame([], $validator->errors('beschikking', $strip($successor)), 'The successor as composed.');
+		self::assertSame([], $validator->errors('beschikking', $strip($this->objects->store['beschikking'][$original['id']]), false), 'The original with its pointer.');
+		self::assertSame($successor['id'], $this->objects->store['beschikking'][$original['id']]['supersededBy']);
+		self::assertNotSame($original['reference'], $successor['reference'], 'The correction has its own number.');
+	}//end testTheNumberedSuccessorFitsTheRealSchema()
 
 	/**
 	 * Compose a beschikking in the ontwerp status with a rendered PDF.

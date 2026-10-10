@@ -120,6 +120,10 @@ class BeschikkingController extends Controller {
 		try {
 			$result = $this->decisionService->compose($caseId, $templateId, $merged);
 			return new JSONResponse($result, Http::STATUS_CREATED);
+		} catch (RefusedException $e) {
+			// No number could be reserved (decision 167): a 503 the client may
+			// retry, not the 500 the catch-all below would answer.
+			return $this->refused(op: 'compose', e: $e);
 		} catch (\Throwable $e) {
 			return $this->fail(op: 'compose', e: $e);
 		}
@@ -170,7 +174,9 @@ class BeschikkingController extends Controller {
 		}
 
 		$updates = $this->readJsonBody();
-		unset($updates['id'], $updates['currentStatus']);
+		// The number and both chain pointers are written by compose() and
+		// BeschikkingSuccession only (REQ-BES-012), never by a field edit.
+		unset($updates['id'], $updates['currentStatus'], $updates['reference'], $updates['supersedes'], $updates['supersededBy']);
 
 		try {
 			$result = $this->decisionService->updateFields($id, $updates);

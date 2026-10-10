@@ -118,15 +118,24 @@ so the chain reads in both directions without a query.
 A beschikking that has already been replaced SHALL NOT be replaced a second time. The chain is
 linear: the correction of a correction succeeds the correction, not the original.
 
+Every beschikking SHALL be numbered when it is composed, with one running number per
+organisation per calendar year, in the form `B-<year>-<six digits>` (decision 167). The
+organisation is the one the case belongs to. A number SHALL never be issued twice; a gap left by a
+failed save is allowed. When no number can be reserved the beschikking SHALL NOT be composed, and
+the refusal SHALL say the request can be retried.
+
+Who may issue a successor is whoever may change the case the beschikking belongs to.
+
 **Feature tier**: V1
 
 #### Scenario: A correction is issued as a successor
 
-- **GIVEN** a beschikking with status `sent` and reference `Z/2026/04832/B01`
+- **GIVEN** a beschikking with status `sent` and reference `B-2026-000123`
 - **WHEN** a handler issues a correction
 - **THEN** a new beschikking SHALL be created with `decisionType: amendment`
 - **AND** the new beschikking SHALL record the original's id
-- **AND** the new beschikking SHALL carry its own reference, distinct from `Z/2026/04832/B01`
+- **AND** the new beschikking SHALL carry its own reference, the next number of its
+  organisation's year, distinct from `B-2026-000123`
 - **AND** the original SHALL still read `sent`, with its content unchanged
 
 #### Scenario: The original points forward to its successor
@@ -150,9 +159,31 @@ linear: the correction of a correction succeeds the correction, not the original
 - **THEN** the attempt SHALL be refused
 - **AND** the refusal SHALL name the successor to correct instead
 
-#### Scenario: The case shows which beschikking was served
+#### Scenario: A draft is changed, not succeeded
 
-- **GIVEN** a case with a beschikking and two corrections
-- **WHEN** the case is opened
-- **THEN** all three SHALL be listed in issue order with their reference numbers
-- **AND** each SHALL show whether it is in force or has been replaced
+- **GIVEN** a beschikking with status `draft`
+- **WHEN** a handler tries to issue a correction of it
+- **THEN** the attempt SHALL be refused with HTTP 409
+- **AND** the refusal SHALL say to change the draft instead
+
+#### Scenario: Each organisation numbers its own year
+
+- **GIVEN** organisation A has issued `B-2026-000041` and organisation B has issued `B-2026-000007`
+- **WHEN** a beschikking is composed on a case of organisation A
+- **THEN** it SHALL be numbered `B-2026-000042`
+- **AND** organisation B's next beschikking SHALL be numbered `B-2026-000008`
+- **AND** on 1 January the next beschikking of either SHALL be numbered `B-<new year>-000001`
+
+#### Scenario: No number, no beschikking
+
+- **GIVEN** the counter cannot be reached
+- **WHEN** a beschikking is composed
+- **THEN** nothing SHALL be saved
+- **AND** the response SHALL be HTTP 503, naming the rule `beschikking-number-unavailable`
+
+#### Scenario: Only a case handler may issue a successor
+
+- **GIVEN** a user without mutation access on the case of a signed beschikking
+- **WHEN** they request a correction of it
+- **THEN** the request SHALL be refused with HTTP 403
+- **AND** no beschikking SHALL be composed

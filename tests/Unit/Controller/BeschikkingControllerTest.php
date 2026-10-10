@@ -109,6 +109,41 @@ class BeschikkingControllerTest extends TestCase {
 	}//end authenticate()
 
 	/**
+	 * No number could be reserved: a 503 the client may retry, not a 500 (decision 167).
+	 *
+	 * @return void
+	 */
+	public function testCreateWithoutANumberIs503(): void {
+		$this->authenticate();
+		$this->request->method('getContent')->willReturn('{"caseId":"zaak-1"}');
+		$this->service->method('compose')->willThrowException(
+			\OCA\Dossiq\Exception\RefusedException::indeterminate(rule: 'beschikking-number-unavailable', sentence: 'No number.')
+		);
+
+		$response = $this->controller->create();
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame('beschikking-number-unavailable', $response->getData()['error']);
+	}//end testCreateWithoutANumberIs503()
+
+	/**
+	 * A field edit never writes the number or the chain pointers (REQ-BES-012).
+	 *
+	 * @return void
+	 */
+	public function testUpdateNeverWritesTheNumberOrThePointers(): void {
+		$this->authenticate();
+		$this->request->method('getContent')->willReturn(
+			'{"rationale":"x","reference":"B-1999-000001","supersedes":"a","supersededBy":"b"}'
+		);
+		$this->service->expects($this->once())->method('updateFields')
+			->with('besch-1', ['rationale' => 'x'])
+			->willReturn(['id' => 'besch-1']);
+
+		$this->assertSame(Http::STATUS_OK, $this->controller->update('besch-1')->getStatus());
+	}//end testUpdateNeverWritesTheNumberOrThePointers()
+
+	/**
 	 * An unauthenticated show request returns 401.
 	 *
 	 * @return void
