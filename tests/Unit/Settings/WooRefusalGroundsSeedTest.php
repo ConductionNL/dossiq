@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-the-grounds-are-settled-against-the-law-before-they-are-seeded-req-wrg-001
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-the-grounds-are-settled-against-the-law-before-they-are-seeded-req-wrg-001
  */
 
 declare(strict_types=1);

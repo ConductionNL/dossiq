@@ -119,6 +119,9 @@ export const CnRelatedObjectsWidget = {
 		register: { type: [String, Object], default: '' },
 		schema: { type: [String, Object], default: '' },
 		store: { type: Object, default: null },
+		// Declared with the library's default so a spec can read what the host
+		// passed: on, the real widget lists every `/uses` and `/used` object.
+		showObjects: { type: Boolean, default: true },
 		extraSections: { type: Array, default: () => [] },
 	},
 	render() {
