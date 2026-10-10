@@ -120,7 +120,7 @@ test.describe('The advice request History tab shows the bezwaar entries', () => 
 		}
 	})
 
-	// @e2e openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md#scenario-the-history-tab-shows-the-committee-assignment
+	// @e2e openspec/specs/bezwaar-awb-audit-trail/spec.md#scenario-the-history-tab-shows-the-committee-assignment
 	test('the History tab lists the panel-member-added entry with its actor and time', async ({
 		page,
 	}) => {

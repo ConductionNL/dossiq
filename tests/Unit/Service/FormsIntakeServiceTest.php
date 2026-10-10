@@ -34,7 +34,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 
 declare(strict_types=1);

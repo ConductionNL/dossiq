@@ -12,4 +12,4 @@ Kind: code. Based on `feat/one-team-model` (#3533).
 
 ## 2. After the nextcloud-vue release
 
-- [ ] 2.1 Bump `@conduction/nextcloud-vue` to the release that carries nextcloud-vue #1424 and re-vendor `tests/schemas/app-manifest-v2.schema.json` from it.
+- [x] 2.1 Bump `@conduction/nextcloud-vue` to the release that carries nextcloud-vue #1424 and re-vendor `tests/schemas/app-manifest-v2.schema.json` from it. Done on development by #3582 (2.77.0).
