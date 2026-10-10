@@ -109,8 +109,14 @@
       gone; wiring asserted from `tests/Unit/AppInfo/TermijnTimerRegistrarTest.php`. Live check
       owed (live pass, decision 139): an advice request with a deadline 5 days out arms a timer
       (`occ` / OR flow timers list) whose reminder fires on day 2 and expiry on day 6.
-- [ ] 2.6 Shared: extend `TermijnTimerFiredListener` (or split per engine) on `metadata.kind`;
+- [x] 2.6 Shared: extend `TermijnTimerFiredListener` (or split per engine) on `metadata.kind`;
       each retirement carries its own fixture pair for the date arithmetic that moves.
+      Split per engine (10 Oct, lane L7): each engine has its own fired listener keyed on its own
+      `metadata.source` (`dossiq-advice`, `dossiq-bezwaartermijn`, `dossiq-dso`,
+      `dossiq-milestone`), all registered in `TermijnTimerRegistrar`, and each timer test pins the
+      days the retired job acted on (`AdviceTimerTest`, `BezwaarArchiveTimerTest`,
+      `DsoDeadlineTimerTest`, `MilestoneStallTimerTest`). The saved-object plumbing they share is
+      `Listener/Support/SavedObjectPayload`.
 
 ## Phase 3: milestones (staged)
 
@@ -161,5 +167,5 @@
 
 ## Verify
 
-- [ ] V.1 `openspec validate termijnbewaking-op-engine-timers --strict` exits 0.
+- [x] V.1 `openspec validate termijnbewaking-op-engine-timers --strict` exits 0 (10 Oct, openspec 1.12.0).
 - [ ] V.2 After each phase: the structural test's allowlist shrank; hydra gates green on the diff.
