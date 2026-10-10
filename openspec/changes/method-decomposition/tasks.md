@@ -260,6 +260,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         handlers themselves have no unit test; nothing constructs ZgwService in tests, so their
         orchestration is covered by the Newman ZGW collections (live pass, decision 139).
 - [ ] Slice 6, the controllers (ZrcController 12, ZtcController 10, DrcController 5); AcController
-      waits until #3298 (which edits it) lands
+      waits until #3298 (which edits it) lands. Note: each controller also carries CLASS-level
+      CyclomaticComplexity/NPathComplexity suppressions, which silence every method in the file;
+      removing them shows 15 hidden method findings in ZrcController and 9 in DrcController.
+  - [x] 6a `ZtcController` (11 suppressions: the class-level CyclomaticComplexity,
+        NPathComplexity and ExcessiveClassLength, plus the 8 on its enrich and filter methods).
+        The read-path cross-reference work moves to three new classes:
+        `ZtcCrossReferenceEnricher` (builds the lists), `ZtcRelatedTypeLookup` (the OpenRegister
+        lookups behind them) and `ZtcUrlValidityFilter` (drops URLs to concept or out-of-date
+        types). `index`, `handlePublish` and the ZIOT omschrijving lookup each lost a step to a
+        private helper. The controller went from 1,324 to about 800 lines. New classes, one
+        test: `tests/Unit/Service/Zgw/ZtcCrossReferenceTest.php` (8 tests); the existing
+        `ZtcControllerContractTest` still passes.
 - [ ] Slice 7, the singletons (ZgwJwtValidator, LoadDefaultZgwMappings, ZgwRulesBase,
       ContactMomentService, PlanItemCascade)
