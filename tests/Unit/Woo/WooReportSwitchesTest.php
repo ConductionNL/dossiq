@@ -95,10 +95,10 @@ class WooReportSwitchesTest extends TestCase {
 	public function testOnlyAMemberOfTheReaderGroupReads(): void {
 		$switches = $this->switches(stored: [WooReportSwitches::READERS => ' woo-leiding ']);
 		$this->assertSame('woo-leiding', $switches->readerGroup());
-		$this->assertTrue($switches->isThroughputReader(userId: 'lead'));
-		$this->assertFalse($switches->isThroughputReader(userId: 'admin'));
-		$this->assertFalse($switches->isThroughputReader(userId: ''));
-		$this->assertFalse($this->switches(stored: [])->isThroughputReader(userId: 'lead'));
+		$this->assertTrue($switches->maySeeThroughput(userId: 'lead'));
+		$this->assertFalse($switches->maySeeThroughput(userId: 'admin'));
+		$this->assertFalse($switches->maySeeThroughput(userId: ''));
+		$this->assertFalse($this->switches(stored: [])->maySeeThroughput(userId: 'lead'));
 	}//end testOnlyAMemberOfTheReaderGroupReads()
 
 	/**

@@ -67,5 +67,6 @@ class ListenerRegistrar {
 		(new CaseMergeRegistrar())->register(context: $context);
 		(new BulkActionRegistrar())->register(context: $context);
 		(new CrossAppListenerRegistrar())->register(context: $context);
+		(new WooListenerRegistrar())->register(context: $context);
 	}//end register()
 }//end class

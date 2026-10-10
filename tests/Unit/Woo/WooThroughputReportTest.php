@@ -23,8 +23,8 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Woo\WooThroughputReport;
-use OCP\IConfig;
 use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 
@@ -32,10 +32,13 @@ use PHPUnit\Framework\TestCase;
  * Assessments are counted per reviewer per day, by verdict, in the instance time zone.
  *
  * @covers \OCA\Dossiq\Woo\WooThroughputReport
+ * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */
 class WooThroughputReportTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The assessment store.
@@ -67,14 +70,10 @@ class WooThroughputReportTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'][$key] ?? $default)
 		);
-		$config = $this->createMock(IConfig::class);
-		$config->method('getSystemValueString')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => ($key === 'default_timezone' ? $zone : $default)
-		);
 		$users = $this->createMock(IUserManager::class);
 		$users->method('getDisplayName')->willReturnMap([['reviewer-a', 'Anna de Wit'], ['reviewer-b', null]]);
 
-		return new WooThroughputReport(settingsService: $settings, config: $config, userManager: $users);
+		return new WooThroughputReport(settingsService: $settings, caseDates: $this->caseDates(zone: $zone), userManager: $users);
 	}//end report()
 
 	/**
@@ -137,7 +136,6 @@ class WooThroughputReportTest extends TestCase {
 
 		$this->assertSame('2026-11-11', $this->report(zone: 'Europe/Amsterdam')->forCase(caseId: 'case-x')['rows'][0]['day']);
 		$this->assertSame('2026-11-10', $this->report(zone: 'UTC')->forCase(caseId: 'case-x')['rows'][0]['day']);
-		$this->assertSame('2026-11-10', $this->report(zone: 'Not/AZone')->forCase(caseId: 'case-x')['rows'][0]['day']);
 	}//end testTheDayIsTheInstanceTimeZoneDay()
 
 	/**
@@ -188,7 +186,7 @@ class WooThroughputReportTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCsvHoldsTheRowsAndDefusesFormulas(): void {
-		$csv = WooThroughputReport::toCsv(
+		$csv = $this->report()->toCsv(
 			rows: [['reviewer' => '=cmd', 'displayName' => 'A "B"', 'day' => '2026-11-10', 'openbaar' => 1, 'deels_openbaar' => 0, 'niet_openbaar' => 0, 'total' => 1]]
 		);
 

@@ -24,6 +24,7 @@ use OCA\Dossiq\Controller\WooReportController;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\EntityAnsweringRegister;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RecordingAuditTrailMapper;
 use OCA\Dossiq\Woo\WooReportReadLog;
 use OCA\Dossiq\Woo\WooReportSwitches;
@@ -31,7 +32,6 @@ use OCA\Dossiq\Woo\WooThroughputReport;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
-use OCP\IConfig;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -48,10 +48,13 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooReportSwitches
  * @covers \OCA\Dossiq\Woo\WooThroughputReport
  * @covers \OCA\Dossiq\Woo\WooReportReadLog
+ * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
  */
 class WooReportControllerTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The store holding the cases and assessments.
@@ -161,8 +164,6 @@ class WooReportControllerTest extends TestCase {
 			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'case_schema' => 'case', 'woo_assessment_schema' => 'wooDocumentAssessment'][$key] ?? $default)
 		);
 
-		$config = $this->createMock(IConfig::class);
-		$config->method('getSystemValueString')->willReturn('Europe/Amsterdam');
 		$users = $this->createMock(IUserManager::class);
 		$users->method('getDisplayName')->willReturnCallback(static fn (string $u): string => strtoupper($u));
 
@@ -184,12 +185,25 @@ class WooReportControllerTest extends TestCase {
 		return new WooReportController(
 			request: $request,
 			switches: new WooReportSwitches(appConfig: $appConfig, groupManager: $groups),
-			throughputReport: new WooThroughputReport(settingsService: $settings, config: $config, userManager: $users),
+			throughputReport: new WooThroughputReport(settingsService: $settings, caseDates: $this->caseDates(), userManager: $users),
 			readLog: new WooReportReadLog(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
 			userSession: $session,
 			l10n: $l10n,
 		);
 	}//end controller()
+
+	/**
+	 * A bare report, for its CSV writer.
+	 *
+	 * @return WooThroughputReport The report.
+	 */
+	private function controllerReport(): WooThroughputReport {
+		return new WooThroughputReport(
+			settingsService: $this->createMock(SettingsService::class),
+			caseDates: $this->caseDates(),
+			userManager: $this->createMock(IUserManager::class),
+		);
+	}//end controllerReport()
 
 	/**
 	 * Off on a fresh install: 403 with the not-switched-on sentence, and nothing is read or recorded.
@@ -308,7 +322,7 @@ class WooReportControllerTest extends TestCase {
 		$csv = $this->controller(uid: 'lead', params: ['case' => 'case-x', 'format' => 'csv'])->throughput();
 
 		$this->assertInstanceOf(DataDownloadResponse::class, $csv);
-		$this->assertSame(WooThroughputReport::toCsv(rows: $json), $csv->render());
+		$this->assertSame($this->controllerReport()->toCsv(rows: $json), $csv->render());
 		$lines = array_values(array_filter(explode("\r\n", $csv->render())));
 		$this->assertCount(1 + count($json), $lines);
 		$this->assertCount(2, $this->trail->rows);
