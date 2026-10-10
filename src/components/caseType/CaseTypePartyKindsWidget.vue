@@ -24,7 +24,12 @@
 <template>
 	<div class="case-type-party-kinds" data-testid="case-type-party-kinds">
 		<p class="case-type-party-kinds__lead">
-			{{ t('dossiq', 'Which kinds of party a case of this type accepts, in the order the handler sees them') }}
+			{{
+				t(
+					'dossiq',
+					'Which kinds of party a case of this type accepts, in the order the handler sees them',
+				)
+			}}
 		</p>
 
 		<NcLoadingIcon v-if="loading" :size="24" />
@@ -45,21 +50,33 @@
 						:disabled="!editable"
 						:data-testid="'case-type-party-kind-' + row.code"
 						@update:modelValue="toggle(row.code, $event)">
-						{{ row.accepted ? (acceptedIndex(row.code) + 1) + '. ' + row.label : row.label }}
+						{{
+							row.accepted
+								? acceptedIndex(row.code) + 1 + '. ' + row.label
+								: row.label
+						}}
 					</NcCheckboxRadioSwitch>
 					<span v-if="!row.accepted" class="case-type-party-kinds__muted">
 						{{ t('dossiq', 'Not accepted by this case type') }}
 					</span>
-					<span v-if="editable && row.accepted" class="case-type-party-kinds__move">
+					<span
+						v-if="editable && row.accepted"
+						class="case-type-party-kinds__move">
 						<NcButton
-							:aria-label="t('dossiq', 'Move {kind} up', { kind: row.label })"
+							:aria-label="
+								t('dossiq', 'Move {kind} up', { kind: row.label })
+							"
 							:disabled="acceptedIndex(row.code) === 0"
 							@click="move(row.code, -1)">
 							↑
 						</NcButton>
 						<NcButton
-							:aria-label="t('dossiq', 'Move {kind} down', { kind: row.label })"
-							:disabled="acceptedIndex(row.code) === accepted.length - 1"
+							:aria-label="
+								t('dossiq', 'Move {kind} down', { kind: row.label })
+							"
+							:disabled="
+								acceptedIndex(row.code) === accepted.length - 1
+							"
 							@click="move(row.code, 1)">
 							↓
 						</NcButton>
@@ -67,13 +84,27 @@
 				</li>
 			</ol>
 
-			<p class="case-type-party-kinds__muted" data-testid="case-type-party-kinds-source">
-				{{ editable
-					? t('dossiq', 'Kinds from pipelinq. Pipelinq keeps the choice, so every app offers the same kinds.')
-					: t('dossiq', 'Pipelinq is not installed on this instance, so a case offers dossiq\'s own kinds and nothing can be saved here.') }}
+			<p
+				class="case-type-party-kinds__muted"
+				data-testid="case-type-party-kinds-source">
+				{{
+					editable
+						? t(
+								'dossiq',
+								'Kinds from pipelinq. Pipelinq keeps the choice, so every app offers the same kinds.',
+							)
+						: t(
+								'dossiq',
+								"Pipelinq is not installed on this instance, so a case offers dossiq's own kinds and nothing can be saved here.",
+							)
+				}}
 			</p>
 
-			<p v-if="error" class="case-type-party-kinds__error" role="alert" data-testid="case-type-party-kinds-error">
+			<p
+				v-if="error"
+				class="case-type-party-kinds__error"
+				role="alert"
+				data-testid="case-type-party-kinds-error">
 				{{ error }}
 			</p>
 			<p v-if="savedNote" class="case-type-party-kinds__muted" role="status">
@@ -145,10 +176,18 @@ export default {
 			const byCode = new Map(this.kinds.map((kind) => [kindCode(kind), kind]))
 			const first = this.accepted
 				.filter((code) => byCode.has(code))
-				.map((code) => ({ code, label: labelOf(byCode.get(code)), accepted: true }))
+				.map((code) => ({
+					code,
+					label: labelOf(byCode.get(code)),
+					accepted: true,
+				}))
 			const rest = this.kinds
 				.filter((kind) => !this.accepted.includes(kindCode(kind)))
-				.map((kind) => ({ code: kindCode(kind), label: labelOf(kind), accepted: false }))
+				.map((kind) => ({
+					code: kindCode(kind),
+					label: labelOf(kind),
+					accepted: false,
+				}))
 
 			return [...first, ...rest]
 		},
@@ -184,7 +223,9 @@ export default {
 				const answer = await fetchCaseTypePartyKinds(this.caseTypeId)
 				this.source = String(answer?.source || 'dossiq')
 				this.available = answer?.available === true
-				this.kinds = (Array.isArray(answer?.kinds) ? answer.kinds : []).filter((kind) => kindCode(kind) !== '')
+				this.kinds = (
+					Array.isArray(answer?.kinds) ? answer.kinds : []
+				).filter((kind) => kindCode(kind) !== '')
 				// Nothing declared: every kind is offered today, so every kind starts ticked.
 				this.accepted = Array.isArray(answer?.accepted)
 					? answer.accepted.map(String)
@@ -255,13 +296,19 @@ export default {
 			this.error = ''
 			this.savedNote = ''
 			try {
-				const answer = await declareCaseTypePartyKinds(this.caseTypeId, this.accepted)
+				const answer = await declareCaseTypePartyKinds(
+					this.caseTypeId,
+					this.accepted,
+				)
 				if (Array.isArray(answer?.accepted)) {
 					this.accepted = answer.accepted.map(String)
 				}
 				this.savedNote = t('dossiq', 'Saved in pipelinq.')
 			} catch (error) {
-				this.error = refusalOf(error, t('dossiq', 'The party kinds could not be saved.'))
+				this.error = refusalOf(
+					error,
+					t('dossiq', 'The party kinds could not be saved.'),
+				)
 			} finally {
 				this.busy = false
 			}

@@ -116,8 +116,7 @@ class RequesterRegistrySubscription {
 				return ['requested' => false, 'reason' => 'the requester is not kept by a source register'];
 			}
 
-			$state = $registry->stateFor($objectUuid);
-			if (is_array($state) === true && in_array((string)($state['state'] ?? ''), self::LIVE_STATES, true) === true) {
+			if ($this->isLive(state: $registry->stateFor($objectUuid)) === true) {
 				return ['requested' => false, 'reason' => 'already subscribed'];
 			}
 
@@ -135,4 +134,18 @@ class RequesterRegistrySubscription {
 
 		return ['requested' => true, 'reason' => ''];
 	}//end subscribe()
+
+	/**
+	 * Whether a subscription state is one that needs no new request.
+	 *
+	 * @param mixed $state What the registry answered for the requester.
+	 *
+	 * @return bool True when a request is already requested or active.
+	 *
+	 * @spec openspec/changes/contacts-domain/tasks.md#4-integrations
+	 */
+	private function isLive(mixed $state): bool {
+		return is_array($state) === true
+			&& in_array((string)($state['state'] ?? ''), self::LIVE_STATES, true) === true;
+	}//end isLive()
 }//end class

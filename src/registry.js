@@ -553,7 +553,7 @@ const registry = {
 		kind: 'widget',
 		component: CaseTypePartyKindsWidget,
 		...PANEL_WIDGET_META,
-		_note: 'CaseTypeDetail: the Partijsoorten section. Lists pipelinq\'s kinds with the accepted ones first in declared order, moves them up and down, and saves the declaration to pipelinq. Without pipelinq it lists dossiq\'s own three read only and says nothing can be saved.',
+		_note: "CaseTypeDetail: the Partijsoorten section. Lists pipelinq's kinds with the accepted ones first in declared order, moves them up and down, and saves the declaration to pipelinq. Without pipelinq it lists dossiq's own three read only and says nothing can be saved.",
 	},
 
 	'case-pipelinq-contact-moments': {
@@ -561,7 +561,7 @@ const registry = {
 		kind: 'widget',
 		component: CasePipelinqContactMoments,
 		...PANEL_WIDGET_META,
-		_note: 'CaseDetail Communication tab, the Customer record section (board DqZaakContactmomenten): pipelinq\'s contact moments by membership, the shared line, and the two filing acts. Says in words when pipelinq is absent, which is not the same as no moments.',
+		_note: "CaseDetail Communication tab, the Customer record section (board DqZaakContactmomenten): pipelinq's contact moments by membership, the shared line, and the two filing acts. Says in words when pipelinq is absent, which is not the same as no moments.",
 	},
 
 	'case-programme': {
@@ -569,7 +569,7 @@ const registry = {
 		kind: 'widget',
 		component: CaseProgrammeSection,
 		...PANEL_WIDGET_META,
-		_note: 'CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq\'s refusal naming the holder.',
+		_note: "CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq's refusal naming the holder.",
 	},
 
 	CaseHandoverDialog: {

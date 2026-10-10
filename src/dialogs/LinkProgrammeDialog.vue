@@ -18,7 +18,10 @@
 		@closing="$emit('close')">
 		<div class="link-programme">
 			<NcLoadingIcon v-if="loading" :size="24" />
-			<p v-else-if="programmes.length === 0" class="link-programme__hint" data-testid="link-programme-none">
+			<p
+				v-else-if="programmes.length === 0"
+				class="link-programme__hint"
+				data-testid="link-programme-none">
 				{{ t('dossiq', 'Pipelinq holds no programme you can choose.') }}
 			</p>
 			<fieldset v-else class="link-programme__group">
@@ -36,7 +39,11 @@
 				</NcCheckboxRadioSwitch>
 			</fieldset>
 
-			<p v-if="error" class="link-programme__error" role="alert" data-testid="link-programme-error">
+			<p
+				v-if="error"
+				class="link-programme__error"
+				role="alert"
+				data-testid="link-programme-error">
 				{{ error }}
 			</p>
 		</div>
@@ -62,7 +69,11 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { fetchProgrammes, linkCaseProgramme, refusalOf } from '../services/pipelinqCaseApi.js'
+import {
+	fetchProgrammes,
+	linkCaseProgramme,
+	refusalOf,
+} from '../services/pipelinqCaseApi.js'
 
 export default {
 	name: 'LinkProgrammeDialog',
@@ -98,9 +109,14 @@ export default {
 	async mounted() {
 		try {
 			const answer = await fetchProgrammes()
-			this.programmes = Array.isArray(answer?.programmes) ? answer.programmes : []
+			this.programmes = Array.isArray(answer?.programmes)
+				? answer.programmes
+				: []
 		} catch (error) {
-			this.error = refusalOf(error, t('dossiq', 'The programmes could not be read.'))
+			this.error = refusalOf(
+				error,
+				t('dossiq', 'The programmes could not be read.'),
+			)
 		} finally {
 			this.loading = false
 		}
@@ -123,7 +139,10 @@ export default {
 				this.$emit('linked')
 				this.$emit('close')
 			} catch (error) {
-				this.error = refusalOf(error, t('dossiq', 'The case could not be linked to that programme.'))
+				this.error = refusalOf(
+					error,
+					t('dossiq', 'The case could not be linked to that programme.'),
+				)
 			} finally {
 				this.busy = false
 			}

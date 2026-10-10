@@ -49,7 +49,12 @@
 			</p>
 
 			<p class="file-contact-moment__hint">
-				{{ t('dossiq', 'It stays one contact moment. You see it on both cases afterwards.') }}
+				{{
+					t(
+						'dossiq',
+						'It stays one contact moment. You see it on both cases afterwards.',
+					)
+				}}
 			</p>
 
 			<p
@@ -62,7 +67,9 @@
 		</div>
 
 		<template #actions>
-			<NcButton data-testid="file-contact-moment-cancel" @click="$emit('close')">
+			<NcButton
+				data-testid="file-contact-moment-cancel"
+				@click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton
@@ -121,7 +128,10 @@ export default {
 	computed: {
 		/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03 */
 		momentLabel() {
-			return [this.moment?.channel, this.moment?.subject || this.moment?.summary]
+			return [
+				this.moment?.channel,
+				this.moment?.subject || this.moment?.summary,
+			]
 				.filter(Boolean)
 				.join(': ')
 		},
@@ -153,12 +163,17 @@ export default {
 					.filter((row) => String(row?.id ?? '') !== this.caseId)
 					.map((row) => ({
 						id: String(row?.id ?? ''),
-						label: [row?.identifier, row?.title].filter(Boolean).join(' · '),
+						label: [row?.identifier, row?.title]
+							.filter(Boolean)
+							.join(' · '),
 					}))
 				this.error = ''
 			} catch (error) {
 				this.results = []
-				this.error = refusalOf(error, t('dossiq', 'Those words could not be searched for.'))
+				this.error = refusalOf(
+					error,
+					t('dossiq', 'Those words could not be searched for.'),
+				)
 			} finally {
 				this.searched = true
 			}
@@ -174,11 +189,21 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				await fileContactMoment(this.caseId, String(this.moment?.id || ''), this.target)
+				await fileContactMoment(
+					this.caseId,
+					String(this.moment?.id || ''),
+					this.target,
+				)
 				this.$emit('filed')
 				this.$emit('close')
 			} catch (error) {
-				this.error = refusalOf(error, t('dossiq', 'The contact moment could not be filed on that case.'))
+				this.error = refusalOf(
+					error,
+					t(
+						'dossiq',
+						'The contact moment could not be filed on that case.',
+					),
+				)
 			} finally {
 				this.busy = false
 			}

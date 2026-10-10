@@ -70,7 +70,10 @@ export async function logContactMoment(caseId, moment) {
  */
 export async function fileContactMoment(caseId, momentId, targetCaseId) {
 	const { data } = await axios.post(
-		caseUrl(caseId, '/contact-moments/' + encodeURIComponent(momentId) + '/file'),
+		caseUrl(
+			caseId,
+			'/contact-moments/' + encodeURIComponent(momentId) + '/file',
+		),
 		{ targetCaseId },
 	)
 	return data
@@ -140,7 +143,10 @@ export async function fetchCaseProgramme(caseId) {
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
  */
 export async function linkCaseProgramme(caseId, programmeId, title = '') {
-	const { data } = await axios.post(caseUrl(caseId, '/programme'), { programmeId, title })
+	const { data } = await axios.post(caseUrl(caseId, '/programme'), {
+		programmeId,
+		title,
+	})
 	return data
 }
 
@@ -151,7 +157,9 @@ export async function linkCaseProgramme(caseId, programmeId, title = '') {
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-hangs-under-a-programme-by-reference-and-the-progress-figure-names-its-mode-req-plq-08
  */
 export async function fetchProgrammes() {
-	const { data } = await axios.get(generateUrl('/apps/dossiq/api/pipelinq/programmes'))
+	const { data } = await axios.get(
+		generateUrl('/apps/dossiq/api/pipelinq/programmes'),
+	)
 	return data
 }
 
@@ -164,7 +172,10 @@ export async function fetchProgrammes() {
  */
 export async function fetchCaseTypePartyKinds(caseTypeId) {
 	const { data } = await axios.get(
-		generateUrl('/apps/dossiq/api/case-types/{caseTypeId}/pipelinq/party-kinds', { caseTypeId }),
+		generateUrl(
+			'/apps/dossiq/api/case-types/{caseTypeId}/pipelinq/party-kinds',
+			{ caseTypeId },
+		),
 	)
 	return data
 }
@@ -179,7 +190,10 @@ export async function fetchCaseTypePartyKinds(caseTypeId) {
  */
 export async function declareCaseTypePartyKinds(caseTypeId, kinds) {
 	const { data } = await axios.put(
-		generateUrl('/apps/dossiq/api/case-types/{caseTypeId}/pipelinq/party-kinds', { caseTypeId }),
+		generateUrl(
+			'/apps/dossiq/api/case-types/{caseTypeId}/pipelinq/party-kinds',
+			{ caseTypeId },
+		),
 		{ kinds },
 	)
 	return data
@@ -234,16 +248,42 @@ export function sharedLine(moment) {
 	}
 
 	if (hidden === 0) {
-		return n('dossiq', 'Also on {count} other case', 'Also on {count} other cases', named, { count: named })
+		return n(
+			'dossiq',
+			'Also on {count} other case',
+			'Also on {count} other cases',
+			named,
+			{ count: named },
+		)
 	}
 
 	if (named === 0) {
-		return n('dossiq', 'Also on {count} case you may not see', 'Also on {count} cases you may not see', hidden, { count: hidden })
+		return n(
+			'dossiq',
+			'Also on {count} case you may not see',
+			'Also on {count} cases you may not see',
+			hidden,
+			{ count: hidden },
+		)
 	}
 
-	return n('dossiq', 'Also on {count} other case', 'Also on {count} other cases', named, { count: named })
+	return (
+		n(
+			'dossiq',
+			'Also on {count} other case',
+			'Also on {count} other cases',
+			named,
+			{ count: named },
+		)
 		+ ' '
-		+ n('dossiq', 'and {count} you may not see', 'and {count} you may not see', hidden, { count: hidden })
+		+ n(
+			'dossiq',
+			'and {count} you may not see',
+			'and {count} you may not see',
+			hidden,
+			{ count: hidden },
+		)
+	)
 }
 
 /**
@@ -263,18 +303,30 @@ export function languageLine(answer) {
 	const language = languageName(answer.language)
 
 	if (answer.available !== true) {
-		return t('dossiq', 'Writing language: {language}. No preference can be read on this instance.', { language })
+		return t(
+			'dossiq',
+			'Writing language: {language}. No preference can be read on this instance.',
+			{ language },
+		)
 	}
 
 	if (answer.stated === true) {
-		return t('dossiq', 'Writing language: {language}. Asked for by the party.', { language })
+		return t('dossiq', 'Writing language: {language}. Asked for by the party.', {
+			language,
+		})
 	}
 
 	if (answer.rule === 'instanceDefault') {
-		return t('dossiq', 'Writing language: {language}. No preference recorded, so the default language of this instance.', { language })
+		return t(
+			'dossiq',
+			'Writing language: {language}. No preference recorded, so the default language of this instance.',
+			{ language },
+		)
 	}
 
-	return t('dossiq', 'Writing language: {language}. No preference recorded.', { language })
+	return t('dossiq', 'Writing language: {language}. No preference recorded.', {
+		language,
+	})
 }
 
 /**
@@ -292,7 +344,9 @@ export function languageName(tag) {
 		fr: t('dossiq', 'French'),
 		fy: t('dossiq', 'Frisian'),
 	}
-	const key = String(tag || '').toLowerCase().split('-')[0]
+	const key = String(tag || '')
+		.toLowerCase()
+		.split('-')[0]
 	return names[key] || String(tag || '')
 }
 
@@ -310,7 +364,11 @@ export function progressLine(progress) {
 		return t('dossiq', 'Progress cannot be read on this instance.')
 	}
 
-	if (progress.computable !== true || progress.progress === null || progress.progress === undefined) {
+	if (
+		progress.computable !== true
+		|| progress.progress === null
+		|| progress.progress === undefined
+	) {
 		const reason = String(progress.sentence || '')
 		return reason === ''
 			? t('dossiq', 'Progress cannot be computed.')
@@ -320,11 +378,21 @@ export function progressLine(progress) {
 	const percent = Number(progress.progress)
 	const modes = {
 		manual: t('dossiq', '{percent} percent done, entered by hand.', { percent }),
-		fromTasks: t('dossiq', '{percent} percent done, measured by the closed tasks of the programme.', { percent }),
-		fromEffort: t('dossiq', '{percent} percent done, measured by the hours booked against the estimate.', { percent }),
+		fromTasks: t(
+			'dossiq',
+			'{percent} percent done, measured by the closed tasks of the programme.',
+			{ percent },
+		),
+		fromEffort: t(
+			'dossiq',
+			'{percent} percent done, measured by the hours booked against the estimate.',
+			{ percent },
+		),
 	}
 
-	return modes[progress.mode] || t('dossiq', '{percent} percent done.', { percent })
+	return (
+		modes[progress.mode] || t('dossiq', '{percent} percent done.', { percent })
+	)
 }
 
 /**
@@ -345,11 +413,17 @@ export function refusalSentence(refusal, indicators) {
 		.filter(Boolean)
 
 	if (named.length === 0) {
-		return t('dossiq', '{reason} The contact moment is kept in dossiq.', { reason: refusal })
+		return t('dossiq', '{reason} The contact moment is kept in dossiq.', {
+			reason: refusal,
+		})
 	}
 
-	return t('dossiq', 'Indicator {indicators}: {reason} The contact moment is kept in dossiq.', {
-		indicators: named.join(', '),
-		reason: refusal,
-	})
+	return t(
+		'dossiq',
+		'Indicator {indicators}: {reason} The contact moment is kept in dossiq.',
+		{
+			indicators: named.join(', '),
+			reason: refusal,
+		},
+	)
 }

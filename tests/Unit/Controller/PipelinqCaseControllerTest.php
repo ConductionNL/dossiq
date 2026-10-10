@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PipelinqCaseController;
+use OCA\Dossiq\Controller\PipelinqContactMomentController;
+use OCA\Dossiq\Controller\PipelinqProgrammeController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
@@ -80,11 +82,11 @@ class PipelinqCaseControllerTest extends TestCase {
 	}//end setUp()
 
 	/**
-	 * The controller over real consumers.
+	 * The gateway over the pipelinq services this instance has.
 	 *
-	 * @return PipelinqCaseController The controller.
+	 * @return PipelinqGateway The gateway.
 	 */
-	private function controller(): PipelinqCaseController {
+	private function gateway(): PipelinqGateway {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			function (string $id): object {
@@ -95,8 +97,57 @@ class PipelinqCaseControllerTest extends TestCase {
 				return $this->services[$id];
 			}
 		);
+
+		return new PipelinqGateway($container, $this->createMock(LoggerInterface::class));
+	}//end gateway()
+
+	/**
+	 * The contact moment controller over the real bridge.
+	 *
+	 * @return PipelinqContactMomentController The controller.
+	 */
+	private function momentsController(): PipelinqContactMomentController {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		return new PipelinqContactMomentController(
+			'dossiq',
+			$this->request,
+			new ContactMomentBridge($this->gateway(), $this->createMock(LoggerInterface::class)),
+			$this->log,
+			$this->access,
+			$this->session,
+			$l10n,
+		);
+	}//end momentsController()
+
+	/**
+	 * The programme controller over the real consumer.
+	 *
+	 * @return PipelinqProgrammeController The controller.
+	 */
+	private function programmeController(): PipelinqProgrammeController {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		return new PipelinqProgrammeController(
+			'dossiq',
+			$this->request,
+			new ProgrammeConsumer($this->gateway(), $this->createMock(LoggerInterface::class)),
+			$this->access,
+			$this->session,
+			$l10n,
+		);
+	}//end programmeController()
+
+	/**
+	 * The controller over real consumers.
+	 *
+	 * @return PipelinqCaseController The controller.
+	 */
+	private function controller(): PipelinqCaseController {
 		$logger = $this->createMock(LoggerInterface::class);
-		$gateway = new PipelinqGateway($container, $logger);
+		$gateway = $this->gateway();
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
@@ -104,11 +155,8 @@ class PipelinqCaseControllerTest extends TestCase {
 			'dossiq',
 			$this->request,
 			$gateway,
-			new ContactMomentBridge($gateway, $logger),
-			$this->log,
 			new PartyKindConsumer($gateway, new PartyVocabulary($l10n), $this->createMock(SettingsService::class), $logger),
 			new CorrespondenceLanguageConsumer($gateway, $logger),
-			new ProgrammeConsumer($gateway, $logger),
 			$this->cases,
 			$this->access,
 			$this->session,
@@ -167,7 +215,7 @@ class PipelinqCaseControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testContactMomentsSayWhenPipelinqIsAbsent(): void {
-		$absent = $this->controller()->contactMoments(caseId: 'case-b')->getData();
+		$absent = $this->momentsController()->contactMoments(caseId: 'case-b')->getData();
 		$this->assertFalse($absent['available'], 'An absent pipelinq is not a case with no contact moments.');
 
 		$this->services[PipelinqGateway::CONTACT_MOMENTS] = new class {
@@ -189,7 +237,7 @@ class PipelinqCaseControllerTest extends TestCase {
 			}
 		};
 
-		$data = $this->controller()->contactMoments(caseId: 'case-b')->getData();
+		$data = $this->momentsController()->contactMoments(caseId: 'case-b')->getData();
 		$this->assertTrue($data['available']);
 		$this->assertSame(['case-a'], $data['moments'][0]['alsoOnCases']);
 		$this->assertSame(1, $data['moments'][0]['alsoOnHiddenCount'], 'A case the reader may not see is counted, not named.');
@@ -204,7 +252,7 @@ class PipelinqCaseControllerTest extends TestCase {
 		$this->access = $this->createMock(CaseAccessGuard::class);
 		$this->access->method('hasCaseReadAccess')->willReturn(false);
 
-		$response = $this->controller()->contactMoments(caseId: 'case-b');
+		$response = $this->momentsController()->contactMoments(caseId: 'case-b');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testAReaderWithoutAccessIsRefused()
@@ -222,7 +270,7 @@ class PipelinqCaseControllerTest extends TestCase {
 			static fn (string $caseId): bool => $caseId === 'case-b'
 		);
 
-		$refused = $this->controller()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-x');
+		$refused = $this->momentsController()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-x');
 		$this->assertSame(Http::STATUS_FORBIDDEN, $refused->getStatus(), 'Putting a call on a case is a change to that case.');
 		$this->assertSame([], $filing->calls, 'Nothing was asked of pipelinq for a refused caller.');
 	}//end testFilingNeedsBothCasesAndGoesThroughPipelinq()
@@ -237,7 +285,7 @@ class PipelinqCaseControllerTest extends TestCase {
 		$this->services[PipelinqGateway::CONTACT_MOMENT_FILING] = $filing;
 		$this->access->method('hasCaseMutationAccess')->willReturn(true);
 
-		$response = $this->controller()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-x');
+		$response = $this->momentsController()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-x');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame([['fileOnAlsoCase', 'm-1', 'case-x']], $filing->calls);
@@ -253,8 +301,8 @@ class PipelinqCaseControllerTest extends TestCase {
 		$this->services[PipelinqGateway::CONTACT_MOMENT_FILING] = $filing;
 		$this->access->method('hasCaseMutationAccess')->willReturn(true);
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-b')->getStatus());
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller()->fileContactMoment(caseId: 'case-b', momentId: 'm-1')->getStatus());
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->momentsController()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-b')->getStatus());
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->momentsController()->fileContactMoment(caseId: 'case-b', momentId: 'm-1')->getStatus());
 		$this->assertSame([], $filing->calls);
 	}//end testFilingOntoTheSameCaseIsRefused()
 
@@ -267,7 +315,7 @@ class PipelinqCaseControllerTest extends TestCase {
 		$this->services[PipelinqGateway::CONTACT_MOMENT_FILING] = $this->filing(status: 409);
 		$this->access->method('hasCaseMutationAccess')->willReturn(true);
 
-		$response = $this->controller()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-x');
+		$response = $this->momentsController()->fileContactMoment(caseId: 'case-b', momentId: 'm-1', targetCaseId: 'case-x');
 
 		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
 		$this->assertSame('This contact moment is already on that case.', $response->getData()['error']);
@@ -283,7 +331,7 @@ class PipelinqCaseControllerTest extends TestCase {
 		$this->services[PipelinqGateway::CONTACT_MOMENT_FILING] = $filing;
 		$this->access->method('hasCaseMutationAccess')->willReturn(true);
 
-		$this->assertSame(Http::STATUS_OK, $this->controller()->unfileContactMoment(caseId: 'case-b', momentId: 'm-1')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->momentsController()->unfileContactMoment(caseId: 'case-b', momentId: 'm-1')->getStatus());
 		$this->assertSame([['unfileFromCase', 'm-1', 'case-b']], $filing->calls);
 	}//end testUnfilingTakesItOffThisCase()
 
@@ -355,7 +403,7 @@ class PipelinqCaseControllerTest extends TestCase {
 			}
 		};
 
-		$response = $this->controller()->linkProgramme(caseId: 'case-b', programmeId: 'p-2', title: 'Subsidie buurtfeest');
+		$response = $this->programmeController()->linkProgramme(caseId: 'case-b', programmeId: 'p-2', title: 'Subsidie buurtfeest');
 
 		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
 		$this->assertSame('This work is already in programme p-1.', $response->getData()['error']);
@@ -369,7 +417,7 @@ class PipelinqCaseControllerTest extends TestCase {
 	public function testLinkingNeedsMutationAccess(): void {
 		$this->access->method('hasCaseMutationAccess')->willReturn(false);
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller()->linkProgramme(caseId: 'case-b', programmeId: 'p-2')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->programmeController()->linkProgramme(caseId: 'case-b', programmeId: 'p-2')->getStatus());
 	}//end testLinkingNeedsMutationAccess()
 
 	/**
@@ -405,7 +453,7 @@ class PipelinqCaseControllerTest extends TestCase {
 		$this->access->method('hasCaseMutationAccess')->willReturn(false);
 		$this->log->expects($this->never())->method('createContactMoment');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller()->logContactMoment(caseId: 'case-b')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->momentsController()->logContactMoment(caseId: 'case-b')->getStatus());
 	}//end testLoggingNeedsMutationAccess()
 
 	/**
@@ -437,7 +485,7 @@ class PipelinqCaseControllerTest extends TestCase {
 			}
 		);
 
-		$response = $this->controller()->logContactMoment(caseId: 'case-b');
+		$response = $this->momentsController()->logContactMoment(caseId: 'case-b');
 		$data = $response->getData();
 
 		$this->assertSame(Http::STATUS_CREATED, $response->getStatus(), 'The dossiq record is written whatever pipelinq says.');
@@ -457,6 +505,6 @@ class PipelinqCaseControllerTest extends TestCase {
 		$this->access->method('hasCaseMutationAccess')->willReturn(true);
 		$this->log->method('createContactMoment')->willThrowException(new RuntimeException('Invalid kanaal'));
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->controller()->logContactMoment(caseId: 'case-b')->getStatus());
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $this->momentsController()->logContactMoment(caseId: 'case-b')->getStatus());
 	}//end testAnInvalidMomentIsABadRequest()
 }//end class
