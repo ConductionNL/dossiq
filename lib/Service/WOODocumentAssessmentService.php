@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
@@ -82,6 +83,8 @@ class WOODocumentAssessmentService {
 	 * @param WooRefusalGrounds|null $refusalGrounds The settled list a cited ground is checked against.
 	 *        Built over the same settings and logger when left out, because those are its only
 	 *        collaborators and a default built from them is the instance the container wires.
+	 * @param CaseReviewerAccess|null $reviewerAccess Who may change an assessment and who reads it,
+	 *        when the case type keeps its assessments private to the case (case-reviewer-access).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -89,6 +92,7 @@ class WOODocumentAssessmentService {
 		private readonly LoggerInterface $logger,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
 		?WooRefusalGrounds $refusalGrounds = null,
+		private readonly ?CaseReviewerAccess $reviewerAccess = null,
 	) {
 		$this->refusalGrounds = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
@@ -107,6 +111,7 @@ class WOODocumentAssessmentService {
 	 * @throws RuntimeException If OpenRegister unavailable
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function bulkUpsert(string $caseId, array $assessments): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -121,14 +126,11 @@ class WOODocumentAssessmentService {
 			throw new RuntimeException('WOO assessment schema not configured');
 		}
 
-		$userId = 'system';
-		$user = $this->userSession->getUser();
-		if ($user !== null) {
-			$userId = $user->getUID();
-		}
+		$userId = ($this->userSession->getUser()?->getUID() ?? 'system');
 
 		$saved = [];
 		$errors = [];
+		$created = 0;
 
 		foreach ($assessments as $assessment) {
 			$validationErrors = $this->validate(assessment: $assessment);
@@ -145,8 +147,11 @@ class WOODocumentAssessmentService {
 			$assessment['assessedBy'] = $userId;
 			$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
 
-			// Find existing assessment for this document in this case.
-			$existing = $this->searchObjectsAsArrays(
+			// Find existing assessment for this document in this case. Read
+			// regardless of the caller, so an assessment the caller cannot see
+			// is never assessed a second time (REQ-CRA-003); only its uuid and
+			// owner are used, nothing of it is answered.
+			$existing = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
 				schema: $assessmentSchema,
@@ -158,6 +163,17 @@ class WOODocumentAssessmentService {
 			);
 
 			if (count($existing) > 0) {
+				$refusal = $this->reviewerAccess?->refusalFor(
+					caseId: $caseId,
+					record: $existing[0],
+					userId: $userId,
+					reference: (string)$assessment['documentRef']
+				);
+				if ($refusal !== null) {
+					$errors[] = $refusal;
+					continue;
+				}
+
 				$existingId = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
 				$saved[] = $objectService->saveObject(
 					object: $assessment,
@@ -173,7 +189,10 @@ class WOODocumentAssessmentService {
 				register: $register,
 				schema: $assessmentSchema,
 			);
+			$created++;
 		}//end foreach
+
+		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $created);
 
 		$outstanding = $this->getOutstanding(caseId: $caseId);
 

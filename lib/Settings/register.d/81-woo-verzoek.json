@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.2.0",
+          "version": "1.3.0",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -129,6 +129,23 @@
           "addressFields": [
             "wooRequest.verzoekerEmail"
           ]
+        },
+        "reviewerAccess": {
+          "records": [
+            {
+              "schemaKey": "woo_assessment_schema",
+              "caseField": "caseRef"
+            }
+          ],
+          "reviewers": [
+            {
+              "schemaKey": "review_batch_schema",
+              "caseField": "case",
+              "userField": "assignee"
+            }
+          ],
+          "supervisorGroup": "dossiq-coordinators",
+          "hideOthers": false
         },
         "recordImports": [
           {

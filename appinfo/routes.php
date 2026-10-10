@@ -828,6 +828,8 @@ $extra = [
     ['name' => 'wooCollection#queries',    'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'GET'],
     ['name' => 'wooCollection#storeQuery', 'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'POST'],
     ['name' => 'wooCollection#rerun',      'url' => '/api/cases/{id}/woo/collection/queries/{queryId}/rerun',      'verb' => 'POST'],
+    // Case-scoped reviewer access (case-reviewer-access REQ-CRA-004): administrator only, once after an upgrade.
+    ['name' => 'caseReviewerAccess#reconcile', 'url' => '/api/cases/reviewer-access/reconcile', 'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are
