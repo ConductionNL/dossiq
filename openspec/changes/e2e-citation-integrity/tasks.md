@@ -162,7 +162,11 @@ come true at scale.
       - **The citation names a requirement or nothing.** `intake-triage-and-refusal.spec.ts`
         (13) cites `requirement-*` anchors, and `lifecycle-acts-on-the-case.spec.ts` (8) cites
         the spec with no anchor. Both requirements are in the canonical specs; each citation
-        needs the scenario under that requirement that its test actually proves.
+        needs the scenario under that requirement that its test actually proves. **Done for
+        20 of the 21** (read against each test's assertions; four tests prove two scenarios and
+        cite both). The one left, `the declaration says the scheme resolves on this instance`,
+        proves no scenario under REQ-TRIAGE-02 (it is not the fail-closed scenario), so it keeps
+        its dead pointer until someone writes that test or the scenario it proves.
 - [ ] 6.4 Archive integrity, measured while doing 6.2: of the archived changes, 112 carry 719
       ADDED or MODIFIED requirement headings that do not appear verbatim in the canonical spec
       of the same capability. That count is an upper bound, since later changes legitimately
