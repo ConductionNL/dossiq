@@ -40,6 +40,7 @@ import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
 import { useObjectStore } from './store/modules/object.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
+import { installPageTitles } from './utils/pageTitle.js'
 import { currentPermissions } from './utils/permissions.js'
 import { routerBase } from './utils/routerBase.js'
 import {
@@ -288,6 +289,11 @@ const router = createRouter({
 // `utils/manifestRoutes.js#permissionGuard` for what it enforces, why it
 // redirects rather than errors, and what it deliberately does NOT close.
 router.beforeEach(permissionGuard)
+
+// The browser tab names the page ("Cases - Dossiq - Nextcloud"), the way
+// Nextcloud's own apps do, instead of the same server-rendered title on every
+// route. See `utils/pageTitle.js`.
+installPageTitles(router, builtManifest, (label) => t('dossiq', label))
 
 // The case page subscribes to the case it is showing (gap register row 2.20).
 // It is wired here rather than in a component because `#CaseDetail` is rendered

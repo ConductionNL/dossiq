@@ -145,6 +145,7 @@ class CaseRelationService {
 			$rows[$targetId.'|'.$type] = array_merge(
 				$entry,
 				[
+					'title'        => $this->titleOf(caseId: $targetId, entry: $entry),
 					'direction'    => null,
 					'label'        => null,
 					'inverseLabel' => null,
@@ -156,6 +157,32 @@ class CaseRelationService {
 
 		return array_values($rows);
 	}//end listRelations()
+
+	/**
+	 * The title of the far case of a legacy relation, or '' when unreadable.
+	 *
+	 * A legacy entry stores only `{caseId, aardRelatie}`, so without this the
+	 * Related cases card showed it as its bare uuid. A case that cannot be
+	 * read answers '', and the card leaves the row out rather than print an
+	 * id a handler cannot use.
+	 *
+	 * @param string               $caseId The far case uuid.
+	 * @param array<string, mixed> $entry  The stored entry.
+	 *
+	 * @return string The title, or ''.
+	 *
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+	 */
+	private function titleOf(string $caseId, array $entry): string {
+		$stored = trim((string)($entry['title'] ?? ''));
+		if ($stored !== '') {
+			return $stored;
+		}
+
+		$case = $this->store->fetchCase(caseUuid: $caseId);
+
+		return trim((string)($case['title'] ?? ''));
+	}//end titleOf()
 
 	/**
 	 * Add a typed peer relation to the case that declares it.

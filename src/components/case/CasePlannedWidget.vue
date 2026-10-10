@@ -30,6 +30,19 @@
   Deleted the day OpenRegister's `related` widget can include scheduled flows
   by subject (tasks 3.3).
 
+  ONLY CASES ARE RELATED CASES. The library's Objects group lists everything
+  OpenRegister's `/uses` and `/used` answer for the case: its case type, its
+  status type, its workflow template, its custody record, and an object it
+  cannot name as a bare uuid. Under the heading "Related cases" that read as
+  four related cases, none of them a case. `showObjects` is off, so the card
+  holds the typed case relations (which already include the parent and the
+  sub-cases, each under the name it has from here) and the planned follow-ups.
+  An object linked to the case belongs on the Objects section of the same tab.
+  The parent case was the one real case the Objects group carried that the
+  typed relations do not, so it gets its own section, under its own name, and
+  only when its title can be read. A row in any of these case sections opens
+  that case.
+
   @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
 -->
 <template>
@@ -42,7 +55,9 @@
 			:register="register"
 			:schema="schema"
 			:store="store"
-			:extraSections="extraSections" />
+			:showObjects="false"
+			:extraSections="extraSections"
+			@selectExtra="openRelatedCase" />
 
 		<ul
 			v-if="series.length > 0"
@@ -110,8 +125,9 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CasePlanFollowUpDialog from '../../dialogs/CasePlanFollowUpDialog.vue'
 import logger from '../../logger.js'
+import { useObjectStore } from '../../store/modules/object.js'
 import { caseActionRefusal, plannedRows } from '../../utils/caseActionsHelpers.js'
-import { relationSections } from '../../utils/caseRelationHelpers.js'
+import { isBareUuid, relationSections } from '../../utils/caseRelationHelpers.js'
 
 export default {
 	name: 'CasePlannedWidget',
@@ -165,6 +181,7 @@ export default {
 		return {
 			planned: [],
 			relations: [],
+			parentCase: null,
 			planning: false,
 			stopping: '',
 			stopError: '',
@@ -188,6 +205,12 @@ export default {
 					label: t('dossiq', 'Planned cases'),
 					icon: 'CalendarClock',
 					items: this.rows,
+				},
+				{
+					key: 'parent',
+					label: t('dossiq', 'Parent case'),
+					icon: 'FileTreeOutline',
+					items: this.parentCase ? [this.parentCase] : [],
 				},
 				// One group per label, so the heading says what the link is
 				// called from THIS case. The library's own Objects group merges
@@ -220,6 +243,20 @@ export default {
 	},
 
 	watch: {
+		'objectData.parentCase': {
+			immediate: true,
+			/**
+			 * Read the parent case's title whenever the case names one.
+			 *
+			 * @param {string} parentId The parent case uuid, or empty.
+			 * @return {void} Nothing.
+			 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+			 */
+			handler(parentId) {
+				this.loadParent(parentId)
+			},
+		},
+
 		objectId: {
 			immediate: true,
 			/**
@@ -309,6 +346,57 @@ export default {
 					error,
 				})
 			}
+		},
+
+		/**
+		 * The parent case, by its title, or nothing.
+		 *
+		 * A parent whose title cannot be read is left out rather than shown as
+		 * its uuid, for the same reason a typed relation is.
+		 *
+		 * @param {string} parentId The parent case uuid, or empty.
+		 * @return {Promise<void>} Nothing.
+		 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+		 */
+		async loadParent(parentId) {
+			const id = typeof parentId === 'string' ? parentId.trim() : ''
+			if (id === '' || id === String(this.objectId ?? '')) {
+				this.parentCase = null
+				return
+			}
+			try {
+				const parent = await useObjectStore().fetchObject('case', id)
+				const title = String(parent?.title || '').trim()
+				this.parentCase =
+					title === '' || isBareUuid(title) ? null : { id, label: title }
+			} catch (error) {
+				this.parentCase = null
+				logger.error(`could not read the parent case ${id}`, { error })
+			}
+		},
+
+		/**
+		 * Open the case a related-case row names.
+		 *
+		 * The library hands a host-supplied row back as `select-extra` and does
+		 * nothing else with it, so before this a click on a related case did
+		 * nothing at all. A planned row is a scheduled flow, not a case, and
+		 * opens nothing.
+		 *
+		 * @param {object} payload `{ section, item }` from the widget.
+		 * @return {void} Nothing.
+		 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+		 */
+		openRelatedCase(payload) {
+			const id = String(payload?.item?.id || '')
+			if (id === '' || payload?.section === 'planned') {
+				return
+			}
+			if (this.$router) {
+				this.$router.push({ name: 'CaseDetail', params: { id } })
+				return
+			}
+			window.location.assign(this.caseLink(id))
 		},
 
 		/**

@@ -584,4 +584,32 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertSame('vervolg', $rel[0]['aardRelatie']);
 		$this->assertSame('t', $rel[0]['notes']);
 	}//end testListRelationsDecodes()
+
+	/**
+	 * A legacy relation carries the far case's title, so the card never shows
+	 * its uuid; an unreadable far case answers an empty title.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
+	 */
+	public function testALegacyRelationCarriesTheFarCaseTitle(): void {
+		$store = [
+			'a' => [
+				'id' => 'a',
+				'relatedCases' => json_encode(
+					[
+						['caseId' => 'b', 'aardRelatie' => 'vervolg'],
+						['caseId' => 'gone', 'aardRelatie' => 'subject'],
+					]
+				),
+			],
+			'b' => ['id' => 'b', 'title' => 'Bezwaar Dakkapel'],
+		];
+		$service = $this->makeService($store);
+
+		$rows = array_column($service->listRelations(caseId: 'a'), null, 'caseId');
+		$this->assertSame('Bezwaar Dakkapel', $rows['b']['title']);
+		$this->assertSame('', $rows['gone']['title']);
+	}//end testALegacyRelationCarriesTheFarCaseTitle()
 }//end class
