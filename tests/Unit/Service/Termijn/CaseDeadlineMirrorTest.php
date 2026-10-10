@@ -169,4 +169,158 @@ class CaseDeadlineMirrorTest extends TestCase {
 		self::assertFalse($this->mirror->follow('case-1'));
 		self::assertNull($this->objects->get('case', 'case-1'));
 	}//end testAMissingCaseIsNotWritten()
+
+	/**
+	 * A saved instance moves the case only when it is the statutory one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testFollowInstanceMovesTheCaseOnlyForAStatutoryTerm(): void {
+		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
+		$this->instance('t1', ['endDateCurrent' => '2026-11-12']);
+
+		self::assertFalse($this->mirror->followInstance(null));
+		self::assertFalse($this->mirror->followInstance(['id' => 'p1', 'case' => 'case-1', 'kind' => TermKind::PLANNED, 'endDateCurrent' => '2026-12-01']));
+		self::assertTrue($this->mirror->followInstance(['id' => 't1', 'case' => 'case-1', 'endDateCurrent' => '2026-11-12']));
+		self::assertSame('2026-11-12', $this->objects->get('case', 'case-1')[CaseDeadlineMirror::FIELD]);
+	}//end testFollowInstanceMovesTheCaseOnlyForAStatutoryTerm()
+
+	/**
+	 * No case id, no deadline.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testAnEmptyCaseIdHasNoDeadline(): void {
+		self::assertNull($this->mirror->deadlineFor('  '));
+	}//end testAnEmptyCaseIdHasNoDeadline()
+
+	/**
+	 * Terms that cannot be read leave the case as it is, and say so.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testAnUnreadableStoreLeavesTheCaseAndLogs(): void {
+		$broken = new class {
+			/**
+			 * @param mixed ...$args Anything.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function findObjects(mixed ...$args): array {
+				throw new \RuntimeException('database gone');
+			}
+
+			/**
+			 * @param mixed ...$args Anything.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function searchObjects(mixed ...$args): array {
+				throw new \RuntimeException('database gone');
+			}
+
+			/**
+			 * @param mixed ...$args Anything.
+			 *
+			 * @return mixed
+			 */
+			public function find(mixed ...$args): mixed {
+				throw new \RuntimeException('database gone');
+			}
+		};
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::atLeastOnce())->method('warning');
+
+		$mirror = new CaseDeadlineMirror(
+			settingsService: $this->settingsWith(objectService: $broken, caseSchema: 'case'),
+			store: new TermInstanceStore(settingsService: $this->settingsWith(objectService: $broken, caseSchema: 'case'), logger: $logger),
+			logger: $logger,
+		);
+
+		self::assertFalse($mirror->follow('case-1'));
+	}//end testAnUnreadableStoreLeavesTheCaseAndLogs()
+
+	/**
+	 * Without a configured case schema nothing is read or written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testAnUnconfiguredCaseSchemaWritesNothing(): void {
+		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
+		$this->instance('t1', ['endDateCurrent' => '2026-11-12']);
+		$settings = $this->settingsWith(objectService: $this->objects, caseSchema: '');
+		$logger = $this->createMock(LoggerInterface::class);
+		$mirror = new CaseDeadlineMirror(
+			settingsService: $settings,
+			store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+			logger: $logger,
+		);
+
+		self::assertFalse($mirror->follow('case-1'));
+		self::assertArrayNotHasKey(CaseDeadlineMirror::FIELD, $this->objects->get('case', 'case-1'));
+	}//end testAnUnconfiguredCaseSchemaWritesNothing()
+
+	/**
+	 * A write the store refuses is logged and answered false.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testARefusedWriteIsLoggedAndAnsweredFalse(): void {
+		$store = new class extends FakeTermijnStore {
+			/**
+			 * @param mixed ...$args Anything.
+			 *
+			 * @return never
+			 */
+			public function patchObject(mixed ...$args): never {
+				throw new \RuntimeException('validation failed');
+			}
+		};
+		$store->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
+		$store->seed('deadlineInstance', ['id' => 't1', 'case' => 'case-1', 'status' => 'lopend', 'endDateCurrent' => '2026-11-12']);
+		$settings = $this->settingsWith(objectService: $store, caseSchema: 'case');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::once())->method('warning')
+			->with(self::stringContains('could not follow'));
+		$mirror = new CaseDeadlineMirror(
+			settingsService: $settings,
+			store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+			logger: $logger,
+		);
+
+		self::assertFalse($mirror->follow('case-1'));
+	}//end testARefusedWriteIsLoggedAndAnsweredFalse()
+
+	/**
+	 * Settings over a given object service.
+	 *
+	 * @param object $objectService The store.
+	 * @param string $caseSchema    The case schema slug, or empty.
+	 *
+	 * @return SettingsService The settings double.
+	 */
+	private function settingsWith(object $objectService, string $caseSchema): SettingsService {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => $caseSchema,
+				'termijn_instance_schema' => 'deadlineInstance',
+				default => '',
+			}
+		);
+
+		return $settings;
+	}//end settingsWith()
 }//end class
