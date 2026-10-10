@@ -28,7 +28,6 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\TenantOnboardingController;
 use OCA\Dossiq\Service\TenantBillingService;
 use OCA\Dossiq\Service\TenantOnboardingService;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -61,17 +60,17 @@ class TenantOnboardingControllerTest extends TestCase {
 	/**
 	 * The controller over the real onboarding and tenant services.
 	 *
-	 * @param bool $openRegister Whether OpenRegister is installed.
+	 * @param bool                      $openRegister Whether OpenRegister is installed.
+	 * @param TenantBillingService|null $billing      The billing emitter, a double when null.
 	 *
 	 * @return TenantOnboardingController The controller.
 	 */
-	private function controller(bool $openRegister = true): TenantOnboardingController {
+	private function controller(bool $openRegister = true, ?TenantBillingService $billing = null): TenantOnboardingController {
 		$onboarding = new TenantOnboardingService(
-			tenantSaasService: $this->createMock(TenantSaasService::class),
 			appManager: $this->anchorApps(openRegister: $openRegister),
 			container: $this->anchorContainer(),
 			logger: $this->anchorLogger(),
-			billingService: $this->createMock(TenantBillingService::class),
+			billingService: ($billing ?? $this->createMock(TenantBillingService::class)),
 			tenantService: $this->realTenantService(openRegister: $openRegister),
 		);
 
@@ -141,6 +140,32 @@ class TenantOnboardingControllerTest extends TestCase {
 		$this->assertSame([], $this->anchorStore->all(schema: 'tenantOnboardingTask'));
 		$this->assertNotSame([], $this->anchorErrors, 'The refusal is logged.');
 	}//end testAnIdWithNoOrganisationWritesNothingAndAnswersConflict()
+
+	/**
+	 * Go-live answers OK and writes no tenant status (REQ-TOO-004, task 6.8).
+	 *
+	 * The tenant is ready (a case type, a mandate and a tenant admin exist),
+	 * so activation succeeds. The only thing it may write is the first billing
+	 * line; the stored tenant object keeps the status it had.
+	 *
+	 * @return void
+	 */
+	public function testActivatingAfterGoLiveAnswersOkWithoutAStatusWrite(): void {
+		$this->anchorStore->seed(schema: 'tenant', uuid: self::ORG, row: ['slug' => 'zuiddrecht', 'displayName' => 'Gemeente Zuiddrecht', 'status' => 'onboarding', 'tier' => 'premium']);
+		$this->anchorStore->seed(schema: 'caseType', uuid: 'ct-1', row: ['tenantRef' => self::ORG]);
+		$this->anchorStore->seed(schema: 'tenantMandate', uuid: 'm-1', row: ['tenantRef' => self::ORG]);
+		$this->anchorStore->seed(schema: 'tenantUser', uuid: 'u-1', row: ['tenantRef' => self::ORG, 'role' => 'tenant_admin']);
+
+		$billing = $this->createMock(TenantBillingService::class);
+		$billing->expects($this->once())->method('tierMonthlyPrice')->with('premium')->willReturn(99.0);
+		$billing->expects($this->once())->method('emitEvent');
+
+		$response = $this->controller(billing: $billing)->activate(self::ORG);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(0, $this->anchorStore->writes, 'Go-live writes nothing to the register.');
+		$this->assertSame('onboarding', $this->anchorStore->row(schema: 'tenant', uuid: self::ORG)['status']);
+	}//end testActivatingAfterGoLiveAnswersOkWithoutAStatusWrite()
 
 	/**
 	 * Without OpenRegister the route answers conflict rather than an empty success.

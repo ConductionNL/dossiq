@@ -101,4 +101,21 @@ class EntityAnsweringRegister {
 	): array {
 		return $this->register->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
 	}//end saveObject()
+
+	/**
+	 * One page of rows, as ObjectService::findAll() answers, when the store pages.
+	 *
+	 * @param array<string, mixed> $config        The query.
+	 * @param bool                 $_rbac         Ignored: this store is not scoped.
+	 * @param bool                 $_multitenancy Ignored: this store is not scoped.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+		if ($this->register instanceof RefusableRegister) {
+			return $this->register->findAll(config: $config);
+		}
+
+		return [];
+	}//end findAll()
 }//end class

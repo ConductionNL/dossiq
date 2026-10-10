@@ -57,6 +57,17 @@ class Application extends App implements IBootstrap {
 	public const APP_ID = 'dossiq';
 
 	/**
+	 * The OpenRegister register SLUG dossiq's schemas live in.
+	 *
+	 * FROZEN: a register slug, not this app's id. OpenRegister resolves
+	 * registers by slug, so this moves only together with the stored
+	 * register (see the note in appinfo/info.xml), never with an app rename.
+	 * It used to be read off `TenantSaasService::REGISTER`, which retired with
+	 * the tenant admin store (tenancy-onto-openregister-organisation 6.7).
+	 */
+	public const REGISTER_SLUG = 'dossiq';
+
+	/**
 	 * Constructor for the Application class.
 	 *
 	 * @return void

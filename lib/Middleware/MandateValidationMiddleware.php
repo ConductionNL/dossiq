@@ -275,9 +275,14 @@ class MandateValidationMiddleware extends Middleware {
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	private function logDecision(string $tenantId, string $userId, string $action, array $decision): void {
+		$outcome = 'denied';
+		if ($decision['allowed'] === true) {
+			$outcome = 'allowed';
+		}
+
 		$this->auditTrail->emit(
 			[
-				'action' => 'mandate.'.$action.'.'.($decision['allowed'] === true ? 'allowed' : 'denied'),
+				'action' => 'mandate.'.$action.'.'.$outcome,
 				'actor' => $userId,
 				'resource' => $this->request->getRequestUri(),
 				'tenantId' => $tenantId,

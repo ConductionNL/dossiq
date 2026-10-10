@@ -39,7 +39,6 @@ use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCA\Dossiq\Service\TenantBillingService;
 use OCA\Dossiq\Service\TenantConfigurationService;
 use OCA\Dossiq\Service\TenantOnboardingService;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -161,7 +160,6 @@ class TenantEntityRowReadsTest extends TestCase {
 		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows);
 
 		return new TenantOnboardingService(
-			tenantSaasService: $this->createMock(TenantSaasService::class),
 			appManager: $appManager,
 			container: $container,
 			logger: $this->createMock(LoggerInterface::class),
