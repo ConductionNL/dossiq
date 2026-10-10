@@ -28,8 +28,8 @@ test.describe('Woo refusal grounds', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#scenario-the-seed-is-the-settled-list
-	// @e2e openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#scenario-a-narrower-ground-sits-under-a-broader-one
+	// @e2e openspec/specs/woo-refusal-grounds/spec.md#scenario-the-seed-is-the-settled-list
+	// @e2e openspec/specs/woo-refusal-grounds/spec.md#scenario-a-narrower-ground-sits-under-a-broader-one
 	test('the seeded list carries 5.1.2.e under 5.1.2 under 5.1', async ({
 		request,
 	}) => {
@@ -42,8 +42,8 @@ test.describe('Woo refusal grounds', () => {
 		expect(broader[0].citable).toBe(false)
 	})
 
-	// @e2e openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#scenario-an-administrator-adds-a-narrower-ground
-	// @e2e openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#scenario-a-label-edit-is-in-the-history
+	// @e2e openspec/specs/woo-refusal-grounds/spec.md#scenario-an-administrator-adds-a-narrower-ground
+	// @e2e openspec/specs/woo-refusal-grounds/spec.md#scenario-a-label-edit-is-in-the-history
 	test('an admin adds 5.1.2.e.1 under 5.1.2.e, edits its label, and reads both in the history', async ({
 		page,
 		request,

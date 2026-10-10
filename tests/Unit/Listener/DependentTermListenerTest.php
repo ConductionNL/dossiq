@@ -31,7 +31,7 @@ use Psr\Log\NullLogger;
 /**
  * Which term events make an offer, and which make none.
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 class DependentTermListenerTest extends TestCase {
 	/**

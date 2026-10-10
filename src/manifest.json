@@ -1113,7 +1113,7 @@
 			"id": "MyWorkHome",
 			"route": "/",
 			"type": "dashboard",
-			"title": "My Work",
+			"title": "My work",
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
 			"config": {
 				"userLayout": true,
@@ -1822,7 +1822,7 @@
 			"id": "MyWork",
 			"route": "/my-work",
 			"type": "custom",
-			"title": "My Work",
+			"title": "My work",
 			"component": "MyWorkView",
 			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
 			"config": {
@@ -5064,7 +5064,7 @@
 			"id": "WorkflowBoard",
 			"route": "/workflow-board",
 			"type": "custom",
-			"title": "Workflow Board",
+			"title": "Workflow board",
 			"component": "WorkflowBoardView",
 			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
 			"config": {
@@ -5744,7 +5744,7 @@
 			"id": "LhsRecommendations",
 			"route": "/settings/lhs-recommendations",
 			"type": "index",
-			"title": "LHS Recommendations",
+			"title": "LHS recommendations",
 			"config": {
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
@@ -5780,7 +5780,7 @@
 			"id": "LhsRecommendationDetail",
 			"route": "/settings/lhs-recommendations/:id",
 			"type": "detail",
-			"title": "LHS Recommendation",
+			"title": "LHS recommendation",
 			"config": {
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
