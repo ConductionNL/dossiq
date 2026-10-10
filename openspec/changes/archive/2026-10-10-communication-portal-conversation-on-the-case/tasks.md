@@ -24,7 +24,7 @@ Tier: V1. Kind: code. Rows: portaliq `cmp-act-ask-question-case`,
     field `messageFields.readAt` names, and only when it is still empty, so
     the first moment stays (portaliq `InboxMessageFields::readPayload()`). A
     dossiq listener would have been a second writer of the same field.
-- [ ] 1.3 Live check (not run: needs a live instance with portaliq): a message written by dossiq shows its body and date in
+- [ ] 1.3 Live check (not run: needs a live instance with portaliq): a message written by dossiq shows its body and date in (live pass, decision 139; archived 10 Oct, recipe in dossiq STATE.md "Still owed")
   portaliq's inbox, and Mark as read sets `readByRecipientAt`.
 
 ## 2. Attachments
@@ -33,9 +33,10 @@ Tier: V1. Kind: code. Rows: portaliq `cmp-act-ask-question-case`,
   `type: file` on `replyToMessage` (design D-2).
   - unit: the provider test asserts both declarations
   - `PortalConversation::ATTACHMENTS_FIELD`; `PortalConversationTest::testAttachmentsAreFilesBothWays`
-- [ ] 2.2 Repair step: copy each document id's file in `attachments` into its
+- [x] 2.2 Repair step: copy each document id's file in `attachments` into its
   message's folder; idempotent; post-migration with a version key (ADR-106).
   - unit: run twice, one copy per file
+  - `lib/Repair/CopyMessageAttachmentsIntoMessageFolders.php` (a record uuid or a bare file id; copies, never moves), registered in post-migration; `CopyMessageAttachmentsIntoMessageFoldersTest`
 
 ## 3. Reply and case choice
 
@@ -77,5 +78,5 @@ Tier: V1. Kind: code. Rows: portaliq `cmp-act-ask-question-case`,
     records the handler's message as a public `portaalbericht` entry.
     `tests/vitest/portalMessageDialog.spec.js` validates the payload against
     the real `portaalBericht` fragment.
-- [ ] 5.3 `tests/e2e/portal-conversation-on-the-case.spec.ts` (written, not run: needs a live instance): a handler
+- [ ] 5.3 `tests/e2e/portal-conversation-on-the-case.spec.ts` (written, not run: needs a live instance): a handler (live pass, decision 139; archived 10 Oct, recipe in dossiq STATE.md "Still owed")
   answers a resident's message from the case; citing the scenarios below.

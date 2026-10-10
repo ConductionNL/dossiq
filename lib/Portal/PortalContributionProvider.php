@@ -413,7 +413,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, mixed>> The messages, or [] without a reader.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseMessages(string $caseId): array {
 		if ($this->messages === null) {

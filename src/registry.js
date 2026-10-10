@@ -749,7 +749,7 @@ const registry = {
 	},
 
 	// --- Message the applicant, the CaseDetail header action (communication-portal-conversation-on-the-case). ---
-	// @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	// @spec openspec/specs/portal-contribution/spec.md
 	PortalMessageDialog: {
 		kind: 'modal',
 		component: PortalMessageDialog,
