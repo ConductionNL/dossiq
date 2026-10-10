@@ -185,8 +185,13 @@ class CaseRecordImport {
 		foreach ($sources as $source) {
 			$sourceId = $this->store->idOf(row: $source);
 			$skipped = $this->skippedAs(source: $source, sourceId: $sourceId, stampField: $stampField, dryRun: $dryRun);
-			if ($skipped !== '') {
-				$answer[$skipped] = ((int)$answer[$skipped] + 1);
+			if ($skipped === 'alreadyImported') {
+				$answer['alreadyImported']++;
+				continue;
+			}
+
+			if ($skipped === 'unmigrated') {
+				$answer['unmigrated']++;
 				continue;
 			}
 
