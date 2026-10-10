@@ -37,10 +37,19 @@ follow that instance (REQ-OTE-01). The extension route MUST NOT write
 #### Scenario: Request deadline extension (verdaging)
 @e2e exclude the extension goes through DeadlineExtensionService behind the route; covered by tests/Unit/Service/WOODeadlineServiceTest.php and tests/Unit/Controller/WOOAssessmentControllerTest.php
 
-- **GIVEN** a WOO case whose term instance has `endDateCurrent` 2026-11-02 and `countExtensions` 0
+- **GIVEN** a WOO case whose term instance has `endDateCurrent` 2026-11-02, the original end of its four weeks, and `countExtensions` 0
 - **WHEN** the case worker extends with the reason "Zienswijzen van derden"
-- **THEN** `DeadlineExtensionService::requestExtension()` MUST be called on the case's statutory instance with 2026-11-16, the end plus 14 days, rolled
+- **THEN** the case's statutory instance MUST be extended to 2026-11-16, the original end plus 14 days, rolled
 - **AND** the instance's `countExtensions` MUST be 1 and the case `deadline` MUST be 2026-11-16
+
+#### Scenario: The extension counts from the original end, unrolled
+@e2e exclude a calendar roll; covered by tests/Unit/Service/WOODeadlineServiceTest.php and tests/Unit/Service/DeadlineExtensionLimitTest.php
+
+- **GIVEN** a WOO request received on Saturday 2026-05-02, whose four weeks end on Saturday 2026-05-30 and roll to Monday 2026-06-01
+- **WHEN** the case worker extends it
+- **THEN** the 14 days MUST count from the original end as counted, Saturday 2026-05-30, not from the rolled Monday (Ruben, 2026-10-09)
+- **AND** the requested end Saturday 2026-06-13 MUST then be rolled by the Algemene termijnenwet, to Monday 2026-06-15
+- **AND** `endDateBeforeRoll` MUST read 2026-06-13
 - **AND** the term's event list MUST hold a `verleng` event with that reason
 
 #### Scenario: Only one extension allowed

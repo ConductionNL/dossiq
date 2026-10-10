@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use ReflectionClass;
 use RuntimeException;
 
@@ -68,12 +69,15 @@ class DeadlineExtensionService {
 	 *        caller that builds this service by hand keeps working; when it is
 	 *        absent the declared ceiling is simply not enforced, which is the
 	 *        behaviour this change replaces rather than a new silence.
+	 * @param CaseDeadlineMirror|null $mirror Which statutory term decides a case, for an
+	 *        extension asked for by case ({@see extendStatutoryTermOfCase()}).
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermDeclarationReader $declarations = null,
+		private readonly ?CaseDeadlineMirror $mirror = null,
 	) {
 	}//end __construct()
 
@@ -108,6 +112,82 @@ class DeadlineExtensionService {
 			mode: self::MODE_STANDARD
 		);
 	}//end requestExtension()
+
+	/**
+	 * Extend the statutory term of a case by a number of days.
+	 *
+	 * For a law that names its extension in days rather than as an end date
+	 * (Woo art. 4.4 lid 2: at most two weeks). The term is the one that
+	 * decides the case's deadline ({@see CaseDeadlineMirror::decidingInstance()});
+	 * the requested end is a base day plus the days (by default the term's
+	 * current end; a caller can name another, such as the unrolled original
+	 * end Woo art. 4.4 counts from), and from there it is
+	 * the same extension as {@see requestExtension()}: rolled, checked against
+	 * the definition's ceiling, stored, and followed by the case's deadline.
+	 *
+	 * @param string $caseId    The case uuid.
+	 * @param string $rationale Why (the `verleng` event's rationale).
+	 * @param int    $days      How many days to add.
+	 * @param (\Closure(array<string, mixed>): string)|null $baseOf The day the days count
+	 *        from, as `Y-m-d`, given the term; null counts from its current end.
+	 *
+	 * @return array{previous: string, instance: array<string, mixed>} The end before, and the extended term.
+	 *
+	 * @throws RefusedException When the case has no running statutory term, or it has had
+	 *         every extension it allows (409), or a declared period refuses it (422).
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function extendStatutoryTermOfCase(string $caseId, string $rationale, int $days, ?\Closure $baseOf = null): array {
+		if ($this->mirror === null) {
+			throw new RefusedException(
+				rule: 'term-engine-unavailable',
+				sentence: 'The term engine is not available, so the term cannot be extended.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			);
+		}
+
+		$term = $this->mirror->decidingInstance(instances: $this->termService->instancesForCase(caseId: $caseId));
+		if ($term === null || (string)($term['status'] ?? '') === 'completed') {
+			throw new RefusedException(
+				rule: 'no-running-statutory-term',
+				sentence: 'This case has no running term to extend.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		$previous = $this->mirror->endOf(instance: $term);
+		$base = $previous;
+		if ($baseOf !== null) {
+			$base = $baseOf($term);
+		}
+
+		$requested = $this->dates->formatCalendarDate(
+			$this->dates->parse($base, 'endDateCurrent')->modify('+' . max(0, $days) . ' days')
+		);
+
+		try {
+			$extended = $this->requestExtension(
+				termInstanceId: (string)($term['id'] ?? ''),
+				rationale: $rationale,
+				newEndDate: $requested,
+			);
+		} catch (RefusedException $e) {
+			throw $e;
+		} catch (RuntimeException $e) {
+			// With a positive number of days the end always moves forward, so
+			// what is left is the ceiling: a 409 the reader can act on, not a
+			// 500. The engine's own message is for the log.
+			throw new RefusedException(
+				rule: 'extension-ceiling-reached',
+				sentence: 'This term has had every extension it allows.',
+				status: RefusedException::STATUS_REFUSED,
+				previous: $e,
+			);
+		}
+
+		return ['previous' => $previous, 'instance' => $extended];
+	}//end extendStatutoryTermOfCase()
 
 	/**
 	 * Request a supervisor-approved AWB 4:14 lid 3 verlenging.

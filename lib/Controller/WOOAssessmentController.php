@@ -152,6 +152,7 @@ class WOOAssessmentController extends Controller {
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	#[NoAdminRequired]
 	public function extendDeadline(string $id): JSONResponse {
@@ -167,6 +168,9 @@ class WOOAssessmentController extends Controller {
 		try {
 			$result = $this->deadlineService->extendDeadline(caseId: $id, reason: $reason);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			// A second extension answers 409 with the rule, not a 500.
+			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {
