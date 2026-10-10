@@ -39,6 +39,19 @@ was delivered on that date. A later delivery on the same case SHALL write a new 
 `supersedes` names the frozen one. Withdrawing a publication SHALL NOT unfreeze its set; the set
 SHALL record `withdrawnAt`.
 
+The set's own folder SHALL hold a copy of every delivered file as it went out (the redaction for
+`deels_openbaar`, never the original). At freeze the set SHALL carry OpenRegister's freeze marker with
+state `geleverd`, so OpenRegister refuses every write to those copies through its files API and
+through Files or WebDAV (openregister object-archive-state REQ-OAS-007). The withdraw stamp is the
+one write that lifts that marker, for that write only, and sets it again. A copy that cannot be
+written, or an OpenRegister without the archive handler, SHALL NOT stop the delivery: the hashes
+still record what went out, and re-verification catches a changed file on the case.
+
+#### Scenario: A delivered file cannot be overwritten
+- **GIVEN** a frozen set whose folder holds `002-nota.pdf`, the redaction that went out
+- **WHEN** someone writes new bytes to that file through OpenRegister's files API
+- **THEN** the write SHALL be refused with 409 naming the freeze, and the file SHALL keep the bytes that went out
+
 #### Scenario: A delivered verdict cannot be changed
 - **GIVEN** a frozen set naming an assessment `openbaar`
 - **WHEN** a handler changes that assessment to `niet_openbaar` through the OpenRegister API

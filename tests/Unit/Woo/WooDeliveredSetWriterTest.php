@@ -36,6 +36,55 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
+/**
+ * OpenRegister's archive handler on its signature (openregister ArchiveHandler::freeze/unfreeze).
+ */
+class FakeArchiveHandler {
+
+	/** @var array<string, array<string, mixed>> Freeze markers by object id. */
+	public array $frozen = [];
+
+	/** @var list<string> */
+	public array $calls = [];
+
+	public function freeze(string $identifier, ?string $reason = null, ?string $state = null, ?string $register = null, ?string $schema = null): array {
+		$this->calls[] = 'freeze ' . $identifier;
+		$this->frozen[$identifier] = ['reason' => $reason, 'state' => $state, 'register' => $register, 'schema' => $schema];
+
+		return ['uuid' => $identifier, 'frozen' => $this->frozen[$identifier]];
+	}//end freeze()
+
+	public function unfreeze(string $identifier, ?string $reason = null, ?string $register = null, ?string $schema = null): array {
+		$this->calls[] = 'unfreeze ' . $identifier;
+		unset($this->frozen[$identifier]);
+
+		return ['uuid' => $identifier, 'frozen' => null];
+	}//end unfreeze()
+}//end class
+
+/**
+ * OpenRegister's FileService::addFile(), refusing a frozen object's folder the way
+ * REQ-OAS-007 does (409, ObjectStateWriteException).
+ */
+class FakeFrozenAwareFileService {
+
+	/** @var array<string, array<string, string>> Files by object id, name => bytes. */
+	public array $files = [];
+
+	public function __construct(private readonly FakeArchiveHandler $handler) {
+	}//end __construct()
+
+	public function addFile(string $objectEntity, string $fileName, mixed $content, bool $share = false, array $tags = [], mixed ...$rest): object {
+		if (isset($this->handler->frozen[$objectEntity]) === true) {
+			throw new \RuntimeException('Cannot write to this object: it was frozen', 409);
+		}
+
+		$this->files[$objectEntity][$fileName] = (string)$content;
+
+		return new \stdClass();
+	}//end addFile()
+}//end class
+
 class WooDeliveredSetWriterTest extends TestCase {
 
 	/**
@@ -173,4 +222,65 @@ class WooDeliveredSetWriterTest extends TestCase {
 
 		$this->assertFalse($sent);
 	}//end testDeliverFreezesOrDiscardsAroundTheSend()
+
+	/**
+	 * The delivered bytes are kept in the set's own folder and frozen with it (REQ-WDS-002 with OpenRegister REQ-OAS-007).
+	 *
+	 * @return void
+	 */
+	public function testAFrozenFileRefusesAWrite(): void {
+		$handler = new FakeArchiveHandler();
+		$files = new FakeFrozenAwareFileService(handler: $handler);
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getFileService')->willReturn($files);
+		$settings->method('getOpenRegisterClass')->willReturnCallback(
+			static fn (string $class): ?object => ($class === WooDeliveredSetWriter::ARCHIVE_HANDLER ? $handler : null)
+		);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (['register' => 'dossiq'][$key] ?? $default)
+		);
+		$writer = new WooDeliveredSetWriter(settings: $settings);
+
+		$result = $writer->deliver(caseId: 'case-1', decisionId: 'dec-1', delivered: [
+			['assessment' => 'as-1', 'classification' => 'openbaar', 'deliveredRef' => 'doc-1', 'originalRef' => 'doc-1', 'fileName' => 'brief.pdf', 'content' => base64_encode('public bytes')],
+			['assessment' => 'as-2', 'classification' => 'deels_openbaar', 'deliveredRef' => 'doc-2-red', 'originalRef' => 'doc-2', 'fileName' => 'nota.pdf', 'content' => base64_encode('redacted bytes')],
+		], send: static fn (): string => 'pub-1');
+		$setId = $result['setId'];
+
+		// The bytes that went out, and only those: the redaction, never the original.
+		$this->assertSame(['001-brief.pdf' => 'public bytes', '002-nota.pdf' => 'redacted bytes'], $files->files[$setId]);
+		$this->assertSame(['freeze ' . $setId], $handler->calls);
+		$this->assertSame('geleverd', $handler->frozen[$setId]['state']);
+		$this->assertSame('wooDeliveredSet', $handler->frozen[$setId]['schema']);
+		$this->assertStringContainsString('pub-1', (string)$handler->frozen[$setId]['reason']);
+
+		try {
+			$files->addFile(objectEntity: $setId, fileName: '002-nota.pdf', content: 'swapped');
+			$this->fail('a write into a frozen set folder must be refused');
+		} catch (\RuntimeException $e) {
+			$this->assertSame(409, $e->getCode());
+		}
+
+		$this->assertSame('redacted bytes', $files->files[$setId]['002-nota.pdf']);
+
+		// The withdraw stamp lifts the platform freeze for its one write and sets it again.
+		$writer->markWithdrawn(caseId: 'case-1', publicationId: 'pub-1');
+		$this->assertSame(['freeze ' . $setId, 'unfreeze ' . $setId, 'freeze ' . $setId], $handler->calls);
+		$this->assertArrayHasKey($setId, $handler->frozen);
+		$this->assertNotEmpty($this->store->row(schema: 'wooDeliveredSet', uuid: $setId)['withdrawnAt']);
+	}//end testAFrozenFileRefusesAWrite()
+
+	/**
+	 * Without OpenRegister's archive handler or file service the delivery still goes out and the set is still frozen.
+	 *
+	 * @return void
+	 */
+	public function testWithoutThePlatformFreezeTheSetIsStillRecorded(): void {
+		$result = $this->writer()->deliver(caseId: 'case-1', decisionId: 'dec-1', delivered: [
+			['assessment' => 'as-1', 'classification' => 'openbaar', 'deliveredRef' => 'doc-1', 'originalRef' => 'doc-1', 'fileName' => 'brief.pdf', 'content' => base64_encode('x')],
+		], send: static fn (): string => 'pub-1');
+
+		$this->assertSame('frozen', $this->store->row(schema: 'wooDeliveredSet', uuid: $result['setId'])['status']);
+	}//end testWithoutThePlatformFreezeTheSetIsStillRecorded()
 }//end class

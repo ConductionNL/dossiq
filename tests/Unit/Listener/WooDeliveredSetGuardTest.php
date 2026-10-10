@@ -179,6 +179,30 @@ class WooDeliveredSetGuardTest extends TestCase {
 	}//end testOnlyTheWithdrawStampPassesOnAFrozenSet()
 
 	/**
+	 * OpenRegister's freeze marker on a frozen set changes no data, so it passes; a second withdraw stamp does not.
+	 *
+	 * @return void
+	 */
+	public function testAFreezeMarkerOnAFrozenSetIsNotADataChange(): void {
+		$old = $this->entity(schema: 'wooDeliveredSet', uuid: 'set-1', data: $this->frozen);
+		$marked = $this->entity(schema: 'wooDeliveredSet', uuid: 'set-1', data: $this->frozen);
+		$marked->setFrozen(['by' => 'behandelaar', 'at' => '2026-10-07T10:00:01+02:00', 'reason' => 'Woo-levering, publicatie pub-1', 'state' => 'geleverd']);
+		$freeze = new ObjectUpdatingEvent($marked, $old);
+
+		$stamped = array_merge($this->frozen, ['withdrawnAt' => '2026-10-09T10:00:00+02:00']);
+		$restamp = new ObjectUpdatingEvent(
+			$this->entity(schema: 'wooDeliveredSet', uuid: 'set-1', data: array_merge($stamped, ['withdrawnAt' => '2026-10-10T10:00:00+02:00'])),
+			$this->entity(schema: 'wooDeliveredSet', uuid: 'set-1', data: $stamped)
+		);
+
+		$this->guard()->handle($freeze);
+		$this->guard()->handle($restamp);
+
+		$this->assertFalse($freeze->isPropagationStopped(), 'setting OpenRegister\'s freeze on a frozen set must pass');
+		$this->assertTrue($restamp->isPropagationStopped(), 'a second withdraw stamp is a data change');
+	}//end testAFreezeMarkerOnAFrozenSetIsNotADataChange()
+
+	/**
 	 * A pending set is not guarded: freezing and discarding it must work.
 	 *
 	 * @return void

@@ -12,7 +12,7 @@
       "wooDeliveredSet": {
         "slug": "wooDeliveredSet",
         "icon": "PackageVariantClosed",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "searchable": false,
         "title": "Woo delivered set",
         "description": "What was delivered for publication on a Woo decision: each document as it went out, with the hash of its bytes, and one hash over the whole set. Frozen once the publication exists, so it shows later what went out.",
@@ -25,7 +25,11 @@
           "setHash"
         ],
         "configuration": {
-          "objectNameField": "setHash"
+          "objectNameField": "setHash",
+          "_archiveNote": "woo-delivered-set-is-a-record task 2.2. Lets OpenRegister freeze a delivered set (state geleverd): with the marker, OpenRegister refuses every write to the set's data and to the delivered bytes kept in its folder, through its files API and through Files or WebDAV (object-archive-state REQ-OAS-007). Without this key the ArchiveHandler refuses the freeze.",
+          "x-openregister-archive": {
+            "enabled": true
+          }
         },
         "properties": {
           "case": {
