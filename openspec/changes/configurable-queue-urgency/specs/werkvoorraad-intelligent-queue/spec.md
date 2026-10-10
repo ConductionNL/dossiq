@@ -155,23 +155,23 @@ deadline.
 
 Each My Work card MUST show a pill for its deadline tier, sourced from
 `GET /api/work-queue`, labelled as on the board `dossiq/DqAanMijToegewezen`:
-`overdue` reads "Te laat" (English source "Late") in the error colour,
-`critical` reads "Kritiek" ("Critical") in the warning colour, `warning` reads
-"Bijna" ("Soon") in a softer warning style, and `normal` reads "Normaal"
-("Normal") in a neutral style. Colours MUST come from Nextcloud CSS variables
-only.
+`overdue` reads "Te laat" (English source "Late") and `critical` reads
+"Kritiek" ("Critical"), both in the error tint; `warning` reads "Bijna"
+("Soon") in the warning tint; and `normal` reads "Normaal" ("Normal") in a
+neutral style. The two error-tinted pills differ by their label, as the board
+draws them. Colours MUST come from Nextcloud CSS variables only.
 
 #### Scenario: Overdue chip
 @e2e exclude Needs a seeded overdue case; the label and class mapping is asserted by tests/vitest/workQueueHelpers.spec.js.
 
 - GIVEN a case whose deadline tier is `overdue`
-- THEN its card MUST show the pill "Te laat" styled with `--color-error`
+- THEN its card MUST show the pill "Te laat" in the error tint
 
 #### Scenario: Critical chip
 @e2e exclude Needs a seeded case two working days from its deadline; asserted by tests/vitest/workQueueHelpers.spec.js.
 
 - GIVEN a case whose deadline tier is `critical`
-- THEN its card MUST show the pill "Kritiek" styled with `--color-warning`
+- THEN its card MUST show the pill "Kritiek" in the error tint, as the board draws it
 
 #### Scenario: Normal tier shows no chip
 - GIVEN a case with no deadline
