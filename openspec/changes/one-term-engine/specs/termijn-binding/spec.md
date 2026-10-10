@@ -153,7 +153,7 @@ the day after the end day.
 - **AND** it SHALL breach at 2026-10-30 00:00, the day after the end day
 
 #### Scenario: The last day is not red in the list, on the board or in the week strip
-@e2e exclude a manifest rule; the rule values are asserted in tests/vitest/manifestDueRules.spec.js
+@e2e exclude a manifest rule; the rule values are asserted in tests/vitest/simpleListAndDashboard.spec.js
 
 - **GIVEN** a case whose deadline is today
 - **WHEN** it is shown in the simple structure's case list, on the workflow board and in the week strip

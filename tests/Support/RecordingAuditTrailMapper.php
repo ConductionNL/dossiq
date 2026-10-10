@@ -21,7 +21,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 
 declare(strict_types=1);

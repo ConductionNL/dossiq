@@ -14,4 +14,4 @@
 
 ## 3. Verify
 
-- [ ] 3.1 Live: one verzoek, one case; the integriq handoff and the retired endpoint make none; a complaint gets `klacht-behandeling`
+- [ ] 3.1 (live pass, decision 139) Live: one verzoek, one case; the integriq handoff and the retired endpoint make none; a complaint gets `klacht-behandeling`
