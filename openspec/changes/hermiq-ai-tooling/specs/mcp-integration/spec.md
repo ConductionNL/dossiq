@@ -48,13 +48,13 @@ Dossiq MUST expose `dossiq.listOverdueComplaints` via `#[McpTool]` on `Complaint
 Dossiq MUST expose exactly these write tools via `#[McpTool]`, each on the named owning service so that every guard, clock, mandate check and notification of the human path also runs on the agent path, and each declaring the listed `scope` and `reach` (Hermiq treats these declarations as the enforcement floor):
 
 - `dossiq.transitionCase` — `StatusTransitionService` (guard evaluation, `statusRecord` emission, automatic actions, termijn recalculation); `scope: "update"`, `reach: "instance"`.
-- `dossiq.reassignCase` — `CaseReassignmentService`; `scope: "update"`, `reach: "instance"`.
-- `dossiq.completeTask` — workflow engine step completion (`WorkflowEngineService`), never a raw `task` object write; `scope: "update"`, `reach: "instance"`.
+- `dossiq.reassignCase` — `CaseAssignmentService::reassign()` (the single-case form of the caseload release, coordinators only, the receiver notified); `scope: "update"`, `reach: "instance"`.
+- `dossiq.completeTask` — workflow engine step completion (`CaseTaskActions::complete()`, the engine task verb the case page uses), never a raw `task` object write; `scope: "update"`, `reach: "instance"`.
 - `dossiq.extendDeadline` — `DeadlineExtensionService`; `scope: "update"`, `reach: "instance"`.
 - `dossiq.pauseDeadline` / `dossiq.resumeDeadline` — `DeadlinePauseService`; `scope: "update"`, `reach: "instance"`.
 - `dossiq.scheduleAppointment` — `AppointmentService`; `scope: "create"`, `reach: "external"` (notifies the citizen).
 - `dossiq.cancelAppointment` — `AppointmentService`; `scope: "update"`, `reach: "external"`.
-- `dossiq.draftBeschikking` — `BeschikkingGenerationService`, draft only; `scope: "create"`, `reach: "user"`.
+- `dossiq.draftBeschikking` — `BeschikkingService::compose()`, draft only; `scope: "create"`, `reach: "user"`.
 
 No curated write MUST bypass its owning service to write through `ObjectService`, and no derived (`x-openregister-mcp`) write verb MUST be declared on any Dossiq schema (REQ-MCP-102 stands).
 
@@ -96,7 +96,7 @@ The following tools MUST be declared approval-gated, such that an invocation pro
 
 - **WHEN** an agent is told "Henk is out sick — move his open bezwaar cases to Fatima" and invokes `dossiq.case.search(filters: { assignee: "henk", isFinalStatus: false })` followed by `dossiq.reassignCase` per case
 - **THEN** each reassignment SHALL pend as an approval and no case SHALL move until the user approves it
-- **AND** approved reassignments SHALL execute through `CaseReassignmentService` with its normal notifications
+- **AND** approved reassignments SHALL execute through `CaseAssignmentService::reassign()` with its normal notifications
 
 #### Scenario: Closing a case is gated, routine flow is not
 
