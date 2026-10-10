@@ -43,12 +43,15 @@ class NoticeNotSentException extends RuntimeException {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $reasonCode Why nothing was sent.
-	 * @param string $reason     The sentence for the log.
+	 * @param string               $reasonCode Why nothing was sent.
+	 * @param string               $reason     The sentence for the log.
+	 * @param array<string, mixed> $delivery   The not-sent delivery result of a requester
+	 *                                         notice: status, reason, every channel tried.
 	 */
 	public function __construct(
 		private readonly string $reasonCode,
 		string $reason = '',
+		private readonly array $delivery = [],
 	) {
 		if ($reason === '') {
 			$reason = 'The notice was not sent.';
@@ -67,4 +70,19 @@ class NoticeNotSentException extends RuntimeException {
 	public function getReasonCode(): string {
 		return $this->reasonCode;
 	}//end getReasonCode()
+
+	/**
+	 * The not-sent delivery result, as RequesterNoticeSender answered it.
+	 *
+	 * Empty when the refusal came from somewhere that keeps no result. A caller
+	 * that records the notice on the case stores this, never a result it made
+	 * up itself.
+	 *
+	 * @return array<string, mixed> The result, or [].
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function getDelivery(): array {
+		return $this->delivery;
+	}//end getDelivery()
 }//end class

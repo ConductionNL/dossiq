@@ -96,7 +96,7 @@ test.describe('A dependent term follows its predecessor', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#scenario-link-a-vergunning-to-the-bezwaar-it-waits-on
+	// @e2e openspec/specs/related-case-linking/spec.md#scenario-link-a-vergunning-to-the-bezwaar-it-waits-on
 	test('Each side reads the link under its own half of the name', async ({
 		page,
 	}) => {
@@ -119,7 +119,7 @@ test.describe('A dependent term follows its predecessor', () => {
 		})
 	})
 
-	// @e2e openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#scenario-the-handler-is-offered-the-extension
+	// @e2e openspec/specs/related-case-linking/spec.md#scenario-the-handler-is-offered-the-extension
 	test('The moved term is offered, and moves nothing by itself', async ({
 		playwright,
 		baseURL,
@@ -164,7 +164,7 @@ test.describe('A dependent term follows its predecessor', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#scenario-accepting-extends-with-the-reason
+	// @e2e openspec/specs/related-case-linking/spec.md#scenario-accepting-extends-with-the-reason
 	test('Accepting moves the waiting term by the offered days', async ({
 		playwright,
 		baseURL,

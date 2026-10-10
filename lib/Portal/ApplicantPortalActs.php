@@ -82,6 +82,7 @@ class ApplicantPortalActs {
 		'amendment' => 'The applicant changed an answer in the portal',
 		'document' => 'The applicant added a document in the portal',
 		'task-answer' => 'The applicant answered a task in the portal',
+		'answer' => 'The applicant answered your question in the portal',
 	];
 
 	/**
@@ -104,7 +105,7 @@ class ApplicantPortalActs {
 	 * Record a write the applicant made on their case and tell the assignee.
 	 *
 	 * @param string             $caseId     The case the write landed on.
-	 * @param string             $act        `amendment`, `document` or `task-answer`.
+	 * @param string             $act        `amendment`, `document`, `task-answer` or `answer`.
 	 * @param array<int, string> $fields     The field names the act touched.
 	 * @param string             $occurredAt The moment of the write, ISO 8601.
 	 *
