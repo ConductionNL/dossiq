@@ -23,11 +23,26 @@
 
 ## 5. Write and annotate e2e scenarios
 
-- [ ] Create or update the Playwright e2e spec for the Bezwaar & Beroep section: assert the sidebar shows one "Bezwaar & Beroep" item (no sub-items), the landing page shows four cards, and each of the four former leaf routes resolves via direct URL navigation
-- [ ] Tag all four former-leaf deep-link scenarios with `@gate-19` so they are included in the route-reachability gate
+- [x] (superseded, see below) Create or update the Playwright e2e spec for the Bezwaar & Beroep section: assert the sidebar shows one "Bezwaar & Beroep" item (no sub-items), the landing page shows four cards, and each of the four former leaf routes resolves via direct URL navigation
+- [x] (superseded, see below) Tag all four former-leaf deep-link scenarios with `@gate-19` so they are included in the route-reachability gate
 
 ## 6. Gate validation
 
-- [ ] Run the Hydra `route-reachability` gate (gate-19) and confirm all four former leaf routes pass
-- [ ] Run the Hydra `dashboard-antipattern` gate to confirm no group is left without a route
-- [ ] Run the full `hydra-gates` suite and confirm no regressions
+- [x] (superseded, see below) Run the Hydra `route-reachability` gate (gate-19) and confirm all four former leaf routes pass
+- [x] (superseded, see below) Run the Hydra `dashboard-antipattern` gate to confirm no group is left without a route
+- [x] (superseded, see below) Run the full `hydra-gates` suite and confirm no regressions
+
+## Superseded (10 Oct 2026, lane L3)
+
+Closed without building sections 5 and 6, and archived without folding its
+delta into a main spec. The pages this change collapsed no longer exist:
+`refactor(nav): retire five superseded pages instead of only hiding them`
+(#1682, f35541288) deleted `Bezwaren`, `Beroepen` and the `BezwaarBeroepGroup`
+with its card landing page, because `BezwaarDecisions` and
+`BezwaarAdviceRequests` had already been retired by `case-type-navigation`
+and every card resolved to nothing. Objections are cases, listed on `Cases`
+narrowed by case type (see the `removalsCoverageNote` in
+`src/menu-layout.json`). Folding REQ-NAV-001 to 003 would write requirements
+for a menu entry and four routes that were deliberately removed, so the
+archive uses `--skip-specs`. There is nothing to e2e-test and no route for
+gate 19 to reach.

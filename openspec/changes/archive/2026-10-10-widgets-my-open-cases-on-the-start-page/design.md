@@ -22,7 +22,7 @@ Nextcloud 32 to 34 (`appinfo/info.xml`).
 `MyOpenWorkWidget` implements `IWidget`, `IAPIWidgetV2`, `IButtonWidget`,
 `IIconWidget` and `IReloadableWidget`. `getItemsV2($userId, $since, $limit)`
 calls `forPerson()` for that user and maps each item to a `WidgetItem`: title,
-a subtitle of the due date and the source label, the link from `route` made
+a subtitle of the kind of work (case, task or work item) and the due date (built that way: the queue groups by the reader's choice, so the source label is not on every item), the link from `route` made
 absolute, and an icon per `subjectType`. Items are ordered by `dueAt`, empty
 dates last. `getButtons()` answers one button, "Open my work", to `/my-work`,
 and the item list's `emptyContentMessage` reads "Nothing waiting for you."

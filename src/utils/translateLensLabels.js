@@ -18,7 +18,7 @@
  * @param {(text: string) => string} translate The host translate.
  * @return {object} The same manifest with its lens labels translated.
  *
- * @spec openspec/changes/simple-list-and-dashboard/design.md
+ * @spec openspec/changes/archive/2026-10-10-simple-list-and-dashboard/design.md
  */
 export function translateLensLabels(manifest, translate) {
 	for (const page of manifest?.pages ?? []) {
@@ -97,7 +97,7 @@ function translateTabsAndSections(content, translate) {
  * @param {(text: string) => string} translate The host translate.
  * @return {object} The same manifest with its banner copy translated.
  *
- * @spec openspec/changes/simple-list-and-dashboard/design.md
+ * @spec openspec/changes/archive/2026-10-10-simple-list-and-dashboard/design.md
  */
 export function translateBannerCopy(manifest, translate) {
 	const banner = (widget) => {

@@ -9,18 +9,24 @@ dossiq's JavaScript. It MUST offer a button "Open my work" that leads to the My
 work page.
 
 #### Scenario: The start page shows my cases and leads to my work
+@e2e tests/e2e/my-open-work-widget.spec.ts
+
 - **GIVEN** a handler with two open cases assigned to them and one open task
 - **WHEN** they open a start page that holds the widget "My open work"
 - **THEN** the widget MUST list the two cases and the task, soonest due first
 - **AND** "Open my work" MUST open the My work page
 
 #### Scenario: Items reach a host without dossiq's bundle
+@e2e tests/e2e/my-open-work-widget.spec.ts
+
 - **GIVEN** the same handler
 - **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for
   the widget
 - **THEN** the response MUST carry the three items with their titles and links
 
 #### Scenario: More work than fits
+@e2e exclude Twelve items on the admin's shared queue cannot be seeded stably; covered by tests/Unit/Dashboard/QueueWidgetItemsTest.php and tests/Unit/Dashboard/MyOpenWorkWidgetTest.php.
+
 - **GIVEN** a handler with twelve open items and a host that asks for seven
 - **WHEN** the widget answers
 - **THEN** it MUST list six items and a seventh reading "6 more in My work"
@@ -31,6 +37,8 @@ The widget "My tasks" MUST keep its id and its dashboard rendering and MUST also
 answer its open tasks through Nextcloud's widget item API.
 
 #### Scenario: A start page that reads items shows my tasks
+@e2e tests/e2e/my-open-work-widget.spec.ts
+
 - **GIVEN** a handler with two open tasks
 - **WHEN** a client asks the widget item API for "My tasks"
 - **THEN** it MUST answer both tasks with a link to each

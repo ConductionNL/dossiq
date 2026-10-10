@@ -13,5 +13,5 @@
   with `BackfillCaseStatusRoleTest`.
 - [x] 3.3 After the live check: stage buttons that cannot hide, the three tiles
   out of the grid, the number as a pill, the deadline in the side column.
-- [ ] 4.1 Live check by the coordinator, after the import and
+- [ ] 4.1 (live pass, decision 139) Live check by the coordinator, after the import and
   `occ openregister:rematerialise-calculations`.

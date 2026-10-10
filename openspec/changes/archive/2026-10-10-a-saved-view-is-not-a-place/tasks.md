@@ -35,7 +35,7 @@ Tier: V1. Kind: code. Retracts `cases-views-are-places` (archived
   `savedViewPlaces` example stays because it is the measured one; add
   that the key was later removed and that the classifier cannot see a
   removal.
-- [ ] 2.1 `tests/e2e/a-saved-view-is-not-a-place.spec.ts`, replacing
+- [x] 2.1 `tests/e2e/a-saved-view-is-not-a-place.spec.ts` (written 10 Oct; its run is the live pass, decision 139), replacing
   `cases-views-are-places.spec.ts`: apply a view and assert the address
   stays the page's own and carries `_order`; reload it and assert the
   sort survives; clear the filters and assert nothing of the view is

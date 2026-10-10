@@ -12,7 +12,7 @@
  * checked against the thing it names, and the full structure is held equal to
  * the manifest.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  * @spec openspec/changes/landing-views/specs/my-work-landing/spec.md
  */
 
