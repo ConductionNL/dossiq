@@ -38,7 +38,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq;
 
 use OCP\App\IAppManager;
-use OCP\Util;
 
 /**
  * The declaration, and a live reading of it.
@@ -146,7 +145,9 @@ final class Prerequisites {
 	 *                                       Injected so a test can report one
 	 *                                       absent; defaults to the real thing.
 	 * @param int|null      $phpVersionId   The running PHP, as PHP_VERSION_ID.
-	 * @param int|null      $nextcloudMajor The running Nextcloud major version.
+	 * @param int|null      $nextcloudMajor The running Nextcloud major version,
+	 *                                      from `OCP\ServerVersion`. Null reports
+	 *                                      it unknown, and so not in range.
 	 *
 	 * @return array<string, mixed> The declaration with a `present` on every item.
 	 *
@@ -161,7 +162,11 @@ final class Prerequisites {
 	): array {
 		$loaded = $extensionLoaded ?? static fn (string $name): bool => extension_loaded($name);
 		$running = $phpVersionId ?? PHP_VERSION_ID;
-		$major = $nextcloudMajor ?? (int)(Util::getVersion()[0] ?? 0);
+		$major = ($nextcloudMajor ?? 0);
+		$majorText = '';
+		if ($major > 0) {
+			$majorText = (string)$major;
+		}
 
 		$extensions = [];
 		foreach (self::EXTENSIONS as $name => $why) {
@@ -181,7 +186,7 @@ final class Prerequisites {
 			'nextcloud' => [
 				'min' => self::NEXTCLOUD_MIN,
 				'max' => self::NEXTCLOUD_MAX,
-				'running' => (string)$major,
+				'running' => $majorText,
 				'present' => ($major >= (int)self::NEXTCLOUD_MIN && $major <= (int)self::NEXTCLOUD_MAX),
 			],
 			'extensions' => $extensions,
