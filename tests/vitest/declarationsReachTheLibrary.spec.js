@@ -33,6 +33,7 @@ import { userWidgetPresets } from '@conduction/nextcloud-vue/src/components/CnWi
 import { buildQueryString } from '@conduction/nextcloud-vue/src/utils/headers.js'
 import { resolveQueryFilters } from '@conduction/nextcloud-vue/src/utils/routeFilters.js'
 import { resolveScopeLayout } from '@conduction/nextcloud-vue/src/utils/scopeListLayout.js'
+import { contextOf } from '@conduction/nextcloud-vue/src/utils/sentinelTokens.js'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
@@ -266,11 +267,15 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 				0,
 			)
 
-			// And no unresolved token: nothing resolves "my team", so a
-			// preset filtering on one would send the literal string and be a
-			// permanently empty card.
+			// And only tokens the installed library resolves at fetch time.
+			// "Your team's queue" filters on `@myGroups` (my-teams-queue): a
+			// library that does not know it would send the literal string and
+			// show a permanently empty card, so this fails until the
+			// dependency carries it.
 			Object.values(preset.widget.content.filter).forEach((value) => {
-				expect(String(value).startsWith('@')).toBe(false)
+				if (String(value).startsWith('@')) {
+					expect(contextOf(String(value)), String(value)).toBe('filter')
+				}
 			})
 		})
 	})

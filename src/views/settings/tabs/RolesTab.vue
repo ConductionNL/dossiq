@@ -117,7 +117,7 @@
 				</p>
 
 				<div class="roles-tab__add">
-					<h4>{{ t('dossiq', 'Add Role Type') }}</h4>
+					<h4>{{ t('dossiq', 'Add role type') }}</h4>
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
@@ -463,13 +463,13 @@ export default {
 }
 
 .roles-tab__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 
 .field-error {
 	display: block;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 12px;
 	margin-bottom: 8px;
 }

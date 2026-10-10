@@ -7,7 +7,7 @@
  * form refuses a value outside them before anything is sent, and the server
  * clamps anything that still gets through.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import { translate as t } from '@nextcloud/l10n'
@@ -85,7 +85,7 @@ function boundsMessage(spec) {
  * @param {{max: number, whole: boolean}} spec The field's bounds.
  * @return {{value: (number|null), error: string}} The number and '' when valid, else the message.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export function checkQueueValue(raw, spec) {
 	const value = readNumber(raw)
@@ -106,7 +106,7 @@ export function checkQueueValue(raw, spec) {
  * @param {object} initial The `queueUrgencySettings` initial state.
  * @return {{[field: string]: number}} The values per field.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export function initialQueueUrgencyValues(initial) {
 	const values = {}
@@ -125,7 +125,7 @@ export function initialQueueUrgencyValues(initial) {
  *   The errors per field, and the body for POST /api/settings, or null when
  *   any field is refused, so nothing is sent.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export function buildQueueUrgencyPayload(values) {
 	const errors = {}
@@ -152,7 +152,7 @@ export function buildQueueUrgencyPayload(values) {
  * @param {number} max The upper bound (60 critical, 120 warning).
  * @return {{value: (number|undefined), error: string}} The whole number, undefined when empty, or the message.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 export function readThresholdOverride(raw, max) {
 	if (readNumber(raw) === null && String(raw ?? '').trim() === '') {

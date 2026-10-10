@@ -201,7 +201,7 @@ export default {
 
 .status--active {
 	background: var(--color-success);
-	color: var(--color-primary-element-text);
+	color: var(--color-success-text);
 }
 
 .status--ended,

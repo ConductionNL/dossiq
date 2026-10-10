@@ -33,7 +33,8 @@ export const SEARCH_INDEX_COMMAND = 'occ openregister:tables:search-index'
 /**
  * What openregister says about the indexes behind object search.
  *
- * @return {Promise<object>} `{concurrentRebuildSupported, tables, tableCount, indexCount, lastRun}`.
+ * @return {Promise<object>} `{concurrentRebuildSupported, tables, tableCount, indexCount, lastRun}`,
+ *     `lastRun` being an ISO 8601 time or null.
  * @throws {Error} When openregister cannot be read.
  *
  * @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
@@ -54,6 +55,33 @@ export async function searchIndexStatus() {
 		tables: data.tables && typeof data.tables === 'object' ? data.tables : {},
 		tableCount: Number(data.tableCount ?? 0),
 		indexCount: Number(data.indexCount ?? 0),
-		lastRun: data.lastRun ?? null,
+		lastRun: lastRunTime(data.lastRun),
 	}
+}
+
+/**
+ * When the last stored run finished, or started, or null when none ran.
+ *
+ * OpenRegister answers `lastRun` as the REPORT of that run, an object with
+ * `startedAt` and (for a run that got that far) `finishedAt`, and as `[]`
+ * when nothing ever ran. Printing the report itself drew an empty "Last run"
+ * for the never-ran case and "[object Object]" for the ran case.
+ *
+ * @param {object|Array|string|null|undefined} report What openregister answered as `lastRun`.
+ * @return {string|null} An ISO 8601 time, or null when no run is on record.
+ *
+ * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ */
+export function lastRunTime(report) {
+	if (typeof report === 'string') {
+		return report === '' ? null : report
+	}
+
+	if (report === null || typeof report !== 'object' || Array.isArray(report)) {
+		return null
+	}
+
+	const time = report.finishedAt || report.startedAt || ''
+
+	return typeof time === 'string' && time !== '' ? time : null
 }
