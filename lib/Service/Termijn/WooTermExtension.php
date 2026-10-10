@@ -95,7 +95,7 @@ class WooTermExtension {
 	 * @param string $caseId The case UUID
 	 * @param string $reason Mandatory reason for the extension
 	 *
-	 * @return array{caseId: string, previousDeadline: string, deadline: string, extensionReason: string, countExtensions: int}
+	 * @return array{caseId: string, previousDeadline: string, deadline: string, extensionReason: string, countExtensions: int, termInstanceId: string}
 	 *
 	 * @throws \InvalidArgumentException If the reason is empty
 	 * @throws RefusedException When the case has no statutory term or its extension is used up (409)
@@ -148,6 +148,7 @@ class WooTermExtension {
 			'deadline' => $deadline,
 			'extensionReason' => $reason,
 			'countExtensions' => (int)($updated['countExtensions'] ?? 0),
+			'termInstanceId' => (string)($instance['id'] ?? ''),
 		];
 	}//end extend()
 

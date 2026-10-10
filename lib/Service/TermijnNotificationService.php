@@ -5,8 +5,10 @@
  *
  * Renders the AWB notification templates (ontvangstbevestiging, extension,
  * ingebrekestelling-receipt, dwangsom-payment and the rest of TEMPLATES) in
- * en/nl and mails them to the recipient through {@see TermNoticeSender}, which
- * asks integriq first and sends each notice once.
+ * en/nl and hands them to {@see RequesterNoticeSender}, which puts each in the
+ * requester's portal inbox, sends it as digital post or mails it through
+ * {@see TermNoticeSender} (integriq first, each notice once), and records the
+ * delivery result on the case.
  *
  * It used to hand them to BerichtenboxRoutingService::routeToBerichtenbox(),
  * which only logged and returned a derived id, so no notice reached anyone.
@@ -36,6 +38,8 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
+use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Termijn\TermLetters;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\BackgroundJob\IJobList;
@@ -73,6 +77,8 @@ class TermijnNotificationService {
 	 * @param TermLetters $letters The wording of every term notification. Defaulted rather than
 	 *        required, because it has no collaborators of its own and every caller that wired
 	 *        this service before the letters were split out passes four arguments.
+	 * @param RequesterNoticeSender|null $requester The one sender for requester notices. Absent,
+	 *        a sender over the e-mail transport alone, which is what this service did before.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -80,6 +86,7 @@ class TermijnNotificationService {
 		private readonly LoggerInterface $logger,
 		private readonly ?IJobList $jobList = null,
 		private readonly TermLetters $letters = new TermLetters(),
+		private readonly ?RequesterNoticeSender $requester = null,
 	) {
 	}//end __construct()
 
@@ -151,22 +158,26 @@ class TermijnNotificationService {
 	 *
 	 * @param string $type Template type.
 	 * @param string $termInstanceId Instance id.
-	 * @param string $recipientUserId Recipient user id.
+	 * @param string $recipientUserId The address the caller holds for the requester, or ''.
 	 * @param array<string, mixed> $context Extra context (zaak ref, dates, amounts).
-	 *
+	 * @param array<string, mixed> $requester The case row, when the caller has it: the sender
+	 *        then also offers the portal inbox and digital post. [] keeps to the address.
 	 * @return array<string, mixed> Dispatched payload (with rendered subject +
-	 *                              body and the `dispatch` delivery record).
-	 *
-	 * @throws \OCA\Dossiq\Exception\NoticeNotSentException When nothing was sent.
-	 *
+	 *                              body and the `dispatch` delivery result, status `sent`).
+	 * @throws NoticeNotSentException When nothing was sent; its getDelivery() is the
+	 *         not-sent result. A throw rather than a returned `not-sent`, because every
+	 *         caller already treats it as "nothing went out" and a caller that forgets to
+	 *         read a status cannot record a notice nobody received as sent.
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-mailed-after-integriq-allows-it-req-term-070
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function sendTermijnNotification(
 		string $type,
 		string $termInstanceId,
 		string $recipientUserId,
 		array $context = [],
+		array $requester = [],
 	): array {
 		if (in_array($type, self::TEMPLATES, true) === false) {
 			throw new InvalidArgumentException('Unknown template: ' . $type);
@@ -179,27 +190,44 @@ class TermijnNotificationService {
 		$payload['deadlineInstance'] = $termInstanceId;
 		$payload['template'] = $type;
 
-		// Mail it. The sender throws when nothing went out, so a caller that
-		// gets a payload back holds a record of a notice that left (or that an
-		// earlier run already sent), never a record of one that did not.
-		$payload['dispatch'] = $this->sender->send(
+		$case = $requester;
+		if (trim((string)($case['id'] ?? '')) === '') {
+			$case['id'] = $this->caseRefOf(instance: ($instance ?? []), context: $context);
+		}
+
+		$moment = (string)($context['moment'] ?? RequesterNoticeSender::momentFor(template: $type));
+		$sender = ($this->requester ?? new RequesterNoticeSender(email: $this->sender, logger: $this->logger));
+
+		$dispatch = $sender->send(
+			case: $case,
 			template: $type,
-			instanceId: $termInstanceId,
-			recipient: $recipientUserId,
-			caseRef: $this->caseRefOf(instance: ($instance ?? []), context: $context),
-			subject: (string)$payload['subject'],
-			body: (string)$payload['body'],
-			dedupeKey: (string)($context['dedupeKey'] ?? ''),
+			rendered: ['subject' => (string)$payload['subject'], 'body' => (string)$payload['body']],
+			moment: $moment,
+			options: [
+				'recipient' => $recipientUserId,
+				'instanceId' => $termInstanceId,
+				'dedupeKey' => (string)($context['dedupeKey'] ?? ''),
+				'recordExtras' => (array)($context['recordExtras'] ?? []),
+			],
 		);
+
+		if ($dispatch['status'] !== RequesterNoticeSender::STATUS_SENT) {
+			throw new NoticeNotSentException(
+				reasonCode: (string)$dispatch['reasonCode'],
+				reason: (string)$dispatch['reason'],
+				delivery: $dispatch,
+			);
+		}
+
+		$payload['dispatch'] = $dispatch;
 
 		$this->logger->info(
 			'TermijnNotification dispatched',
 			[
 				'type' => $type,
-				'recipient' => $recipientUserId,
 				'instance' => $termInstanceId,
-				'notificationChannel' => (string)($payload['dispatch']['notificationChannel'] ?? ''),
-				'duplicate' => (($payload['dispatch']['duplicate'] ?? false) === true),
+				'notificationChannel' => (string)$dispatch['channel'],
+				'duplicate' => (($dispatch['duplicate'] ?? false) === true),
 			]
 		);
 

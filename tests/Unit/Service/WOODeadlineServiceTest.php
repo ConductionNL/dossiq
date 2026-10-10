@@ -300,6 +300,12 @@ class WOODeadlineServiceTest extends TestCase {
 				'deadline' => '2026-11-16',
 				'extensionReason' => 'Zienswijzen van derden',
 				'countExtensions' => 1,
+				'termInstanceId' => 'ti-woo',
+				// No ExtensionNotice wired here: the answer says the requester was not told.
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'notice-not-wired',
+				'noticeReason' => 'No sender is wired, so the requester was not told.',
 			],
 			$result
 		);

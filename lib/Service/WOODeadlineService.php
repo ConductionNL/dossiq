@@ -31,6 +31,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\ExtensionNotice;
 use OCA\Dossiq\Service\Termijn\WooTermExtension;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -68,6 +69,8 @@ class WOODeadlineService {
 	 *        statutory term end lands on a day the administered calendar works.
 	 * @param WooTermExtension|null $extension The Woo extension over the term engine.
 	 *        Absent, an extension is refused rather than written onto the case.
+	 * @param ExtensionNotice|null $notice Tells the requester, with the reason and the new end.
+	 *        Absent, the answer says the requester was not told.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -76,6 +79,7 @@ class WOODeadlineService {
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?WooTermExtension $extension = null,
+		private readonly ?ExtensionNotice $notice = null,
 	) {
 	}//end __construct()
 
@@ -116,12 +120,15 @@ class WOODeadlineService {
 	 * @param string $caseId The case UUID
 	 * @param string $reason Mandatory reason for the extension
 	 *
-	 * @return array{caseId: string, previousDeadline: string, deadline: string, extensionReason: string, countExtensions: int}
+	 * @return array<string, mixed> The extension (caseId, previousDeadline, deadline, extensionReason,
+	 *         countExtensions, termInstanceId) and the notice (noticeStatus, noticeChannel,
+	 *         noticeReasonCode, noticeReason).
 	 *
 	 * @throws \InvalidArgumentException If the reason is empty
 	 * @throws \RuntimeException When the term engine is not available
 	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	public function extendDeadline(string $caseId, string $reason): array {
 		if (trim($reason) === '') {
@@ -132,7 +139,25 @@ class WOODeadlineService {
 			throw new RuntimeException('The term engine is not available, so the Woo term cannot be extended');
 		}
 
-		return $this->extension->extend(caseId: $caseId, reason: $reason);
+		$extended = $this->extension->extend(caseId: $caseId, reason: $reason);
+
+		// The extension stands whatever becomes of the notice: the answer and
+		// the case say whether the requester was told (REQ-WRN-005).
+		if ($this->notice === null) {
+			return $extended + [
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'notice-not-wired',
+				'noticeReason' => 'No sender is wired, so the requester was not told.',
+			];
+		}
+
+		return $extended + $this->notice->tell(
+			caseId: $caseId,
+			instanceId: (string)($extended['termInstanceId'] ?? ''),
+			reason: $reason,
+			newEnd: (string)$extended['deadline'],
+		);
 	}//end extendDeadline()
 
 	/**

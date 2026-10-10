@@ -79,8 +79,15 @@ class TermLetters {
 				$newEnd = (string)($context['newEinddatum'] ?? $end);
 				$subject = 'Verlenging termijn zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
-					. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n"
-					. 'U vindt de officiele verlengingsbrief in uw burgerportaal.';
+					. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
+				// Woo art. 4.4 lid 2: the requester is told WHY, not only that
+				// the term moved (REQ-WRN-005).
+				$reason = rtrim(trim((string)($context['reason'] ?? '')), '.');
+				if ($reason !== '') {
+					$body .= 'De reden: ' . $reason . ".\n";
+				}
+
+				$body .= 'U vindt de officiele verlengingsbrief in uw burgerportaal.';
 				break;
 			case 'ingebrekestelling-receipt':
 				$graceEnd = (string)($context['graceEnd'] ?? '–');
@@ -445,7 +452,7 @@ class TermLetters {
 	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
 	 */
 	private function inadmissible(string $case, string $locale, array $context): array {
-		$reason = trim((string)($context['reason'] ?? ''));
+		$reason = rtrim(trim((string)($context['reason'] ?? '')), '.');
 		if ($reason === '') {
 			$reason = 'Uw aanvraag voldoet niet aan de eisen om in behandeling te worden genomen.';
 			if ($locale === 'en') {

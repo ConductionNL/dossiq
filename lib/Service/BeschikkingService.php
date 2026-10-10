@@ -399,7 +399,10 @@ class BeschikkingService {
 			message: 'Beschikking verzonden',
 			fields: [
 				'channel' => (string)($dispatch['notificationChannel'] ?? ''),
-				'sentOn' => (string)($dispatch['sentOn'] ?? ''),
+				// The announcement date the beschikking itself carries. The
+				// routing service no longer answers a sent moment, because it
+				// calls no transport (REQ-WRN-001).
+				'sentOn' => (string)($decision['announcementDate'] ?? ''),
 				'decisionType' => (string)($decision['decisionType'] ?? ''),
 				'reference' => (string)($decision['reference'] ?? ''),
 				'beschikkingId' => $decisionId,
