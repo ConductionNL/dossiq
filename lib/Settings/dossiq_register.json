@@ -2662,7 +2662,8 @@
                                 "required": "isRequired",
                                 "default": "defaultValue",
                                 "calculation": "calculation",
-                                "conceptScheme": "conceptScheme"
+                                "conceptScheme": "conceptScheme",
+                                "hideOnCreate": "hideOnCreate"
                             },
                             "values": {
                                 "mode": "array",

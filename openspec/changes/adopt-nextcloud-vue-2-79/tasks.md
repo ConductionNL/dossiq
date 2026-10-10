@@ -14,3 +14,5 @@
 - [x] 3.3 `tests/vitest/wooReceiptDateOffCreateForm.spec.js` fails if the
   flag or its schema declaration disappears, and runs the library's own
   `propertiesFromDefinitions` through dossiq's map.
+- [x] 3.4 Name `hideOnCreate` in the case form map and in `RENDERER_ROLES`;
+  `DeclaredDisplayFlagHasReaderTest` names the new display flag (D-2).
