@@ -57,9 +57,11 @@
 				<span class="menu-case-types__text">
 					<span class="menu-case-types__label">{{ caseType.title }}</span>
 					<span
-v-if="openCasesLabel(caseType)"
+						v-if="openCasesLabel(caseType)"
 						class="menu-case-types__meta"
-						data-testid="menu-case-types-count">{{ openCasesLabel(caseType) }}</span>
+						data-testid="menu-case-types-count"
+						>{{ openCasesLabel(caseType) }}</span
+					>
 				</span>
 				<NcButton
 					variant="tertiary"
@@ -98,9 +100,11 @@ v-if="openCasesLabel(caseType)"
 				<span class="menu-case-types__option">
 					<span>{{ option.title }}</span>
 					<span
-v-if="openCasesLabel(option)"
+						v-if="openCasesLabel(option)"
 						class="menu-case-types__meta"
-						data-testid="menu-case-types-option-count">{{ openCasesLabel(option) }}</span>
+						data-testid="menu-case-types-option-count"
+						>{{ openCasesLabel(option) }}</span
+					>
 				</span>
 			</template>
 		</NcSelect>
@@ -179,7 +183,10 @@ export default {
 		try {
 			const { chosen, available } = await fetchMenuCaseTypes()
 			this.openCases = Object.fromEntries(
-				[...available, ...chosen].map((caseType) => [caseType.id, caseType.openCases ?? null]),
+				[...available, ...chosen].map((caseType) => [
+					caseType.id,
+					caseType.openCases ?? null,
+				]),
 			)
 			this.chosen = chosen
 			this.available = available
@@ -211,7 +218,9 @@ export default {
 				return ''
 			}
 
-			return n('dossiq', '{count} open case', '{count} open cases', count, { count })
+			return n('dossiq', '{count} open case', '{count} open cases', count, {
+				count,
+			})
 		},
 
 		/**
