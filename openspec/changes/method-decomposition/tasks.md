@@ -216,9 +216,24 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
       Characterisation: `tests/Unit/Service/ZgwZrcCaseFieldRulesTest.php` (27 tests). The
       class-level ExcessiveClassComplexity (153 against 50) and ExcessiveClassLength stay: they
       need a class split, not a method split.
-- [ ] Slice 2, `ZgwBrcRulesService` (6)
+- [x] Slice 2, `ZgwBrcRulesService` (6 complexity suppressions and 2 `phpcs:ignore` gone):
+      `rulesBesluitenCreate()` chains `checkBesluittype`, the uniqueness check (which now owns
+      its own `empty()` guard) and the relation check; the brc-007 relation reads both
+      directions through `isCaseTypeRelatedToDecisionType()` and `caseTypeListsDecisionType()`;
+      brc-008 resolves the document's type through `getDocumentTypeOfDocument()`; shared
+      `getObjectByUrl()`, `decodeList()` and `missingInformatieobjecttypeError()` replace the
+      repeated lookups, JSON decoding and the duplicated over-long message. Characterisation:
+      `tests/Unit/Service/ZgwBrcRulesServiceTest.php` (15 tests). Class complexity is 89 against
+      50, so its class-level suppression stays.
 - [ ] Slice 3, `ZgwZtcRulesService` (7)
-- [ ] Slice 4, `ZgwDrcRulesService` (4)
+- [x] Slice 4, `ZgwDrcRulesService` (4 complexity + 1 unused-parameter suppressions gone):
+      the document create rules run `checkInformatieobjecttype()` and `applyCreateDefaults()`;
+      the ObjectInformatieObject create rules are `checkOioUrls()` then `checkOioRelations()`;
+      `validateIndicationGebruiksrechtTrue()` lost its never-read `$body`. Characterisation:
+      `tests/Unit/Service/ZgwDrcRulesServiceTest.php` (10 tests). With a context, an OIO for a
+      zaak or besluit is refused either way (a duplicate when the ZIO/BIO exists, inconsistent
+      when it does not). That matches VNG: the ZRC/BRC creates that OIO itself as a side effect
+      of the ZIO/BIO, so a client never posts one. The test pins it.
 - [ ] Slice 5, `ZgwService` (15), in several PRs
 - [ ] Slice 6, the controllers (ZrcController 12, ZtcController 10, DrcController 5); AcController
       waits until #3298 (which edits it) lands
