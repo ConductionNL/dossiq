@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
+use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
@@ -41,6 +42,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -111,8 +113,14 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
+ * @uses \OCA\Dossiq\Exception\NoticeNotSentException
+ * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
+ * @uses \OCA\Dossiq\Service\OptOutGate
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class AcknowledgementDutyTest extends TestCase {
+	use MakesRealTermNoticeSender;
 
 	/**
 	 * The in-memory case store.
@@ -155,9 +163,11 @@ class AcknowledgementDutyTest extends TestCase {
 	/**
 	 * The service, wired against the in-memory store.
 	 *
+	 * @param TermNoticeSender|null $sender The e-mail transport; a mock that always sends when null.
+	 *
 	 * @return AcknowledgementService The service under test.
 	 */
-	private function service(): AcknowledgementService {
+	private function service(?TermNoticeSender $sender = null): AcknowledgementService {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
@@ -191,8 +201,13 @@ class AcknowledgementDutyTest extends TestCase {
 			termService: $terms,
 			notifications: new TermijnNotificationService(
 				termService: $this->createMock(originalClassName: TermijnService::class),
-				sender: $this->sentNotices(),
-				logger: $logger
+				sender: ($sender ?? $this->sentNotices()),
+				logger: $logger,
+				requester: new RequesterNoticeSender(
+					email: ($sender ?? $this->sentNotices()),
+					settings: $settings,
+					writer: new CaseFieldWriter(),
+				),
 			),
 			contacts: new CaseContactDirectory(),
 			portal: new PortalContributionProvider(),
@@ -248,7 +263,8 @@ class AcknowledgementDutyTest extends TestCase {
 		self::assertCount(expectedCount: 1, haystack: $stored['outboundCommunications']);
 
 		$record = $stored['outboundCommunications'][0];
-		self::assertSame(expected: 'case-received', actual: $record['moment']);
+		self::assertSame(expected: 'acknowledgement', actual: $record['moment']);
+		self::assertSame(expected: 'sent', actual: $record['status']);
 		self::assertSame(expected: 'email', actual: $record['channel']);
 		self::assertSame(expected: 'aanvrager@example.nl', actual: $record['recipient']);
 		self::assertSame(expected: 'ontvangstbevestiging', actual: $record['template']);
@@ -316,7 +332,12 @@ class AcknowledgementDutyTest extends TestCase {
 			self::assertStringContainsString(needle: 'no address', haystack: $e->getSentence());
 		}
 
-		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
+		// The case records the notice that did not go out, and why (REQ-WRN-006).
+		$records = $this->store->cases[$caseId]['outboundCommunications'];
+		self::assertCount(expectedCount: 1, haystack: $records);
+		self::assertSame(expected: 'not-sent', actual: $records[0]['status']);
+		self::assertSame(expected: 'no-channel', actual: $records[0]['reasonCode']);
+		self::assertArrayNotHasKey(key: 'messageId', array: $records[0]);
 	}//end testACaseWithNoAddressRefusesWithAStatusAndASentence()
 
 	/**
@@ -461,7 +482,13 @@ class AcknowledgementDutyTest extends TestCase {
 	}//end testContentOnThePlatformCarriesNoCaseContent()
 
 	/**
-	 * A citizen who chose the portal is not mailed, and the record says so.
+	 * The record names the channel the acknowledgement actually went through.
+	 *
+	 * This test used to assert `portal` for a citizen who chose the portal,
+	 * while the notice was mailed: the record named a channel nothing went
+	 * through. A case without a portal subject cannot reach the portal inbox,
+	 * so the transport that took it was e-mail, and that is what is recorded
+	 * (REQ-WRN-002).
 	 *
 	 * @return void
 	 */
@@ -470,8 +497,8 @@ class AcknowledgementDutyTest extends TestCase {
 
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
-		self::assertSame(expected: 'portal', actual: $result['record']['channel']);
-		self::assertSame(expected: 'portal', actual: $this->store->cases[$caseId]['acknowledgementDuty']['channel']);
+		self::assertSame(expected: 'email', actual: $result['record']['channel']);
+		self::assertSame(expected: 'email', actual: $this->store->cases[$caseId]['acknowledgementDuty']['channel']);
 	}//end testTheCitizensRecordedChannelIsTheOneRecorded()
 
 	/**
@@ -488,6 +515,63 @@ class AcknowledgementDutyTest extends TestCase {
 		self::assertStringContainsString(needle: '2026-11-01', haystack: $result['payload']['body']);
 		self::assertStringContainsString(needle: 'Dakkapel Kerkstraat 12', haystack: $result['payload']['body']);
 	}//end testTheMessageCarriesTheKenmerkAndTheDeadline()
+
+	/**
+	 * REQ-WRN-003: the mail server refused the acknowledgement, so the duty is
+	 * not met. The refusal carries the transport's reason, which is what
+	 * AcknowledgementDispatchJob hands to recordFailedAttempt().
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 */
+	public function testTheDutyIsNotMetWhenNothingWentOut(): void {
+		$caseId = $this->seedCase();
+
+		try {
+			$this->service(sender: $this->realTermNoticeSender(mailerThrows: true))->acknowledge(caseId: $caseId);
+			self::fail(message: 'an acknowledgement nobody received must not come back as sent');
+		} catch (RefusedException $e) {
+			self::assertSame(expected: 'acknowledgement-not-sent', actual: $e->getRule());
+			self::assertStringContainsString(needle: 'mail server', haystack: $e->getSentence());
+		}
+
+		$duty = ($this->store->cases[$caseId]['acknowledgementDuty'] ?? []);
+		self::assertNotSame(expected: AcknowledgementService::STATUS_MET, actual: ($duty['status'] ?? ''));
+	}//end testTheDutyIsNotMetWhenNothingWentOut()
+
+	/**
+	 * REQ-WRN-003: no public "verzonden" line when nothing went out, and an
+	 * internal line that says it was not sent and why.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 */
+	public function testNoPublicSentLineWhenNothingWentOut(): void {
+		$caseId = $this->seedCase();
+		$entries = [];
+		$this->timeline->method('record')->willReturnCallback(
+			static function (string $caseId, string $kind, string $message, array $fields = [], string $visibility = CaseTimeline::INTERNAL) use (&$entries): string {
+				$entries[] = ['message' => $message, 'fields' => $fields, 'visibility' => $visibility];
+				return 'entry-' . count($entries);
+			}
+		);
+
+		try {
+			$this->service(sender: $this->realTermNoticeSender(mailerThrows: true))->acknowledge(caseId: $caseId);
+		} catch (RefusedException $e) {
+			// The refusal is the previous test's subject.
+		}
+
+		$public = array_filter($entries, static fn (array $entry): bool => $entry['visibility'] === CaseTimeline::PUBLIC_ENTRY);
+		self::assertSame(expected: [], actual: array_values($public), message: 'a citizen must not read that it was sent');
+
+		self::assertCount(expectedCount: 1, haystack: $entries);
+		self::assertSame(expected: CaseTimeline::INTERNAL, actual: $entries[0]['visibility']);
+		self::assertStringContainsString(needle: 'niet verzonden', haystack: $entries[0]['message']);
+		self::assertStringContainsString(needle: 'mail server', haystack: (string)($entries[0]['fields']['reason'] ?? ''));
+	}//end testNoPublicSentLineWhenNothingWentOut()
 
 	/**
 	 * A sender that answers a delivery record, so these tests stay about the duty.

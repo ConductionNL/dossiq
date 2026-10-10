@@ -48,7 +48,7 @@
 				</thead>
 				<tbody>
 					<tr v-for="(row, key) in quarterly.perType" :key="key">
-						<td>{{ key }}</td>
+						<td>{{ row.title || key }}</td>
 						<td>{{ row.totaal || 0 }}</td>
 						<td>{{ percent(row.binnenTermijnPercent || 0) }}</td>
 						<td>{{ row.overschrijdingen || 0 }}</td>
