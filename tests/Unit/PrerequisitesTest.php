@@ -148,9 +148,9 @@ class PrerequisitesTest extends TestCase {
 		$report = (new Prerequisites())->check($this->appManager(['openregister']));
 
 		$rows = array_column($report['apps']['optional'], null, 'id');
-		$this->assertArrayHasKey('hrmq', $rows, 'the hours app must be listed');
-		$this->assertFalse($rows['hrmq']['present']);
-		$this->assertNotSame('', $rows['hrmq']['unlocks']);
+		$this->assertArrayHasKey('humaniq', $rows, 'the hours app must be listed');
+		$this->assertFalse($rows['humaniq']['present']);
+		$this->assertNotSame('', $rows['humaniq']['unlocks']);
 
 		foreach ($report['apps']['optional'] as $row) {
 			$this->assertNotSame(
@@ -160,6 +160,44 @@ class PrerequisitesTest extends TestCase {
 			);
 		}
 	}//end testAnOptionalAppSaysWhatItUnlocks()
+
+	/**
+	 * An optional app is found under the id it ships today and under its old one.
+	 *
+	 * Filinq, integriq, decidiq and humaniq each ship their new id on
+	 * development, and an instance that has not upgraded still answers to the
+	 * old one. A lookup on either id alone tells one of the two administrators
+	 * to install an app they already have.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md#requirement-the-prerequisites-are-declared-once-and-shown-req-admin-024
+	 */
+	public function testAnOptionalAppIsFoundUnderItsShippedIdAndItsOldOne(): void {
+		$shipped = ['filinq', 'integriq', 'decidiq', 'humaniq', 'thematiq'];
+		$old = ['docudesk', 'openconnector', 'decidesk', 'hrmq', 'nldesign'];
+
+		$onNew = array_column(
+			(new Prerequisites())->check($this->appManager(array_merge(['openregister'], $shipped)))['apps']['optional'],
+			null,
+			'id'
+		);
+		$onOld = array_column(
+			(new Prerequisites())->check($this->appManager(array_merge(['openregister'], $old)))['apps']['optional'],
+			null,
+			'id'
+		);
+
+		foreach ($shipped as $appId) {
+			$this->assertArrayHasKey($appId, $onNew, sprintf('"%s" must be listed under the id it ships', $appId));
+			$this->assertTrue($onNew[$appId]['present'], sprintf('"%s" installed under its shipped id must read present', $appId));
+			$this->assertTrue($onOld[$appId]['present'], sprintf('"%s" installed under its old id must read present', $appId));
+		}
+
+		foreach ($old as $appId) {
+			$this->assertArrayNotHasKey($appId, $onNew, sprintf('"%s" is an old id and must not be a row of its own', $appId));
+		}
+	}//end testAnOptionalAppIsFoundUnderItsShippedIdAndItsOldOne()
 
 	/**
 	 * A PHP older than the declared minimum reports missing.

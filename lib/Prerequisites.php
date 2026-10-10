@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq;
 
+use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 
 /**
@@ -93,23 +94,26 @@ final class Prerequisites {
 	/**
 	 * The apps dossiq works with when they are there, and what each one adds.
 	 *
-	 * 🔴 THE KEYS ARE APP IDS AND A RENAMED APP MOVES ON ITS OWN SCHEDULE.
-	 * `IAppManager::isInstalled()` is a duck-typed lookup: pointing one at a
-	 * name nothing answers to reports "missing" rather than failing, so a key
-	 * changed ahead of the app it names would tell every administrator to
-	 * install something they already have.
+	 * 🔴 THE KEYS ARE THE IDS THE APPS SHIP, AND THE LOOKUP ALSO TRIES THEIR OLD
+	 * ONE. `IAppManager::isInstalled()` is a duck-typed lookup: pointing it at a
+	 * name nothing answers to reports "missing" rather than failing. Filinq,
+	 * integriq, decidiq, humaniq and thematiq ship their new id on development,
+	 * and an instance that has not upgraded still answers to the old one, so
+	 * each key resolves through `FleetAppId`, which tries both. A key on either
+	 * id alone tells one of those two administrators to install an app they
+	 * already have.
 	 *
 	 * @var array<string, string>
 	 */
 	public const APPS_OPTIONAL = [
-		'openconnector' => 'Sends and receives over the municipal integrations.',
-		'docudesk' => 'Generates and anonymises the documents on a case.',
-		'hrmq' => 'Books the hours a handler writes on a case.',
-		'decidesk' => 'Takes a decision that needs a committee.',
+		'integriq' => 'Sends and receives over the municipal integrations.',
+		'filinq' => 'Generates and anonymises the documents on a case.',
+		'humaniq' => 'Books the hours a handler writes on a case.',
+		'decidiq' => 'Takes a decision that needs a committee.',
 		'portaliq' => 'Shows the applicant their own case.',
 		'pipelinq' => 'Runs the intake and routing pipelines.',
 		'hermiq' => 'Answers the AI-assisted steps.',
-		'nldesign' => 'Themes the app to the government design system.',
+		'thematiq' => 'Themes the app to the government design system.',
 	];
 
 	/**
@@ -216,7 +220,7 @@ final class Prerequisites {
 	 */
 	private static function isInstalled(IAppManager $appManager, string $appId): bool {
 		try {
-			return $appManager->isInstalled($appId);
+			return FleetAppId::isInstalled(appManager: $appManager, canonical: $appId);
 		} catch (\Throwable) {
 			return false;
 		}
