@@ -117,7 +117,7 @@ class MandateValidationMiddleware extends Middleware {
 	 * dispatches on the controller class and the request URI instead.
 	 *
 	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		$user = $this->userSession->getUser();

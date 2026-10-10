@@ -1,6 +1,6 @@
 {
   "eslint.inlineDisables": 14,
-  "eslint.suppressedViolations": 312,
+  "eslint.suppressedViolations": 309,
   "phpcs.inlineIgnores": 4,
   "phpmd.suppressWarnings": 249,
   "phpstan.ignorePatterns": 11,

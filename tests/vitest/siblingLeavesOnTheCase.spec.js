@@ -20,8 +20,8 @@
  * the sibling the surface is missing rather than empty. That is why no
  * placement declares `requiredApp` (see hoursLeafManifest.spec.js).
  *
- * @spec openspec/changes/projects-from-planninq-on-the-case/tasks.md
- * @spec openspec/changes/merge-case-documents-via-filinq-leaf/tasks.md
+ * @spec openspec/specs/case-linked-projects/spec.md
+ * @spec openspec/specs/case-documents-merge-via-filinq-leaf/spec.md
  */
 
 import fs from 'fs'
@@ -85,12 +85,12 @@ describe('sibling leaves on the case page', () => {
 		expect(caseDetail.config.schema).toBe('case')
 	})
 
-	// @spec openspec/changes/projects-from-planninq-on-the-case/specs/case-linked-projects/spec.md#a-handler-starts-a-project-from-a-case
+	// @spec openspec/specs/case-linked-projects/spec.md#a-handler-starts-a-project-from-a-case
 	it('places planninq-projects on the case page, in the grid', () => {
 		expect(placedInTheGrid('planninq-projects').title).toBe('Projects')
 	})
 
-	// @spec openspec/changes/merge-case-documents-via-filinq-leaf/specs/case-documents-merge-via-filinq-leaf/spec.md#a-handler-merges-a-cases-documents-into-one-pdf
+	// @spec openspec/specs/case-documents-merge-via-filinq-leaf/spec.md#a-handler-merges-a-cases-documents-into-one-pdf
 	it('places filinq-merge-to-pdf on the case page, in the grid', () => {
 		expect(placedInTheGrid('filinq-merge-to-pdf').title).toBe(
 			'Merge into one PDF',

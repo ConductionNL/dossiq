@@ -9,6 +9,7 @@ import {
 	getDaysRemaining,
 	isCaseOverdue,
 } from './caseHelpers.js'
+import { isOverdue } from './deadlineCountdown.js'
 import { prioritySortWeight } from './taskHelpers.js'
 import { isTerminalStatus } from './taskLifecycle.js'
 
@@ -213,9 +214,7 @@ export function getMyWorkItems(cases, tasks, limit = 5) {
 
 	for (const task of tasks) {
 		const overdue =
-			!isTerminalStatus(task.status)
-			&& task.dueDate
-			&& new Date(task.dueDate) < new Date(todayString())
+			!isTerminalStatus(task.status) && task.dueDate && isOverdue(task.dueDate)
 		const daysLeft = task.dueDate ? getDaysRemaining(task.dueDate) : null
 		let daysText = '—'
 		if (daysLeft !== null) {
