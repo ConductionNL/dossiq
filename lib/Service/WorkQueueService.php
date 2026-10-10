@@ -4,8 +4,13 @@
  * Dossiq Work Queue Service
  *
  * Computes a deterministic urgency score for a case handler's open cases
- * and tasks (deadline proximity, priority, case age), and a per-handler
- * open-case workload summary for coordinators.
+ * and tasks (the deadline tier, priority, and how long a case has been lying
+ * still), and a per-handler open-case workload summary for coordinators.
+ *
+ * The deadline tier ("termijnstatus") is deliberately not called urgency in
+ * code: a case also carries the ITIL `urgency` field, which CasePriorityService
+ * combines with impact into the priority. The user-facing word stays
+ * "urgentie", for the score this class computes.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -22,6 +27,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -29,9 +35,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
+use OCA\Dossiq\Service\Queue\UrgencyProfile;
 use OCA\Dossiq\Service\Status\StatusDeclaration;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -50,54 +60,77 @@ class WorkQueueService {
 	use SearchesObjects;
 
 	/**
-	 * Urgency tier constants.
+	 * Deadline tier (termijnstatus) constants.
 	 */
-	private const TIER_OVERDUE = 'overdue';
-	private const TIER_CRITICAL = 'critical';
-	private const TIER_WARNING = 'warning';
-	private const TIER_NORMAL = 'normal';
+	private const DEADLINE_TIER_OVERDUE = 'overdue';
+	private const DEADLINE_TIER_CRITICAL = 'critical';
+	private const DEADLINE_TIER_WARNING = 'warning';
+	private const DEADLINE_TIER_NORMAL = 'normal';
 
 	/**
-	 * Base score per tier — higher tiers score higher; the deadline
+	 * Base score per deadline tier. Higher tiers score higher; the deadline
 	 * component further differentiates within a tier by exact day count.
+	 * The 250 points between two bases are more than the priority and idle
+	 * parts can add together (see UrgencyProfile's bounds), so the tier
+	 * always decides first.
 	 *
 	 * @var array<string, float>
 	 */
-	private const TIER_BASE_SCORE = [
-		self::TIER_OVERDUE => 1000.0,
-		self::TIER_CRITICAL => 750.0,
-		self::TIER_WARNING => 500.0,
-		self::TIER_NORMAL => 250.0,
+	private const DEADLINE_TIER_BASE_SCORE = [
+		self::DEADLINE_TIER_OVERDUE => 1000.0,
+		self::DEADLINE_TIER_CRITICAL => 750.0,
+		self::DEADLINE_TIER_WARNING => 500.0,
+		self::DEADLINE_TIER_NORMAL => 250.0,
 	];
 
 	/**
-	 * Score contribution per priority value.
+	 * Priority steps; the profile's priority weight is paid per step.
 	 *
-	 * @var array<string, float>
+	 * @var array<string, int>
 	 */
-	private const PRIORITY_WEIGHT = [
-		'urgent' => 30.0,
-		'high' => 20.0,
-		'normal' => 10.0,
-		'low' => 0.0,
+	private const PRIORITY_POINTS = [
+		'urgent' => 3,
+		'high' => 2,
+		'normal' => 1,
+		'low' => 0,
 	];
 
 	/**
-	 * Fallback priority weight for an unknown/empty priority value.
+	 * Fallback priority step for an unknown/empty priority value.
 	 */
-	private const DEFAULT_PRIORITY_WEIGHT = 10.0;
+	private const DEFAULT_PRIORITY_POINTS = 1;
 
 	/**
-	 * Age component: capped days and weight per day.
+	 * Idle component: days lying still count up to this cap.
 	 */
-	private const MAX_AGE_DAYS = 60;
-	private const AGE_WEIGHT_PER_DAY = 0.5;
+	private const MAX_IDLE_DAYS = 60;
+
+	/**
+	 * Maximum number of open cases one queue computation reads. Named, so the
+	 * search never falls back to OpenRegister's default page and silently
+	 * leaves every case past it out of the ranking.
+	 */
+	private const QUEUE_CASE_LIMIT = 1000;
 
 	/**
 	 * Safety cap on the business-day walk in businessDaysBetween(), so a
 	 * corrupt/far-future deadline can never loop unbounded.
 	 */
 	private const MAX_BUSINESS_DAY_WALK = 3660;
+
+	/**
+	 * The term statuses whose end date still counts for urgency.
+	 *
+	 * @var array<int, string>
+	 */
+	private const OPEN_TERM_STATUSES = ['lopend', 'verlengd', 'paused', 'exceeded'];
+
+	/**
+	 * Whether the Monday-to-Friday fallback has been said in the log already.
+	 *
+	 * @var bool
+	 */
+	private bool $saidFallback = false;
 
 	/**
 	 * Maximum number of cases fetched for the workload aggregation.
@@ -111,14 +144,34 @@ class WorkQueueService {
 	 * @param EngineTaskInbox $engineTasks     The engine's inbox reader.
 	 * @param LoggerInterface $logger Logger.
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param QueueUrgencySettings $urgencySettings The admin's thresholds and weights.
+	 * @param CaseJournal $journal Reads the case's own record of acts.
+	 * @param WorkingDayRoll|null $calendar The administered calendar the business days are
+	 *        counted on (REQ-OTE-04). Optional so a build without it counts Monday to Friday,
+	 *        as before, and says so once in the log.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly EngineTaskInbox $engineTasks,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
+		private readonly QueueUrgencySettings $urgencySettings,
+		private readonly CaseJournal $journal,
+		private readonly ?WorkingDayRoll $calendar = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The instance's thresholds and weights, for a caller that scores items
+	 * without a case type (the personal queue).
+	 *
+	 * @return UrgencyProfile The admin profile.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	public function adminProfile(): UrgencyProfile {
+		return $this->urgencySettings->profile();
+	}//end adminProfile()
 
 	/**
 	 * Compute the urgency-scored work queue for one user.
@@ -144,19 +197,22 @@ class WorkQueueService {
 			return [];
 		}
 
+		$profile = $this->urgencySettings->profile();
+
 		$items = [];
 		$caseItems = $this->queueCaseItems(
 			objectService: $objectService,
 			register: $register,
 			caseSchema: $caseSchema,
 			userId: $userId,
-			now: $now
+			now: $now,
+			profile: $profile
 		);
 		foreach ($caseItems as $item) {
 			$items[] = $item;
 		}
 
-		foreach ($this->queueTaskItems(userId: $userId, now: $now) as $item) {
+		foreach ($this->queueTaskItems(userId: $userId, now: $now, profile: $profile) as $item) {
 			$items[] = $item;
 		}
 
@@ -335,56 +391,78 @@ class WorkQueueService {
 	}//end countOpenCasesByHandler()
 
 	/**
-	 * Score a single item deterministically. Pure function — no I/O.
+	 * Score a single item deterministically. Pure function, no I/O.
+	 *
+	 * The deadline tier comes from the working days left against the
+	 * profile's thresholds; the score adds the priority and idle parts the
+	 * profile weighs. The reference date is the last activity on the item:
+	 * the idle part counts the calendar days since it, capped, and a moment in
+	 * the future counts as today.
 	 *
 	 * @param string|null $deadline Resolved deadline (Y-m-d or parseable date), or null.
 	 * @param string $priority Priority value (low/normal/high/urgent), any casing.
-	 * @param string|null $referenceDate Reference date for the age component (e.g. case startDate), or null.
+	 * @param string|null $referenceDate The last activity on the item, or null for no idle part.
 	 * @param DateTimeImmutable $now The "now" instant the score is computed against.
+	 * @param UrgencyProfile|null $profile Thresholds and weights; null scores with the defaults.
 	 *
 	 * @return array{
-	 *     tier: string,
+	 *     deadlineTier: string,
 	 *     daysUntilDeadline: int|null,
+	 *     idleDays: int|null,
 	 *     score: float,
-	 *     scoreBreakdown: array{deadline: float, priority: float, age: float}
+	 *     scoreBreakdown: array{deadline: float, priority: float, idle: float}
 	 * } Score result.
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	public function scoreItem(?string $deadline, string $priority, ?string $referenceDate, DateTimeImmutable $now): array {
+	public function scoreItem(
+		?string $deadline,
+		string $priority,
+		?string $referenceDate,
+		DateTimeImmutable $now,
+		?UrgencyProfile $profile = null,
+	): array {
+		$profile = ($profile ?? new UrgencyProfile());
 		$today = new DateTimeImmutable($now->format('Y-m-d'));
 
 		$daysUntilDeadline = null;
-		$tier = self::TIER_NORMAL;
+		$deadlineTier = self::DEADLINE_TIER_NORMAL;
 		$deadlineComponent = 0.0;
 
 		$deadlineDate = $this->dates->tryParse($this->dates->toCalendarDateOrNull($deadline));
 		if ($deadlineDate !== null) {
 			$daysUntilDeadline = $this->businessDaysBetween(today: $today, target: $deadlineDate);
-			$tier = $this->tierFor(daysUntilDeadline: $daysUntilDeadline);
-			$deadlineComponent = (self::TIER_BASE_SCORE[$tier] - $daysUntilDeadline);
+			$deadlineTier = $this->deadlineTierFor(daysUntilDeadline: $daysUntilDeadline, profile: $profile);
+			$deadlineComponent = (self::DEADLINE_TIER_BASE_SCORE[$deadlineTier] - $daysUntilDeadline);
 		}
 
 		$priorityKey = strtolower(trim($priority));
-		$priorityComponent = (self::PRIORITY_WEIGHT[$priorityKey] ?? self::DEFAULT_PRIORITY_WEIGHT);
+		$priorityComponent = ((self::PRIORITY_POINTS[$priorityKey] ?? self::DEFAULT_PRIORITY_POINTS) * $profile->priorityWeight);
 
-		$ageComponent = 0.0;
+		$idleDays = null;
+		$idleComponent = 0.0;
 		$referenceParsed = $this->dates->tryParse($this->dates->toCalendarDateOrNull($referenceDate));
-		if ($referenceParsed !== null && $referenceParsed <= $today) {
-			$ageDays = (int)$today->diff($referenceParsed)->days;
-			$ageComponent = (min($ageDays, self::MAX_AGE_DAYS) * self::AGE_WEIGHT_PER_DAY);
+		if ($referenceParsed !== null) {
+			$idleDays = 0;
+			if ($referenceParsed < $today) {
+				$idleDays = (int)$today->diff($referenceParsed)->days;
+			}
+
+			$idleComponent = (min($idleDays, self::MAX_IDLE_DAYS) * $profile->idleWeight);
 		}
 
-		$score = ($deadlineComponent + $priorityComponent + $ageComponent);
+		$score = ($deadlineComponent + $priorityComponent + $idleComponent);
 
 		return [
-			'tier' => $tier,
+			'deadlineTier' => $deadlineTier,
 			'daysUntilDeadline' => $daysUntilDeadline,
+			'idleDays' => $idleDays,
 			'score' => round($score, 2),
 			'scoreBreakdown' => [
 				'deadline' => round($deadlineComponent, 2),
 				'priority' => round($priorityComponent, 2),
-				'age' => round($ageComponent, 2),
+				'idle' => round($idleComponent, 2),
 			],
 		];
 	}//end scoreItem()
@@ -392,27 +470,48 @@ class WorkQueueService {
 	/**
 	 * Build scored case queue items for one user.
 	 *
+	 * The cases are read with the filters the My Work list uses, so the
+	 * ranked set is the same set the list shows, and with a named limit so no
+	 * open case falls off a default page. Each item carries the case row, so
+	 * a list can render the card from the ranked answer.
+	 *
 	 * @param object $objectService OpenRegister ObjectService.
 	 * @param string $register Register slug/id.
 	 * @param string $caseSchema Case schema slug/id.
 	 * @param string $userId User id to scope to.
 	 * @param DateTimeImmutable $now Now.
+	 * @param UrgencyProfile $profile The instance profile.
 	 *
 	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	private function queueCaseItems(object $objectService, string $register, string $caseSchema, string $userId, DateTimeImmutable $now): array {
+	private function queueCaseItems(
+		object $objectService,
+		string $register,
+		string $caseSchema,
+		string $userId,
+		DateTimeImmutable $now,
+		UrgencyProfile $profile,
+	): array {
 		try {
 			$cases = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $caseSchema,
-				filters: ['assignee' => $userId]
+				filters: [
+					'assignee' => $userId,
+					'statusHiddenInLists' => false,
+					'isDraft' => false,
+					'_limit' => self::QUEUE_CASE_LIMIT,
+				]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning('WorkQueue: case search failed', ['error' => $e->getMessage()]);
 			return [];
 		}
 
+		$profilesByType = [];
 		$items = [];
 		foreach ($cases as $case) {
 			$endDate = (string)($case['endDate'] ?? '');
@@ -425,9 +524,24 @@ class WorkQueueService {
 			$fallbackDate = (string)($case['deadline'] ?? '');
 			$deadline = $this->resolveCaseDeadline(objectService: $objectService, register: $register, caseId: $caseId, fallback: $fallbackDate);
 			$priority = (string)($case['priority'] ?? 'normal');
-			$startDate = (string)($case['startDate'] ?? '');
 
-			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: $startDate, now: $now);
+			$caseTypeId = $this->caseTypeIdOf(case: $case);
+			if (array_key_exists($caseTypeId, $profilesByType) === false) {
+				$profilesByType[$caseTypeId] = $this->profileForCaseType(
+					objectService: $objectService,
+					register: $register,
+					caseTypeId: $caseTypeId,
+					profile: $profile
+				);
+			}
+
+			$scoring = $this->scoreItem(
+				deadline: $deadline,
+				priority: $priority,
+				referenceDate: $this->lastActivityOf(case: $case),
+				now: $now,
+				profile: $profilesByType[$caseTypeId]
+			);
 
 			$items[] = array_merge(
 				[
@@ -439,6 +553,7 @@ class WorkQueueService {
 					'status' => ($case['status'] ?? null),
 					'priority' => $priority,
 					'deadline' => $deadline,
+					'case' => $case,
 				],
 				$scoring
 			);
@@ -448,14 +563,147 @@ class WorkQueueService {
 	}//end queueCaseItems()
 
 	/**
+	 * The last activity on a case: the latest of its last save and the newest
+	 * entry in its journal, falling back to its start date.
+	 *
+	 * `SilenceCloseService::lastActivity()` reads the journal first on
+	 * purpose, because its own warning write touches the case. The queue
+	 * writes nothing to a case, so the latest of the two is the honest answer
+	 * here: an edit that wrote no journal entry is still somebody working on
+	 * the case.
+	 *
+	 * @param array<string, mixed> $case The case row.
+	 *
+	 * @return string|null The moment, or null when the case carries none.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function lastActivityOf(array $case): ?string {
+		$latest = null;
+		foreach ($this->activityMoments(case: $case) as $moment) {
+			if ($latest === null || $moment > $latest) {
+				$latest = $moment;
+			}
+		}
+
+		if ($latest !== null) {
+			return $latest->format('Y-m-d');
+		}
+
+		$startDate = (string)($case['startDate'] ?? '');
+		if ($startDate === '') {
+			return null;
+		}
+
+		return $startDate;
+	}//end lastActivityOf()
+
+	/**
+	 * Every moment a case records activity: its last save and each journal entry.
+	 *
+	 * @param array<string, mixed> $case The case row.
+	 *
+	 * @return array<int, DateTimeImmutable> The moments that parse.
+	 */
+	private function activityMoments(array $case): array {
+		$candidates = [($case['@self']['updated'] ?? null)];
+		foreach ($this->journal->entries(case: $case) as $entry) {
+			$candidates[] = ($entry['at'] ?? null);
+		}
+
+		$moments = [];
+		foreach ($candidates as $candidate) {
+			if (is_string($candidate) === false || $candidate === '') {
+				continue;
+			}
+
+			$moment = $this->dates->tryParse($candidate);
+			if ($moment !== null) {
+				$moments[] = $moment;
+			}
+		}
+
+		return $moments;
+	}//end activityMoments()
+
+	/**
+	 * The case type id a case row names, whether as a uuid or an object.
+	 *
+	 * @param array<string, mixed> $case The case row.
+	 *
+	 * @return string The id, or '' when the case names none.
+	 */
+	private function caseTypeIdOf(array $case): string {
+		$caseType = ($case['caseType'] ?? '');
+		if (is_array($caseType) === true) {
+			$caseType = ($caseType['id'] ?? ($caseType['uuid'] ?? ''));
+		}
+
+		if (is_string($caseType) === false) {
+			return '';
+		}
+
+		return $caseType;
+	}//end caseTypeIdOf()
+
+	/**
+	 * The profile for the cases of one case type: the instance profile with
+	 * the type's own thresholds where it sets them.
+	 *
+	 * A case type that cannot be read scores with the instance profile, and
+	 * says so in the log: a queue that refuses to rank because one case type
+	 * went missing helps nobody.
+	 *
+	 * @param object $objectService OpenRegister ObjectService.
+	 * @param string $register Register slug/id.
+	 * @param string $caseTypeId The case type id, or ''.
+	 * @param UrgencyProfile $profile The instance profile.
+	 *
+	 * @return UrgencyProfile The profile for that type.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 */
+	private function profileForCaseType(object $objectService, string $register, string $caseTypeId, UrgencyProfile $profile): UrgencyProfile {
+		$caseTypeSchema = (string)$this->settingsService->getConfigValue('case_type_schema');
+		if ($caseTypeId === '' || $caseTypeSchema === '') {
+			return $profile;
+		}
+
+		try {
+			$caseType = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseTypeSchema,
+				id: $caseTypeId
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'WorkQueue: case type read failed, scoring with the instance thresholds',
+				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+			);
+			return $profile;
+		}
+
+		if ($caseType === null) {
+			return $profile;
+		}
+
+		return $profile->withCaseTypeThresholds(
+			criticalDays: ($caseType['queueCriticalDays'] ?? null),
+			warningDays: ($caseType['queueWarningDays'] ?? null)
+		);
+	}//end profileForCaseType()
+
+	/**
 	 * Build scored task queue items for one user.
 	 *
 	 * @param string $userId User id to scope to.
 	 * @param DateTimeImmutable $now Now.
+	 * @param UrgencyProfile $profile The instance profile.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function queueTaskItems(string $userId, DateTimeImmutable $now): array {
+	private function queueTaskItems(string $userId, DateTimeImmutable $now, UrgencyProfile $profile): array {
 		// The ENGINE, and the open/closed split is made THERE. Filtering a
 		// paged window client-side silently drops every open task past the
 		// boundary, which is how a queue comes to look empty on the day
@@ -471,7 +719,7 @@ class WorkQueueService {
 				$deadline = $dueDate;
 			}
 
-			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: null, now: $now);
+			$scoring = $this->scoreItem(deadline: $deadline, priority: $priority, referenceDate: null, now: $now, profile: $profile);
 
 			$items[] = array_merge(
 				[
@@ -516,15 +764,17 @@ class WorkQueueService {
 	}//end resolveCaseDeadline()
 
 	/**
-	 * Find the nearest `einddatumActueel` among a case's active (`lopend`)
-	 * termijn instances, or null when termijn tracking is not configured, the
-	 * case has none, or the lookup fails.
+	 * Find the nearest `endDateCurrent` among a case's open term instances
+	 * (running, extended, paused or exceeded), or null when termijn tracking
+	 * is not configured, the case has none, or the lookup fails.
 	 *
 	 * @param object $objectService OpenRegister ObjectService.
 	 * @param string $register Register slug/id.
 	 * @param string $caseId Case id.
 	 *
 	 * @return string|null The nearest active deadline, or null.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-the-urgency-score-reads-every-open-term-req-ote-06
 	 */
 	private function nearestActiveTermDeadline(object $objectService, string $register, string $caseId): ?string {
 		$termSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
@@ -537,10 +787,7 @@ class WorkQueueService {
 				objectService: $objectService,
 				register: $register,
 				schema: $termSchema,
-				filters: [
-					'case' => $caseId,
-					'status' => 'lopend',
-				]
+				filters: ['case' => $caseId]
 			);
 		} catch (\Throwable $e) {
 			return null;
@@ -548,6 +795,15 @@ class WorkQueueService {
 
 		$nearest = null;
 		foreach ($instances as $instance) {
+			// EVERY OPEN TERM, not only a running one (REQ-OTE-06). A paused
+			// term's end has already moved by the pause and an extended one's
+			// by the extension, so both are the dates a handler is judged on.
+			// Filtered here rather than in the query, because a list of
+			// statuses is not a filter every store reads the same way.
+			if (in_array((string)($instance['status'] ?? ''), self::OPEN_TERM_STATUSES, true) === false) {
+				continue;
+			}
+
 			$date = (string)($instance['endDateCurrent'] ?? '');
 			if ($date === '' || ($nearest !== null && $date >= $nearest)) {
 				continue;
@@ -560,27 +816,30 @@ class WorkQueueService {
 	}//end nearestActiveTermijnDeadline()
 
 	/**
-	 * Determine the urgency tier for a given business-day offset.
+	 * Determine the deadline tier for a given business-day offset.
 	 *
 	 * @param int $daysUntilDeadline Signed business-day offset (negative = overdue).
+	 * @param UrgencyProfile $profile The thresholds to hold it against.
 	 *
-	 * @return string One of the TIER_* constants.
+	 * @return string One of the DEADLINE_TIER_* constants.
+	 *
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	private function tierFor(int $daysUntilDeadline): string {
+	private function deadlineTierFor(int $daysUntilDeadline, UrgencyProfile $profile): string {
 		if ($daysUntilDeadline < 0) {
-			return self::TIER_OVERDUE;
+			return self::DEADLINE_TIER_OVERDUE;
 		}
 
-		if ($daysUntilDeadline <= 3) {
-			return self::TIER_CRITICAL;
+		if ($daysUntilDeadline <= $profile->criticalDays) {
+			return self::DEADLINE_TIER_CRITICAL;
 		}
 
-		if ($daysUntilDeadline <= 7) {
-			return self::TIER_WARNING;
+		if ($daysUntilDeadline <= $profile->warningDays) {
+			return self::DEADLINE_TIER_WARNING;
 		}
 
-		return self::TIER_NORMAL;
-	}//end tierFor()
+		return self::DEADLINE_TIER_NORMAL;
+	}//end deadlineTierFor()
 
 	/**
 	 * Count signed business days (Mon–Fri) between two dates.
@@ -594,6 +853,8 @@ class WorkQueueService {
 	 * @param DateTimeImmutable $target The target date (date-only).
 	 *
 	 * @return int Signed business-day offset.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	private function businessDaysBetween(DateTimeImmutable $today, DateTimeImmutable $target): int {
 		if ($today->format('Y-m-d') === $target->format('Y-m-d')) {
@@ -603,6 +864,24 @@ class WorkQueueService {
 		$direction = 1;
 		if ($target < $today) {
 			$direction = -1;
+		}
+
+		// THE ADMINISTERED CALENDAR FIRST (REQ-TERM-026, REQ-OTE-04). A closure
+		// day the organisation declared is not a working day, and Koningsdag
+		// is not one either, which a Monday-to-Friday walk counts as both.
+		// The same days the walk below counts: forward the days after today up
+		// to and including the target, backward the target up to today. The
+		// engine counts the working days in [from, to), so the bounds shift.
+		$from = $target->setTime(0, 0);
+		$to = $today->setTime(0, 0);
+		if ($direction > 0) {
+			$from = $today->setTime(0, 0)->modify('+1 day');
+			$to = $target->setTime(0, 0)->modify('+1 day');
+		}
+
+		$counted = $this->administeredBusinessDays(earlier: $from, later: $to);
+		if ($counted !== null) {
+			return ($counted * $direction);
 		}
 
 		$cursor = $today;
@@ -626,5 +905,35 @@ class WorkQueueService {
 
 		return ($count * $direction);
 	}//end businessDaysBetween()
+
+	/**
+	 * The working days between two days on the administered calendar, or null.
+	 *
+	 * Null when no calendar is wired or it does not answer; the caller then
+	 * walks Monday to Friday, and this says so once per request.
+	 *
+	 * @param DateTimeImmutable $earlier The earlier day.
+	 * @param DateTimeImmutable $later   The later day.
+	 *
+	 * @return int|null The unsigned count, or null.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 */
+	private function administeredBusinessDays(DateTimeImmutable $earlier, DateTimeImmutable $later): ?int {
+		$counted = $this->calendar?->daysBetween(from: $earlier, to: $later, mode: WorkingDayRoll::MODE_WORKING_DAYS);
+		if ($counted !== null) {
+			return $counted;
+		}
+
+		if ($this->saidFallback === false) {
+			$this->saidFallback = true;
+			$this->logger->warning(
+				'Dossiq work queue: the organisation calendar did not answer, so days until a deadline '
+				. 'were counted Monday to Friday, without holidays or closure days'
+			);
+		}
+
+		return null;
+	}//end administeredBusinessDays()
 
 }//end class

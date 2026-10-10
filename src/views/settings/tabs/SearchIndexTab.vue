@@ -62,6 +62,7 @@
 </template>
 
 <script>
+import { getCanonicalLocale } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import {
@@ -103,17 +104,25 @@ export default {
 		},
 
 		/**
-		 * When maintenance last ran, or that it never has.
+		 * When maintenance last ran, as a date and time, or that it never has.
 		 *
 		 * @return {string} The answer, in words.
-		 * @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
 		 */
 		lastRun() {
 			if (this.status.lastRun === null || this.status.lastRun === '') {
 				return t('dossiq', 'Never')
 			}
 
-			return String(this.status.lastRun)
+			const when = new Date(this.status.lastRun)
+			if (Number.isNaN(when.getTime())) {
+				return String(this.status.lastRun)
+			}
+
+			return when.toLocaleString(getCanonicalLocale(), {
+				dateStyle: 'medium',
+				timeStyle: 'short',
+			})
 		},
 
 		/**
@@ -163,19 +172,41 @@ export default {
 </script>
 
 <style scoped>
+/*
+ * Label above value, and the label wraps. Nextcloud's settings stylesheet
+ * gives a `dt` a fixed width and no wrapping, which ran "Rebuild without
+ * locking" under its own value (round-4 cloud check).
+ */
 .search-index__figures {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 16px 24px;
+	margin-block: 0 12px;
+}
+
+.search-index__figures > div {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 24px;
-	margin-block-end: 12px;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
 }
 
 .search-index__figures dt {
+	display: block;
+	float: none;
+	width: auto;
+	margin: 0;
+	padding: 0;
+	text-align: start;
+	min-width: 0;
+	white-space: normal;
+	overflow-wrap: anywhere;
 	color: var(--color-text-maxcontrast);
 }
 
 .search-index__figures dd {
 	font-weight: bold;
 	margin: 0;
+	overflow-wrap: anywhere;
 }
 </style>

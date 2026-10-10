@@ -129,6 +129,28 @@ class StalledCaseDetector {
 	}//end findStalledCases()
 
 	/**
+	 * The milestone one case waits on now, whether or not it is late.
+	 *
+	 * The first unreached milestone with the deadline the schedule gives it,
+	 * the same row {@see self::findStalledCases()} reports, without the
+	 * lateness filter. The milestone timer arms on this deadline, so the
+	 * timer and the stalled list can never disagree about which milestone a
+	 * case waits on or when it is due.
+	 *
+	 * @param array<string, mixed> $case The case object.
+	 *
+	 * @return array<string, mixed>|null The row (caseId, milestoneIdentifier,
+	 *                                   milestoneLabel, deadline Y-m-d,
+	 *                                   daysOverdue, assignee), or null when the
+	 *                                   case is closed, unscheduled or complete.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	public function waitingOn(array $case): ?array {
+		return $this->getStallRow(case: $case, today: new DateTimeImmutable('today'), thresholdDays: PHP_INT_MIN);
+	}//end waitingOn()
+
+	/**
 	 * Build the stall report row for a single case, or null when it is not stalled.
 	 *
 	 * Cases without an id, closed cases, cases without a case type and cases

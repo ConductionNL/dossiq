@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IGroupManager;
 /**
  * The platform admin check for the tenant boundary.
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 class TenantService {
 	/**
@@ -61,7 +61,7 @@ class TenantService {
 	 *
 	 * @return bool True when the user is in the NC admin group.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function isPlatformAdmin(string $userId): bool {
 		return $this->groupManager->isAdmin($userId);

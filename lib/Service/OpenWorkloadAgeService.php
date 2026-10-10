@@ -5,7 +5,7 @@
  *
  * How old the work still standing is, per status, answered now.
  *
- * `ProcessMiningController` and `BottleneckDetectionJob` compute durations over
+ * `ProcessMiningController` and `StalledCaseDetector` compute durations over
  * CLOSED cases. That is a different number, and a teamleider asking "how old is
  * what we still have" cannot get it from finished work: a queue nobody has
  * touched in four months contributes nothing to a report about cases that ended.

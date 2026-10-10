@@ -86,6 +86,23 @@
 				@update:modelValue="(v) => $emit('update', 'handlerAction', v)" />
 		</div>
 
+		<!-- Handling teams -->
+		<div class="form-group">
+			<NcSelect
+				:modelValue="selectedHandlingTeams"
+				:options="handlingTeamOptions"
+				:multiple="true"
+				:loading="groupsLoading"
+				:inputLabel="t('dossiq', 'Handling teams')"
+				@update:modelValue="updateHandlingTeams" />
+			<span class="field-hint">{{
+				t(
+					'dossiq',
+					'The teams that handle cases of this type, besides the default group, which always counts. Their members are offered this case type for their menu.',
+				)
+			}}</span>
+		</div>
+
 		<!-- Origin -->
 		<div class="form-group">
 			<label class="required">{{ t('dossiq', 'Origin') }}</label>
@@ -139,6 +156,30 @@
 			<span v-if="errors.serviceTarget" class="field-error">{{
 				errors.serviceTarget
 			}}</span>
+		</div>
+
+		<!-- Queue thresholds: when a case of this type turns critical or almost due in the work queue -->
+		<div class="form-group" data-testid="case-type-queue-thresholds">
+			<NcTextField
+				:modelValue="thresholdText(form.queueCriticalDays)"
+				:label="t('dossiq', 'Critical from, working days left')"
+				:error="!!thresholdErrors.queueCriticalDays"
+				:helperText="thresholdErrors.queueCriticalDays || thresholdHint"
+				inputmode="numeric"
+				data-testid="case-type-queue-critical-days"
+				@update:modelValue="
+					(v) => updateThreshold('queueCriticalDays', v, 60)
+				" />
+			<NcTextField
+				:modelValue="thresholdText(form.queueWarningDays)"
+				:label="t('dossiq', 'Almost due from, working days left')"
+				:error="!!thresholdErrors.queueWarningDays"
+				:helperText="thresholdErrors.queueWarningDays || thresholdHint"
+				inputmode="numeric"
+				data-testid="case-type-queue-warning-days"
+				@update:modelValue="
+					(v) => updateThreshold('queueWarningDays', v, 120)
+				" />
 		</div>
 
 		<!-- Extension Allowed -->
@@ -293,11 +334,13 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcCheckboxRadioSwitch, NcSelect, NcTextField } from '@nextcloud/vue'
 import DurationPicker from '../components/DurationPicker.vue'
+import { fetchNextcloudGroups } from '../../../services/nextcloudGroupsApi.js'
 import {
 	getConfidentialityOptions,
 	getOriginOptions,
 } from '../../../utils/caseTypeValidation.js'
 import { formatDuration } from '../../../utils/durationHelpers.js'
+import { readThresholdOverride } from '../../../utils/queueUrgencySettings.js'
 
 export default {
 	name: 'GeneralTab',
@@ -326,10 +369,76 @@ export default {
 		return {
 			iv3Taakvelden: [],
 			iv3TaakveldenLoading: false,
+			/** Bounds messages for the two queue thresholds, per field. */
+			thresholdErrors: {},
+			groups: [],
+			groupsLoading: false,
 		}
 	},
 
 	computed: {
+		/**
+		 * The hint under both queue thresholds.
+		 *
+		 * @return {string} The translated hint.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		thresholdHint() {
+			return t(
+				'dossiq',
+				'Leave empty to use the default from the admin settings.',
+			)
+		},
+
+		/**
+		 * The groups an administrator may name as handling teams.
+		 *
+		 * A team the case type already names but the instance no longer has is
+		 * kept as an option under its id, so saving does not drop it in silence.
+		 *
+		 * @return {Array<{id: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		handlingTeamOptions() {
+			const known = new Set(this.groups.map((group) => group.id))
+			const missing = this.handlingTeamIds
+				.filter((id) => !known.has(id))
+				.map((id) => ({ id, label: id }))
+
+			return [...this.groups, ...missing]
+		},
+
+		/**
+		 * The handling teams the case type declares, as group ids.
+		 *
+		 * @return {Array<string>} The ids.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		handlingTeamIds() {
+			const teams = this.form.handling?.teams
+
+			return Array.isArray(teams)
+				? teams.filter((id) => typeof id === 'string' && id !== '')
+				: []
+		},
+
+		/**
+		 * The selected options, in the declared order.
+		 *
+		 * @return {Array<{id: string, label: string}>} The options.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		selectedHandlingTeams() {
+			return this.handlingTeamIds.map(
+				(id) =>
+					this.handlingTeamOptions.find((option) => option.id === id) || {
+						id,
+						label: id,
+					},
+			)
+		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		originOptions() {
 			return getOriginOptions()
@@ -428,9 +537,78 @@ export default {
 
 	mounted() {
 		this.loadIv3Taakvelden()
+		this.loadGroups()
 	},
 
 	methods: {
+		/**
+		 * A stored threshold as the field shows it.
+		 *
+		 * @param {unknown} value The stored value.
+		 * @return {string} The text, '' when none is stored.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		thresholdText(value) {
+			return value === undefined || value === null ? '' : String(value)
+		},
+
+		/**
+		 * Write one queue threshold to the form, or say why not.
+		 *
+		 * Empty sends undefined, so the field is left off the saved case type
+		 * and the instance default applies; null is not written because the
+		 * schema declares an integer.
+		 *
+		 * @param {string} field 'queueCriticalDays' or 'queueWarningDays'.
+		 * @param {string} raw What the person typed.
+		 * @param {number} max The upper bound.
+		 *
+		 * @spec openspec/specs/case-types/spec.md
+		 */
+		updateThreshold(field, raw, max) {
+			const { value, error } = readThresholdOverride(raw, max)
+			this.thresholdErrors = { ...this.thresholdErrors, [field]: error }
+			if (!error) {
+				this.$emit('update', field, value)
+			}
+		},
+
+		/**
+		 * Write the chosen handling teams back into the whole handling block.
+		 *
+		 * The other switches of the block are kept: the form saves the block as
+		 * one value, so writing `teams` alone would drop the default group,
+		 * the handler, the messages and the intake screen.
+		 *
+		 * @param {Array<{id: string}>|null} options The chosen options.
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		updateHandlingTeams(options) {
+			const teams = (options || []).map((option) => option.id)
+			this.$emit('update', 'handling', {
+				...(this.form.handling || {}),
+				teams,
+			})
+		},
+
+		/**
+		 * Load the instance's groups once, for the handling teams picker.
+		 *
+		 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+		 */
+		async loadGroups() {
+			this.groupsLoading = true
+			try {
+				this.groups = await fetchNextcloudGroups()
+			} catch {
+				// Non-fatal: the picker keeps the declared teams under their ids.
+				this.groups = []
+			} finally {
+				this.groupsLoading = false
+			}
+		},
+
 		/**
 		 * Load the IV3 taakveld reference list once, for the picker's options.
 		 *
@@ -443,7 +621,7 @@ export default {
 					generateUrl('/apps/dossiq/api/reports/iv3/taakvelden'),
 				)
 				this.iv3Taakvelden = (res.data && res.data.taakvelden) || []
-			} catch (e) {
+			} catch {
 				// Non-fatal: the picker just shows no options when this fails.
 				this.iv3Taakvelden = []
 			} finally {
@@ -475,7 +653,7 @@ export default {
 
 .form-group label.required::after {
 	content: ' *';
-	color: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .general-tab__textarea {
@@ -510,7 +688,7 @@ export default {
 
 .field-error {
 	display: block;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 12px;
 	margin-top: 4px;
 }

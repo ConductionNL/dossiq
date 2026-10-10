@@ -62,6 +62,9 @@ class TermijnTimerRegistrar {
 			listener: TermijnTimerFiredListener::class
 		);
 
+		// The advice, bezwaar, DSO and milestone clocks, off their daily jobs.
+		(new DeadlineTimerRegistrar())->register(context: $context);
+
 		// A term runs only in the statuses it declares, so the clock is
 		// reconciled with the case's status after every save that landed. It
 		// reconciles rather than reacting to a transition: the question is

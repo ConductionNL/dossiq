@@ -43,6 +43,9 @@ $extra = [
         // Backend manifest delta — case-type navigation (case-type-navigation).
         // Consumed by useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' }).
     ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
+        // The case types each user chose for My case types (case-types-in-my-menu).
+    ['name' => 'menuCaseTypes#index',  'url' => '/api/menu-case-types', 'verb' => 'GET'],
+    ['name' => 'menuCaseTypes#update', 'url' => '/api/menu-case-types', 'verb' => 'PUT'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
     ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
@@ -675,7 +678,7 @@ $extra = [
         // ── VTH Module: checklist results, advice, LHS lookup ─
         // A DSO verzoek has no route here: integriq receives it and
         // VergunningaanvraagCreatedListener makes the case (one path).
-        // @spec openspec/changes/dso-single-intake-path/specs/vth-dso-integration/spec.md
+        // @spec openspec/specs/vth-dso-integration/spec.md
         // @spec openspec/changes/vth-module/tasks.md#task-8
     ['name' => 'lhs#lookup',          'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
 

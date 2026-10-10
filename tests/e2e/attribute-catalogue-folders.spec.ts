@@ -147,7 +147,7 @@ test.describe('The attribute catalogue is in folders', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/attribute-catalogue-folders/specs/property-definition-management/spec.md#attributes-by-folder
+	// @e2e openspec/specs/property-definition-management/spec.md#attributes-by-folder
 	// @e2e property-definition-management::attributes-by-folder
 	test('the category an administrator typed is stored and read back', async () => {
 		// The cheapest half of the chain, and the one that fails silently:
@@ -167,7 +167,7 @@ test.describe('The attribute catalogue is in folders', () => {
 		expect(row.category).toBe(ADDRESS)
 	})
 
-	// @e2e openspec/changes/attribute-catalogue-folders/specs/property-definition-management/spec.md#attributes-by-folder
+	// @e2e openspec/specs/property-definition-management/spec.md#attributes-by-folder
 	// @e2e property-definition-management::attributes-by-folder
 	test('the sidebar folders the catalogue, and picking one narrows it', async ({
 		page,
@@ -215,7 +215,7 @@ test.describe('The attribute catalogue is in folders', () => {
 		await expect(rows.filter({ hasText: AMOUNT })).toHaveCount(1)
 	})
 
-	// @e2e openspec/changes/attribute-catalogue-folders/specs/property-definition-management/spec.md#attributes-by-folder
+	// @e2e openspec/specs/property-definition-management/spec.md#attributes-by-folder
 	// @e2e property-definition-management::attributes-by-folder
 	test('an attribute with no category is still in the catalogue', async ({
 		page,
@@ -233,7 +233,7 @@ test.describe('The attribute catalogue is in folders', () => {
 		})
 	})
 
-	// @e2e openspec/changes/attribute-catalogue-folders/specs/property-definition-management/spec.md#grouped-picker
+	// @e2e openspec/specs/property-definition-management/spec.md#grouped-picker
 	// @e2e property-definition-management::grouped-picker
 	test('the picker on a case type groups its attributes under their categories', async ({
 		page,
@@ -266,7 +266,7 @@ test.describe('The attribute catalogue is in folders', () => {
 		expect(texts.some((text) => text.includes(RUN_PREFIX))).toBe(true)
 	})
 
-	// @e2e openspec/changes/attribute-catalogue-folders/specs/property-definition-management/spec.md#attributes-by-folder
+	// @e2e openspec/specs/property-definition-management/spec.md#attributes-by-folder
 	// @e2e property-definition-management::attributes-by-folder
 	test('the catalogue is not readable without a session', async ({
 		playwright,

@@ -151,7 +151,7 @@
 
 				<!-- Add new result type form -->
 				<div class="results-tab__add">
-					<h4>{{ t('dossiq', 'Add Result Type') }}</h4>
+					<h4>{{ t('dossiq', 'Add result type') }}</h4>
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
@@ -453,12 +453,12 @@ export default {
 
 .badge--retain {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .badge--destroy {
 	background: var(--color-warning);
-	color: white;
+	color: var(--color-warning-text);
 }
 
 .result-type-row__period {
@@ -526,13 +526,13 @@ export default {
 }
 
 .results-tab__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 
 .field-error {
 	display: block;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 12px;
 	margin-bottom: 8px;
 }

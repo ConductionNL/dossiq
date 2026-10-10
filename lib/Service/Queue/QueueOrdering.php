@@ -63,19 +63,25 @@ class QueueOrdering {
 	/**
 	 * Score one item.
 	 *
-	 * @param QueueItem         $item The item.
-	 * @param DateTimeImmutable $now  The moment to score against.
+	 * @param QueueItem           $item    The item.
+	 * @param DateTimeImmutable   $now     The moment to score against.
+	 * @param UrgencyProfile|null $profile The thresholds and weights; null reads the admin's.
 	 *
-	 * @return array<string, mixed> The scorer's verdict: tier, days, score and breakdown.
+	 * @return array<string, mixed> The scorer's verdict: deadline tier, days, score and breakdown.
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
-	public function score(QueueItem $item, DateTimeImmutable $now): array {
+	public function score(QueueItem $item, DateTimeImmutable $now, ?UrgencyProfile $profile = null): array {
+		// No reference date: a queue item does not carry the case's last
+		// activity, so the personal queue has no idle part. Nor does it know
+		// the case type, so the admin thresholds apply.
 		return $this->scorer->scoreItem(
 			deadline: $item->dueAt,
 			priority: $item->priority,
 			referenceDate: null,
-			now: $now
+			now: $now,
+			profile: ($profile ?? $this->scorer->adminProfile())
 		);
 	}//end score()
 
@@ -90,9 +96,10 @@ class QueueOrdering {
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 	 */
 	public function order(array $items, DateTimeImmutable $now): array {
+		$profile = $this->scorer->adminProfile();
 		$scored = [];
 		foreach ($items as $item) {
-			$verdict = $this->score(item: $item, now: $now);
+			$verdict = $this->score(item: $item, now: $now, profile: $profile);
 			$scored[] = array_merge($item->jsonSerialize(), $verdict);
 		}
 

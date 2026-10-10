@@ -60,7 +60,7 @@ class Notifier implements INotifier {
 	public const SUBJECT_CASE_ROLE_NOTIFIED = 'case_role_notified';
 
 	/**
-	 * The subject key BottleneckDetectionJob dispatches for a stalled milestone.
+	 * The subject key MilestoneStallActs dispatches for a stalled milestone.
 	 */
 	public const SUBJECT_MILESTONE_BOTTLENECK = 'milestone_bottleneck';
 
@@ -369,7 +369,7 @@ class Notifier implements INotifier {
 	/**
 	 * The `milestone_bottleneck` wording.
 	 *
-	 * BottleneckDetectionJob also stores a raw `plain` message in hardcoded
+	 * MilestoneStallActs also stores a raw `plain` message in hardcoded
 	 * Dutch. Whatever `prepare()` parses wins on screen, so from here the
 	 * recipient reads their own language. The raw message is left where it is:
 	 * it sits in stored notification rows, and rewriting those is a data
@@ -481,7 +481,7 @@ class Notifier implements INotifier {
 	 * The five deadline wordings.
 	 *
 	 * The Woo keys carry `daysRemaining`; the permit keys carry only the case,
-	 * because DsoDeadlineJob decides the tier itself and sends the tier rather
+	 * because DsoDeadlineTimerFiredListener decides the tier itself and sends the tier rather
 	 * than the count. So the Woo warning names a number and the permit warning
 	 * does not, which is the honest split: inventing a count the sender never
 	 * measured would read as precision the notification does not have.
