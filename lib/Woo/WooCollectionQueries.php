@@ -84,7 +84,7 @@ class WooCollectionQueries {
 	 */
 	public function store(string $caseId, array $search, string $userId): array {
 		$source = (string)($search['source'] ?? '');
-		if (WooSources::isKnown(source: $source) === false) {
+		if (in_array($source, [WooSources::SOURCE_FILES, WooSources::SOURCE_CASES, WooSources::SOURCE_MICROSOFT365], true) === false) {
 			throw new WooCorpusRefused(reason: 'unknown_source', status: 400);
 		}
 
@@ -284,11 +284,12 @@ class WooCollectionQueries {
 	private function save(array $row, string $uuid): array {
 		[$objectService, $register, $schema] = $this->target();
 		unset($row['id'], $row['uuid'], $row['@self']);
-		if ($uuid === '') {
-			$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema);
-		} else {
-			$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $uuid);
+		$existing = null;
+		if ($uuid !== '') {
+			$existing = $uuid;
 		}
+
+		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $existing);
 
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			$saved = $saved->jsonSerialize();

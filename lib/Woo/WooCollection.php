@@ -205,6 +205,27 @@ class WooCollection {
 	}//end record()
 
 	/**
+	 * The case document holding the same bytes, or ''.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param string $sha256 The candidate's hash.
+	 *
+	 * @return string The document uuid, or ''.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
+	 */
+	public function duplicateOf(string $caseId, string $sha256): string {
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$record = ($this->store->findRecord(recordId: $documentId) ?? []);
+			if ((string)($record['integrity']['value'] ?? '') === $sha256) {
+				return $documentId;
+			}
+		}
+
+		return '';
+	}//end duplicateOf()
+
+	/**
 	 * Every exclusion of the case.
 	 *
 	 * @param string $caseId The case uuid.

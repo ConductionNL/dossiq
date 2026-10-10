@@ -74,12 +74,8 @@ class WooStartFromListener implements IEventListener {
 			return;
 		}
 
-		$object = $event->getObject();
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$object = $object->jsonSerialize();
-		}
-
-		if (is_array($object) === false) {
+		$object = $this->payload(event: $event);
+		if ($object === null) {
 			return;
 		}
 
@@ -98,4 +94,24 @@ class WooStartFromListener implements IEventListener {
 			$this->logger->warning('Dossiq Woo: the earlier request could not be copied', ['case' => $caseId, 'from' => $from, 'error' => $e->getMessage()]);
 		}
 	}//end handle()
+
+	/**
+	 * The created object as an array, or null.
+	 *
+	 * @param ObjectCreatedEvent $event The event.
+	 *
+	 * @return array<string, mixed>|null The object.
+	 */
+	private function payload(ObjectCreatedEvent $event): ?array {
+		$object = $event->getObject();
+		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+			$object = $object->jsonSerialize();
+		}
+
+		if (is_array($object) === false) {
+			return null;
+		}
+
+		return $object;
+	}//end payload()
 }//end class

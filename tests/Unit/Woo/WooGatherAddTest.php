@@ -266,7 +266,6 @@ class WooGatherAddTest extends TestCase {
 			l10n: $l10n,
 			logger: $this->createMock(LoggerInterface::class),
 			collection: $collection,
-			caseDocuments: $caseDocuments,
 		);
 	}//end service()
 

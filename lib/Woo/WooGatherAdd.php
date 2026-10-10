@@ -49,7 +49,6 @@ use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -70,7 +69,6 @@ class WooGatherAdd {
 	 * @param IL10N                     $l10n        The refusal sentences.
 	 * @param LoggerInterface           $logger      Logs a pick that failed for a reason the caller cannot fix.
 	 * @param WooCollection             $collection  Records a duplicate or unreadable pick as an exclusion.
-	 * @param WooCaseDocuments          $caseDocuments The case's documents, for the duplicate check.
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
@@ -81,7 +79,6 @@ class WooGatherAdd {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly WooCollection $collection,
-		private readonly WooCaseDocuments $caseDocuments,
 	) {
 	}//end __construct()
 
@@ -266,12 +263,12 @@ class WooGatherAdd {
 	 *
 	 * @return string The document record uuid.
 	 *
-	 * @throws RuntimeException When the file cannot be stored or no record results.
+	 * @throws WooPickRefused   `write-failed` when the file cannot be read back or no record results.
 	 * @throws WooPickRefused   `duplicate` when the case holds the same bytes; recorded as an exclusion.
 	 */
 	private function store(string $caseId, string $fileName, string $content, array $provenance): string {
 		$sha256 = hash('sha256', $content);
-		$duplicateOf = $this->duplicateOf(caseId: $caseId, sha256: $sha256);
+		$duplicateOf = $this->collection->duplicateOf(caseId: $caseId, sha256: $sha256);
 		if ($duplicateOf !== '') {
 			$this->collection->record(
 				caseId: $caseId,
@@ -291,7 +288,7 @@ class WooGatherAdd {
 
 		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
 		if ($fileId <= 0) {
-			throw new RuntimeException('The stored file could not be read back');
+			throw new WooPickRefused('write-failed');
 		}
 
 		$record = $this->store->findRecord(fileId: $fileId);
@@ -300,7 +297,7 @@ class WooGatherAdd {
 		}
 
 		if ($record === null) {
-			throw new RuntimeException('The stored file did not become a document on the case');
+			throw new WooPickRefused('write-failed');
 		}
 
 		$record['provenance'] = $provenance;
@@ -332,25 +329,6 @@ class WooGatherAdd {
 
 		return null;
 	}//end projectStoredFile()
-
-	/**
-	 * The case document holding the same bytes, or ''.
-	 *
-	 * @param string $caseId The case uuid.
-	 * @param string $sha256 The candidate's hash.
-	 *
-	 * @return string The document uuid, or ''.
-	 */
-	private function duplicateOf(string $caseId, string $sha256): string {
-		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
-			$record = ($this->store->findRecord(recordId: $documentId) ?? []);
-			if ((string)($record['integrity']['value'] ?? '') === $sha256) {
-				return $documentId;
-			}
-		}
-
-		return '';
-	}//end duplicateOf()
 
 	/**
 	 * Record a pick that could not be read as an exclusion, so what arrived reconciles.

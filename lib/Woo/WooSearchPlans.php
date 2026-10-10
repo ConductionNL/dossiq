@@ -292,11 +292,12 @@ class WooSearchPlans {
 		[$objectService, $register, $schema] = $this->target(configKey: $configKey);
 		unset($row['id'], $row['uuid'], $row['@self']);
 
-		if ($uuid === '') {
-			$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema);
-		} else {
-			$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $uuid);
+		$existing = null;
+		if ($uuid !== '') {
+			$existing = $uuid;
 		}
+
+		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $existing);
 
 		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
 			$saved = $saved->jsonSerialize();
