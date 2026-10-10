@@ -36,12 +36,24 @@ function caseForms() {
 	for (const page of manifest.pages) {
 		const config = page.config || {}
 		if (config.schema === 'case' && Array.isArray(config.includeFields)) {
-			forms.push({ where: `${page.id}.config`, page: page.id, includeFields: config.includeFields })
+			forms.push({
+				where: `${page.id}.config`,
+				page: page.id,
+				includeFields: config.includeFields,
+			})
 		}
 		for (const action of config.headerActions || []) {
 			const schema = action.schema || config.schema
-			if (schema === 'case' && action.type === 'open-form' && Array.isArray(action.includeFields)) {
-				forms.push({ where: `${page.id}.headerActions.${action.id}`, page: page.id, includeFields: action.includeFields })
+			if (
+				schema === 'case'
+				&& action.type === 'open-form'
+				&& Array.isArray(action.includeFields)
+			) {
+				forms.push({
+					where: `${page.id}.headerActions.${action.id}`,
+					page: page.id,
+					includeFields: action.includeFields,
+				})
 			}
 		}
 	}
@@ -83,7 +95,9 @@ describe('the create forms leave the receipt to dossiq', () => {
 	})
 
 	it('asks for no start date on any of them', () => {
-		const asking = createForms.filter((form) => form.includeFields.includes('startDate')).map((form) => form.where)
+		const asking = createForms
+			.filter((form) => form.includeFields.includes('startDate'))
+			.map((form) => form.where)
 		expect(asking).toEqual([])
 	})
 
@@ -98,8 +112,14 @@ describe('the create forms leave the receipt to dossiq', () => {
 
 	it('does not require the Woo receipt question, in the seed or the template', () => {
 		const definitions = [
-			...collect(wooFragment, (node) => node.name === 'receiptDate' && 'propertyType' in node),
-			...collect(wooTemplate, (node) => node.name === 'receiptDate' && 'propertyType' in node),
+			...collect(
+				wooFragment,
+				(node) => node.name === 'receiptDate' && 'propertyType' in node,
+			),
+			...collect(
+				wooTemplate,
+				(node) => node.name === 'receiptDate' && 'propertyType' in node,
+			),
 		]
 		expect(definitions).toHaveLength(2)
 		for (const definition of definitions) {
