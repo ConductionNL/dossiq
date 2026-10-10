@@ -84,7 +84,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
+	// @e2e openspec/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
 	//
 	// The date matters more than the row does. A lens that listed the case
 	// with an empty "recover until" cell would satisfy a presence assertion
@@ -118,7 +118,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(typeof row.daysRemaining).toBe('number')
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
+	// @e2e openspec/specs/case-management/spec.md#a-bezwaar-deleted-by-mistake-is-still-there
 	//
 	// The same scenario through the page a handler actually opens, because the
 	// endpoint answering correctly and the lens rendering are two facts. The
@@ -147,7 +147,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		await expect(row.getByTestId(`restore-${caseId}`)).toBeVisible()
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#the-guard-still-refuses-what-it-refused-before
+	// @e2e openspec/specs/case-management/spec.md#the-guard-still-refuses-what-it-refused-before
 	//
 	// The control on the whole change: the recovery window must not have
 	// turned the delete guard into a formality. A case with a running term is
@@ -187,7 +187,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		).toBe(false)
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-case-is-got-back
+	// @e2e openspec/specs/case-management/spec.md#a-case-is-got-back
 	//
 	// The restore is asserted twice: the case is live again, AND the act was
 	// recorded. A restore that worked and recorded nothing leaves a trail
@@ -231,7 +231,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		).toBeLessThan(500)
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#only-the-declared-role-destroys
+	// @e2e openspec/specs/case-management/spec.md#only-the-declared-role-destroys
 	//
 	// Playwright runs as admin, and an admin holds every right, so the
 	// assertion that a handler WITHOUT the role is refused cannot be made
@@ -261,7 +261,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		expect(body.deletionWindow).toBeTruthy()
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#nothing-survives-a-destruction
+	// @e2e openspec/specs/case-management/spec.md#nothing-survives-a-destruction
 	//
 	// The window is a refusal and not decoration: inside it the case can still
 	// come back, so destroying it needs the window waived explicitly. This
@@ -299,7 +299,7 @@ test.describe('A deleted case is recoverable, and destroying it is a second act'
 		).toBe(true)
 	})
 
-	// @e2e openspec/changes/case-recycle-window/specs/case-management/spec.md#a-case-whose-purpose-ended-is-still-archived
+	// @e2e openspec/specs/case-management/spec.md#a-case-whose-purpose-ended-is-still-archived
 	//
 	// The two clocks come back as two values with two labels. The assertion is
 	// on the SEPARATION, not on either date: a single date field answered

@@ -128,17 +128,16 @@ const CASE_LENSES = [
 	// person raised. They are the everyday two, which is why they are pills.
 	'Waiting on the applicant',
 	'Needs attention',
-	// Three lenses over per-user platform state rather than a field of the case
-	// (case-number-and-favourites row 2.19, openregister#3766; case-followers
-	// row 13.18, openregister `object-watchers`). They answer about YOU, not
-	// about the case: the star you set, the cases you subscribed to and the
-	// ones you last opened. Followed sits next to Favourites because both
-	// answer "which cases did I pick out", and before Recently opened because
-	// a case you chose outranks one you happened to open. All three are behind
-	// the '⋯' chip rather than in the strip: the cap keeps the pills for the
-	// lenses a handler reaches for every morning.
-	'Favourites',
-	'Followed',
+	// Two lenses over per-user platform state rather than a field of the case
+	// (case-followers row 13.18, openregister `object-watchers`;
+	// case-number-and-favourites row 2.19). They answer about YOU, not about
+	// the case: the cases you follow and the ones you last opened. Following
+	// is the one lens for the cases you picked out since a favourite became a
+	// follow with notifications off (one-follow-control), and it sits before
+	// Recently opened because a case you chose outranks one you happened to
+	// open. Both are behind the '⋯' chip rather than in the strip: the cap
+	// keeps the pills for the lenses a handler reaches for every morning.
+	'Following',
 	'Recently opened',
 	// The risk this organisation assessed
 	// (markers-and-assessments-on-the-case row 2.40, #2837). It sits before
@@ -191,8 +190,7 @@ const CASE_LENSES = [
  */
 const CASES_ONLY = [
 	'Unread',
-	'Favourites',
-	'Followed',
+	'Following',
 	'Recently opened',
 	'Waiting on the applicant',
 	'Needs attention',
