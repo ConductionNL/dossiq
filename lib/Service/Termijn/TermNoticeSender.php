@@ -33,6 +33,13 @@
  * does not ask again for that notice; a failure that may pass (integriq absent,
  * no sender address, the mail server down) gives the claim back.
  *
+ * THE TRANSPORT IS CONFIGURATION (decisions 165 and 182). A notice leaves
+ * through {@see OutboundCaseMail} as kind `notice`, so
+ * {@see MailTransportPolicy} decides whether it goes out through Nextcloud's
+ * IMailer (the default: it carries the RFC 8058 headers) or through the
+ * Nextcloud Mail account the case type sends from. This class builds no
+ * message and holds no sender address of its own.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service\Termijn
  *
@@ -57,12 +64,12 @@ namespace OCA\Dossiq\Service\Termijn;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
+use OCA\Dossiq\Service\Email\MailTransportPolicy;
+use OCA\Dossiq\Service\Email\OutboundCaseMail;
 use OCA\Dossiq\Service\OptOutGate;
-use OCP\IAppConfig;
-use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Mails one term notice, once, if integriq allows it.
@@ -92,17 +99,27 @@ class TermNoticeSender {
 	private const WISHES = ['opted-out', 'no-consent'];
 
 	/**
+	 * A refusal of the outbound mail, as the notice's reason code.
+	 *
+	 * The two that predate the transport policy keep their codes, so a
+	 * caller's record and the daily sweep read them as before.
+	 */
+	private const OUTBOUND_CODES = [
+		'mail-sender-not-configured' => 'no-sender-address',
+		'mail-transport-unavailable' => 'mail-failed',
+		'mail-account-unavailable' => 'mail-failed',
+	];
+
+	/**
 	 * Constructor.
 	 *
-	 * @param IMailer         $mailer    Nextcloud's mailer.
-	 * @param IAppConfig      $appConfig Holds the sender address.
-	 * @param CaseMailOptOut  $optOut    Asks integriq and places its link and headers.
+	 * @param OutboundCaseMail $outbound Sends the notice through the transport its kind is configured for.
+	 * @param CaseMailOptOut   $optOut   Asks integriq whether the notice may go.
 	 * @param TermNoticeLedger $ledger   Keeps each notice to one send.
-	 * @param LoggerInterface $logger    Logger.
+	 * @param LoggerInterface  $logger   Logger.
 	 */
 	public function __construct(
-		private readonly IMailer $mailer,
-		private readonly IAppConfig $appConfig,
+		private readonly OutboundCaseMail $outbound,
 		private readonly CaseMailOptOut $optOut,
 		private readonly TermNoticeLedger $ledger,
 		private readonly LoggerInterface $logger,
@@ -136,6 +153,8 @@ class TermNoticeSender {
 	 * @param string $subject    The subject.
 	 * @param string $body       The body, as plain text.
 	 * @param string $dedupeKey  The caller's name for this notice, or '' to key on its content.
+	 * @param array<string, mixed> $case The case row, when the caller has it: a notice
+	 *        configured to the Mail account then leaves from the account its case type names.
 	 *
 	 * @return array<string, mixed> The delivery record.
 	 *
@@ -152,6 +171,7 @@ class TermNoticeSender {
 		string $subject,
 		string $body,
 		string $dedupeKey = '',
+		array $case = [],
 	): array {
 		$address = strtolower(trim($recipient));
 		if (filter_var($address, FILTER_VALIDATE_EMAIL) === false) {
@@ -186,6 +206,7 @@ class TermNoticeSender {
 
 		$this->deliver(
 			key: $key,
+			case: $case,
 			address: $address,
 			subject: $subject,
 			body: $body,
@@ -257,9 +278,10 @@ class TermNoticeSender {
 	}//end claimOrEarlier()
 
 	/**
-	 * Build and hand the mail to the mailer.
+	 * Hand the notice to the outbound mail, as kind `notice`.
 	 *
 	 * @param string                   $key         The notice key, released on failure.
+	 * @param array<string, mixed>     $case        The case row, or [].
 	 * @param string                   $address     The address.
 	 * @param string                   $subject     The subject.
 	 * @param string                   $body        The plain text body.
@@ -267,40 +289,27 @@ class TermNoticeSender {
 	 *
 	 * @return void
 	 *
-	 * @throws NoticeNotSentException When there is no sender address or the mailer refuses.
+	 * @throws NoticeNotSentException When there is no sender or the transport took nothing.
 	 */
-	private function deliver(string $key, string $address, string $subject, string $body, ?array $unsubscribe): void {
-		$from = trim($this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''));
-		if ($from === '' || str_ends_with($from, '@example.nl') === true) {
-			$this->ledger->release(key: $key);
-			$this->logger->warning(
-				'Dossiq term notice not sent: email_from_address is not configured',
-				['app' => Application::APP_ID]
-			);
-			throw new NoticeNotSentException(reasonCode: 'no-sender-address', reason: 'No sender address is configured.');
-		}
-
-		$fromName = $this->appConfig->getValueString(Application::APP_ID, 'email_from_name', 'Dossiq');
-
+	private function deliver(string $key, array $case, string $address, string $subject, string $body, ?array $unsubscribe): void {
 		try {
-			$message = $this->mailer->createMessage();
-			$message->setFrom([$from => $fromName]);
-			$message->setTo([$address]);
-			$message->setSubject($subject);
-			$this->optOut->dress(
-				message: $message,
+			$sender = $this->outbound->senderFor(caseData: $case, kind: MailTransportPolicy::KIND_NOTICE);
+			$this->outbound->send(
+				sender: $sender,
+				to: $address,
+				subject: $subject,
 				body: nl2br(htmlspecialchars($body, ENT_QUOTES)),
 				unsubscribe: $unsubscribe,
 				plain: $body,
 			);
-			$this->mailer->send($message);
-		} catch (Throwable $e) {
+		} catch (RefusedException $e) {
 			$this->ledger->release(key: $key);
-			$this->logger->error(
-				'Dossiq term notice not sent: the mailer refused it',
-				['app' => Application::APP_ID, 'exception' => $e]
+			$code = (self::OUTBOUND_CODES[$e->getRule()] ?? $e->getRule());
+			$this->logger->warning(
+				'Dossiq term notice not sent: the outbound mail refused it',
+				['app' => Application::APP_ID, 'code' => $code, 'rule' => $e->getRule()]
 			);
-			throw new NoticeNotSentException(reasonCode: 'mail-failed', reason: 'The mail server did not accept the notice.');
+			throw new NoticeNotSentException(reasonCode: $code, reason: $e->getSentence());
 		}
 	}//end deliver()
 

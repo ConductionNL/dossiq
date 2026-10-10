@@ -118,6 +118,7 @@ class OutboundCaseMail {
 	 * @param string                   $body        The HTML body as written.
 	 * @param array<string,mixed>|null $unsubscribe integriq's link material, or null for an exempt mail.
 	 * @param array<int, string>       $attachments Paths in the sending user's own files.
+	 * @param string|null              $plain       The plain body as written, when the mail has one; else the HTML without tags.
 	 *
 	 * @return array{state: string, outboxId: int|null} SENT, SENT_NOT_FILED or QUEUED.
 	 *
@@ -132,13 +133,14 @@ class OutboundCaseMail {
 		string $body,
 		?array $unsubscribe,
 		array $attachments = [],
+		?string $plain = null,
 	): array {
 		if ($sender['transport'] === MailTransportPolicy::TRANSPORT_MAIL_ACCOUNT) {
 			return $this->throughAccount(
 				account: (array)$sender['account'],
 				to: $to,
 				subject: $subject,
-				bodies: $this->optOut->bodies(body: $body, unsubscribe: $unsubscribe),
+				bodies: $this->optOut->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain),
 				attachments: $attachments
 			);
 		}
@@ -157,7 +159,7 @@ class OutboundCaseMail {
 		);
 		$message->setTo([$to]);
 		$message->setSubject($subject);
-		$this->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe);
+		$this->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe, plain: $plain);
 
 		try {
 			$this->mailer->send($message);
