@@ -95,7 +95,7 @@ class WooGatherAdd {
 	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-picked-results-become-documents-on-the-case-req-woo-013
 	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-every-gathered-document-records-where-it-was-found-req-woo-014
 	 */
-	public function add(string $caseId, array $picks, string $terms, IUser $user): array {
+	public function addPicks(string $caseId, array $picks, string $terms, IUser $user): array {
 		$results = [];
 		foreach ($picks as $pick) {
 			if (is_array($pick) === false) {
@@ -106,7 +106,7 @@ class WooGatherAdd {
 		}
 
 		return $results;
-	}//end add()
+	}//end addPicks()
 
 	/**
 	 * Add one pick.

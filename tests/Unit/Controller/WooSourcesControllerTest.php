@@ -190,7 +190,7 @@ class WooSourcesControllerTest extends TestCase {
 
 	public function testTheAddAnswersEachPickAndRefusesWhenNoneWasAdded(): void {
 		$this->params = ['picks' => json_encode([['source' => 'files', 'key' => '11'], ['source' => 'files', 'key' => '13']]), 'terms' => 'Stationsweg'];
-		$this->gatherAdd->expects(self::exactly(2))->method('add')->willReturnOnConsecutiveCalls(
+		$this->gatherAdd->expects(self::exactly(2))->method('addPicks')->willReturnOnConsecutiveCalls(
 			[['key' => '11', 'status' => 'added'], ['key' => '13', 'status' => 'refused']],
 			[['key' => '13', 'status' => 'refused']],
 		);
@@ -205,7 +205,7 @@ class WooSourcesControllerTest extends TestCase {
 	}//end testTheAddAnswersEachPickAndRefusesWhenNoneWasAdded()
 
 	public function testTheAddRefusesNoPicksAndACallerWithoutCaseAccess(): void {
-		$this->gatherAdd->expects(self::never())->method('add');
+		$this->gatherAdd->expects(self::never())->method('addPicks');
 
 		$this->params = ['picks' => []];
 		self::assertSame(Http::STATUS_BAD_REQUEST, $this->controller()->add(id: self::CASE_ID)->getStatus());

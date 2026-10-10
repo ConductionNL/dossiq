@@ -173,7 +173,7 @@ class WooSourcesController extends Controller {
 			return new JSONResponse(['error' => 'picks_required', 'message' => $this->l10n->t('Pick at least one result to add.')], Http::STATUS_BAD_REQUEST);
 		}
 
-		$results = $this->gatherAdd->add(
+		$results = $this->gatherAdd->addPicks(
 			caseId: $id,
 			picks: array_values($picks),
 			terms: trim((string)$this->request->getParam('terms', '')),

@@ -280,7 +280,7 @@ class WooGatherAddTest extends TestCase {
 		$this->userFiles[12] = $this->fileDouble(path: '/pjansen/files/Team Verkeer/memo.pdf', fileId: 12, content: 'memo');
 		$this->userFiles[13] = $this->fileDouble(path: '/pjansen/files/Directie/geheim.pdf', fileId: 13, content: 'geheim', readable: false);
 
-		$results = $this->service()->add(
+		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
 			picks: [
 				['source' => 'files', 'key' => '11', 'location' => 'Team Ruimte'],
@@ -306,7 +306,7 @@ class WooGatherAddTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFileOutsideTheCallersFolderIsRefused(): void {
-		$results = $this->service()->add(caseId: self::CASE_ID, picks: [['source' => 'files', 'key' => '77']], terms: 'x', user: $this->user);
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'key' => '77']], terms: 'x', user: $this->user);
 
 		self::assertSame('refused', $results[0]['status']);
 		self::assertSame('not-readable', $results[0]['reason']);
@@ -321,7 +321,7 @@ class WooGatherAddTest extends TestCase {
 	public function testTheAddedDocumentRecordsWhereItWasFound(): void {
 		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/Team Ruimte/notulen.pdf', fileId: 11, content: 'notulen');
 
-		$results = $this->service()->add(
+		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
 			picks: [['source' => 'files', 'key' => '11', 'location' => 'Team Ruimte/notulen.pdf']],
 			terms: 'bouwvergunning 2024',
@@ -348,7 +348,7 @@ class WooGatherAddTest extends TestCase {
 	 * @return void
 	 */
 	public function testADocumentOfAnotherCaseIsLinkedNotCopied(): void {
-		$results = $this->service()->add(
+		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
 			picks: [['source' => 'cases', 'key' => self::LINKED_DOC, 'location' => 'Omgevingsvergunning Stationsweg']],
 			terms: 'Stationsweg',
@@ -377,16 +377,16 @@ class WooGatherAddTest extends TestCase {
 	 */
 	public function testALinkTheCallerMayNotReadOrAlreadyHasIsRefused(): void {
 		$this->readsOtherCase = false;
-		$refused = $this->service()->add(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
+		$refused = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
 		self::assertSame('not-readable', $refused[0]['reason']);
 
 		$this->readsOtherCase = true;
 		$service = $this->service();
-		$service->add(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
-		$again = $service->add(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
+		$service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
+		$again = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
 		self::assertSame('already-on-case', $again[0]['reason']);
 
-		$missing = $service->add(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => 'no-such-document']], terms: 'x', user: $this->user);
+		$missing = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => 'no-such-document']], terms: 'x', user: $this->user);
 		self::assertSame('not-found', $missing[0]['reason']);
 	}//end testALinkTheCallerMayNotReadOrAlreadyHasIsRefused()
 
@@ -398,7 +398,7 @@ class WooGatherAddTest extends TestCase {
 	public function testAnIntegriqHitIsFetchedIntoTheCaseFolder(): void {
 		$this->fetchable['driveItem:d1:i1'] = ['fileName' => 'raadsvoorstel.docx', 'mimeType' => 'application/msword', 'content' => 'voorstel'];
 
-		$results = $this->service()->add(
+		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
 			picks: [
 				['source' => 'microsoft365', 'key' => 'driveItem:d1:i1', 'location' => 'Ruimte / Gedeelde documenten'],
@@ -424,7 +424,7 @@ class WooGatherAddTest extends TestCase {
 		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/a.pdf', fileId: 11, content: 'a');
 		$this->register->seed('informatieobject', 'listener-made', ['fileId' => 900, 'fileName' => 'a.pdf', 'title' => 'a']);
 
-		$results = $this->service()->add(caseId: self::CASE_ID, picks: [['source' => 'files', 'key' => '11']], terms: 't', user: $this->user);
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'key' => '11']], terms: 't', user: $this->user);
 
 		self::assertSame('listener-made', $results[0]['documentId']);
 		self::assertCount(2, $this->register->all('informatieobject'), 'the seeded linked doc and the listener\'s record, nothing more');
