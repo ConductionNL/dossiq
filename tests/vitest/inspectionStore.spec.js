@@ -44,13 +44,23 @@ describe('inspection store (stack A)', () => {
 		setActivePinia(createPinia())
 		vi.clearAllMocks()
 		vi.spyOn(console, 'error').mockImplementation(() => {})
-		objectStore.saveObject.mockImplementation(async (schema, data) => ({ id: data.id || 'new-id', ...data }))
+		objectStore.saveObject.mockImplementation(async (schema, data) => ({
+			id: data.id || 'new-id',
+			...data,
+		}))
 	})
 
 	it('reads templates from inspectionChecklistTemplate, scoped to the case type, with section items flattened', async () => {
 		objectStore.fetchCollection.mockResolvedValue({
 			results: [
-				{ id: 'c1', status: 'active', sections: [{ items: [{ id: 'a', label: 'A' }] }, { items: [{ id: 'b', label: 'B' }] }] },
+				{
+					id: 'c1',
+					status: 'active',
+					sections: [
+						{ items: [{ id: 'a', label: 'A' }] },
+						{ items: [{ id: 'b', label: 'B' }] },
+					],
+				},
 				{ id: 'c2', status: 'retired', sections: [] },
 			],
 		})
@@ -58,27 +68,46 @@ describe('inspection store (stack A)', () => {
 
 		await store.fetchChecklists('type-1')
 
-		expect(objectStore.fetchCollection).toHaveBeenCalledWith('inspectionChecklistTemplate', { caseType: 'type-1', limit: 100 })
+		expect(objectStore.fetchCollection).toHaveBeenCalledWith(
+			'inspectionChecklistTemplate',
+			{ caseType: 'type-1', limit: 100 },
+		)
 		expect(store.activeChecklists.map((c) => c.id)).toEqual(['c1'])
 		expect(store.activeChecklists[0].items.map((i) => i.id)).toEqual(['a', 'b'])
 	})
 
 	it('reads reports from inspectieRapport, scoped to the case', async () => {
-		objectStore.fetchCollection.mockResolvedValue([{ id: 'r1', result: 'conform' }, { id: 'r2', result: 'partly_conform' }])
+		objectStore.fetchCollection.mockResolvedValue([
+			{ id: 'r1', result: 'conform' },
+			{ id: 'r2', result: 'partly_conform' },
+		])
 		const store = useInspectionStore()
 
 		await store.fetchReports('case-1')
 
-		expect(objectStore.fetchCollection).toHaveBeenCalledWith('inspectieRapport', { case: 'case-1', limit: 100 })
+		expect(objectStore.fetchCollection).toHaveBeenCalledWith(
+			'inspectieRapport',
+			{ case: 'case-1', limit: 100 },
+		)
 		expect(store.nonConformReports.map((r) => r.id)).toEqual(['r2'])
 	})
 
 	it('writes a report with every item passed as conform and opens no follow-up', async () => {
 		const store = useInspectionStore()
 
-		const saved = await store.createReport({ case: 'case-1', items: [{ result: 'pass' }, { result: 'nvt' }] })
+		const saved = await store.createReport({
+			case: 'case-1',
+			items: [{ result: 'pass' }, { result: 'nvt' }],
+		})
 
-		expect(objectStore.saveObject).toHaveBeenCalledWith('inspectieRapport', expect.objectContaining({ result: 'conform', failedItems: 0, followUpRequired: false }))
+		expect(objectStore.saveObject).toHaveBeenCalledWith(
+			'inspectieRapport',
+			expect.objectContaining({
+				result: 'conform',
+				failedItems: 0,
+				followUpRequired: false,
+			}),
+		)
 		expect(saved.result).toBe('conform')
 		expect(engineTaskStore.create).not.toHaveBeenCalled()
 	})
@@ -86,25 +115,50 @@ describe('inspection store (stack A)', () => {
 	it('calls a report partly conform when some applicable items fail, and opens a follow-up task', async () => {
 		const store = useInspectionStore()
 
-		await store.createReport({ case: 'case-1', items: [{ result: 'fail' }, { result: 'pass' }, { result: 'nvt' }] })
+		await store.createReport({
+			case: 'case-1',
+			items: [{ result: 'fail' }, { result: 'pass' }, { result: 'nvt' }],
+		})
 
-		expect(objectStore.saveObject).toHaveBeenCalledWith('inspectieRapport', expect.objectContaining({ result: 'partly_conform', failedItems: 1, followUpRequired: true }))
-		expect(engineTaskStore.create).toHaveBeenCalledWith(expect.objectContaining({ case: 'case-1', status: 'available', relatedObject: 'new-id' }))
+		expect(objectStore.saveObject).toHaveBeenCalledWith(
+			'inspectieRapport',
+			expect.objectContaining({
+				result: 'partly_conform',
+				failedItems: 1,
+				followUpRequired: true,
+			}),
+		)
+		expect(engineTaskStore.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				case: 'case-1',
+				status: 'available',
+				relatedObject: 'new-id',
+			}),
+		)
 	})
 
 	it('calls a report non conform when every applicable item fails; nvt items do not save it', async () => {
 		const store = useInspectionStore()
 
-		await store.createReport({ case: 'case-1', items: [{ result: 'fail' }, { result: 'nvt' }] })
+		await store.createReport({
+			case: 'case-1',
+			items: [{ result: 'fail' }, { result: 'nvt' }],
+		})
 
-		expect(objectStore.saveObject).toHaveBeenCalledWith('inspectieRapport', expect.objectContaining({ result: 'non_conform', failedItems: 1 }))
+		expect(objectStore.saveObject).toHaveBeenCalledWith(
+			'inspectieRapport',
+			expect.objectContaining({ result: 'non_conform', failedItems: 1 }),
+		)
 	})
 
 	it('keeps the error and returns null when the report cannot be written', async () => {
 		objectStore.saveObject.mockRejectedValue(new Error('schema refused'))
 		const store = useInspectionStore()
 
-		const saved = await store.createReport({ case: 'case-1', items: [{ result: 'fail' }] })
+		const saved = await store.createReport({
+			case: 'case-1',
+			items: [{ result: 'fail' }],
+		})
 
 		expect(saved).toBeNull()
 		expect(store.error).toBe('schema refused')

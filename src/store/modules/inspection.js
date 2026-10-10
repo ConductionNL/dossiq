@@ -17,7 +17,9 @@ import { useObjectStore } from './object.js'
  */
 export function flattenTemplate(template) {
 	const sections = Array.isArray(template?.sections) ? template.sections : []
-	const items = sections.flatMap((section) => (Array.isArray(section?.items) ? section.items : []))
+	const items = sections.flatMap((section) =>
+		Array.isArray(section?.items) ? section.items : [],
+	)
 	return { ...template, items }
 }
 
