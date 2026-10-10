@@ -19,16 +19,18 @@
  * from dossiq (`one-follow-control`). The follower list stays visible to the
  * people who may edit the case, quiet follows included.
  *
- * 🔴 THE STATE IS READ OFF THE OBJECT, NOT FETCHED. `@self.watching` rides
- * every object read and every list row, so a page renders the button from
- * data it already has. There is no route that answers the state on its own.
- * An anonymous read carries no marker at all, because there is no "you" to
- * answer for, so an absent flag reads as not following.
+ * 🔴 THE CASE PAGE'S BUTTON IS NOT HERE. The Follow control beside the case
+ * title, with its bell and its count, is nextcloud-vue's CnFollowToggle,
+ * which CnDetailPage draws for every object that carries `@self.watching`
+ * (`one-follow-control-in-the-header`). dossiq's own strip drew a second one
+ * that never agreed with it, and is gone. What stays here is the row action
+ * on the lists and the Followers section on the People tab.
  *
- * 🔴 THE COUNT IS TOLD TO AN EDITOR ONLY. `@self.watcherCount` is attached on
- * the render path for a reader who may update the case, and omitted for
- * everybody else. So an absent count means "not your business", never "nobody
- * follows this", and `watcherCountOf()` answers null rather than zero.
+ * 🔴 THE STATE IS READ OFF THE OBJECT, NOT FETCHED. `@self.watching` rides
+ * every object read and every list row, so a row renders from data it already
+ * has. There is no route that answers the state on its own. An anonymous read
+ * carries no marker at all, because there is no "you" to answer for, so an
+ * absent flag reads as not following.
  *
  * 🔴 LISTING THE FOLLOWERS NEEDS `update` ON THE CASE. A reader without it is
  * refused with 403, which is a different answer from a case nobody follows.
@@ -43,6 +45,7 @@
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
  * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
+ * @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -108,34 +111,6 @@ export async function unfollow(id, register = CASE_REGISTER, schema = CASE_SCHEM
 }
 
 /**
- * Turn the notifications of your follow on or off, and keep following.
- *
- * A follow with notifications off is what a favourite used to be
- * (openregister `merge-follow-and-favourites`): the case stays under
- * Following and on the tile, and nothing about it reaches your notifications.
- *
- * @param {string}  id       The object uuid.
- * @param {boolean} notify   TRUE to hear about changes, FALSE for a quiet follow.
- * @param {string}  register The register slug.
- * @param {string}  schema   The schema slug.
- * @return {Promise<object>} The subscription row the write answered.
- *
- * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
- */
-export async function setNotify(
-	id,
-	notify,
-	register = CASE_REGISTER,
-	schema = CASE_SCHEMA,
-) {
-	const { data } = await axios.put(`${objectUrl(id, register, schema)}/watch`, {
-		notify: notify === true,
-	})
-
-	return data ?? {}
-}
-
-/**
  * Follow or unfollow, whichever the wanted state asks for.
  *
  * @param {string}  id       The object uuid.
@@ -196,40 +171,6 @@ export async function listFollowers(
  */
 export function isFollowing(row) {
 	return row?.['@self']?.watching === true
-}
-
-/**
- * Whether this reader's follow of a row sends notifications.
- *
- * `@self.watchNotify` rides every read next to `@self.watching`. An older
- * OpenRegister sends no switch, and every follow then notified, so an absent
- * switch reads as on.
- *
- * @param {object} row The object as the store holds it.
- * @return {boolean} TRUE when the follow notifies.
- *
- * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
- */
-export function notifiesOf(row) {
-	return row?.['@self']?.watchNotify !== false
-}
-
-/**
- * How many people follow a row the page already fetched.
- *
- * `@self.watcherCount` is attached for a reader who may update the object and
- * omitted for everybody else, so an absent count is "not told to you" and not
- * "nobody". Null says that, where zero would be a claim about the audience.
- *
- * @param {object} row The object as the store holds it.
- * @return {number|null} The count, or null when it was not told to this reader.
- *
- * @spec openspec/changes/case-followers/specs/case-management/spec.md
- */
-export function followerCountOf(row) {
-	const count = row?.['@self']?.watcherCount
-
-	return typeof count === 'number' ? count : null
 }
 
 /**

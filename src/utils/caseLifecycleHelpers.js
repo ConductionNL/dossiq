@@ -106,6 +106,7 @@ export function buildTransitionPayload({ transitionId, comment, resultTypeId }) 
  * @return {string} What to show the handler.
  * @spec openspec/specs/status-transition-engine/spec.md
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/changes/dutch-copy-on-the-case-page/specs/frontend-locale-completeness/spec.md
  */
 export function refusalMessage(body, translate) {
 	const t = typeof translate === 'function' ? translate : (s) => s
@@ -161,6 +162,12 @@ export function refusalMessage(body, translate) {
 			return t('This case could not be found.')
 		case 'reason_required':
 			return t('Give a reason first.')
+		// A gesture the server could not save answers this code with an
+		// English `error` beside it. The code is what is translated, so a
+		// Dutch handler does not read "The case could not be changed." in
+		// English (dutch-copy-on-the-case-page, finding F4).
+		case 'change_failed':
+			return t('The case could not be changed.')
 		// The three approval refusals (REQ-DEC-01). The sentence naming the
 		// approval and the people it waits on rides on the blocked act itself,
 		// where there is room for it; these are what a handler sees when they

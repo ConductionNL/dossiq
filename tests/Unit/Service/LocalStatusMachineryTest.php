@@ -99,7 +99,6 @@ class LocalStatusMachineryTest extends TestCase {
 		'lib/Service/AdviceService.php' => 'membership check beside AdviceAuthorizationGuard (domain authz); the declared adviesAanvraag lifecycle agrees; thinning follows termijnbewaking-op-engine-timers 2.5 (the expiry timer) per case-status-onto-engine-lifecycle tasks 5.3.',
 		'lib/Service/Subsidie/SubsidieService.php' => 'subsidy process domain machine without a declared schema lifecycle yet; declaring one and thinning is staged in case-status-onto-engine-lifecycle tasks 5.2.',
 		'lib/Service/Bezwaar/AdvisoryCommitteeService.php' => 'committee machinery owned end to end by the migrate-committees-to-decidiq change; it leaves dossiq entirely rather than moving onto the engine here.',
-		'lib/Service/TenantSaasService.php' => 'tenant lifecycle, not case machinery; owned by the tenancy-onto-openregister-organisation change.',
 	];
 
 	/**

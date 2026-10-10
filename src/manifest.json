@@ -569,7 +569,7 @@
 								"columns": [
 									{ "key": "identifier", "label": "Number" },
 									{ "key": "title", "label": "Title" },
-									{ "key": "deadline", "label": "Deadline" }
+									{ "key": "deadline", "label": "Deadline", "format": "date" }
 								],
 								"rowRoute": "CaseDetail",
 								"emptyText": "Follow a case to keep an eye on it here"
@@ -599,7 +599,7 @@
 								"columns": [
 									{ "key": "identifier", "label": "Number" },
 									{ "key": "title", "label": "Title" },
-									{ "key": "deadline", "label": "Deadline" }
+									{ "key": "deadline", "label": "Deadline", "format": "date" }
 								],
 								"rowRoute": "CaseDetail",
 								"emptyText": "Nothing is waiting for your teams",
@@ -926,14 +926,12 @@
 								},
 								"limit": 5
 							},
+							"_columnsNote": "my-work-cards-and-team-tiles-read-right, finding F7. The tile is four grid columns (about 340px), and three columns (number, title, date) asked for about 490px, so the date, the one column that says when, was cut off on the right. The board DqDashboard draws this tile as two columns: the title with the case number as a muted line under it, and the date on the right. So the number is the title's `secondary` line, the title wraps (`cn-cell--wrap`) instead of pushing the table wider, and the date keeps one line at the end. No widths are declared: the tile hides its header, and a width only reaches a table through its header cells.",
 							"columns": [
 								{
-									"key": "identifier",
-									"cellClass": "cn-cell--muted"
-								},
-								{
 									"key": "title",
-									"cellClass": "cn-cell--strong"
+									"secondary": "identifier",
+									"cellClass": "cn-cell--strong cn-cell--wrap"
 								},
 								{
 									"key": "@self.viewedAt",
@@ -1422,7 +1420,8 @@
 										},
 										{
 											"key": "deadline",
-											"label": "Deadline"
+											"label": "Deadline",
+											"format": "date"
 										}
 									],
 									"rowRoute": "CaseDetail",
@@ -2343,6 +2342,14 @@
 						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
 					},
 					{
+						"id": "case-change-proposals",
+						"type": "integration",
+						"integrationId": "portaliq-change-proposal-queue",
+						"title": "Proposed changes",
+						"icon": "FileEditOutline",
+						"_note": "portal-change-proposals-on-the-case D2, placed as the Proposals tab of the case panels as board PtVoorstelBeoordelen draws it (Voorstellen). A resident proposes a corrected title or description in the portal (the proposeCaseChange action); portaliq queues it and renders the queue here, where the handler accepts or rejects it. Accepting writes the case as the reviewer with RBAC on, so it is refused wherever the reviewer could not edit the case by hand. dossiq keeps no copy of a proposal. A leaf whose app is absent is never registered, so without portaliq the panel is missing rather than empty, and no requiredApp is declared."
+					},
+					{
 						"id": "case-projects",
 						"type": "integration",
 						"integrationId": "planninq-projects",
@@ -2495,6 +2502,10 @@
 								{
 									"widgetId": "case-work-panel",
 									"label": "Work"
+								},
+								{
+									"widgetId": "case-change-proposals",
+									"label": "Proposals"
 								},
 								{
 									"widgetId": "case-decisions-panel",

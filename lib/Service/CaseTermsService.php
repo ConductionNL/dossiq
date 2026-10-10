@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermMoveHistory;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
@@ -100,16 +101,21 @@ class CaseTermsService {
 	 * @param string $caseTypeId The case type UUID.
 	 * @param DateTimeImmutable|null $start When the clocks start (default now).
 	 * @param string $plannedStart The planned start date, `Y-m-d`, when the case carries one.
+	 * @param array<string, mixed>|null $plannedDefinition The `planned` term definition that
+	 *        resolved for the case, as {@see \OCA\Dossiq\Service\Term\TermResolution} answers
+	 *        it. Used only when the case type declares no `plannedLeadTime` of its own.
 	 *
 	 * @return array<int, array<string, mixed>> The instances this call created or moved.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
 	 */
 	public function bindForCase(
 		string $caseId,
 		string $caseTypeId,
 		?DateTimeImmutable $start = null,
 		string $plannedStart = '',
+		?array $plannedDefinition = null,
 	): array {
 		if ($caseId === '' || $caseTypeId === '') {
 			return [];
@@ -130,13 +136,20 @@ class CaseTermsService {
 			$plannedExtra = ['plannedStartDate' => $plannedStart];
 		}
 
+		// The case type's own lead time, else the service norm a planned
+		// definition declares; TermDefinitions::plannedClock() says which wins.
+		$plannedClock = TermDefinitions::plannedClock(
+			declaredDays: $declared['plannedLeadTimeDays'],
+			definition: $plannedDefinition
+		);
+
 		$planned = $this->bindLeadTime(
 			caseId: $caseId,
 			kind: TermKind::PLANNED,
-			days: $declared['plannedLeadTimeDays'],
+			days: $plannedClock['days'],
 			start: $from,
-			extra: $plannedExtra,
-			mode: WorkingDayRoll::MODE_WORKING_DAYS,
+			extra: array_merge($plannedExtra, $plannedClock['extra']),
+			mode: $plannedClock['mode'],
 		);
 		if ($planned !== null) {
 			$bound[] = $planned;
