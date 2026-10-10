@@ -3502,6 +3502,13 @@
 							"component": "CaseTermsTab"
 						},
 						{
+							"id": "assistant",
+							"label": "Assistant",
+							"icon": "RobotOutline",
+							"_note": "ai-features-on-the-case-consume-hermiq REQ-AIC-02 to REQ-AIC-04, board DqZaakAssistent: the AI features this case type switched on, where each runs as hermiq answers it, a run on a case document with a refusal shown in words, and the report group with its near-duplicates. A `component:` tab and not a `widgets[]` one for the reason the Terms tab gives. An undeclared case type makes no call to hermiq: the panel reads the case type's declaration first.",
+							"component": "CaseAiFeaturesPanel"
+						},
+						{
 							"id": "access",
 							"label": "Access",
 							"icon": "ShieldAccountOutline",

@@ -38,8 +38,6 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * depends on the interface so its own logic can be exercised against a fake;
  * only this binding knows the database.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class RepairPortRegistrar {
