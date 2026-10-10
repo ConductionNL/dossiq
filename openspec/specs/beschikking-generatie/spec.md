@@ -450,11 +450,11 @@ so the chain reads in both directions without a query.
 A beschikking that has already been replaced SHALL NOT be replaced a second time. The chain is
 linear: the correction of a correction succeeds the correction, not the original.
 
-Every beschikking SHALL be numbered when it is composed, with one running number per
-organisation per calendar year, in the form `B-<year>-<six digits>` (decision 167). The
-organisation is the one the case belongs to. A number SHALL never be issued twice; a gap left by a
-failed save is allowed. When no number can be reserved the beschikking SHALL NOT be composed, and
-the refusal SHALL say the request can be retried.
+Every beschikking SHALL be numbered when it is composed, as the document series `beschikking`
+of the generic capability `numbered-document-series` (REQ-NDS-001 to REQ-NDS-003, decisions 167
+and 182): one running number per organisation per calendar year, `B-<year>-<six digits>` unless
+the case type configures another prefix. When no number can be reserved the beschikking SHALL NOT
+be composed, and the refusal SHALL say the request can be retried.
 
 Who may issue a successor is whoever may change the case the beschikking belongs to.
 
@@ -511,7 +511,7 @@ Who may issue a successor is whoever may change the case the beschikking belongs
 - **GIVEN** the counter cannot be reached
 - **WHEN** a beschikking is composed
 - **THEN** nothing SHALL be saved
-- **AND** the response SHALL be HTTP 503, naming the rule `beschikking-number-unavailable`
+- **AND** the response SHALL be HTTP 503, naming the rule `document-number-unavailable`
 
 #### Scenario: Only a case handler may issue a successor
 

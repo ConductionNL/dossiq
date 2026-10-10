@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -49,11 +50,18 @@ use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * Controller for beschikking lifecycle endpoints.
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T05
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) 60 against 50, crossed by
+ * successor() (REQ-BES-012). Decision 182 forbids a new procedure-named
+ * controller, so the endpoint joins the one this beschikking lifecycle already
+ * has rather than a second beschikking class; the refactor programme of
+ * decision 184 moves this controller onto generic capabilities as a whole.
  */
 class BeschikkingController extends Controller {
 	use TranslatesRefusals;
@@ -66,6 +74,7 @@ class BeschikkingController extends Controller {
 	 * @param BeschikkingService $decisionService The beschikking service.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseAccessGuard $accessGuard Per-case mutation access, for issuing a successor.
 	 */
 	public function __construct(
 		string $appName,
@@ -73,6 +82,7 @@ class BeschikkingController extends Controller {
 		private readonly BeschikkingService $decisionService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -175,7 +185,7 @@ class BeschikkingController extends Controller {
 
 		$updates = $this->readJsonBody();
 		// The number and both chain pointers are written by compose() and
-		// BeschikkingSuccession only (REQ-BES-012), never by a field edit.
+		// issueSuccessor() only (REQ-BES-012), never by a field edit.
 		unset($updates['id'], $updates['currentStatus'], $updates['reference'], $updates['supersedes'], $updates['supersededBy']);
 
 		try {
@@ -323,6 +333,96 @@ class BeschikkingController extends Controller {
 	// ------------------------------------------------------------------
 	// Internal helpers
 	// ------------------------------------------------------------------
+
+	/**
+	 * Issue a successor to the beschikking `{id}`.
+	 *
+	 * Body: `decisionType` (`amendment` or `withdrawal`), and optionally
+	 * `rationale`, `decision`, `addressee` and `templateId`.
+	 *
+	 * @param string $id The beschikking being corrected or withdrawn.
+	 *
+	 * @return JSONResponse 201 with the successor; 401, 403, 404, 409 or 422 otherwise.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function successor(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$original = $this->decisionService->find($id);
+		if ($original === null) {
+			return new JSONResponse(['error' => 'Beschikking not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$caseId = (string)($original['caseId'] ?? '');
+		if ($caseId === '' || $this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'You may not change this case'], Http::STATUS_FORBIDDEN);
+		}
+
+		$body = $this->request->getParams();
+
+		try {
+			$successor = $this->decisionService->issueSuccessor(
+				originalId: $id,
+				kind: (string)($body['decisionType'] ?? ''),
+				overrides: $this->successorContentOf(body: $body),
+				templateId: $this->successorTemplateOf(body: $body),
+			);
+
+			return new JSONResponse($successor, Http::STATUS_CREATED);
+		} catch (RefusedException $refusal) {
+			return $this->refused(op: 'successor', e: $refusal);
+		} catch (Throwable $failure) {
+			$this->logger->error(
+				'BeschikkingController: successor failed',
+				['exception' => $failure->getMessage(), 'beschikkingId' => $id],
+			);
+
+			return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end successor()
+
+	/**
+	 * The successor's content as the handler sent it, and nothing else.
+	 *
+	 * The number, the pointers and the status are never read from the
+	 * body: compose() and the succession write them.
+	 *
+	 * @param array<string, mixed> $body The request parameters.
+	 *
+	 * @return array<string, mixed> Rationale, decision and addressee, where sent.
+	 */
+	private function successorContentOf(array $body): array {
+		$overrides = [];
+		foreach (['rationale', 'decision', 'addressee'] as $field) {
+			if (array_key_exists($field, $body) === true) {
+				$overrides[$field] = $body[$field];
+			}
+		}
+
+		return $overrides;
+	}//end successorContentOf()
+
+	/**
+	 * The template the handler chose, or null to keep the original's.
+	 *
+	 * @param array<string, mixed> $body The request parameters.
+	 *
+	 * @return string|null The template id.
+	 */
+	private function successorTemplateOf(array $body): ?string {
+		$templateId = trim((string)($body['templateId'] ?? ''));
+		if ($templateId === '') {
+			return null;
+		}
+
+		return $templateId;
+	}//end successorTemplateOf()
 
 	/**
 	 * Resolve the current user UID or null.

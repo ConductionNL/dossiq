@@ -44,27 +44,32 @@
   Decision 167 (Q-dossiq-L1-2) answered the numbering: one running number per organisation per
   year, `B-2026-000123`, written by `compose()`; a correction gets its own new number and points
   at the one it replaces. Built:
-  - `lib/Service/Beschikking/BeschikkingNumberer.php`: reserves the number through OpenRegister's
-    `SequenceService` with the case's organisation and the year in the scope key, so two
-    organisations on one instance never share a row; refuses 503 `beschikking-number-unavailable`
-    when no number can be reserved. `tests/Unit/Service/Beschikking/BeschikkingNumbererTest.php`
-    (per organisation, per year, no organisation, long ids, no counter, a zero answer).
+  - Generic per decision 182 (procedures are configuration, code is generic):
+    `lib/Service/DocumentSeries/DocumentSeriesNumberer.php` issues the next number of a named
+    document series, per organisation and year, through OpenRegister's `SequenceService` with
+    series, organisation and year in the scope key. The case type configures the prefix under
+    `documentSeries.<series>.prefix` (`register.d/39-document-series.json`); beschikkingen are the
+    series `beschikking` with default prefix `B`. Refuses 503 `document-number-unavailable` when no
+    number can be reserved. `tests/Unit/Service/DocumentSeries/DocumentSeriesNumbererTest.php`
+    (per organisation, per series, per year, case-type prefix, unreadable case, long ids, no
+    counter, a zero answer). Generic requirement: `openspec/specs/numbered-document-series/spec.md`.
   - `BeschikkingService::compose()` writes `reference` and, for a successor, `supersedes`;
-    `BeschikkingServiceTest::testComposeWritesTheNextRunningNumber` (mutation-checked: renaming the
-    written key reddens it) and `testTheNumberedSuccessorFitsTheRealSchema` (both payloads validated
-    against the merged register through `RealSchemaValidator`). That test found compose writing an
-    empty `addressee`/`decision` as the JSON list `[]` against `type: object`; compose now leaves
-    an empty one out.
-  - `lib/Service/Beschikking/BeschikkingSuccession.php`: refuses an unknown kind (422), a draft
-    (409 `successor-of-a-draft`) and a second successor (409 `already-superseded`, naming the
-    successor's number); composes the successor first, then writes the original's `supersededBy`.
-    `tests/Unit/Service/Beschikking/BeschikkingSuccessionTest.php`.
+    `BeschikkingServiceTest::testComposeWritesTheNextRunningNumber` (mutation-checked) and
+    `testTheNumberedSuccessorFitsTheRealSchema` (both payloads validated against the merged
+    register through `RealSchemaValidator`). That test found compose writing an empty
+    `addressee`/`decision` as the JSON list `[]` against `type: object`; compose now leaves an
+    empty one out.
+  - `BeschikkingService::issueSuccessor()` (no new procedure-named class, decision 182): refuses an
+    unknown kind (422), a draft (409 `successor-of-a-draft`) and a second successor (409
+    `already-superseded`, naming the successor's number); composes the successor first, then
+    writes the original's `supersededBy`. `BeschikkingServiceTest::testACorrectionIsANewNumberedSuccessor`
+    and `testSuccessorRefusals`.
   - `StateMachineService`: `reference` and `supersedes` join `CONTENT_FIELDS`; new
     `WRITE_ONCE_FIELDS = ['supersededBy']`, which the listener also checks, so the pointer can be
     written once after signing and never re-pointed or cleared.
     `BeschikkingImmutabilityListenerTest` (three new cases; mutation-checked).
-  - `lib/Controller/BeschikkingSuccessorController.php`, `POST /api/beschikkingen/{id}/successor`,
-    guarded by per-case mutation access. `tests/Unit/Controller/BeschikkingSuccessorControllerTest.php`.
+  - `BeschikkingController::successor()`, `POST /api/beschikkingen/{id}/successor`, guarded by
+    per-case mutation access (`BeschikkingControllerTest`, three successor tests).
     `BeschikkingController::create()` answers the numbering refusal as 503, and `update()` never
     writes `reference`, `supersedes` or `supersededBy`.
   - Schema `beschikking` 1.1.0 gains `supersedes` and `supersededBy` (`register.d/30-beschikking.json`

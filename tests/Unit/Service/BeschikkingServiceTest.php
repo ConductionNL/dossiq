@@ -29,7 +29,6 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BerichtenboxRoutingService;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
-use OCA\Dossiq\Service\Beschikking\BeschikkingNumberer;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
@@ -39,6 +38,9 @@ use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
@@ -147,9 +149,9 @@ class FakeObjectService {
  *
  * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
  * @uses \OCA\Dossiq\Service\Beschikking\AuditPacketBuilder
- * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingNumberer
+ * @uses \OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer
+ * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
- * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingSuccession
  * @uses \OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler
  * @uses \OCA\Dossiq\Service\Beschikking\MandaatVerifier
  * @uses \OCA\Dossiq\Service\Beschikking\MockSigningAdapter
@@ -274,8 +276,9 @@ class BeschikkingServiceTest extends TestCase {
 			$this->createMock(CoordinatorRequirement::class),
 			$this->timeline,
 			$this->remedy,
-			new BeschikkingNumberer(
+			new DocumentSeriesNumberer(
 				$this->createMock(CaseStatusStore::class),
+				$this->createMock(CaseTypeResolver::class),
 				$this->sequencesContainer(),
 				$logger,
 			),
@@ -357,15 +360,9 @@ class BeschikkingServiceTest extends TestCase {
 	 */
 	public function testTheNumberedSuccessorFitsTheRealSchema(): void {
 		$validator = new \OCA\Dossiq\Tests\Support\RealSchemaValidator();
-		$succession = new \OCA\Dossiq\Service\Beschikking\BeschikkingSuccession(
-			$this->service,
-			$this->repository,
-			new StateMachineService($this->settings, $this->createMock(LoggerInterface::class)),
-		);
-
 		$original = $this->composeWmo();
 		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
-		$successor = $succession->issue($original['id'], 'amendment', ['rationale' => 'Herzien na bezwaar.']);
+		$successor = $this->service->issueSuccessor($original['id'], 'amendment', ['rationale' => 'Herzien na bezwaar.']);
 
 		$strip = static fn (array $row): array => array_diff_key($row, array_flip(['id', 'motivering_required', 'geadresseerde_required']));
 		self::assertSame([], $validator->errors('beschikking', $strip($successor)), 'The successor as composed.');
@@ -373,6 +370,65 @@ class BeschikkingServiceTest extends TestCase {
 		self::assertSame($successor['id'], $this->objects->store['beschikking'][$original['id']]['supersededBy']);
 		self::assertNotSame($original['reference'], $successor['reference'], 'The correction has its own number.');
 	}//end testTheNumberedSuccessorFitsTheRealSchema()
+
+	/**
+	 * A successor is a new numbered draft pointing back; only the pointer changes on the original.
+	 *
+	 * @return void
+	 */
+	public function testACorrectionIsANewNumberedSuccessor(): void {
+		$original = $this->composeWmo();
+		$this->objects->store['beschikking'][$original['id']]['currentStatus'] = 'sent';
+		$before = $this->objects->store['beschikking'][$original['id']];
+
+		$successor = $this->service->issueSuccessor($original['id'], 'withdrawal');
+
+		self::assertSame('withdrawal', $successor['decisionType']);
+		self::assertSame($original['id'], $successor['supersedes']);
+		self::assertSame('draft', $successor['currentStatus']);
+		self::assertSame($original['addressee'], $successor['addressee'], 'The addressee carries over.');
+		$after = $this->objects->store['beschikking'][$original['id']];
+		self::assertSame($successor['id'], $after['supersededBy']);
+		unset($after['supersededBy']);
+		unset($after['id'], $before['id']);
+		self::assertSame($before, $after, 'Nothing but the pointer changed on the original.');
+	}//end testACorrectionIsANewNumberedSuccessor()
+
+	/**
+	 * A replaced beschikking refuses a second successor and names the one to correct; a draft and an unknown kind are refused.
+	 *
+	 * @return void
+	 */
+	public function testSuccessorRefusals(): void {
+		$original = $this->composeWmo();
+		$draftId = $original['id'];
+
+		$cases = [
+			'successor-kind-unknown' => fn () => $this->service->issueSuccessor($draftId, 'toekenning'),
+			'successor-of-a-draft' => fn () => $this->service->issueSuccessor($draftId, 'amendment'),
+		];
+		foreach ($cases as $rule => $attempt) {
+			try {
+				$attempt();
+				self::fail($rule.' must be refused.');
+			} catch (RefusedException $refusal) {
+				self::assertSame($rule, $refusal->getRule());
+			}
+		}
+
+		$this->objects->store['beschikking'][$draftId]['currentStatus'] = 'signed';
+		$first = $this->service->issueSuccessor($draftId, 'amendment');
+		$count = count($this->objects->store['beschikking']);
+		try {
+			$this->service->issueSuccessor($draftId, 'amendment');
+			self::fail('A second successor must be refused.');
+		} catch (RefusedException $refusal) {
+			self::assertSame('already-superseded', $refusal->getRule());
+			self::assertStringContainsString((string)$first['reference'], $refusal->getSentence());
+		}
+
+		self::assertCount($count, $this->objects->store['beschikking'], 'Nothing was composed for the refused attempt.');
+	}//end testSuccessorRefusals()
 
 	/**
 	 * Compose a beschikking in the ontwerp status with a rendered PDF.

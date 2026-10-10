@@ -64,6 +64,13 @@ class BeschikkingControllerTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * The per-case access guard double.
+	 *
+	 * @var \OCA\Dossiq\Service\CaseAccessGuard&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private \OCA\Dossiq\Service\CaseAccessGuard $guard;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var BeschikkingController
@@ -85,6 +92,7 @@ class BeschikkingControllerTest extends TestCase {
 			->getMockForAbstractClass();
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
+		$this->guard = $this->createMock(\OCA\Dossiq\Service\CaseAccessGuard::class);
 
 		$this->controller = new BeschikkingController(
 			'dossiq',
@@ -92,6 +100,7 @@ class BeschikkingControllerTest extends TestCase {
 			$this->service,
 			$this->userSession,
 			$logger,
+			$this->guard,
 		);
 	}//end setUp()
 
@@ -117,13 +126,13 @@ class BeschikkingControllerTest extends TestCase {
 		$this->authenticate();
 		$this->request->method('getContent')->willReturn('{"caseId":"zaak-1"}');
 		$this->service->method('compose')->willThrowException(
-			\OCA\Dossiq\Exception\RefusedException::indeterminate(rule: 'beschikking-number-unavailable', sentence: 'No number.')
+			\OCA\Dossiq\Exception\RefusedException::indeterminate(rule: 'document-number-unavailable', sentence: 'No number.')
 		);
 
 		$response = $this->controller->create();
 
 		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-		$this->assertSame('beschikking-number-unavailable', $response->getData()['error']);
+		$this->assertSame('document-number-unavailable', $response->getData()['error']);
 	}//end testCreateWithoutANumberIs503()
 
 	/**
@@ -142,6 +151,68 @@ class BeschikkingControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $this->controller->update('besch-1')->getStatus());
 	}//end testUpdateNeverWritesTheNumberOrThePointers()
+
+	/**
+	 * A handler who may change the case issues the successor with exactly the content they sent.
+	 *
+	 * @return void
+	 */
+	public function testAHandlerWithMutationAccessIssuesTheSuccessor(): void {
+		$this->authenticate();
+		$this->service->method('find')->willReturn(['id' => 'besch-1', 'caseId' => 'case-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->request->method('getParams')->willReturn(
+			['id' => 'besch-1', 'decisionType' => 'amendment', 'rationale' => 'herzien', 'reference' => 'B-1999-000001']
+		);
+		$this->service->expects($this->once())->method('issueSuccessor')
+			->with('besch-1', 'amendment', ['rationale' => 'herzien'], null)
+			->willReturn(['id' => 'besch-2', 'reference' => 'B-2026-000124']);
+
+		$response = $this->controller->successor('besch-1');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame('B-2026-000124', $response->getData()['reference']);
+	}//end testAHandlerWithMutationAccessIssuesTheSuccessor()
+
+	/**
+	 * Without mutation access on the case nothing is issued; an unknown beschikking is a 404; nobody signed in is a 401.
+	 *
+	 * @return void
+	 */
+	public function testSuccessorRefusals(): void {
+		$this->service->expects($this->never())->method('issueSuccessor');
+		$this->userSession->method('getUser')->willReturnOnConsecutiveCalls(null, $this->createMock(IUser::class), $this->createMock(IUser::class));
+		$this->service->method('find')->willReturnOnConsecutiveCalls(null, ['id' => 'besch-1', 'caseId' => 'case-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(false);
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller->successor('besch-1')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller->successor('nope')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $this->controller->successor('besch-1')->getStatus());
+	}//end testSuccessorRefusals()
+
+	/**
+	 * A refusal answers with its own status and sentence; an unexpected failure is a generic 500.
+	 *
+	 * @return void
+	 */
+	public function testSuccessorRefusalCarriesItsStatusAndAFailureLeaksNothing(): void {
+		$this->authenticate();
+		$this->service->method('find')->willReturn(['id' => 'besch-1', 'caseId' => 'case-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->request->method('getParams')->willReturn(['decisionType' => 'amendment', 'templateId' => 'tpl-2']);
+		$this->service->method('issueSuccessor')->willReturnOnConsecutiveCalls(
+			$this->throwException(new \OCA\Dossiq\Exception\RefusedException(rule: 'already-superseded', sentence: 'Replaced by B-2026-000124.')),
+			$this->throwException(new \RuntimeException('secret detail')),
+		);
+
+		$refused = $this->controller->successor('besch-1');
+		$this->assertSame(Http::STATUS_CONFLICT, $refused->getStatus());
+		$this->assertSame('already-superseded', $refused->getData()['error']);
+
+		$failed = $this->controller->successor('besch-1');
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertStringNotContainsString('secret', (string)json_encode($failed->getData()));
+	}//end testSuccessorRefusalCarriesItsStatusAndAFailureLeaksNothing()
 
 	/**
 	 * An unauthenticated show request returns 401.

@@ -179,7 +179,7 @@ Who may issue a successor is whoever may change the case the beschikking belongs
 - **GIVEN** the counter cannot be reached
 - **WHEN** a beschikking is composed
 - **THEN** nothing SHALL be saved
-- **AND** the response SHALL be HTTP 503, naming the rule `beschikking-number-unavailable`
+- **AND** the response SHALL be HTTP 503, naming the rule `document-number-unavailable`
 
 #### Scenario: Only a case handler may issue a successor
 
