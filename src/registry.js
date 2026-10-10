@@ -108,7 +108,6 @@ import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
-import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
@@ -952,11 +951,9 @@ const registry = {
 	// create/edit/delete of local decision records while mounted on no page.
 	// Decisions are authored in decidiq (besluitvorming leaf); the read-only
 	// case-decisions widget displays the outcomes stored on the case.
-	CaseDocumentsTab: {
-		kind: 'page',
-		component: CaseDocumentsTab,
-		_note: 'Documents where document.case === parent.id',
-	},
+	// CaseDocumentsTab was retired by documents-on-the-case 2.2: it was mounted
+	// on no page. The Documents list is the Files tab, nextcloud-vue
+	// CnFilesBrowser through the files leaf, with the dossier's row data.
 
 	// --- Deelzaak (sub-case) full-page views — manifest routes. ---
 	// @spec openspec/changes/deelzaak-support/tasks.md#T05
