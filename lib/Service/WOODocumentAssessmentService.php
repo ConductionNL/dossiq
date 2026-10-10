@@ -197,7 +197,7 @@ class WOODocumentAssessmentService {
 	 * @return array<string, string> Validation errors keyed by field name; empty if valid
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	public function validate(array $assessment): array {
 		$errors = [];
@@ -243,7 +243,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @throws RefusedException With 503 when the list cannot be read.
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	private function refusalOfGrounds(array $grounds): ?string {
 		foreach ($grounds as $code) {

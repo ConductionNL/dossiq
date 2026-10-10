@@ -106,6 +106,13 @@ const SILENT = [
 	// there is no input to control.
 	'portalTurn',
 	'assignedGroupPublicName',
+	// The earlier Woo request this one started from: a reference the draft search
+	// plan is copied from, `visible: false`, never a filter (woo-request-corpus-collection).
+	'wooStartFrom',
+	// What dossiq writes for the Woo requester (woo-dossier-shared-with-the-requester
+	// REQ-WDS-002, REQ-WDS-003): a sentence and a link the portal shows, never a filter.
+	'termNote',
+	'resultLink',
 ]
 
 /**
