@@ -15,6 +15,14 @@
                 "title": "Default group",
                 "description": "The Nextcloud group a new case of this type is routed to when no rule says otherwise."
               },
+              "teams": {
+                "type": "array",
+                "title": "Handling teams",
+                "description": "The other Nextcloud groups that handle cases of this type. The default group always counts as one, so leave it out here. Each member of these groups is offered this case type for their own menu.",
+                "items": {
+                  "type": "string"
+                }
+              },
               "defaultHandler": {
                 "type": "string",
                 "title": "Default handler",

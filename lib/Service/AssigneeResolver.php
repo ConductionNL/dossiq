@@ -172,7 +172,9 @@ class AssigneeResolver {
 	 * to a principal nothing answers to.
 	 *
 	 * Read through `referenceId`, never a `(string)` cast: `assignedGroup` is a
-	 * `$ref`, so an expanded read casts to the literal "Array".
+	 * Nextcloud group id since one-team-model, but it was a `$ref` before, and a
+	 * client that still sends the expanded object would otherwise write the
+	 * literal "Array".
 	 *
 	 * Falls back to the case type's declared default group when the case names
 	 * no team. That default is read through {@see CaseTypeHandling} and nowhere
