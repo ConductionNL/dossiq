@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
@@ -199,7 +200,7 @@ class TenantAuthenticationService {
 			read: fn (): mixed => $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantMandate',
 						'tenantRef' => $tenantId,
 					],
@@ -296,7 +297,7 @@ class TenantAuthenticationService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantUser',
 						'tenantRef' => $tenantId,
 						'userRef' => $userId,
@@ -364,7 +365,7 @@ class TenantAuthenticationService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantUser',
 						'userRef' => $userId,
 					],

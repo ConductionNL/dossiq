@@ -36,6 +36,7 @@
         <!-- case-merge: OpenRegister's merge event, which CaseMergeRegistrar
              registers the follower against by `::class`. -->
         <file name="tests/Stubs/OpenRegister/Event/ObjectsMergedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php" />
         <!-- flow-nodes-to-their-owners: the sent-mail and generated-document
              events dossiq files on the case. Verbatim copies of the real classes. -->
         <file name="tests/Stubs/OpenRegister/Event/FlowEmailSentEvent.php" />

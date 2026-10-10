@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -55,19 +56,19 @@ class TenantOnboardingService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TenantSaasService $tenantSaasService Tenant SaaS service.
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
 	 * @param TenantBillingService $billingService Billing-event emitter.
+	 * @param TenantService $tenantService Creates the tenant's audit anchor before onboarding starts.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
-		private readonly TenantSaasService $tenantSaasService,
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly TenantBillingService $billingService,
+		private readonly TenantService $tenantService,
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
@@ -75,11 +76,16 @@ class TenantOnboardingService {
 	/**
 	 * Fork the default 7-step template into the tenant's onboarding list.
 	 *
-	 * @param string $tenantId Tenant UUID.
+	 * The tenant's audit anchor is made first (decision Q6), and without it no
+	 * step is written: a tenant whose audit entries have nowhere to land must
+	 * not look onboarded.
+	 *
+	 * @param string $tenantId Tenant UUID, which is the Organisation's uuid.
 	 *
 	 * @return array<int, array<string, mixed>> Created task rows.
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function createOnboarding(string $tenantId): array {
 		$objectService = $this->getObjectService();
@@ -88,12 +94,22 @@ class TenantOnboardingService {
 			return [];
 		}
 
+		// When remove-casetask task 7.1 moves the onboarding steps onto the
+		// engine Task, this call moves with them: the anchor comes first.
+		if ($this->tenantService->ensureAuditAnchor(organisationUuid: $tenantId) === false) {
+			$this->logger->error(
+				'Dossiq: onboarding not started, the tenant has no audit anchor',
+				['tenantId' => $tenantId]
+			);
+			return [];
+		}
+
 		$created = [];
 		foreach (self::STEPS as $step) {
 			try {
 				$row = $objectService->saveObject(
 					object: ['tenantRef' => $tenantId, 'step' => $step, 'status' => 'pending'],
-					register: TenantSaasService::REGISTER,
+					register: Application::REGISTER_SLUG,
 					schema: 'tenantOnboardingTask',
 					uuid: null
 				);
@@ -134,7 +150,7 @@ class TenantOnboardingService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantOnboardingTask',
 						'tenantRef' => $tenantId,
 					],
@@ -213,7 +229,7 @@ class TenantOnboardingService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantOnboardingTask',
 						'tenantRef' => $tenantId,
 						'step' => $step,
@@ -249,7 +265,7 @@ class TenantOnboardingService {
 
 			$row = $objectService->saveObject(
 				object: $task,
-				register: TenantSaasService::REGISTER,
+				register: Application::REGISTER_SLUG,
 				schema: 'tenantOnboardingTask',
 				uuid: $uuidArg
 			);
@@ -303,13 +319,19 @@ class TenantOnboardingService {
 	}//end validateGoLive()
 
 	/**
-	 * Trigger the activation flow when go-live validates.
+	 * Complete go-live when it validates.
+	 *
+	 * Writes no tenant status (task 6.8). The Organisation is `active` from the
+	 * start (decision 2f) and OpenRegister's TenantLifecycleService governs its
+	 * status; the onboarding steps are dossiq's own state. What go-live still
+	 * does here is emit the first billing line.
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 *
 	 * @return array{activated: bool, missing?: array<int, string>}
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function activate(string $tenantId): array {
 		$check = $this->validateGoLive(tenantId: $tenantId);
@@ -317,17 +339,10 @@ class TenantOnboardingService {
 			return ['activated' => false, 'missing' => $check['missing']];
 		}
 
-		try {
-			$tenant = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: activation transition failed', ['exception' => $e->getMessage()]);
-			return ['activated' => false, 'missing' => ['transition_failed']];
-		}
-
 		// Go-live emits the first billing line (the tier subscription). Without
 		// a real usage event no invoice ever has a non-zero amount — this is
 		// the wiring the metered-billing pipeline lacked (procest#223 finding 2).
-		$tier = (string)($tenant['tier'] ?? 'basic');
+		$tier = $this->tierOf(tenantId: $tenantId);
 		$unitPrice = $this->billingService->tierMonthlyPrice(tier: $tier);
 		$this->billingService->emitEvent(
 			tenantId: $tenantId,
@@ -339,6 +354,38 @@ class TenantOnboardingService {
 
 		return ['activated' => true];
 	}//end activate()
+
+	/**
+	 * The tenant's subscription tier, read, never written.
+	 *
+	 * A migrated tenant's tier is on its stored tenant object, the read-only
+	 * audit anchor. A tenant onboarded after the migration has an anchor
+	 * without one and bills at `basic` until its tier is set (decision 2a puts
+	 * the tier on `tenantConfiguration`).
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return string The tier.
+	 */
+	private function tierOf(string $tenantId): string {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return 'basic';
+		}
+
+		try {
+			$anchor = $objectService->find($tenantId, register: Application::REGISTER_SLUG, schema: 'tenant', _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			return 'basic';
+		}
+
+		$tier = (string)($this->rowNormaliser->normalise(row: $anchor)['data']['tier'] ?? '');
+		if ($tier === '') {
+			return 'basic';
+		}
+
+		return $tier;
+	}//end tierOf()
 
 	/**
 	 * Count rows in a schema with a filter.
@@ -357,7 +404,7 @@ class TenantOnboardingService {
 				[
 					'filters' => array_merge(
 						[
-							'register' => TenantSaasService::REGISTER,
+							'register' => Application::REGISTER_SLUG,
 							'schema' => $schema,
 						],
 						$filters

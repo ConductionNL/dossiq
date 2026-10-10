@@ -671,6 +671,12 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
 }
 
+// tenancy-onto-openregister-organisation 6.9: the organisation update event,
+// so OrganisationStatusChangeListenerTest can drive handle() with the real shape.
+if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php';
+}
+
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {

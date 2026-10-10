@@ -29,9 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantMigrationService;
+use OCA\Dossiq\Service\TenantService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -46,16 +48,23 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 	use RunsUnderSystemIdentity;
 
 	/**
+	 * How many tenantUser rows are read per page when collecting the member organisations.
+	 */
+	private const PAGE = 500;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param TenantMigrationService $migration       The migration, shared with the occ command.
 	 * @param SettingsService        $settingsService Provides the ObjectService to run as system.
 	 * @param LoggerInterface        $logger          Logger.
+	 * @param TenantService          $tenants         Creates the audit anchor of a member organisation that has none.
 	 */
 	public function __construct(
 		private readonly TenantMigrationService $migration,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly TenantService $tenants,
 	) {
 	}//end __construct()
 
@@ -81,11 +90,13 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		$summary = null;
+		$anchors = ['members' => 0, 'anchored' => 0];
 		try {
 			$this->withSystemIdentity(
 				objectService: $this->settingsService->getObjectService(),
-				work: function () use (&$summary): void {
+				work: function () use (&$summary, &$anchors): void {
 					$summary = $this->migration->migrate();
+					$anchors = $this->anchorMemberOrganisations();
 				}
 			);
 		} catch (Throwable $e) {
@@ -108,6 +119,14 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 			)
 		);
 
+		$output->info(
+			sprintf(
+				'Dossiq: %d of %d organisations with members have their tenant audit anchor.',
+				$anchors['anchored'],
+				$anchors['members']
+			)
+		);
+
 		if ($unmigrated > 0) {
 			$this->logger->warning(
 				'Dossiq: stored tenants are left with no Organisation of the same uuid',
@@ -116,4 +135,67 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 			$output->warning('Dossiq: '.$unmigrated.' tenants are not migrated yet; run occ dossiq:migrate-tenants --dry-run to see which.');
 		}
 	}//end run()
+
+	/**
+	 * Give every Organisation a tenantUser row points at its audit anchor (decision Q6).
+	 *
+	 * An anchor that exists is left alone; one that is missing is created by
+	 * `TenantService::ensureAuditAnchor()`. A reference with no Organisation
+	 * behind it gets none, and is not counted as anchored.
+	 *
+	 * @return array{members: int, anchored: int} The member organisations, and how many have an anchor now.
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 */
+	private function anchorMemberOrganisations(): array {
+		$members = $this->memberOrganisations();
+		$anchored = 0;
+		foreach ($members as $uuid) {
+			if ($this->tenants->ensureAuditAnchor(organisationUuid: $uuid) === true) {
+				$anchored++;
+			}
+		}
+
+		return ['members' => count($members), 'anchored' => $anchored];
+	}//end anchorMemberOrganisations()
+
+	/**
+	 * The distinct organisations the tenantUser rows point at.
+	 *
+	 * @return array<int, string> The organisation uuids.
+	 */
+	private function memberOrganisations(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		$refs = [];
+		$offset = 0;
+		do {
+			$rows = (array) $objectService->findAll(
+				[
+					'filters' => ['register' => Application::REGISTER_SLUG, 'schema' => 'tenantUser'],
+					'limit' => self::PAGE,
+					'offset' => $offset,
+				]
+			);
+			foreach ($rows as $row) {
+				$data = $row;
+				if (is_object($row) === true && method_exists($row, 'getObject') === true) {
+					$data = (array) $row->getObject();
+				}
+
+				$ref = trim((string) (((array) $data)['tenantRef'] ?? ''));
+				if ($ref !== '') {
+					$refs[$ref] = true;
+				}
+			}
+
+			$offset += self::PAGE;
+			$full = (count($rows) === self::PAGE);
+		} while ($full === true);
+
+		return array_keys($refs);
+	}//end memberOrganisations()
 }//end class
