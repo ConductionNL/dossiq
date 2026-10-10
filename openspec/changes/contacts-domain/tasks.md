@@ -45,7 +45,16 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   - `@spec openspec/specs/initiator-display/spec.md`
   - `npm run check:manifest` exits 0; `_note` on the page says why the
     second folder is hidden
-- [ ] 2.2 [moved: nextcloud-vue `cnindexpage-folder-schema`] MOVED
+- [x] 2.2 CLOSED BY THE BOARD (2026-10-10, lane L4, decision 130). The
+  library seam shipped (nextcloud-vue `cnindexpage-folder-schema`, in 2.76.0),
+  and the board `DqContacten` decides against using it here: the Contacts
+  list shows people only and says "organisaties staan onder Organisaties".
+  The Organisations page under Contacts is that list, the spec (REQ-ID-4)
+  already says the page carries no `folderSidebar`, and
+  `tests/vitest/contactsDomain.spec.js` asserts it. Nothing to build. The
+  history below is kept as the record of why the folder never shipped.
+
+  [moved: nextcloud-vue `cnindexpage-folder-schema`] MOVED
   2026-09-11, Ruben's decision: a folder that carries its own schema changes
   how every index page in the fleet loads its list, not only this one, so
   the fix lives with the component, not with this change. This task stays
