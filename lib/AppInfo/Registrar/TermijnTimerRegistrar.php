@@ -34,6 +34,10 @@ use OCA\Dossiq\Listener\AdviceTimerFiredListener;
 use OCA\Dossiq\Listener\AdviceTimerListener;
 use OCA\Dossiq\Listener\BezwaarArchiveTimerFiredListener;
 use OCA\Dossiq\Listener\BezwaarArchiveTimerListener;
+use OCA\Dossiq\Listener\DsoDeadlineTimerFiredListener;
+use OCA\Dossiq\Listener\DsoDeadlineTimerListener;
+use OCA\Dossiq\Listener\MilestoneStallTimerFiredListener;
+use OCA\Dossiq\Listener\MilestoneStallTimerListener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Listener\TermStatusClockListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -97,6 +101,17 @@ class TermijnTimerRegistrar {
 			event: ObjectUpdatedEvent::class,
 			listener: BezwaarArchiveTimerListener::class
 		);
+
+		// The DSO decision term and the milestone stall: band and breach
+		// rungs from the engine, and the saves that move their deadlines.
+		foreach ([DsoDeadlineTimerFiredListener::class, MilestoneStallTimerFiredListener::class] as $fired) {
+			$context->registerEventListener(event: FlowTimerFiredEvent::class, listener: $fired);
+		}
+
+		foreach ([DsoDeadlineTimerListener::class, MilestoneStallTimerListener::class] as $saved) {
+			$context->registerEventListener(event: ObjectCreatedEvent::class, listener: $saved);
+			$context->registerEventListener(event: ObjectUpdatedEvent::class, listener: $saved);
+		}
 
 		// A term runs only in the statuses it declares, so the clock is
 		// reconciled with the case's status after every save that landed. It

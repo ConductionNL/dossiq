@@ -201,6 +201,9 @@ class DsoDeadlineTimer {
 			return self::UNAVAILABLE;
 		}
 
+		$warning  = $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14);
+		$critical = $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5);
+
 		$config = [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $caseId.self::SUBJECT_SUFFIX,
@@ -211,8 +214,8 @@ class DsoDeadlineTimer {
 			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
 			'escalationRules' => [
 				$this->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'dso-termijn-overschreden'),
-				$this->rule(trigger: 'preBreach', offset: $this->lead(key: 'dso_deadline_warning_weeks_warning', fallback: 14), unit: 'businessDays', message: self::MESSAGE_WARNING),
-				$this->rule(trigger: 'preBreach', offset: $this->lead(key: 'dso_deadline_warning_weeks_critical', fallback: 5), unit: 'businessDays', message: self::MESSAGE_CRITICAL),
+				$this->rule(trigger: 'preBreach', offset: $warning, unit: 'businessDays', message: self::MESSAGE_WARNING),
+				$this->rule(trigger: 'preBreach', offset: $critical, unit: 'businessDays', message: self::MESSAGE_CRITICAL),
 			],
 			'anchorEvent'     => 'dso_term_running',
 			'anchorEventAt'   => $anchor,

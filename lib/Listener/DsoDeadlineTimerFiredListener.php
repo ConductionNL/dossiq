@@ -31,7 +31,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Dso\DsoDeadlineActs;
 use OCA\Dossiq\Service\Dso\DsoDeadlineTimer;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
@@ -116,7 +115,9 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 	 *
 	 * The band is read off the rung's message identity, which the timer
 	 * sets per rung, because the two preBreach rungs differ only in offset
-	 * and the offsets are settings.
+	 * and the offsets are settings. The subjects are literals on purpose:
+	 * NotifierTest finds every dispatched subject by scanning for them, and
+	 * a constant would hide this sender from it.
 	 *
 	 * @param array<string, mixed> $case    The case, read fresh.
 	 * @param string               $message The rung's message identity.
@@ -131,12 +132,12 @@ class DsoDeadlineTimerFiredListener implements IEventListener {
 		}
 
 		if ($message === DsoDeadlineTimer::MESSAGE_CRITICAL) {
-			$this->acts->notify(case: $case, subject: Notifier::SUBJECT_DSO_DEADLINE_CRITICAL);
+			$this->acts->notify(case: $case, subject: 'dso_deadline_critical');
 			return;
 		}
 
 		if ($message === DsoDeadlineTimer::MESSAGE_WARNING) {
-			$this->acts->notify(case: $case, subject: Notifier::SUBJECT_DSO_DEADLINE_WARNING);
+			$this->acts->notify(case: $case, subject: 'dso_deadline_warning');
 		}
 	}//end act()
 }//end class

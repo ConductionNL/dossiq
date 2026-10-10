@@ -32,7 +32,6 @@ namespace OCA\Dossiq\Service\Milestone;
 
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
@@ -118,7 +117,7 @@ class MilestoneStallActs {
 				->setUser($assignee)
 				->setDateTime(new DateTime())
 				->setObject('case', $caseId)
-				->setSubject(Notifier::SUBJECT_MILESTONE_BOTTLENECK, ['milestone' => $label, 'daysOverdue' => $daysOverdue])
+				->setSubject('milestone_bottleneck', ['milestone' => $label, 'daysOverdue' => $daysOverdue])
 				->setMessage('plain', ['message' => 'Zaak wacht '.$daysOverdue.' dag(en) langer dan verwacht op mijlpaal "'.$label.'".']);
 			$this->notifications->notify($notification);
 		} catch (Throwable $e) {

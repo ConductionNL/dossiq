@@ -33,6 +33,10 @@ use OCA\Dossiq\Listener\AdviceTimerFiredListener;
 use OCA\Dossiq\Listener\AdviceTimerListener;
 use OCA\Dossiq\Listener\BezwaarArchiveTimerFiredListener;
 use OCA\Dossiq\Listener\BezwaarArchiveTimerListener;
+use OCA\Dossiq\Listener\DsoDeadlineTimerFiredListener;
+use OCA\Dossiq\Listener\DsoDeadlineTimerListener;
+use OCA\Dossiq\Listener\MilestoneStallTimerFiredListener;
+use OCA\Dossiq\Listener\MilestoneStallTimerListener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
@@ -66,6 +70,12 @@ class TermijnTimerRegistrarTest extends TestCase {
 			['OCA\OpenRegister\Event\FlowTimerFiredEvent', BezwaarArchiveTimerFiredListener::class],
 			['OCA\OpenRegister\Event\ObjectCreatedEvent', BezwaarArchiveTimerListener::class],
 			['OCA\OpenRegister\Event\ObjectUpdatedEvent', BezwaarArchiveTimerListener::class],
+			['OCA\OpenRegister\Event\FlowTimerFiredEvent', DsoDeadlineTimerFiredListener::class],
+			['OCA\OpenRegister\Event\ObjectCreatedEvent', DsoDeadlineTimerListener::class],
+			['OCA\OpenRegister\Event\ObjectUpdatedEvent', DsoDeadlineTimerListener::class],
+			['OCA\OpenRegister\Event\FlowTimerFiredEvent', MilestoneStallTimerFiredListener::class],
+			['OCA\OpenRegister\Event\ObjectCreatedEvent', MilestoneStallTimerListener::class],
+			['OCA\OpenRegister\Event\ObjectUpdatedEvent', MilestoneStallTimerListener::class],
 		] as $pair) {
 			self::assertContains(needle: $pair, haystack: $registered, message: implode(' -> ', $pair));
 		}

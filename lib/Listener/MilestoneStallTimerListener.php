@@ -116,8 +116,11 @@ class MilestoneStallTimerListener implements IEventListener {
 
 		if ($this->inSchema(object: $saved, configured: (string) $this->settingsService->getConfigValue('milestone_record_schema')) === true) {
 			$caseRef = $saved['case'] ?? '';
-			$caseId  = is_array($caseRef) === true ? (string) ($caseRef['id'] ?? '') : (string) $caseRef;
-			return $this->acts->find(caseId: $caseId);
+			if (is_array($caseRef) === true) {
+				$caseRef = $caseRef['id'] ?? '';
+			}
+
+			return $this->acts->find(caseId: (string) $caseRef);
 		}
 
 		return null;

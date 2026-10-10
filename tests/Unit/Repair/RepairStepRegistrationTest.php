@@ -81,6 +81,8 @@ class RepairStepRegistrationTest extends TestCase {
 		'ArmTermijnEngineTimers' => 'arms existing TermijnInstances; none exist yet',
 		'ArmAdviceTimers' => 'arms existing open advice requests; none exist yet',
 		'ArmBezwaarArchiveTimers' => 'arms existing bezwaar triggers; none exist yet',
+		'ArmDsoDeadlineTimers' => 'arms existing open DSO cases; none exist yet',
+		'ArmMilestoneStallTimers' => 'arms existing cases waiting on a milestone; none exist yet',
 		'ReconcileCaseDeadlinesWithTerms' => 'writes existing case deadlines from their terms; none exist yet',
 		'RearmBeslistermijnTimers' => 're-arms existing running term timers; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',

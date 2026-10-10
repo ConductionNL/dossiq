@@ -33,7 +33,6 @@ namespace OCA\Dossiq\Service\Dso;
 
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -146,7 +145,7 @@ class DsoDeadlineActs {
 			return false;
 		}
 
-		$this->notify(case: $case, subject: Notifier::SUBJECT_DSO_DEADLINE_OVERDUE);
+		$this->notify(case: $case, subject: 'dso_deadline_overdue');
 		if (($case['deadlineOverdue'] ?? false) === true) {
 			return false;
 		}

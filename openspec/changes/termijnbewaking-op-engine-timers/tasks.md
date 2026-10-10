@@ -75,10 +75,20 @@
       `BezwaarArchiveTimerFiredListener`. `BezwaarArchiveTimerListener` syncs on saves,
       `lib/Repair/ArmBezwaarArchiveTimers.php` arms the triggers running at upgrade. Job, its two
       tests and its allowlist entry are gone. Live check owed (live pass, decision 139).
-- [ ] 2.3 **DSO** — `DsoDeadlineJob` advances case status from cron: replace with an armed timer
+- [x] 2.3 **DSO** — `DsoDeadlineJob` advances case status from cron: replace with an armed timer
       per DSO-zaak and a `FlowTimerFiredEvent` consumer that drives the SAME
       `StatusTransitionService` path a user action takes (no cron-only transition code). Retire
       the job; remove its allowlist entry.
+      Built 10 Oct (lane L7). Correction to the task text, read off the job: DsoDeadlineJob never
+      moved a status; it notified the assignee in a warning and a critical band and, on overdue,
+      set `deadlineOverdue` with one journal entry, so there was no transition to route.
+      `lib/Service/Dso/DsoDeadlineTimer.php` arms one timer per open DSO case (`dsoStatus`
+      submitted/in_handling) breaching on the deadline day (the job called day 0 overdue), with
+      the two bands as `preBreach` rungs in businessDays read from the `dso_deadline_warning_weeks_*`
+      settings as working days, as the job read them. Subject `<case>:dso`, because status dwell
+      timers are cancelled by subject on the case id. One notification per band instead of one
+      per day. `DsoDeadlineActs` (fresh read; a decided case is never marked), listener, fired
+      listener, `ArmDsoDeadlineTimers` repair. Job, two tests, allowlist entry gone.
 - [x] 2.4 **Vergadering** — DELIVERED BY RETIREMENT, not by migration: the wave-5 status sweep
       (`openspec/changes/case-status-onto-engine-lifecycle`) found the engine dead — the job
       scanned for cases with a literal `status: 'planned'`, which `case.status` (a statusType
@@ -104,10 +114,18 @@
 
 ## Phase 3: milestones (staged)
 
-- [ ] 3.1 `Milestone/StalledCaseDetector` + `BottleneckDetectionJob`: the stalled-threshold
+- [x] 3.1 `Milestone/StalledCaseDetector` + `BottleneckDetectionJob`: the stalled-threshold
       becomes an armed `due`/`none` timer per active milestone (SLA in `businessDays` against the
       seeded `nl-national` calendar); detection-on-cron becomes rung fires. Retire
       `BottleneckDetectionJob`; remove its allowlist entry.
+      Built 10 Oct (lane L7): `StalledCaseDetector::waitingOn()` names the milestone a case waits
+      on with its scheduled deadline (the same row the stalled list reports, without the lateness
+      filter), and `lib/Service/Milestone/MilestoneStallTimer.php` arms one timer per case on it,
+      breaching the day after the deadline (`daysOverdue > 0`). It re-syncs on case saves that move
+      status, start date or case type and on every milestone-record save. `MilestoneStallActs`
+      tells the assignee once, only when the case still waits late on the armed milestone. The
+      SLA stays dossiq's working-day count; the engine `SlaCalculator`/`nl-national` calendar is
+      task 3.2. Job, its test and allowlist entry gone.
 - [ ] 3.2 `MilestoneService`: replace the app-local working-day math with the engine
       `SlaCalculator` + `WorkingCalendarService` (fixture pair: same business-day counts across a
       weekend + Dutch national holiday).
