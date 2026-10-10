@@ -115,7 +115,8 @@ class BespokeServiceRegistrar {
 					appManager: $c->get('OCP\\App\\IAppManager'),
 					initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState'),
 					settingsService: $c->get('OCA\\Dossiq\\Service\\SettingsService'),
-					queueUrgency: $c->get('OCA\\Dossiq\\Service\\Queue\\QueueUrgencySettings')
+					queueUrgency: $c->get('OCA\\Dossiq\\Service\\Queue\\QueueUrgencySettings'),
+					serverVersion: $c->get('OCP\\ServerVersion')
 				);
 			}
 		);

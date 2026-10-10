@@ -4,8 +4,8 @@
  * Dossiq KCC Callback Service
  *
  * Scheduling, retry and lifecycle management for KCC callback requests.
- * Retry timing (exponential backoff, max attempts) is delegated to the
- * SlaCalculator. Persistence uses the OpenRegister ObjectService.
+ * Retry timing (exponential backoff) is delegated to the
+ * CallbackRetrySchedule. Persistence uses the OpenRegister ObjectService.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Kcc
@@ -54,12 +54,12 @@ class CallbackService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service.
-	 * @param SlaCalculator $slaCalculator The SLA / backoff calculator.
+	 * @param CallbackRetrySchedule $retrySchedule The retry backoff.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
-		private SlaCalculator $slaCalculator,
+		private CallbackRetrySchedule $retrySchedule,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -168,7 +168,7 @@ class CallbackService {
 		}
 
 		$callback['status'] = 'attempted';
-		$callback['nextAttemptAt'] = $this->slaCalculator
+		$callback['nextAttemptAt'] = $this->retrySchedule
 			->nextRetryAt(from: $now, attemptCount: $attempts)
 			->format(DateTimeInterface::ATOM);
 

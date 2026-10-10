@@ -271,11 +271,11 @@ export default {
 }
 
 .sub-case-types-tab__success {
-	color: var(--color-success);
+	color: var(--color-success-text);
 }
 
 .sub-case-types-tab__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .sub-case-types-tab__empty {

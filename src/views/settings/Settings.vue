@@ -153,7 +153,7 @@ export default {
 }
 
 .success-message {
-	color: var(--color-success);
+	color: var(--color-success-text);
 	margin-top: 12px;
 }
 </style>

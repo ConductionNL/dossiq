@@ -100,6 +100,12 @@ class FakeObjectService {
 				$rows,
 				static function (array $row) use ($filters): bool {
 					foreach ($filters as $key => $value) {
+						// `_limit`, `_page` and friends are query parameters on the
+						// real service, not object fields.
+						if (str_starts_with((string)$key, '_') === true) {
+							continue;
+						}
+
 						if (($row[$key] ?? null) !== $value) {
 							return false;
 						}

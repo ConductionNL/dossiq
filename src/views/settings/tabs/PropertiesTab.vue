@@ -672,13 +672,13 @@ export default {
 }
 
 .properties-tab__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 
 .field-error {
 	display: block;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 12px;
 	margin-bottom: 8px;
 }

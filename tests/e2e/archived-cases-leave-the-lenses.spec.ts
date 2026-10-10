@@ -231,7 +231,7 @@ test.afterAll(async () => {
 })
 
 test.describe('A closed case is archived and comes back', () => {
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-archive-a-closed-case
+	// @e2e openspec/specs/case-management/spec.md#archive-a-closed-case
 	test('archiving a closed case marks it and moves the ZGW field', async () => {
 		const id = cases['Gearchiveerd A']
 
@@ -248,7 +248,7 @@ test.describe('A closed case is archived and comes back', () => {
 		expect(await archiveStatusOf(id)).toMatch(/^archived/)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-archive-is-not-offered-on-a-running-case
+	// @e2e openspec/specs/case-management/spec.md#archive-is-not-offered-on-a-running-case
 	test('archive is refused on a case that is still running', async () => {
 		const id = cases['Open A']
 
@@ -263,7 +263,7 @@ test.describe('A closed case is archived and comes back', () => {
 		expect(await markerOn(id)).toBeNull()
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-restore-in-one-action
+	// @e2e openspec/specs/case-management/spec.md#restore-in-one-action
 	test('restore clears the marker and puts the case back in the lists', async () => {
 		const id = cases['Gearchiveerd C']
 
@@ -306,7 +306,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		await narrowToThisRun(page)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-the-archived-case-is-gone-from-cases
+	// @e2e openspec/specs/case-management/spec.md#the-archived-case-is-gone-from-cases
 	test('the default lens shows the open cases and none of the archived ones', async ({
 		page,
 	}) => {
@@ -329,7 +329,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		}
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-the-archived-lens-finds-them
+	// @e2e openspec/specs/case-management/spec.md#the-archived-lens-finds-them
 	test('the Archived lens shows them and nothing else', async ({ page }) => {
 		await chooseLens(page, CHIPS.archived)
 
@@ -349,7 +349,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		}
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-search-does-not-return-an-archived-case
+	// @e2e openspec/specs/case-management/spec.md#search-does-not-return-an-archived-case
 	test('the archived cases are not in the default result of a shared query', async ({
 		page,
 	}) => {
@@ -370,7 +370,7 @@ test.describe('Archived cases leave the working lenses', () => {
 		expect(joined).toContain(`${RUN_PREFIX} Open A`)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-a-tile-and-its-list-agree
+	// @e2e openspec/specs/case-management/spec.md#a-tile-and-its-list-agree
 	test('the list and the total under it count the same set', async ({ page }) => {
 		// A tile and a list disagreeing is the failure, and both read the same
 		// query. The count the page itself prints is therefore the thing to
@@ -395,7 +395,7 @@ test.describe('Archived cases leave the working lenses', () => {
 })
 
 test.describe('An archived case is read-only and says so', () => {
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-the-fields-cannot-be-edited
+	// @e2e openspec/specs/case-management/spec.md#the-fields-cannot-be-edited
 	test('the case page names the archive and offers no write action', async ({
 		page,
 	}) => {
@@ -453,7 +453,7 @@ test.describe('An archived case is read-only and says so', () => {
 		await expect(page.getByTestId('case-archived')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md#scenario-a-write-shows-the-reason
+	// @e2e openspec/specs/case-management/spec.md#a-write-shows-the-reason
 	test('a write reaching the server anyway is refused, naming the archive', async () => {
 		const id = cases['Gearchiveerd B']
 
