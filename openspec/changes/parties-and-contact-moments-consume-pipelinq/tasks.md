@@ -75,7 +75,7 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
 - [x] 9.2 (2026-10-10: written, four scenarios, each skipping with a reason on an instance without pipelinq) `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts`, with
   a reason-bearing exclusion on every scenario it does not cover, per gate 19.
 - [ ] 9.4 (live pass, decision 139) Run `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts` and `tests/e2e/case-communication.spec.ts` on an instance with dossiq and pipelinq installed (pipelinq with at least two party kinds and two programmes).
-- [ ] 9.3 `openspec validate --strict` exits 0.
+- [x] 9.3 (2026-10-10: `openspec validate parties-and-contact-moments-consume-pipelinq --strict` reports valid) `openspec validate --strict` exits 0.
 
 ## Rescue, 2026-09-18: the six guards, one at a time
 
