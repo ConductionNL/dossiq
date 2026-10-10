@@ -105,7 +105,7 @@ describe('the dashboard captions', () => {
 	it('says in Dutch what the SLA share counts', () => {
 		expect(
 			widgetOf(manifest, 'Dashboard', 'kpi-sla-compliance').content.caption,
-		).toBe('haalden hun termijn')
+		).toBe('haalden hun termijn, naar doorlooptijd')
 	})
 })
 
