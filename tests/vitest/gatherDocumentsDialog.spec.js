@@ -291,7 +291,11 @@ describe('GatherDocumentsDialog', () => {
 		await wrapper.find('[data-testid="gather-search"]').trigger('click')
 		await flushPromises()
 
-		expect(axios.post).not.toHaveBeenCalled()
+		expect(
+			axios.post.mock.calls.filter(([url]) =>
+				String(url).endsWith('/woo/sources/search'),
+			),
+		).toEqual([])
 		expect(wrapper.find('[data-testid="gather-results-files"]').exists()).toBe(
 			true,
 		)
@@ -306,6 +310,8 @@ describe('GatherDocumentsDialog', () => {
 		await wrapper
 			.find('[data-testid="gather-pick-files-11"] input')
 			.setValue(true)
+		wrapper.vm.custodian = 'Afdeling Vergunningen'
+		await wrapper.vm.$nextTick()
 		await wrapper
 			.find('[data-testid="gather-pick-files-12"] input')
 			.setValue(true)

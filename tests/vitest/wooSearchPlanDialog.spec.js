@@ -180,7 +180,7 @@ describe('WooSearchPlanDialog', () => {
 			},
 		)
 		expect(wrapper.find('[data-testid="woo-plan-recorded"]').text()).toBe(
-			'Recorded by {who} on {when}',
+			'Recorded by pjansen on 2026-10-10',
 		)
 	})
 
