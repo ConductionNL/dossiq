@@ -6,4 +6,4 @@
   - unit: `FilinqRedactionClientTest::testTheBackendThatLookedIsReadFromFilinqsResult`, `::testFilinqsNothingFoundIsNotCalledRedacted`
 - [x] 1.3 `WOORedactionService` sends a refused document to manual redaction with reason `filinq_has_no_live_detector` (D2).
   - unit: `WOORedactionServiceTest::testADocumentFilinqRefusedForWantOfADetectorFallsToManualWithItsOwnReason`
-- [ ] 2.1 Live check once filinq's change lands: with entity detection switched off, a deels openbaar document on a Woo case lands on the manual list with reason `filinq_has_no_live_detector` and no anonymised file is written.
+- [ ] 2.1 (live pass, decision 139) Live check once filinq's change lands: with entity detection switched off, a deels openbaar document on a Woo case lands on the manual list with reason `filinq_has_no_live_detector` and no anonymised file is written.
