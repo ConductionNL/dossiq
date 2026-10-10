@@ -25511,6 +25511,60 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "kind": "parkeren-bewoner",
+        "portalSubject": "Voorbeeld Portalsubject 1",
+        "theme": "Voorbeeld Theme 1",
+        "case": "00000000-0000-4000-8000-000000000000",
+        "decision": "00000000-0000-4000-8000-000000000000",
+        "validFrom": "2026-03-01",
+        "validUntil": "2026-03-01",
+        "status": "active",
+        "kenteken": "ABCDEF",
+        "adres": "Voorbeeld Adres 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "kind": "parkeren-bezoeker",
+        "portalSubject": "Voorbeeld Portalsubject 2",
+        "theme": "Voorbeeld Theme 2",
+        "case": "00000000-0000-4000-8000-000000000001",
+        "decision": "00000000-0000-4000-8000-000000000001",
+        "validFrom": "2026-03-02",
+        "validUntil": "2026-03-02",
+        "status": "suspended",
+        "kenteken": "BCDEFG",
+        "adres": "Voorbeeld Adres 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "kind": "parkeren-bedrijf",
+        "portalSubject": "Voorbeeld Portalsubject 3",
+        "theme": "Voorbeeld Theme 3",
+        "case": "00000000-0000-4000-8000-000000000002",
+        "decision": "00000000-0000-4000-8000-000000000002",
+        "validFrom": "2026-03-03",
+        "validUntil": "2026-03-03",
+        "status": "revoked",
+        "kenteken": "CDEFGH",
+        "adres": "Voorbeeld Adres 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "plannedAction",
           "slug": "dossiq-planned-action-1"
         },
