@@ -6,16 +6,23 @@ Tier: V1. Kind: code. Size M. dossiq's half of hermiq#896, #898, #899, #900 and
 The file paths below say where each task landed. This repo's PHP suite lives
 under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
 
-- [ ] 1.1 A case type declares, per AI feature, the surface it appears on:
+- [x] 1.1 A case type declares, per AI feature, the surface it appears on:
   `case`, `intake` or `none` (D-1). Features are named by the slug hermiq
   registers them under, so one feature is one thing across the two apps.
   - `@spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-a-case-type-declares-which-ai-features-are-on-and-where-they-appear-req-aic-01`
-  - `lib/Settings/register.d/*.json` (zaaktype fragment), schema version moved
-- [ ] 1.2 An undeclared feature renders nothing and makes no call.
-  - `lib/Service/Ai/CaseTypeAiFeatures.php`
-- [ ] 2.1 Read which provider each declared feature uses and where it runs, from
+  - `lib/Settings/register.d/43-case-type-ai-features.json` (`caseType.aiFeatures`,
+    an object whose values are `case`, `intake` or `none`; no provider, model
+    or residency), register 0.20.25, info.xml bumped; en/nl l10n.
+    Test: `tests/Unit/Service/Ai/CaseTypeAiFeaturesDeclarationTest.php`.
+- [x] 1.2 An undeclared feature renders nothing and makes no call.
+  - `lib/Service/Ai/CaseTypeAiFeatures.php`; tests
+    `tests/Unit/Service/Ai/CaseTypeAiFeaturesTest.php` and
+    `AssistantControllerTest::testAiFeaturesAsksNobodyWhenTheCaseTypeDeclaresNothing`.
+- [x] 2.1 Read which provider each declared feature uses and where it runs, from
   hermiq's register (D-2). No provider, model or residency is stored here.
-  - `lib/Service/Assistant/HermiqAiFeatureClient.php::featureResidency()`
+  - `lib/Service/Assistant/HermiqAiFeatureClient.php::featureResidency()`,
+    joined in `AssistantController::aiFeatures()`; test
+    `AssistantControllerTest::testAFeatureHermiqDoesNotKnowIsUnavailableAndNotLocal`.
 - [ ] 2.2 An absent hermiq reports every declared feature as unavailable, never
   as local.
 - [ ] 3.1 A feature that reads a document carries the reference, and a request
