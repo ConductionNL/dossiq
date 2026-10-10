@@ -105,6 +105,9 @@ const SILENT = [
 	// `visible: false` and are written by the register's own expressions, so
 	// there is no input to control.
 	'portalTurn',
+	// The channel as it arrived when it was not a slug: a ZGW URL kept so a ZGW
+	// client reads back what it wrote (decision 171), never a filter.
+	'communicationChannelSource',
 	'assignedGroupPublicName',
 	// What dossiq writes for the Woo requester (woo-dossier-shared-with-the-requester
 	// REQ-WDS-002, REQ-WDS-003): a sentence and a link the portal shows, never a filter.
