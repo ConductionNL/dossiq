@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\WooStartFromListener
+ * @uses   \OCA\Dossiq\Woo\WooSearchPlans
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooStartFromListenerTest extends TestCase {
 

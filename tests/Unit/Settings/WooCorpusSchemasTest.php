@@ -28,6 +28,9 @@ use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @coversNothing
+ */
 class WooCorpusSchemasTest extends TestCase {
 
 	/**

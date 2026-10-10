@@ -48,6 +48,16 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Controller\WooCollectionController
+ * @uses   \OCA\Dossiq\Woo\WooCollection
+ * @uses   \OCA\Dossiq\Woo\WooCollectionQueries
+ * @uses   \OCA\Dossiq\Woo\WooSearchPlans
+ * @uses   \OCA\Dossiq\Woo\WooCorpusRefused
+ * @uses   \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Woo\WooSources
  */
 class WooCollectionControllerTest extends TestCase {
 

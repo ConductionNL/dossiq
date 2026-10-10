@@ -35,6 +35,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Woo\WooSearchPlans
  * @covers \OCA\Dossiq\Woo\WooCorpusRefused
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses   \OCA\Dossiq\Woo\WooSources
  */
 class WooSearchPlansTest extends TestCase {
 

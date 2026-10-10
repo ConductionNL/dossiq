@@ -38,6 +38,11 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Woo\WooCollectionQueries
+ * @uses   \OCA\Dossiq\Woo\WooCorpusRefused
+ * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses   \OCA\Dossiq\Woo\WooSources
  */
 class WooCollectionQueryTest extends TestCase {
 

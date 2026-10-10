@@ -48,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\WooSourcesController
  * @uses   \OCA\Dossiq\Woo\WooSources
  * @uses   \OCA\Dossiq\Support\FleetAppId
+ * @uses   \OCA\Dossiq\Woo\WooSearchPlans
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooSourcesControllerTest extends TestCase {
 
