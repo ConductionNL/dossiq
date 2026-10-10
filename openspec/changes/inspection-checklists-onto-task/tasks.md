@@ -10,15 +10,19 @@ before the decisions would specify a guess.
 
 ## The five steps
 
-- [ ] 1 **Pin.** Every reader and writer of the seven schemas has a test that
-      fails when its behaviour changes. Present today:
+- [x] 1 **Pin.** Every reader and writer of the seven schemas has a test that
+      fails when its behaviour changes:
       `tests/Unit/Service/ChecklistServiceTest.php`,
       `tests/Unit/Service/InspectionChecklistServiceTest.php`,
-      `tests/Unit/Controller/InspectionChecklistControllerTest.php` and
-      `tests/Unit/Listener/ChecklistRunImmutabilityListenerTest.php`.
-      Missing: the mobile store `src/store/modules/inspection.js` (stack A)
-      has no vitest, and the portal's `submitChecklistRun` write has no test
-      of its own.
+      `tests/Unit/Controller/InspectionChecklistControllerTest.php`,
+      `tests/Unit/Listener/ChecklistRunImmutabilityListenerTest.php` and, for
+      the portal's collections and its `submitChecklistRun` write,
+      `testInspectorContributionShape` plus the field-drift test in
+      `tests/Unit/Portal/PortalContributionProviderTest.php`. The mobile store
+      `src/store/modules/inspection.js` (stack A) had none; it is pinned by
+      `tests/vitest/inspectionStore.spec.js`, added 10 Oct 2026.
+      Mutation-checked: dropping the `nvt` term from the result rule reddened
+      one test of the eight, alone.
 - [x] 2 **Map.** Done 10 Oct 2026, written up in the proposal under "What the
       map found". Three stacks, seven schemas. The run maps onto `Task`; the
       template and its typed items do not. Five decisions came out of it
