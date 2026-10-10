@@ -144,6 +144,7 @@ class ManifestControllerTest extends TestCase {
 				config: $this->config,
 				groupManager: $groupManager,
 				userManager: $userManager,
+				text: new \OCA\Dossiq\Service\Support\TranslatedText(l10n: $l10n),
 			),
 			userSession: $userSession,
 			urlGenerator: $urlGenerator,

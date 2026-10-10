@@ -25,6 +25,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\MenuCaseTypesService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
+use OCP\IL10N;
 use OCP\IConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -135,7 +137,8 @@ class MenuCaseTypesServiceTest extends TestCase {
 		string $stored='',
 		?IConfig $config=null,
 		array $groups=[],
-		?FakeMenuCaseTypeObjectService $objectService=null
+		?FakeMenuCaseTypeObjectService $objectService=null,
+		string $language='nl'
 	): MenuCaseTypesService {
 		$objectService ??= new FakeMenuCaseTypeObjectService();
 		$objectService->rows = $rows;
@@ -171,8 +174,52 @@ class MenuCaseTypesServiceTest extends TestCase {
 			config: $config,
 			groupManager: $groupManager,
 			userManager: $userManager,
+			text: $this->text(language: $language),
 		);
 	}//end service()
+
+	/**
+	 * The title resolver, reading in the given language.
+	 *
+	 * @param string $language The reader's language code.
+	 *
+	 * @return TranslatedText
+	 */
+	private function text(string $language): TranslatedText {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn($language);
+
+		return new TranslatedText(l10n: $l10n);
+	}//end text()
+
+	/**
+	 * A translatable title reaches the menu in the reader's language, not as
+	 * "Array": the title is stored as a language map.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/menu-case-type-titles-in-the-readers-language/specs/case-type-navigation/spec.md
+	 */
+	public function testATranslatableTitleIsReadInTheReadersLanguage(): void {
+		$rows = [
+			['id' => 'kap', 'title' => ['nl' => 'Kapvergunning', 'en' => 'Tree felling permit']],
+			['id' => 'woo', 'title' => ['nl' => 'Woo-verzoek']],
+			['id' => 'bare', 'title' => []],
+		];
+
+		$this->assertSame(
+			[
+				['id' => 'bare', 'title' => 'bare'],
+				['id' => 'kap', 'title' => 'Kapvergunning'],
+				['id' => 'woo', 'title' => 'Woo-verzoek'],
+			],
+			$this->service($rows)->visibleCaseTypes()
+		);
+
+		$english = $this->service(rows: $rows, language: 'en')->visibleCaseTypes();
+		$this->assertSame('Tree felling permit', $english[1]['title']);
+		$this->assertSame('Woo-verzoek', $english[2]['title'], 'a map without the reader\'s language falls back to Dutch');
+	}//end testATranslatableTitleIsReadInTheReadersLanguage()
 
 	/**
 	 * Visible case types: current versions only, one per uuid, sorted by title.
