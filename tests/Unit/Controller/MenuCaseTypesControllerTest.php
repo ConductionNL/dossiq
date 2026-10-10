@@ -1,0 +1,109 @@
+<?php
+
+/**
+ * MenuCaseTypesController Unit Tests
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Controller;
+
+use OCA\Dossiq\Controller\MenuCaseTypesController;
+use OCA\Dossiq\Service\MenuCaseTypesService;
+use OCP\AppFramework\Http;
+use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Unit tests for MenuCaseTypesController.
+ *
+ * @covers \OCA\Dossiq\Controller\MenuCaseTypesController
+ */
+class MenuCaseTypesControllerTest extends TestCase {
+
+	/**
+	 * Build the controller over a service mock for a user (or anonymous).
+	 *
+	 * @param MenuCaseTypesService $service The service mock.
+	 * @param string|null $userId The user, or null for anonymous.
+	 *
+	 * @return MenuCaseTypesController
+	 */
+	private function controller(MenuCaseTypesService $service, ?string $userId='alice'): MenuCaseTypesController {
+		$session = $this->createMock(IUserSession::class);
+		$user = null;
+		if ($userId !== null) {
+			$user = $this->createMock(IUser::class);
+			$user->method('getUID')->willReturn($userId);
+		}
+
+		$session->method('getUser')->willReturn($user);
+
+		return new MenuCaseTypesController(
+			request: $this->createMock(IRequest::class),
+			menuCaseTypes: $service,
+			userSession: $session,
+		);
+	}//end controller()
+
+	/**
+	 * index: the user's own chosen list and the available case types.
+	 *
+	 * @return void
+	 */
+	public function testIndexReturnsChosenAndAvailable(): void {
+		$visible = [['id' => 'a', 'title' => 'A'], ['id' => 'b', 'title' => 'B']];
+		$service = $this->createMock(MenuCaseTypesService::class);
+		$service->method('offeredCaseTypes')->with('alice')->willReturn($visible);
+		$service->expects($this->once())->method('chosen')->with('alice', $visible)->willReturn([$visible[1]]);
+
+		$response = $this->controller($service)->index();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['chosen' => [$visible[1]], 'available' => $visible], $response->getData());
+	}//end testIndexReturnsChosenAndAvailable()
+
+	/**
+	 * update: stores for the current user only, through the cleaning service.
+	 *
+	 * @return void
+	 */
+	public function testUpdateSavesForTheCurrentUser(): void {
+		$visible = [['id' => 'a', 'title' => 'A']];
+		$service = $this->createMock(MenuCaseTypesService::class);
+		$service->method('offeredCaseTypes')->with('alice')->willReturn($visible);
+		$service->expects($this->once())->method('save')->with('alice', ['a', 'x'], $visible)->willReturn($visible);
+
+		$response = $this->controller($service)->update(['a', 'x']);
+
+		$this->assertSame(['chosen' => $visible], $response->getData());
+	}//end testUpdateSavesForTheCurrentUser()
+
+	/**
+	 * Anonymous callers are refused on both verbs.
+	 *
+	 * @return void
+	 */
+	public function testAnonymousIsRefused(): void {
+		$service = $this->createMock(MenuCaseTypesService::class);
+		$service->expects($this->never())->method('save');
+
+		$controller = $this->controller($service, null);
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->index()->getStatus());
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->update(['a'])->getStatus());
+	}//end testAnonymousIsRefused()
+}//end class

@@ -244,35 +244,32 @@ describe('the Team column and the Mine chip', () => {
 	const INDEXES = [['Cases', 'case', 'assignedGroup']]
 
 	it.each(INDEXES)(
-		'%s shows a Team column reading the expanded team name',
+		'%s shows a Team column reading the group id',
 		(id, slug, property) => {
 			const config = page(id).config
 			const keys = config.columns.map((column) =>
 				typeof column === 'string' ? column : column.key,
 			)
 
-			// The nested key, not the bare property: `assignedGroup` is a $ref
-			// and CnIndexPage renders a plain key raw, so a bare column would
-			// show a uuid in every row and look like data rather than an error.
-			expect(keys).toContain(`${property}.roleName`)
-			expect(
-				config.extend,
-				'a nested column key only resolves when OpenRegister expands the reference on the fetch',
-			).toContain(property)
+			// The bare property: since one-team-model `assignedGroup` is a
+			// Nextcloud group id, not a $ref. A nested `.roleName` key would
+			// read nothing on every row, and an `extend` would ask OpenRegister
+			// to expand a reference that is not there.
+			expect(keys).toContain(property)
+			expect(keys).not.toContain(`${property}.roleName`)
+			expect(config.extend ?? []).not.toContain(property)
 			// Beside the personal assignee, never instead of it.
 			expect(keys).toContain('assignee')
-			expect(keys.indexOf(`${property}.roleName`)).toBeGreaterThan(
-				keys.indexOf('assignee'),
-			)
+			expect(keys.indexOf(property)).toBeGreaterThan(keys.indexOf('assignee'))
 		},
 	)
 
 	it.each(INDEXES)(
 		'%s can be narrowed to a team by facet',
 		(id, slug, property) => {
-			// The Team quick-filter chip is blocked on the platform resolving the
-			// signed-in handler's organisatieRol rows, so the sidebar facet is the
-			// only way to pick a team. A facet is opt-in per property.
+			// No Team quick-filter chip ships yet (a "my teams" token needs the
+			// reader's groups), so the sidebar facet is the only way to pick a
+			// team. A facet is opt-in per property.
 			expect(page(id).config.sidebar.enabled).toBe(true)
 			expect(schema(slug).properties[property].facetable).toBe(true)
 		},

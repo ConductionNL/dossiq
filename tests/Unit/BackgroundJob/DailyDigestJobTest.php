@@ -192,7 +192,7 @@ class DailyDigestJobTest extends TestCase {
 	 * One waiting item, as the queue answers it.
 	 *
 	 * @param string $id   The item id.
-	 * @param string $tier Its urgency tier.
+	 * @param string $tier Its deadline tier.
 	 *
 	 * @return array<string, mixed> The item.
 	 */
@@ -201,7 +201,7 @@ class DailyDigestJobTest extends TestCase {
 			'id' => $id,
 			'title' => 'Waiting ' . $id,
 			'source' => 'assigned-cases',
-			'tier' => $tier,
+			'deadlineTier' => $tier,
 		];
 	}
 

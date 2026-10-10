@@ -582,6 +582,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\CopyEmbeddedBezwaarAuditTrail</step>
             <!--
+                one-team-model. A case's team is a Nextcloud group id; a case
+                stored before held an organisation role uuid. This moves each
+                case to the group its role names (organisatieRol.ncGroupId) and
+                guesses nothing: a role without a group leaves the case as it is,
+                and occ dossiq:teams:migrate lists those cases. After the import
+                above (the schema must already accept a group id) and before the
+                custody backfill below (a holding it opens records the group).
+                Idempotent and non-fatal. POST-MIGRATION only: a fresh install
+                has no case holding a role.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateCaseTeamsToGroups</step>
+            <!--
                 The chain of custody starts the day it ships, so every case that
                 already exists would have a chain with a hole at the front, and
                 a chain with a hole reads as an answer. This opens one holding
@@ -747,6 +759,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
+              MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
@@ -947,6 +960,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
     <commands>
         <command>OCA\Dossiq\Command\AdoptShippedFlowsCommand</command>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
+        <command>OCA\Dossiq\Command\MigrateCaseTeamsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateLhsToDecisionTablesCommand</command>
