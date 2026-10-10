@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Woo\WooPagesSeen;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -67,19 +68,23 @@ class WOODecisionService {
 	 * @param WOODocumentAssessmentService $assessmentService Document assessment service
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
+	 * @param WooPagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WOODocumentAssessmentService $assessmentService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?WooPagesSeen $pagesSeen = null,
 	) {
 	}//end __construct()
 
 	/**
 	 * Assemble the formal WOO besluit for a case.
 	 *
-	 * Validates that all documents are assessed, then writes a decision object
+	 * Validates that all documents are assessed and every required page of an
+	 * in-scope document was seen (refused with 409 otherwise, woo-review-triage),
+	 * then writes a decision object
 	 * linked to the case referencing all assessments and weigeringsgronden.
 	 *
 	 * @param string $caseId The case UUID
@@ -91,10 +96,14 @@ class WOODecisionService {
 	 * @throws \InvalidArgumentException If any document has not been assessed
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function assembleDecision(string $caseId, array $decisionData = []): array {
 		// Guard: all documents must be assessed before a besluit can be created.
 		$this->assertAllDocumentsAssessed(caseId: $caseId);
+
+		// Guard: every required page of every in-scope document has been seen (REQ-WRT-005).
+		$this->pagesSeen?->assertAllSeen(caseId: $caseId);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -265,6 +274,19 @@ class WOODecisionService {
 			);
 		}
 	}//end markCaseReady()
+
+	/**
+	 * The in-scope documents of a case whose required pages are not all seen, with those pages.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, list<int>> The unseen pages by document; empty without the review.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 */
+	public function unseenPages(string $caseId): array {
+		return ($this->pagesSeen?->unseenInCase(caseId: $caseId) ?? []);
+	}//end unseenPages()
 
 	/**
 	 * Guard that every document of a case carries an assessment.

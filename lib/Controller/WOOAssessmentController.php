@@ -211,6 +211,15 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse($result);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		} catch (RefusedException $e) {
+			return new JSONResponse(
+				[
+					'error' => $e->getRule(),
+					'message' => $this->l10n->t('The decision waits until every required page has been seen.'),
+					'unseen' => $this->decisionService->unseenPages(caseId: $id),
+				],
+				$e->getStatus()
+			);
 		} catch (\RuntimeException $e) {
 			$this->logger->error(
 				'WOO besluit assembly failed: ' . $e->getMessage(),
@@ -411,6 +420,7 @@ class WOOAssessmentController extends Controller {
 		return match ($reason) {
 			'no_woo_decision' => [Http::STATUS_CONFLICT, $this->l10n->t('This case has no Woo decision yet. Assemble the decision first.')],
 			'several_woo_decisions' => [Http::STATUS_CONFLICT, $this->l10n->t('This case has more than one Woo decision. Publish one by its decision id.')],
+			'pages_unseen' => [Http::STATUS_CONFLICT, $this->l10n->t('Publishing waits until every required page has been seen.')],
 			'no_publishable_documents' => [Http::STATUS_CONFLICT, $this->l10n->t('Nothing can be published yet: no document is assessed as public.')],
 			'no_publication' => [Http::STATUS_CONFLICT, $this->l10n->t('This decision has not been published.')],
 			'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi is not installed, so nothing can be published.')],

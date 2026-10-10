@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WOOAssessmentController;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
@@ -30,7 +31,11 @@ use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
+use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Woo\WooPagesSeen;
+use OCA\Dossiq\Woo\WooReviewDepth;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -268,6 +273,56 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testBulkAssessWithAnUnknownGroundAnswers422()
 
 	/**
+	 * A verdict on an in-scope document whose required pages are unseen is not stored, and the answer names the pages.
+	 *
+	 * @return void
+	 */
+	public function testBulkAssessRefusesUnseenPages(): void {
+		$store = new InMemoryRegister();
+		$store->seed(schema: 'document', uuid: 'doc-001', row: ['case' => 'case-uuid-001']);
+		$store->seed(schema: 'document', uuid: 'doc-002', row: ['case' => 'case-uuid-001']);
+		$store->seed(schema: 'wooDocumentReview', uuid: 'r-1', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-001', 'relevance' => 'in-scope', 'pagesRequired' => [1, 2, 3], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
+		$store->seed(schema: 'wooDocumentReview', uuid: 'r-2', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-002', 'relevance' => 'in-scope', 'pagesRequired' => [1], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
+		$this->request->method('getParam')->willReturnMap([
+			['assessments', [], [
+				['documentRef' => 'doc-001', 'classification' => 'openbaar'],
+				['documentRef' => 'doc-002', 'classification' => 'openbaar'],
+			]],
+		]);
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview', 'document_schema' => 'document'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($config[$key] ?? ''));
+		$reviews = new WooDocumentReviews(settingsService: $settings, logger: $this->logger);
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, $reviews, new WooPagesSeen(reviews: $reviews, depth: new WooReviewDepth()));
+		$controller = new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$service,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$this->untranslated(),
+		);
+
+		$response = $controller->bulkAssess('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('doc-001', $response->getData()['errors'][0]['documentRef']);
+		$this->assertSame('Open these pages before giving a verdict: 2, 3.', $response->getData()['errors'][0]['errors']['pagesSeen']);
+		$stored = array_column($store->all('wooDocumentAssessment'), 'documentRef');
+		$this->assertSame(['doc-002'], $stored);
+	}//end testBulkAssessRefusesUnseenPages()
+
+	/**
 	 * An unreadable list refuses the whole call with 503 and the rule.
 	 *
 	 * @return void
@@ -336,6 +391,34 @@ class WOOAssessmentControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}//end testCreateDecisionReturns422WhenDocumentsOutstanding()
+
+	/**
+	 * A decision that waits for unseen pages answers 409 naming the documents and pages; publish does the same.
+	 *
+	 * @return void
+	 */
+	public function testDecisionAndPublishAnswer409NamingTheUnseenPages(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['decision', [], []], ['decisionId', '', '']]);
+		$this->decisionService->method('assembleDecision')->willThrowException(
+			new RefusedException(rule: 'woo-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
+		);
+		$this->decisionService->method('unseenPages')->willReturn(['doc-7' => [7]]);
+		$this->publicationService->method('publish')->willReturn(['available' => false, 'reason' => 'pages_unseen', 'unseen' => ['doc-7' => [7]]]);
+
+		$decision = $this->controller->createDecision('case-uuid-001');
+		$this->assertSame(409, $decision->getStatus());
+		$this->assertSame('woo-pages-unseen', $decision->getData()['error']);
+		$this->assertSame(['doc-7' => [7]], $decision->getData()['unseen']);
+
+		$published = $this->controller->publishDecision('case-uuid-001');
+		$this->assertSame(409, $published->getStatus());
+		$this->assertSame(['doc-7' => [7]], $published->getData()['unseen']);
+		$this->assertSame('Publishing waits until every required page has been seen.', $published->getData()['message']);
+	}//end testDecisionAndPublishAnswer409NamingTheUnseenPages()
 
 	/**
 	 * PublishDecision returns 401 when user is not authenticated.

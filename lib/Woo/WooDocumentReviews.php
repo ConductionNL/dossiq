@@ -233,79 +233,15 @@ class WooDocumentReviews {
 	}//end mark()
 
 	/**
-	 * A reviewer saw these pages: append each one not yet recorded for them, with the time.
+	 * The pages seen on these reviews, and the required pages still unseen.
 	 *
-	 * The viewer also reports the page count. The first count a review
-	 * hears sets `pageCount`, and the required pages are then drawn again
-	 * from the recorded depth, so a sample keeps its seed.
-	 *
-	 * @param string $caseId The Woo case UUID.
-	 * @param string $documentRef The document.
-	 * @param list<int> $pages The pages displayed.
-	 * @param int|null $pageCount The document's page count, when the viewer knows it.
-	 * @param string $userId The reviewer.
-	 *
-	 * @return array<string, mixed> The saved review.
-	 *
-	 * @throws RefusedException When no page is given or the review cannot be written.
+	 * @return WooPagesSeen The pages seen, over these reviews.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
-	public function recordPagesSeen(string $caseId, string $documentRef, array $pages, ?int $pageCount, string $userId): array {
-		$pages = array_values(array_unique(array_filter($pages, static fn (int $page): bool => $page >= 1)));
-		if ($pages === []) {
-			throw new RefusedException(
-				rule: 'woo-pages-required',
-				sentence: 'Name the pages that were displayed.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$review = ($this->forCase(caseId: $caseId)[$documentRef] ?? ['case' => $caseId, 'documentRef' => $documentRef, 'relevance' => self::UNMARKED]);
-		if ($pageCount !== null && $pageCount >= 1 && isset($review['pageCount']) === false) {
-			$review['pageCount'] = $pageCount;
-			$review['pagesRequired'] = (new WooReviewDepth())->pagesRequired(depth: (array)($review['depth'] ?? []), pageCount: $pageCount);
-		}
-
-		$seen = array_values((array)($review['pagesSeen'] ?? []));
-		$known = [];
-		foreach ($seen as $entry) {
-			$known[(string)($entry['by'] ?? '').':'.(int)($entry['page'] ?? 0)] = true;
-		}
-
-		$now = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-		foreach ($pages as $page) {
-			if (isset($known[$userId.':'.$page]) === false) {
-				$seen[] = ['page' => $page, 'by' => $userId, 'at' => $now];
-			}
-		}
-
-		$review['pagesSeen'] = $seen;
-
-		return $this->save(review: $review);
-	}//end recordPagesSeen()
-
-	/**
-	 * The required pages of a review that nobody has seen yet.
-	 *
-	 * @param array<string, mixed> $review The review.
-	 *
-	 * @return list<int> The unseen required pages, ascending.
-	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
-	 */
-	public function unseenPages(array $review): array {
-		$seen = [];
-		foreach ((array)($review['pagesSeen'] ?? []) as $entry) {
-			$seen[(int)($entry['page'] ?? 0)] = true;
-		}
-
-		$required = array_map('intval', (array)($review['pagesRequired'] ?? []));
-		$unseen = array_values(array_filter($required, static fn (int $page): bool => isset($seen[$page]) === false));
-		sort($unseen);
-
-		return $unseen;
-	}//end unseenPages()
+	public function pages(): WooPagesSeen {
+		return new WooPagesSeen(reviews: $this, depth: new WooReviewDepth());
+	}//end pages()
 
 	/**
 	 * Save a review, creating or replacing it.

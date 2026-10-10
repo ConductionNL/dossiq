@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Woo\WooPagesSeen;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -52,6 +53,10 @@ use Throwable;
  * Service for publishing WOO decisions through OpenCatalogi.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The thirteenth type is
+ * WooPagesSeen: publishing must refuse while a required page is unseen
+ * (woo-review-triage REQ-WRT-005), and that answer lives in one place.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
@@ -102,6 +107,7 @@ class WooPublicationService {
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
+	 * @param WooPagesSeen|null $pagesSeen The pages seen per document; publishing waits for the required ones.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -112,6 +118,7 @@ class WooPublicationService {
 		private readonly ?WooDossierReturn $dossierReturn = null,
 		?WooCaseLedger $caseLedger = null,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
+		private readonly ?WooPagesSeen $pagesSeen = null,
 	) {
 		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
@@ -281,6 +288,11 @@ class WooPublicationService {
 			$decisionId = $resolved['decisionId'];
 		}
 
+		$unseen = $this->unseenPages(caseId: $caseId);
+		if ($unseen !== []) {
+			return ['available' => false, 'reason' => 'pages_unseen', 'unseen' => $unseen];
+		}
+
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$decisionSchema = $this->settingsService->getConfigValue('decision_schema');
@@ -345,6 +357,19 @@ class WooPublicationService {
 	}//end publish()
 
 
+
+	/**
+	 * The in-scope documents with required pages nobody has seen yet.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, list<int>> The unseen pages by document; empty without the review schema.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 */
+	private function unseenPages(string $caseId): array {
+		return ($this->pagesSeen?->unseenInCase(caseId: $caseId) ?? []);
+	}//end unseenPages()
 
 	/**
 	 * Load the case and decision objects for a publish/withdraw request.

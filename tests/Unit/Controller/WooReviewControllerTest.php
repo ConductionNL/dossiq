@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Woo\WooPagesSeen;
 use OCA\Dossiq\Woo\WooReviewBatches;
 use OCA\Dossiq\Woo\WooReviewDepth;
 use OCA\Dossiq\Woo\WooReviewSummary;
@@ -47,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooReviewSummary
  * @covers \OCA\Dossiq\Woo\WooDocumentReviews
  * @covers \OCA\Dossiq\Woo\WooReviewBatches
+ * @covers \OCA\Dossiq\Woo\WooPagesSeen
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
@@ -130,6 +132,7 @@ class WooReviewControllerTest extends TestCase {
 				l10n: $l10n,
 				logger: $logger,
 			),
+			pagesSeen: new WooPagesSeen(reviews: $reviews, depth: new WooReviewDepth()),
 			caseAccessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,
@@ -273,7 +276,6 @@ class WooReviewControllerTest extends TestCase {
 		$this->assertSame([1, 2, 3], array_column($saved['pagesSeen'], 'page'));
 		$this->assertSame(['reviewer-a'], array_values(array_unique(array_column($saved['pagesSeen'], 'by'))));
 		$this->assertNotEmpty($saved['pagesSeen'][0]['at']);
-		$this->assertSame([], (new WooDocumentReviews(settingsService: $this->createMock(SettingsService::class), logger: $this->createMock(LoggerInterface::class)))->unseenPages(review: $saved));
 
 		$empty = $this->controller(params: ['pages' => []])->pagesSeen(id: 'case-x', documentRef: 'doc-4');
 		$this->assertSame(422, $empty->getStatus());

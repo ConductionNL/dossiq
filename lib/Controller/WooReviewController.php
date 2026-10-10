@@ -26,6 +26,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Woo\WooPagesSeen;
 use OCA\Dossiq\Woo\WooReviewBatches;
 use OCA\Dossiq\Woo\WooReviewSummary;
 use OCP\AppFramework\Controller;
@@ -54,6 +55,7 @@ class WooReviewController extends Controller {
 	 * @param WooDocumentReviews $reviews The relevance store.
 	 * @param WooReviewSummary $summary The case summary.
 	 * @param WooReviewBatches $batches The review batches.
+	 * @param WooPagesSeen $pagesSeen The pages seen per document.
 	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
 	 * @param IL10N $l10n The translations.
@@ -65,6 +67,7 @@ class WooReviewController extends Controller {
 		private readonly WooDocumentReviews $reviews,
 		private readonly WooReviewSummary $summary,
 		private readonly WooReviewBatches $batches,
+		private readonly WooPagesSeen $pagesSeen,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
@@ -231,12 +234,12 @@ class WooReviewController extends Controller {
 		}
 
 		try {
-			$review = $this->reviews->recordPagesSeen(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
+			$review = $this->pagesSeen->record(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
 		} catch (RefusedException $e) {
 			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
 		}
 
-		return new JSONResponse($review + ['unseen' => $this->reviews->unseenPages(review: $review)]);
+		return new JSONResponse($review + ['unseen' => $this->pagesSeen->unseenPages(review: $review)]);
 	}//end pagesSeen()
 
 	/**

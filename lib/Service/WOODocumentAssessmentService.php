@@ -83,7 +83,7 @@ class WOODocumentAssessmentService {
 	 * @param WooRefusalGrounds|null $refusalGrounds The settled list a cited ground is checked against.
 	 *        Built over the same settings and logger when left out, because those are its only
 	 *        collaborators and a default built from them is the instance the container wires.
-	 * @param WooDocumentReviews|null $reviews Each document's relevance (woo-review-triage); null keeps every document needing a verdict.
+	 * @param WooDocumentReviews|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -134,7 +134,12 @@ class WOODocumentAssessmentService {
 		$errors = [];
 
 		foreach ($assessments as $assessment) {
-			$validationErrors = $this->validate(assessment: $assessment);
+			$unseen = [];
+			if ($this->reviews !== null) {
+				$unseen = $this->reviews->pages()->refusalFor(caseId: $caseId, assessment: $assessment);
+			}
+
+			$validationErrors = $this->validate(assessment: $assessment) + $unseen;
 			if (empty($validationErrors) === false) {
 				$errors[] = [
 					'documentRef' => $assessment['documentRef'] ?? 'unknown',

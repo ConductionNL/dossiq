@@ -100,15 +100,25 @@ PR, sections 4 to 6 the second.
     `unseen`), `WooDocumentReviews::recordPagesSeen()` and `unseenPages()`;
     `WooReviewControllerTest::testPagesSeenAreAppendedWithTheReviewer`.
     Open: the viewer call and its vitest (board DqWooReview, design-system #191, draft).
-- [ ] 5.2 Refuse a verdict while required pages are unseen: in `WOODocumentAssessmentService::validate()`
+- [x] 5.2 Refuse a verdict while required pages are unseen: in `WOODocumentAssessmentService::validate()`
   for `bulkAssess`, and in a listener on OpenRegister's object updating and creating events for
   `wooDocumentAssessment` (direct API writes) (REQ-WRT-005).
   - **fails today**: `testAVerdictSetWithoutOpeningIsRefused` in
     `tests/Unit/Listener/WooPagesSeenGuardTest.php`, with the real event class, and
     `testBulkAssessRefusesUnseenPages` in `WOOAssessmentControllerTest`.
-- [ ] 5.3 `assembleDecision()` and `publish()` refuse with 409 naming documents and pages (REQ-WRT-005).
+  - Built: `lib/Woo/WooPagesSeen.php` (record, unseen per review, document and case, the refusal sentence,
+    `assertAllSeen`) with `WooPagesSeenTest`; `lib/Listener/WooPagesSeenGuard.php` on `ObjectCreatingEvent` and
+    `ObjectUpdatingEvent` (registered in `WooListenerRegistrar`) with `WooPagesSeenGuardTest`
+    (`testAVerdictSetWithoutOpeningIsRefused` red first: class absent); `bulkUpsert()` adds the refusal per
+    assessment (`testBulkAssessRefusesUnseenPages` red first with the check removed). Only in-scope documents with
+    `pagesRequired` are held; a document never put in a batch has none, so existing Woo cases do not block.
+- [x] 5.3 `assembleDecision()` and `publish()` refuse with 409 naming documents and pages (REQ-WRT-005).
   - **fails today**: `WooPublicationServiceTest::testPublishWaitsForTheLastPage`,
     `WOODecisionServiceTest::testTheDecisionWaitsForTheLastPage`.
+  - Built: `WOODecisionService::assembleDecision()` throws `woo-pages-unseen` (409) through
+    `WooPagesSeen::assertAllSeen()`; `WooPublicationService::publish()` answers `pages_unseen` with `unseen` by
+    document; `WOOAssessmentController` answers both with 409 and the unseen pages
+    (`testDecisionAndPublishAnswer409NamingTheUnseenPages`).
 
 ## 6. The request as an authorisation container
 

@@ -22,9 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Woo\WooPagesSeen;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -138,6 +140,32 @@ class WOODecisionServiceTest extends TestCase {
 
 		$this->service->assembleDecision('case-uuid-001');
 	}//end testAssembleDecisionThrowsWhenDocumentsOutstanding()
+
+	/**
+	 * The decision waits for the last page: page 7 of one in-scope document unseen answers 409 and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheDecisionWaitsForTheLastPage(): void {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+		$pagesSeen = $this->createMock(WooPagesSeen::class);
+		$pagesSeen->method('unseenInCase')->with('case-001')->willReturn(['doc-7' => [7]]);
+		$pagesSeen->method('assertAllSeen')->with('case-001')->willThrowException(
+			new RefusedException(rule: 'woo-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
+		);
+		$this->settingsService->expects($this->never())->method('getObjectService');
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, $pagesSeen);
+
+		$this->assertSame(['doc-7' => [7]], $service->unseenPages(caseId: 'case-001'));
+		$this->assertSame([], $this->service->unseenPages(caseId: 'case-001'));
+		try {
+			$service->assembleDecision(caseId: 'case-001');
+			$this->fail('A decision was assembled with a required page unseen.');
+		} catch (RefusedException $e) {
+			$this->assertSame('woo-pages-unseen', $e->getRule());
+			$this->assertSame(409, $e->getStatus());
+		}
+	}//end testTheDecisionWaitsForTheLastPage()
 
 	/**
 	 * AssembleDecision throws RuntimeException when OpenRegister is unavailable.
