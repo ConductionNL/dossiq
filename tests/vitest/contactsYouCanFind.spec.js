@@ -134,11 +134,13 @@ describe('where the organisations index sits', () => {
 		expect(iconsSource).toContain(`\n\t${entry.icon},`)
 	})
 
-	it('does not collide with the tenants entry that carries the same label', () => {
-		// `TenantsMenu` is also labelled Organisations and means the tenant,
-		// not a company. It is removed, so the two never render together; if
-		// it ever comes back it must be renamed first.
-		expect(menuLayout.removals).toContain('TenantsMenu')
+	it('does not collide with the tenants entry that carried the same label', () => {
+		// `TenantsMenu` was also labelled Organisations and meant the tenant,
+		// not a company. It retired with dossiq's tenant store, so it is in
+		// neither the manifest nor the removals any more; if a tenant entry
+		// ever comes back it must be named for what it is first.
+		expect(menuLayout.removals).not.toContain('TenantsMenu')
+		expect(manifest.menu.map((m) => m.id)).not.toContain('TenantsMenu')
 		const labelled = built.menu.filter((m) => m.label === 'Organisations')
 		expect(labelled).toHaveLength(0)
 	})

@@ -62,7 +62,6 @@ const OTHER_SIDEBARS = {
 	// an always-empty drawer.
 	AdviceDetail: 2,
 	WmsLayerDetail: 2,
-	TenantDetail: 2,
 	TransferDetail: 2,
 	WorkflowDefinitionDetail: 2,
 	StatusRecordDetail: 2,

@@ -8,7 +8,7 @@
  * is OpenRegister's TenantLifecycleService, and the `tenant` schema stays only
  * as the read-only anchor of the tenant audit trail. So nothing names the two
  * classes, no route reaches them, and the one write left on the schema is
- * the anchor creation. The manifest pages go in step 5, with their own test.
+ * the anchor creation. No manifest page administers tenants either (step 5).
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Architecture
@@ -137,4 +137,18 @@ class NoRetiredTenantStoreTest extends TestCase {
 
 		$this->assertSame($expected, $found);
 	}//end testOnlyTheAnchorCreationWritesATenantObjectAndNothingDeletesOne()
+
+	/**
+	 * No manifest page, menu entry or deep link administers tenants (REQ-TOO-004, step 5).
+	 *
+	 * @return void
+	 */
+	public function testNoManifestPageOrMenuNamesTheTenantsRoute(): void {
+		foreach (['src/manifest.json', 'src/menu-layout.json', 'src/menu-layout.simple.json'] as $file) {
+			$source = (string) file_get_contents(self::ROOT.'/'.$file);
+			foreach (['"Tenants"', '"TenantDetail"', '"TenantsMenu"', '/settings/tenants'] as $needle) {
+				$this->assertStringNotContainsString($needle, $source, $file.' still names '.$needle);
+			}
+		}
+	}//end testNoManifestPageOrMenuNamesTheTenantsRoute()
 }//end class

@@ -696,12 +696,10 @@ describe('what this change does NOT move', () => {
 		// beside `All cases`, which is where a handler looks for the case
 		// they just deleted.
 		//
-		// TWO ENTRIES ARE LABELLED `Organisations` AND THAT IS NOT A TYPO. The
-		// second one, further down, is `TenantsMenu` — the multitenancy
-		// tenant, not a KvK company. It sits in `menu-layout.json#removals`
-		// and renders nowhere, so the two never appear together; the
-		// collision is only visible here, on the RAW manifest, which is
-		// exactly where it should be visible.
+		// ONE ENTRY IS LABELLED `Organisations`: the KvK companies. The second
+		// one, `TenantsMenu` (the multitenancy tenant), retired with dossiq's
+		// tenant store (tenancy-onto-openregister-organisation step 5); a
+		// tenant is an OpenRegister organisation and is administered there.
 		expect(manifest.menu.map((entry) => entry.label)).toEqual([
 			'Dashboard',
 			// `Your queue` and `Close out your day` are the sixth and seventh
@@ -727,7 +725,6 @@ describe('what this change does NOT move', () => {
 			'Settings',
 			'Documentation',
 			'Store',
-			'Organisations',
 			'Map layers',
 			'Woo refusal grounds',
 			'Case types',
