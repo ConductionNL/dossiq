@@ -119,6 +119,9 @@ requester. When a Woo term is extended, dossiq SHALL send the requester an `exte
 carrying the reason and the new end date, through REQ-WRN-001 and REQ-WRN-002. The extension SHALL
 stand when the notice is `not-sent`, and the case SHALL show the extension notice as not sent with
 the reason, so the handler can send it another way before the original term ends.
+Every extension of a statutory term SHALL send the same notice, whichever route extended it
+(Awb 4:14 lid 3 asks that the applicant is told; decision 166), and the requester SHALL be told
+once per extension.
 
 #### Scenario: The requester is told about the extension
 - **GIVEN** a Woo case from the portal with a running term
@@ -132,6 +135,22 @@ the reason, so the handler can send it another way before the original term ends
 - **THEN** the term SHALL be extended
 - **AND** the case SHALL store the extension notice with status `not-sent` and reason `no-channel`
 - **AND** the extend response SHALL say the requester was not told
+
+#### Scenario: A statutory extension outside Woo tells the requester too
+@e2e exclude no non-Woo extension flow in the nightly fixtures; unit over the term engine, StatutoryExtensionNoticeTest
+
+- **GIVEN** a vergunning case with a running statutory term
+- **WHEN** the handler extends the term through `termijn#verleng` with a reason
+- **THEN** the requester SHALL get the `extension` notice with that reason and the new end date
+- **AND** a planned or internal term extended the same way SHALL tell nobody
+
+#### Scenario: The requester is told once
+@e2e exclude a second send is only visible in the transport; unit over the controller, WOOAssessmentControllerExtensionNoticeTest
+
+- **GIVEN** a Woo case from the portal with a running term
+- **WHEN** the handler extends the term
+- **THEN** exactly one `portaalBericht` SHALL carry the extension
+- **AND** the case SHALL store one extension record
 
 ### Requirement: Every requester notice is stored on the case with its result (REQ-WRN-006)
 
