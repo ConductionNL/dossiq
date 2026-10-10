@@ -105,6 +105,15 @@ final class PackageTestRegister extends InMemoryRegister {
  * @covers \OCA\Dossiq\Service\CaseDefinition\ShippedPackageRules
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageDirectory
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageCapabilities
+ * @covers \OCA\Dossiq\Service\CaseDefinition\PackagePartRules
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
+ * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
+ * @uses \OCA\Dossiq\Service\CaseDefinition\PackageIds
+ * @uses \OCA\Dossiq\Service\Starter\ShippedConfigurationService
+ * @uses \OCA\Dossiq\Service\Starter\ShippedFingerprint
+ * @uses \OCA\Dossiq\Service\Starter\ShippedSets
+ * @uses \OCA\Dossiq\Service\Starter\StarterStore
  */
 class PackageInstallerTest extends TestCase {
 

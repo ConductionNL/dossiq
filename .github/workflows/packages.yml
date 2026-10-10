@@ -39,6 +39,23 @@ jobs:
     name: Install packages on a clean instance
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # PostgreSQL, not SQLite: integriq's migrations declare JSON columns, which
+    # Nextcloud's SQLite platform refuses ("Unknown database type json"), so
+    # enabling it on SQLite fails before dossiq is reached.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nextcloud
+          POSTGRES_PASSWORD: nextcloud
+          POSTGRES_DB: nextcloud
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nextcloud"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout Nextcloud server
         uses: actions/checkout@v4
@@ -61,7 +78,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          extensions: mbstring, intl, sqlite3, zip, gd, curl, xml, json
+          extensions: mbstring, intl, pdo_pgsql, pgsql, zip, gd, curl, xml, json
           tools: composer:v2
 
       - name: Checkout and install the apps dossiq runs on
@@ -76,7 +93,9 @@ jobs:
       - name: Install Nextcloud and enable the apps
         run: |
           cd server
-          php occ maintenance:install --database sqlite --admin-user admin --admin-pass admin
+          php occ maintenance:install --database pgsql --database-host 127.0.0.1 --database-port 5432 \
+            --database-name nextcloud --database-user nextcloud --database-pass nextcloud \
+            --admin-user admin --admin-pass admin
           for app in openregister decidiq integriq; do
             php occ app:enable "$app"
           done
