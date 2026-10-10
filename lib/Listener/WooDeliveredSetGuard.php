@@ -101,7 +101,10 @@ class WooDeliveredSetGuard implements IEventListener {
 			return;
 		}
 
-		$sentence = $this->l10n->t('This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.', [substr($deliveredAt, 0, 10)]);
+		$sentence = $this->l10n->t(
+			'This was delivered for publication on %1$s, so it cannot be changed. Publish again to deliver a new set.',
+			[substr($deliveredAt, 0, 10)]
+		);
 		if ($deliveredAt === '') {
 			$sentence = $this->l10n->t('Whether this was delivered for publication could not be checked, so it cannot be changed now. Try again later.');
 		}

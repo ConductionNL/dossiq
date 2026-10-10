@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\Dossiq\Woo\WooCaseLedger;
 use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -40,8 +41,8 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @covers \OCA\Dossiq\Woo\WooDeliveredSetWriter
+ * @covers \OCA\Dossiq\Woo\WooCaseLedger
  *
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
  * @uses \OCA\Dossiq\Woo\WooResultLink
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -133,7 +134,7 @@ class WooPublicationDeliveredSetTest extends TestCase {
 			categoryMapper: new WooCategoryMapper(),
 			appManager: $apps,
 			logger: new NullLogger(),
-			deliveredSets: new WooDeliveredSetWriter(settings: $settings),
+			caseLedger: new WooCaseLedger(settingsService: $settings, logger: new NullLogger(), deliveredSets: new WooDeliveredSetWriter(settings: $settings)),
 		);
 	}//end service()
 

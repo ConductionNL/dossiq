@@ -1510,5 +1510,9 @@
     "lib/Settings/register.d/85-woo-dossier-shared.json::case": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/86-woo-delivered-set.json::wooDeliveredSet": {
+        "version": "1.0.0",
+        "digest": "05946b6dd58ae257e1c9104b7ad0c590c5f664c590295dc0937af5ea38e182fd"
     }
 }

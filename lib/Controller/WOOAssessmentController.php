@@ -411,6 +411,10 @@ class WOOAssessmentController extends Controller {
 			'no_publication' => [Http::STATUS_CONFLICT, $this->l10n->t('This decision has not been published.')],
 			'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi is not installed, so nothing can be published.')],
 			'openregister_unavailable' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenRegister is not available.')],
+			'delivered_set_not_written' => [
+				Http::STATUS_SERVICE_UNAVAILABLE,
+				$this->l10n->t('What would be delivered could not be recorded first, so nothing was published. Try again later.'),
+			],
 			'opencatalogi_api_error' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi did not accept the publication. Try again later.')],
 			default => [Http::STATUS_CONFLICT, $this->l10n->t('The publication could not be changed.')],
 		};

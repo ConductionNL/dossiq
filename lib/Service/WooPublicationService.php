@@ -42,7 +42,6 @@ use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
-use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -103,7 +102,6 @@ class WooPublicationService {
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
-	 * @param WooDeliveredSetWriter|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -114,7 +112,6 @@ class WooPublicationService {
 		private readonly ?WooDossierReturn $dossierReturn = null,
 		?WooCaseLedger $caseLedger = null,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
-		private readonly ?WooDeliveredSetWriter $deliveredSets = null,
 	) {
 		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
@@ -325,33 +322,32 @@ class WooPublicationService {
 			return ['available' => false, 'reason' => 'no_publishable_documents'];
 		}
 
-		// THE SET FIRST (woo-delivered-set-is-a-record REQ-WDS-001): what goes
-		// out is recorded before it goes out. No record, no delivery.
-		$setId = '';
-		if ($this->deliveredSets !== null) {
-			try {
-				$setId = $this->deliveredSets->idOf(row: $this->deliveredSets->open(caseId: $caseId, decisionId: $decisionId, delivered: $delivery['items']));
-			} catch (Throwable $e) {
-				$this->logger->error('WooPublicationService::publish could not record the delivered set', ['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]);
-				return ['available' => false, 'reason' => 'delivered_set_not_written'];
-			}
-		}
-
 		$payload = $this->buildPayload(case: $case, decision: $decision);
 		$existingId = (string)($decision['wooPublication']['publicationId'] ?? '');
 
+		// THE SET FIRST (woo-delivered-set-is-a-record REQ-WDS-001): what goes
+		// out is recorded before it goes out, frozen after, deleted on failure.
 		try {
-			$publicationId = $this->sendPublicationToOpenCatalogi(payload: $payload, disclosable: $disclosable, existingId: $existingId);
+			$delivered = $this->caseLedger->deliver(
+				caseId: $caseId,
+				decisionId: $decisionId,
+				items: $delivery['items'],
+				send: fn (): string => $this->sendPublicationToOpenCatalogi(payload: $payload, disclosable: $disclosable, existingId: $existingId),
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'WooPublicationService::publish failed',
 				['app' => Application::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
-			$this->discardSet(setId: $setId);
-			return ['available' => false, 'reason' => 'opencatalogi_api_error'];
+			$reason = 'opencatalogi_api_error';
+			if ($e->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
+				$reason = 'delivered_set_not_written';
+			}
+
+			return ['available' => false, 'reason' => $reason];
 		}
 
-		$this->freezeSet(setId: $setId, publicationId: $publicationId);
+		$publicationId = $delivered['publicationId'];
 
 		$publicationUrl = $this->buildPublicationUrl(publicationId: $publicationId);
 
@@ -383,48 +379,10 @@ class WooPublicationService {
 			'available' => true,
 			'publicationId' => $publicationId,
 			'publicationUrl' => $publicationUrl,
-			'deliveredSet' => $setId,
+			'deliveredSet' => $delivered['setId'],
 		];
 	}//end publish()
 
-	/**
-	 * Delete the pending set of a failed delivery; a failure here is logged, the answer stands.
-	 *
-	 * @param string $setId The set, or '' for none.
-	 *
-	 * @return void
-	 */
-	private function discardSet(string $setId): void {
-		if ($setId === '' || $this->deliveredSets === null) {
-			return;
-		}
-
-		try {
-			$this->deliveredSets->discard(setId: $setId);
-		} catch (Throwable $e) {
-			$this->logger->error('WooPublicationService: the pending delivered set of a failed publish could not be deleted', ['app' => Application::APP_ID, 'setId' => $setId, 'error' => $e->getMessage()]);
-		}
-	}//end discardSet()
-
-	/**
-	 * Freeze the set with its publication; a failure is logged loudly, the publication stands.
-	 *
-	 * @param string $setId         The set, or '' for none.
-	 * @param string $publicationId The publication.
-	 *
-	 * @return void
-	 */
-	private function freezeSet(string $setId, string $publicationId): void {
-		if ($setId === '' || $this->deliveredSets === null) {
-			return;
-		}
-
-		try {
-			$this->deliveredSets->freeze(setId: $setId, publicationId: $publicationId);
-		} catch (Throwable $e) {
-			$this->logger->error('WooPublicationService: the delivered set could not be frozen; it stays pending', ['app' => Application::APP_ID, 'setId' => $setId, 'error' => $e->getMessage()]);
-		}
-	}//end freezeSet()
 
 
 
@@ -602,11 +560,7 @@ class WooPublicationService {
 		$decision['wooPublication']['withdrawnAt'] = date('c');
 
 		// The set stays frozen and records the withdraw (REQ-WDS-002).
-		try {
-			$this->deliveredSets?->markWithdrawn(caseId: (string)($decision['case'] ?? $caseId), publicationId: $publicationId);
-		} catch (Throwable $e) {
-			$this->logger->error('WooPublicationService: the delivered set could not record the withdraw', ['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]);
-		}
+		$this->caseLedger->markWithdrawn(caseId: (string)($decision['case'] ?? $caseId), publicationId: $publicationId);
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 

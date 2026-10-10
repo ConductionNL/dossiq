@@ -33,7 +33,9 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * Writes, freezes, discards and stamps a delivered set.
@@ -65,16 +67,74 @@ class WooDeliveredSetWriter {
 	public const STATUS_FROZEN = 'frozen';
 
 	/**
+	 * The failure a delivery answers when its set cannot be written first.
+	 */
+	public const SET_NOT_WRITTEN = 'woo_delivered_set_not_written';
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settings    Bridge to OpenRegister.
-	 * @param IUserSession|null $userSession Who delivers.
+	 * @param SettingsService      $settings    Bridge to OpenRegister.
+	 * @param IUserSession|null    $userSession Who delivers.
+	 * @param LoggerInterface|null $logger      Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
 		private readonly ?IUserSession $userSession = null,
+		private readonly ?LoggerInterface $logger = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Write the pending set, send, then freeze it; delete it when the send fails.
+	 *
+	 * @param string                           $caseId     The Woo case.
+	 * @param string                           $decisionId The Woo decision.
+	 * @param array<int, array<string, mixed>> $delivered  What goes out (see open()).
+	 * @param callable(): string               $send       Creates or updates the publication; answers its id.
+	 *
+	 * @return array{publicationId: string, setId: string}
+	 *
+	 * @throws RuntimeException SET_NOT_WRITTEN when the set cannot be written; nothing is sent then.
+	 * @throws Throwable        The send's own failure, after the pending set is deleted.
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function deliver(string $caseId, string $decisionId, array $delivered, callable $send): array {
+		try {
+			$setId = $this->idOf(row: $this->open(caseId: $caseId, decisionId: $decisionId, delivered: $delivered));
+		} catch (Throwable $e) {
+			$this->logger?->error('Dossiq: the delivered Woo set could not be written, so nothing was sent', ['case' => $caseId, 'error' => $e->getMessage()]);
+			throw new RuntimeException(self::SET_NOT_WRITTEN, 0, $e);
+		}
+
+		try {
+			$publicationId = (string)$send();
+		} catch (Throwable $e) {
+			$this->quietly(what: 'delete the pending set of a failed delivery', operation: fn () => $this->discard(setId: $setId));
+			throw $e;
+		}
+
+		$this->quietly(what: 'freeze the delivered set; it stays pending', operation: fn () => $this->freeze(setId: $setId, publicationId: $publicationId));
+
+		return ['publicationId' => $publicationId, 'setId' => $setId];
+	}//end deliver()
+
+	/**
+	 * Run a follow-up write whose failure is logged, never thrown.
+	 *
+	 * @param string   $what      What failed, for the log.
+	 * @param callable $operation The write.
+	 *
+	 * @return void
+	 */
+	private function quietly(string $what, callable $operation): void {
+		try {
+			$operation();
+		} catch (Throwable $e) {
+			$this->logger?->error('Dossiq: could not ' . $what, ['error' => $e->getMessage()]);
+		}
+	}//end quietly()
 
 	/**
 	 * The set hash: SHA-256 over `<sha256>  <deliveredRef>` lines, sorted by `deliveredRef`, joined by newlines.
@@ -142,7 +202,7 @@ class WooDeliveredSetWriter {
 
 		$stored = $this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $set);
 		if ($stored === null || $this->idOf(row: $stored) === '') {
-			throw new RuntimeException('woo_delivered_set_not_written');
+			throw new RuntimeException(self::SET_NOT_WRITTEN);
 		}
 
 		return $stored;
@@ -280,6 +340,8 @@ class WooDeliveredSetWriter {
 	 * @param array<string, mixed> $row The row.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function idOf(array $row): string {
 		return (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));

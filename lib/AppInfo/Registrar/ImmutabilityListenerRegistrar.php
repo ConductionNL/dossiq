@@ -96,7 +96,7 @@ class ImmutabilityListenerRegistrar {
 			listener: BeschikkingImmutabilityListener::class
 		);
 
-		// woo-delivered-set-is-a-record REQ-WDS-002: a frozen delivered set
+		// Woo delivered sets (REQ-WDS-002): a frozen delivered set
 		// and the assessments it names refuse change, through every writer.
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,

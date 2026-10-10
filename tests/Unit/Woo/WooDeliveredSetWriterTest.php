@@ -136,4 +136,41 @@ class WooDeliveredSetWriterTest extends TestCase {
 
 		$this->assertSame([], $this->store->all(schema: 'wooDeliveredSet'));
 	}//end testADiscardedSetIsGone()
+
+	/**
+	 * deliver() freezes after a good send, deletes after a failed one, and sends nothing when no set can be written.
+	 *
+	 * @return void
+	 */
+	public function testDeliverFreezesOrDiscardsAroundTheSend(): void {
+		$writer = $this->writer();
+		$good = $writer->deliver(caseId: 'case-1', decisionId: 'dec-1', delivered: [], send: static fn (): string => 'pub-1');
+		$this->assertSame('frozen', $this->store->row(schema: 'wooDeliveredSet', uuid: $good['setId'])['status']);
+
+		try {
+			$writer->deliver(caseId: 'case-2', decisionId: 'dec-2', delivered: [], send: static function (): string {
+				throw new \RuntimeException('opencatalogi down');
+			});
+			$this->fail('a failed send must be rethrown');
+		} catch (\RuntimeException $e) {
+			$this->assertSame('opencatalogi down', $e->getMessage());
+		}
+
+		$this->assertCount(1, $this->store->all(schema: 'wooDeliveredSet'));
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$sent = false;
+		try {
+			(new WooDeliveredSetWriter(settings: $settings))->deliver(caseId: 'case-3', decisionId: 'dec-3', delivered: [], send: static function () use (&$sent): string {
+				$sent = true;
+				return 'pub-3';
+			});
+			$this->fail('no store must refuse the delivery');
+		} catch (\RuntimeException $e) {
+			$this->assertSame(WooDeliveredSetWriter::SET_NOT_WRITTEN, $e->getMessage());
+		}
+
+		$this->assertFalse($sent);
+	}//end testDeliverFreezesOrDiscardsAroundTheSend()
 }//end class
