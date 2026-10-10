@@ -125,6 +125,8 @@ class UndeclaredCaseKeyDroppingStore extends FakeTermijnStore {
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Termijn\TermKindClassifier
+ * @uses \OCA\Dossiq\Service\Termijn\WooTermExtension
  */
 class WOODeadlineServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -40,6 +40,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\InformationRequestService
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\Termijn\TermKindClassifier
  */
 class RequestInformationSuspendsTest extends TestCase {
 	use BindsTermFixtures;

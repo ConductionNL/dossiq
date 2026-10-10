@@ -50,6 +50,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Listener\CaseDeadlineListener
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineCalculator
+ * @uses \OCA\Dossiq\Service\Termijn\TermKindClassifier
  */
 class TermijnServiceTest extends TestCase {
 

@@ -28,6 +28,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\DeadlineReportingService
+ * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
+ * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
  */
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;

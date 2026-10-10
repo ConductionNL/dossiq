@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Termijn\TermKindClassifier
  * @covers \OCA\Dossiq\Service\Termijn\CaseDeadlineFollower
  * @covers \OCA\Dossiq\Service\Termijn\WooTermExtension
+ * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class TermKindClassifierTest extends TestCase {
 

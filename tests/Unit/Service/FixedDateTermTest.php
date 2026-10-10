@@ -35,6 +35,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\CaseTermsService
  * @covers \OCA\Dossiq\Service\TermDeclarationReader
  * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\Termijn\TermKindClassifier
  */
 class FixedDateTermTest extends TestCase {
 	use BindsTermFixtures;

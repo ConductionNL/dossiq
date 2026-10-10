@@ -368,7 +368,7 @@
         "digest": "992fc28f78a34e4146a3185fa1507b1e104e28b8cf92267d25b6da4a8cd5fbcc"
     },
     "lib/Settings/dossiq_mock_register.json::organisatieRol": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "6aab919162980d3534c1ef2f4117bf86da3cd4aa53b191a7ea6e4390712e4501"
     },
     "lib/Settings/dossiq_mock_register.json::participatiewetZaak": {
@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.38.0",
-        "digest": "d82a45282187d85c8c264dc1d84eaf4bf31d7fe80bcfae532851b21bead6a5fd"
+        "version": "1.39.0",
+        "digest": "f6775a111140dc4c1bd4c0df527bb616ddb2ad5266778411308c1ae8ba821cf3"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.15.0",
+        "version": "1.16.0",
         "digest": "003336da057f4e5db998786a8ebf01b371b4b95e7fac9c800b52eb08cba6db01"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -1252,7 +1252,7 @@
         "digest": "3391da0907a3bd6a980484ef5b5f717950a053d465b738b34ffa6ed8394ffef9"
     },
     "lib/Settings/register.d/61-mandaat-matrix.json::organisatieRol": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "423897ce2daa7becc764809b952278c82c2b81c4184e313b3209f3828bfbc679"
     },
     "lib/Settings/register.d/62-handler-vervanging.json::substitution": {

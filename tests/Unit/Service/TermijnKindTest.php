@@ -44,6 +44,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\TermijnTimerService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Termijn\TermKindClassifier
  */
 class TermijnKindTest extends TestCase {
 	use MakesCaseDateNormaliser;
