@@ -43,6 +43,9 @@ $extra = [
         // Backend manifest delta — case-type navigation (case-type-navigation).
         // Consumed by useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' }).
     ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
+        // The case types each user chose for My case types (case-types-in-my-menu).
+    ['name' => 'menuCaseTypes#index',  'url' => '/api/menu-case-types', 'verb' => 'GET'],
+    ['name' => 'menuCaseTypes#update', 'url' => '/api/menu-case-types', 'verb' => 'PUT'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
     ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],

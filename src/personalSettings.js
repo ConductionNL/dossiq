@@ -9,10 +9,12 @@
  * people's records, which is not a personal setting.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/personal-settings-surface/spec.md
+ * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-005
  */
 import { CnSettingsSection } from '@conduction/nextcloud-vue'
 import { createApp, h } from 'vue'
 import CaseEmailMatchSettings from './views/settings/CaseEmailMatchSettings.vue'
+import MenuCaseTypesSettings from './views/settings/MenuCaseTypesSettings.vue'
 import NotificationRoutingSettings from './views/settings/NotificationRoutingSettings.vue'
 import SubstitutionSettings from './views/settings/SubstitutionSettings.vue'
 import WorkDigestSettings from './views/settings/WorkDigestSettings.vue'
@@ -92,3 +94,24 @@ const notificationRouting = createApp({
 notificationRouting.config.globalProperties.t = t
 notificationRouting.config.globalProperties.n = n
 notificationRouting.mount('#dossiq-personal-notification-routing')
+
+// The case types under My case types in the sidebar, in this user's order
+// (case-types-in-my-menu, board DqPersoonlijkeInstellingen). The sidebar's
+// pencil beside that heading opens this section.
+const menuCaseTypes = createApp({
+	render: () =>
+		h(
+			CnSettingsSection,
+			{
+				name: t('dossiq', 'Case types in my menu'),
+				description: t(
+					'dossiq',
+					'These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.',
+				),
+			},
+			[h(MenuCaseTypesSettings)],
+		),
+})
+menuCaseTypes.config.globalProperties.t = t
+menuCaseTypes.config.globalProperties.n = n
+menuCaseTypes.mount('#dossiq-personal-menu-case-types')
