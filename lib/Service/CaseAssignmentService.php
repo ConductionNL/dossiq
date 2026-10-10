@@ -42,8 +42,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTime;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Notification\Notifier;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -60,12 +63,14 @@ class CaseAssignmentService {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The settings service (OpenRegister access).
-	 * @param LoggerInterface $logger          The logger.
+	 * @param SettingsService $settingsService     The settings service (OpenRegister access).
+	 * @param LoggerInterface $logger              The logger.
+	 * @param IManager|null   $notificationManager Tells the receiving handler about a reassignment.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?IManager $notificationManager = null,
 	) {
 	}//end __construct()
 
@@ -138,6 +143,82 @@ class CaseAssignmentService {
 
 		return $this->describe(caseId: $caseId, userId: $userId, assignee: '');
 	}//end release()
+
+	/**
+	 * Hand one case to another handler.
+	 *
+	 * The single-case form of a caseload release. Who may do it is the
+	 * caller's check (a coordinator, as for the bulk release); this method
+	 * only refuses a move that is no move, writes `assignee` and nothing else,
+	 * and tells the receiving handler with the same notification the bulk
+	 * release sends. The case's audit trail carries who changed it and from what.
+	 *
+	 * @param string $caseId  The case UUID.
+	 * @param string $toUser  The receiving handler.
+	 * @param string $actorId Who ordered it.
+	 *
+	 * @return array{caseId: string, assignee: string, previousAssignee: string, mine: bool, claimable: bool, releasable: bool} The new assignment.
+	 *
+	 * @throws RuntimeException With code `receiver_required`, `case_not_found`, `already_assigned` or `assignment_write_failed`.
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-206-human-approval-of-ai-writes-is-hermiqs-policy
+	 */
+	public function reassign(string $caseId, string $toUser, string $actorId): array {
+		$toUser = trim($toUser);
+		if ($toUser === '') {
+			throw new RuntimeException('receiver_required');
+		}
+
+		$previous = $this->readAssignee(caseId: $caseId);
+		if ($previous === $toUser) {
+			// Not a move. Writing it would stamp an audit entry saying the
+			// case went from somebody to themselves.
+			throw new RuntimeException('already_assigned');
+		}
+
+		$this->write(caseId: $caseId, assignee: $toUser);
+		$this->notifyReceiver(toUser: $toUser, fromUser: $previous, caseId: $caseId);
+
+		$this->logger->info(
+			'Dossiq CaseAssignmentService: case reassigned',
+			['app' => Application::APP_ID, 'caseId' => $caseId, 'from' => $previous, 'to' => $toUser, 'actor' => $actorId]
+		);
+
+		return (['previousAssignee' => $previous] + $this->describe(caseId: $caseId, userId: $actorId, assignee: $toUser));
+	}//end reassign()
+
+	/**
+	 * Tell the receiving handler a case was handed to them.
+	 *
+	 * The `cases_reassigned` subject the bulk release already sends, with a
+	 * count of one. A failed notification never undoes the move.
+	 *
+	 * @param string $toUser   The receiving handler.
+	 * @param string $fromUser The previous handler, or empty.
+	 * @param string $caseId   The case UUID.
+	 *
+	 * @return void
+	 */
+	private function notifyReceiver(string $toUser, string $fromUser, string $caseId): void {
+		if ($this->notificationManager === null) {
+			return;
+		}
+
+		try {
+			$notification = $this->notificationManager->createNotification();
+			$notification->setApp(Application::APP_ID)
+				->setUser($toUser)
+				->setDateTime(new DateTime())
+				->setObject('case', $caseId)
+				->setSubject(Notifier::SUBJECT_CASES_REASSIGNED, ['fromUser' => $fromUser, 'count' => 1]);
+			$this->notificationManager->notify($notification);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq CaseAssignmentService: reassignment notification failed: ' . $e->getMessage(),
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'toUser' => $toUser]
+			);
+		}
+	}//end notifyReceiver()
 
 	/**
 	 * Shape one answer, so the three gestures cannot describe the same case
