@@ -13,8 +13,8 @@
     "schemas": {
       "wooDocumentReview": {
         "slug": "wooDocumentReview",
-        "icon": "FileFindOutline",
-        "version": "1.0.0",
+        "icon": "FileEyeOutline",
+        "version": "1.0.1",
         "title": "Woo document review",
         "description": "Per document collected on a Woo case: is it about the request at all, who or which rule said so, its batch, and the pages a reviewer saw.",
         "type": "object",
@@ -114,8 +114,8 @@
       },
       "wooTriageRule": {
         "slug": "wooTriageRule",
-        "icon": "FilterCogOutline",
-        "version": "1.0.0",
+        "icon": "Tune",
+        "version": "1.0.1",
         "title": "Woo triage rule",
         "description": "A visible rule on a Woo case that marks collected documents in or out of scope without a reviewer opening each one.",
         "type": "object",

@@ -1428,16 +1428,16 @@
         "digest": "c6717a0258ebeb74fddf9f8e85ed3be6efa1ed0a0c8ccbf9207140e469125593"
     },
     "lib/Settings/register.d/87-woo-review.json::wooDocumentReview": {
-        "version": "1.0.0",
-        "digest": "8346853289263846f50e823b3cdc856f8421111583fca1b8349f5807da89067a"
+        "version": "1.0.1",
+        "digest": "42e5f9db46cfe1f0c4b26a8a40c3edf90211623a62f08c89fa823dafca23958f"
     },
     "lib/Settings/register.d/87-woo-review.json::wooReviewBatch": {
         "version": "1.0.0",
         "digest": "e4c21273b50de9636c5bff2f2f4a56b3188363d1705e1adc96ee26dc732a235c"
     },
     "lib/Settings/register.d/87-woo-review.json::wooTriageRule": {
-        "version": "1.0.0",
-        "digest": "bc494c76db72dd1cb004dc7b46442b3216d8b1022158278d983227161a2fa0a9"
+        "version": "1.0.1",
+        "digest": "55dd39ae37e3894ab1efb1b21b30ebfcc3c6132d560a1a2e7b77c0b06db3b394"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",
