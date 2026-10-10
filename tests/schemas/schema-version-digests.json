@@ -268,7 +268,7 @@
         "digest": "4bf27b7713504dbce72d6a6685b739ed961697f8901d22b25e74e533800f4010"
     },
     "lib/Settings/dossiq_mock_register.json::inspectionChecklistTemplate": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "f03fa2aeb05ffb13c1b132c05d69ba02dc31f12681647949bfe52f02514fbb1b"
     },
     "lib/Settings/dossiq_mock_register.json::inspectionResult": {
@@ -760,7 +760,7 @@
         "digest": "e59229d368c3f0b7f26ea2b8231ceffdca394b7ee0a9fd14012ad35db72628a2"
     },
     "lib/Settings/dossiq_register.json::inspectionChecklistTemplate": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "20b3e5128838eae562d952ec88f48161e80421c5b8523e8c2cbad9c7b9e9d091"
     },
     "lib/Settings/dossiq_register.json::inspectionResult": {

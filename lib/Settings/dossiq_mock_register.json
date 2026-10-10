@@ -7901,7 +7901,7 @@
       "inspectionChecklistTemplate": {
         "slug": "inspectionChecklistTemplate",
         "icon": "ClipboardListOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:HowTo",
         "title": "Inspection Checklist Template",
         "description": "Long-lived configuration template for an inspection checklist. Owns sections, items, response-type rules and follow-up action defaults. Publishing an edit creates a new version and retires the previous one.",
@@ -7984,6 +7984,11 @@
                       "responseType"
                     ],
                     "properties": {
+                      "id": {
+                          "type": "string",
+                          "description": "Stable key an answer names; kept when the label changes",
+                          "title": "Id"
+                      },
                       "order": {
                         "type": "integer",
                         "description": "Display order of the item",
@@ -8059,6 +8064,16 @@
                         "description": "Allowed values when responseType is meerkeuze",
                         "title": "Choices"
                       },
+                      "weight": {
+                          "type": "number",
+                          "description": "Weight of this item in a scored checklist",
+                          "title": "Weight"
+                      },
+                      "parent": {
+                          "type": "string",
+                          "description": "Id of the item this one is nested under",
+                          "title": "Parent"
+                      },
                       "failureAction": {
                         "type": "object",
                         "description": "Conditional follow-up dispatched on failure",
@@ -8096,6 +8111,11 @@
               }
             },
             "title": "Sections"
+          },
+          "legacyRef": {
+              "type": "string",
+              "description": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
+              "title": "Legacy reference"
           },
           "seedKey": {
             "type": "string",
