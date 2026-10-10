@@ -26,7 +26,9 @@ export function flattenTemplate(template) {
 			// The panel's form reads stack A's names: `type`, and a photo
 			// gate that is on or off for a failed answer.
 			type: item.type || item.responseType,
-			photoRequired: item.photoRequired === true || ['if_no', 'altijd'].includes(item.photoRequired),
+			photoRequired:
+				item.photoRequired === true
+				|| ['if_no', 'altijd'].includes(item.photoRequired),
 		}))
 	return { ...template, items }
 }
@@ -135,7 +137,10 @@ export const useInspectionStore = defineStore('inspection', {
 			this.error = null
 			try {
 				const response = await axios.get(
-					generateUrl('/apps/dossiq/api/vth/cases/{id}/inspection-results', { id: caseId }),
+					generateUrl(
+						'/apps/dossiq/api/vth/cases/{id}/inspection-results',
+						{ id: caseId },
+					),
 				)
 				this.reports = Array.isArray(response?.data) ? response.data : []
 				return this.reports
@@ -164,20 +169,28 @@ export const useInspectionStore = defineStore('inspection', {
 			this.error = null
 			try {
 				const response = await axios.post(
-					generateUrl('/apps/dossiq/api/vth/cases/{id}/inspection-result', { id: reportData.case }),
+					generateUrl(
+						'/apps/dossiq/api/vth/cases/{id}/inspection-result',
+						{ id: reportData.case },
+					),
 					{
 						checklistId: reportData.checklist,
 						items: reportData.items || [],
 						remarks: reportData.remarks,
 						location: reportData.location,
-						inspectionDate: reportData.inspectionDate || new Date().toISOString(),
+						inspectionDate:
+							reportData.inspectionDate || new Date().toISOString(),
 					},
 				)
 				const saved = response.data
 				this.reports.push(saved)
 
 				if (saved.failedItems > 0) {
-					await this.createFollowUpTask(reportData.case, saved.failedItems, saved.id)
+					await this.createFollowUpTask(
+						reportData.case,
+						saved.failedItems,
+						saved.id,
+					)
 				}
 
 				return saved

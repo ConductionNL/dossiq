@@ -482,29 +482,47 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 			items: [],
 			remarks: `${RUN_PREFIX} run`,
 		})
-		expect(status, `the run must be recorded; ${JSON.stringify(body ?? {}).slice(0, 300)}`).toBe(201)
-		expect(body?.state, 'the run task is completed in the same request').toBe('completed')
+		expect(
+			status,
+			`the run must be recorded; ${JSON.stringify(body ?? {}).slice(0, 300)}`,
+		).toBe(201)
+		expect(body?.state, 'the run task is completed in the same request').toBe(
+			'completed',
+		)
 		expect(body?.result, 'no item applies, so nothing failed').toBe('conform')
-		expect(body?.checklist, 'the task names the template it was filled against').toBe(checklistId)
+		expect(
+			body?.checklist,
+			'the task names the template it was filled against',
+		).toBe(checklistId)
 
 		const readBack = await readResults(inspector, caseId)
-		const run = readBack.results.find((row: any) => String(row?.id ?? '') === String(body?.id ?? ''))
+		const run = readBack.results.find(
+			(row: any) => String(row?.id ?? '') === String(body?.id ?? ''),
+		)
 		expect(run, 'the run must be readable back from the case').toBeTruthy()
 		expect(run?.remarks).toBe(`${RUN_PREFIX} run`)
 	})
 
 	// @e2e openspec/specs/inspection-checklists/spec.md#create-inspection-checklist
-	test('a checklist template is listed in the editor\'s shape', async () => {
+	test("a checklist template is listed in the editor's shape", async () => {
 		expect(adminCleanup, 'the admin context must be open').not.toBeNull()
-		const res = await (adminCleanup as APIRequestContext).get('/index.php/apps/dossiq/api/vth/checklists', {
-			headers: { 'OCS-APIRequest': 'true' },
-		})
+		const res = await (adminCleanup as APIRequestContext).get(
+			'/index.php/apps/dossiq/api/vth/checklists',
+			{
+				headers: { 'OCS-APIRequest': 'true' },
+			},
+		)
 		expect(res.status()).toBe(200)
 		const rows = await res.json()
-		const mine = (Array.isArray(rows) ? rows : []).find((row: any) => String(row?.id ?? '') === checklistId)
+		const mine = (Array.isArray(rows) ? rows : []).find(
+			(row: any) => String(row?.id ?? '') === checklistId,
+		)
 		expect(mine, 'the seeded template must be listed').toBeTruthy()
 		expect(mine?.active, 'an active template reads as active').toBe(true)
-		expect(Array.isArray(mine?.items), 'the editor reads one flat items list').toBe(true)
+		expect(
+			Array.isArray(mine?.items),
+			'the editor reads one flat items list',
+		).toBe(true)
 	})
 
 	// @e2e openspec/specs/inspection-checklists/spec.md#another-authenticated-account-is-refused

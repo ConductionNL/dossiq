@@ -34,6 +34,7 @@ use RuntimeException;
  * Unit tests for InspectionChecklistService.
  *
  * @covers \OCA\Dossiq\Service\InspectionChecklistService
+ * @uses \OCA\Dossiq\Service\Inspection\InspectionTemplateMapper
  */
 class InspectionChecklistServiceTest extends TestCase {
 
