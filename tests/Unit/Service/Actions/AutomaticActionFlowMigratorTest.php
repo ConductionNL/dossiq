@@ -301,6 +301,39 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 	}
 
 	/**
+	 * An action whose tenantId is an Organisation uuid migrates exactly as before (REQ-TOO-002).
+	 *
+	 * `automaticAction.tenantId` now references `nc-organisation`. The stored
+	 * values did not change, because the tenant migration kept every tenant uuid
+	 * on its Organisation, so the migrator must still identify the action by
+	 * that uuid and its slug.
+	 *
+	 * @return void
+	 */
+	public function testAnActionWhoseTenantIdIsAnOrganisationUuidStillMigrates(): void {
+		$organisation = '7c1f1c4e-2b6d-4f6a-9d7e-0a1b2c3d4e5f';
+		$flowService = $this->flowServiceFake();
+		$migrator = $this->migrator(
+			[
+				[
+					'tenantId' => $organisation,
+					'slug' => 'send-decision-email',
+					'title' => 'Send decision email',
+					'type' => 'sendEmail',
+					'config' => '{"recipientRef":"indiener","subjectTemplate":"Uw besluit","bodyTemplate":"Zie {{case.title}}"}',
+				],
+			],
+			$flowService,
+			['openregister.send-email'],
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(1, $summary['created']);
+		$this->assertSame('dossiq:automaticAction:'.$organisation.':send-decision-email', $flowService->saves[0]['document']['notes']);
+	}
+
+	/**
 	 * An action type no node implements is SKIPPED, never wrapped in a flow.
 	 *
 	 * Writing it would rebuild the exact defect this programme already fixed in
