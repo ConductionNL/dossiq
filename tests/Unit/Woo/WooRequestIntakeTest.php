@@ -601,4 +601,19 @@ class WooRequestIntakeTest extends TestCase {
 		$this->expectExceptionMessage(WooRequestRefused::UNAVAILABLE);
 		$this->intake->start($this->request());
 	}//end testWithoutTheCaseTypeTheIntakeIsUnavailable()
+	/**
+	 * A request that names an earlier Woo case carries it on the case for WooStartFromListener (REQ-WRC-005).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-new-request-starts-from-the-configuration-of-an-earlier-one-req-wrc-005
+	 */
+	public function testARequestThatStartsFromAnEarlierOneNamesIt(): void {
+		$earlier = '55555555-5555-4555-8555-555555555555';
+		$answer = $this->intake->start(request: $this->request(overrides: ['startFrom' => $earlier]));
+		self::assertSame($earlier, $this->store->row('case', $answer['caseId'])['wooStartFrom']);
+
+		$other = $this->intake->start(request: $this->request(overrides: ['startFrom' => 'not a uuid']));
+		self::assertArrayNotHasKey('wooStartFrom', $this->store->row('case', $other['caseId']));
+	}//end testARequestThatStartsFromAnEarlierOneNamesIt()
 }//end class

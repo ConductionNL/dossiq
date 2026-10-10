@@ -341,6 +341,18 @@
             }
           }
         }
+      },
+      "case": {
+        "properties": {
+          "wooStartFrom": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Started from",
+            "description": "The earlier Woo request this request started from. Its custodians, systems and terms are copied into this request's draft search plan when the case is created.",
+            "visible": false,
+            "facetable": false
+          }
+        }
       }
     }
   }

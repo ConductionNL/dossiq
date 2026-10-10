@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\WooStartFromListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -126,6 +127,13 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
+		);
+
+		// A new Woo request that names an earlier one starts from its
+		// configuration (woo-request-corpus-collection REQ-WRC-005).
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: WooStartFromListener::class
 		);
 
 		// The chain of custody starts where the case was registered. Without
