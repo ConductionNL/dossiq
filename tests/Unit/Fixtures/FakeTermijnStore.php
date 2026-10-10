@@ -196,6 +196,16 @@ class FakeTermijnStore {
 
 		unset($filters['_limit'], $filters['_offset']);
 
+		// `_ids` is OpenRegister's batched id restriction (MagicSearchHandler).
+		if (array_key_exists('_ids', $filters) === true) {
+			$ids = array_map('strval', (array)$filters['_ids']);
+			unset($filters['_ids']);
+			$rows = array_values(array_filter(
+				$rows,
+				static fn (array $row): bool => in_array((string)($row['id'] ?? ''), $ids, true),
+			));
+		}
+
 		if (array_key_exists('id', $filters) === true || array_key_exists('uuid', $filters) === true) {
 			// Live behaviour: a filter on an undeclared schema property
 			// silently returns zero rows. Do NOT resolve it here.
