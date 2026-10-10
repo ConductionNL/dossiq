@@ -84,7 +84,7 @@
         "digest": "7f4d46785ced125954d2a0d0cc29021458aa6056b5f594a814f375934f92b55d"
     },
     "lib/Settings/dossiq_mock_register.json::case": {
-        "version": "1.11.0",
+        "version": "1.12.0",
         "digest": "b3307a986d1c5611318e51bbdab8626fedff3020f613d55cd26c3dda0f8f31ab"
     },
     "lib/Settings/dossiq_mock_register.json::case-location": {
@@ -368,7 +368,7 @@
         "digest": "992fc28f78a34e4146a3185fa1507b1e104e28b8cf92267d25b6da4a8cd5fbcc"
     },
     "lib/Settings/dossiq_mock_register.json::organisatieRol": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "6aab919162980d3534c1ef2f4117bf86da3cd4aa53b191a7ea6e4390712e4501"
     },
     "lib/Settings/dossiq_mock_register.json::participatiewetZaak": {
@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.37.0",
-        "digest": "472bbb131ffe2b3a1553c077c861fb939d5156b391d5dae1535f3bc75e0ce607"
+        "version": "1.38.1",
+        "digest": "b578ccbd77b6c4ff6987dedc29b48fdd1bf6ca6cfd9b329b80bf72ff9e04a5ab"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -628,8 +628,8 @@
         "digest": "1e292065ac93b0f59124ff10e9281de4c0e709f4055e1d70c413c74000dcf6cd"
     },
     "lib/Settings/dossiq_register.json::caseDocument": {
-        "version": "1.0.0",
-        "digest": "af74b1a1d601c52574b7cf989444021e48d9c138ce5ba11e760df10677d1db54"
+        "version": "1.0.1",
+        "digest": "def98c86a005626419ea126d52505eb690de5817d8d5e82dea74e414776034cd"
     },
     "lib/Settings/dossiq_register.json::caseFederatedActivity": {
         "version": "1.0.0",
@@ -664,8 +664,8 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.15.0",
-        "digest": "003336da057f4e5db998786a8ebf01b371b4b95e7fac9c800b52eb08cba6db01"
+        "version": "1.16.1",
+        "digest": "dbbfd52696a00662451f8e487669d62c5b96851e3e68cff4350fa5cdf5983038"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
         "version": "1.1.0",
@@ -676,8 +676,8 @@
         "digest": "f84c0366cd1e0643caa23644da09f768b175bbca38545fbbdf10c8037f5675cc"
     },
     "lib/Settings/dossiq_register.json::complaint": {
-        "version": "1.2.1",
-        "digest": "7712e3a118e284886a47fc1b0af63b99e9691922e8d2e2aac7dcb30a0bfc42a5"
+        "version": "1.2.2",
+        "digest": "4733bad5f5fd6243a540f6c2e3179d69a14a345fd5f4c3d150771064ae4bc0c8"
     },
     "lib/Settings/dossiq_register.json::complaintCategory": {
         "version": "1.0.1",
@@ -696,8 +696,8 @@
         "digest": "513d4cb9be3384e17a9dab23a4f38d89aa5dacf7c545b28f3d0f11fb07032e6e"
     },
     "lib/Settings/dossiq_register.json::decision": {
-        "version": "1.2.0",
-        "digest": "327f4726c3cf622426f22770b25f6b412b9f238ee3e5dc62aac1c92271b7218c"
+        "version": "1.2.1",
+        "digest": "8ce2b544c22cc7a1a0d81907aeb9f2e58367dd01d6340d4d590da01ca88e9610"
     },
     "lib/Settings/dossiq_register.json::decisionDocument": {
         "version": "1.0.1",
@@ -712,8 +712,8 @@
         "digest": "972486cb47511ec19d9c2a2bca84d2d484349feb2af0d140042c26d5756a5a73"
     },
     "lib/Settings/dossiq_register.json::document": {
-        "version": "1.1.1",
-        "digest": "0164c77a146d7a88a4a743efc3b245839a3437fe9dac68ea7483874b0d3fe35a"
+        "version": "1.1.2",
+        "digest": "fb2c41864a5e6b70f15ff4f581bc8964495cf0be4bfab101fdd20092119af210"
     },
     "lib/Settings/dossiq_register.json::documentLink": {
         "version": "1.0.1",
@@ -792,8 +792,8 @@
         "digest": "f1a352f650a6be2789776bf94667f8c5b3f651c2a90dfda17c07d205bf6dd8ef"
     },
     "lib/Settings/dossiq_register.json::objectionProceeding": {
-        "version": "1.0.0",
-        "digest": "992fc28f78a34e4146a3185fa1507b1e104e28b8cf92267d25b6da4a8cd5fbcc"
+        "version": "1.0.1",
+        "digest": "8ed219dd41bbb7124129e1866a7ad3e851225c971b90f2299f61254109ceecd3"
     },
     "lib/Settings/dossiq_register.json::obligation": {
         "version": "1.0.0",
@@ -808,12 +808,12 @@
         "digest": "b4478fc7ca310f7ce4b0f0020f649f4ae8a3f9bb33b452893fcb3f0e14ee80ab"
     },
     "lib/Settings/dossiq_register.json::result": {
-        "version": "1.1.0",
-        "digest": "c34a1da55dc891a8c2b39ae5d5697c2eb6b2a2cba56de377c09486276c1d3882"
+        "version": "1.1.1",
+        "digest": "9cb89847a4d69b59cf7456433b1cff5359f2e24e4af8f2698254d8b9692b5506"
     },
     "lib/Settings/dossiq_register.json::resultType": {
-        "version": "1.1.1",
-        "digest": "6a49d3eca51d3754ab2f8beb7c65354d7e6becd32652e5431f233c75eeeb39ff"
+        "version": "1.1.2",
+        "digest": "bd17a29a2029b67bd3f16aff64c9a864f47d4bb1551361b6967bc9c3e7a9fdef"
     },
     "lib/Settings/dossiq_register.json::role": {
         "version": "1.2.0",
@@ -824,12 +824,12 @@
         "digest": "50155dafb0f1f0b5f8f88b597314a32e9e2f7464598765744dc167f38a9e8f01"
     },
     "lib/Settings/dossiq_register.json::statusRecord": {
-        "version": "1.3.0",
-        "digest": "172c5e4ca93c27c973888d0575f9e6dace80bb212ec7ccd085eebbd4308c1830"
+        "version": "1.3.1",
+        "digest": "7cb7dc7e787418460a092158c4a9ee6dcfb59cb97b1c0811cfab2497bb676497"
     },
     "lib/Settings/dossiq_register.json::statusType": {
-        "version": "1.7.1",
-        "digest": "492dbf8f98d388c911a28b704cfcf0cb5c272bcf8f958b7547ac92435440a039"
+        "version": "1.7.2",
+        "digest": "ca4565a41c50db0fa2318923f1452c2a4443e1911cda441cb907f200ea98d70b"
     },
     "lib/Settings/dossiq_register.json::supplier": {
         "version": "1.2.0",
@@ -1208,8 +1208,8 @@
         "digest": "c1d14c4fca22a09246ac620e4f8e01c478d93728d92f9c8399fd1bf15cb92332"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::deadlineInstance": {
-        "version": "1.3.0",
-        "digest": "aa19ac3744c9c3128a7f5c7c744c5572187cc349748247f72eb78ef9d2da8f0d"
+        "version": "1.3.1",
+        "digest": "425910e0859b4adc65eab5ad4c8975e09c15a806b9992831b8d4d5671e2ae24a"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::dwangsomUitbetaling": {
         "version": "1.0.1",
@@ -1252,7 +1252,7 @@
         "digest": "3391da0907a3bd6a980484ef5b5f717950a053d465b738b34ffa6ed8394ffef9"
     },
     "lib/Settings/register.d/61-mandaat-matrix.json::organisatieRol": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "423897ce2daa7becc764809b952278c82c2b81c4184e313b3209f3828bfbc679"
     },
     "lib/Settings/register.d/62-handler-vervanging.json::substitution": {

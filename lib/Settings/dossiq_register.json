@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.16.0",
+                "version": "1.16.1",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -766,7 +766,7 @@
                     }
                 },
                 "icon": "ListStatus",
-                "version": "1.7.1",
+                "version": "1.7.2",
                 "searchable": false,
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
@@ -1088,7 +1088,7 @@
                     }
                 },
                 "icon": "FlagOutline",
-                "version": "1.1.1",
+                "version": "1.1.2",
                 "searchable": false,
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "ResultaatType",
@@ -1643,7 +1643,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.38.0",
+                "version": "1.38.1",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -4121,7 +4121,7 @@
                     }
                 },
                 "icon": "FlagCheckered",
-                "version": "1.1.0",
+                "version": "1.1.1",
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "Resultaat",
                 "title": "Result",
@@ -4185,7 +4185,7 @@
                     }
                 },
                 "icon": "ProgressClock",
-                "version": "1.3.0",
+                "version": "1.3.1",
                 "x-schema-org": "schema:Event",
                 "x-zgw-equivalent": "Status",
                 "title": "Status record",
@@ -4318,7 +4318,7 @@
                     }
                 },
                 "icon": "Gavel",
-                "version": "1.2.0",
+                "version": "1.2.1",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "Besluit",
                 "title": "Decision",
@@ -4497,7 +4497,7 @@
             "document": {
                 "slug": "document",
                 "icon": "FileDocumentOutline",
-                "version": "1.1.1",
+                "version": "1.1.2",
                 "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "EnkelvoudigInformatieObject",
@@ -4968,7 +4968,7 @@
                     }
                 },
                 "icon": "LinkVariant",
-                "version": "1.0.0",
+                "version": "1.0.1",
                 "x-zgw-equivalent": "ZaakInformatieObject",
                 "title": "Case Document Link",
                 "description": "Links a document to a case",
@@ -5450,7 +5450,7 @@
             "objectionProceeding": {
                 "slug": "objectionProceeding",
                 "icon": "Gavel",
-                "version": "1.0.0",
+                "version": "1.0.1",
                 "x-schema-org": "schema:LegalCase",
                 "x-zgw-equivalent": "Bezwaarzaak",
                 "title": "Objection",
@@ -9867,7 +9867,7 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.2.1",
+                "version": "1.2.2",
                 "searchable": false,
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
