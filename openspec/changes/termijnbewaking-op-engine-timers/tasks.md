@@ -126,9 +126,16 @@
       tells the assignee once, only when the case still waits late on the armed milestone. The
       SLA stays dossiq's working-day count; the engine `SlaCalculator`/`nl-national` calendar is
       task 3.2. Job, its test and allowlist entry gone.
-- [ ] 3.2 `MilestoneService`: replace the app-local working-day math with the engine
+- [x] 3.2 `MilestoneService`: replace the app-local working-day math with the engine
       `SlaCalculator` + `WorkingCalendarService` (fixture pair: same business-day counts across a
       weekend + Dutch national holiday).
+      Found done underneath this task (checked 10 Oct, lane L7): `WorkingDayCalculator`, which
+      `MilestoneSchedule` and `StalledCaseDetector` count with, asks OpenRegister's administered
+      calendar through `Termijn\WorkingDayRoll::worksOn()` since 2026-09-19 and keeps its Dutch
+      list only as the logged fallback (`tests/Unit/Service/WorkingDaysAreAdministeredTest.php`).
+      The fixture pair at the milestone level: `tests/Unit/Service/Milestone/MilestoneScheduleOnTheCalendarTest.php`
+      (Ascension and Whit Monday 2026 land the same on the calendar as on the list; an
+      administered closure day moves the milestone).
 
 ## Phase 4: KCC (staged)
 
@@ -147,6 +154,10 @@
       no-local-calendar control file follow.
 - [ ] 4.2 Sweep `lib/` for remaining `->diff(` deadline math outside the allowlisted calculation
       classes; tighten the structural test's allowlist to empty.
+      Partly (10 Oct, lane L7): the allowlist in `TimedJobDeadlineThresholdTest` shrank from six
+      to two. Left: `WOODeadlineCheckJob` (task 2.1, waits on #3539 and the Woo lanes, which own
+      the Woo services) and `PauseChaseJob` (the documented fallback while OpenRegister is an
+      optional runtime dependency).
 
 ## Verify
 
