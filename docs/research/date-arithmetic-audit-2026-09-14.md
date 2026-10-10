@@ -72,7 +72,7 @@ The proposal counted five files referencing `WorkingDayCalculator`, and
 those five are all inside the 37. A sixth file references it at
 `16f00124a`, `lib/Service/Milestone/StalledCaseDetector.php`, which does no
 date arithmetic of its own and so is not one of the 37. Two of the five,
-`lib/Service/Kcc/SlaCalculator.php` and the calculator itself, have the
+`lib/Service/Kcc/SlaCalculator.php` (since retired) and the calculator itself, have the
 verdict `neither`, which is why three rather than five statutory files
 reached a calendar before this change.
 
@@ -87,7 +87,9 @@ consults for the day a date lands on, after this change.
 | `lib/BackgroundJob/AdviceDeadlineJob.php` | 89 | neither | | a look-ahead window the daily scan uses to pick which advices to remind on, not a date anyone is held to |
 | `lib/BackgroundJob/DsoDeadlineJob.php` | 196, 205 | statutory | `WorkingDayCalculator` | the Omgevingswet decision term; the day walk is already the calculator's |
 | `lib/Flow/DossiqAskPersonNode.php` | 648, 669 | neither | | a flow task due date and a node timeout in minutes, both process plumbing |
+| `lib/Service/Milestone/MilestoneStallTimer.php` | 154 | business | `WorkingDayCalculator` | the day after a milestone's scheduled deadline, when its stall timer breaches (`termijnbewaking-op-engine-timers` 3.1). The deadline itself comes from `StalledCaseDetector` and `MilestoneSchedule`, which count working days; the `+1 day` only moves the breach to the first day the case is late, the day BottleneckDetectionJob reported it. A milestone is a house norm, not a term the Awb names |
 | `lib/Service/Pause/ChaseSchedule.php` | 105 | business | `WorkingDayCalculator` | the interval between two reminders on a suspended term (`pause-reason-with-chasing`). The hersteltermijn ITSELF is statutory and `DeadlinePauseService` rolls it; a reminder inside that window is the gemeente's own schedule and nobody is in breach when one lands late. It still reaches the calendar, because a reason may declare `countsWorkingDays` and a reminder on a Sunday is a reminder nobody reads |
+| `lib/Service/WorkQueueService.php` | 646 | business | `WorkingDayRoll` | the business days until a deadline, for the urgency tier of the work queue. It is a display count, not a term anyone is held to, and it asks the administered calendar first (`one-term-engine`, REQ-OTE-04); the day shift only aligns its bounds with the Monday to Friday fallback walk |
 | `lib/Service/Queue/PersonalAgendaItemService.php` | 177 | neither | | the fortnight the personal queue looks ahead for items a person planned on their own calendar. It is a display window on a list, not a date anybody is held to, and moving it off a Saturday would hide a Saturday appointment from the person who booked it (`one-personal-queue`) |
 | `lib/Flow/DossiqRequestDecisionNode.php` | 615 | neither | | a node timeout in minutes |
 | `lib/Listener/AcknowledgementOnCreateListener.php` | 113 | neither | | queues the acknowledgement with attempt 1 through `IJobList::add()`, the same unanchored match. No date is computed here |
@@ -103,6 +105,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/CaseTermsService.php` | 249 | statutory | engine calendar | binds the planned end, the internal target, the phase term and a case type's fixed closing date; every one of them is a date somebody is held to, and `endAfter()` is the single line that turns a day count into one |
 | `lib/Service/ComplaintAnalyticsService.php` | 247 | neither | | a six month reporting window |
 | `lib/Service/ComplaintService.php` | 408 | statutory | `WorkingDayCalculator` | Awb 9:11 klachttermijn in weeks; the service already consults the calculator for working days |
+| `lib/Service/DeadlineExtensionService.php` | 150 | statutory | `rollTermEndFor` | an extension named in days (Woo art. 4.4 lid 2) asks for the current end plus those days; the asked-for date then goes through the same Algemene termijnenwet roll as every extension (`one-term-engine`) |
 | `lib/Service/DeadlinePauseService.php` | 93, 172 | statutory | engine calendar | Awb 4:5 and 4:15: the credited suspension and the unused remainder both move `endDateCurrent` |
 | `lib/Service/DemoCaseloadReport.php` | 86 | neither | | a three day horizon in a demo report |
 | `lib/Service/DemoCaseloadSeedDataService.php` | 343 | neither | | demo seed data |
@@ -110,7 +113,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Doorlooptijd/DeadlineComplianceCalculator.php` | 168 | neither | | month buckets for a compliance trend |
 | `lib/Service/DsoCaseService.php` | 310 | statutory | `WorkingDayCalculator` | the Omgevingswet term; the day walk is already the calculator's |
 | `lib/Service/DwangsomUitbetalingService.php` | 101 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
-| `lib/Service/Kcc/SlaCalculator.php` | 183, 218 | neither | `WorkingDayCalculator` | an intraday KCC service norm in seconds and minutes |
+| `lib/Service/Kcc/CallbackRetrySchedule.php` | 71 | neither | | the wait before the next callback attempt, 15 minutes doubling to a day. It replaced `Kcc/SlaCalculator.php` (retired by `termijnbewaking-op-engine-timers` 4.1), whose channel SLAs nothing read; a retry wait is not a deadline and has no calendar |
 | `lib/Service/NoticeOfDefaultService.php` | 171 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |

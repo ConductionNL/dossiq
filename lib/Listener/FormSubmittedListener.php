@@ -36,7 +36,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+ * @spec openspec/specs/leaf-integrations/spec.md
  */
 class FormSubmittedListener implements IEventListener {
 
@@ -82,7 +82,7 @@ class FormSubmittedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md
+	 * @spec openspec/specs/leaf-integrations/spec.md
 	 */
 	public function handle(Event $event): void {
 		$form = $this->call(subject: $event, method: 'getForm');

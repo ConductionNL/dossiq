@@ -107,7 +107,7 @@ test.describe('case type field vocabulary', () => {
 		})
 	}
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#an-administrator-declares-a-set-valued-answer
+	// @e2e openspec/specs/property-definition-management/spec.md#an-administrator-declares-a-set-valued-answer
 	test('an administrator declares a set-valued answer', async ({
 		page,
 		request,
@@ -128,7 +128,7 @@ test.describe('case type field vocabulary', () => {
 		expect(stored.items).toEqual({ type: 'string' })
 	})
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#a-document-is-the-value-of-a-field
+	// @e2e openspec/specs/property-definition-management/spec.md#a-document-is-the-value-of-a-field
 	test('a document is the value of a field', async ({ page, request }) => {
 		const tab = await openProperties(page)
 		const name = `${RUN_PREFIX} Situatietekening`
@@ -144,7 +144,7 @@ test.describe('case type field vocabulary', () => {
 		expect(stored.propertyType).toBe('file')
 	})
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#a-multi-line-text-field-is-declared
+	// @e2e openspec/specs/property-definition-management/spec.md#a-multi-line-text-field-is-declared
 	test('a multi-line text field is declared', async ({ page, request }) => {
 		const tab = await openProperties(page)
 		const name = `${RUN_PREFIX} Toelichting`
@@ -162,7 +162,7 @@ test.describe('case type field vocabulary', () => {
 		expect(stored.format).toBe('markdown')
 	})
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#a-value-outside-the-declared-range-is-refused
+	// @e2e openspec/specs/property-definition-management/spec.md#a-value-outside-the-declared-range-is-refused
 	test('a value outside the declared range is refused by the engine', async ({
 		page,
 		request,
@@ -187,8 +187,8 @@ test.describe('case type field vocabulary', () => {
 		// asserting a check dossiq does not perform.
 	})
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#an-administrator-fills-the-choice-list
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#an-empty-choice-list-is-refused-rather-than-shipped
+	// @e2e openspec/specs/property-definition-management/spec.md#an-administrator-fills-the-choice-list
+	// @e2e openspec/specs/property-definition-management/spec.md#an-empty-choice-list-is-refused-rather-than-shipped
 	test('a choice list is filled, and an empty one is refused', async ({
 		page,
 		request,
@@ -224,7 +224,7 @@ test.describe('case type field vocabulary', () => {
 		])
 	})
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#a-fee-is-computed-from-two-other-fields
+	// @e2e openspec/specs/property-definition-management/spec.md#a-fee-is-computed-from-two-other-fields
 	test('a fee declares a calculation the engine evaluates', async ({
 		page,
 		request,
@@ -251,7 +251,7 @@ test.describe('case type field vocabulary', () => {
 		})
 	})
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#a-case-type-declares-a-second-address-field
+	// @e2e openspec/specs/property-definition-management/spec.md#a-case-type-declares-a-second-address-field
 	test('a second address field declares its register, and dossiq resolves nothing', async ({
 		page,
 		request,
@@ -274,7 +274,7 @@ test.describe('case type field vocabulary', () => {
 		expect(stored.propertySource).toBe('bag')
 	})
 
-	// @e2e openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md#a-case-type-authored-on-a-wider-vocabulary-opens-safely
+	// @e2e openspec/specs/property-definition-management/spec.md#a-case-type-authored-on-a-wider-vocabulary-opens-safely
 	test('a type this instance does not know keeps its value', async ({
 		page,
 		request,

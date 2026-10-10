@@ -113,6 +113,27 @@ final class Prerequisites {
 	];
 
 	/**
+	 * What a person reads for an app whose product name moved ahead of its id.
+	 *
+	 * 🔴 DISPLAY ONLY. The keys of APPS_OPTIONAL stay the ids `isInstalled()`
+	 * is asked about; a key moves only when that app's own `<id>` in its
+	 * `appinfo/info.xml` has moved. Until then the row shows the current
+	 * product name and looks up the old id, so an administrator is not told
+	 * to install an app under a name the app store no longer uses.
+	 *
+	 * @var array<string, string>
+	 *
+	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 */
+	public const DISPLAY_NAMES = [
+		'openconnector' => 'integriq',
+		'docudesk' => 'filinq',
+		'hrmq' => 'humaniq',
+		'decidesk' => 'decidiq',
+		'nldesign' => 'thematiq',
+	];
+
+	/**
 	 * Read every prerequisite against this instance, right now.
 	 *
 	 * No cache. It runs on the admin settings page and nowhere else, so the
@@ -124,18 +145,28 @@ final class Prerequisites {
 	 *                                       Injected so a test can report one
 	 *                                       absent; defaults to the real thing.
 	 * @param int|null      $phpVersionId   The running PHP, as PHP_VERSION_ID.
+	 * @param int|null      $nextcloudMajor The running Nextcloud major version,
+	 *                                      from `OCP\ServerVersion`. Null reports
+	 *                                      it unknown, and so not in range.
 	 *
 	 * @return array<string, mixed> The declaration with a `present` on every item.
 	 *
 	 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
 	 */
 	public function check(
 		IAppManager $appManager,
 		?callable $extensionLoaded = null,
 		?int $phpVersionId = null,
+		?int $nextcloudMajor = null,
 	): array {
 		$loaded = $extensionLoaded ?? static fn (string $name): bool => extension_loaded($name);
 		$running = $phpVersionId ?? PHP_VERSION_ID;
+		$major = ($nextcloudMajor ?? 0);
+		$majorText = '';
+		if ($major > 0) {
+			$majorText = (string)$major;
+		}
 
 		$extensions = [];
 		foreach (self::EXTENSIONS as $name => $why) {
@@ -155,6 +186,8 @@ final class Prerequisites {
 			'nextcloud' => [
 				'min' => self::NEXTCLOUD_MIN,
 				'max' => self::NEXTCLOUD_MAX,
+				'running' => $majorText,
+				'present' => ($major >= (int)self::NEXTCLOUD_MIN && $major <= (int)self::NEXTCLOUD_MAX),
 			],
 			'extensions' => $extensions,
 			'apps' => [
@@ -195,6 +228,7 @@ final class Prerequisites {
 		foreach ($declared as $appId => $unlocks) {
 			$rows[] = [
 				'id' => $appId,
+				'name' => (self::DISPLAY_NAMES[$appId] ?? $appId),
 				'unlocks' => $unlocks,
 				// 🔴 A MISSING APP IS REPORTED, NEVER GUESSED AT. isInstalled()
 				// can throw on a broken app directory, and a throw here would

@@ -256,6 +256,6 @@ export default {
 
 .toewijzingen-table__type--waarnemer {
 	background: var(--color-warning);
-	color: var(--color-main-background);
+	color: var(--color-warning-text);
 }
 </style>

@@ -72,7 +72,7 @@ class HearingMinutesRecorder {
 	 *
 	 * @throws RuntimeException When consent for the recording is absent.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function guardRecordingConsent(
 		string $sessionId,
@@ -162,7 +162,7 @@ class HearingMinutesRecorder {
 	 *
 	 * @throws RuntimeException When the late correction lacks a reason.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function lateCorrectionPayload(mixed $entry): array {
 		$hasReason = isset($entry['correctionReason'])

@@ -30,6 +30,7 @@
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
+ * @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -43,11 +44,13 @@ import {
 	getRequestToken,
 	listObjects,
 	objectId,
+	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedStateMachine,
 	updateObject,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
+import { clickHeaderAction, dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 const APP_BASE = '/index.php/apps/dossiq'
 
@@ -429,6 +432,94 @@ test.describe('a task template is offered where a task is created', () => {
 		expect(
 			(await elsewhere.json()).items.map((row: any) => row.name),
 		).not.toContain(`${RUN_PREFIX} Vraag advies aan juridische zaken`)
+	})
+})
+
+/**
+ * REQ-TPL-02's second scenario, and REQ-TPL-06/07 which carry it to the form a
+ * handler can reach. Until the-close-form-keeps-its-template this file carried
+ * the scenario's tag and no test for it: gate-19 asks for a reference to a
+ * FILE, so the tag read as satisfied while nothing ran.
+ *
+ * The close form is the lifecycle menu on the case page, the only surface
+ * that closes a case. The template is asserted three ways: offered for its
+ * own case type, preset into an empty form, and never written over text the
+ * handler typed first.
+ */
+test.describe('a result template presets the close form', () => {
+	test.setTimeout(180_000)
+
+	test('a standard refusal is not retyped, and typed text survives a template', async ({
+		page,
+		request,
+	}) => {
+		const token = await getRequestToken(request)
+		const machine = await seedStateMachine(request, token)
+		const body =
+			'Uw bezwaar is niet-ontvankelijk verklaard, omdat het te laat is ingediend.'
+
+		await createObject(request, token, 'contentTemplate', {
+			name: `${RUN_PREFIX} Niet-ontvankelijkverklaring`,
+			kind: 'result',
+			caseTypes: [machine.caseTypeId],
+			body,
+			presets: { body },
+		})
+		await createObject(request, token, 'contentTemplate', {
+			name: `${RUN_PREFIX} Vergunning verleend`,
+			kind: 'result',
+			caseTypes: ['a-case-type-this-template-does-not-name'],
+			body: 'De vergunning is verleend.',
+			presets: { body: 'De vergunning is verleend.' },
+		})
+
+		const seeded = await seedCase(request, token, {
+			title: `${RUN_PREFIX} Bezwaar te laat`,
+			caseType: machine.caseTypeId,
+			status: machine.statusInProgress,
+		})
+
+		await page.goto(
+			`/index.php/apps/${REGISTER}/cases/${objectId(seeded)}`,
+			PAGE_LOAD,
+		)
+		await dismissSupportDialog(page)
+		await expect(page.getByTestId('cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+		await clickHeaderAction(page, 'cn-action-case-lifecycle-menu')
+		await expect(page.getByTestId('case-acts-list')).toBeVisible({
+			timeout: 25_000,
+		})
+		await page.getByTestId('case-act-button-finish').click()
+
+		const picker = page.getByTestId('template-picker')
+		await expect(picker).toBeVisible({ timeout: 15_000 })
+		await picker.click()
+		// Scoped means scoped: the other case type's template is not offered.
+		await expect(
+			page.getByRole('option', { name: `${RUN_PREFIX} Vergunning verleend` }),
+		).toHaveCount(0)
+		await page
+			.getByRole('option', {
+				name: `${RUN_PREFIX} Niet-ontvankelijkverklaring`,
+			})
+			.click()
+
+		const outcome = page.getByTestId('case-act-reason-input').locator('textarea')
+		await expect(outcome).toHaveValue(body)
+
+		// Typed text survives: clear, type, pick again, and the typing stands.
+		await outcome.fill("Twee alinea's die de behandelaar zelf schreef.")
+		await picker.click()
+		await page
+			.getByRole('option', {
+				name: `${RUN_PREFIX} Niet-ontvankelijkverklaring`,
+			})
+			.click()
+		await expect(outcome).toHaveValue(
+			"Twee alinea's die de behandelaar zelf schreef.",
+		)
 	})
 })
 

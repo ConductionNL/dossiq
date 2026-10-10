@@ -240,17 +240,17 @@ export default {
 
 .stuf-endpoints__health--ok {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .stuf-endpoints__health--degraded {
 	background: var(--color-warning);
-	color: white;
+	color: var(--color-warning-text);
 }
 
 .stuf-endpoints__health--circuit_open {
 	background: var(--color-error);
-	color: white;
+	color: var(--color-error-text);
 }
 
 .stuf-endpoints__note {
@@ -260,7 +260,7 @@ export default {
 }
 
 .stuf-endpoints__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 

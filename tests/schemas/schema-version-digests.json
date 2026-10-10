@@ -84,7 +84,7 @@
         "digest": "7f4d46785ced125954d2a0d0cc29021458aa6056b5f594a814f375934f92b55d"
     },
     "lib/Settings/dossiq_mock_register.json::case": {
-        "version": "1.11.0",
+        "version": "1.12.0",
         "digest": "b3307a986d1c5611318e51bbdab8626fedff3020f613d55cd26c3dda0f8f31ab"
     },
     "lib/Settings/dossiq_mock_register.json::case-location": {
@@ -368,7 +368,7 @@
         "digest": "992fc28f78a34e4146a3185fa1507b1e104e28b8cf92267d25b6da4a8cd5fbcc"
     },
     "lib/Settings/dossiq_mock_register.json::organisatieRol": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "6aab919162980d3534c1ef2f4117bf86da3cd4aa53b191a7ea6e4390712e4501"
     },
     "lib/Settings/dossiq_mock_register.json::participatiewetZaak": {
@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.37.0",
-        "digest": "472bbb131ffe2b3a1553c077c861fb939d5156b391d5dae1535f3bc75e0ce607"
+        "version": "1.40.0",
+        "digest": "df743b1e7751b11e68e882f1886e3c244acfcd10c94a089bdf9b3039786c737b"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.15.0",
+        "version": "1.17.0",
         "digest": "003336da057f4e5db998786a8ebf01b371b4b95e7fac9c800b52eb08cba6db01"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -1208,7 +1208,7 @@
         "digest": "c1d14c4fca22a09246ac620e4f8e01c478d93728d92f9c8399fd1bf15cb92332"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::deadlineInstance": {
-        "version": "1.3.0",
+        "version": "1.5.0",
         "digest": "aa19ac3744c9c3128a7f5c7c744c5572187cc349748247f72eb78ef9d2da8f0d"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::dwangsomUitbetaling": {
@@ -1252,7 +1252,7 @@
         "digest": "3391da0907a3bd6a980484ef5b5f717950a053d465b738b34ffa6ed8394ffef9"
     },
     "lib/Settings/register.d/61-mandaat-matrix.json::organisatieRol": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "423897ce2daa7becc764809b952278c82c2b81c4184e313b3209f3828bfbc679"
     },
     "lib/Settings/register.d/62-handler-vervanging.json::substitution": {

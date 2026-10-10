@@ -70,7 +70,7 @@ class QueueOrdering {
 	 * @return array<string, mixed> The scorer's verdict: deadline tier, days, score and breakdown.
 	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function score(QueueItem $item, DateTimeImmutable $now, ?UrgencyProfile $profile = null): array {
 		// No reference date: a queue item does not carry the case's last
