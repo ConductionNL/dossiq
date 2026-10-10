@@ -70,19 +70,9 @@ class OnboardingSteps {
 	private const TASK_SERVICE = 'OCA\OpenRegister\Service\Task\TaskService';
 
 	/**
-	 * OpenRegister's task inbox, by name.
-	 */
-	private const INBOX_SERVICE = 'OCA\OpenRegister\Service\Task\TaskInboxService';
-
-	/**
 	 * OpenRegister's form-aware completion, by name.
 	 */
 	private const COMPLETION_SERVICE = 'OCA\OpenRegister\Service\Task\TaskFormCompletion';
-
-	/**
-	 * OpenRegister's inbox criteria, by name.
-	 */
-	private const CRITERIA = 'OCA\OpenRegister\Db\TaskInboxCriteria';
 
 	/**
 	 * The most recent engine failure, or ''.
@@ -94,14 +84,16 @@ class OnboardingSteps {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settings  OpenRegister availability.
-	 * @param ContainerInterface $container Resolves the engine's services.
-	 * @param LoggerInterface    $logger    Logger.
+	 * @param SettingsService    $settings   OpenRegister availability.
+	 * @param ContainerInterface $container  Resolves the engine's services.
+	 * @param LoggerInterface    $logger     Logger.
+	 * @param EngineInboxQuery   $inboxQuery The one engine inbox read dossiq shares.
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly EngineInboxQuery $inboxQuery,
 	) {
 	}//end __construct()
 
@@ -127,26 +119,25 @@ class OnboardingSteps {
 	 *
 	 * @return array<string, array{id: string, step: string, status: string, completedBy: string, completedAt: string}> The steps.
 	 *
+	 * The read goes through EngineInboxQuery, the one place dossiq builds
+	 * OpenRegister's inbox criteria; a failed read leaves `lastError()` set.
+	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md
 	 */
 	public function forTenant(string $tenantId, string $actor): array {
-		$inbox = $this->engineService(className: self::INBOX_SERVICE);
-		if (trim($tenantId) === '' || $inbox === null) {
+		if (trim($tenantId) === '') {
 			return [];
 		}
 
-		$criteriaClass = self::CRITERIA;
-		try {
-			$criteria = new $criteriaClass(uid: $actor, isAdmin: true, scope: 'all', objectUuid: $tenantId, kind: self::KIND);
-			$envelope = $inbox->inbox($criteria, 100, 0);
-		} catch (Throwable $e) {
-			$this->lastError = $e->getMessage();
-			$this->logger->warning('Dossiq: could not read the onboarding steps', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
-			return [];
-		}
+		$rows = $this->inboxQuery->rows(
+			criteria: ['uid' => $actor, 'isAdmin' => true, 'scope' => 'all', 'objectUuid' => $tenantId, 'kind' => self::KIND],
+			limit: 100,
+			failure: ['Dossiq: could not read the onboarding steps', ['tenantId' => $tenantId]]
+		);
+		$this->lastError = $this->inboxQuery->lastError();
 
 		$steps = [];
-		foreach ($this->rowsOf(envelope: $envelope) as $row) {
+		foreach ($rows as $row) {
 			$step = self::field(row: $row, key: 'taskKey');
 			if ($step === '') {
 				continue;
@@ -179,8 +170,7 @@ class OnboardingSteps {
 	 * @spec openspec/specs/tenant-onboarding/spec.md
 	 */
 	public function open(string $tenantId, string $step, string $title, string $status, ?string $actor, array $metadata = []): string {
-		$service = $this->engineService(className: self::TASK_SERVICE);
-		if ($service === null || array_key_exists($status, self::STATE_FOR_STATUS) === false) {
+		if (array_key_exists($status, self::STATE_FOR_STATUS) === false || $this->engineAvailable() === false) {
 			return '';
 		}
 
@@ -204,6 +194,7 @@ class OnboardingSteps {
 		try {
 			// Positional: resolved by name from an app that need not be
 			// installed, so dossiq binds to its parameter order, not names.
+			$service = $this->container->get(self::TASK_SERVICE);
 			$task = $service->import($payload, $actor);
 		} catch (Throwable $e) {
 			$this->lastError = $e->getMessage();
@@ -225,12 +216,12 @@ class OnboardingSteps {
 	 * @spec openspec/specs/tenant-onboarding/spec.md
 	 */
 	public function complete(string $taskId, ?string $actor): bool {
-		$completion = $this->engineService(className: self::COMPLETION_SERVICE);
-		if (trim($taskId) === '' || $completion === null) {
+		if (trim($taskId) === '' || $this->engineAvailable() === false) {
 			return false;
 		}
 
 		try {
+			$completion = $this->container->get(self::COMPLETION_SERVICE);
 			$completion->complete($taskId, 'done', null, null, [], $actor);
 		} catch (Throwable $e) {
 			$this->lastError = $e->getMessage();
@@ -265,47 +256,22 @@ class OnboardingSteps {
 	}//end statusFor()
 
 	/**
-	 * One engine service, or null when OpenRegister is not there.
+	 * Whether OpenRegister is there to hold the steps.
 	 *
-	 * PROTECTED so a unit test can hand in the engine; OpenRegister is not
-	 * installed in dossiq's test run.
+	 * The engine's services themselves are resolved inside each verb's own
+	 * try block, so a service that will not resolve is logged with the verb
+	 * that needed it rather than answered as an empty value here.
 	 *
-	 * @param string $className The service's class name.
-	 *
-	 * @return object|null The service.
+	 * @return bool True when OpenRegister is available.
 	 */
-	protected function engineService(string $className): ?object {
+	private function engineAvailable(): bool {
 		if ($this->settings->isOpenRegisterAvailable() === false) {
 			$this->lastError = 'OpenRegister is not available.';
-			return null;
+			return false;
 		}
 
-		try {
-			return $this->container->get($className);
-		} catch (Throwable $e) {
-			$this->lastError = $e->getMessage();
-			return null;
-		}
-	}//end engineService()
-
-	/**
-	 * The rows of an inbox answer: a list, or an envelope with `results`.
-	 *
-	 * @param mixed $envelope The answer.
-	 *
-	 * @return array<int, mixed> The rows.
-	 */
-	private function rowsOf(mixed $envelope): array {
-		if (is_array($envelope) === false) {
-			return [];
-		}
-
-		if (array_key_exists('results', $envelope) === true && is_array($envelope['results']) === true) {
-			return array_values($envelope['results']);
-		}
-
-		return array_values($envelope);
-	}//end rowsOf()
+		return true;
+	}//end engineAvailable()
 
 	/**
 	 * One field of an engine row, array or entity, as a string.

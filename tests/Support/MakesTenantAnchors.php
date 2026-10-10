@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Support;
 
 use DateTime;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineInboxQuery;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantOrganisationResolver;
@@ -215,8 +216,53 @@ trait MakesTenantAnchors {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn(true);
 
-		return new OnboardingSteps(settings: $settings, container: $this->anchorContainer(), logger: $this->anchorLogger());
+		$container = $this->anchorContainer();
+		$logger = $this->anchorLogger();
+
+		return new OnboardingSteps(
+			settings: $settings,
+			container: $container,
+			logger: $logger,
+			inboxQuery: $this->anchorInboxQuery(settings: $settings, container: $container, logger: $logger)
+		);
 	}//end realOnboardingSteps()
+
+	/**
+	 * The real EngineInboxQuery, reading the in-memory engine.
+	 *
+	 * Only the lookup of OpenRegister's inbox service is replaced, because
+	 * OpenRegister is not installed in dossiq's test run; the criteria are
+	 * built and the rows unwrapped by the production code.
+	 *
+	 * @param SettingsService    $settings  OpenRegister availability.
+	 * @param ContainerInterface $container The anchor container.
+	 * @param LoggerInterface    $logger    The anchor logger.
+	 *
+	 * @return EngineInboxQuery The query.
+	 */
+	private function anchorInboxQuery(SettingsService $settings, ContainerInterface $container, LoggerInterface $logger): EngineInboxQuery {
+		return new class($settings, $container, $logger) extends EngineInboxQuery {
+			/**
+			 * Constructor.
+			 *
+			 * @param SettingsService    $settings  OpenRegister availability.
+			 * @param ContainerInterface $engine    The anchor container.
+			 * @param LoggerInterface    $logger    The anchor logger.
+			 */
+			public function __construct(SettingsService $settings, private ContainerInterface $engine, LoggerInterface $logger) {
+				parent::__construct(settings: $settings, container: $engine, logger: $logger);
+			}
+
+			/**
+			 * The in-memory engine's inbox.
+			 *
+			 * @return object|null The inbox.
+			 */
+			protected function resolveInbox(): ?object {
+				return $this->engine->get('OCA\\OpenRegister\\Service\\Task\\TaskInboxService');
+			}
+		};
+	}//end anchorInboxQuery()
 
 	/**
 	 * The real TenantAuditTrailService over the shared store and trail.
