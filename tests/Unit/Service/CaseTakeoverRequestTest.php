@@ -25,7 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Custody\TakeoverStore
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTakeoverRequestTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -102,7 +102,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testARequestReachesTheHolderAndLeavesTheCaseAlone(): void {
 		$record = $this->takeovers()->request(
@@ -128,7 +128,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testTheOpenHoldingWinsOverTheCaseSeat(): void {
 		$this->chain()->begin(
@@ -151,7 +151,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testARequestWithoutAReasonIsRefused(): void {
 		$this->expectException(RefusedException::class);
@@ -164,7 +164,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testYouCannotAskYourselfForTheCaseYouHold(): void {
 		$this->expectException(RefusedException::class);
@@ -177,7 +177,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testAnUnknownCaseIsRefused(): void {
 		$this->expectException(RefusedException::class);
@@ -193,7 +193,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testARequestSurvivesAnEngineThatWillNotTakeTheTask(): void {
 		$engine = $this->createMock(originalClassName: EngineTaskGateway::class);
@@ -215,7 +215,7 @@ class CaseTakeoverRequestTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function testTheRequestsOnACaseReadBack(): void {
 		$takeovers = $this->takeovers();

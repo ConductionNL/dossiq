@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
 /**
  * Whether this case may be handed to this receiver now, and under what scope.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class CaseTransferConsentGate {
 
@@ -86,7 +86,7 @@ class CaseTransferConsentGate {
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger          Records a gate that could not be evaluated.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -119,7 +119,7 @@ class CaseTransferConsentGate {
 	 *     crossesOrganisation: bool
 	 * } The verdict, and the scope when there is one.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function assess(
 		string $caseId,
@@ -209,7 +209,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @return array{covering: array<string, mixed>|null, lapsedOn: string, withdrawn: bool} What they amount to.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	private function scanConsents(array $candidates, DateTimeImmutable $moment): array {
 		$lapsedOn = '';
@@ -249,7 +249,7 @@ class CaseTransferConsentGate {
 	 * @param string $receivingOrg The organisation receiving.
 	 *
 	 * @return bool True when the boundary is crossed.
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function crossesOrganisation(string $sourceOrganisation, string $receivingOrg): bool {
 		$source = strtolower(trim($sourceOrganisation));
@@ -269,7 +269,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @return array<int, string> The scope, empty when there is none.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
 	 */
 	public function scopeOf(?array $consent): array {
 		if ($consent === null) {
@@ -312,7 +312,7 @@ class CaseTransferConsentGate {
 	 *
 	 * @return bool Whether an internal move needs consent too.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
 	public function consentRequiredInside(string $caseId): bool {
 		$caseId = trim($caseId);

@@ -28,7 +28,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 
 declare(strict_types=1);
@@ -126,7 +126,7 @@ final class PssShareStore {
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  * @uses \OCA\Dossiq\Service\CaseSharingService
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
+ * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */
 class PartnerShareScopeTest extends TestCase {
 
@@ -170,7 +170,7 @@ class PartnerShareScopeTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
 	 */
 	public function testNoShareIsWrittenWithoutAConsent(): void {
 		$answer = $this->sharing()->createPartnerShare(
@@ -190,7 +190,7 @@ class PartnerShareScopeTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
 	 */
 	public function testTheShareCarriesTheScopeTheConsentNames(): void {
 		$this->store->seed(
@@ -233,7 +233,7 @@ class PartnerShareScopeTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
+	 * @spec openspec/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
 	 */
 	public function testAConsentForAnotherPartnerWritesNoShare(): void {
 		$this->store->seed(

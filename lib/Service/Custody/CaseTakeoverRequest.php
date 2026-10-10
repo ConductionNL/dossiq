@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * The pull: request, accept, refuse, escalate.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseTakeoverRequest {
 
@@ -117,7 +117,7 @@ class CaseTakeoverRequest {
 	 * @param LoggerInterface   $logger          Records every request and every answer.
 	 * @param TakeoverStore     $store           Where the records and the cases are kept.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseCustodyChain $custody,
@@ -138,7 +138,7 @@ class CaseTakeoverRequest {
 	 *
 	 * @throws RefusedException When the case cannot be read, the asker already holds it, or the record cannot be written.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function request(string $caseId, string $requestedBy, string $reason): array {
 		$caseId = trim($caseId);
@@ -203,15 +203,16 @@ class CaseTakeoverRequest {
 	 *
 	 * @param string $takeoverId The request's uuid.
 	 * @param string $acceptedBy Who answered.
+	 * @param string $caseId     The case the caller was authorised on; the request must be on it.
 	 *
 	 * @return array<string, mixed> The answered request.
 	 *
-	 * @throws RefusedException When the request is unknown or already answered.
+	 * @throws RefusedException When the request is unknown, on another case, or already answered.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
-	public function accept(string $takeoverId, string $acceptedBy): array {
-		$record = $this->requireOpenRequest(takeoverId: $takeoverId);
+	public function accept(string $takeoverId, string $acceptedBy, string $caseId): array {
+		$record = $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId);
 		$caseId = trim((string)($record['caseId'] ?? ''));
 		$asker = trim((string)($record['requestedBy'] ?? ''));
 		$unit = trim((string)($record['holdingUnit'] ?? ''));
@@ -240,14 +241,15 @@ class CaseTakeoverRequest {
 	 * @param string $takeoverId The request's uuid.
 	 * @param string $reason     Why the holder is keeping the case.
 	 * @param string $refusedBy  Who answered.
+	 * @param string $caseId     The case the caller was authorised on; the request must be on it.
 	 *
 	 * @return array<string, mixed> The answered request.
 	 *
-	 * @throws RefusedException When the request is unknown, already answered, or the reason is missing.
+	 * @throws RefusedException When the request is unknown, on another case, already answered, or the reason is missing.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
-	public function refuse(string $takeoverId, string $reason, string $refusedBy): array {
+	public function refuse(string $takeoverId, string $reason, string $refusedBy, string $caseId): array {
 		$reason = trim($reason);
 		if ($reason === '') {
 			throw new RefusedException(
@@ -257,7 +259,7 @@ class CaseTakeoverRequest {
 			);
 		}
 
-		$record = $this->requireOpenRequest(takeoverId: $takeoverId);
+		$record = $this->requireOpenRequest(takeoverId: $takeoverId, caseId: $caseId);
 		$record['status'] = 'refused';
 		$record['refusalReason'] = $reason;
 		$record['answeredBy'] = trim($refusedBy);
@@ -282,7 +284,7 @@ class CaseTakeoverRequest {
 	 *
 	 * @return array<int, array<string, mixed>> The requests that escalated.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function escalateOverdue(string $now = ''): array {
 		$moment = $this->instant(value: $now) ?? new DateTimeImmutable();
@@ -321,7 +323,7 @@ class CaseTakeoverRequest {
 	 *
 	 * @return array<int, array<string, mixed>> The requests.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+	 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	public function onCase(string $caseId): array {
 		$caseId = trim($caseId);
@@ -431,12 +433,13 @@ class CaseTakeoverRequest {
 	 * A request that is still open, or a refusal.
 	 *
 	 * @param string $takeoverId The request's uuid.
+	 * @param string $caseId     The case the request must be on.
 	 *
 	 * @return array<string, mixed> The request.
 	 *
-	 * @throws RefusedException When it is unknown or already answered.
+	 * @throws RefusedException When it is unknown, on another case, or already answered.
 	 */
-	private function requireOpenRequest(string $takeoverId): array {
+	private function requireOpenRequest(string $takeoverId, string $caseId): array {
 		$takeoverId = trim($takeoverId);
 
 		try {
@@ -456,7 +459,11 @@ class CaseTakeoverRequest {
 			);
 		}
 
-		if ($record === null) {
+		// A request on ANOTHER case reads as unknown. The caller was
+		// authorised on the case in the URL, and nothing else: answering a
+		// request by its id alone let anyone who may change one case move a
+		// different one (decision 168 rests on this per-case check holding).
+		if ($record === null || trim((string)($record['caseId'] ?? '')) !== trim($caseId)) {
 			throw new RefusedException(
 				rule: self::REQUEST_UNKNOWN,
 				sentence: 'That request could not be found.',

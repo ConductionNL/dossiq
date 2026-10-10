@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCP\IUserSession;
 /**
  * The chain, who held the case on a date, and what a unit held.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyController extends Controller {
 
@@ -66,7 +66,7 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		string $appName,
@@ -87,7 +87,7 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @return JSONResponse The chain, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	#[NoAdminRequired]
 	public function chain(string $caseId): JSONResponse {
@@ -114,7 +114,7 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @return JSONResponse The holding, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	#[NoAdminRequired]
 	public function holder(string $caseId): JSONResponse {
@@ -146,7 +146,7 @@ class CaseCustodyController extends Controller {
 	 *
 	 * @return JSONResponse The holdings, or the refusal.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	#[NoAdminRequired]
 	public function unit(string $unit): JSONResponse {
