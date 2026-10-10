@@ -248,7 +248,7 @@ class NotePush {
 		}
 
 		if ($event->isHandled() === false) {
-			// integriq is installed and its listener did not take the request:
+			// The integriq listener is installed and did not take the request:
 			// it logged why. The note did not leave, so this is a failure.
 			return $this->recordFailure(
 				caseId: $caseId,
@@ -267,7 +267,7 @@ class NotePush {
 		}
 
 		if ((int)$event->getMatchedSubscriptions() === 0) {
-			// integriq took the request and nothing is bound to receive case
+			// Integriq took the request and nothing is bound to receive case
 			// notes: the same answer as an instance without integriq.
 			return $this->unbound();
 		}
