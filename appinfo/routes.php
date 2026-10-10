@@ -816,6 +816,18 @@ $extra = [
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
+    // Gather documents on a Woo case (woo-requests-gather-documents-from-sources D-2, D-3).
+    ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
+    ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],
+    ['name' => 'wooSources#add',    'url' => '/api/cases/{id}/woo/sources/add',    'verb' => 'POST'],
+    // The corpus of a Woo request (woo-request-corpus-collection).
+    ['name' => 'wooCollection#plan',       'url' => '/api/cases/{id}/woo/plan',                                    'verb' => 'GET'],
+    ['name' => 'wooCollection#recordPlan', 'url' => '/api/cases/{id}/woo/plan',                                    'verb' => 'PUT'],
+    ['name' => 'wooCollection#report',     'url' => '/api/cases/{id}/woo/collection',                              'verb' => 'GET'],
+    ['name' => 'wooCollection#exclude',    'url' => '/api/cases/{id}/woo/documents/{documentRef}/exclude',         'verb' => 'POST'],
+    ['name' => 'wooCollection#queries',    'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'GET'],
+    ['name' => 'wooCollection#storeQuery', 'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'POST'],
+    ['name' => 'wooCollection#rerun',      'url' => '/api/cases/{id}/woo/collection/queries/{queryId}/rerun',      'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are

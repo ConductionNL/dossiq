@@ -1,0 +1,363 @@
+{
+  "_note": "woo-request-corpus-collection (rows 19.1 to 19.4 and 19.18). The corpus of a Woo request is a record on the Woo case (decision D1): a search plan recorded before collection, the configuration a next request starts from, every exclusion with its reason, and every search as a query someone else can run again. A plan without recordedAt is a draft and counts as no plan.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "wooSearchPlan",
+          "wooRequestConfiguration",
+          "wooExclusion",
+          "wooCollectionQuery"
+        ]
+      }
+    },
+    "schemas": {
+      "wooSearchPlan": {
+        "slug": "wooSearchPlan",
+        "icon": "ClipboardSearchOutline",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Woo search plan",
+        "description": "Whose files and which systems are searched for a Woo request, over which period and with which terms. Recorded before collection starts. A plan without a recorded date is a draft and counts as no plan.",
+        "type": "object",
+        "required": [
+          "case"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case this plan belongs to. One plan per case.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "custodians": {
+            "type": "array",
+            "title": "Custodians",
+            "description": "The people or functions whose files are searched.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Name",
+                  "description": "The person or function whose files are searched, as the plan names them.",
+                  "maxLength": 255
+                },
+                "function": {
+                  "type": "string",
+                  "title": "Function",
+                  "description": "Their function or department.",
+                  "maxLength": 255
+                },
+                "userId": {
+                  "type": "string",
+                  "title": "Nextcloud user",
+                  "description": "Their Nextcloud user, when they have one.",
+                  "maxLength": 255
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          },
+          "systems": {
+            "type": "array",
+            "title": "Systems",
+            "description": "The sources to search, by the ids the case's source list names: files, cases or microsoft365.",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "periodFrom": {
+            "type": "string",
+            "title": "Period from",
+            "description": "Start of the period searched.",
+            "format": "date"
+          },
+          "periodTo": {
+            "type": "string",
+            "title": "Period to",
+            "description": "End of the period searched.",
+            "format": "date"
+          },
+          "terms": {
+            "type": "string",
+            "title": "Search terms",
+            "description": "The terms to search with.",
+            "maxLength": 1024
+          },
+          "recordedBy": {
+            "type": "string",
+            "title": "Recorded by",
+            "description": "The user who recorded the plan.",
+            "maxLength": 255
+          },
+          "recordedAt": {
+            "type": "string",
+            "title": "Recorded at",
+            "description": "When the plan was recorded. Empty for a draft.",
+            "format": "date-time"
+          }
+        }
+      },
+      "wooRequestConfiguration": {
+        "slug": "wooRequestConfiguration",
+        "icon": "ContentCopy",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Woo request configuration",
+        "description": "What a new Woo request can start from: the custodians, systems and terms of an earlier request, without its period. Other changes may add keys; every key present is copied.",
+        "type": "object",
+        "required": [
+          "case"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case this configuration belongs to.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "custodians": {
+            "type": "array",
+            "title": "Custodians",
+            "description": "The people or functions whose files are searched.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Name",
+                  "description": "The person or function whose files are searched, as the plan names them.",
+                  "maxLength": 255
+                },
+                "function": {
+                  "type": "string",
+                  "title": "Function",
+                  "description": "Their function or department.",
+                  "maxLength": 255
+                },
+                "userId": {
+                  "type": "string",
+                  "title": "Nextcloud user",
+                  "description": "Their Nextcloud user, when they have one.",
+                  "maxLength": 255
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          },
+          "systems": {
+            "type": "array",
+            "title": "Systems",
+            "description": "The sources to search, by the ids the case's source list names: files, cases or microsoft365.",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "terms": {
+            "type": "string",
+            "title": "Search terms",
+            "description": "The terms to search with.",
+            "maxLength": 1024
+          },
+          "copiedFrom": {
+            "type": "string",
+            "title": "Copied from",
+            "description": "The earlier Woo case or named template this configuration was copied from.",
+            "maxLength": 255,
+            "facetable": true
+          }
+        }
+      },
+      "wooExclusion": {
+        "slug": "wooExclusion",
+        "icon": "FileAlertOutline",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Woo exclusion",
+        "description": "A candidate document set aside before review, with the reason, so what the reviewer saw reconciles with what arrived.",
+        "type": "object",
+        "required": [
+          "case",
+          "reason"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case this belongs to.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "documentRef": {
+            "type": "string",
+            "title": "Document",
+            "description": "The document on the case that was set aside, when it was on the case.",
+            "maxLength": 255,
+            "facetable": true
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "The source the candidate came from, when it never reached the case.",
+            "maxLength": 64
+          },
+          "location": {
+            "type": "string",
+            "title": "Location",
+            "description": "Where the candidate sat in its source.",
+            "maxLength": 1024
+          },
+          "fileName": {
+            "type": "string",
+            "title": "File name",
+            "description": "The candidate's file name.",
+            "maxLength": 255
+          },
+          "sha256": {
+            "type": "string",
+            "title": "SHA-256",
+            "description": "The hash of the candidate's content, when it was read.",
+            "maxLength": 64
+          },
+          "duplicateOf": {
+            "type": "string",
+            "title": "Duplicate of",
+            "description": "The document on the case this candidate duplicates.",
+            "maxLength": 255
+          },
+          "custodian": {
+            "type": "string",
+            "title": "Custodian",
+            "description": "The plan custodian the candidate belongs to.",
+            "maxLength": 255,
+            "facetable": true
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Why the candidate was set aside.",
+            "facetable": true,
+            "enum": [
+              "duplicate",
+              "out-of-period",
+              "out-of-scope",
+              "unreadable"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "What the handler wrote about it.",
+            "maxLength": 2000
+          },
+          "excludedBy": {
+            "type": "string",
+            "title": "Excluded by",
+            "description": "The user who set it aside, or the add that recorded it.",
+            "maxLength": 255
+          },
+          "excludedAt": {
+            "type": "string",
+            "title": "Excluded at",
+            "description": "When it was set aside.",
+            "format": "date-time"
+          }
+        }
+      },
+      "wooCollectionQuery": {
+        "slug": "wooCollectionQuery",
+        "icon": "ClipboardSearchOutline",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Woo collection query",
+        "description": "A search run from a Woo case, stored so anyone who may read the case can run it again and see what is new.",
+        "type": "object",
+        "required": [
+          "case",
+          "source"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo request case this belongs to.",
+            "format": "uuid",
+            "facetable": true
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "The source searched: files, cases or microsoft365.",
+            "maxLength": 64,
+            "facetable": true
+          },
+          "terms": {
+            "type": "string",
+            "title": "Search terms",
+            "description": "The terms the search ran with.",
+            "maxLength": 1024
+          },
+          "periodFrom": {
+            "type": "string",
+            "title": "Period from",
+            "description": "Start of the period searched.",
+            "format": "date"
+          },
+          "periodTo": {
+            "type": "string",
+            "title": "Period to",
+            "description": "End of the period searched.",
+            "format": "date"
+          },
+          "filters": {
+            "type": "object",
+            "title": "Filters",
+            "description": "Any further filters the search ran with."
+          },
+          "runBy": {
+            "type": "string",
+            "title": "Run by",
+            "description": "The user who ran the search.",
+            "maxLength": 255
+          },
+          "runAt": {
+            "type": "string",
+            "title": "Run at",
+            "description": "When the search ran.",
+            "format": "date-time"
+          },
+          "resultKeys": {
+            "type": "array",
+            "title": "Result keys",
+            "description": "A stable key per row the search returned: a file id, an item id or an object uuid.",
+            "items": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "wooStartFrom": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Started from",
+            "description": "The earlier Woo request this request started from. Its custodians, systems and terms are copied into this request's draft search plan when the case is created.",
+            "visible": false,
+            "facetable": false
+          }
+        }
+      }
+    }
+  }
+}

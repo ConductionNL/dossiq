@@ -84,7 +84,7 @@
         "digest": "7f4d46785ced125954d2a0d0cc29021458aa6056b5f594a814f375934f92b55d"
     },
     "lib/Settings/dossiq_mock_register.json::case": {
-        "version": "1.11.0",
+        "version": "1.12.0",
         "digest": "b3307a986d1c5611318e51bbdab8626fedff3020f613d55cd26c3dda0f8f31ab"
     },
     "lib/Settings/dossiq_mock_register.json::case-location": {
@@ -368,7 +368,7 @@
         "digest": "992fc28f78a34e4146a3185fa1507b1e104e28b8cf92267d25b6da4a8cd5fbcc"
     },
     "lib/Settings/dossiq_mock_register.json::organisatieRol": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "6aab919162980d3534c1ef2f4117bf86da3cd4aa53b191a7ea6e4390712e4501"
     },
     "lib/Settings/dossiq_mock_register.json::participatiewetZaak": {
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.15.0",
+        "version": "1.16.0",
         "digest": "003336da057f4e5db998786a8ebf01b371b4b95e7fac9c800b52eb08cba6db01"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -1252,7 +1252,7 @@
         "digest": "3391da0907a3bd6a980484ef5b5f717950a053d465b738b34ffa6ed8394ffef9"
     },
     "lib/Settings/register.d/61-mandaat-matrix.json::organisatieRol": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "423897ce2daa7becc764809b952278c82c2b81c4184e313b3209f3828bfbc679"
     },
     "lib/Settings/register.d/62-handler-vervanging.json::substitution": {
@@ -1426,6 +1426,34 @@
     "lib/Settings/register.d/84-woo-refusal-grounds.json::wooRefusalGround": {
         "version": "1.0.0",
         "digest": "c6717a0258ebeb74fddf9f8e85ed3be6efa1ed0a0c8ccbf9207140e469125593"
+    },
+    "lib/Settings/register.d/85-woo-gather-provenance.json::informatieobject": {
+        "version": "1.4.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/85-woo-gather-provenance.json::zaakinformatieobject": {
+        "version": "1.2.0",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooCollectionQuery": {
+        "version": "1.0.0",
+        "digest": "e6eeadd8dbd64df210b97f659b11229f75fdf45d30734456271ebec1620ddb8c"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooExclusion": {
+        "version": "1.0.0",
+        "digest": "581bbf366c66f21249943b5d5e670d904291cdf795aa10a3787bac288180edc0"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooRequestConfiguration": {
+        "version": "1.0.0",
+        "digest": "e340f984d8c0ce27ae04738e2f77d732b7337c862d159bcaa4154bbb9baa406f"
+    },
+    "lib/Settings/register.d/86-woo-corpus.json::wooSearchPlan": {
+        "version": "1.0.0",
+        "digest": "741410186bc4660b177865856a3a90313d8164e1f6c0125e503cad9b519b53ae"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",

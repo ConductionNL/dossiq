@@ -132,6 +132,7 @@ class WooRequestIntake {
 			caseType: $caseType,
 			subjectRef: $subjectRef,
 			wooRequest: $wooRequest,
+			startFrom: trim((string)($request['startFrom'] ?? '')),
 		);
 		$caseId = $saved['id'];
 
@@ -247,12 +248,20 @@ class WooRequestIntake {
 	 * @param array<string, mixed>  $caseType      The Woo request case type.
 	 * @param string                $subjectRef    The resident.
 	 * @param array<string, string> $wooRequest    The request as the case keeps it.
+	 * @param string                $startFrom     An earlier Woo case this request starts from, or ''.
 	 *
 	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when the write fails.
 	 */
-	private function writeCase(object $objectService, string $register, array $caseType, string $subjectRef, array $wooRequest): array {
+	private function writeCase(
+		object $objectService,
+		string $register,
+		array $caseType,
+		string $subjectRef,
+		array $wooRequest,
+		string $startFrom = '',
+	): array {
 		$case = [
 			'title' => $wooRequest['onderwerp'],
 			'description' => $wooRequest['omschrijving'],
@@ -264,6 +273,12 @@ class WooRequestIntake {
 			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
 			'wooRequest' => $wooRequest,
 		];
+
+		// A request that starts from an earlier one names it; WooStartFromListener
+		// copies that request's configuration once the case exists (REQ-WRC-005).
+		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $startFrom) === 1) {
+			$case['wooStartFrom'] = $startFrom;
+		}
 
 		// THE REQUESTER DETAILS ALSO ANSWER THE CASE TYPE'S OWN QUESTIONS.
 		// The Woo type declares verzoekerNaam, verzoekerEmail and
