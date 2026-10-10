@@ -322,6 +322,44 @@ class PackageInstallerTest extends TestCase {
 	}//end testANewerVersionAddsNewRowsAndLeavesExistingOnesAlone()
 
 	/**
+	 * A package may carry a family of case types: `caseType` as a list writes
+	 * each one, and a list holding something other than objects is refused.
+	 *
+	 * @return void
+	 */
+	public function testAPackageMayCarrySeveralCaseTypes(): void {
+		$second = '0f1c0000-0000-4000-8000-000000000002';
+		$root = $this->variant(
+			static function (string $dir) use ($second): void {
+				self::editJson(
+					$dir . '/case-type.json',
+					static function (array $c) use ($second): array {
+						$c['caseType'] = [$c['caseType'], ['id' => $second, 'title' => 'Fixture appeal', 'identifier' => 'fixture-appeal']];
+						$c['statusTypes'][] = ['id' => '0f1c0000-0000-4000-8000-000000000013', 'name' => 'Lodged', 'order' => 1, 'caseType' => $second];
+						return $c;
+					}
+				);
+			}
+		);
+
+		$outcome = $this->installer(root: $root)->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(8, $outcome['written']);
+		$this->assertSame('Fixture appeal', $this->register->row('caseType', $second)['title']);
+
+		$broken = $this->variant(
+			static function (string $dir): void {
+				self::editJson($dir . '/case-type.json', static fn (array $c): array => ['caseType' => [$c['caseType'], 'not an object']] + $c);
+			}
+		);
+		$refused = $this->installer(root: $broken)->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::REFUSED, $refused['status']);
+		$this->assertStringContainsString('caseType must be one object or a non-empty list of objects', implode("\n", $refused['errors']));
+	}//end testAPackageMayCarrySeveralCaseTypes()
+
+	/**
 	 * A row the store refuses takes every row of the package back out, across
 	 * parts, and nothing is recorded.
 	 *

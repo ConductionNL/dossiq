@@ -111,6 +111,10 @@ class PackagePartRules {
 	/**
 	 * Check `case-type.json`.
 	 *
+	 * `caseType` is one object, or a list of objects when a package carries a
+	 * family of case types that move together (bezwaar and beroep). Each
+	 * child row names its own case type, so the list needs no other change.
+	 *
 	 * @param array<string, string> $files The package files.
 	 *
 	 * @return void
@@ -121,8 +125,8 @@ class PackagePartRules {
 			return;
 		}
 
-		if (is_array($data['caseType'] ?? null) === false || array_is_list($data['caseType']) === true) {
-			$this->errors[] = 'case-type.json: caseType must be one object.';
+		if ($this->isCaseTypeShape(value: ($data['caseType'] ?? null)) === false) {
+			$this->errors[] = 'case-type.json: caseType must be one object or a non-empty list of objects.';
 		}
 
 		foreach ($data as $collection => $rows) {
@@ -134,6 +138,31 @@ class PackagePartRules {
 			$this->checkRows(rows: $this->listOf(value: $rows), where: "case-type.json {$collection}");
 		}
 	}//end checkCaseType()
+
+	/**
+	 * Whether `caseType` is one object or a non-empty list of objects.
+	 *
+	 * @param mixed $value The decoded `caseType` value.
+	 *
+	 * @return bool
+	 */
+	private function isCaseTypeShape(mixed $value): bool {
+		if (is_array($value) === false || $value === []) {
+			return false;
+		}
+
+		if (array_is_list($value) === false) {
+			return true;
+		}
+
+		foreach ($value as $caseType) {
+			if (is_array($caseType) === false || $caseType === [] || array_is_list($caseType) === true) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end isCaseTypeShape()
 
 	/**
 	 * Check a directory of files that are one row each.
