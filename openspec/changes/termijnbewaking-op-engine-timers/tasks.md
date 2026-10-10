@@ -192,4 +192,8 @@
 ## Verify
 
 - [x] V.1 `openspec validate termijnbewaking-op-engine-timers --strict` exits 0 (10 Oct, openspec 1.12.0).
-- [ ] V.2 After each phase: the structural test's allowlist shrank; hydra gates green on the diff.
+- [x] V.2 After each phase: the structural test's allowlist shrank; hydra gates green on the diff.
+      10 Oct (lane L7, 2.1): allowlist 2 -> 1; `run-hydra-gates.sh --scope-to-diff --base origin/development`
+      on 64f9bbe06: three reds, all inherited (gate 23 names tenant and audit files this diff does not
+      touch, gate 53 cannot resolve ajv locally, gate 101 names the `dossiqIntegration` and
+      `wooRefusalGround` demo data). Phase 2 is complete; phase 4 stops at 4.2.
