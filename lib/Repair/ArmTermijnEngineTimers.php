@@ -174,7 +174,7 @@ class ArmTermijnEngineTimers implements IRepairStep {
 			return;
 		}
 
-		$this->termService->updateTermijnInstance($rowId, ['engineTimerId' => $timerId]);
+		$this->termService->updateTermijnInstance($rowId, ['engineTimerId' => $timerId, 'timerBreachesAfterLastDay' => true]);
 		$counts['armed']++;
 
 		if ($status === 'paused') {

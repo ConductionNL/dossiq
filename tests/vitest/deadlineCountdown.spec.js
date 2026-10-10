@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest'
 import {
 	daysUntilDeadline,
 	deadlineCountdown,
+	isOverdue,
 } from '../../src/utils/deadlineCountdown.js'
 
 /** A fixed "now" so the suite does not drift with the wall clock. */
@@ -98,5 +99,23 @@ describe('daysUntilDeadline', () => {
 
 	it('is null when there is nothing to count', () => {
 		expect(daysUntilDeadline(null, NOW)).toBeNull()
+	})
+})
+
+describe('isOverdue', () => {
+	// A term is late only from the day after its last day (one-term-engine,
+	// REQ-OTE-05 and REQ-OTE-07), whatever the hour.
+	it('is not overdue on the last day, even in the afternoon', () => {
+		expect(isOverdue(day(0), NOW)).toBe(false)
+	})
+
+	it('is overdue from the day after', () => {
+		expect(isOverdue(day(-1), NOW)).toBe(true)
+	})
+
+	it('is not overdue before the deadline or without one', () => {
+		expect(isOverdue(day(2), NOW)).toBe(false)
+		expect(isOverdue(null, NOW)).toBe(false)
+		expect(isOverdue('', NOW)).toBe(false)
 	})
 })
