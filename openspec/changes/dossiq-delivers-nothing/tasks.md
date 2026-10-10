@@ -127,3 +127,26 @@ cross-app command to shillinq, mirroring the decidiq `DecisionRequestedEvent` pr
 - [ ] shillinq defines `InvoiceIngestRequestedEvent` (its repo, its openspec).
 - [ ] `ShillinqIntegrationService::exportInvoice()` dispatches it (class-guarded, fail-closed);
       the blocking `sleep()` retry loop and the bearer-token HTTP client retire.
+
+## Re-verified 2026-10-10 against integriq `development` (lane L11, decision 156)
+
+Decision 156 says a dependency in another repo is built there, not parked. So each blocker
+above was measured again against integriq before anyone builds it, and one of them is already
+gone:
+
+- **The `<stuf:functie>` prerequisite is met another way.** integriq's
+  `OutboundNotificationTranslator` writes `StUF:verwerkingssoort` `T` (create), `W` (update) or
+  `V` (vervallen) on the object and `mutatiesoort` in the parameters. StUF 3.01 tells a
+  `creeerZaak` from an `actualiseerZaak` kennisgeving by exactly that. `<stuf:functie>` belongs
+  to vrije berichten (Di/Du). The 2026-09-12 reading looked at the older translator.
+- **A request/response StUF call exists.** `StufZknClient::exchange()` posts with an explicit
+  SOAPAction and returns the answer, and `StufZdsDocumentDelivery` already uses it for the ZDS
+  identificatie round-trip. A `genereerZaakIdentificatie` Du01 call can use the same path, so
+  this needs a caller, not a new seam.
+- **What is really missing is the route.** `DeliveryRequestedEvent` fans out to CloudEvents
+  subscriptions. No subscription target sends a StUF-ZKN kennisgeving, so a `creeerZaak`
+  dispatched through the seam would reach no zaaksysteem. That target (a subscription that
+  calls `StufZknSyncService::sendNotification()`) is the integriq piece to build. And since
+  `creeerZaak`/`actualiseerZaak` have zero production callers in dossiq, it is worth building
+  only once a municipality's zaaksysteem actually needs them.
+
