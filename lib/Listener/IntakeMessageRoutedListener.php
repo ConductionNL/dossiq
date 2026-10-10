@@ -42,7 +42,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+ * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+ * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 class IntakeMessageRoutedListener implements IEventListener {
 
@@ -96,7 +96,7 @@ class IntakeMessageRoutedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	public function handle(Event $event): void {
 		try {
@@ -119,7 +119,7 @@ class IntakeMessageRoutedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 * @spec openspec/specs/intake-from-a-channel/spec.md
 	 */
 	private function answer(Event $event): void {
 		if (method_exists($event, 'getTargetSchema') === false) {
