@@ -215,7 +215,8 @@ class WooCollection {
 	 */
 	public function exclusions(string $caseId): array {
 		[$objectService, $register, $schema] = $this->target();
-		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['case' => $caseId, '_limit' => 1000]);
+		$filters = ['case' => $caseId, '_limit' => 1000];
+		$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: $filters);
 
 		return array_values(array_filter($rows, static fn (array $row): bool => (string)($row['case'] ?? '') === $caseId));
 	}//end exclusions()
