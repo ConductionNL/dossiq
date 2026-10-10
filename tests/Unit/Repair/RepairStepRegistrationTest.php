@@ -96,6 +96,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
+		'MigrateCmmnCasePlans' => 'drains existing casePlanState blobs into OpenRegister plan items; a fresh install has none',
 		// INHERITED from the family-plan lane, which shipped this step with no
 		// entry on either side. Named here rather than left red: it rewrites
 		// the goal and trajectory text of EXISTING gezinsplan rows, and a
