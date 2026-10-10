@@ -26,14 +26,23 @@ test.describe('case types in my menu', () => {
 	let original: string[] = []
 
 	test.beforeEach(async ({ page }) => {
-		const response = await page.request.get(`/index.php${API}`, { headers: { 'OCS-APIRequest': 'true' } })
+		const response = await page.request.get(`/index.php${API}`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		const body = await response.json()
 		original = (body.chosen ?? []).map((caseType: { id: string }) => caseType.id)
 	})
 
 	test.afterEach(async ({ page }) => {
-		const token = await page.evaluate(() => (window as unknown as { OC?: { requestToken?: string } }).OC?.requestToken ?? '')
-		await page.request.put(`/index.php${API}`, { data: { ids: original }, headers: { requesttoken: token } })
+		const token = await page.evaluate(
+			() =>
+				(window as unknown as { OC?: { requestToken?: string } }).OC
+					?.requestToken ?? '',
+		)
+		await page.request.put(`/index.php${API}`, {
+			data: { ids: original },
+			headers: { requesttoken: token },
+		})
 	})
 
 	test('a case handler adds, orders and removes case types', async ({ page }) => {
@@ -43,7 +52,7 @@ test.describe('case types in my menu', () => {
 
 		// Start from an empty list so the positions below are known.
 		const remove = section.getByTestId('menu-case-types-remove')
-		while (await remove.count() > 0) {
+		while ((await remove.count()) > 0) {
 			await remove.first().click()
 		}
 
@@ -52,7 +61,10 @@ test.describe('case types in my menu', () => {
 		for (let i = 0; i < 2; i++) {
 			await picker.click()
 			const option = page.getByRole('option').first()
-			test.skip(await option.count() === 0, 'This instance offers fewer than two case types to this user')
+			test.skip(
+				(await option.count()) === 0,
+				'This instance offers fewer than two case types to this user',
+			)
 			await option.click()
 		}
 		const rows = section.locator('[data-testid^="menu-case-types-row-"]')
@@ -64,7 +76,9 @@ test.describe('case types in my menu', () => {
 		await section.getByTestId('menu-case-types-move').nth(1).focus()
 		await page.keyboard.press('ArrowUp')
 		await expect(rows.nth(0)).toContainText(second)
-		await expect(section.getByTestId('menu-case-types-status')).toContainText(second)
+		await expect(section.getByTestId('menu-case-types-status')).toContainText(
+			second,
+		)
 
 		// The sidebar shows them under My case types, in that order.
 		await page.goto('/apps/dossiq/')
@@ -79,7 +93,9 @@ test.describe('case types in my menu', () => {
 		await section.getByTestId('menu-case-types-remove').first().click()
 		await expect(rows).toHaveCount(1)
 		await page.goto('/apps/dossiq/')
-		await expect(page.getByTestId('cn-nav-caption-MyCaseTypesCaption')).toBeVisible()
+		await expect(
+			page.getByTestId('cn-nav-caption-MyCaseTypesCaption'),
+		).toBeVisible()
 		await expect(nav.getByRole('link', { name: second })).toHaveCount(0)
 	})
 })

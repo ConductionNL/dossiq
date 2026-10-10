@@ -377,7 +377,9 @@ export default {
 		handlingTeamIds() {
 			const teams = this.form.handling?.teams
 
-			return Array.isArray(teams) ? teams.filter((id) => typeof id === 'string' && id !== '') : []
+			return Array.isArray(teams)
+				? teams.filter((id) => typeof id === 'string' && id !== '')
+				: []
 		},
 
 		/**
@@ -388,7 +390,11 @@ export default {
 		 */
 		selectedHandlingTeams() {
 			return this.handlingTeamIds.map(
-				(id) => this.handlingTeamOptions.find((option) => option.id === id) || { id, label: id },
+				(id) =>
+					this.handlingTeamOptions.find((option) => option.id === id) || {
+						id,
+						label: id,
+					},
 			)
 		},
 
@@ -506,7 +512,10 @@ export default {
 		 */
 		updateHandlingTeams(options) {
 			const teams = (options || []).map((option) => option.id)
-			this.$emit('update', 'handling', { ...(this.form.handling || {}), teams })
+			this.$emit('update', 'handling', {
+				...(this.form.handling || {}),
+				teams,
+			})
 		},
 
 		/**

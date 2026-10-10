@@ -121,7 +121,11 @@ describe('the simple profile', () => {
 			'OrganisationsMenu',
 		])
 		const captions = main.filter((entry) => entry.type === 'caption')
-		expect(captions.map((entry) => entry.label)).toEqual(['Cases', 'My case types', 'Relations'])
+		expect(captions.map((entry) => entry.label)).toEqual([
+			'Cases',
+			'My case types',
+			'Relations',
+		])
 		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(8)
 	})
 
