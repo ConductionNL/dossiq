@@ -42,8 +42,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Termijn\TermMoveHistory;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -68,6 +70,9 @@ class CaseTermsService {
 	 * @param TermMoveHistory|null $moves The record of every move a term made, and
 	 *        why. Optional so a container that cannot build it leaves the binding
 	 *        exactly as it was.
+	 * @param WorkingDayRoll|null $calendar The administered calendar, which counts the
+	 *        planned end and the internal target in working days (REQ-OTE-04). Optional
+	 *        so a build without it counts calendar days and says so in the log.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -75,6 +80,7 @@ class CaseTermsService {
 		private readonly TermijnTimerService $timers,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermMoveHistory $moves = null,
+		private readonly ?WorkingDayRoll $calendar = null,
 	) {
 	}//end __construct()
 
@@ -130,6 +136,7 @@ class CaseTermsService {
 			days: $declared['plannedLeadTimeDays'],
 			start: $from,
 			extra: $plannedExtra,
+			mode: WorkingDayRoll::MODE_WORKING_DAYS,
 		);
 		if ($planned !== null) {
 			$bound[] = $planned;
@@ -140,6 +147,7 @@ class CaseTermsService {
 			kind: TermKind::INTERNAL,
 			days: $declared['internalTargetDays'],
 			start: $from,
+			mode: WorkingDayRoll::MODE_WORKING_DAYS,
 		);
 		if ($internal !== null) {
 			$bound[] = $internal;
@@ -210,6 +218,9 @@ class CaseTermsService {
 	 * @param int $days The declared lead time in days, 0 when undeclared.
 	 * @param DateTimeImmutable $start When it starts.
 	 * @param array<string, mixed> $extra Extra fields to write on the instance.
+	 * @param string $mode Which days it counts: `calendarDays` (the default, what a phase
+	 *        term and a remedy declare) or `workingDays` (the planned end and the internal
+	 *        target, whose schema says so).
 	 *
 	 * @return array<string, mixed>|null The instance, or null when nothing is declared.
 	 *
@@ -221,12 +232,13 @@ class CaseTermsService {
 		int $days,
 		DateTimeImmutable $start,
 		array $extra = [],
+		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
 	): ?array {
 		if ($days <= 0 || TermKind::isKnown($kind) === false) {
 			return null;
 		}
 
-		$end = $this->endAfter(start: $start, days: $days);
+		$end = $this->endAfter(start: $start, days: $days, mode: $mode);
 
 		return $this->termService->saveTermInstance(
 			instance: array_merge(
@@ -253,13 +265,26 @@ class CaseTermsService {
 	 *
 	 * @param DateTimeImmutable $start When the clock starts.
 	 * @param int $days How many days it runs.
+	 * @param string $mode `calendarDays` (the default) or `workingDays`.
 	 *
 	 * @return string The end date as `Y-m-d`.
 	 *
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
-	public function endAfter(DateTimeImmutable $start, int $days): string {
-		$raw = $start->modify('+' . max(0, $days) . ' days');
+	public function endAfter(
+		DateTimeImmutable $start,
+		int $days,
+		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
+	): string {
+		// WORKING DAYS ARE THE ADMINISTERED CALENDAR'S (REQ-OTE-04). The planned
+		// end and the internal target say "working days" in their schema and
+		// were counted in calendar days, which gave a ten working day target
+		// four days less than declared. When the calendar does not answer, the
+		// roll counts calendar days and says so in the log.
+		$days = max(0, $days);
+		$raw = $this->calendar?->endAfterOrCalendarDays(start: $start, days: $days, mode: $mode)
+			?? $start->add(new DateInterval('P' . $days . 'D'));
 
 		return $this->timers->rollTermEndFor(date: $raw)->format('Y-m-d');
 	}//end endAfter()
