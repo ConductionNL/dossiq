@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Status;
 
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\WorkQueueService;
@@ -39,6 +41,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService::tallyWaitingOn
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @uses \OCA\Dossiq\Service\WorkQueueService
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
@@ -64,6 +67,8 @@ class WorkQueueWaitingCountTest extends TestCase {
 			engineTasks: $this->createMock(originalClassName: EngineTaskInbox::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			dates: $this->caseDates(),
+			urgencySettings: new QueueUrgencySettings(settings: $this->createMock(originalClassName: SettingsService::class)),
+			journal: $this->createMock(originalClassName: CaseJournal::class),
 		);
 	}//end setUp()
 

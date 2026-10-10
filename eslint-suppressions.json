@@ -249,11 +249,6 @@
       "count": 1
     }
   },
-  "src/views/MyWorkCards.vue": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    }
-  },
   "src/views/admin/SubstitutionAdmin.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 4
@@ -535,11 +530,6 @@
   "src/views/settings/tabs/DocumentTypesTab.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 3
-    }
-  },
-  "src/views/settings/tabs/GeneralTab.vue": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "src/views/settings/tabs/MandaatMatrixSettingsTab.vue": {

@@ -23,7 +23,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Sends connection reports and refresh requests to integriq.
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 class IntegrationStatusService {
 
@@ -157,7 +157,7 @@ class IntegrationStatusService {
 	 *
 	 * @return array{status: string, message: string}|null The status and its words, or null without the readers.
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function templatesStatus(): ?array {
 		if ($this->templateChoice === null || $this->appConfig === null) {
@@ -188,7 +188,7 @@ class IntegrationStatusService {
 	 *
 	 * @return bool True when the report was sent.
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function recordTemplates(): bool {
 		$status = $this->templatesStatus();
@@ -213,7 +213,7 @@ class IntegrationStatusService {
 	 *
 	 * @return bool True when the report was sent.
 	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function record(string $key, string $status, string $message = ''): bool {
 		if (in_array($key, self::KEYS, true) === false) {
@@ -259,7 +259,7 @@ class IntegrationStatusService {
 	 *
 	 * @return array<int, string> The connection keys a refresh was sent for.
 	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function recordFromSave(array $saved): array {
 		$eventClass = $this->resolveEventClass(eventClass: self::REFRESH_EVENT);
@@ -302,7 +302,7 @@ class IntegrationStatusService {
 	 *
 	 * @return string|null The class name to instantiate, or null when absent.
 	 *
-	 * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	protected function resolveEventClass(string $eventClass): ?string {
 		$qualified = '\\' . $eventClass;

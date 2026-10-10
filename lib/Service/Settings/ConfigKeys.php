@@ -314,6 +314,12 @@ class ConfigKeys {
 		'consultation_warning_offset_days',
 		'consultation_external_response_url',
 		'consultation_bottleneck_threshold',
+		// Queue urgency (configurable-queue-urgency), edited by
+		// QueueUrgencySettingsTab.vue and read by QueueUrgencySettings.
+		'queue_critical_days',
+		'queue_warning_days',
+		'queue_priority_weight',
+		'queue_idle_weight',
 		// Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
 		// Official publication (DROP / LVBB) — empty disables dispatch.
 		'drop_lvbb_endpoint',
