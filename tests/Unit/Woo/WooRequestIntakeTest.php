@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  */
 
 declare(strict_types=1);
@@ -452,7 +452,7 @@ class WooRequestIntakeTest extends TestCase {
 	 * register and schema itself and checks the owner, so it reads and writes
 	 * unscoped, and the request goes through.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 *
 	 * @return void
 	 */
@@ -477,7 +477,7 @@ class WooRequestIntakeTest extends TestCase {
 	 * Unscoped reads do not weaken the owner check: without a Nextcloud user,
 	 * someone else's dossier is still not found.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 *
 	 * @return void
 	 */
@@ -498,7 +498,7 @@ class WooRequestIntakeTest extends TestCase {
 	/**
 	 * Someone else's dossier is refused as not found, and nothing is written.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 *
 	 * @return void
 	 */

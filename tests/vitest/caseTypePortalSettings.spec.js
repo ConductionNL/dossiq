@@ -10,7 +10,7 @@
  * only compares it with itself. And it is sent through the real save function
  * with axios replaced, so the URL and the body are the ones a browser sends.
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 import fs from 'fs'

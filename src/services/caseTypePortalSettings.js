@@ -17,7 +17,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -27,14 +27,14 @@ import { generateUrl } from '@nextcloud/router'
  * `amendCase` action (design D1). Whatever a case type opens, portaliq narrows
  * it to this list, so offering more here would be a checkbox that does nothing.
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export const WRITABLE_CEILING = ['description']
 
 /**
  * The portal audiences `amendCase` is served to (design D1).
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export const PORTAL_AUDIENCES = ['client', 'citizen', 'supplier']
 
@@ -43,7 +43,7 @@ export const PORTAL_AUDIENCES = ['client', 'citizen', 'supplier']
  *
  * @param {Array<string|object>|undefined} value A list of ids or rows.
  * @return {string[]} The ids.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 function ids(value) {
 	if (!Array.isArray(value)) {
@@ -65,7 +65,7 @@ function ids(value) {
  *
  * @param {string|undefined} value The value.
  * @return {string} The text.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 function text(value) {
 	return typeof value === 'string' ? value.trim() : ''
@@ -76,7 +76,7 @@ function text(value) {
  *
  * @param {object|undefined} block The stored window.
  * @return {{openStatuses: string[], closedReason: string}} The state.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 function windowState(block) {
 	return {
@@ -90,7 +90,7 @@ function windowState(block) {
  *
  * @param {object} caseType The case type as OpenRegister answers it.
  * @return {object} The state: `writable` per ceiling field, `amendment`, `documents`, `withdrawal`.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export function portalStateFrom(caseType = {}) {
 	const stored = Array.isArray(caseType?.portalWritable)
@@ -131,7 +131,7 @@ export function portalStateFrom(caseType = {}) {
  *
  * @param {object} state The state `portalStateFrom` returns, after editing.
  * @return {object} The body of the PATCH.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export function portalPayload(state) {
 	const portalWritable = []
@@ -194,7 +194,7 @@ export function portalPayload(state) {
  * @param {string} id The case type's id.
  * @param {object} state The form state.
  * @return {Promise<object>} The saved case type.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export async function savePortalSettings(id, state) {
 	const { data } = await axios.patch(
@@ -211,7 +211,7 @@ export async function savePortalSettings(id, state) {
  *
  * @param {string} id The case type's id.
  * @return {Promise<object>} The case type.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export async function readCaseType(id) {
 	const { data } = await axios.get(
@@ -227,7 +227,7 @@ export async function readCaseType(id) {
  *
  * @param {Error|object} error The rejected request.
  * @return {string} The sentence, or the empty string.
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 export function refusalSentence(error) {
 	const body = error?.response?.data

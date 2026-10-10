@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * The requester details as entries of a case's `properties` bag.
  *
- * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
  */
 class WooRequesterProperties {
 	use SearchesObjects;
@@ -71,7 +71,7 @@ class WooRequesterProperties {
 	 *
 	 * @return array<int, array<string, string>> The entries.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
 	 */
 	public function forCaseType(object $objectService, string $register, string $caseTypeId, array $wooRequest): array {
 		$answers = $this->answers(wooRequest: $wooRequest);

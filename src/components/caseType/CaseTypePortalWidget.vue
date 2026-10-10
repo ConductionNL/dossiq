@@ -20,7 +20,7 @@
   guard refuses a withdrawal the workflow cannot write. Its sentence is shown
   as it comes back.
 
-  @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+  @spec openspec/specs/portal-contribution/spec.md
 -->
 <template>
 	<div class="case-type-portal" data-testid="case-type-portal">
@@ -190,7 +190,7 @@ export default {
 		 * The case type this page is bound to.
 		 *
 		 * @return {string} The route's id.
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		caseTypeId() {
 			return String(this.$route?.params?.id ?? '')
@@ -198,7 +198,7 @@ export default {
 
 		/**
 		 * @return {string[]} The fields the applicant may be allowed to change.
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		fields() {
 			return WRITABLE_CEILING
@@ -206,7 +206,7 @@ export default {
 
 		/**
 		 * @return {Array<{key: string, title: string}>} The two windows.
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		windows() {
 			return [
@@ -217,7 +217,7 @@ export default {
 
 		/**
 		 * @return {Array<{id: string, label: string}>} The type's statuses as options.
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		statusOptions() {
 			return this.statuses
@@ -241,7 +241,7 @@ export default {
 		 *
 		 * @param {string} field The case field.
 		 * @return {string} The label.
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		fieldLabel(field) {
 			return field === 'description'
@@ -254,7 +254,7 @@ export default {
 		 *
 		 * @param {string[]} ids The ids.
 		 * @return {Array<{id: string, label: string}>} The options.
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		optionsFor(ids) {
 			return (ids || [])
@@ -273,7 +273,7 @@ export default {
 		 *
 		 * @param {Array<object>|null} options The options.
 		 * @return {string[]} The ids.
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		idsOf(options) {
 			return (options || []).map((option) => option.id)
@@ -283,7 +283,7 @@ export default {
 		 * Read the case type and its statuses.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -310,7 +310,7 @@ export default {
 		 * Write the section, showing the guard's sentence when it refuses.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+		 * @spec openspec/specs/portal-contribution/spec.md
 		 */
 		async save() {
 			this.saving = true

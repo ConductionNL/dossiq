@@ -309,7 +309,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	private function startWooVerzoekAction(): array {
 		// THE DOSSIER GOES IN THE FIRST STEP, hidden. Portaliq gathers every
@@ -366,7 +366,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
 	 */
 	private function startWooVerzoekAlgemeenAction(): array {
@@ -416,7 +416,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/portal-citizen-writes-on-the-case/tasks.md#1.1
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function amendCaseAction(): array {
 		return [

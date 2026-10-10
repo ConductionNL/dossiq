@@ -369,7 +369,7 @@ class PortalContributionProvider {
 	 *
 	 * @return string|null The applicant's BSN, or null.
 	 *
-	 * @spec openspec/changes/portal-message-box-recipient/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function messageBoxRecipient(string $messageId): ?string {
 		if ($this->messageBox === null) {
@@ -391,7 +391,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, mixed>> `{id, title, kind, date, file, mimeType?, size?}` per document.
 	 *
-	 * @spec openspec/changes/portal-case-documents/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseDocuments(string $caseId): array {
 		if ($this->documents === null) {

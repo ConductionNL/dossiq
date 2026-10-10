@@ -492,7 +492,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	public function testAResidentStartsAWooRequestFromTheirDossier(string $audience): void {
 		$actions = [];

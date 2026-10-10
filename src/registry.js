@@ -474,7 +474,7 @@ const registry = {
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
 	},
 	// --- What a case type opens to its applicant (portal-citizen-writes-on-the-case D3). ---
-	// @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	// @spec openspec/specs/portal-contribution/spec.md
 	CaseTypePortalWidget: {
 		// @custom-widget-ratchet exclude every picker offers the case type's own statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers; a declared form would offer a free text field for a status uuid
 		kind: 'widget',

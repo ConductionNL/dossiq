@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Opens a Woo request case for a resident, optionally from their dossier.
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  */
 class WooRequestIntake {
 
@@ -106,9 +106,9 @@ class WooRequestIntake {
 	 * @throws WooRequestRefused When the request is unusable, the dossier is not the resident's,
 	 *                           or the register or case type is missing.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
 	public function start(array $request): array {
 		$wooRequest = (new WooRequestForm())->normalise(request: $request);
@@ -159,7 +159,7 @@ class WooRequestIntake {
 	 *
 	 * @return string The path, starting with `/index.php`.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 */
 	public function publicationPath(string $publicationId): string {
 		$catalogSlug = $this->settingsService->getConfigValue('woo_publication_catalog_slug', 'publication');
@@ -179,7 +179,7 @@ class WooRequestIntake {
 	 *
 	 * @throws WooRequestRefused NOT_FOUND when it is absent or someone else's.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
 	private function ownedCollection(object $objectService, string $collectionId, string $subjectRef): array {
 		$collection = null;
@@ -411,7 +411,7 @@ class WooRequestIntake {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
 	private function recordSource(object $objectService, array $collection, string $caseId): void {
 		$reference = self::SOURCE_PREFIX . $caseId;
@@ -461,7 +461,7 @@ class WooRequestIntake {
 	 *
 	 * @return array<string, mixed>|null The object, or null when it does not exist.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
 	private function findUnscoped(object $objectService, int|string $register, int|string $schema, string $id): ?array {
 		try {
