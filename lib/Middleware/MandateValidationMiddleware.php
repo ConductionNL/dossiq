@@ -34,7 +34,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
 
 /**
  * Mandate-matrix middleware. Audit-logs every decision (allow + deny).
@@ -92,7 +91,6 @@ class MandateValidationMiddleware extends Middleware {
 	 * @param TenantContext $context Tenant context.
 	 * @param TenantAuthenticationService $authService Auth service.
 	 * @param TenantService $tenantService Platform admin check.
-	 * @param LoggerInterface $logger Logger.
 	 * @param TenantAuditTrailService $auditTrail Writes each decision to the tenant's audit trail.
 	 */
 	public function __construct(
@@ -101,7 +99,6 @@ class MandateValidationMiddleware extends Middleware {
 		private readonly TenantContext $context,
 		private readonly TenantAuthenticationService $authService,
 		private readonly TenantService $tenantService,
-		private readonly LoggerInterface $logger,
 		private readonly TenantAuditTrailService $auditTrail,
 	) {
 	}//end __construct()
@@ -229,9 +226,15 @@ class MandateValidationMiddleware extends Middleware {
 			return;
 		}
 
-		$this->logger->info(
-			'Dossiq: request refused because the organisation is not active',
-			['userId' => $userId, 'tenantId' => $this->context->getTenantId(), 'status' => $status]
+		// On the tenant's audit trail, not only in the log: a refused request
+		// is a decision, the same as a mandate decision.
+		$this->auditTrail->emit(
+			[
+				'action' => 'organisation.refused.'.$status,
+				'actor' => $userId,
+				'resource' => $this->request->getRequestUri(),
+				'tenantId' => $this->context->getTenantId(),
+			]
 		);
 
 		throw (new MandateDeniedException(message: 'Organisation is '.$status, code: 403))->withLifecycleStatus(status: $status);
@@ -262,8 +265,8 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * The decision becomes a row on OpenRegister's audit trail of the tenant's
 	 * anchor (REQ-TOO-006), written by `TenantAuditTrailService`, which writes
-	 * no row and logs an error when the tenant has no anchor. The log line
-	 * stays for the SIEM stream.
+	 * no row and logs an error when the tenant has no anchor, and mirrors
+	 * every entry to the log as a `Dossiq AUDIT` line for the SIEM stream.
 	 *
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $userId NC user ID.
@@ -284,19 +287,8 @@ class MandateValidationMiddleware extends Middleware {
 			[
 				'action' => 'mandate.'.$action.'.'.$outcome,
 				'actor' => $userId,
-				'resource' => $this->request->getRequestUri(),
+				'resource' => $this->request->getRequestUri().' ('.(string)$decision['reason'].')',
 				'tenantId' => $tenantId,
-			]
-		);
-
-		$this->logger->info(
-			'Dossiq mandate decision',
-			[
-				'tenantId' => $tenantId,
-				'userId' => $userId,
-				'action' => $action,
-				'allowed' => (bool)$decision['allowed'],
-				'reason' => (string)$decision['reason'],
 			]
 		);
 	}//end logDecision()
