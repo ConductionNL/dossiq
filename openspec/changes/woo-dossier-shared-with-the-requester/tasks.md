@@ -9,7 +9,7 @@ Read `openspec/woo-build-rules.md` first. Start the term tasks (group 2) only on
 
 ## 2. Term on the portal case (after one-term-engine PR 4)
 
-- [x] 2.0 (`lib/Settings/register.d/85-woo-dossier-shared.json` declares both on `case`, register 0.20.22; both on `CITIZEN_CASE_FIELDS`; `tests/Unit/Woo/WooPortalResultLinkTest.php::testTheCaseDeclaresTheTermNoteAndTheResultLink`) Declare `termNote` and `resultLink` on the `case` schema in `lib/Settings/register.d/76-portal-citizen-writes.json`, in the exact shapes of portaliq's `portalCase` (`portaliq/woo-dossier-in-my-cases` REQ-WDM-002 and REQ-WDM-003), bump the version, and add both to the fields of the citizen cases collection. Verify: a register test that saves both on a case and reads them back (an undeclared key is dropped on save).
+- [x] 2.0 (`lib/Settings/register.d/85-woo-dossier-shared.json` declares both on `case`, register 0.20.23; both on `CITIZEN_CASE_FIELDS`; `tests/Unit/Woo/WooPortalResultLinkTest.php::testTheCaseDeclaresTheTermNoteAndTheResultLink`) Declare `termNote` and `resultLink` on the `case` schema in `lib/Settings/register.d/76-portal-citizen-writes.json`, in the exact shapes of portaliq's `portalCase` (`portaliq/woo-dossier-in-my-cases` REQ-WDM-002 and REQ-WDM-003), bump the version, and add both to the fields of the citizen cases collection. Verify: a register test that saves both on a case and reads them back (an undeclared key is dropped on save).
 - [ ] 2.1 Write `legalDecisionDate` and `termNote` on every Woo case save (REQ-WDS-002). Verify: `tests/Unit/Portal/WooPortalTermNoteTest.php::testAPausedTermSaysWhyAndGivesNoDate`, `::testAnExtensionCarriesItsReason`, `::testARunningTermHasNoNote`.
 
 ## 3. Result link
