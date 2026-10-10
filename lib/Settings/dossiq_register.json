@@ -8600,8 +8600,9 @@
             "tenant": {
                 "slug": "tenant",
                 "icon": "OfficeBuildingOutline",
-                "version": "1.1.0",
+                "version": "1.1.1",
                 "deprecated": true,
+                "searchable": false,
                 "deprecationNote": "Retired as the tenant admin store (ADR-022, consume-or-tenant-fleet-wide): identity, lifecycle status and quotas live on OpenRegister's Organisation, and `occ dossiq:migrate-tenants` plus the MigrateTenantsToOrganisations repair step project the legacy rows onto Organisations. The schema stays as the read-only anchor of the tenant audit trail. The only write left is creating an anchor; nothing updates or deletes a tenant object.",
                 "x-schema-org": "schema:Organization",
                 "title": "Tenant",
