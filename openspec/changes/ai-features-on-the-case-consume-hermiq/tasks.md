@@ -29,11 +29,28 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
   - `lib/Service/Ai/ReportGroupingConsumer.php`
 - [ ] 4.2 A group changes no confirmation of receipt: the count owed is read
   from the reports, never from the group.
-- [ ] 5.1 Declare a create-only intake tool annotated as hermiq's grant
+- [x] 5.1 Declare a create-only intake tool annotated as hermiq's grant
   requires, and the read tools for the outbound surface (D-5).
-  - `lib/Mcp/DossiqToolProvider.php`
-- [ ] 5.2 The intake tool files through the creation path the create form
+  - `lib/Service/Mcp/IntakeTools.php` (`dossiq.fileCase`: `citizenIntake` mark,
+    `scope: create`, `action: create`, `reach: instance`), listed in
+    `lib/Mcp/DossiqScannableServices.php`; the six curated reads carry
+    `outsideAgent`. The hand-written `DossiqToolProvider` is gone
+    (dossiq-mcp-adoption), so the path in the original text no longer exists.
+  - Tests: `IntakeToolsTest::testTheToolCarriesTheMarkAndTheCreateTaxonomyHermiqReads`,
+    `DossiqScannableServicesTest::testOnlyTheCreateToolCarriesTheIntakeMark`,
+    `DossiqScannableServicesTest::testOnlyTheReadsAreOfferedToTheOutsideSurface`.
+  - Needs openregister#4546 (reach) and the annotations PR (decision 177) on
+    the instance, and hermiq's intake recognition PR, before hermiq sees it.
+- [x] 5.2 The intake tool files through the creation path the create form
   already uses, with its own validation, and refuses what that path refuses.
+  - `lib/Service/Intake/CaseIntakeFiling.php`: one `saveObject()` on the case
+    schema as the caller (the create form's `createOverride` saves the same
+    way), allowlisted payload, published case type by id or identifier, no
+    intermediate intake object (decision 179).
+  - Tests: `CaseIntakeFilingTest` (the write, the identifier lookup, the payload
+    against the real case schema, a missing subject, a draft-only case type,
+    a refusal from the create path and from RBAC, no storage),
+    `IntakeToolsTest::testARefusalIsThrownWithDossiqsSentence`.
 - [ ] 5.3 Declare the request catalogue hermiq classifies from.
 - [ ] 6.1 Ship the initial prompt library into hermiq and stop owning it
   (REQ-AIC-06).

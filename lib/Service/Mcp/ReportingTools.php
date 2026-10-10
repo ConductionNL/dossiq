@@ -84,7 +84,8 @@ class ReportingTools {
 		scope: 'read',
 		reach: 'user',
 		subject: 'deadline',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getDeadlineDashboard(): array {
 		$refusal = $this->refuseOutsideReportingAudience();
@@ -113,7 +114,8 @@ class ReportingTools {
 		scope: 'read',
 		reach: 'user',
 		subject: 'leadTime',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getDoorlooptijdMetrics(?string $caseType = null, string $period = '12m', int $atRiskDays = 5): array {
 		$refusal = $this->refuseOutsideReportingAudience();
@@ -152,7 +154,8 @@ class ReportingTools {
 		scope: 'read',
 		reach: 'user',
 		subject: 'kpi',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getKpiOverview(): array {
 		$user = $this->userSession->getUser();
@@ -178,7 +181,8 @@ class ReportingTools {
 		scope: 'read',
 		reach: 'user',
 		subject: 'workload',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getWorkload(): array {
 		$user = $this->userSession->getUser();

@@ -472,7 +472,8 @@ class ComplaintService {
 		scope: 'read',
 		reach: 'user',
 		subject: 'complaint',
-		action: 'listOverdue'
+		action: 'listOverdue',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function listOverdueComplaints(): array {
 		$today = $this->dates->today();

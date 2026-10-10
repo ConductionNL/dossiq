@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Mcp;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\Registrar\AppHostRegistrar;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
+use OCA\Dossiq\Service\Mcp\IntakeTools;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
@@ -84,6 +85,7 @@ class DossiqScannableServicesTest extends TestCase {
 		'scheduleAppointment' => 'external',
 		'cancelAppointment' => 'external',
 		'draftBeschikking' => 'user',
+		'fileCase' => 'instance',
 	];
 
 	/**
@@ -136,8 +138,10 @@ class DossiqScannableServicesTest extends TestCase {
 
 			foreach ($method->getParameters() as $param) {
 				$type = $param->getType();
+				// `array` is a list the scanner describes as a JSON array; only
+				// hermiq's intake transcript (`fileCase` $messages) needs one.
 				$this->assertTrue(
-					$type instanceof ReflectionNamedType && in_array($type->getName(), ['string', 'int', 'bool', 'float'], true),
+					$type instanceof ReflectionNamedType && in_array($type->getName(), ['string', 'int', 'bool', 'float', 'array'], true),
 					$where . ' parameter $' . $param->getName() . ' is not a scalar the scanner can describe.'
 				);
 				$this->assertNotSame('userId', $param->getName(), $where . ' lets the agent name the acting user.');
@@ -176,7 +180,7 @@ class DossiqScannableServicesTest extends TestCase {
 			$checked++;
 		}
 
-		$this->assertSame(5, $checked, 'Expected the five tool classes under Service\\Mcp.');
+		$this->assertSame(6, $checked, 'Expected the six tool classes under Service\\Mcp.');
 	}//end testNoToolClassReachesPastItsOwningService()
 
 	/**
@@ -248,4 +252,52 @@ class DossiqScannableServicesTest extends TestCase {
 
 		return $classes;
 	}//end attributedClassesInLib()
+
+	/**
+	 * Exactly the create-only intake tool carries hermiq's intake mark, and it
+	 * declares the create scope and action hermiq requires beside the mark
+	 * (decision 177). No tool that reads or changes an existing case is marked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-only-the-create-tool-is-annotated-for-intake
+	 */
+	public function testOnlyTheCreateToolCarriesTheIntakeMark(): void {
+		$marked = [];
+		foreach ($this->tools() as [$method, $tool]) {
+			if (($tool->annotations[IntakeTools::INTAKE_MARK] ?? false) === true) {
+				$marked[] = $tool->name;
+				$this->assertSame('create', $tool->scope);
+				$this->assertSame('create', $tool->action);
+				$this->assertFalse($tool->readOnlyHint);
+			}
+		}
+
+		$this->assertSame(['fileCase'], $marked);
+	}//end testOnlyTheCreateToolCarriesTheIntakeMark()
+
+	/**
+	 * The six curated reads, and nothing else, are offered to hermiq's outbound
+	 * surface (`outsideAgent`, design D-5). The caller's own rights still decide
+	 * per call, because each read runs its controller's gate; a write is never
+	 * offered there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-conversational-intake-files-through-dossiqs-own-create-only-path-req-aic-05
+	 */
+	public function testOnlyTheReadsAreOfferedToTheOutsideSurface(): void {
+		$offered = [];
+		foreach ($this->tools() as [$method, $tool]) {
+			if (($tool->annotations['outsideAgent'] ?? false) === true) {
+				$offered[] = $tool->name;
+				$this->assertTrue($tool->readOnlyHint, $tool->name);
+			}
+		}
+
+		sort($offered);
+		$reads = self::READ_TOOLS;
+		sort($reads);
+		$this->assertSame($reads, $offered);
+	}//end testOnlyTheReadsAreOfferedToTheOutsideSurface()
 }//end class

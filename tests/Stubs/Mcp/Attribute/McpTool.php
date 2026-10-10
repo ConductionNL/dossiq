@@ -46,6 +46,8 @@ if (class_exists(McpTool::class, false) === false) {
 		 * @param string|null $scope           read, create, update or delete.
 		 * @param string|null $subject         The thing the tool acts on.
 		 * @param string|null $action          The verb the tool performs.
+		 * @param string|null $reach           self, user, instance or external.
+		 * @param array<string, bool|int|float|string> $annotations Free-form marks a consumer reads (REQ-ATTR-007).
 		 */
 		public function __construct(
 			public readonly ?string $name = null,
@@ -57,6 +59,7 @@ if (class_exists(McpTool::class, false) === false) {
 			public readonly ?string $subject = null,
 			public readonly ?string $action = null,
 			public readonly ?string $reach = null,
+			public readonly array $annotations = [],
 		) {
 		}//end __construct()
 	}//end class
