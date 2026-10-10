@@ -78,6 +78,26 @@ export function daysUntilDeadline(deadline, now = new Date()) {
 }
 
 /**
+ * Whether a deadline has passed: from the day AFTER it, never on it.
+ *
+ * THE ONE RULE FOR EVERY SURFACE (REQ-OTE-07). A term is not late on its last
+ * day (REQ-TERM-DAY-001), and five components used to decide that each in
+ * their own way: two compared instants and called a case late from midnight
+ * UTC of its last day. They all ask here now.
+ *
+ * @param {string|number|Date|null|undefined} deadline The deadline.
+ * @param {Date} [now] The moment to judge against (defaults to the current one).
+ * @return {boolean} True only when the deadline's day is before today; false
+ *   when there is no readable deadline.
+ *
+ * @spec openspec/changes/one-term-engine/specs/my-work/spec.md#requirement-one-front-end-helper-decides-days-left-and-overdue-req-ote-07
+ */
+export function isOverdue(deadline, now = new Date()) {
+	const days = daysUntilDeadline(deadline, now)
+	return days !== null && days < 0
+}
+
+/**
  * The deadline column's cell content: how many days are left, or how many
  * days the case is past due.
  *

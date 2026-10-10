@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\OpenCaseCounts;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IConfig;
 use OCP\IGroupManager;
@@ -71,6 +72,16 @@ class MenuCaseTypesService {
 	 * @var int
 	 */
 	public const MAX_ENTRIES = 30;
+
+	/**
+	 * Each superseded case type version, pointing at the version that replaced it.
+	 *
+	 * Filled by the last read of the case types, so a count can fold a case
+	 * opened under an old version into the version the menu lists.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $supersededBy = [];
 
 	/**
 	 * Constructor.
@@ -176,8 +187,10 @@ class MenuCaseTypesService {
 		$handling = new CaseTypeHandling();
 
 		$caseTypes = [];
+		$this->supersededBy = [];
 		foreach ($rows as $row) {
 			if (empty($row['supersededBy']) === false) {
+				$this->rememberSuperseded(row: $row);
 				continue;
 			}
 
@@ -203,6 +216,69 @@ class MenuCaseTypesService {
 
 		return $list;
 	}//end currentCaseTypes()
+
+	/**
+	 * The same case types, each with the number of open cases of that type the user may see.
+	 *
+	 * ONE aggregate query, never a count per case type: a terms facet on the
+	 * case's `caseType` over the open cases, under the user's own RBAC. A case
+	 * opened under an older version of a case type counts for the version the
+	 * list holds. When the counts are unknown (no OpenRegister, no case
+	 * schema, no `caseType` facet in the answer) every `openCases` is null, so
+	 * the picker shows no number rather than a 0 nobody counted. A facet query
+	 * that throws is passed on to the caller.
+	 *
+	 * Call it after offeredCaseTypes() or visibleCaseTypes(): those read the
+	 * case type versions this folds by.
+	 *
+	 * @param array<int, array{id: string, title: string}> $caseTypes The case types to count.
+	 *
+	 * @return array<int, array{id: string, title: string, openCases: int|null}> The case types with their counts.
+	 *
+	 * @throws \Throwable When OpenRegister's facet query fails.
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	public function withOpenCaseCounts(array $caseTypes): array {
+		$counts = (new OpenCaseCounts(settingsService: $this->settingsService))->byCaseType(
+			supersededBy: $this->supersededBy
+		);
+
+		return array_map(
+			static function (array $caseType) use ($counts): array {
+				$caseType['openCases'] = null;
+				if ($counts !== null) {
+					$caseType['openCases'] = ($counts[$caseType['id']] ?? 0);
+				}
+
+				return $caseType;
+			},
+			$caseTypes
+		);
+	}//end withOpenCaseCounts()
+
+	/**
+	 * The same case types, each saying its count is unknown.
+	 *
+	 * What the controller answers when the count query failed: no number on
+	 * screen, never a 0 nobody counted.
+	 *
+	 * @param array<int, array{id: string, title: string}> $caseTypes The case types.
+	 *
+	 * @return array<int, array{id: string, title: string, openCases: null}> The case types, count unknown.
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	public function withUnknownOpenCaseCounts(array $caseTypes): array {
+		return array_map(
+			static function (array $caseType): array {
+				$caseType['openCases'] = null;
+
+				return $caseType;
+			},
+			$caseTypes
+		);
+	}//end withUnknownOpenCaseCounts()
 
 	/**
 	 * The user's chosen case types, in their order, limited to what they may see.
@@ -286,6 +362,22 @@ class MenuCaseTypesService {
 
 		return array_values($kept);
 	}//end keepVisible()
+
+	/**
+	 * Remember which version replaced a superseded case type version.
+	 *
+	 * @param array<string, mixed> $row The superseded case type row.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	private function rememberSuperseded(array $row): void {
+		$old = $this->resolveUuid(object: $row);
+		if ($old !== null && is_string($row['supersededBy']) === true) {
+			$this->supersededBy[$old] = $row['supersededBy'];
+		}
+	}//end rememberSuperseded()
 
 	/**
 	 * Resolve an OpenRegister object's UUID from its array shape.

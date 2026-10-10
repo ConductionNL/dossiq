@@ -97,6 +97,17 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('dossiq', 'Queue urgency')"
+			:description="
+				t(
+					'dossiq',
+					'When a case counts as critical or almost due, and how much priority and time lying still weigh in the order.',
+				)
+			">
+			<QueueUrgencySettingsTab />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'Mandate matrix: administration')"
 			:description="
 				t(
@@ -308,6 +319,7 @@ import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
 import MenuStructureTab from './tabs/MenuStructureTab.vue'
 import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
+import QueueUrgencySettingsTab from './tabs/QueueUrgencySettingsTab.vue'
 import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
@@ -332,6 +344,7 @@ export default {
 		SearchIndexTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
+		QueueUrgencySettingsTab,
 		MandaatMatrixTab,
 		MandaatMatrixSettingsTab,
 		MenuStructureTab,

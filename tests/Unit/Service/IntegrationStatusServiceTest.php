@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -361,7 +361,7 @@ class IntegrationStatusServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/specs/beschikking-generatie/spec.md#scenario-the-card-reads-what-the-seam-bound
+	 * @spec openspec/specs/beschikking-generatie/spec.md#scenario-the-card-reads-what-the-seam-bound
 	 */
 	public function testTheTemplatesCardReadsWhatTheSeamBinds(): void {
 		$this->assertSame('configured', $this->serviceForTemplates(filinq: true, named: '')->templatesStatus()['status']);
@@ -379,7 +379,7 @@ class IntegrationStatusServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function testSavingTheTemplateKeyReportsTheCard(): void {
 		$refreshed = $this->serviceForTemplates(filinq: true, named: '')->recordFromSave(['beschikking_template_adapter' => '']);

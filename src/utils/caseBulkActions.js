@@ -5,7 +5,7 @@
 // `config.bulkActions[].handler` and registered in registry.js as
 // `kind: 'handler'` entries.
 //
-// Their own module, like caseClaim.js / caseFavourite.js / caseUnread.js
+// Their own module, like caseClaim.js / caseFollow.js / caseUnread.js
 // beside them, so a unit test can reach a handler without importing every page
 // the registry mounts.
 //
