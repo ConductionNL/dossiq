@@ -1,0 +1,140 @@
+{
+  "_note": "woo-delivered-set-is-a-record REQ-WDS-001 (rows 19.15, 19.16). What dossiq delivered to OpenCatalogi for a Woo decision, as a record of its own: every item with the delivered file's hash, and one hash over the set. Written pending before the publication is created, frozen with the publication id after, deleted when publishing fails. Never published. No authorization block: it is read with the same access as the case, like the assessments it names; there is no public read.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "wooDeliveredSet"
+        ]
+      }
+    },
+    "schemas": {
+      "wooDeliveredSet": {
+        "slug": "wooDeliveredSet",
+        "icon": "PackageVariantClosed",
+        "version": "1.0.0",
+        "searchable": false,
+        "title": "Woo delivered set",
+        "description": "What was delivered for publication on a Woo decision: each document as it went out, with the hash of its bytes, and one hash over the whole set. Frozen once the publication exists, so it shows later what went out.",
+        "type": "object",
+        "required": [
+          "case",
+          "decision",
+          "status",
+          "items",
+          "setHash"
+        ],
+        "configuration": {
+          "objectNameField": "setHash"
+        },
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The Woo case the set was delivered from.",
+            "facetable": true
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision",
+            "description": "The Woo decision the set was delivered with."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "frozen"
+            ],
+            "default": "pending",
+            "title": "Status",
+            "description": "Pending while the publication is being made, frozen once it exists. A frozen set and the assessments it names cannot be changed.",
+            "facetable": true
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Delivered at",
+            "description": "When the set was delivered."
+          },
+          "deliveredBy": {
+            "type": "string",
+            "title": "Delivered by",
+            "description": "Who published the decision."
+          },
+          "supersedes": {
+            "type": "string",
+            "title": "Supersedes",
+            "description": "The earlier set of the same case this delivery replaces, if any."
+          },
+          "publication": {
+            "type": "string",
+            "title": "Publication",
+            "description": "The publication in OpenCatalogi the set went into. Set when the set is frozen."
+          },
+          "withdrawnAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Withdrawn at",
+            "description": "When the publication was withdrawn. The set stays frozen."
+          },
+          "setHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Set hash",
+            "description": "SHA-256 over the lines of item hash and delivered file, sorted by delivered file."
+          },
+          "items": {
+            "type": "array",
+            "title": "Items",
+            "description": "Each delivered document: the assessment, its classification, the file that went out and the original, with size and hash.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "assessment": {
+                  "type": "string",
+                  "title": "Assessment",
+                  "description": "The document assessment this item was delivered under."
+                },
+                "classification": {
+                  "type": "string",
+                  "enum": [
+                    "openbaar",
+                    "deels_openbaar"
+                  ],
+                  "title": "Classification",
+                  "description": "Public in full or in part."
+                },
+                "deliveredRef": {
+                  "type": "string",
+                  "title": "Delivered file",
+                  "description": "The document that went out: the original when public in full, the redaction when public in part."
+                },
+                "originalRef": {
+                  "type": "string",
+                  "title": "Original",
+                  "description": "The document as it came in."
+                },
+                "fileName": {
+                  "type": "string",
+                  "title": "File name",
+                  "description": "The name of the delivered file."
+                },
+                "size": {
+                  "type": "integer",
+                  "title": "Size",
+                  "description": "The size of the delivered file in bytes."
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$",
+                  "title": "SHA-256",
+                  "description": "The SHA-256 of the delivered file's bytes."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

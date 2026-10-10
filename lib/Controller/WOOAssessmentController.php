@@ -104,7 +104,7 @@ class WOOAssessmentController extends Controller {
 	 * @throws OCSForbiddenException If user is not authenticated or not authorized
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-dossiq-validates-assessments-against-the-list-req-wrg-005
 	 */
 	#[NoAdminRequired]
 	public function bulkAssess(string $id): JSONResponse {
@@ -382,7 +382,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	private function publicationResponse(array $result): JSONResponse {
 		if (($result['available'] ?? false) === true) {
@@ -405,7 +405,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return array{0: int, 1: string}
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
 	 */
 	private function refusal(string $reason): array {
 		return match ($reason) {
@@ -415,6 +415,10 @@ class WOOAssessmentController extends Controller {
 			'no_publication' => [Http::STATUS_CONFLICT, $this->l10n->t('This decision has not been published.')],
 			'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi is not installed, so nothing can be published.')],
 			'openregister_unavailable' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenRegister is not available.')],
+			'delivered_set_not_written' => [
+				Http::STATUS_SERVICE_UNAVAILABLE,
+				$this->l10n->t('What would be delivered could not be recorded first, so nothing was published. Try again later.'),
+			],
 			'opencatalogi_api_error' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi did not accept the publication. Try again later.')],
 			default => [Http::STATUS_CONFLICT, $this->l10n->t('The publication could not be changed.')],
 		};

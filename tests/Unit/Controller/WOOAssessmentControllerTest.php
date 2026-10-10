@@ -357,7 +357,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	public function testPublishWithoutADecisionIdAnswers409WhenTheCaseHasNoWooDecision(): void {
 		$user = $this->createMock(IUser::class);
@@ -384,7 +384,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
 	 */
 	public function testARefusalIsTranslatedForTheHeaderAction(): void {
 		$user = $this->createMock(IUser::class);
@@ -430,7 +430,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	public function testWithdrawWithoutOpenCatalogiAnswers503(): void {
 		$user = $this->createMock(IUser::class);
@@ -480,6 +480,45 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->assertTrue($data['available']);
 		$this->assertSame('pub-001', $data['publicationId']);
 	}//end testPublishDecisionReturnsResultWhenAuthenticated()
+
+	/**
+	 * The publish answer carries the delivered set's id (woo-delivered-set-is-a-record REQ-WDS-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function testPublishDecisionAnswersTheSetId(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->publicationService->method('publish')->willReturn(['available' => true, 'publicationId' => 'pub-001', 'deliveredSet' => 'set-001']);
+
+		$response = $this->controller->publishDecision('case-uuid-001');
+
+		$this->assertSame('set-001', $response->getData()['deliveredSet']);
+	}//end testPublishDecisionAnswersTheSetId()
+
+	/**
+	 * An unrecorded delivered set refuses the publish with 503 and a sentence.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function testAnUnrecordedSetRefusesThePublish(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->publicationService->method('publish')->willReturn(['available' => false, 'reason' => 'delivered_set_not_written']);
+
+		$response = $this->controller->publishDecision('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertStringContainsString('recorded', $response->getData()['message']);
+	}//end testAnUnrecordedSetRefusesThePublish()
 
 	/**
 	 * WithdrawPublication returns 401 when user is not authenticated.
