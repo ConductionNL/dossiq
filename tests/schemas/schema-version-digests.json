@@ -1427,17 +1427,29 @@
         "version": "1.0.0",
         "digest": "c6717a0258ebeb74fddf9f8e85ed3be6efa1ed0a0c8ccbf9207140e469125593"
     },
-    "lib/Settings/register.d/87-woo-review.json::wooDocumentReview": {
-        "version": "1.0.1",
-        "digest": "42e5f9db46cfe1f0c4b26a8a40c3edf90211623a62f08c89fa823dafca23958f"
+    "lib/Settings/register.d/87-document-review.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
-    "lib/Settings/register.d/87-woo-review.json::wooReviewBatch": {
+    "lib/Settings/register.d/87-document-review.json::documentReview": {
+        "version": "1.0.1",
+        "digest": "02e838a23349735733f844a3773b73bfde75a0e41e844341d55cb6056c16bd1b"
+    },
+    "lib/Settings/register.d/87-document-review.json::reviewBatch": {
         "version": "1.0.0",
-        "digest": "e4c21273b50de9636c5bff2f2f4a56b3188363d1705e1adc96ee26dc732a235c"
+        "digest": "5b08ec0dc30da171f2ed7616ce2a3f2991d076f5494cf41f4bde4f77661455b1"
     },
-    "lib/Settings/register.d/87-woo-review.json::wooTriageRule": {
+    "lib/Settings/register.d/87-document-review.json::triageRule": {
         "version": "1.0.1",
-        "digest": "55dd39ae37e3894ab1efb1b21b30ebfcc3c6132d560a1a2e7b77c0b06db3b394"
+        "digest": "d2e9e760a21dcaf489056077b144424530450fdaeab46e8706e24fbe26791233"
+    },
+    "lib/Settings/register.d/88-review-recall.json::recallSample": {
+        "version": "1.0.0",
+        "digest": "609d32af904913e7d04f2fdaa4e41bc990f70a96064d22add943f208fff76080"
+    },
+    "lib/Settings/register.d/88-review-recall.json::stoppingRule": {
+        "version": "1.0.0",
+        "digest": "dab8d756b45b98b4d63a27daa2ca3c9b61bac7790e8facb74eec6ab77dceaf97"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",

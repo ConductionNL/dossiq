@@ -24,9 +24,9 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooPagesSeen;
-use OCA\Dossiq\Woo\WooReviewDepth;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\PagesSeen;
+use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
@@ -307,9 +307,9 @@ class WooPublicationServiceTest extends TestCase {
 		$this->appManager->method('isInstalled')->willReturn(true);
 		$this->appManager->method('isEnabledForUser')->willReturn(true);
 		$store = new InMemoryRegister();
-		$store->seed(schema: 'wooDocumentReview', uuid: 'r-1', row: ['case' => 'case-001', 'documentRef' => 'doc-7', 'relevance' => 'in-scope', 'pagesRequired' => [6, 7], 'pagesSeen' => [['page' => 6, 'by' => 'a']]]);
-		$store->seed(schema: 'wooDocumentReview', uuid: 'r-2', row: ['case' => 'case-001', 'documentRef' => 'doc-8', 'relevance' => 'out-of-scope', 'pagesRequired' => [1]]);
-		$config = ['register' => 'dossiq', 'woo_review_schema' => 'wooDocumentReview', 'decision_schema' => 'decision'];
+		$store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-001', 'documentRef' => 'doc-7', 'relevance' => 'in-scope', 'pagesRequired' => [6, 7], 'pagesSeen' => [['page' => 6, 'by' => 'a']]]);
+		$store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-001', 'documentRef' => 'doc-8', 'relevance' => 'out-of-scope', 'pagesRequired' => [1]]);
+		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'decision_schema' => 'decision'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -320,7 +320,7 @@ class WooPublicationServiceTest extends TestCase {
 			categoryMapper: new WooCategoryMapper(),
 			appManager: $this->appManager,
 			logger: $logger,
-			pagesSeen: new WooPagesSeen(reviews: new WooDocumentReviews(settingsService: $settings, logger: $logger), depth: new WooReviewDepth()),
+			pagesSeen: new PagesSeen(reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), depth: new ReviewDepth()),
 		);
 		$this->apiClient->expects($this->never())->method('createPublication');
 

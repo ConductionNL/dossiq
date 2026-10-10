@@ -30,7 +30,7 @@ namespace OCA\Dossiq\Service;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooPagesSeen;
+use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -68,14 +68,14 @@ class WOODecisionService {
 	 * @param WOODocumentAssessmentService $assessmentService Document assessment service
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
-	 * @param WooPagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
+	 * @param PagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WOODocumentAssessmentService $assessmentService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
-		private readonly ?WooPagesSeen $pagesSeen = null,
+		private readonly ?PagesSeen $pagesSeen = null,
 	) {
 	}//end __construct()
 

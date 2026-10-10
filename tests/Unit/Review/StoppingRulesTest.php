@@ -4,7 +4,7 @@
  * Unit tests for the Woo stopping rule.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Woo
+ * @package  OCA\Dossiq\Tests\Unit\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,24 +18,24 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooStoppingRules;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\StoppingRules;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Declaring the stopping rule before review, and only then.
  *
- * @covers \OCA\Dossiq\Woo\WooStoppingRules
+ * @covers \OCA\Dossiq\Review\StoppingRules
  *
  * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
-class WooStoppingRuleTest extends TestCase {
+class StoppingRulesTest extends TestCase {
 
 	/**
 	 * The store.
@@ -51,23 +51,23 @@ class WooStoppingRuleTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->store = new InMemoryRegister();
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'unmarked']);
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'r-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'unmarked']);
+		$this->store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'unmarked']);
+		$this->store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'unmarked']);
 	}//end setUp()
 
 	/**
 	 * The service on the store.
 	 *
-	 * @return WooStoppingRules The service.
+	 * @return StoppingRules The service.
 	 */
-	private function rules(): WooStoppingRules {
-		$config = ['register' => 'dossiq', 'woo_review_schema' => 'wooDocumentReview', 'woo_stopping_rule_schema' => 'wooStoppingRule'];
+	private function rules(): StoppingRules {
+		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'stopping_rule_schema' => 'stoppingRule'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
 
-		return new WooStoppingRules(settingsService: $settings, reviews: new WooDocumentReviews(settingsService: $settings, logger: $logger), logger: $logger);
+		return new StoppingRules(settingsService: $settings, reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), logger: $logger);
 	}//end rules()
 
 	/**
@@ -87,7 +87,7 @@ class WooStoppingRuleTest extends TestCase {
 		$this->assertNotEmpty($rule['declaredAt']);
 
 		$rules->declare(caseId: 'case-x', targetRecall: 0.9, confidence: 0.99, userId: 'handler-h');
-		$this->assertCount(1, $this->store->all('wooStoppingRule'));
+		$this->assertCount(1, $this->store->all('stoppingRule'));
 		$this->assertSame(0.9, $rules->forCase(caseId: 'case-x')['targetRecall']);
 	}//end testARuleIsDeclaredBeforeReview()
 
@@ -99,14 +99,14 @@ class WooStoppingRuleTest extends TestCase {
 	public function testARuleCannotChangeOnceReviewStarted(): void {
 		$rules = $this->rules();
 		$rules->declare(caseId: 'case-x', targetRecall: 0.8, confidence: 0.95, userId: 'handler-h');
-		$this->store->rows['wooDocumentReview']['r-1']['relevance'] = 'in-scope';
+		$this->store->rows['documentReview']['r-1']['relevance'] = 'in-scope';
 
 		$this->assertTrue($rules->reviewStarted(caseId: 'case-x'));
 		try {
 			$rules->declare(caseId: 'case-x', targetRecall: 0.7, confidence: 0.95, userId: 'handler-h');
 			$this->fail('The stopping rule changed after review started.');
 		} catch (RefusedException $e) {
-			$this->assertSame('woo-stopping-rule-locked', $e->getRule());
+			$this->assertSame('review-stopping-rule-locked', $e->getRule());
 			$this->assertSame(409, $e->getStatus());
 		}
 
@@ -125,11 +125,11 @@ class WooStoppingRuleTest extends TestCase {
 				$rules->declare(caseId: 'case-x', targetRecall: $target, confidence: $confidence, userId: 'handler-h');
 				$this->fail('Accepted '.$target.' at '.$confidence);
 			} catch (RefusedException $e) {
-				$this->assertSame('woo-stopping-rule-out-of-range', $e->getRule());
+				$this->assertSame('review-stopping-rule-out-of-range', $e->getRule());
 				$this->assertSame(422, $e->getStatus());
 			}
 		}
 
-		$this->assertSame([], $this->store->all('wooStoppingRule'));
+		$this->assertSame([], $this->store->all('stoppingRule'));
 	}//end testAnOutOfRangeTargetIsRefused()
 }//end class

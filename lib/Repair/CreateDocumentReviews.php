@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq repair step: give every assessed Woo document its relevance review.
+ * Dossiq repair step: give every assessed document its relevance review.
  *
  * @category Repair
  * @package  OCA\Dossiq\Repair
@@ -24,13 +24,13 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Review\DocumentRelevance;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Throwable;
 
 /**
- * Marks every document that already carries a Woo verdict as in scope.
+ * Marks every document that already carries a verdict as in scope.
  *
  * Since woo-review-triage an unmarked document holds up the decision, and a
  * document without a review reads as unmarked. Every document assessed before
@@ -46,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class CreateWooDocumentReviews implements IRepairStep {
+class CreateDocumentReviews implements IRepairStep {
 
 	use SearchesObjects;
 
@@ -64,13 +64,13 @@ class CreateWooDocumentReviews implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param WooDocumentReviews $reviews The review store.
+	 * @param DocumentRelevance $reviews The review store.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly WooDocumentReviews $reviews,
+		private readonly DocumentRelevance $reviews,
 	) {
 	}//end __construct()
 
@@ -82,7 +82,7 @@ class CreateWooDocumentReviews implements IRepairStep {
 	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	public function getName(): string {
-		return 'Mark every assessed Woo document as in scope';
+		return 'Mark every assessed document as in scope';
 	}//end getName()
 
 	/**
@@ -99,7 +99,7 @@ class CreateWooDocumentReviews implements IRepairStep {
 		$register = $this->settingsService->getConfigValue('register');
 		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		if ($objectService === null || $assessmentSchema === '' || $this->reviews->isAvailable() === false) {
-			$output->info('Woo document reviews: OpenRegister or a Woo schema is not configured yet, skipped until the next upgrade.');
+			$output->info('Document reviews: OpenRegister or the verdict schema is not configured yet, skipped until the next upgrade.');
 			return;
 		}
 
@@ -107,7 +107,7 @@ class CreateWooDocumentReviews implements IRepairStep {
 			objectService: $objectService,
 			operation: fn (): array => $this->createMissing(objectService: $objectService, register: $register, schema: $assessmentSchema)
 		);
-		$output->info('Woo document reviews: '.$tally['created'].' created, '.$tally['failed'].' failed.');
+		$output->info('Document reviews: '.$tally['created'].' created, '.$tally['failed'].' failed.');
 	}//end run()
 
 	/**
@@ -165,7 +165,7 @@ class CreateWooDocumentReviews implements IRepairStep {
 		$review = [
 			'case' => $caseId,
 			'documentRef' => $documentRef,
-			'relevance' => WooDocumentReviews::IN_SCOPE,
+			'relevance' => DocumentRelevance::IN_SCOPE,
 			'relevanceSource' => 'reviewer',
 			'markedBy' => (string)($assessment['assessedBy'] ?? ''),
 			'markedAt' => (string)($assessment['assessedAt'] ?? ''),

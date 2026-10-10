@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Dossiq Woo pages seen: which required pages of a document a reviewer has displayed.
+ * Dossiq pages seen: which required pages of a document a reviewer has displayed.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Review
+ * @package  OCA\Dossiq\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -35,19 +35,19 @@ use OCA\Dossiq\Exception\RefusedException;
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
-class WooPagesSeen {
+class PagesSeen {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param WooDocumentReviews $reviews The reviews that hold the required and seen pages.
-	 * @param WooReviewDepth $depth Draws the required pages once the page count is known.
+	 * @param DocumentRelevance $reviews The reviews that hold the required and seen pages.
+	 * @param ReviewDepth $depth Draws the required pages once the page count is known.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly WooDocumentReviews $reviews,
-		private readonly WooReviewDepth $depth,
+		private readonly DocumentRelevance $reviews,
+		private readonly ReviewDepth $depth,
 	) {
 	}//end __construct()
 
@@ -58,7 +58,7 @@ class WooPagesSeen {
 	 * hears sets `pageCount`, and the required pages are then drawn again
 	 * from the recorded depth, so a sample keeps its seed.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string $documentRef The document.
 	 * @param list<int> $pages The pages displayed.
 	 * @param int|null $pageCount The document's page count, when the viewer knows it.
@@ -74,13 +74,13 @@ class WooPagesSeen {
 		$pages = array_values(array_unique(array_filter($pages, static fn (int $page): bool => $page >= 1)));
 		if ($pages === []) {
 			throw new RefusedException(
-				rule: 'woo-pages-required',
+				rule: 'review-pages-required',
 				sentence: 'Name the pages that were displayed.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
 
-		$fresh = ['case' => $caseId, 'documentRef' => $documentRef, 'relevance' => WooDocumentReviews::UNMARKED];
+		$fresh = ['case' => $caseId, 'documentRef' => $documentRef, 'relevance' => DocumentRelevance::UNMARKED];
 		$review = ($this->reviews->forCase(caseId: $caseId)[$documentRef] ?? $fresh);
 		if ($pageCount !== null && $pageCount >= 1 && isset($review['pageCount']) === false) {
 			$review['pageCount'] = $pageCount;
@@ -130,7 +130,7 @@ class WooPagesSeen {
 	/**
 	 * The required pages of an in-scope document nobody has seen yet; empty for any other document.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string $documentRef The document.
 	 *
 	 * @return list<int> The unseen required pages.
@@ -139,7 +139,7 @@ class WooPagesSeen {
 	 */
 	public function unseenFor(string $caseId, string $documentRef): array {
 		$review = ($this->reviews->forCase(caseId: $caseId)[$documentRef] ?? []);
-		if (($review['relevance'] ?? WooDocumentReviews::UNMARKED) !== WooDocumentReviews::IN_SCOPE) {
+		if (($review['relevance'] ?? DocumentRelevance::UNMARKED) !== DocumentRelevance::IN_SCOPE) {
 			return [];
 		}
 
@@ -149,7 +149,7 @@ class WooPagesSeen {
 	/**
 	 * Every in-scope document of a case with required pages nobody has seen yet.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, list<int>> The unseen pages by document.
 	 *
@@ -162,7 +162,7 @@ class WooPagesSeen {
 
 		$unseen = [];
 		foreach ($this->reviews->forCase(caseId: $caseId) as $ref => $review) {
-			if (($review['relevance'] ?? WooDocumentReviews::UNMARKED) !== WooDocumentReviews::IN_SCOPE) {
+			if (($review['relevance'] ?? DocumentRelevance::UNMARKED) !== DocumentRelevance::IN_SCOPE) {
 				continue;
 			}
 
@@ -202,7 +202,7 @@ class WooPagesSeen {
 	public function assertAllSeen(string $caseId): void {
 		if ($this->unseenInCase(caseId: $caseId) !== []) {
 			throw new RefusedException(
-				rule: 'woo-pages-unseen',
+				rule: 'review-pages-unseen',
 				sentence: 'The decision waits until every required page has been seen.',
 				status: RefusedException::STATUS_REFUSED,
 			);

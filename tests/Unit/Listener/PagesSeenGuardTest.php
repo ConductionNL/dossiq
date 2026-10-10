@@ -20,13 +20,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar;
-use OCA\Dossiq\Listener\WooPagesSeenGuard;
+use OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar;
+use OCA\Dossiq\Listener\PagesSeenGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooPagesSeen;
-use OCA\Dossiq\Woo\WooReviewDepth;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\PagesSeen;
+use OCA\Dossiq\Review\ReviewDepth;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -37,13 +37,13 @@ use Psr\Log\LoggerInterface;
 /**
  * Direct OpenRegister writes of a verdict, through the OpenRegister event classes.
  *
- * @covers \OCA\Dossiq\Listener\WooPagesSeenGuard
- * @covers \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
- * @covers \OCA\Dossiq\Woo\WooPagesSeen
+ * @covers \OCA\Dossiq\Listener\PagesSeenGuard
+ * @covers \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
+ * @covers \OCA\Dossiq\Review\PagesSeen
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
-class WooPagesSeenGuardTest extends TestCase {
+class PagesSeenGuardTest extends TestCase {
 
 	/**
 	 * The store.
@@ -59,25 +59,25 @@ class WooPagesSeenGuardTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->store = new InMemoryRegister();
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'review-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'in-scope', 'pagesRequired' => [1, 2, 3], 'pagesSeen' => []]);
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'review-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'out-of-scope', 'pagesRequired' => [1]]);
+		$this->store->seed(schema: 'documentReview', uuid: 'review-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'in-scope', 'pagesRequired' => [1, 2, 3], 'pagesSeen' => []]);
+		$this->store->seed(schema: 'documentReview', uuid: 'review-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'out-of-scope', 'pagesRequired' => [1]]);
 	}//end setUp()
 
 	/**
 	 * The guard on the store.
 	 *
-	 * @return WooPagesSeenGuard The guard.
+	 * @return PagesSeenGuard The guard.
 	 */
-	private function guard(): WooPagesSeenGuard {
-		$config = ['register' => 'dossiq', 'woo_assessment_schema' => '42', 'woo_review_schema' => 'wooDocumentReview'];
+	private function guard(): PagesSeenGuard {
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => '42', 'document_review_schema' => 'documentReview'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
 
-		return new WooPagesSeenGuard(
+		return new PagesSeenGuard(
 			settingsService: $settings,
-			pagesSeen: new WooPagesSeen(reviews: new WooDocumentReviews(settingsService: $settings, logger: $logger), depth: new WooReviewDepth()),
+			pagesSeen: new PagesSeen(reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), depth: new ReviewDepth()),
 			logger: $logger,
 		);
 	}//end guard()
@@ -113,7 +113,7 @@ class WooPagesSeenGuardTest extends TestCase {
 		$this->guard()->handle(event: $event);
 
 		$this->assertTrue($event->isPropagationStopped());
-		$this->assertSame(WooPagesSeenGuard::ERROR_CODE, $event->getErrors()['code']);
+		$this->assertSame(PagesSeenGuard::ERROR_CODE, $event->getErrors()['code']);
 		$this->assertSame([1, 2, 3], $event->getErrors()['pages']);
 		$this->assertStringContainsString('1, 2, 3', $event->getErrors()['message']);
 
@@ -128,7 +128,7 @@ class WooPagesSeenGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testAVerdictAfterEveryPagePasses(): void {
-		$this->store->rows['wooDocumentReview']['review-1']['pagesSeen'] = [
+		$this->store->rows['documentReview']['review-1']['pagesSeen'] = [
 			['page' => 1, 'by' => 'a'], ['page' => 2, 'by' => 'b'], ['page' => 3, 'by' => 'a'],
 		];
 		$event = new ObjectCreatingEvent($this->entity(['caseRef' => 'case-x', 'documentRef' => 'doc-1', 'classification' => 'openbaar']));
@@ -174,9 +174,9 @@ class WooPagesSeenGuardTest extends TestCase {
 			}
 		);
 
-		(new WooListenerRegistrar())->register(context: $context);
+		(new ReviewListenerRegistrar())->register(context: $context);
 
-		$this->assertContains([ObjectCreatingEvent::class, WooPagesSeenGuard::class], $bound);
-		$this->assertContains([ObjectUpdatingEvent::class, WooPagesSeenGuard::class], $bound);
+		$this->assertContains([ObjectCreatingEvent::class, PagesSeenGuard::class], $bound);
+		$this->assertContains([ObjectUpdatingEvent::class, PagesSeenGuard::class], $bound);
 	}//end testTheRegistrarBindsTheGuard()
 }//end class

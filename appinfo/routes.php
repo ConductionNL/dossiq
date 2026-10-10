@@ -816,11 +816,11 @@ $extra = [
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
     ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
-    ['name' => 'wooReview#summary',   'url' => '/api/cases/{id}/woo/summary', 'verb' => 'GET'],
-    ['name' => 'wooReview#relevance', 'url' => '/api/cases/{id}/woo/documents/{documentRef}/relevance', 'verb' => 'POST'],
-    ['name' => 'wooReview#batches',     'url' => '/api/cases/{id}/woo/batches', 'verb' => 'GET'],
-    ['name' => 'wooReview#createBatch', 'url' => '/api/cases/{id}/woo/batches', 'verb' => 'POST'],
-    ['name' => 'wooReview#pagesSeen',   'url' => '/api/cases/{id}/woo/documents/{documentRef}/pages-seen', 'verb' => 'POST'],
+    ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
+    ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
+    ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
+    ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
+    ['name' => 'documentReview#pagesSeen',   'url' => '/api/cases/{id}/review/documents/{documentRef}/pages-seen', 'verb' => 'POST'],
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],

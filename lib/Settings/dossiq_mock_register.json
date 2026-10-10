@@ -25656,8 +25656,8 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooDocumentReview",
-          "slug": "woodocumentreview-woodocumentreview-1-1"
+          "schema": "documentReview",
+          "slug": "documentreview-documentreview-1-1"
         },
         "case": "00000000-0000-4000-8000-000000000000",
         "documentRef": "Voorbeeld Documentref 1",
@@ -25680,8 +25680,8 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooDocumentReview",
-          "slug": "woodocumentreview-woodocumentreview-2-2"
+          "schema": "documentReview",
+          "slug": "documentreview-documentreview-2-2"
         },
         "case": "00000000-0000-4000-8000-000000000001",
         "documentRef": "Voorbeeld Documentref 2",
@@ -25704,8 +25704,8 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooDocumentReview",
-          "slug": "woodocumentreview-woodocumentreview-3-3"
+          "schema": "documentReview",
+          "slug": "documentreview-documentreview-3-3"
         },
         "case": "00000000-0000-4000-8000-000000000002",
         "documentRef": "Voorbeeld Documentref 3",
@@ -25728,8 +25728,86 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooReviewBatch",
-          "slug": "wooreviewbatch-voorbeeld-name-1-1"
+          "schema": "recallSample",
+          "slug": "recallsample-recallsample-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "seed": 1,
+        "documents": [
+          "Voorbeeld Documents 1"
+        ],
+        "drawnBy": "Voorbeeld Drawnby 1",
+        "drawnAt": "2026-03-01T09:00:00+00:00",
+        "nullSetSize": 1,
+        "found": 1,
+        "judgements": {},
+        "batch": "Voorbeeld Batch 1",
+        "k": 1,
+        "confidence": 1.0,
+        "elusionRate": 1.0,
+        "elusionUpper": 1.0,
+        "recallEstimate": 1.0,
+        "recallLowerBound": 1.0,
+        "estimatedAt": "2026-03-01T09:00:00+00:00",
+        "stoppingRuleMetAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "recallSample",
+          "slug": "recallsample-recallsample-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "seed": 2,
+        "documents": [
+          "Voorbeeld Documents 2"
+        ],
+        "drawnBy": "Voorbeeld Drawnby 2",
+        "drawnAt": "2026-03-02T09:00:00+00:00",
+        "nullSetSize": 2,
+        "found": 2,
+        "judgements": {},
+        "batch": "Voorbeeld Batch 2",
+        "k": 2,
+        "confidence": 2.0,
+        "elusionRate": 2.0,
+        "elusionUpper": 2.0,
+        "recallEstimate": 2.0,
+        "recallLowerBound": 2.0,
+        "estimatedAt": "2026-03-02T09:00:00+00:00",
+        "stoppingRuleMetAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "recallSample",
+          "slug": "recallsample-recallsample-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "seed": 3,
+        "documents": [
+          "Voorbeeld Documents 3"
+        ],
+        "drawnBy": "Voorbeeld Drawnby 3",
+        "drawnAt": "2026-03-03T09:00:00+00:00",
+        "nullSetSize": 3,
+        "found": 3,
+        "judgements": {},
+        "batch": "Voorbeeld Batch 3",
+        "k": 3,
+        "confidence": 3.0,
+        "elusionRate": 3.0,
+        "elusionUpper": 3.0,
+        "recallEstimate": 3.0,
+        "recallLowerBound": 3.0,
+        "estimatedAt": "2026-03-03T09:00:00+00:00",
+        "stoppingRuleMetAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reviewBatch",
+          "slug": "reviewbatch-voorbeeld-name-1-1"
         },
         "case": "00000000-0000-4000-8000-000000000000",
         "name": "Voorbeeld Name 1",
@@ -25744,8 +25822,8 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooReviewBatch",
-          "slug": "wooreviewbatch-voorbeeld-name-2-2"
+          "schema": "reviewBatch",
+          "slug": "reviewbatch-voorbeeld-name-2-2"
         },
         "case": "00000000-0000-4000-8000-000000000001",
         "name": "Voorbeeld Name 2",
@@ -25760,8 +25838,8 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooReviewBatch",
-          "slug": "wooreviewbatch-voorbeeld-name-3-3"
+          "schema": "reviewBatch",
+          "slug": "reviewbatch-voorbeeld-name-3-3"
         },
         "case": "00000000-0000-4000-8000-000000000002",
         "name": "Voorbeeld Name 3",
@@ -25776,8 +25854,44 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooTriageRule",
-          "slug": "wootriagerule-voorbeeld-name-1-1"
+          "schema": "stoppingRule",
+          "slug": "stoppingrule-stoppingrule-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "targetRecall": 0.0,
+        "confidence": 0.9,
+        "declaredBy": "Voorbeeld Declaredby 1",
+        "declaredAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stoppingRule",
+          "slug": "stoppingrule-stoppingrule-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "targetRecall": 0.0,
+        "confidence": 0.95,
+        "declaredBy": "Voorbeeld Declaredby 2",
+        "declaredAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stoppingRule",
+          "slug": "stoppingrule-stoppingrule-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "targetRecall": 0.0,
+        "confidence": 0.99,
+        "declaredBy": "Voorbeeld Declaredby 3",
+        "declaredAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "triageRule",
+          "slug": "triagerule-voorbeeld-name-1-1"
         },
         "case": "00000000-0000-4000-8000-000000000000",
         "name": "Voorbeeld Name 1",
@@ -25789,8 +25903,8 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooTriageRule",
-          "slug": "wootriagerule-voorbeeld-name-2-2"
+          "schema": "triageRule",
+          "slug": "triagerule-voorbeeld-name-2-2"
         },
         "case": "00000000-0000-4000-8000-000000000001",
         "name": "Voorbeeld Name 2",
@@ -25802,8 +25916,8 @@
       {
         "@self": {
           "register": "dossiq",
-          "schema": "wooTriageRule",
-          "slug": "wootriagerule-voorbeeld-name-3-3"
+          "schema": "triageRule",
+          "slug": "triagerule-voorbeeld-name-3-3"
         },
         "case": "00000000-0000-4000-8000-000000000002",
         "name": "Voorbeeld Name 3",

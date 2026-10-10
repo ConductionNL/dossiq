@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq Woo stopping rule guard: no change to the rule through OpenRegister once review started.
+ * Dossiq stopping rule guard: no change to the rule through OpenRegister once review started.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooStoppingRules;
+use OCA\Dossiq\Review\StoppingRules;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -32,7 +32,7 @@ use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
 
 /**
- * Refuses an update or delete of a `wooStoppingRule` once any document of its case is marked.
+ * Refuses an update or delete of a `stoppingRule` once any document of its case is marked.
  *
  * The declare route refuses the same; this covers writes that go to
  * OpenRegister directly.
@@ -41,25 +41,25 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  */
-class WooStoppingRuleGuard implements IEventListener {
+class StoppingRuleGuard implements IEventListener {
 
 	/**
 	 * The error code OpenRegister answers with.
 	 */
-	public const ERROR_CODE = 'woo.stopping-rule-locked';
+	public const ERROR_CODE = 'review.stopping-rule-locked';
 
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings, for the rule schema.
-	 * @param WooStoppingRules $rules Whether review started on the rule's case.
+	 * @param StoppingRules $rules Whether review started on the rule's case.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly WooStoppingRules $rules,
+		private readonly StoppingRules $rules,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -93,7 +93,7 @@ class WooStoppingRuleGuard implements IEventListener {
 	 * @return void
 	 */
 	private function inspect(ObjectUpdatingEvent|ObjectDeletingEvent $event, ObjectEntity $stored): void {
-		$expected = $this->settingsService->getConfigValue(WooStoppingRules::SCHEMA_KEY);
+		$expected = $this->settingsService->getConfigValue(StoppingRules::SCHEMA_KEY);
 		$schema = (string)$stored->getSchema();
 		if ($expected === '' || ($schema !== $expected && str_ends_with($schema, '/'.$expected) === false)) {
 			return;
@@ -104,8 +104,8 @@ class WooStoppingRuleGuard implements IEventListener {
 			return;
 		}
 
-		$event->setErrors(['message' => WooStoppingRules::LOCKED, 'code' => self::ERROR_CODE]);
+		$event->setErrors(['message' => StoppingRules::LOCKED, 'code' => self::ERROR_CODE]);
 		$event->stopPropagation();
-		$this->logger->info('Dossiq: refused a change to a Woo stopping rule after review started', ['case' => $caseId]);
+		$this->logger->info('Dossiq: refused a change to a Stopping rule after review started', ['case' => $caseId]);
 	}//end inspect()
 }//end class

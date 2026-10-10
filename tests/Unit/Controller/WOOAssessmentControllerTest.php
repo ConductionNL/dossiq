@@ -33,9 +33,9 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooPagesSeen;
-use OCA\Dossiq\Woo\WooReviewDepth;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\PagesSeen;
+use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -281,8 +281,8 @@ class WOOAssessmentControllerTest extends TestCase {
 		$store = new InMemoryRegister();
 		$store->seed(schema: 'document', uuid: 'doc-001', row: ['case' => 'case-uuid-001']);
 		$store->seed(schema: 'document', uuid: 'doc-002', row: ['case' => 'case-uuid-001']);
-		$store->seed(schema: 'wooDocumentReview', uuid: 'r-1', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-001', 'relevance' => 'in-scope', 'pagesRequired' => [1, 2, 3], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
-		$store->seed(schema: 'wooDocumentReview', uuid: 'r-2', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-002', 'relevance' => 'in-scope', 'pagesRequired' => [1], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
+		$store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-001', 'relevance' => 'in-scope', 'pagesRequired' => [1, 2, 3], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
+		$store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-002', 'relevance' => 'in-scope', 'pagesRequired' => [1], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
 		$this->request->method('getParam')->willReturnMap([
 			['assessments', [], [
 				['documentRef' => 'doc-001', 'classification' => 'openbaar'],
@@ -293,12 +293,12 @@ class WOOAssessmentControllerTest extends TestCase {
 		$user->method('getUID')->willReturn('j.dejong');
 		$this->userSession->method('getUser')->willReturn($user);
 		$this->groupManager->method('isAdmin')->willReturn(true);
-		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview', 'document_schema' => 'document'];
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview', 'document_schema' => 'document'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($config[$key] ?? ''));
-		$reviews = new WooDocumentReviews(settingsService: $settings, logger: $this->logger);
-		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, $reviews, new WooPagesSeen(reviews: $reviews, depth: new WooReviewDepth()));
+		$reviews = new DocumentRelevance(settingsService: $settings, logger: $this->logger);
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, $reviews, new PagesSeen(reviews: $reviews, depth: new ReviewDepth()));
 		$controller = new WOOAssessmentController(
 			'dossiq',
 			$this->request,
@@ -404,14 +404,14 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->groupManager->method('isAdmin')->willReturn(true);
 		$this->request->method('getParam')->willReturnMap([['decision', [], []], ['decisionId', '', '']]);
 		$this->decisionService->method('assembleDecision')->willThrowException(
-			new RefusedException(rule: 'woo-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
+			new RefusedException(rule: 'review-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
 		);
 		$this->decisionService->method('unseenPages')->willReturn(['doc-7' => [7]]);
 		$this->publicationService->method('publish')->willReturn(['available' => false, 'reason' => 'pages_unseen', 'unseen' => ['doc-7' => [7]]]);
 
 		$decision = $this->controller->createDecision('case-uuid-001');
 		$this->assertSame(409, $decision->getStatus());
-		$this->assertSame('woo-pages-unseen', $decision->getData()['error']);
+		$this->assertSame('review-pages-unseen', $decision->getData()['error']);
 		$this->assertSame(['doc-7' => [7]], $decision->getData()['unseen']);
 
 		$published = $this->controller->publishDecision('case-uuid-001');

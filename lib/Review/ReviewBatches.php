@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Dossiq Woo review batches: a named part of a Woo case's documents, assigned to one reviewer.
+ * Dossiq review batches: a named part of a case's documents, assigned to one reviewer.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Review
+ * @package  OCA\Dossiq\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,8 +20,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
@@ -33,7 +34,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Creates and lists the `wooReviewBatch` objects of a Woo case.
+ * Creates and lists the `reviewBatch` objects of a case.
  *
  * A batch names its documents, writes itself on each document's review, and
  * hands its reviewer a task through the engine task seam, so the reviewer
@@ -42,24 +43,19 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
-class WooReviewBatches {
+class ReviewBatches {
 
 	use SearchesObjects;
 
 	/**
 	 * The app config key of the batch schema.
 	 */
-	public const SCHEMA_KEY = 'woo_review_batch_schema';
-
-	/**
-	 * The app config key of the Woo request configuration schema, which carries `reviewDepth`.
-	 */
-	public const CONFIGURATION_KEY = 'woo_request_configuration_schema';
+	public const SCHEMA_KEY = 'review_batch_schema';
 
 	/**
 	 * The kind dossiq stamps on the reviewer's task, read back from `metadata.dossiq.kind`.
 	 */
-	public const TASK_KIND = 'woo-review-batch';
+	public const TASK_KIND = 'review-batch';
 
 	/**
 	 * The filter fields a batch can take its documents by, as the review carries them.
@@ -73,15 +69,16 @@ class WooReviewBatches {
 	/**
 	 * The sentence of a batch that cannot be stored.
 	 */
-	private const UNSTORED = 'The Woo review batch cannot be stored, so nothing was assigned.';
+	private const UNSTORED = 'The Review batch cannot be stored, so nothing was assigned.';
 
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param WooDocumentReviews $reviews The reviews the batch is written on.
+	 * @param DocumentRelevance $reviews The reviews the batch is written on.
 	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
-	 * @param WooReviewDepth $depth The review depth per document type.
+	 * @param ReviewDepth $depth The review depth per document type.
+	 * @param ReviewConfiguration $configuration The case type's review configuration.
 	 * @param EngineTaskGateway $tasks The task seam that hands the reviewer the batch.
 	 * @param IUserManager $userManager Whether the reviewer exists.
 	 * @param IL10N $l10n The translations, for the task's title.
@@ -91,9 +88,10 @@ class WooReviewBatches {
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly WooDocumentReviews $reviews,
+		private readonly DocumentRelevance $reviews,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly WooReviewDepth $depth,
+		private readonly ReviewDepth $depth,
+		private readonly ReviewConfiguration $configuration,
 		private readonly EngineTaskGateway $tasks,
 		private readonly IUserManager $userManager,
 		private readonly IL10N $l10n,
@@ -104,7 +102,7 @@ class WooReviewBatches {
 	/**
 	 * The documents a batch takes: the listed ones, or those whose review matches the filter.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param list<string> $documents The listed documents; used when no filter is given.
 	 * @param array<string, string> $filter The filter, by field of the review.
 	 *
@@ -122,7 +120,7 @@ class WooReviewBatches {
 		$unknown = array_diff(array_keys($filter), self::FILTER_FIELDS);
 		if ($unknown !== []) {
 			throw new RefusedException(
-				rule: 'woo-batch-filter-unknown',
+				rule: 'review-batch-filter-unknown',
 				sentence: 'A batch can be taken by the rule that marked its documents, or by a list of documents.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
@@ -141,7 +139,7 @@ class WooReviewBatches {
 	/**
 	 * The documents among these that are already in an open batch of the case, with that batch's name.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param list<string> $documents The documents.
 	 *
 	 * @return array<string, string> The batch name by document.
@@ -171,7 +169,7 @@ class WooReviewBatches {
 	/**
 	 * Create a batch: write it, write it on each review, and give its reviewer a task.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string $name The batch's name.
 	 * @param string $assignee The reviewer, a Nextcloud user.
 	 * @param list<string> $documents The documents, as `select()` answered them.
@@ -201,9 +199,9 @@ class WooReviewBatches {
 		$batchId = (string)($batch['id'] ?? ($batch['uuid'] ?? ''));
 
 		$reviews = $this->reviews->forCase(caseId: $caseId);
-		$reviewDepth = $this->reviewDepth(caseId: $caseId);
+		$reviewDepth = $this->configuration->reviewDepth(caseId: $caseId);
 		foreach ($documents as $ref) {
-			$review = ($reviews[$ref] ?? ['case' => $caseId, 'documentRef' => $ref, 'relevance' => WooDocumentReviews::UNMARKED]);
+			$review = ($reviews[$ref] ?? ['case' => $caseId, 'documentRef' => $ref, 'relevance' => DocumentRelevance::UNMARKED]);
 			$review['batch'] = $batchId;
 			$review['depth'] = $this->depth->depthFor(
 				reviewDepth: $reviewDepth,
@@ -238,7 +236,7 @@ class WooReviewBatches {
 	 * a marking: it judges them apart from the review, so it writes nothing
 	 * on the reviews and holds no document against the other batches.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string $sampleId The recall sample.
 	 * @param string $assignee The reviewer.
 	 * @param list<string> $documents The sampled documents.
@@ -275,7 +273,7 @@ class WooReviewBatches {
 	/**
 	 * The case's batches, each with its progress: assessed of total.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param array<string, bool> $assessed The assessed documents as keys.
 	 *
 	 * @return list<array<string, mixed>> The batches.
@@ -295,50 +293,9 @@ class WooReviewBatches {
 	}//end forCase()
 
 	/**
-	 * The case's `reviewDepth`, from its Woo request configuration; empty means every page for every type.
-	 *
-	 * @param string $caseId The Woo case UUID.
-	 *
-	 * @return array<string, mixed> The depth by document type.
-	 */
-	private function reviewDepth(string $caseId): array {
-		$schema = $this->settingsService->getConfigValue(self::CONFIGURATION_KEY);
-		if ($schema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $this->settingsService->getObjectService(),
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $schema,
-				filters: ['case' => $caseId, '_limit' => 1],
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the Woo request configuration could not be read, so every page is required',
-				['case' => $caseId, 'exception' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$first = reset($rows);
-		$depth = [];
-		if (is_array($first) === true) {
-			$depth = ($first['reviewDepth'] ?? []);
-		}
-
-		if (is_array($depth) === false) {
-			return [];
-		}
-
-		return $depth;
-	}//end reviewDepth()
-
-	/**
 	 * Hand the reviewer a task for the batch through the engine; '' when the engine did not take it.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string $batchId The batch.
 	 * @param string $name The batch's name.
 	 * @param string $assignee The reviewer.
@@ -351,7 +308,7 @@ class WooReviewBatches {
 		$taskId = $this->tasks->mirrorImport(
 			task: [
 				'id' => self::TASK_KIND.':'.$batchId,
-				'title' => $this->l10n->t('Review the Woo batch "%s"', [$name]),
+				'title' => $this->l10n->t('Review the batch "%s"', [$name]),
 				'description' => $this->l10n->t('%1$d documents to review in the batch "%2$s".', [$count, $name]),
 				'status' => 'available',
 				'assignee' => $assignee,
@@ -363,7 +320,7 @@ class WooReviewBatches {
 		);
 		if ($taskId === '') {
 			$this->logger->warning(
-				'Dossiq: a Woo review batch was created but the engine did not take its task',
+				'Dossiq: a Review batch was created but the engine did not take its task',
 				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId]
 			);
 		}
@@ -374,7 +331,7 @@ class WooReviewBatches {
 	/**
 	 * Refuse an incomplete batch before anything is written.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string $name The trimmed name.
 	 * @param string $assignee The reviewer.
 	 * @param list<string> $documents The documents.
@@ -385,28 +342,28 @@ class WooReviewBatches {
 	 */
 	private function validate(string $caseId, string $name, string $assignee, array $documents): void {
 		if ($this->isAvailable() === false) {
-			throw $this->refusal(rule: 'woo-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE);
+			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE);
 		}
 
 		if ($name === '') {
-			throw $this->refusal(rule: 'woo-batch-name-required', sentence: 'Give the batch a name.');
+			throw $this->refusal(rule: 'review-batch-name-required', sentence: 'Give the batch a name.');
 		}
 
 		if ($assignee === '' || $this->userManager->userExists($assignee) === false) {
-			throw $this->refusal(rule: 'woo-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
+			throw $this->refusal(rule: 'review-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
 		}
 
 		if ($documents === []) {
-			throw $this->refusal(rule: 'woo-batch-empty', sentence: 'Put at least one document in the batch.');
+			throw $this->refusal(rule: 'review-batch-empty', sentence: 'Put at least one document in the batch.');
 		}
 
 		if (array_diff($documents, $this->caseDocuments->idsFor(caseId: $caseId)) !== []) {
-			throw $this->refusal(rule: 'woo-batch-document-unknown', sentence: 'A batch only holds documents of this case.');
+			throw $this->refusal(rule: 'review-batch-document-unknown', sentence: 'A batch only holds documents of this case.');
 		}
 
 		if ($this->taken(caseId: $caseId, documents: $documents) !== []) {
 			throw $this->refusal(
-				rule: 'woo-batch-document-taken',
+				rule: 'review-batch-document-taken',
 				sentence: 'A document is already in another open batch.',
 				status: RefusedException::STATUS_REFUSED,
 			);
@@ -444,7 +401,7 @@ class WooReviewBatches {
 	/**
 	 * Every batch of a case, as stored.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return list<array<string, mixed>> The batches.
 	 */
@@ -488,11 +445,11 @@ class WooReviewBatches {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Dossiq: a Woo review batch could not be written',
+				'Dossiq: a Review batch could not be written',
 				['app' => Application::APP_ID, 'case' => ($batch['case'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			throw $this->refusal(
-				rule: 'woo-batch-unavailable',
+				rule: 'review-batch-unavailable',
 				sentence: self::UNSTORED,
 				status: RefusedException::STATUS_INDETERMINATE,
 				previous: $e,

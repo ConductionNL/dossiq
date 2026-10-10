@@ -121,15 +121,9 @@ class WooReportsInitialStateListenerTest extends TestCase {
 	 */
 	public function testTheRegistrarBindsTheListener(): void {
 		$context = $this->createMock(IRegistrationContext::class);
-		$bound = [];
-		$context->method('registerEventListener')->willReturnCallback(
-			static function (string $event, string $listener) use (&$bound): void {
-				$bound[] = [$event, $listener];
-			}
-		);
+		$context->expects($this->once())->method('registerEventListener')
+			->with(BeforeTemplateRenderedEvent::class, WooReportsInitialStateListener::class);
 
 		(new WooListenerRegistrar())->register(context: $context);
-
-		$this->assertContains([BeforeTemplateRenderedEvent::class, WooReportsInitialStateListener::class], $bound);
 	}//end testTheRegistrarBindsTheListener()
 }//end class

@@ -4,18 +4,18 @@
     "registers": {
       "dossiq": {
         "schemas": [
-          "wooStoppingRule",
-          "wooRecallSample"
+          "stoppingRule",
+          "recallSample"
         ]
       }
     },
     "schemas": {
-      "wooStoppingRule": {
-        "slug": "wooStoppingRule",
+      "stoppingRule": {
+        "slug": "stoppingRule",
         "icon": "FlagCheckered",
         "version": "1.0.0",
-        "title": "Woo stopping rule",
-        "description": "How much of the relevant material a Woo review must find, declared before the first document is marked.",
+        "title": "Stopping rule",
+        "description": "How much of the relevant material a review must find, declared before the first document is marked.",
         "type": "object",
         "required": [
           "case",
@@ -26,7 +26,7 @@
           "case": {
             "type": "string",
             "title": "Case",
-            "description": "The Woo request case the rule belongs to.",
+            "description": "The case the rule belongs to.",
             "format": "uuid",
             "facetable": true
           },
@@ -60,11 +60,11 @@
           }
         }
       },
-      "wooRecallSample": {
-        "slug": "wooRecallSample",
+      "recallSample": {
+        "slug": "recallSample",
         "icon": "ChartBoxOutline",
         "version": "1.0.0",
-        "title": "Woo recall sample",
+        "title": "Recall sample",
         "description": "A random sample from the documents set aside or not yet marked, judged to estimate how much relevant material the review missed.",
         "type": "object",
         "required": [
@@ -76,7 +76,7 @@
           "case": {
             "type": "string",
             "title": "Case",
-            "description": "The Woo request case the sample was drawn on.",
+            "description": "The case the sample was drawn on.",
             "format": "uuid",
             "facetable": true
           },

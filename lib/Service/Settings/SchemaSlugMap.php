@@ -226,12 +226,12 @@ class SchemaSlugMap {
 		// The settled Woo refusal grounds (woo-refusal-grounds-list).
 		'wooRefusalGround' => 'woo_refusal_ground_schema',
 		// The Woo review: relevance, triage rules and batches (woo-review-triage).
-		'wooDocumentReview' => 'woo_review_schema',
-		'wooTriageRule' => 'woo_triage_rule_schema',
-		'wooReviewBatch' => 'woo_review_batch_schema',
+		'documentReview' => 'document_review_schema',
+		'triageRule' => 'triage_rule_schema',
+		'reviewBatch' => 'review_batch_schema',
 		// The recall of a Woo review: the stopping rule and its samples (woo-review-recall-and-stopping).
-		'wooStoppingRule' => 'woo_stopping_rule_schema',
-		'wooRecallSample' => 'woo_recall_sample_schema',
+		'stoppingRule' => 'stopping_rule_schema',
+		'recallSample' => 'recall_sample_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

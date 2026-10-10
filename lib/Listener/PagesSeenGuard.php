@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq Woo pages-seen guard: no verdict through the OpenRegister API before the required pages are seen.
+ * Dossiq pages-seen guard: no verdict through the OpenRegister API before the required pages are seen.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooPagesSeen;
+use OCA\Dossiq\Review\PagesSeen;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -44,25 +44,25 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  */
-class WooPagesSeenGuard implements IEventListener {
+class PagesSeenGuard implements IEventListener {
 
 	/**
 	 * The error code OpenRegister answers with.
 	 */
-	public const ERROR_CODE = 'woo.pages-unseen';
+	public const ERROR_CODE = 'review.pages-unseen';
 
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings, for the assessment schema.
-	 * @param WooPagesSeen $pagesSeen The required and seen pages of each document.
+	 * @param PagesSeen $pagesSeen The required and seen pages of each document.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly WooPagesSeen $pagesSeen,
+		private readonly PagesSeen $pagesSeen,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -126,7 +126,7 @@ class WooPagesSeenGuard implements IEventListener {
 			]
 		);
 		$event->stopPropagation();
-		$this->logger->info('Dossiq: refused a Woo verdict before every required page was seen', ['document' => $documentRef, 'pages' => $unseen]);
+		$this->logger->info('Dossiq: refused a verdict before every required page was seen', ['document' => $documentRef, 'pages' => $unseen]);
 	}//end inspect()
 
 	/**
@@ -154,7 +154,7 @@ class WooPagesSeenGuard implements IEventListener {
 		try {
 			return $object->getObject();
 		} catch (Throwable $e) {
-			$this->logger->debug('Dossiq: the Woo pages-seen guard could not read an object: '.$e->getMessage());
+			$this->logger->debug('Dossiq: the pages-seen guard could not read an object: '.$e->getMessage());
 			return [];
 		}
 	}//end fields()

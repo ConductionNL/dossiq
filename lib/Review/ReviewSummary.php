@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Dossiq Woo review: the case summary of relevance beside the verdicts.
+ * Dossiq document review: the case summary of relevance beside the verdicts.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Review
+ * @package  OCA\Dossiq\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,18 +20,19 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Review;
 
+use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 
 /**
- * Reports a Woo case's documents by relevance and by verdict, and what is still outstanding.
+ * Reports a case's documents by relevance and by verdict, and what is still outstanding.
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class WooReviewSummary {
+class ReviewSummary {
 
 	use SearchesObjects;
 
@@ -39,7 +40,7 @@ class WooReviewSummary {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param WooDocumentReviews $reviews The relevance store.
+	 * @param DocumentRelevance $reviews The relevance store.
 	 * @param WOODocumentAssessmentService $assessments The verdicts and the outstanding list.
 	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
 	 *
@@ -47,16 +48,16 @@ class WooReviewSummary {
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly WooDocumentReviews $reviews,
+		private readonly DocumentRelevance $reviews,
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly WooCaseDocuments $caseDocuments,
 	) {
 	}//end __construct()
 
 	/**
-	 * The summary of one Woo case.
+	 * The summary of one case.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, mixed> `documents`, `relevance` (unmarked, inScope, outOfScope), `verdicts` and `outstanding`.
 	 *
@@ -85,7 +86,7 @@ class WooReviewSummary {
 	/**
 	 * The case's documents that carry a verdict, as keys.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, bool> The assessed documents.
 	 *
@@ -106,7 +107,7 @@ class WooReviewSummary {
 	/**
 	 * The case's assessments the caller may read.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<int, array<string, mixed>> The assessments.
 	 */

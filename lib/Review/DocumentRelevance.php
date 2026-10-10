@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Dossiq Woo review: relevance of each collected document, apart from the verdict.
+ * Dossiq document review: relevance of each collected document, apart from the verdict.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Review
+ * @package  OCA\Dossiq\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Reads and writes the `wooDocumentReview` of each document on a Woo case.
+ * Reads and writes the `documentReview` of each document on a case.
  *
  * Whether a document is about the request at all is recorded here, apart
  * from the disclosure verdict on `wooDocumentAssessment`. A document without
@@ -41,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class WooDocumentReviews {
+class DocumentRelevance {
 
 	use SearchesObjects;
 
@@ -56,7 +56,7 @@ class WooDocumentReviews {
 	/**
 	 * The app config key of the review schema.
 	 */
-	public const SCHEMA_KEY = 'woo_review_schema';
+	public const SCHEMA_KEY = 'document_review_schema';
 
 	/**
 	 * Constructor.
@@ -88,7 +88,7 @@ class WooDocumentReviews {
 	/**
 	 * Every review of a case, keyed by document.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, array<string, mixed>> The reviews by documentRef.
 	 *
@@ -163,7 +163,7 @@ class WooDocumentReviews {
 	 * has said yet whether it is about the request. Without the review schema
 	 * every document needs a verdict, as before, which is the stricter reading.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param array<int, int|string> $documentIds The case's documents.
 	 * @param array<string, bool> $assessed The assessed documents as keys.
 	 *
@@ -198,7 +198,7 @@ class WooDocumentReviews {
 	/**
 	 * A reviewer marks a document's relevance. Changing a rule's marking records the rule as overturned.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string $documentRef The document.
 	 * @param string $relevance `in-scope`, `out-of-scope` or `unmarked`.
 	 * @param string $userId The reviewer.
@@ -212,7 +212,7 @@ class WooDocumentReviews {
 	public function mark(string $caseId, string $documentRef, string $relevance, string $userId): array {
 		if (in_array($relevance, self::RELEVANCES, true) === false) {
 			throw new RefusedException(
-				rule: 'woo-relevance-unknown',
+				rule: 'review-relevance-unknown',
 				sentence: 'Mark the document in scope, out of scope or unmarked.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
@@ -235,12 +235,12 @@ class WooDocumentReviews {
 	/**
 	 * The pages seen on these reviews, and the required pages still unseen.
 	 *
-	 * @return WooPagesSeen The pages seen, over these reviews.
+	 * @return PagesSeen The pages seen, over these reviews.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
-	public function pages(): WooPagesSeen {
-		return new WooPagesSeen(reviews: $this, depth: new WooReviewDepth());
+	public function pages(): PagesSeen {
+		return new PagesSeen(reviews: $this, depth: new ReviewDepth());
 	}//end pages()
 
 	/**
@@ -274,7 +274,7 @@ class WooDocumentReviews {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Dossiq: a Woo document review could not be written',
+				'Dossiq: a Document review could not be written',
 				['app' => Application::APP_ID, 'document' => ($review['documentRef'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			throw $this->unstored(previous: $e);
@@ -296,8 +296,8 @@ class WooDocumentReviews {
 	 */
 	private function unstored(?Throwable $previous): RefusedException {
 		return new RefusedException(
-			rule: 'woo-review-unavailable',
-			sentence: 'The Woo review cannot be stored, so nothing was marked.',
+			rule: 'review-unavailable',
+			sentence: 'The review cannot be stored, so nothing was marked.',
 			status: RefusedException::STATUS_INDETERMINATE,
 			previous: $previous,
 		);

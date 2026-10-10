@@ -42,7 +42,7 @@ use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
-use OCA\Dossiq\Woo\WooPagesSeen;
+use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -55,7 +55,7 @@ use Throwable;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The thirteenth type is
- * WooPagesSeen: publishing must refuse while a required page is unseen
+ * PagesSeen: publishing must refuse while a required page is unseen
  * (woo-review-triage REQ-WRT-005), and that answer lives in one place.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
@@ -107,7 +107,7 @@ class WooPublicationService {
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
-	 * @param WooPagesSeen|null $pagesSeen The pages seen per document; publishing waits for the required ones.
+	 * @param PagesSeen|null $pagesSeen The pages seen per document; publishing waits for the required ones.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -118,7 +118,7 @@ class WooPublicationService {
 		private readonly ?WooDossierReturn $dossierReturn = null,
 		?WooCaseLedger $caseLedger = null,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
-		private readonly ?WooPagesSeen $pagesSeen = null,
+		private readonly ?PagesSeen $pagesSeen = null,
 	) {
 		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
 	}//end __construct()

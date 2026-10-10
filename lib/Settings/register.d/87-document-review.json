@@ -4,19 +4,19 @@
     "registers": {
       "dossiq": {
         "schemas": [
-          "wooDocumentReview",
-          "wooTriageRule",
-          "wooReviewBatch"
+          "documentReview",
+          "triageRule",
+          "reviewBatch"
         ]
       }
     },
     "schemas": {
-      "wooDocumentReview": {
-        "slug": "wooDocumentReview",
+      "documentReview": {
+        "slug": "documentReview",
         "icon": "FileEyeOutline",
         "version": "1.0.1",
-        "title": "Woo document review",
-        "description": "Per document collected on a Woo case: is it about the request at all, who or which rule said so, its batch, and the pages a reviewer saw.",
+        "title": "Document review",
+        "description": "Per document collected on a case: is it about the request at all, who or which rule said so, its batch, and the pages a reviewer saw.",
         "type": "object",
         "required": [
           "case",
@@ -27,7 +27,7 @@
           "case": {
             "type": "string",
             "title": "Case",
-            "description": "The Woo request case the document was collected on.",
+            "description": "The case the document was collected on.",
             "format": "uuid",
             "facetable": true
           },
@@ -112,12 +112,12 @@
           }
         }
       },
-      "wooTriageRule": {
-        "slug": "wooTriageRule",
+      "triageRule": {
+        "slug": "triageRule",
         "icon": "Tune",
         "version": "1.0.1",
-        "title": "Woo triage rule",
-        "description": "A visible rule on a Woo case that marks collected documents in or out of scope without a reviewer opening each one.",
+        "title": "Triage rule",
+        "description": "A visible rule on a case that marks collected documents in or out of scope without a reviewer opening each one.",
         "type": "object",
         "required": [
           "case",
@@ -128,7 +128,7 @@
           "case": {
             "type": "string",
             "title": "Case",
-            "description": "The Woo request case the rule belongs to.",
+            "description": "The case the rule belongs to.",
             "format": "uuid",
             "facetable": true
           },
@@ -165,12 +165,12 @@
           }
         }
       },
-      "wooReviewBatch": {
-        "slug": "wooReviewBatch",
+      "reviewBatch": {
+        "slug": "reviewBatch",
         "icon": "TrayFull",
         "version": "1.0.0",
-        "title": "Woo review batch",
-        "description": "A named part of a Woo case's in-scope documents, assigned to one reviewer through a task.",
+        "title": "Review batch",
+        "description": "A named part of a case's in-scope documents, assigned to one reviewer through a task.",
         "type": "object",
         "required": [
           "case",
@@ -181,7 +181,7 @@
           "case": {
             "type": "string",
             "title": "Case",
-            "description": "The Woo request case the batch belongs to.",
+            "description": "The case the batch belongs to.",
             "format": "uuid",
             "facetable": true
           },
@@ -224,6 +224,28 @@
             ],
             "default": "open",
             "facetable": true
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "documentReview": {
+            "type": "object",
+            "title": "Document review",
+            "description": "Whether cases of this type review their documents for relevance before a verdict, and how deep. A case type that leaves it out has no document review.",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "title": "Document review",
+                "description": "Cases of this type mark each document in or out of scope, in batches for named reviewers, before a verdict.",
+                "default": false
+              },
+              "reviewDepth": {
+                "type": "object",
+                "title": "Review depth",
+                "description": "Per document type: every page, or a sample of a number of pages. A type it does not name is every page."
+              }
+            }
           }
         }
       }

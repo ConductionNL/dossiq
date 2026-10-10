@@ -20,18 +20,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Dossiq\Controller\WooReviewController;
+use OCA\Dossiq\Controller\DocumentReviewController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooPagesSeen;
-use OCA\Dossiq\Woo\WooReviewBatches;
-use OCA\Dossiq\Woo\WooReviewDepth;
-use OCA\Dossiq\Woo\WooReviewSummary;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\PagesSeen;
+use OCA\Dossiq\Review\ReviewBatches;
+use OCA\Dossiq\Review\ReviewConfiguration;
+use OCA\Dossiq\Review\ReviewDepth;
+use OCA\Dossiq\Review\ReviewSummary;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -44,15 +45,15 @@ use Psr\Log\LoggerInterface;
 /**
  * Relevance and the summary through the real reviews, summary and assessment service.
  *
- * @covers \OCA\Dossiq\Controller\WooReviewController
- * @covers \OCA\Dossiq\Woo\WooReviewSummary
- * @covers \OCA\Dossiq\Woo\WooDocumentReviews
- * @covers \OCA\Dossiq\Woo\WooReviewBatches
- * @covers \OCA\Dossiq\Woo\WooPagesSeen
+ * @covers \OCA\Dossiq\Controller\DocumentReviewController
+ * @covers \OCA\Dossiq\Review\ReviewSummary
+ * @covers \OCA\Dossiq\Review\DocumentRelevance
+ * @covers \OCA\Dossiq\Review\ReviewBatches
+ * @covers \OCA\Dossiq\Review\PagesSeen
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class WooReviewControllerTest extends TestCase {
+class DocumentReviewControllerTest extends TestCase {
 
 	/**
 	 * The store.
@@ -72,7 +73,7 @@ class WooReviewControllerTest extends TestCase {
 		$verdicts = ['openbaar', 'openbaar', 'deels_openbaar', 'niet_openbaar'];
 		foreach ($marks as $n => $relevance) {
 			$this->store->seed(schema: 'document', uuid: 'doc-'.$n, row: ['case' => 'case-x']);
-			$this->store->seed(schema: 'wooDocumentReview', uuid: 'review-'.$n, row: ['case' => 'case-x', 'documentRef' => 'doc-'.$n, 'relevance' => $relevance]);
+			$this->store->seed(schema: 'documentReview', uuid: 'review-'.$n, row: ['case' => 'case-x', 'documentRef' => 'doc-'.$n, 'relevance' => $relevance]);
 			if ($n < 4) {
 				$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-'.$n, row: ['caseRef' => 'case-x', 'documentRef' => 'doc-'.$n, 'classification' => $verdicts[$n]]);
 			}
@@ -86,15 +87,15 @@ class WooReviewControllerTest extends TestCase {
 	 * @param bool $mutate Whether the user may change the case.
 	 * @param array<string, mixed> $params The request parameters.
 	 *
-	 * @return WooReviewController The controller.
+	 * @return DocumentReviewController The controller.
 	 */
-	private function controller(bool $read = true, bool $mutate = true, array $params = []): WooReviewController {
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview', 'woo_review_batch_schema' => 'wooReviewBatch'];
+	private function controller(bool $read = true, bool $mutate = true, array $params = []): DocumentReviewController {
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
-		$reviews = new WooDocumentReviews(settingsService: $settings, logger: $logger);
+		$reviews = new DocumentRelevance(settingsService: $settings, logger: $logger);
 		$assessments = new WOODocumentAssessmentService($settings, $this->createMock(IUserSession::class), $logger, null, null, $reviews);
 		$guard = $this->createMock(CaseAccessGuard::class);
 		$guard->method('hasCaseReadAccess')->willReturn($read);
@@ -113,26 +114,27 @@ class WooReviewControllerTest extends TestCase {
 		$userManager = $this->createMock(IUserManager::class);
 		$userManager->method('userExists')->willReturn(true);
 
-		return new WooReviewController(
+		return new DocumentReviewController(
 			request: $request,
 			reviews: $reviews,
-			summary: new WooReviewSummary(
+			summary: new ReviewSummary(
 				settingsService: $settings,
 				reviews: $reviews,
 				assessments: $assessments,
 				caseDocuments: $caseDocuments,
 			),
-			batches: new WooReviewBatches(
+			batches: new ReviewBatches(
 				settingsService: $settings,
 				reviews: $reviews,
 				caseDocuments: $caseDocuments,
-				depth: new WooReviewDepth(),
+				depth: new ReviewDepth(),
+				configuration: new ReviewConfiguration(settingsService: $settings),
 				tasks: $tasks,
 				userManager: $userManager,
 				l10n: $l10n,
 				logger: $logger,
 			),
-			pagesSeen: new WooPagesSeen(reviews: $reviews, depth: new WooReviewDepth()),
+			pagesSeen: new PagesSeen(reviews: $reviews, depth: new ReviewDepth()),
 			caseAccessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,
@@ -161,17 +163,17 @@ class WooReviewControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testMarkingRecordsTheReviewerAndAnOverturnedRule(): void {
-		$this->store->rows['wooDocumentReview']['review-7'] += ['relevanceSource' => 'rule', 'rule' => 'Nieuwsbrieven'];
+		$this->store->rows['documentReview']['review-7'] += ['relevanceSource' => 'rule', 'rule' => 'Nieuwsbrieven'];
 
 		$response = $this->controller(params: ['relevance' => 'in-scope'])->relevance(id: 'case-x', documentRef: 'doc-7');
 
 		$this->assertSame(200, $response->getStatus());
-		$saved = $this->store->rows['wooDocumentReview']['review-7'];
+		$saved = $this->store->rows['documentReview']['review-7'];
 		$this->assertSame('in-scope', $saved['relevance']);
 		$this->assertSame('reviewer', $saved['relevanceSource']);
 		$this->assertSame('Nieuwsbrieven', $saved['overturnedRule']);
 		$this->assertSame('reviewer-a', $saved['markedBy']);
-		$this->assertCount(10, $this->store->all('wooDocumentReview'));
+		$this->assertCount(10, $this->store->all('documentReview'));
 	}//end testMarkingRecordsTheReviewerAndAnOverturnedRule()
 
 	/**
@@ -183,13 +185,13 @@ class WooReviewControllerTest extends TestCase {
 		$this->store->seed(schema: 'document', uuid: 'doc-new', row: ['case' => 'case-x']);
 
 		$this->assertSame(200, $this->controller(params: ['relevance' => 'out-of-scope'])->relevance(id: 'case-x', documentRef: 'doc-new')->getStatus());
-		$created = array_values(array_filter($this->store->all('wooDocumentReview'), static fn (array $r): bool => $r['documentRef'] === 'doc-new'));
+		$created = array_values(array_filter($this->store->all('documentReview'), static fn (array $r): bool => $r['documentRef'] === 'doc-new'));
 		$this->assertSame('out-of-scope', $created[0]['relevance']);
 		$this->assertSame('case-x', $created[0]['case']);
 
 		$refused = $this->controller(params: ['relevance' => 'maybe'])->relevance(id: 'case-x', documentRef: 'doc-new');
 		$this->assertSame(422, $refused->getStatus());
-		$this->assertSame('woo-relevance-unknown', $refused->getData()['error']);
+		$this->assertSame('review-relevance-unknown', $refused->getData()['error']);
 	}//end testAFirstMarkCreatesTheReviewAndNonsenseIsRefused()
 
 	/**
@@ -234,13 +236,13 @@ class WooReviewControllerTest extends TestCase {
 		$refused = $this->controller(params: ['name' => 'Notities', 'assignee' => 'reviewer-a', 'documents' => ['doc-0', 'doc-1']])->createBatch(id: 'case-x');
 
 		$this->assertSame(409, $refused->getStatus());
-		$this->assertSame('woo-batch-document-taken', $refused->getData()['error']);
+		$this->assertSame('review-batch-document-taken', $refused->getData()['error']);
 		$this->assertSame(['doc-0' => 'Mail 2025'], $refused->getData()['taken']);
-		$this->assertCount(1, $this->store->all('wooReviewBatch'));
+		$this->assertCount(1, $this->store->all('reviewBatch'));
 
 		$unknown = $this->controller(params: ['name' => 'Map', 'assignee' => 'reviewer-a', 'filter' => ['custodian' => 'j.devries']])->createBatch(id: 'case-x');
 		$this->assertSame(422, $unknown->getStatus());
-		$this->assertSame('woo-batch-filter-unknown', $unknown->getData()['error']);
+		$this->assertSame('review-batch-filter-unknown', $unknown->getData()['error']);
 	}//end testCreateBatchNamesTheBatchADocumentIsIn()
 
 	/**
@@ -263,14 +265,14 @@ class WooReviewControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testPagesSeenAreAppendedWithTheReviewer(): void {
-		$this->store->rows['wooDocumentReview']['review-4']['depth'] = ['mode' => 'every-page'];
+		$this->store->rows['documentReview']['review-4']['depth'] = ['mode' => 'every-page'];
 
 		$first = $this->controller(read: true, mutate: false, params: ['pages' => [1, 2], 'pageCount' => 3])->pagesSeen(id: 'case-x', documentRef: 'doc-4');
 		$this->assertSame(200, $first->getStatus());
 		$this->assertSame([3], $first->getData()['unseen']);
 
 		$this->controller(params: ['pages' => [2, 3]])->pagesSeen(id: 'case-x', documentRef: 'doc-4');
-		$saved = $this->store->rows['wooDocumentReview']['review-4'];
+		$saved = $this->store->rows['documentReview']['review-4'];
 		$this->assertSame(3, $saved['pageCount']);
 		$this->assertSame([1, 2, 3], $saved['pagesRequired']);
 		$this->assertSame([1, 2, 3], array_column($saved['pagesSeen'], 'page'));
@@ -279,7 +281,7 @@ class WooReviewControllerTest extends TestCase {
 
 		$empty = $this->controller(params: ['pages' => []])->pagesSeen(id: 'case-x', documentRef: 'doc-4');
 		$this->assertSame(422, $empty->getStatus());
-		$this->assertSame('woo-pages-required', $empty->getData()['error']);
+		$this->assertSame('review-pages-required', $empty->getData()['error']);
 		$this->assertSame(403, $this->controller(read: false, mutate: false, params: ['pages' => [1]])->pagesSeen(id: 'case-x', documentRef: 'doc-4')->getStatus());
 	}//end testPagesSeenAreAppendedWithTheReviewer()
 }//end class

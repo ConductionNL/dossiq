@@ -4,7 +4,7 @@
  * Unit tests for Woo review batches.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Woo
+ * @package  OCA\Dossiq\Tests\Unit\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,16 +18,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooReviewBatches;
-use OCA\Dossiq\Woo\WooReviewDepth;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\ReviewBatches;
+use OCA\Dossiq\Review\ReviewConfiguration;
+use OCA\Dossiq\Review\ReviewDepth;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IUserManager;
@@ -38,13 +39,14 @@ use Psr\Log\LoggerInterface;
 /**
  * Batches through the real review store and case documents, with the engine task seam doubled.
  *
- * @covers \OCA\Dossiq\Woo\WooReviewBatches
- * @covers \OCA\Dossiq\Woo\WooReviewDepth
+ * @covers \OCA\Dossiq\Review\ReviewBatches
+ * @covers \OCA\Dossiq\Review\ReviewDepth
+ * @covers \OCA\Dossiq\Review\ReviewConfiguration
  * @covers \OCA\Dossiq\Woo\WooCaseDocuments
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
-class WooReviewBatchesTest extends TestCase {
+class ReviewBatchesTest extends TestCase {
 
 	/**
 	 * The store.
@@ -81,7 +83,7 @@ class WooReviewBatchesTest extends TestCase {
 				$review += ['relevanceSource' => 'rule', 'rule' => 'Nieuwsbrieven'];
 			}
 
-			$this->store->seed(schema: 'wooDocumentReview', uuid: 'review-'.$n, row: $review);
+			$this->store->seed(schema: 'documentReview', uuid: 'review-'.$n, row: $review);
 		}
 
 		$this->store->seed(schema: 'document', uuid: 'doc-y', row: ['case' => 'case-y']);
@@ -100,10 +102,10 @@ class WooReviewBatchesTest extends TestCase {
 	 *
 	 * @param list<string> $users The users that exist.
 	 *
-	 * @return WooReviewBatches The service.
+	 * @return ReviewBatches The service.
 	 */
-	private function batches(array $users = ['reviewer-a', 'reviewer-b']): WooReviewBatches {
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_review_schema' => 'wooDocumentReview', 'woo_review_batch_schema' => 'wooReviewBatch', 'woo_request_configuration_schema' => 'wooRequestConfiguration'];
+	private function batches(array $users = ['reviewer-a', 'reviewer-b']): ReviewBatches {
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch', 'case_schema' => 'case', 'case_type_schema' => 'caseType'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -113,11 +115,12 @@ class WooReviewBatchesTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters));
 
-		return new WooReviewBatches(
+		return new ReviewBatches(
 			settingsService: $settings,
-			reviews: new WooDocumentReviews(settingsService: $settings, logger: $logger),
+			reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
 			caseDocuments: new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger),
-			depth: new WooReviewDepth(),
+			depth: new ReviewDepth(),
+			configuration: new ReviewConfiguration(settingsService: $settings),
 			tasks: $this->tasks,
 			userManager: $userManager,
 			l10n: $l10n,
@@ -155,7 +158,7 @@ class WooReviewBatchesTest extends TestCase {
 		$this->assertStringContainsString('Notities', $this->handed[1]['task']['title']);
 		$this->assertSame('case-x', $this->handed[0]['caseId']);
 		$this->assertSame('handler-h', $this->handed[0]['actor']);
-		$this->assertSame('woo-review-batch', $this->handed[0]['task']['metadata']['dossiq']['kind']);
+		$this->assertSame('review-batch', $this->handed[0]['task']['metadata']['dossiq']['kind']);
 
 		$this->assertSame('engine-task-1', $mail['batch']['task']);
 		$this->assertSame('open', $mail['batch']['status']);
@@ -165,7 +168,7 @@ class WooReviewBatchesTest extends TestCase {
 		$this->assertSame(15, $notes['progress']['total']);
 
 		$mailId = $mail['batch']['id'];
-		$inMail = array_filter($this->store->all('wooDocumentReview'), static fn (array $r): bool => ($r['batch'] ?? '') === $mailId);
+		$inMail = array_filter($this->store->all('documentReview'), static fn (array $r): bool => ($r['batch'] ?? '') === $mailId);
 		$this->assertCount(25, $inMail);
 	}//end testEachBatchGetsATaskForItsReviewer()
 
@@ -185,7 +188,7 @@ class WooReviewBatchesTest extends TestCase {
 			$batches->create(caseId: 'case-x', name: 'Tweede', assignee: 'reviewer-b', documents: ['doc-3', 'doc-30'], userId: 'handler-h');
 			$this->fail('A document already in an open batch was added to another.');
 		} catch (RefusedException $e) {
-			$this->assertSame('woo-batch-document-taken', $e->getRule());
+			$this->assertSame('review-batch-document-taken', $e->getRule());
 			$this->assertSame(409, $e->getStatus());
 		}
 
@@ -201,7 +204,7 @@ class WooReviewBatchesTest extends TestCase {
 	public function testAClosedBatchReleasesItsDocuments(): void {
 		$batches = $this->batches();
 		$first = $batches->create(caseId: 'case-x', name: 'Mail 2025', assignee: 'reviewer-a', documents: ['doc-1'], userId: 'handler-h');
-		$this->store->rows['wooReviewBatch'][$first['batch']['id']]['status'] = 'closed';
+		$this->store->rows['reviewBatch'][$first['batch']['id']]['status'] = 'closed';
 
 		$this->assertSame([], $batches->taken(caseId: 'case-x', documents: ['doc-1']));
 		$second = $batches->create(caseId: 'case-x', name: 'Opnieuw', assignee: 'reviewer-b', documents: ['doc-1'], userId: 'handler-h');
@@ -234,7 +237,7 @@ class WooReviewBatchesTest extends TestCase {
 			$this->batches()->select(caseId: 'case-x', documents: [], filter: ['custodian' => 'j.devries']);
 			$this->fail('A filter on a field no document carries answered a batch.');
 		} catch (RefusedException $e) {
-			$this->assertSame('woo-batch-filter-unknown', $e->getRule());
+			$this->assertSame('review-batch-filter-unknown', $e->getRule());
 			$this->assertSame(422, $e->getStatus());
 		}
 	}//end testAFilterOnAnUnknownFieldIsRefused()
@@ -247,10 +250,10 @@ class WooReviewBatchesTest extends TestCase {
 	public function testABatchNeedsANameAReviewerAndDocumentsOfTheCase(): void {
 		$batches = $this->batches();
 		$cases = [
-			['woo-batch-document-unknown', 'Mail', 'reviewer-a', ['doc-y']],
-			['woo-batch-empty', 'Mail', 'reviewer-a', []],
-			['woo-batch-name-required', '  ', 'reviewer-a', ['doc-1']],
-			['woo-batch-assignee-unknown', 'Mail', 'nobody', ['doc-1']],
+			['review-batch-document-unknown', 'Mail', 'reviewer-a', ['doc-y']],
+			['review-batch-empty', 'Mail', 'reviewer-a', []],
+			['review-batch-name-required', '  ', 'reviewer-a', ['doc-1']],
+			['review-batch-assignee-unknown', 'Mail', 'nobody', ['doc-1']],
 		];
 		foreach ($cases as [$rule, $name, $assignee, $documents]) {
 			try {
@@ -262,7 +265,7 @@ class WooReviewBatchesTest extends TestCase {
 			}
 		}
 
-		$this->assertSame([], $this->store->all('wooReviewBatch'));
+		$this->assertSame([], $this->store->all('reviewBatch'));
 		$this->assertSame([], $this->handed);
 	}//end testABatchNeedsANameAReviewerAndDocumentsOfTheCase()
 
@@ -279,7 +282,7 @@ class WooReviewBatchesTest extends TestCase {
 
 		$this->assertFalse($made['taskCreated']);
 		$this->assertSame('', $made['batch']['task'] ?? '');
-		$this->assertCount(1, $this->store->all('wooReviewBatch'));
+		$this->assertCount(1, $this->store->all('reviewBatch'));
 	}//end testABatchWhoseTaskTheEngineRefusedSaysSo()
 
 	/**
@@ -305,25 +308,26 @@ class WooReviewBatchesTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheBatchRecordsTheDepthPerReview(): void {
-		$this->store->seed(schema: 'wooRequestConfiguration', uuid: 'config-x', row: ['case' => 'case-x', 'reviewDepth' => ['export' => ['mode' => 'sample', 'sampleSize' => 5]]]);
+		$this->store->seed(schema: 'caseType', uuid: 'ct-1', row: ['title' => 'Woo-verzoek', 'documentReview' => ['reviewDepth' => ['export' => ['mode' => 'sample', 'sampleSize' => 5]]]]);
+		$this->store->seed(schema: 'case', uuid: 'case-x', row: ['caseType' => 'ct-1']);
 		$this->store->rows['document']['doc-0']['informatieobjecttype'] = 'export';
 		$this->store->rows['document']['doc-1']['informatieobjecttype'] = 'brief';
-		$this->store->rows['wooDocumentReview']['review-0']['pageCount'] = 200;
-		$this->store->rows['wooDocumentReview']['review-1']['pageCount'] = 3;
+		$this->store->rows['documentReview']['review-0']['pageCount'] = 200;
+		$this->store->rows['documentReview']['review-1']['pageCount'] = 3;
 
 		$this->batches()->create(caseId: 'case-x', name: 'Exports', assignee: 'reviewer-a', documents: ['doc-0', 'doc-1', 'doc-2'], userId: 'handler-h');
 
-		$export = $this->store->row('wooDocumentReview', 'review-0');
+		$export = $this->store->row('documentReview', 'review-0');
 		$this->assertSame('sample', $export['depth']['mode']);
 		$this->assertSame(5, $export['depth']['sampleSize']);
 		$this->assertIsInt($export['depth']['seed']);
 		$this->assertCount(5, $export['pagesRequired']);
-		$this->assertSame($export['pagesRequired'], (new WooReviewDepth())->pagesRequired(depth: $export['depth'], pageCount: 200));
+		$this->assertSame($export['pagesRequired'], (new ReviewDepth())->pagesRequired(depth: $export['depth'], pageCount: 200));
 
-		$letter = $this->store->row('wooDocumentReview', 'review-1');
+		$letter = $this->store->row('documentReview', 'review-1');
 		$this->assertSame(['mode' => 'every-page'], $letter['depth']);
 		$this->assertSame([1, 2, 3], $letter['pagesRequired']);
 
-		$this->assertSame([1], $this->store->row('wooDocumentReview', 'review-2')['pagesRequired']);
+		$this->assertSame([1], $this->store->row('documentReview', 'review-2')['pagesRequired']);
 	}//end testTheBatchRecordsTheDepthPerReview()
 }//end class

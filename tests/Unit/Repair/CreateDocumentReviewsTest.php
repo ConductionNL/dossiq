@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for the CreateWooDocumentReviews repair step.
+ * Unit tests for the CreateDocumentReviews repair step.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Repair
@@ -20,10 +20,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Repair;
 
-use OCA\Dossiq\Repair\CreateWooDocumentReviews;
+use OCA\Dossiq\Repair\CreateDocumentReviews;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Review\DocumentRelevance;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -31,12 +31,12 @@ use Psr\Log\LoggerInterface;
 /**
  * Every assessed document gets one in-scope review, once.
  *
- * @covers \OCA\Dossiq\Repair\CreateWooDocumentReviews
- * @covers \OCA\Dossiq\Woo\WooDocumentReviews
+ * @covers \OCA\Dossiq\Repair\CreateDocumentReviews
+ * @covers \OCA\Dossiq\Review\DocumentRelevance
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
-class CreateWooDocumentReviewsTest extends TestCase {
+class CreateDocumentReviewsTest extends TestCase {
 
 	/**
 	 * The store.
@@ -56,7 +56,7 @@ class CreateWooDocumentReviewsTest extends TestCase {
 		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-2', row: ['caseRef' => 'case-x', 'documentRef' => 'doc-2', 'classification' => 'niet_openbaar', 'assessedBy' => 'bram']);
 		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-3', row: ['caseRef' => 'case-y', 'documentRef' => 'doc-3', 'classification' => 'openbaar']);
 		$this->store->seed(schema: 'wooDocumentAssessment', uuid: 'a-4', row: ['caseRef' => 'case-y', 'classification' => 'openbaar']);
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'r-3', row: ['case' => 'case-y', 'documentRef' => 'doc-3', 'relevance' => 'out-of-scope']);
+		$this->store->seed(schema: 'documentReview', uuid: 'r-3', row: ['case' => 'case-y', 'documentRef' => 'doc-3', 'relevance' => 'out-of-scope']);
 	}//end setUp()
 
 	/**
@@ -64,16 +64,16 @@ class CreateWooDocumentReviewsTest extends TestCase {
 	 *
 	 * @param array<string, string> $config The configured keys.
 	 *
-	 * @return CreateWooDocumentReviews The step.
+	 * @return CreateDocumentReviews The step.
 	 */
-	private function step(array $config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview']): CreateWooDocumentReviews {
+	private function step(array $config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview']): CreateDocumentReviews {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 
-		return new CreateWooDocumentReviews(
+		return new CreateDocumentReviews(
 			settingsService: $settings,
-			reviews: new WooDocumentReviews(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
+			reviews: new DocumentRelevance(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
 		);
 	}//end step()
 
@@ -85,7 +85,7 @@ class CreateWooDocumentReviewsTest extends TestCase {
 	public function testEveryAssessedDocumentGetsOneInScopeReview(): void {
 		$this->step()->run($this->createMock(IOutput::class));
 
-		$byDocument = array_column($this->store->all('wooDocumentReview'), null, 'documentRef');
+		$byDocument = array_column($this->store->all('documentReview'), null, 'documentRef');
 		$this->assertCount(3, $byDocument);
 		$this->assertSame('in-scope', $byDocument['doc-1']['relevance']);
 		$this->assertSame('reviewer', $byDocument['doc-1']['relevanceSource']);
@@ -109,7 +109,7 @@ class CreateWooDocumentReviewsTest extends TestCase {
 		$this->step()->run($this->createMock(IOutput::class));
 
 		$this->assertSame($writes, $this->store->writes);
-		$this->assertCount(3, $this->store->all('wooDocumentReview'));
+		$this->assertCount(3, $this->store->all('documentReview'));
 	}//end testASecondRunCreatesNothing()
 
 	/**
@@ -124,6 +124,6 @@ class CreateWooDocumentReviewsTest extends TestCase {
 		$this->step(config: ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment'])->run($output);
 
 		$this->assertSame(0, $this->store->writes);
-		$this->assertSame('Mark every assessed Woo document as in scope', $this->step()->getName());
+		$this->assertSame('Mark every assessed document as in scope', $this->step()->getName());
 	}//end testWithoutTheReviewSchemaItSkips()
 }//end class

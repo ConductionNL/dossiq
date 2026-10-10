@@ -31,7 +31,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooDocumentReviews;
+use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCA\Dossiq\Woo\WooRefusalGroundsUnavailable;
 use OCP\IUserSession;
@@ -83,7 +83,7 @@ class WOODocumentAssessmentService {
 	 * @param WooRefusalGrounds|null $refusalGrounds The settled list a cited ground is checked against.
 	 *        Built over the same settings and logger when left out, because those are its only
 	 *        collaborators and a default built from them is the instance the container wires.
-	 * @param WooDocumentReviews|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
+	 * @param DocumentRelevance|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -91,7 +91,7 @@ class WOODocumentAssessmentService {
 		private readonly LoggerInterface $logger,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
 		?WooRefusalGrounds $refusalGrounds = null,
-		private readonly ?WooDocumentReviews $reviews = null,
+		private readonly ?DocumentRelevance $reviews = null,
 	) {
 		$this->refusalGrounds = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 	}//end __construct()

@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Dossiq Woo review depth: which pages of a document a reviewer must see.
+ * Dossiq review depth: which pages of a document a reviewer must see.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Review
+ * @package  OCA\Dossiq\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Review;
 
 use Random\Engine\Mt19937;
 use Random\Randomizer;
@@ -35,7 +35,7 @@ use Random\Randomizer;
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
  */
-class WooReviewDepth {
+class ReviewDepth {
 
 	public const EVERY_PAGE = 'every-page';
 

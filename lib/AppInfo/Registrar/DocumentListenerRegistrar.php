@@ -57,5 +57,8 @@ class DocumentListenerRegistrar {
 		foreach (self::NODE_EVENTS as $event) {
 			$context->registerEventListener(event: $event, listener: CaseFolderNodeListener::class);
 		}
+
+		// The document review's write guards (verdicts wait for the pages, the stopping rule is fixed).
+		(new ReviewListenerRegistrar())->register(context: $context);
 	}//end register()
 }//end class

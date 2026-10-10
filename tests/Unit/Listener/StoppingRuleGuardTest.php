@@ -20,12 +20,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar;
-use OCA\Dossiq\Listener\WooStoppingRuleGuard;
+use OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar;
+use OCA\Dossiq\Listener\StoppingRuleGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooStoppingRules;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\StoppingRules;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -36,12 +36,12 @@ use Psr\Log\LoggerInterface;
 /**
  * Direct OpenRegister writes to the stopping rule, through the OpenRegister event classes.
  *
- * @covers \OCA\Dossiq\Listener\WooStoppingRuleGuard
- * @covers \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\StoppingRuleGuard
+ * @covers \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
  *
  * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
-class WooStoppingRuleGuardTest extends TestCase {
+class StoppingRuleGuardTest extends TestCase {
 
 	/**
 	 * The store.
@@ -57,23 +57,23 @@ class WooStoppingRuleGuardTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->store = new InMemoryRegister();
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'unmarked']);
+		$this->store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'unmarked']);
 	}//end setUp()
 
 	/**
 	 * The guard on the store.
 	 *
-	 * @return WooStoppingRuleGuard The guard.
+	 * @return StoppingRuleGuard The guard.
 	 */
-	private function guard(): WooStoppingRuleGuard {
-		$config = ['register' => 'dossiq', 'woo_review_schema' => 'wooDocumentReview', 'woo_stopping_rule_schema' => '88'];
+	private function guard(): StoppingRuleGuard {
+		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'stopping_rule_schema' => '88'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
-		$rules = new WooStoppingRules(settingsService: $settings, reviews: new WooDocumentReviews(settingsService: $settings, logger: $logger), logger: $logger);
+		$rules = new StoppingRules(settingsService: $settings, reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), logger: $logger);
 
-		return new WooStoppingRuleGuard(settingsService: $settings, rules: $rules, logger: $logger);
+		return new StoppingRuleGuard(settingsService: $settings, rules: $rules, logger: $logger);
 	}//end guard()
 
 	/**
@@ -99,12 +99,12 @@ class WooStoppingRuleGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testARuleCannotChangeOnceReviewStarted(): void {
-		$this->store->rows['wooDocumentReview']['r-1']['relevance'] = 'in-scope';
+		$this->store->rows['documentReview']['r-1']['relevance'] = 'in-scope';
 
 		$update = new ObjectUpdatingEvent($this->rule(0.7), $this->rule(0.8));
 		$this->guard()->handle(event: $update);
 		$this->assertTrue($update->isPropagationStopped());
-		$this->assertSame(WooStoppingRuleGuard::ERROR_CODE, $update->getErrors()['code']);
+		$this->assertSame(StoppingRuleGuard::ERROR_CODE, $update->getErrors()['code']);
 
 		$delete = new ObjectDeletingEvent($this->rule(0.8));
 		$this->guard()->handle(event: $delete);
@@ -121,7 +121,7 @@ class WooStoppingRuleGuardTest extends TestCase {
 		$this->guard()->handle(event: $update);
 		$this->assertFalse($update->isPropagationStopped());
 
-		$this->store->rows['wooDocumentReview']['r-1']['relevance'] = 'out-of-scope';
+		$this->store->rows['documentReview']['r-1']['relevance'] = 'out-of-scope';
 		$other = new ObjectUpdatingEvent($this->rule(0.7, '12'), $this->rule(0.8, '12'));
 		$this->guard()->handle(event: $other);
 		$this->assertFalse($other->isPropagationStopped());
@@ -141,9 +141,9 @@ class WooStoppingRuleGuardTest extends TestCase {
 			}
 		);
 
-		(new WooListenerRegistrar())->register(context: $context);
+		(new ReviewListenerRegistrar())->register(context: $context);
 
-		$this->assertContains([ObjectUpdatingEvent::class, WooStoppingRuleGuard::class], $bound);
-		$this->assertContains([ObjectDeletingEvent::class, WooStoppingRuleGuard::class], $bound);
+		$this->assertContains([ObjectUpdatingEvent::class, StoppingRuleGuard::class], $bound);
+		$this->assertContains([ObjectDeletingEvent::class, StoppingRuleGuard::class], $bound);
 	}//end testTheRegistrarBindsTheGuard()
 }//end class

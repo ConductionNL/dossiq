@@ -100,7 +100,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.0",
+          "version": "1.1.1",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -151,7 +151,10 @@
         },
         "decisionTypes": [
           "3c0f5a00-0000-4000-a000-00000000d001"
-        ]
+        ],
+        "documentReview": {
+          "enabled": true
+        }
       },
       {
         "@self": {

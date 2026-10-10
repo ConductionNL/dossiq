@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Dossiq Woo stopping rule: how much a review must find, declared before review.
+ * Dossiq stopping rule: how much a review must find, declared before review.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Review
+ * @package  OCA\Dossiq\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,7 +20,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Review;
 
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Reads and declares the one `wooStoppingRule` of a Woo case.
+ * Reads and declares the one `stoppingRule` of a case.
  *
  * The rule is only worth something when nobody could tune it to the result,
  * so it can be declared or replaced only while every document of the case is
@@ -40,14 +40,14 @@ use Throwable;
  *
  * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
-class WooStoppingRules {
+class StoppingRules {
 
 	use SearchesObjects;
 
 	/**
 	 * The app config key of the stopping rule schema.
 	 */
-	public const SCHEMA_KEY = 'woo_stopping_rule_schema';
+	public const SCHEMA_KEY = 'stopping_rule_schema';
 
 	/**
 	 * The confidences a rule may name.
@@ -63,14 +63,14 @@ class WooStoppingRules {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
-	 * @param WooDocumentReviews $reviews Whether any document is marked yet.
+	 * @param DocumentRelevance $reviews Whether any document is marked yet.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly WooDocumentReviews $reviews,
+		private readonly DocumentRelevance $reviews,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -78,7 +78,7 @@ class WooStoppingRules {
 	/**
 	 * The case's stopping rule, or null when none was declared.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, mixed>|null The rule.
 	 *
@@ -108,7 +108,7 @@ class WooStoppingRules {
 	/**
 	 * Whether any document of the case is marked in or out of scope.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 *
 	 * @return bool True once review started.
 	 *
@@ -116,7 +116,7 @@ class WooStoppingRules {
 	 */
 	public function reviewStarted(string $caseId): bool {
 		foreach ($this->reviews->forCase(caseId: $caseId) as $review) {
-			if (($review['relevance'] ?? WooDocumentReviews::UNMARKED) !== WooDocumentReviews::UNMARKED) {
+			if (($review['relevance'] ?? DocumentRelevance::UNMARKED) !== DocumentRelevance::UNMARKED) {
 				return true;
 			}
 		}
@@ -127,7 +127,7 @@ class WooStoppingRules {
 	/**
 	 * Declare the rule, or replace it while review has not started.
 	 *
-	 * @param string $caseId The Woo case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param float $targetRecall The share to find, 0.5 to 0.99.
 	 * @param float $confidence 0.90, 0.95 or 0.99.
 	 * @param string $userId Who declares it.
@@ -141,14 +141,14 @@ class WooStoppingRules {
 	public function declare(string $caseId, float $targetRecall, float $confidence, string $userId): array {
 		if ($targetRecall < 0.5 || $targetRecall > 0.99 || in_array($confidence, self::CONFIDENCES, true) === false) {
 			throw new RefusedException(
-				rule: 'woo-stopping-rule-out-of-range',
+				rule: 'review-stopping-rule-out-of-range',
 				sentence: 'Choose a target between 0.5 and 0.99 and a confidence of 0.90, 0.95 or 0.99.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
 
 		if ($this->reviewStarted(caseId: $caseId) === true) {
-			throw new RefusedException(rule: 'woo-stopping-rule-locked', sentence: self::LOCKED, status: RefusedException::STATUS_REFUSED);
+			throw new RefusedException(rule: 'review-stopping-rule-locked', sentence: self::LOCKED, status: RefusedException::STATUS_REFUSED);
 		}
 
 		$existing = $this->forCase(caseId: $caseId);
@@ -193,7 +193,7 @@ class WooStoppingRules {
 				uuid: $uuid,
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: a Woo stopping rule could not be stored', ['app' => Application::APP_ID, 'exception' => $e->getMessage()]);
+			$this->logger->error('Dossiq: a Stopping rule could not be stored', ['app' => Application::APP_ID, 'exception' => $e->getMessage()]);
 			throw $this->unstored(previous: $e);
 		}
 
@@ -213,7 +213,7 @@ class WooStoppingRules {
 	 */
 	private function unstored(?Throwable $previous): RefusedException {
 		return new RefusedException(
-			rule: 'woo-stopping-rule-unavailable',
+			rule: 'review-stopping-rule-unavailable',
 			sentence: 'The stopping rule cannot be stored, so nothing was declared.',
 			status: RefusedException::STATUS_INDETERMINATE,
 			previous: $previous,

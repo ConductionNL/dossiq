@@ -4,7 +4,7 @@
  * Unit tests for the Woo pages seen.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Woo
+ * @package  OCA\Dossiq\Tests\Unit\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,25 +18,25 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooDocumentReviews;
-use OCA\Dossiq\Woo\WooPagesSeen;
-use OCA\Dossiq\Woo\WooReviewDepth;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\PagesSeen;
+use OCA\Dossiq\Review\ReviewDepth;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * Recording displayed pages, and the unseen required pages a verdict, decision or publication waits on.
  *
- * @covers \OCA\Dossiq\Woo\WooPagesSeen
+ * @covers \OCA\Dossiq\Review\PagesSeen
  *
  * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
-class WooPagesSeenTest extends TestCase {
+class PagesSeenTest extends TestCase {
 
 	/**
 	 * The store.
@@ -52,9 +52,9 @@ class WooPagesSeenTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->store = new InMemoryRegister();
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'in-scope', 'pagesRequired' => [6, 7], 'pagesSeen' => [['page' => 6, 'by' => 'a']]]);
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'r-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'in-scope', 'pagesRequired' => [1], 'pagesSeen' => [['page' => 1, 'by' => 'b']]]);
-		$this->store->seed(schema: 'wooDocumentReview', uuid: 'r-3', row: ['case' => 'case-x', 'documentRef' => 'doc-3', 'relevance' => 'out-of-scope', 'pagesRequired' => [1, 2]]);
+		$this->store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'in-scope', 'pagesRequired' => [6, 7], 'pagesSeen' => [['page' => 6, 'by' => 'a']]]);
+		$this->store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'in-scope', 'pagesRequired' => [1], 'pagesSeen' => [['page' => 1, 'by' => 'b']]]);
+		$this->store->seed(schema: 'documentReview', uuid: 'r-3', row: ['case' => 'case-x', 'documentRef' => 'doc-3', 'relevance' => 'out-of-scope', 'pagesRequired' => [1, 2]]);
 	}//end setUp()
 
 	/**
@@ -62,19 +62,19 @@ class WooPagesSeenTest extends TestCase {
 	 *
 	 * @param bool $configured Whether the review schema is configured.
 	 *
-	 * @return WooPagesSeen The service.
+	 * @return PagesSeen The service.
 	 */
-	private function pagesSeen(bool $configured = true): WooPagesSeen {
+	private function pagesSeen(bool $configured = true): PagesSeen {
 		$config = ['register' => 'dossiq'];
 		if ($configured === true) {
-			$config['woo_review_schema'] = 'wooDocumentReview';
+			$config['document_review_schema'] = 'documentReview';
 		}
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 
-		return new WooPagesSeen(reviews: new WooDocumentReviews(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)), depth: new WooReviewDepth());
+		return new PagesSeen(reviews: new DocumentRelevance(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)), depth: new ReviewDepth());
 	}//end pagesSeen()
 
 	/**
@@ -139,7 +139,7 @@ class WooPagesSeenTest extends TestCase {
 			$pagesSeen->assertAllSeen(caseId: 'case-x');
 			$this->fail('The decision did not wait for page 7.');
 		} catch (RefusedException $e) {
-			$this->assertSame('woo-pages-unseen', $e->getRule());
+			$this->assertSame('review-pages-unseen', $e->getRule());
 			$this->assertSame(409, $e->getStatus());
 		}
 

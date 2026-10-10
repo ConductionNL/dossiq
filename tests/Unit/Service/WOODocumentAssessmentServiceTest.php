@@ -457,7 +457,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 			$store->seed(schema: 'document', uuid: 'doc-'.$n, row: ['case' => 'case-x', 'title' => 'Document '.$n]);
 			// doc-9 has no review at all yet, which reads as unmarked too.
 			if ($n < 9) {
-				$store->seed(schema: 'wooDocumentReview', uuid: 'review-'.$n, row: ['case' => 'case-x', 'documentRef' => 'doc-'.$n, 'relevance' => $relevance]);
+				$store->seed(schema: 'documentReview', uuid: 'review-'.$n, row: ['case' => 'case-x', 'documentRef' => 'doc-'.$n, 'relevance' => $relevance]);
 			}
 
 			if ($n < 4) {
@@ -467,7 +467,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		// An out-of-scope document that also carries a verdict changes nothing.
 		$store->seed(schema: 'wooDocumentAssessment', uuid: 'a-7', row: ['caseRef' => 'case-x', 'documentRef' => 'doc-7', 'classification' => 'openbaar']);
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview'];
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -478,7 +478,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 			$this->logger,
 			null,
 			null,
-			new \OCA\Dossiq\Woo\WooDocumentReviews(settingsService: $settings, logger: $this->logger),
+			new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger),
 		);
 	}//end relevanceCase()
 
@@ -522,19 +522,19 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$store = new \OCA\Dossiq\Tests\Support\InMemoryRegister();
 		$store->seed(schema: 'document', uuid: 'doc-1', row: ['case' => 'case-x']);
 		$store->seed(schema: 'document', uuid: 'doc-2', row: ['case' => 'case-x']);
-		$store->seed(schema: 'wooDocumentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'in-scope']);
-		$store->seed(schema: 'wooDocumentReview', uuid: 'r-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'unmarked']);
+		$store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'in-scope']);
+		$store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'unmarked']);
 		$store->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['caseRef' => 'case-x', 'documentRef' => 'doc-1', 'classification' => 'openbaar']);
 		$store->seed(schema: 'wooDocumentAssessment', uuid: 'a-2', row: ['caseRef' => 'case-x', 'documentRef' => 'doc-2', 'classification' => 'openbaar']);
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'woo_review_schema' => 'wooDocumentReview'];
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
-		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, new \OCA\Dossiq\Woo\WooDocumentReviews(settingsService: $settings, logger: $this->logger));
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger));
 
 		$this->assertFalse($service->allDocumentsAssessed(caseId: 'case-x'));
 
-		$store->rows['wooDocumentReview']['r-2']['relevance'] = 'out-of-scope';
+		$store->rows['documentReview']['r-2']['relevance'] = 'out-of-scope';
 		$this->assertTrue($service->allDocumentsAssessed(caseId: 'case-x'));
 	}//end testTheDecisionWaitsForUnmarkedDocuments()
 }//end class
