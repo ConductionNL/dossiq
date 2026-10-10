@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\TenantOnboardingService
  * @covers \OCA\Dossiq\Service\TenantService
  * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  */
 class TenantOnboardingControllerTest extends TestCase {
 	use MakesTenantAnchors;
