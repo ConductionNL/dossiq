@@ -20,7 +20,7 @@
  * the sibling the surface is missing rather than empty. That is why no
  * placement declares `requiredApp` (see hoursLeafManifest.spec.js).
  *
- * @spec openspec/changes/projects-from-planninq-on-the-case/tasks.md
+ * @spec openspec/specs/case-linked-projects/spec.md
  * @spec openspec/specs/case-documents-merge-via-filinq-leaf/spec.md
  */
 
@@ -85,7 +85,7 @@ describe('sibling leaves on the case page', () => {
 		expect(caseDetail.config.schema).toBe('case')
 	})
 
-	// @spec openspec/changes/projects-from-planninq-on-the-case/specs/case-linked-projects/spec.md#a-handler-starts-a-project-from-a-case
+	// @spec openspec/specs/case-linked-projects/spec.md#a-handler-starts-a-project-from-a-case
 	it('places planninq-projects on the case page, in the grid', () => {
 		expect(placedInTheGrid('planninq-projects').title).toBe('Projects')
 	})

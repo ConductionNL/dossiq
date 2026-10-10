@@ -356,7 +356,7 @@ change that already covers the area.
 
 | row | owner | covering artefact | dossiq task |
 |---|---|---|---|
-| 1.1 | portaliq | `dossiq/openspec/changes/leaf-integrations/proposal.md (the Forms half;` | caseType.intakeFormRef and FormsIntakeService (leaf-integrations); the portal journey targets the same intake |
+| 1.1 | portaliq | `dossiq/openspec/specs/leaf-integrations/spec.md (the Forms half;` | caseType.intakeFormRef and FormsIntakeService (leaf-integrations); the portal journey targets the same intake |
 | 1.5 | integriq | `integriq/openspec/changes/mail-intake-creates-cases/proposal.md` | accept the start-a-case offer (mailObjectTemplate from leaf-integrations) and the link offer |
 | 2.1 | openregister | `openregister/openspec/changes/generated-identifier/proposal.md` (merged #3785) | `case-number-and-favourites`: case.identifier and complaint.complaintNumber declare x-openregister-generated; ComplaintService's own counter retired |
 | 2.19 | openregister | `openregister/openspec/changes/favourites-and-recent/proposal.md` (merged #3766) | `case-number-and-favourites`: a star on the case and on every row, Favourites and Recently opened chips on Cases and the same two as dashboard tiles |
