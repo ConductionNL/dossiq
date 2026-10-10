@@ -1,5 +1,5 @@
 {
-  "ceiling": 257,
+  "ceiling": 261,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -1834,6 +1834,34 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`searchRowsOrNone()` answers `return []` when a ZTC enrichment search fails; the catch logs at warning naming the schema. It moved out of ZtcController (method-decomposition), where the same catches lived outside lib/Service and were not counted; a failed search leaves one cross-reference list unenriched on a read instead of failing the read."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "sources",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`sources()` answers `return null` when the source register of a declared record import cannot be read; the catch logs at error naming the import key. CaseRecordImport reads null as a failure (\"The source records could not be read.\") and imports nothing, so a failed read is never reported as zero records."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "casesBySource",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`casesBySource()` answers `return null` when the existing cases of the case type cannot be read; the catch logs at warning. CaseRecordImport stops the run and lists the failure, because importing over an unread list would write a half-finished case a second time."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "caseType",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`caseType()` answers `return null` when the case type named to the import cannot be read; the catch logs at warning naming it, and the import answers no case type and runs nothing."
+    },
+    {
+      "file": "lib/Service/Term/TermCarryOver.php",
+      "method": "statutoryInstance",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`statutoryInstance()` answers `return null` when the case's term instances cannot be read; `carry()` then answers the outcome `missing` and changes no term, so the case keeps the term its create bound. It does not log; the import reports the outcome."
     }
   ]
 }

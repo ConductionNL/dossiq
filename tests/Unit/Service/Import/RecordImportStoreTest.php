@@ -137,7 +137,7 @@ class RecordImportStoreTest extends TestCase {
 
 		self::assertSame(['rec-1' => 'case-1'], $this->store()->casesBySource(objectService: $register, caseType: $type, import: ['matchField' => 'origin.id']));
 		self::assertSame([], $this->store()->casesBySource(objectService: $register, caseType: $type, import: []));
-		self::assertSame([], $this->store()->casesBySource(objectService: $this->refusing(), caseType: $type, import: ['matchField' => 'origin.id']));
+		self::assertNull($this->store()->casesBySource(objectService: $this->refusing(), caseType: $type, import: ['matchField' => 'origin.id']), 'an unread list is not an empty one');
 	}//end testEarlierCasesAreFoundByTheirSourceUuid()
 
 	/**
