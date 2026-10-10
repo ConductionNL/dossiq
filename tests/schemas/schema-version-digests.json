@@ -1112,12 +1112,12 @@
         "digest": "c97c6b25439b0f6af45d26b90dc6ad17d5daddc21f35e4c4c0888b8c61239e01"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::gezinsplan": {
-        "version": "1.2.0",
-        "digest": "b906a20caa5f915d0ca7354791424db4801d803567b316b45ef00acdd78ee597"
+        "version": "1.2.1",
+        "digest": "ab535277b6c037ca667fa0ff581e40a623ecb0e2ac8c8299a6b3f4cc61034919"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::indicatiestelling": {
-        "version": "1.2.0",
-        "digest": "99f59176dd6c261bc14cb5799b15d265a89a533ba3b88070e7de5bb188fc66e4"
+        "version": "1.2.1",
+        "digest": "0fc2aee9d3a576c1c6a60aa809372bb041eae3f496417d0234d8effb852fb6b7"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::intervention": {
         "version": "1.1.1",
@@ -1136,8 +1136,8 @@
         "digest": "263e846261b0ad0aa8666a43d43b74c32c95eb7b55521eb26800e13c76f29b74"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::reIntegratieTraject": {
-        "version": "1.1.0",
-        "digest": "4fad19e409e9a3630b936f6e78b2d7909a002031eb2feacfde0d5d8c40cc0ba0"
+        "version": "1.1.1",
+        "digest": "de8cb58bdbd44cd9a6aeb6a3ce4947b1cbae9c5e6bfe8479c66e4c1da927de62"
     },
     "lib/Settings/register.d/50-sociaal-domein.json::sociaalDomeinAuditLog": {
         "version": "1.2.1",

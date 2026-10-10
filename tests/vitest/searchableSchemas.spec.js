@@ -35,65 +35,30 @@ const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 const FRAGMENT_DIR = path.resolve(__dirname, '../../lib/Settings/register.d')
 
 /**
- * Case-owned records that wait on OpenRegister before they can link to their
- * case (unified-search-opens-every-hit-in-dossiq, tasks 2.2 and 2.3).
+ * Case-owned records whose case field is not yet shown to hold a bare case
+ * uuid (unified-search-opens-every-hit-in-dossiq, task 2.1).
  *
- * The deep link for these is `/apps/dossiq/cases/{<case field>}`, and
- * OpenRegister's unified search builds the link from the hit's metadata only
- * (`ObjectSearchResultFormatter::format()` passes `@self` plus uuid, register
- * and schema), so a template naming an object property is never filled. Until
- * openregister hands the formatter the object's own properties they stay as
- * they are: searchable, opening OpenRegister's own page. The list may only
- * shrink: each entry leaves it for a deep link or `searchable: false`.
+ * Their field is a plain string, and no writer in dossiq's own code shows what
+ * goes in it (the rest are linked through `/apps/dossiq/cases/{<field>}` since
+ * openregister#4555 hands the search formatter the object's own properties).
+ * A read of a seeded or live object decides each one: a bare uuid gets a deep
+ * link, anything else `searchable: false`. Until then they stay searchable and
+ * open OpenRegister's own page. The list may only shrink.
  */
 const PENDING_CASE_LINK = [
-	'aanvullingsverzoek',
-	'adviceRequest',
-	'advisoryReport',
-	'appealDecision',
-	'beschikking',
-	'case-location',
 	'caseBerichtenboxMessage',
 	'caseCustody',
-	'caseDocument',
 	'caseFederatedActivity',
 	'caseFederatedShare',
-	'caseIncident',
-	'caseObject',
-	'caseProperty',
 	'caseShare',
 	'caseTakeover',
-	'consultation',
-	'contactmoment',
-	'customerContact',
-	'deadlineInstance',
-	'decision',
 	'dispatch',
 	'fieldInspection',
-	'gezinsplan',
-	'handhavingsactie',
-	'hearingSession',
-	'indicatiestelling',
-	'inspectieRapport',
-	'inspectionChecklistRun',
-	'inspectionResult',
 	'mailIntakeEntry',
 	'mandateEscalation',
 	'milestoneRecord',
-	'objection',
-	'obligation',
-	'plannedAction',
 	'portaalBericht',
-	'reIntegratieTraject',
-	'result',
-	'role',
-	'samenwerkverzoek',
-	'subsidieAanvraag',
-	'supplierContract',
-	'supplierTender',
 	'toestemming',
-	'wooDocumentAssessment',
-	'zaakinformatieobject',
 ]
 
 /**

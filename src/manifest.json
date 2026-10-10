@@ -8190,6 +8190,192 @@
 			"schemaSlug": "caseType",
 			"urlTemplate": "/apps/dossiq/settings/case-types/{uuid}",
 			"displayName": "Case type"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "aanvullingsverzoek",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Request for more information"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "adviceRequest",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Advice request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "advisoryReport",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Advisory report"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "appealDecision",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Appeal decision"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "beschikking",
+			"urlTemplate": "/apps/dossiq/cases/{caseId}",
+			"displayName": "Decision letter"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "case-location",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case location"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseDocument",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Document on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseIncident",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Incident on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseObject",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case object"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseProperty",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case property"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "consultation",
+			"urlTemplate": "/apps/dossiq/cases/{parentCase}",
+			"displayName": "Consultation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "contactmoment",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Contact moment"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "customerContact",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Customer contact"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "deadlineInstance",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Term on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "decision",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Decision"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "handhavingsactie",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Enforcement action"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "hearingSession",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Hearing session"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "inspectieRapport",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Inspection report"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "inspectionChecklistRun",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Inspection checklist"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "inspectionResult",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Inspection result"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "objection",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Objection"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "obligation",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Obligation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "plannedAction",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Planned action"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "result",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case result"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "role",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Role on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "samenwerkverzoek",
+			"urlTemplate": "/apps/dossiq/cases/{caseId}",
+			"displayName": "Collaboration request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "subsidieAanvraag",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Subsidy application"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "supplierContract",
+			"urlTemplate": "/apps/dossiq/cases/{caseRef}",
+			"displayName": "Supplier contract"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "supplierTender",
+			"urlTemplate": "/apps/dossiq/cases/{caseRef}",
+			"displayName": "Supplier tender"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "wooDocumentAssessment",
+			"urlTemplate": "/apps/dossiq/cases/{caseRef}",
+			"displayName": "Woo document assessment"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "zaakinformatieobject",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Document on a case"
 		}
 	]
 }
