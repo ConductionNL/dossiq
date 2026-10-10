@@ -257,7 +257,7 @@ export default {
 		 *
 		 * @return {string} 'ranked' or 'self'.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		listMode() {
 			return resolveListMode(this.sortMode, this.queueState)
@@ -268,7 +268,7 @@ export default {
 		 *
 		 * @return {boolean} True when the queue failed while Urgency is chosen.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		urgencyFellBack() {
 			return this.sortMode === 'urgency' && this.queueState === 'failed'
@@ -281,7 +281,7 @@ export default {
 		 *
 		 * @return {{[key: string]: Array<string>}} The filters.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		routeFilters() {
 			const query = (this.$route && this.$route.query) || {}
@@ -305,7 +305,7 @@ export default {
 		 *
 		 * @return {{rows: Array<object>, pagination: object}} The page.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		rankedPageView() {
 			return pageOfRows(
@@ -328,7 +328,7 @@ export default {
 		 *
 		 * @return {object} Props for CnIndexPage.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		listBinding() {
 			if (this.listMode === 'self') {
@@ -488,7 +488,7 @@ export default {
 		 * to the self-fetching list ordered by deadline, and says so.
 		 *
 		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		async fetchWorkQueue() {
 			try {
@@ -511,7 +511,7 @@ export default {
 		 * @param {object} store The object store.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		async fetchCaseSchema(store) {
 			try {
@@ -526,7 +526,7 @@ export default {
 		 *
 		 * @param {string} value The search term.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		onRankedSearch(value) {
 			if (this.listMode !== 'ranked') {
@@ -541,7 +541,7 @@ export default {
 		 *
 		 * @param {{key: string, values: unknown}} payload The changed filter.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		onRankedFilter(payload) {
 			if (this.listMode !== 'ranked' || !payload || !payload.key) {
@@ -557,7 +557,7 @@ export default {
 		/**
 		 * The ranked list's Clear all: search and every filter.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		onRankedClear() {
 			if (this.listMode !== 'ranked') {
@@ -573,7 +573,7 @@ export default {
 		 *
 		 * @param {number} page The 1-based page.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		onRankedPage(page) {
 			if (this.listMode === 'ranked') {

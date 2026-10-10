@@ -95,7 +95,7 @@ class DsoCaseService {
 	 * The case is written in the shape the case schema accepts: `caseType` is
 	 * the uuid of the case type the activity mapping names, `status` is that
 	 * type's initial status type, and `dsoStatus` is `submitted`, the DSO-LV
-	 * status DsoDeadlineJob selects on. A record that names no case type that
+	 * status the DSO term timer (DsoDeadlineTimer) arms on. A record that names no case type that
 	 * resolves writes nothing and throws: a case on a guessed type is worse
 	 * than a verzoek still waiting in integriq's list.
 	 *

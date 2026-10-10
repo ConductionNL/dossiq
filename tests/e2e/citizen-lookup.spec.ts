@@ -220,7 +220,7 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 		}
 	})
 
-	// @e2e openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#a-member-of-the-group-receives-them
+	// @e2e openspec/specs/security-hardening/spec.md#a-member-of-the-group-receives-them
 	// @e2e security-hardening::a-member-of-the-group-receives-them
 	//
 	// THE CONTROL, AND IT RUNS FIRST. An absent field and an empty fixture are
@@ -241,7 +241,7 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 		}
 	})
 
-	// @e2e openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#a-call-handler-outside-the-group-receives-the-lookup-without-the-four-fields
+	// @e2e openspec/specs/security-hardening/spec.md#a-call-handler-outside-the-group-receives-the-lookup-without-the-four-fields
 	// @e2e security-hardening::a-call-handler-outside-the-group-receives-the-lookup-without-the-four-fields
 	//
 	// BREAKS IF: `redactForCaller` stops being called, stops knowing a key, or
@@ -268,7 +268,7 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 		}
 	})
 
-	// @e2e openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#a-permitted-lookup-leaves-a-row-naming-the-account-and-the-citizen
+	// @e2e openspec/specs/security-hardening/spec.md#a-permitted-lookup-leaves-a-row-naming-the-account-and-the-citizen
 	// @e2e security-hardening::a-permitted-lookup-leaves-a-row-naming-the-account-and-the-citizen
 	test('a permitted lookup leaves a row naming the account and the citizen', async () => {
 		await lookup(officerApi as APIRequestContext)
@@ -284,7 +284,7 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 		}).toPass({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#a-refused-lookup-leaves-a-row-too
+	// @e2e openspec/specs/security-hardening/spec.md#a-refused-lookup-leaves-a-row-too
 	// @e2e security-hardening::a-refused-lookup-leaves-a-row-too
 	//
 	// THE HALF THAT CATCHES THE ENUMERATION. An account refused four hundred
@@ -307,7 +307,7 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 		}).toPass({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#an-account-over-the-limit-is-refused
+	// @e2e openspec/specs/security-hardening/spec.md#an-account-over-the-limit-is-refused
 	// @e2e security-hardening::an-account-over-the-limit-is-refused
 	//
 	// BREAKS IF: the `UserRateLimit` attribute is dropped from a lookup method,
