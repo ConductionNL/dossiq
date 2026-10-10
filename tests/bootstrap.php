@@ -513,8 +513,8 @@ if (class_exists('\\OCA\\Shillinq\\Integration\\PaymentRequestLeafProvider') ===
 // Shillinq's invoice command (dossiq-delivers-nothing phase 5, decision 174).
 // ShillinqIntegrationService raises it by name so dossiq installs without
 // shillinq; without this stub only the absent branch could ever run.
-if (class_exists('\\OCA\\Shillinq\\Event\\InvoiceIngestRequestedEvent') === false) {
-	include_once __DIR__ . '/Stubs/Shillinq/Event/InvoiceIngestRequestedEvent.php';
+if (class_exists('\\OCA\\Shillinq\\Event\\BillablePeriodClosedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Event/BillablePeriodClosedEvent.php';
 }
 
 // Hermiq's oversight contract. procest resolves it by name so it stays

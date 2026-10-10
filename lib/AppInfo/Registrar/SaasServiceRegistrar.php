@@ -50,7 +50,7 @@ class SaasServiceRegistrar {
 	 */
 	public function register(IRegistrationContext $context): void {
 		// ShillinqIntegrationService is autowired since it raises shillinq's
-		// InvoiceIngestRequestedEvent in-process (dossiq-delivers-nothing phase 5,
+		// BillablePeriodClosedEvent in-process (dossiq-delivers-nothing phase 5,
 		// decision 174): no endpoint, no API key, so no config-reading factory.
 		// `shillinq_base_url` and `shillinq_api_key` are no longer read.
 		unset($context);

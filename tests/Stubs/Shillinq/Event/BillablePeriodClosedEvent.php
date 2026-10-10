@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Shillinq InvoiceIngestRequestedEvent test stub.
+ * Shillinq BillablePeriodClosedEvent test stub.
  *
  * Mirrors shillinq's real command (ConductionNL/shillinq, change
- * tenant-month-invoice-from-dossiq, `lib/Event/InvoiceIngestRequestedEvent.php`)
+ * billable-period-becomes-an-invoice, `lib/Event/BillablePeriodClosedEvent.php`)
  * verbatim, so ShillinqIntegrationService is tested against the real
  * constructor order and answer slots rather than against its own assumption
  * about them. tests/bootstrap.php loads it only when the real class is absent.
@@ -29,10 +29,10 @@ namespace OCA\Shillinq\Event;
 use OCP\EventDispatcher\Event;
 
 /**
- * Draft an invoice for the customer that carries a sibling app's reference.
+ * A billable period of an account closed; answered with a draft invoice or a refusal.
  *
  */
-final class InvoiceIngestRequestedEvent extends Event {
+final class BillablePeriodClosedEvent extends Event {
 
 	/**
 	 * The version of the answer's shape.

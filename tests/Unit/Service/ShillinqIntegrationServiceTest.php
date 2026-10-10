@@ -19,7 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\ShillinqIntegrationService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
-use OCA\Shillinq\Event\InvoiceIngestRequestedEvent;
+use OCA\Shillinq\Event\BillablePeriodClosedEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -94,7 +94,7 @@ class ShillinqIntegrationServiceTest extends TestCase {
 	public function testExportInvoiceRaisesShillinqsCommandAndReadsTheInvoice(): void {
 		$seen = null;
 		$this->dispatcher->expects($this->once())->method('dispatchTyped')->willReturnCallback(
-			static function (InvoiceIngestRequestedEvent $event) use (&$seen): void {
+			static function (BillablePeriodClosedEvent $event) use (&$seen): void {
 				$seen = $event;
 				$event->accept(invoiceId: 'inv-9', invoiceNumber: 'BIL-2026-0009');
 			}
@@ -118,7 +118,7 @@ class ShillinqIntegrationServiceTest extends TestCase {
 	 */
 	public function testARefusalIsRecordedOnTheTenantsTrail(): void {
 		$this->dispatcher->method('dispatchTyped')->willReturnCallback(
-			static function (InvoiceIngestRequestedEvent $event): void {
+			static function (BillablePeriodClosedEvent $event): void {
 				$event->refuse(error: 'No shillinq customer carries the external reference "t-1".');
 			}
 		);

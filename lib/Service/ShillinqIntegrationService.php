@@ -4,7 +4,7 @@
  * Dossiq Shillinq Integration Service
  *
  * Hands a tenant's invoiced month to shillinq. Shillinq defines the command
- * (`OCA\Shillinq\Event\InvoiceIngestRequestedEvent`, ADR-041) and its
+ * (`OCA\Shillinq\Event\BillablePeriodClosedEvent`, ADR-041) and its
  * listener drafts a BillableInvoice for the one CustomerMaster that carries
  * the dossiq tenant id as its external reference (decision 174). The answer
  * comes back on the same event object: the drafted invoice, or a refusal that
@@ -48,7 +48,7 @@ class ShillinqIntegrationService {
 	/**
 	 * Shillinq's command, resolved by name so dossiq installs without shillinq.
 	 */
-	public const INGEST_EVENT = 'OCA\\Shillinq\\Event\\InvoiceIngestRequestedEvent';
+	public const INGEST_EVENT = 'OCA\\Shillinq\\Event\\BillablePeriodClosedEvent';
 
 	/**
 	 * Constructor.
