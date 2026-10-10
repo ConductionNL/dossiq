@@ -85,7 +85,7 @@ class WooCollection {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
 	 */
 	public function report(string $caseId): array {
-		$plan = ($this->plans->find(caseId: $caseId) ?? []);
+		$plan = ($this->plans->planOf(caseId: $caseId) ?? []);
 		$custodians = array_fill_keys($this->plans->custodianNames(plan: $plan), $this->zero());
 		$systems = array_fill_keys(array_map('strval', (array)($plan['systems'] ?? [])), $this->zero());
 

@@ -82,14 +82,12 @@ class WooCollectionController extends Controller {
 	 *
 	 * @return JSONResponse `{plan, recorded}`.
 	 *
-	 * @throws RuntimeException Never past run(): it answers 503 when OpenRegister is not configured.
-	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
 	#[NoAdminRequired]
 	public function plan(string $id): JSONResponse {
 		return $this->run(caseId: $id, change: false, step: function () use ($id): JSONResponse {
-			$plan = $this->plans->find(caseId: $id);
+			$plan = $this->plans->planOf(caseId: $id);
 			return new JSONResponse(['plan' => $plan, 'recorded' => ($this->plans->recorded(caseId: $id) !== null)]);
 		});
 	}//end plan()

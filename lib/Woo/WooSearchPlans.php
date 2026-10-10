@@ -84,9 +84,9 @@ class WooSearchPlans {
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
-	public function find(string $caseId): ?array {
+	public function planOf(string $caseId): ?array {
 		return $this->rowOfCase(configKey: self::PLAN_SCHEMA, caseId: $caseId);
-	}//end find()
+	}//end planOf()
 
 	/**
 	 * The case's recorded plan, or null while it has none or only a draft.
@@ -98,7 +98,7 @@ class WooSearchPlans {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
 	public function recorded(string $caseId): ?array {
-		$plan = $this->find(caseId: $caseId);
+		$plan = $this->planOf(caseId: $caseId);
 		if ($plan === null || trim((string)($plan['recordedAt'] ?? '')) === '') {
 			return null;
 		}
@@ -146,7 +146,7 @@ class WooSearchPlans {
 		$plan['recordedBy'] = $userId;
 		$plan['recordedAt'] = gmdate('Y-m-d\TH:i:s\Z');
 
-		$existing = $this->find(caseId: $caseId);
+		$existing = $this->planOf(caseId: $caseId);
 		$saved = $this->save(configKey: self::PLAN_SCHEMA, row: $plan, uuid: $this->idOf(row: (array)$existing));
 
 		$configuration = ($this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $caseId) ?? []);

@@ -112,7 +112,7 @@ class WooSearchPlansTest extends TestCase {
 	public function testADraftPlanCountsAsNone(): void {
 		$this->register->seed('wooSearchPlan', 'draft-1', ['case' => self::CASE_ID, 'terms' => 'x']);
 
-		self::assertNotNull($this->plans->find(caseId: self::CASE_ID));
+		self::assertNotNull($this->plans->planOf(caseId: self::CASE_ID));
 		self::assertNull($this->plans->recorded(caseId: self::CASE_ID));
 	}//end testADraftPlanCountsAsNone()
 
@@ -142,7 +142,7 @@ class WooSearchPlansTest extends TestCase {
 
 		$this->plans->startFrom(caseId: self::CASE_ID, from: self::EARLIER);
 
-		$draft = $this->plans->find(caseId: self::CASE_ID);
+		$draft = $this->plans->planOf(caseId: self::CASE_ID);
 		self::assertSame(['Wethouder Ruimte', 'Afdeling Vergunningen'], $this->plans->custodianNames(plan: $draft));
 		self::assertSame(['files', 'microsoft365'], $draft['systems']);
 		self::assertSame('Stationsweg', $draft['terms']);
