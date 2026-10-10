@@ -291,6 +291,11 @@ class WooRequestIntake {
 			// the type's processingDeadline (P28D).
 			'startDate' => date('Y-m-d'),
 			'portalSubject' => $subjectRef,
+			// THE PARTY THE CASE BELONGS TO, typed as portaliq's mandates name
+			// it. The assertion carries the subject only, so a request is the
+			// person's own until portaliq signs a company or a mandate into it
+			// (site-business-and-authorisation D2). Never a BSN.
+			'portalParty' => 'subject:' . $subjectRef,
 			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
 			'wooRequest' => $wooRequest,
 		];

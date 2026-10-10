@@ -96,4 +96,20 @@ describe('sibling leaves on the case page', () => {
 			'Merge into one PDF',
 		)
 	})
+
+	// @spec openspec/changes/portal-change-proposals-on-the-case/specs/portal-contribution/spec.md
+	it('places portaliq-change-proposal-queue as the Proposals tab of the case panels', () => {
+		const widget = caseDetail.config.widgets.find(
+			(w) => w.integrationId === 'portaliq-change-proposal-queue',
+		)
+		expect(widget.type).toBe('integration')
+		expect(widget.requiredApp).toBeUndefined()
+		const panels = caseDetail.config.widgets.find((w) => w.id === 'case-panels')
+		const tab = panels.content.tabs.find((t) => t.widgetId === widget.id)
+		expect(tab.label).toBe('Proposals')
+		expect(
+			caseDetail.config.layout.find((l) => l.widgetId === widget.id),
+			'a tab, not a grid panel',
+		).toBeUndefined()
+	})
 })

@@ -1403,6 +1403,10 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/77-portaliq-change-proposals.json::case": {
+        "version": "",
+        "digest": "62543aac920e02e7b05c31d311eb11909a0fea3e3b13a3d4a0fbd86af5afbe7c"
+    },
     "lib/Settings/register.d/79-planninq-projects-leaf.json::case": {
         "version": "",
         "digest": "a03ddc03548b6f4f1e1b67d743e8eb531b859ee26edabf38bc67d2d223249af9"
@@ -1434,6 +1438,14 @@
     "lib/Settings/register.d/84-woo-refusal-grounds.json::wooRefusalGround": {
         "version": "1.0.0",
         "digest": "c6717a0258ebeb74fddf9f8e85ed3be6efa1ed0a0c8ccbf9207140e469125593"
+    },
+    "lib/Settings/register.d/85-permits.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/85-permits.json::permit": {
+        "version": "1.0.0",
+        "digest": "75ebb2f39470202b1281c5d603b9c8fbb65b19583e54bdfb901bb3458120d98d"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",

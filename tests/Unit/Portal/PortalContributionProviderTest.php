@@ -428,8 +428,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->fail('the citizen contribution must declare the page ' . $id);
 	}//end citizenPage()
 
-	public function testAdvertisesFourAudiences(): void {
-		$this->assertSame(['supplier', 'citizen', 'client', 'inspector'], $this->provider->getAudiences());
+	public function testAdvertisesFiveAudiences(): void {
+		$this->assertSame(['supplier', 'citizen', 'client', 'business', 'inspector'], $this->provider->getAudiences());
 	}
 
 	public function testPrimaryAudienceFallbackIsSupplier(): void {
@@ -474,7 +474,7 @@ class PortalContributionProviderTest extends TestCase {
 		// `vragenAanU` is what the organisation still needs from the resident
 		// (site-resident-portal-design D1), between their cases and their
 		// messages.
-		$this->assertSame(['mijnZaken', 'vragenAanU', 'berichten', 'verzoeken'], $ids);
+		$this->assertSame(['mijnZaken', 'vragenAanU', 'berichten', 'verzoeken', 'mijnVergunningen'], $ids);
 
 		// Three creates and the one update a resident makes on their own
 		// case (dossiq#3152). The two creates that name a case were deferred until Portaliq
@@ -482,7 +482,7 @@ class PortalContributionProviderTest extends TestCase {
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
 		$this->assertSame(
-			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'startWooVerzoek', 'startWooVerzoekAlgemeen'],
+			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'proposeCaseChange', 'startWooVerzoek', 'startWooVerzoekAlgemeen', 'changePermitPlate'],
 			$actionIds
 		);
 	}

@@ -1,0 +1,435 @@
+{
+  "_note": "portal-permits-as-held-products D1. A permit a resident holds, as portaliq's products collection reads it (kind products, theme parkeren), and issuesPermit on the case type that grants it. Seeds the two parking case types. Issuing (D2) waits on Q-dossiq-L2-4.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "permit"
+        ]
+      }
+    },
+    "schemas": {
+      "permit": {
+        "slug": "permit",
+        "title": "Permit",
+        "version": "1.0.0",
+        "description": "A permit a resident holds, issued from a decided case: what it is, for whom, from when until when, and the plate and address enforcement reads.",
+        "required": [
+          "title",
+          "kind",
+          "portalSubject"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "What the permit is called, as the holder reads it."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "parkeren-bewoner",
+              "parkeren-bezoeker",
+              "parkeren-bedrijf"
+            ],
+            "title": "Permit kind",
+            "description": "Which kind of permit this is."
+          },
+          "theme": {
+            "type": "string",
+            "title": "Theme",
+            "description": "The portal theme the permit is shown under, for example parkeren."
+          },
+          "portalSubject": {
+            "type": "string",
+            "visible": false,
+            "title": "Holder",
+            "description": "The portal subject reference of the resident who holds the permit."
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case",
+            "description": "The case the permit was issued from."
+          },
+          "decision": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Decision",
+            "description": "The decision the permit was issued under."
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid from",
+            "description": "The first day the permit is valid."
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid until",
+            "description": "The last day the permit is valid."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "revoked"
+            ],
+            "default": "active",
+            "title": "Status",
+            "description": "Whether the permit is in force, suspended or revoked."
+          },
+          "kenteken": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{6}$",
+            "title": "Licence plate",
+            "description": "The licence plate the permit is for, stored without dashes."
+          },
+          "adres": {
+            "type": "string",
+            "title": "Address",
+            "description": "The address the permit belongs to."
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "issuesPermit": {
+            "type": "object",
+            "title": "Issues a permit",
+            "description": "When a case of this type is granted, the permit the resident then holds.",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "title": "Permit kind",
+                "description": "Which kind of permit a granted case issues."
+              },
+              "theme": {
+                "type": "string",
+                "title": "Theme",
+                "description": "The portal theme the permit is shown under."
+              },
+              "titleTemplate": {
+                "type": "string",
+                "title": "Title template",
+                "description": "The permit title, with case fields in double braces."
+              },
+              "detailsFromCase": {
+                "type": "object",
+                "title": "Details from the case",
+                "description": "Which case property fills each permit field, for example kenteken."
+              },
+              "changeCaseType": {
+                "type": "string",
+                "format": "uuid",
+                "title": "Change case type",
+                "description": "The case type a request to change the permit opens."
+              },
+              "changesPlateOf": {
+                "type": "string",
+                "title": "Changes the plate of",
+                "description": "Set on a change case type: the case changes the licence plate of the permit it names."
+              }
+            }
+          }
+        }
+      }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseType",
+          "version": "1.1.0",
+          "slug": "parkeervergunning-bewoners"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000001",
+        "uuid": "5e7a1000-0000-4000-a000-000000000001",
+        "identifier": "parkeervergunning-bewoners",
+        "title": "Parkeervergunning bewoners",
+        "description": "Een parkeervergunning voor een bewoner van een vergunninggebied.",
+        "processingDeadline": "P8W",
+        "confidentiality": "intern",
+        "isDraft": false,
+        "internalOrExternal": "extern",
+        "origin": "indienen",
+        "category": "Vergunningen",
+        "initialStatus": "5e7a1000-0000-4000-a000-000000000101",
+        "issuesPermit": {
+          "kind": "parkeren-bewoner",
+          "theme": "parkeren",
+          "titleTemplate": "Bewonersvergunning {{zone}}",
+          "detailsFromCase": {
+            "kenteken": "kenteken",
+            "adres": "adres"
+          },
+          "changeCaseType": "5e7a1000-0000-4000-a000-000000000002"
+        }
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseType",
+          "version": "1.1.0",
+          "slug": "kenteken-wijzigen-parkeervergunning"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000002",
+        "uuid": "5e7a1000-0000-4000-a000-000000000002",
+        "identifier": "kenteken-wijzigen-parkeervergunning",
+        "title": "Kenteken wijzigen parkeervergunning",
+        "description": "Een nieuw kenteken op een parkeervergunning die u al hebt.",
+        "processingDeadline": "P2W",
+        "confidentiality": "intern",
+        "isDraft": false,
+        "internalOrExternal": "extern",
+        "origin": "indienen",
+        "category": "Vergunningen",
+        "initialStatus": "5e7a1000-0000-4000-a000-000000000201",
+        "issuesPermit": {
+          "kind": "parkeren-bewoner",
+          "theme": "parkeren",
+          "changesPlateOf": "permit"
+        }
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "parkeervergunning-bewoners-ontvangen"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000101",
+        "uuid": "5e7a1000-0000-4000-a000-000000000101",
+        "name": "Ontvangen",
+        "description": "Uw aanvraag is binnen.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "order": 1,
+        "isFinal": false,
+        "role": "intake",
+        "publicLabel": "Ontvangen",
+        "publicDescription": "Uw aanvraag is binnen."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "parkeervergunning-bewoners-in-behandeling"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000102",
+        "uuid": "5e7a1000-0000-4000-a000-000000000102",
+        "name": "In behandeling",
+        "description": "Wij beoordelen uw aanvraag.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "order": 2,
+        "isFinal": false,
+        "role": "in-progress",
+        "publicLabel": "In behandeling",
+        "publicDescription": "Wij beoordelen uw aanvraag."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "parkeervergunning-bewoners-afgehandeld"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000103",
+        "uuid": "5e7a1000-0000-4000-a000-000000000103",
+        "name": "Afgehandeld",
+        "description": "Wij hebben op uw aanvraag besloten.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "order": 3,
+        "isFinal": true,
+        "role": "closed",
+        "publicLabel": "Afgehandeld",
+        "publicDescription": "Wij hebben op uw aanvraag besloten."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "parkeervergunning-bewoners-verleend"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000111",
+        "uuid": "5e7a1000-0000-4000-a000-000000000111",
+        "name": "Verleend",
+        "description": "De vergunning is verleend.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P1Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "parkeervergunning-bewoners-geweigerd"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000112",
+        "uuid": "5e7a1000-0000-4000-a000-000000000112",
+        "name": "Geweigerd",
+        "description": "De vergunning is geweigerd.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P1Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "kenteken-wijzigen-parkeervergunning-ontvangen"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000201",
+        "uuid": "5e7a1000-0000-4000-a000-000000000201",
+        "name": "Ontvangen",
+        "description": "Uw aanvraag is binnen.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000002",
+        "order": 1,
+        "isFinal": false,
+        "role": "intake",
+        "publicLabel": "Ontvangen",
+        "publicDescription": "Uw aanvraag is binnen."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "kenteken-wijzigen-parkeervergunning-in-behandeling"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000202",
+        "uuid": "5e7a1000-0000-4000-a000-000000000202",
+        "name": "In behandeling",
+        "description": "Wij beoordelen uw aanvraag.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000002",
+        "order": 2,
+        "isFinal": false,
+        "role": "in-progress",
+        "publicLabel": "In behandeling",
+        "publicDescription": "Wij beoordelen uw aanvraag."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "kenteken-wijzigen-parkeervergunning-afgehandeld"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000203",
+        "uuid": "5e7a1000-0000-4000-a000-000000000203",
+        "name": "Afgehandeld",
+        "description": "Wij hebben op uw aanvraag besloten.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000002",
+        "order": 3,
+        "isFinal": true,
+        "role": "closed",
+        "publicLabel": "Afgehandeld",
+        "publicDescription": "Wij hebben op uw aanvraag besloten."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "kenteken-wijzigen-parkeervergunning-verleend"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000211",
+        "uuid": "5e7a1000-0000-4000-a000-000000000211",
+        "name": "Verleend",
+        "description": "De vergunning is verleend.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000002",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P1Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "kenteken-wijzigen-parkeervergunning-geweigerd"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000212",
+        "uuid": "5e7a1000-0000-4000-a000-000000000212",
+        "name": "Geweigerd",
+        "description": "De vergunning is geweigerd.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000002",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P1Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "parkeervergunning-bewoners-ingetrokken"
+        },
+        "id": "5e7a1000-0000-4000-a000-000000000113",
+        "uuid": "5e7a1000-0000-4000-a000-000000000113",
+        "name": "Ingetrokken",
+        "description": "De vergunning is ingetrokken.",
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P1Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "parkeervergunning-bewoners-kenteken"
+        },
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "name": "kenteken",
+        "definition": "Kenteken",
+        "description": "Het kenteken van de auto waarvoor u de vergunning aanvraagt.",
+        "propertyType": "string",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "parkeervergunning-bewoners-adres"
+        },
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "name": "adres",
+        "definition": "Adres",
+        "description": "Het adres in het vergunninggebied waar u woont.",
+        "propertyType": "string",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "parkeervergunning-bewoners-zone"
+        },
+        "caseType": "5e7a1000-0000-4000-a000-000000000001",
+        "name": "zone",
+        "definition": "Vergunninggebied",
+        "description": "Het gebied waarvoor de vergunning geldt, bijvoorbeeld binnenstad.",
+        "propertyType": "string",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "kenteken-wijzigen-parkeervergunning-permit"
+        },
+        "caseType": "5e7a1000-0000-4000-a000-000000000002",
+        "name": "permit",
+        "definition": "Vergunning",
+        "description": "De vergunning waarop het nieuwe kenteken komt.",
+        "propertyType": "string",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "kenteken-wijzigen-parkeervergunning-nieuw-kenteken"
+        },
+        "caseType": "5e7a1000-0000-4000-a000-000000000002",
+        "name": "nieuwKenteken",
+        "definition": "Nieuw kenteken",
+        "description": "Het kenteken van uw andere auto.",
+        "propertyType": "string",
+        "isRequired": true
+      }
+    ]
+  }
+}

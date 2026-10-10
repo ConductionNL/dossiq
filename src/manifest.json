@@ -2347,6 +2347,14 @@
 						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
 					},
 					{
+						"id": "case-change-proposals",
+						"type": "integration",
+						"integrationId": "portaliq-change-proposal-queue",
+						"title": "Proposed changes",
+						"icon": "FileEditOutline",
+						"_note": "portal-change-proposals-on-the-case D2, placed as the Proposals tab of the case panels as board PtVoorstelBeoordelen draws it (Voorstellen). A resident proposes a corrected title or description in the portal (the proposeCaseChange action); portaliq queues it and renders the queue here, where the handler accepts or rejects it. Accepting writes the case as the reviewer with RBAC on, so it is refused wherever the reviewer could not edit the case by hand. dossiq keeps no copy of a proposal. A leaf whose app is absent is never registered, so without portaliq the panel is missing rather than empty, and no requiredApp is declared."
+					},
+					{
 						"id": "case-projects",
 						"type": "integration",
 						"integrationId": "planninq-projects",
@@ -2499,6 +2507,10 @@
 								{
 									"widgetId": "case-work-panel",
 									"label": "Work"
+								},
+								{
+									"widgetId": "case-change-proposals",
+									"label": "Proposals"
 								},
 								{
 									"widgetId": "case-decisions-panel",

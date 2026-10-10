@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261010120000</version>
+    <version>0.4.47-unstable.20261010130000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -664,6 +664,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  message's attachments are copied into the message folder portaliq
                  serves, once, behind a persisted key. -->
             <step>OCA\Dossiq\Repair\CopyMessageAttachmentsIntoMessageFolders</step>
+            <!-- portal-contact-channel-follows-the-resident D3: names every case
+                 whose communicationChannel is not a channel slug; writes nothing. -->
+            <step>OCA\Dossiq\Repair\ReportCommunicationChannelValues</step>
+            <!-- site-business-and-authorisation D2: a portal case filed before
+                 portalParty existed gets subject:<portalSubject>, once. -->
+            <step>OCA\Dossiq\Repair\BackfillPortalParty</step>
             <!-- gemachtigde-role-on-every-case-type: the one role type that names
                  no case type, so every case type can record a representative
                  under Awb 2:1. MUST come before SyncCaseRoleVocabulary, which
@@ -784,6 +790,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder
+              ReportCommunicationChannelValues  names existing cases whose channel is not a slug; a fresh install has none
+              BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
 
