@@ -32,8 +32,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Mcp;
 
 use OCA\Dossiq\Service\ComplaintService;
+use OCA\Dossiq\Service\Mcp\AppointmentTools;
+use OCA\Dossiq\Service\Mcp\BeschikkingTools;
 use OCA\Dossiq\Service\Mcp\CaseTools;
 use OCA\Dossiq\Service\Mcp\ReportingTools;
+use OCA\Dossiq\Service\Mcp\TermTools;
 use OCA\OpenRegister\Mcp\IMcpScannableServices;
 
 /**
@@ -60,6 +63,9 @@ class DossiqScannableServices implements IMcpScannableServices {
 			ReportingTools::class,
 			CaseTools::class,
 			ComplaintService::class,
+			TermTools::class,
+			AppointmentTools::class,
+			BeschikkingTools::class,
 		];
 	}//end getScannableServiceClasses()
 }//end class

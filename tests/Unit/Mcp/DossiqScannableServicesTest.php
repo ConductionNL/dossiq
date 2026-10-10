@@ -75,6 +75,15 @@ class DossiqScannableServicesTest extends TestCase {
 		'getWorkload' => 'user',
 		'listAvailableTransitions' => 'user',
 		'listOverdueComplaints' => 'user',
+		'transitionCase' => 'instance',
+		'reassignCase' => 'instance',
+		'completeTask' => 'instance',
+		'extendDeadline' => 'instance',
+		'pauseDeadline' => 'instance',
+		'resumeDeadline' => 'instance',
+		'scheduleAppointment' => 'external',
+		'cancelAppointment' => 'external',
+		'draftBeschikking' => 'user',
 	];
 
 	/**
@@ -118,6 +127,11 @@ class DossiqScannableServicesTest extends TestCase {
 			if (in_array($tool->name, self::READ_TOOLS, true) === true) {
 				$this->assertSame('read', $tool->scope, $where);
 				$this->assertTrue($tool->readOnlyHint, $where);
+			} else {
+				// A write never claims to be read-only: hermiq gates an
+				// ungranted write, and a false readOnlyHint is what says it is one.
+				$this->assertNotSame('read', $tool->scope, $where);
+				$this->assertFalse($tool->readOnlyHint, $where);
 			}
 
 			foreach ($method->getParameters() as $param) {
@@ -133,7 +147,7 @@ class DossiqScannableServicesTest extends TestCase {
 		}//end foreach
 
 		sort($names);
-		$expected = self::READ_TOOLS;
+		$expected = array_keys(self::REACH);
 		sort($expected);
 		$this->assertSame($expected, $names);
 	}//end testEveryToolDeclaresWhatTheScannerAndTheGrantMatrixRead()
