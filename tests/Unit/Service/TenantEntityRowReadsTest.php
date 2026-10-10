@@ -166,6 +166,7 @@ class TenantEntityRowReadsTest extends TestCase {
 			container: $container,
 			logger: $this->createMock(LoggerInterface::class),
 			billingService: $this->createMock(TenantBillingService::class),
+			tenantService: $this->createMock(\OCA\Dossiq\Service\TenantService::class),
 		);
 	}//end onboardingAnswering()
 

@@ -41,6 +41,7 @@ class TenantOnboardingServiceTest extends TestCase {
 			container: $this->createMock(ContainerInterface::class),
 			logger: $this->createMock(LoggerInterface::class),
 			billingService: $this->createMock(\OCA\Dossiq\Service\TenantBillingService::class),
+			tenantService: $this->createMock(\OCA\Dossiq\Service\TenantService::class),
 		);
 	}
 

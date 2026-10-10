@@ -50,6 +50,8 @@ class EntityAnsweringRegister {
 	 * @param bool       $files    Unused.
 	 * @param int|string $register The register.
 	 * @param int|string $schema   The schema.
+	 * @param bool       $_rbac         Ignored: this store is not scoped.
+	 * @param bool       $_multitenancy Ignored: this store is not scoped.
 	 *
 	 * @return ObjectEntity The entity.
 	 *
@@ -61,6 +63,8 @@ class EntityAnsweringRegister {
 		bool $files = false,
 		int|string $register = '',
 		int|string $schema = '',
+		bool $_rbac = true,
+		bool $_multitenancy = true,
 	): ObjectEntity {
 		$row = $this->register->find(id: $id, register: $register, schema: $schema);
 		if ($row === null) {
@@ -74,4 +78,27 @@ class EntityAnsweringRegister {
 
 		return $entity;
 	}//end find()
+
+	/**
+	 * Save one object into the shared store, as ObjectService::saveObject() does.
+	 *
+	 * @param array<string, mixed> $object        The object.
+	 * @param int|string           $register      The register.
+	 * @param int|string           $schema        The schema.
+	 * @param string|null          $uuid          The uuid, or null for a new one.
+	 * @param bool                 $_rbac         Ignored: this store is not scoped.
+	 * @param bool                 $_multitenancy Ignored: this store is not scoped.
+	 *
+	 * @return array<string, mixed> The stored row.
+	 */
+	public function saveObject(
+		array $object,
+		int|string $register = '',
+		int|string $schema = '',
+		?string $uuid = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): array {
+		return $this->register->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+	}//end saveObject()
 }//end class

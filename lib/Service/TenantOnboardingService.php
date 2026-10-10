@@ -60,6 +60,7 @@ class TenantOnboardingService {
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
 	 * @param TenantBillingService $billingService Billing-event emitter.
+	 * @param TenantService $tenantService Creates the tenant's audit anchor before onboarding starts.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 */
 	public function __construct(
@@ -68,6 +69,7 @@ class TenantOnboardingService {
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly TenantBillingService $billingService,
+		private readonly TenantService $tenantService,
 		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
 	) {
 	}//end __construct()
@@ -75,16 +77,31 @@ class TenantOnboardingService {
 	/**
 	 * Fork the default 7-step template into the tenant's onboarding list.
 	 *
-	 * @param string $tenantId Tenant UUID.
+	 * The tenant's audit anchor is made first (decision Q6), and without it no
+	 * step is written: a tenant whose audit entries have nowhere to land must
+	 * not look onboarded.
+	 *
+	 * @param string $tenantId Tenant UUID, which is the Organisation's uuid.
 	 *
 	 * @return array<int, array<string, mixed>> Created task rows.
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function createOnboarding(string $tenantId): array {
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
 			$this->logger->info('Dossiq: createOnboarding skipped — OR unavailable');
+			return [];
+		}
+
+		// When remove-casetask task 7.1 moves the onboarding steps onto the
+		// engine Task, this call moves with them: the anchor comes first.
+		if ($this->tenantService->ensureAuditAnchor(organisationUuid: $tenantId) === false) {
+			$this->logger->error(
+				'Dossiq: onboarding not started, the tenant has no audit anchor',
+				['tenantId' => $tenantId]
+			);
 			return [];
 		}
 
