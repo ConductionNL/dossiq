@@ -140,20 +140,20 @@
 				"label": "New case",
 				"icon": "Plus",
 				"type": "open-form",
-				"size": "large",
-				"columns": 2,
+				"size": "normal",
+				"columns": 1,
 				"includeFields": [
 					"caseType",
 					"title",
 					"requester",
-					"description",
-					"assignee",
-					"impact",
-					"urgency",
-					"confidentiality",
 					"intakeChannel",
+					"description",
 					"startDate",
-					"plannedEndDate"
+					"plannedEndDate",
+					"assignee",
+					"confidentiality",
+					"impact",
+					"urgency"
 				],
 				"fieldOverrides": {
 					"description": {
