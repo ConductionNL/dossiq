@@ -157,6 +157,7 @@ class DocumentReviewControllerTest extends TestCase {
 		$this->assertSame(['unmarked' => 1, 'inScope' => 6, 'outOfScope' => 3], $data['relevance']);
 		$this->assertSame(['openbaar' => 2, 'deels_openbaar' => 1, 'niet_openbaar' => 1, 'total' => 4], $data['verdicts']);
 		$this->assertEqualsCanonicalizing(['doc-4', 'doc-5', 'doc-9'], $data['outstanding']['documents']);
+		$this->assertSame([], $data['unseen']);
 	}//end testTheSummaryReportsRelevanceBesideVerdicts()
 
 	/**

@@ -69,6 +69,7 @@
         "{count} items",
         "{from} – (no end)",
         "{minutes} min",
-        "{percent}%"
+        "{percent}%",
+        "Relevant"
     ]
 }

@@ -59,6 +59,7 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
 - [ ] 2.2 A `Triage rules` section on the Woo case page with the rules, their conditions and their
   counts, and `src/dialogs/TriageRuleDialog.vue` to add or edit one (REQ-WRT-002).
   - vitest `src/dialogs/__tests__/TriageRuleDialog.spec.js` `testAnEffectIsRequired`.
+  - Open: waits on 2.1 (no rules route yet). The panel of 3.2 leaves the section out until then.
 
 ## 3. Batches
 
@@ -75,8 +76,14 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
     `EngineTaskGateway::mirrorImport()` with `metadata.dossiq.kind` `review-batch`.
     Open: the filter takes `rule` today. `custodian` and `sourceSystem` are refused (`review-batch-filter-unknown`)
     until the collected documents carry them (lane L9, woo-request-corpus-collection).
-- [ ] 3.2 A `Batches` section on the case page with assignee and progress (REQ-WRT-003).
+- [x] 3.2 A `Batches` section on the case page with assignee and progress (REQ-WRT-003).
   - `npm run check:manifest` exits 0.
+  - Built to board DqWooReview (design-system #191): `src/components/case/DocumentReviewPanel.vue` (registry
+    type `document-review`, a `Review` tab beside Files in the case manifest) with the sections Where the review
+    stands (the four tiles and the unseen-pages notice), Stopping rule and how much was found, Batches and reviewers,
+    and What is still open; `src/dialogs/ReviewBatchDialog.vue` makes a batch. On a case whose case type does not
+    set `documentReview.enabled` it says so in one sentence (the summary now answers `enabled` and `unseen`).
+    vitest `tests/vitest/documentReview.spec.js`; `check:manifest` 0.
 
 ## 4. Review depth
 
@@ -107,7 +114,11 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
   - Built (backend): `DocumentReviewController::pagesSeen` (read guard; `{pages, pageCount}`; answers the review with
     `unseen`), `DocumentRelevance::recordPagesSeen()` and `unseenPages()`;
     `DocumentReviewControllerTest::testPagesSeenAreAppendedWithTheReviewer`.
-    Open: the viewer call and its vitest (board DqWooReview, design-system #191, draft).
+    Built (client): `src/services/pagesSeenReporter.js`, the call any review viewer makes as a page comes into view
+    (each page once per viewing, batched, re-reported after a failed post), with vitest
+    `testEachDisplayedPageIsReportedOnce` in `tests/vitest/documentReview.spec.js`.
+    Open: dossiq has no paged document viewer to call it from (Nextcloud's Viewer exposes no page events, and no
+    pdf.js is installed); Q-dossiq-L8-1.
 - [x] 5.2 Refuse a verdict while required pages are unseen: in `WOODocumentAssessmentService::validate()`
   for `bulkAssess`, and in a listener on OpenRegister's object updating and creating events for
   `wooDocumentAssessment` (direct API writes) (REQ-WRT-005).
@@ -175,6 +186,8 @@ record. OpenRegister refuses a parent that references another schema
 - [ ] 7.1 e2e `tests/e2e/woo-review-triage.spec.ts`: apply a rule, overturn one marking, make two
   batches, open a document page by page, try to decide with a page unseen and see the refusal,
   finish, decide. Cite REQ-WRT-001 to REQ-WRT-005.
+  - Written as `tests/e2e/document-review.spec.ts`, citing every scenario of `document-review` and REQ-WRT-W01.
+    Not run (live pass, decision 139). The triage-rule test is red until 2.1 lands.
 
 ## 8. Verify and deliver
 

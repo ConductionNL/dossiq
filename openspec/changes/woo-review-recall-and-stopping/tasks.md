@@ -66,9 +66,13 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
     `POST /api/cases/{id}/review/recall/samples/{sampleId}/judgements` (`{documentRef, inScope}`) in `RecallController`,
     with `RecallControllerTest::testDrawingRefusesWithoutMutationAccess`, `testDrawThenJudgeThroughTheRoutes`,
     `testUnreadableInputAnswers422`.
-- [ ] 2.3 A `Recall` section on the Woo case page showing the rule, every sample and estimate with n,
+- [x] 2.3 A `Recall` section on the Woo case page showing the rule, every sample and estimate with n,
   k, N, found, the confidence and the date, and the gap to the target (REQ-WRS-002).
   - `npm run check:manifest` exits 0.
+  - Built to board DqWooReview: the section Stopping rule and how much was found in
+    `src/components/case/DocumentReviewPanel.vue` (declare form before review, the rule after, each sample with its
+    state, estimate, lower bound against the target, n, N, k and found, and judging the open sample's documents);
+    `src/dialogs/RecallSampleDialog.vue` draws a sample. vitest `tests/vitest/documentReview.spec.js`.
 
 ## 3. Met, recorded
 
@@ -92,6 +96,8 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
 - [ ] 4.1 e2e `tests/e2e/woo-recall.spec.ts`: declare a rule, mark a document and see the rule
   locked, draw a sample of 20 on a seeded case, judge it, and see the estimate and the met or not
   met line. Cite REQ-WRS-001 to REQ-WRS-003.
+  - Written in `tests/e2e/document-review.spec.ts` (the spec's own 400/1600/200 fixture). Not run (live pass,
+    decision 139).
 
 ## 5. Verify and deliver
 

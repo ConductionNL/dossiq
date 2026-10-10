@@ -2473,6 +2473,10 @@
 									"label": "Files"
 								},
 								{
+									"widgetId": "case-document-review",
+									"label": "Review"
+								},
+								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes"
 								},
@@ -3268,6 +3272,14 @@
 						"title": "Case banners",
 						"icon": "FlagOutline",
 						"_note": "Archived, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
+					},
+					{
+						"id": "case-document-review",
+						"type": "document-review",
+						"title": "Review",
+						"icon": "FileCheckOutline",
+						"_note": "document-review (woo-review-triage and woo-review-recall-and-stopping, generic per decision 182), board DqWooReview: relevance apart from the verdict, the stopping rule and recall samples, batches and reviewers, and what is still open. A tab beside Files because review is work on the case's documents. On a case whose case type does not set documentReview.enabled it says so in one sentence.",
+						"content": {}
 					},
 					{
 						"id": "family-plan",

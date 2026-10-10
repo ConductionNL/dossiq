@@ -83,6 +83,7 @@ class ReviewSummary {
 			'relevance' => $this->reviews->count(documentRefs: $documents, reviews: $reviews),
 			'verdicts' => $verdicts,
 			'outstanding' => $this->assessments->getOutstanding(caseId: $caseId),
+			'unseen' => $this->reviews->pages()->unseenInCase(caseId: $caseId),
 		];
 	}//end forCase()
 
