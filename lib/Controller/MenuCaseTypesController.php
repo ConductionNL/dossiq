@@ -70,12 +70,12 @@ class MenuCaseTypesController extends Controller {
 			return new JSONResponse(data: ['message' => 'Not logged in'], statusCode: Http::STATUS_UNAUTHORIZED);
 		}
 
-		$visible = $this->menuCaseTypes->visibleCaseTypes();
+		$offered = $this->menuCaseTypes->offeredCaseTypes(userId: $user->getUID());
 
 		return new JSONResponse(
 			data: [
-				'chosen' => $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $visible),
-				'available' => $visible,
+				'chosen' => $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $offered),
+				'available' => $offered,
 			]
 		);
 	}//end index()
@@ -101,7 +101,7 @@ class MenuCaseTypesController extends Controller {
 		$chosen = $this->menuCaseTypes->save(
 			userId: $user->getUID(),
 			ids: array_values($ids),
-			visible: $this->menuCaseTypes->visibleCaseTypes()
+			visible: $this->menuCaseTypes->offeredCaseTypes(userId: $user->getUID())
 		);
 
 		return new JSONResponse(data: ['chosen' => $chosen]);
