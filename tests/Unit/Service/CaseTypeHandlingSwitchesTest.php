@@ -81,6 +81,30 @@ class CaseTypeHandlingSwitchesTest extends TestCase {
 	}//end testAnUnmigratedCaseTypeStillNamesItsGroup()
 
 	/**
+	 * The handling teams: the default group first, then the declared teams, once each.
+	 *
+	 * @return void
+	 */
+	public function testTheHandlingTeamsAreTheDefaultGroupAndTheDeclaredTeams(): void {
+		self::assertSame(
+			expected: ['vergunningen', 'handhaving'],
+			actual: $this->handling->teams(
+				caseType: ['handling' => ['defaultGroup' => 'vergunningen', 'teams' => ['handhaving', 'vergunningen', '', 42]]]
+			)
+		);
+	}//end testTheHandlingTeamsAreTheDefaultGroupAndTheDeclaredTeams()
+
+	/**
+	 * A case type that names only a default group is linked through it.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithOnlyADefaultGroupIsHandledByThatGroup(): void {
+		self::assertSame(expected: ['woo'], actual: $this->handling->teams(caseType: ['handling' => ['defaultGroup' => 'woo']]));
+		self::assertSame(expected: [], actual: $this->handling->teams(caseType: []));
+	}//end testACaseTypeWithOnlyADefaultGroupIsHandledByThatGroup()
+
+	/**
 	 * The declared handler beats the legacy property, and the legacy property
 	 * answers when the block is silent.
 	 *

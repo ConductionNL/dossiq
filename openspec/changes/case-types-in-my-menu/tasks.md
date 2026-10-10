@@ -43,3 +43,9 @@ Kind: code. Board canon: DqZijbalk and DqPersoonlijkeInstellingen
   `NcAppNavigationCaption`'s actions slot. Until then the caption's `href` is
   inert and the section is reached from the user menu.
 - [ ] 4.2 The open-case count beside each case type on the board.
+
+## 5. Amendment (2026-10-09)
+
+- [x] 5.1 The picker offers the case types the user's team handles, with the
+  access fallback, and the hint is the board text again. Built in
+  `case-type-handling-teams` (REQ-CT-44), which stacks on this change.
