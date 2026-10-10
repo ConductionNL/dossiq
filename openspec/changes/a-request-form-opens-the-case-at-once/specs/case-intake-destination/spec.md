@@ -55,5 +55,5 @@ The portal's bezwaar and klacht actions SHALL submit into `case`. The `portaalVe
 #### Scenario: An old portaalVerzoek becomes a case
 - **GIVEN** a stored `portaalVerzoek` of kind `bezwaarschrift` against case Z/2026/09128
 - **WHEN** the drain runs
-- **THEN** a bezwaar case exists with `tegenZaak` Z/2026/09128 and the old id as `externalReference`
+- **THEN** a bezwaar case exists with `contestedCase` Z/2026/09128 and the old id as `externalReference`
 - **AND** the report counts it as delivered

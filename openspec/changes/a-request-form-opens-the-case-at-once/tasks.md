@@ -2,15 +2,16 @@
 
 ## 1. Term fields on create
 
-- [ ] 1.1 Move `IntakeTermStartListener` to `ObjectCreatingEvent` and the move out of `draft`; one save; skip draft cases
+- [x] 1.1 Move `IntakeTermStartListener` to `ObjectCreatingEvent` and the move out of `draft`; one save; skip draft cases
   - Spec ref: specs/case-intake-destination/spec.md, "The case create MUST carry its term fields"
   - Files: lib/Listener/IntakeTermStartListener.php, lib/AppInfo/Application.php
   - Test: unit test asserting the fields on the creating object; a control asserting no second save
-- [ ] 1.2 `startDate` = date of `termStartsAt` for submit-opened cases (decision 181)
-- [ ] 1.3 Schema markers `x-openregister.confirmation` and `x-openregister.serverSet` on the case properties
+- [x] 1.2 `startDate` = date of `termStartsAt` for submit-opened cases (decision 181)
+- [x] 1.3 Schema markers `x-openregister.confirmation` and `x-openregister.serverSet` on the case properties
   - Files: lib/Settings/dossiq_register.json
 
-- [ ] 1.4 Receipt listeners (`AcknowledgementOnCreateListener`, routing, `IntakeRequirementsListener`) skip `draft` cases and run on the move out of `draft` (decision 180)
+- [x] 1.4 Receipt listeners (`AcknowledgementOnCreateListener`, `DeadlineCaseCreatedListener`, `IntakeRequirementsListener`) skip `draft` cases and run on the move out of `draft` (decision 180), through the generic `ReceiptMoment`
+  - Routing: dossiq has no create-time routing listener. The case flow `Case behandeling` (trigger `object.created`) sets the intake status and role; skipping drafts there needs an OpenRegister flow trigger that knows the draft status (open point for openregister)
   - Test: a draft create queues no acknowledgement; leaving draft queues exactly one
 
 ## 2. Intake requirement D-5 (intake-says-when-the-term-starts task 2.1)
@@ -20,14 +21,15 @@
 
 ## 3. Bezwaar and klacht
 
-- [ ] 3.1 Point `createBezwaar` and `createKlacht` at `case` with fixed `caseType`, cross-references and attachments as documents
-  - Files: lib/Portal/CitizenManifest.php
-- [ ] 3.2 `occ dossiq:intake:drain-portaalverzoek`, report delivered and refused; old id to `externalReference`
+- [x] 3.1 Point `createBezwaar` and `createKlacht` at `case`, with `caseType` stamped from the settings `portal_objection_case_type` / `portal_complaint_case_type` (default the shipped `bezwaar-behandeling` / `klacht-behandeling`, decision 182), `contestedCase` as cross-reference and `attachments` on the case
+  - Files: lib/Portal/CitizenManifest.php, lib/Portal/PortalContributionProvider.php, lib/Service/Intake/IntakeCaseTypes.php
+  - Open: attachments become `caseDocument` rows (portaliq's submit), and the klacht `category` has no case property yet
+- [x] 3.2 `occ dossiq:intake:drain-portaalverzoek`, report delivered and refused; old id to `externalReference`
 - [ ] 3.3 Remove `portaalVerzoek` from register.d/50-zaakportaal.json, SchemaSlugMap and ConfigKeys when the drain reports zero
 
 ## 4. Other intake paths
 
-- [ ] 4.1 `WooRequestIntake::writeCase` returns `receivedAt` and `termStartsAt` with the identifier and deadline; the confirmation template gains the term start
+- [x] 4.1 `WooRequestIntake::writeCase` returns `receivedAt` and `termStartsAt` with the identifier and deadline; the confirmation template gains the term start
 - [ ] 4.2 `FormsIntakeService`: binding maps answers to typed properties, checked at bind time through OpenRegister's validator (decision 181)
 - [ ] 4.3 Case-type publish re-checks bound forms (`caseType.intakeFormRef` and portaliq bindings), including `requiredBeforeCreation`
 

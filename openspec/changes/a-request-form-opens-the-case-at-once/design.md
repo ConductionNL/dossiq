@@ -10,7 +10,7 @@ A case opened through a form submit gets `startDate` = the date of `termStartsAt
 
 ## D-3. bezwaar and klacht are cases from the first request
 
-The portal actions `createBezwaar` and `createKlacht` change destination from `portaalVerzoek` to `case`, with `caseType` fixed per action and `tegenZaak` and `tegenBesluit` as cross-references. `withinTerm` is computed by the bezwaar case type's timeliness rule, already on the case, instead of on the request object. Attachments become case documents.
+The portal actions `createBezwaar` and `createKlacht` change destination from `portaalVerzoek` to `case`, with `caseType` stamped per action from an app setting (`portal_objection_case_type`, `portal_complaint_case_type`; a procedure is configuration, decision 182) and `contestedCase` and `contestedDecision` as cross-references on the case. `withinTerm` is computed by the bezwaar case type's timeliness rule, already on the case, instead of on the request object. Attachments become case documents.
 
 ## D-3b. A draft case is not received
 
