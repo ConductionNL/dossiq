@@ -128,7 +128,7 @@ test.describe('Inspect, on a case page', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/admin-inspect-entry/specs/case-management/spec.md#scenario-raw-data-shows-the-stored-case
+	// @e2e openspec/specs/case-management/spec.md#raw-data-shows-the-stored-case
 	test('an admin opens the raw data, and reads the case as it is stored', async ({
 		page,
 	}) => {
@@ -161,7 +161,7 @@ test.describe('Inspect, on a case page', () => {
 		await expect(page.getByTestId('case-raw-data-error')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/admin-inspect-entry/specs/case-management/spec.md#scenario-raw-data-shows-the-stored-case
+	// @e2e openspec/specs/case-management/spec.md#raw-data-shows-the-stored-case
 	test('an admin can reach the flow runs for this case', async ({ page }) => {
 		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 		await openHeaderActionsMenu(page)
@@ -176,7 +176,7 @@ test.describe('Inspect, on a case page', () => {
 		)
 	})
 
-	// @e2e openspec/changes/admin-inspect-entry/specs/case-management/spec.md#scenario-handlers-do-not-see-inspect
+	// @e2e openspec/specs/case-management/spec.md#handlers-do-not-see-inspect
 	test('the gate answers no to a handler and yes to an admin', async ({
 		request,
 	}) => {
@@ -198,7 +198,7 @@ test.describe('Inspect, on a case page', () => {
 		expect((await asHandler.json())?.isAdmin).toBe(false)
 	})
 
-	// @e2e openspec/changes/admin-inspect-entry/specs/case-management/spec.md#scenario-handlers-do-not-see-inspect
+	// @e2e openspec/specs/case-management/spec.md#handlers-do-not-see-inspect
 	test('a handler is offered neither entry', async ({ browser, baseURL }) => {
 		const context = await browser.newContext({
 			baseURL,

@@ -178,7 +178,7 @@ test.describe('Following a case', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-follow-a-colleagues-case
+	// @e2e openspec/specs/case-management/spec.md#follow-a-colleagues-case
 	//
 	// BREAKS IF: the strip stops reading `@self.watching`, or the PUT stops
 	// landing. The reload is the point: an optimistic flip that never reached
@@ -212,7 +212,7 @@ test.describe('Following a case', () => {
 		expect(errors).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-follow-a-colleagues-case
+	// @e2e openspec/specs/case-management/spec.md#follow-a-colleagues-case
 	//
 	// BREAKS IF: `_watching` stops being resolved inside the query, or starts
 	// being read as "no restriction" when the caller follows nothing. The
@@ -227,7 +227,7 @@ test.describe('Following a case', () => {
 		expect(ids).not.toContain(cases.dropped)
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-follow-a-colleagues-case
+	// @e2e openspec/specs/case-management/spec.md#follow-a-colleagues-case
 	//
 	// BREAKS IF: the Followers section stops rendering, or the panel starts
 	// drawing a refusal as an empty list. The admin driving this run may update
@@ -261,7 +261,7 @@ test.describe('Following a case', () => {
 		expect(errors).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-unfollow
+	// @e2e openspec/specs/case-management/spec.md#unfollow
 	//
 	// BREAKS IF: the DELETE stops landing, which is the failure the two verbs
 	// exist to prevent: a strip that PUT in both directions reports success and
@@ -290,7 +290,7 @@ test.describe('Following a case', () => {
 		expect(errors).toEqual([])
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-a-follower-hears
+	// @e2e openspec/specs/case-management/spec.md#a-follower-hears
 	//
 	// BREAKS IF: the annotation never reaches the live schema. That is the
 	// silent one: OpenRegister folds `x-openregister-notifications` into the
@@ -328,7 +328,7 @@ test.describe('Following a case', () => {
 		expect(rules.caseAssigned?.trigger?.type).toBe('created')
 	})
 
-	// @e2e openspec/changes/case-followers/specs/case-management/spec.md#scenario-a-follower-hears
+	// @e2e openspec/specs/case-management/spec.md#a-follower-hears
 	//
 	// BREAKS IF: the fan-out stops reaching the watchers. The control is the
 	// unfollowed case moving through the SAME transition in the same run: a
