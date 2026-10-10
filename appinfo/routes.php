@@ -820,6 +820,9 @@ $extra = [
     ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
     ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],
     ['name' => 'wooSources#add',    'url' => '/api/cases/{id}/woo/sources/add',    'verb' => 'POST'],
+    // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
+    // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
+    ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are

@@ -51,7 +51,11 @@ use OCA\Dossiq\Controller\TermijnController;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\PhpInputStream;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -66,6 +70,11 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\TermijnController
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\DeadlineExtensionService
+ * @uses \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Tests\Support\PhpInputStream
  */
 class TermijnControllerContractTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -352,4 +361,57 @@ class TermijnControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $rejected->getStatus());
 		$this->assertSame(['message' => 'Termijn already completed'], $rejected->getData());
 	}//end testVoltooiDistinguishesAMissingInstance404FromADomainRejection400()
+
+	/**
+	 * REQ-WTR-002 through the route: a Sunday posted to `verleng` is stored as
+	 * the Monday after it, with the supplied Sunday kept as `endDateBeforeRoll`.
+	 *
+	 * @return void
+	 */
+	public function testVerlengRollsTheEndDate(): void {
+		$this->signIn();
+		$this->term->method('getTermijnInstance')->willReturn(
+			['id' => 'ti-1', 'case' => 'c1', 'endDateCurrent' => '2026-11-02', 'countExtensions' => 0, 'deadlineDefinition' => '']
+		);
+		$written = [];
+		$this->term->method('updateTermijnInstance')->willReturnCallback(
+			static function (string $id, array $patch) use (&$written): array {
+				$written = $patch;
+				return array_merge(['id' => $id], $patch);
+			}
+		);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$caseTypeSlugs = $this->createMock(CaseTypeSlugResolver::class);
+		$controller = new TermijnController(
+			appName: 'dossiq',
+			request: $this->request,
+			term: $this->term,
+			pause: $this->pause,
+			extension: new DeadlineExtensionService(
+				termService: $this->term,
+				dates: $this->caseDates(),
+				timerService: new TermijnTimerService(
+					settingsService: $settings,
+					logger: $this->logger,
+					dates: $this->caseDates(),
+					fallbackCalendar: new WorkingDayCalculator(),
+				),
+			),
+			dates: $this->caseDates(),
+			caseTypeSlugs: $caseTypeSlugs,
+			userSession: $this->userSession,
+			logger: $this->logger,
+		);
+
+		$response = PhpInputStream::with(
+			(string)json_encode(['newEinddatum' => '2026-11-15', 'rationale' => 'Zienswijzen van derden']),
+			static fn () => $controller->verleng(id: 'ti-1')
+		);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('2026-11-16', $written['endDateCurrent'] ?? null);
+		$this->assertSame('2026-11-15', $written['endDateBeforeRoll'] ?? null);
+	}//end testVerlengRollsTheEndDate()
 }//end class

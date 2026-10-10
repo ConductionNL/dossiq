@@ -255,6 +255,33 @@ class ApplicantPortalActsTest extends TestCase {
 	}//end testAWriteReachesTheTimelineAndTheAssignee()
 
 	/**
+	 * An answer to the organisation's question reaches the timeline and the assignee
+	 * (woo-dossier-shared-with-the-requester REQ-WDS-001).
+	 *
+	 * @return void
+	 */
+	public function testAnAnswerToAQuestionReachesTheTimelineAndTheAssignee(): void {
+		$this->timeline->expects($this->once())
+			->method('record')
+			->with(
+				'case-1',
+				TimelineKinds::APPLICANT_RESPONSE,
+				'The applicant answered your question in the portal: applicantAnswer',
+				[
+					'act' => 'answer',
+					'fields' => 'applicantAnswer',
+					'occurredAt' => '2026-10-07T10:00:00+02:00',
+				],
+				CaseTimeline::INTERNAL,
+			)
+			->willReturn('entry-1');
+
+		$this->assertTrue($this->acts()->recordWrite('case-1', 'answer', ['applicantAnswer'], '2026-10-07T10:00:00+02:00'));
+		$this->assertCount(1, $this->sent);
+		$this->assertSame('answer', $this->sent[0]['parameters']['act']);
+	}//end testAnAnswerToAQuestionReachesTheTimelineAndTheAssignee()
+
+	/**
 	 * A withdrawal writes its entry with the status and reason and tells the assignee.
 	 *
 	 * @return void
@@ -341,7 +368,7 @@ class ApplicantPortalActsTest extends TestCase {
 		$kind = $declared[TimelineKinds::APPLICANT_RESPONSE];
 		$this->assertTrue($kind['followUp']);
 		$this->assertSame(
-			['amendment', 'document', 'task-answer', ApplicantPortalActs::ACT_WITHDRAWAL],
+			['amendment', 'document', 'task-answer', 'answer', ApplicantPortalActs::ACT_WITHDRAWAL],
 			$kind['properties']['act']['enum']
 		);
 		foreach (['fields', 'status', 'reason', 'occurredAt'] as $property) {

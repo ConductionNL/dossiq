@@ -40,4 +40,5 @@ Tier: V1. Kind: code. Rows 9.2, 9.1, 9.12. Consumer half of openregister
   not run locally; `openspec validate case-search-declares-its-fields
   --strict`.
 - [ ] 7.1 Re-rate rows 9.2, 9.1 and 9.12 when nextcloud-vue#1176 lands the
-  missing-value chip. The lens ships without it; the sidebar chip does not.
+  missing-value chip. (dependency built by lane L1, decision 156:
+  ConductionNL/nextcloud-vue#1430; re-rate after it lands and dossiq is on that release) The lens ships without it; the sidebar chip does not.

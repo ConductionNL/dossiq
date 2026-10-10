@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -27,7 +27,7 @@ use RuntimeException;
 /**
  * Thrown instead of answering an empty list, which would read as "no grounds exist".
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-other-apps-read-the-list-through-one-named-method-req-wrg-007
  */
 class WooRefusalGroundsUnavailable extends RuntimeException {
 }//end class
