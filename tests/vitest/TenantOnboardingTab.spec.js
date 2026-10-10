@@ -30,9 +30,8 @@ vi.mock('@nextcloud/vue', () => {
 	}
 })
 
-const { default: TenantOnboardingTab } = await import(
-	'../../src/views/settings/tabs/TenantOnboardingTab.vue'
-)
+const { default: TenantOnboardingTab } =
+	await import('../../src/views/settings/tabs/TenantOnboardingTab.vue')
 
 describe('TenantOnboardingTab', () => {
 	beforeEach(() => {
@@ -46,7 +45,11 @@ describe('TenantOnboardingTab', () => {
 				total: 2,
 				active: null,
 				results: [
-					{ uuid: 'org-1', name: 'Gemeente Zuiddrecht', slug: 'zuiddrecht' },
+					{
+						uuid: 'org-1',
+						name: 'Gemeente Zuiddrecht',
+						slug: 'zuiddrecht',
+					},
 					{ uuid: 'org-2', name: '', slug: 'westdorp' },
 				],
 			},
@@ -57,7 +60,11 @@ describe('TenantOnboardingTab', () => {
 
 		expect(mockGet).toHaveBeenCalledTimes(1)
 		expect(mockGet.mock.calls[0][0]).toBe('/apps/openregister/api/organisations')
-		expect(mockGet.mock.calls.some((c) => String(c[0]).includes('/api/saas/tenants'))).toBe(false)
+		expect(
+			mockGet.mock.calls.some((c) =>
+				String(c[0]).includes('/api/saas/tenants'),
+			),
+		).toBe(false)
 		expect(wrapper.vm.tenantOptions).toEqual([
 			{ id: 'org-1', label: 'Gemeente Zuiddrecht' },
 			{ id: 'org-2', label: 'westdorp' },
@@ -70,7 +77,12 @@ describe('TenantOnboardingTab', () => {
 		await flushPromises()
 
 		await wrapper.setData({
-			progress: { steps: [{ step: 'contract', status: 'completed' }, { step: 'branding', status: 'pending' }] },
+			progress: {
+				steps: [
+					{ step: 'contract', status: 'completed' },
+					{ step: 'branding', status: 'pending' },
+				],
+			},
 		})
 
 		expect(wrapper.vm.completedSteps).toBe(1)
