@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCA\Dossiq\Service\CaseTypeStore;
 /**
  * Read a case's answers, from the register's list or a legacy map.
  *
- * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseAnswerReader {
 
@@ -62,7 +62,7 @@ class CaseAnswerReader {
 	 *
 	 * @return array<int, array{name: string, definition: string, value: string}> The answers.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function entriesOf(array $case): array {
 		$raw = ($case['properties'] ?? []);
@@ -96,7 +96,7 @@ class CaseAnswerReader {
 	 *
 	 * @return array<string, mixed> The map.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function keyed(array $values): array {
 		$keyed = [];
@@ -117,7 +117,7 @@ class CaseAnswerReader {
 	 *
 	 * @return string The key.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function key(string $name): string {
 		return mb_strtolower(trim($name));

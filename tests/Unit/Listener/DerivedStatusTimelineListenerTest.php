@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -165,7 +165,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testALandedDerivationReachesTheTimeline(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -188,7 +188,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testADerivedMoveNamesNoActorAndInventsNoReason(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -231,7 +231,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAMoveNobodyDerivedIsNotRecordedTwice(): void {
 		$this->listener->handle($this->saved(caseId: 'case-1', status: 'st-compleet'));
@@ -244,7 +244,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testADerivationThatDidNotLandIsNotRecorded(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -259,7 +259,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testAStagedMoveIsRecordedOnlyOnce(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-open', toStatus: 'st-compleet');
@@ -275,7 +275,7 @@ class DerivedStatusTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function testADerivationThatChangesNothingStagesNothing(): void {
 		$this->journal->stage(caseId: 'case-1', fromStatus: 'st-compleet', toStatus: 'st-compleet');

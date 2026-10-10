@@ -61,7 +61,7 @@ use RuntimeException;
  * moved somewhere it is not measured.
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class CaseEmailService {
 

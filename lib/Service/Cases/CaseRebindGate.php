@@ -235,7 +235,7 @@ class CaseRebindGate {
 	 *
 	 * @throws RefusedException When the two lists differ.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function assertDropConfirmed(array $dropped, array $confirmed): void {
 		$normalise = static function (array $names): array {

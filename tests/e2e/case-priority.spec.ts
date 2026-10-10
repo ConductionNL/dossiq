@@ -159,7 +159,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		})
 	}
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#a-handler-records-how-much-it-matters-and-how-soon
+	// @e2e openspec/specs/case-priority/spec.md#a-handler-records-how-much-it-matters-and-how-soon
 	test('a handler records how much it matters and how soon, and both are stored', async ({
 		playwright,
 		baseURL,
@@ -183,7 +183,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#a-case-created-by-intake-takes-the-declared-defaults
+	// @e2e openspec/specs/case-priority/spec.md#a-case-created-by-intake-takes-the-declared-defaults
 	test('a case created without impact or urgency takes its type declared defaults', async ({
 		playwright,
 		baseURL,
@@ -200,7 +200,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#changing-urgency-changes-the-priority
+	// @e2e openspec/specs/case-priority/spec.md#changing-urgency-changes-the-priority
 	test('raising the urgency raises the derived priority', async ({
 		playwright,
 		baseURL,
@@ -225,7 +225,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#two-case-types-read-the-same-impact-differently
+	// @e2e openspec/specs/case-priority/spec.md#two-case-types-read-the-same-impact-differently
 	test('two case types read the same impact and urgency differently', async ({
 		playwright,
 		baseURL,
@@ -247,7 +247,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#an-override-survives-the-next-derivation
+	// @e2e openspec/specs/case-priority/spec.md#an-override-survives-the-next-derivation
 	test('an override a teamleider set survives the next derivation', async ({
 		playwright,
 		baseURL,
@@ -279,7 +279,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#the-override-says-who-and-why
+	// @e2e openspec/specs/case-priority/spec.md#the-override-says-who-and-why
 	test('the case page shows who overrode the priority, when and why', async ({
 		page,
 		playwright,
@@ -315,7 +315,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#clearing-the-override-returns-to-the-derived-answer
+	// @e2e openspec/specs/case-priority/spec.md#clearing-the-override-returns-to-the-derived-answer
 	test('clearing the override returns the case to what the matrix derives NOW', async ({
 		playwright,
 		baseURL,
@@ -346,7 +346,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#a-case-two-days-from-its-term-rises
+	// @e2e openspec/specs/case-priority/spec.md#a-case-two-days-from-its-term-rises
 	test('a case inside two days of its term rises, and records the rule', async ({
 		playwright,
 		baseURL,
@@ -375,7 +375,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#an-extended-term-does-not-lower-a-raised-priority
+	// @e2e openspec/specs/case-priority/spec.md#an-extended-term-does-not-lower-a-raised-priority
 	test('an extended term does not lower a priority the rule raised', async ({
 		playwright,
 		baseURL,
@@ -408,7 +408,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#escalation-and-the-case-agree-on-the-word
+	// @e2e openspec/specs/case-priority/spec.md#escalation-and-the-case-agree-on-the-word
 	test('an escalation reports the case priority, on the case vocabulary', async ({
 		playwright,
 		baseURL,
@@ -428,7 +428,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md#a-handler-sorts-the-queue-by-priority
+	// @e2e openspec/specs/case-priority/spec.md#a-handler-sorts-the-queue-by-priority
 	test('a handler sorts the case list by priority and gets the declared order', async ({
 		page,
 	}) => {

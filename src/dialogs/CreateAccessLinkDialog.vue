@@ -10,7 +10,7 @@
   which asks OpenRegister for the link (#3817). OpenRegister refuses a link
   with no expiry, so the date field starts filled rather than empty.
 
-  @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+  @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 -->
 <template>
 	<NcDialog
@@ -177,7 +177,7 @@ export default {
 		 * The date the expiry field starts on.
 		 *
 		 * @return {string} an ISO date, DEFAULT_DAYS from today.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		defaultExpiry() {
 			const date = new Date()
@@ -190,7 +190,7 @@ export default {
 		 *
 		 * @param {string} id the document id.
 		 * @param {boolean} checked whether it travels with the link.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
 		 */
 		toggleDocument(id, checked) {
 			const picked = this.form.documents.filter((entry) => entry !== id)
@@ -204,7 +204,7 @@ export default {
 		 * Hand the payload up. Reading is always granted, so it is never sent
 		 * as a choice.
 		 *
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		createLink() {
 			const capabilities = ['read']

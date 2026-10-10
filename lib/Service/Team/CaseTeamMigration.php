@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+ * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Converts stored organisation role references on cases into Nextcloud group ids.
  *
- * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+ * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
  */
 class CaseTeamMigration {
 
@@ -98,7 +98,7 @@ class CaseTeamMigration {
 	 * @param IGroupManager   $groups          Nextcloud's groups, the one authority on a team.
 	 * @param LoggerInterface $logger          Logger.
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -122,7 +122,7 @@ class CaseTeamMigration {
 	 * } The report. `ran` is false when OpenRegister or the case schema is not
 	 *   configured, and `skippedBecause` says which.
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	public function run(bool $apply): array {
 		$report = [
@@ -195,7 +195,7 @@ class CaseTeamMigration {
 	 *
 	 * @return array<string, mixed> The report with this case counted.
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-existing-cases-move-to-the-group-their-role-names-req-team-03
 	 */
 	private function sortOne(array $case, array $roles, bool $apply, array $report, callable $write): array {
 		$value = $this->referenceId(value: ($case[self::FIELD] ?? ''));

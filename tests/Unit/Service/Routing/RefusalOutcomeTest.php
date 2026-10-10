@@ -303,7 +303,7 @@ class RefusalOutcomeTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
 	 */
 	public function testADestinationRoleWithoutAGroupLeavesTheCaseUnassigned(): void {
 		unset($this->store->teams['Juridische Zaken|intake']['ncGroupId']);

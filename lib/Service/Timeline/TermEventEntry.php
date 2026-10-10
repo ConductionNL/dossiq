@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCA\Dossiq\Service\TermKind;
 /**
  * Writes one `termijngebeurtenis` entry per recorded term event.
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class TermEventEntry {
 
@@ -91,7 +91,7 @@ class TermEventEntry {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function recordEvent(
 		array $instance,
@@ -142,7 +142,7 @@ class TermEventEntry {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function recordStart(array $instance, array $requested = []): void {
 		$caseId = trim((string)($instance['case'] ?? ''));

@@ -16,7 +16,7 @@
   applies. This component decides nothing: it shows the impact and reports the
   coordinator's choices (a move, an answer, the confirmed loss) upwards.
 
-  @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<div class="rebind-impact" data-testid="case-rebind-impact">
@@ -187,7 +187,7 @@ export default {
 		 * @param {object} row The dropped row.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		droppedReason(row) {
 			if (row.reason === 'type') {
@@ -208,7 +208,7 @@ export default {
 		 * @param {string} kind The kind the server reported.
 		 * @return {string} The label.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		kindLabel(kind) {
 			const labels = {
@@ -231,7 +231,7 @@ export default {
 		 * @param {string} source The answer.
 		 * @param {string} target The field.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		move(source, target) {
 			if (!target) {
@@ -245,7 +245,7 @@ export default {
 		 *
 		 * @param {string} source The answer.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		unmove(source) {
 			const next = { ...this.remap }
@@ -259,7 +259,7 @@ export default {
 		 * @param {string} name The field.
 		 * @param {string} value The answer.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		answer(name, value) {
 			this.$emit('update:answers', { ...this.answers, [name]: value })

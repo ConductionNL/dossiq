@@ -35,7 +35,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Applies the declared term rule's floor to a case, and reads back its priority.
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 class CasePriorityRaiseService {
 
@@ -78,7 +78,7 @@ class CasePriorityRaiseService {
 	 * @return string The case's priority after the rule ran, or the empty
 	 *                string when the case cannot be read.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function raiseForThreshold(string $caseId, int $threshold): string {
 		$case = $this->readCase(caseId: $caseId);
@@ -115,7 +115,7 @@ class CasePriorityRaiseService {
 	 *
 	 * @return string The stored priority, or the empty string when unreadable.
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function priorityOf(string $caseId): string {
 		$case = $this->readCase(caseId: $caseId);

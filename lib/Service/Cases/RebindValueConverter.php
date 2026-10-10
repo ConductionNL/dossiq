@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 /**
  * Fit a stored answer onto a target property definition.
  *
- * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class RebindValueConverter {
 
@@ -100,7 +100,7 @@ class RebindValueConverter {
 	 *
 	 * @return string One of text, number, integer, boolean, date, date-time, email, url, choice, or structured:<type>.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function kindOf(array $definition): string {
 		if ($this->choicesOf(definition: $definition) !== []) {
@@ -128,7 +128,7 @@ class RebindValueConverter {
 	 *
 	 * @return array<int, string> The choices, or [] when any answer of its kind will do.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function choicesOf(array $definition): array {
 		$values = ($definition['enumValues'] ?? []);
@@ -153,7 +153,7 @@ class RebindValueConverter {
 	 *
 	 * @return string The text, '' for nothing.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function asText(mixed $value): string {
 		if ($value === null) {
@@ -188,7 +188,7 @@ class RebindValueConverter {
 	 *
 	 * @return string|null The value on the target, or null when it does not fit.
 	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function fit(string $value, array $source, array $target): ?string {
 		$value = trim($value);

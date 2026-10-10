@@ -8800,13 +8800,12 @@
             "caseShare": {
                 "slug": "caseShare",
                 "icon": "ShareVariant",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:CreativeWork",
                 "title": "Case share",
                 "description": "Token- or partner-based share over a case for external collaboration",
                 "type": "object",
                 "required": [
-                    "token",
                     "caseId",
                     "shareType",
                     "permissionLevel"

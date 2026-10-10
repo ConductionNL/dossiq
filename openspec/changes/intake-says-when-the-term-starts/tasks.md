@@ -30,7 +30,7 @@ change was being built, so the engine calendar answers rather than
     replayed create event cannot re-stamp it against a calendar that has
     gained a holiday since. That is the whole of "SHALL NOT be recomputed on
     read".
-- [ ] 2.1 [partial] The on-screen intake confirmation names the reference,
+- [ ] 2.1 [partial] (portaliq half: cannot be built as specified, the intake is queued before any case or term exists; Q-dossiq-L1-4) The on-screen intake confirmation names the reference,
   the received moment, the start and the deadline (D-5).
   - WHAT SHIPPED: the three fields are on
     `PortalContributionProvider::CITIZEN_CASE_FIELDS`, which is the ONE list
