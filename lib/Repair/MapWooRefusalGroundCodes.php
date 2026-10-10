@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Maps stored grounds once per row, marked, idempotent and non-fatal.
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
  */
 class MapWooRefusalGroundCodes implements IRepairStep {
 
@@ -106,7 +106,7 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
 	 */
 	public function getName(): string {
 		return 'Map the Woo refusal grounds stored on assessments and decisions onto the settled list';
@@ -119,7 +119,7 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -169,7 +169,7 @@ class MapWooRefusalGroundCodes implements IRepairStep {
 	 *
 	 * @return array<string, mixed> `weigeringsgronden`, `groundsListVersion` and, when any, `groundsUnmapped`.
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-stored-codes-are-mapped-never-guessed-req-wrg-006
 	 */
 	public function changesFor(array $row, array $settled): array {
 		if ((string)($row['groundsListVersion'] ?? '') === WooRefusalGrounds::LIST_VERSION) {

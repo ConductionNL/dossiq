@@ -240,6 +240,7 @@
                     "version": "1.1.0",
                     "slug": "zaaktype-innovatiefonds-2026"
                 },
+                "isDraft": false,
                 "id": "b3c1a000-0000-4000-a000-00000000f001",
                 "uuid": "b3c1a000-0000-4000-a000-00000000f001",
                 "title": "Innovatiefonds 2026",
@@ -328,6 +329,7 @@
                     "version": "1.1.0",
                     "slug": "zaaktype-cultuur-subsidie-2026"
                 },
+                "isDraft": false,
                 "id": "b3c1a000-0000-4000-a000-00000000f002",
                 "uuid": "b3c1a000-0000-4000-a000-00000000f002",
                 "title": "Cultuursubsidie 2026",
