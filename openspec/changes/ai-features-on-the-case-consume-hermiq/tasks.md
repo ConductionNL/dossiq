@@ -30,9 +30,20 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
     hermiq's gate) and
     `AssistantControllerTest::testAnAbsentHermiqReportsEveryDeclaredFeatureUnavailable`
     over the real client.
-- [ ] 3.1 A feature that reads a document carries the reference, and a request
+- [x] 3.1 A feature that reads a document carries the reference, and a request
   without one is refused before it is sent (D-3).
-  - `lib/Service/Ai/CaseAiFeatureGateway.php`
+  - `src/services/caseAiFeatureGateway.js` (`runFeatureOnDocument`,
+    `refusalSentence`), not the PHP path first written here: hermiq reads the
+    document in the signed-in person's Files, so the call is made in the
+    handler's own session. Through dossiq's backend it would be read as the
+    hermiq service account instead.
+  - hermiq side, built under decision 156: hermiq#1148,
+    `POST /api/ai-features/{slug}/run-on-document` (the reference reaches every
+    pre-call gate, and a refusal is a 422 naming the gate).
+  - Test: `tests/vitest/caseAiFeatureGateway.spec.js` (no reference means no
+    request; the reference travels; a refusal carries hermiq's gate; a
+    transport failure is not dressed up as a refusal; the sentence names the
+    feature and the reason).
 - [ ] 3.2 A refusal is rendered with the feature and the reason named, carrying
   hermiq's own gate name rather than a generic failure.
   - `src/components/case/CaseAiFeaturesPanel.vue`
