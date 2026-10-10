@@ -2,7 +2,7 @@
   "eslint.inlineDisables": 14,
   "eslint.suppressedViolations": 309,
   "phpcs.inlineIgnores": 6,
-  "phpmd.suppressWarnings": 273,
+  "phpmd.suppressWarnings": 270,
   "phpstan.ignorePatterns": 11,
   "phpstan.inlineIgnores": 7,
   "phpunit.skips": 6,

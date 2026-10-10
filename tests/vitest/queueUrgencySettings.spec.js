@@ -5,7 +5,7 @@
  * The queue urgency form: defaults, bounds, and that a refused value sends
  * nothing.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 
 import { describe, expect, it } from 'vitest'
@@ -59,7 +59,7 @@ describe('buildQueueUrgencyPayload', () => {
 		})
 	})
 
-	// @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md#scenario-an-out-of-bounds-weight-is-refused-in-the-form
+	// @spec openspec/specs/admin-settings/spec.md#scenario-an-out-of-bounds-weight-is-refused-in-the-form
 	it('refuses a weight out of bounds, names the bounds and sends nothing', () => {
 		const { errors, payload } = buildQueueUrgencyPayload({
 			criticalDays: 3,
