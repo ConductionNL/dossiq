@@ -312,7 +312,7 @@ class DashboardController extends Controller {
 	 *
 	 * @return string `simple` or `full`.
 	 *
-	 * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+	 * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
 	 */
 	protected function menuStructure(): string {
 		return (new MenuStructure())->normalise(

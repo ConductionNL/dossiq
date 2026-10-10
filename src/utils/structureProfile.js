@@ -43,7 +43,7 @@
  * Nothing here deletes anything. The pages, the routes and the fragments are
  * the same in both profiles, which is what keeps every deep link working.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md
  */
 
 import logger from '../logger.js'
@@ -75,7 +75,7 @@ const LAYOUT_KEYS = [
  * @param {unknown} raw The stored setting, as initial state hands it over.
  * @return {string} `simple` or `full`.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
  */
 export function resolveStructureProfile(raw) {
 	return raw === STRUCTURE_FULL ? STRUCTURE_FULL : STRUCTURE_SIMPLE
@@ -89,7 +89,7 @@ export function resolveStructureProfile(raw) {
  *   The order is fixed: replace keys, patch items by name, append, then order.
  * @return {object} A new page object.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 export function applyPageOverlay(page, overlay) {
 	const config = { ...(page.config || {}), ...(overlay.config || {}) }
@@ -158,7 +158,7 @@ export function applyPageOverlay(page, overlay) {
  * @param {unknown} item A list item from a page config.
  * @return {string|undefined} Its name, or undefined when it has none.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-025
+ * @spec openspec/specs/dashboard/spec.md#REQ-DASH-025
  */
 export function overlayItemName(item) {
 	if (typeof item === 'string') {
@@ -184,7 +184,7 @@ const THEMING_PLACEHOLDER = '@theming.'
  * @param {object|null} theming The theming capabilities (`name`, `logo`, ...).
  * @return {object} A new nav block with every placeholder resolved.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 export function resolveNavPlaceholders(nav, theming) {
 	const resolveOne = (value) => {
@@ -252,7 +252,7 @@ export function resolveNavPlaceholders(nav, theming) {
  *   capabilities, for the placeholders a profile's `nav` block may carry.
  * @return {object} The built manifest.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 export function buildProfiledManifest(
 	buildManifest,

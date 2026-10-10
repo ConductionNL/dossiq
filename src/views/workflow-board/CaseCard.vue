@@ -144,7 +144,7 @@ export default {
 		 *
 		 * @return {object|null}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		dueRule() {
 			const pages = this.cnManifest?.pages
@@ -184,7 +184,7 @@ export default {
 		 *
 		 * @return {string}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		requesterLabel() {
 			const requester = this.caseItem.initiatorDisplayName
@@ -210,7 +210,7 @@ export default {
 		 *
 		 * @return {string|null}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		deadlineSeverity() {
 			return cardDueSeverity(this.daysRemaining, this.dueRule)

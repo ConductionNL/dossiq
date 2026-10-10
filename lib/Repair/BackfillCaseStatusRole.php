@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/simple-case-page/specs/case-management/spec.md#REQ-CM-77
+ * @spec openspec/specs/case-management/spec.md#REQ-CM-77
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
 /**
  * Backfill `statusRole` on the cases that exist.
  *
- * @spec openspec/changes/simple-case-page/specs/case-management/spec.md#REQ-CM-77
+ * @spec openspec/specs/case-management/spec.md#REQ-CM-77
  */
 class BackfillCaseStatusRole implements IRepairStep {
 
@@ -96,7 +96,7 @@ class BackfillCaseStatusRole implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/simple-case-page/specs/case-management/spec.md#REQ-CM-77
+	 * @spec openspec/specs/case-management/spec.md#REQ-CM-77
 	 */
 	public function getName(): string {
 		return 'Give existing cases the role of the status they sit in (statusRole)';
@@ -109,7 +109,7 @@ class BackfillCaseStatusRole implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/simple-case-page/specs/case-management/spec.md#REQ-CM-77
+	 * @spec openspec/specs/case-management/spec.md#REQ-CM-77
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -164,7 +164,7 @@ class BackfillCaseStatusRole implements IRepairStep {
 	 *
 	 * @return string The role to write, or ''.
 	 *
-	 * @spec openspec/changes/simple-case-page/specs/case-management/spec.md#REQ-CM-77
+	 * @spec openspec/specs/case-management/spec.md#REQ-CM-77
 	 */
 	public function roleToWrite(array $case, array $roles): string {
 		$status = ($case['status'] ?? null);

@@ -15,7 +15,7 @@
  *
  * jsdom, because the library's resolver imports `@nextcloud/auth`.
  *
- * @spec openspec/changes/simple-case-page/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'

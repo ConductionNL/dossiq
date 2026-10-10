@@ -20,7 +20,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
  */
 
 declare(strict_types=1);

@@ -29,26 +29,41 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Dashboard;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCP\Dashboard\IWidget;
+use OCA\Dossiq\Service\Queue\Source\EngineTaskSource;
+use OCP\Dashboard\IAPIWidgetV2;
+use OCP\Dashboard\Model\WidgetItems;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Util;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Dashboard widget showing tasks assigned to the current user.
  *
+ * The Nextcloud dashboard still mounts the widget's own bundle through
+ * `load()`. A host that reads items instead (the dashboard item API, the
+ * mobile apps, a start page) gets the same open tasks from `getItemsV2()`.
+ *
  * @spec openspec/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md#REQ-DASH-024
  */
-class MyTasksWidget implements IWidget {
+class MyTasksWidget implements IAPIWidgetV2 {
 	/**
 	 * Constructor.
 	 *
-	 * @param IL10N $l10n L10N service
-	 * @param IURLGenerator $url URL generator
+	 * @param IL10N            $l10n   L10N service
+	 * @param IURLGenerator    $url    URL generator
+	 * @param EngineTaskSource $tasks  The engine's open tasks, as the personal queue reads them.
+	 * @param QueueWidgetItems $items  Maps queue items onto widget items.
+	 * @param LoggerInterface  $logger Logger.
 	 */
 	public function __construct(
 		private IL10N $l10n,
 		private IURLGenerator $url,
+		private EngineTaskSource $tasks,
+		private QueueWidgetItems $items,
+		private LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -135,4 +150,34 @@ class MyTasksWidget implements IWidget {
 		Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 
 	}//end load()
+
+	/**
+	 * The person's open tasks as widget items, soonest due first.
+	 *
+	 * When the engine cannot be read the list is empty and SAYS so: "no tasks"
+	 * would be a claim about the reader's day that nobody checked.
+	 *
+	 * @param string      $userId The person.
+	 * @param string|null $since  Not used: the engine has no "since" cursor.
+	 * @param int         $limit  The most items the host shows.
+	 *
+	 * @return WidgetItems The items.
+	 *
+	 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-024
+	 */
+	public function getItemsV2(string $userId, ?string $since = null, int $limit = 7): WidgetItems {
+		// The interface passes a cursor this widget has no use for.
+		unset($since);
+		try {
+			$open = $this->tasks->itemsFor(userId: $userId);
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: the My tasks widget could not read the engine: ' . $e->getMessage());
+			return new WidgetItems([], $this->l10n->t('Your tasks could not be read just now.'));
+		}
+
+		return new WidgetItems(
+			$this->items->items(queueItems: $open, limit: $limit),
+			$this->l10n->t('No open tasks.')
+		);
+	}//end getItemsV2()
 }//end class
