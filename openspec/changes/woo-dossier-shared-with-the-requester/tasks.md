@@ -18,7 +18,7 @@ Read `openspec/woo-build-rules.md` first. Start the term tasks (group 2) only on
 
 ## 4. Clarification
 
-- [x] 4.1 (`AanvullingsverzoekService::ask(kind, question)`, refused before any letter on another case type or with documents; `CaseTermsController::requestInformation` passes `kind` and `question`; `tests/Unit/Service/WooClarificationTest.php`) Add the kind `verduidelijking` to `aanvullingsverzoek`, Woo case type only, without items (REQ-WDS-004). Verify: `tests/Unit/Service/WooClarificationTest.php`.
+- [x] 4.1 (`AanvullingsverzoekService::ask(question:)`, the desk sends `kind: verduidelijking` and `question`, refused before any letter on another case type or with documents; `CaseTermsController::requestInformation` passes `kind` and `question`; `tests/Unit/Service/WooClarificationTest.php`) Add the kind `verduidelijking` to `aanvullingsverzoek`, Woo case type only, without items (REQ-WDS-004). Verify: `tests/Unit/Service/WooClarificationTest.php`.
 
 ## 5. Nothing from the desk
 

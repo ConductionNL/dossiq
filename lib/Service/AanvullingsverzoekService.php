@@ -117,8 +117,8 @@ class AanvullingsverzoekService {
 	 * @param string             $pauseReason  The administered reason that types it.
 	 * @param string             $rationale    Why the case cannot be decided yet.
 	 * @param string             $party        The party being asked.
-	 * @param string             $kind         `aanvulling` (documents) or `verduidelijking` (one question, Woo only).
-	 * @param string             $question     The one question of a `verduidelijking`, as the requester reads it.
+	 * @param string|null        $question     The one question of a `verduidelijking` (Woo only), as the
+	 *                                         requester reads it; null asks for documents.
 	 *
 	 * @return array<string, mixed> The written request.
 	 *
@@ -135,12 +135,13 @@ class AanvullingsverzoekService {
 		string $pauseReason = '',
 		string $rationale = '',
 		string $party = '',
-		string $kind = self::KIND_DOCUMENTS,
-		string $question = '',
+		?string $question = null,
 	): array {
-		$this->assertKind(caseId: $caseId, kind: $kind, items: $items, question: $question);
+		$kind = self::KIND_DOCUMENTS;
 		$asked = $items;
-		if ($kind === self::KIND_CLARIFICATION) {
+		if ($question !== null) {
+			$kind = self::KIND_CLARIFICATION;
+			$this->assertClarification(caseId: $caseId, items: $items, question: $question);
 			// The letter carries the question as the one thing asked; the
 			// record keeps it as the summary and lists no documents.
 			$asked = [trim($question)];
@@ -220,35 +221,22 @@ class AanvullingsverzoekService {
 	}//end ask()
 
 	/**
-	 * Refuse a kind the case cannot take, before any letter goes out.
+	 * Refuse a clarification the case cannot take, before any letter goes out.
 	 *
 	 * A `verduidelijking` asks one question on a Woo case and lists no
 	 * documents (woo-dossier-shared-with-the-requester REQ-WDS-004).
 	 *
 	 * @param string             $caseId   The case UUID.
-	 * @param string             $kind     The kind asked for.
 	 * @param array<int, string> $items    The documents asked for.
 	 * @param string             $question The question.
 	 *
 	 * @return void
 	 *
-	 * @throws RefusedException When the kind does not fit the case or the request.
+	 * @throws RefusedException When the case is no Woo request, or the request is not one question.
 	 *
 	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
-	private function assertKind(string $caseId, string $kind, array $items, string $question): void {
-		if ($kind === self::KIND_DOCUMENTS) {
-			return;
-		}
-
-		if ($kind !== self::KIND_CLARIFICATION) {
-			throw new RefusedException(
-				rule: 'aanvullingsverzoek-unknown-kind',
-				sentence: 'A request asks for documents or for a clarification.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
+	private function assertClarification(string $caseId, array $items, string $question): void {
 		if ($this->caseTypeOf(caseId: $caseId) !== WooRequestIntake::CASE_TYPE_ID) {
 			throw new RefusedException(
 				rule: 'aanvullingsverzoek-clarification-woo-only',

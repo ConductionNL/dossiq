@@ -107,7 +107,6 @@ class WooClarificationTest extends TestCase {
 			recipient: 'anna@example.org',
 			durationDays: 14,
 			userId: 'behandelaar',
-			kind: AanvullingsverzoekService::KIND_CLARIFICATION,
 			question: self::QUESTION,
 		);
 	}//end askClarification()

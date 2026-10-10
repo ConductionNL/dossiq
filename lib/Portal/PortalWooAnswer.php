@@ -212,16 +212,13 @@ class PortalWooAnswer {
 				schema: AanvullingsverzoekService::SCHEMA,
 				id: $requestId
 			);
-			if ($request === null
-				|| (string)($request['portalSubject'] ?? '') !== $subjectRef
-				|| (string)($request['state'] ?? '') !== 'open'
-			) {
+			if ($this->isOpenFor(row: $request, subjectRef: $subjectRef, open: true) === false) {
 				return null;
 			}
 
 			$caseId = (string)($request['case'] ?? '');
 			$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
-			if ($case === null || (string)($case['portalSubject'] ?? '') !== $subjectRef) {
+			if ($this->isOpenFor(row: $case, subjectRef: $subjectRef, open: false) === false) {
 				return null;
 			}
 
@@ -240,6 +237,23 @@ class PortalWooAnswer {
 
 		return $caseId;
 	}//end answerableCase()
+
+	/**
+	 * Whether a row belongs to the subject and, when asked, is an open request.
+	 *
+	 * @param array<string, mixed>|null $row        The request or the case.
+	 * @param string                    $subjectRef The portal subject.
+	 * @param bool                      $open       Whether the row must be in the state `open`.
+	 *
+	 * @return bool
+	 */
+	private function isOpenFor(?array $row, string $subjectRef, bool $open): bool {
+		if ($row === null || (string)($row['portalSubject'] ?? '') !== $subjectRef) {
+			return false;
+		}
+
+		return $open === false || (string)($row['state'] ?? '') === 'open';
+	}//end isOpenFor()
 
 	/**
 	 * A row's id, wherever OpenRegister put it.
