@@ -22,25 +22,21 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Repair\ProvisionAssignedGroups;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A Team picker with nothing in it looks exactly like a broken reference.
+ * The mandate matrix seeds two example organisation roles, and the demo cases
+ * carry a team.
  *
- * `case.assignedGroup` and `caseTask.assigneeGroup` reference
- * `organisatieRol`, and until this fragment seeded two rows the schema shipped
- * with no instances at all: the picker opened empty and the sidebar facet
- * listed nothing, on a fresh install, with no error anywhere. This file is
- * what fails when the rows are dropped or renamed.
- *
- * The demo cases point at those rows through `@ref:` tokens rather than bare
- * slugs, and the difference matters: `ImportHandler::resolveSeedReferenceTokens()`
- * rewrites `@ref:` targets in a PRE-PASS over the whole merged object list, so
- * it does not care that `46-demo-cases-english.json` merges before
- * `61-mandaat-matrix.json`. A bare slug is resolved as the import loop walks
- * the list, which for these two cases would mean pointing at a team row that
- * does not exist yet.
+ * Since one-team-model a case's team is a Nextcloud group id, not a reference
+ * to an `organisatieRol` row. The demo cases used to reach the two seeded rows
+ * through `@ref:` tokens; they now name `behandelaars`, the group
+ * `ProvisionAssignedGroups` creates on every install, so the Team column shows
+ * a group that exists rather than a uuid nothing answers to. A demo case that
+ * still carried an `@ref:` would store a role uuid in a group field, which is
+ * exactly what `occ dossiq:teams:migrate` reports as unmapped.
  *
  * @covers \OCA\Dossiq\Service\SettingsService
  *
@@ -122,7 +118,7 @@ class MandaatMatrixSeedTest extends TestCase {
 			$this->assertArrayHasKey(
 				$slug,
 				$teams,
-				sprintf('No organisatieRol row "%s" is seeded, so the Team picker opens empty on a fresh install.', $slug)
+				sprintf('No organisatieRol row "%s" is seeded, so the mandate matrix ships without an example role.', $slug)
 			);
 			$this->assertSame($name, ($teams[$slug]['roleName'] ?? null), $slug . ' must carry its role name.');
 			$this->assertSame(
@@ -134,13 +130,12 @@ class MandaatMatrixSeedTest extends TestCase {
 	}//end testBothTeamsAreSeeded()
 
 	/**
-	 * Two demo cases carry a team, and they reach it by an `@ref:` token.
+	 * Two demo cases carry a team, and it is a group every install provisions.
 	 *
 	 * @return void
 	 */
 	public function testTwoDemoCasesCarryATeam(): void {
 		$cases = $this->seedObjects('case');
-		$teams = $this->seedObjects('organisatieRol');
 
 		$withTeam = [];
 		foreach ($cases as $slug => $case) {
@@ -158,23 +153,16 @@ class MandaatMatrixSeedTest extends TestCase {
 			. implode(', ', array_keys($withTeam))
 		);
 
-		foreach ($withTeam as $slug => $reference) {
-			$this->assertStringStartsWith(
+		foreach ($withTeam as $slug => $group) {
+			$this->assertStringStartsNotWith(
 				'@ref:',
-				$reference,
-				sprintf(
-					'Case "%s" must reach its team through an `@ref:` token. A bare slug is resolved as the import '
-					. 'loop walks the objects, and 46-demo-cases-english.json merges BEFORE 61-mandaat-matrix.json, '
-					. 'so the team row does not exist yet at that point.',
-					$slug
-				)
+				$group,
+				sprintf('Case "%s" points its team at a register row; a team is a Nextcloud group id.', $slug)
 			);
-
-			$target = substr($reference, strlen('@ref:'));
-			$this->assertArrayHasKey(
-				$target,
-				$teams,
-				sprintf('Case "%s" references team "%s", which no fragment seeds.', $slug, $target)
+			$this->assertContains(
+				$group,
+				ProvisionAssignedGroups::ASSIGNED_GROUPS,
+				sprintf('Case "%s" names the group "%s", which no install provisions.', $slug, $group)
 			);
 		}
 	}//end testTwoDemoCasesCarryATeam()
