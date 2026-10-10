@@ -34,6 +34,8 @@ failure line in the PR body.
   - **fails today**: `testTheRouterNeverAnswersAMessageId` in that file. Red: `Failed asserting that an
     array does not have the key 'messageId'.` Reduced to channel selection; BeschikkingService's
     public line takes its date from the announcement date.
+  - Retired with task 2.4: once `verzend()` sends through the sender, nothing called the router
+    (`NoDarkCapabilityTest` named it), so the class and its test are removed.
 - [x] 1.3 `TermijnNotificationService::sendTermijnNotification()` calls the sender and returns its
   result under `dispatch` (REQ-WRN-001).
   - **fails today**: `tests/Unit/Service/TermijnNotificationServiceTest.php`
