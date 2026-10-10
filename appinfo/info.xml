@@ -405,6 +405,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <!--
+                AFTER THE CASE TYPE SEEDS. Thirteen shipped case types were seeded
+                without isDraft and stored as drafts (the default), so the new
+                case form could not offer them. Sets isDraft false on exactly
+                those, once per instance; see the class for why once.
+            -->
+            <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
+            <!--
                 AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
                 BEFORE THEM ALL. This step projects the implicit lifecycle of a
                 case type that has no workflow yet into a published "basis"
@@ -915,6 +922,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!-- LAST OF THE SEEDS, because it projects a basis workflow onto
                  every case type the steps above just created. See the
                  post-migration block for what its old position cost. -->

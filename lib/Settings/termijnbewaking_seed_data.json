@@ -71,6 +71,17 @@
         "grace": 14
       },
       "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-omgevingsvergunning",
+      "caseType": "omgevingsvergunning",
+      "legalBasis": "Ow 16.64 lid 1",
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "extensionCapacity": 42,
+      "countExtensions": 1,
+      "pauseExtensionDuration": [14, 28],
+      "validFrom": "2026-01-01"
     }
   ]
 }
