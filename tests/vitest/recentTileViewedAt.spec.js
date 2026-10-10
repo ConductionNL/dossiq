@@ -46,9 +46,9 @@ describe('the Recently opened tile', () => {
 	it('shows when you opened each case, as a relative date read off the envelope', async () => {
 		const recent = recentTile()
 		const keys = recent.content.columns.map((column) => column.key)
-		expect(keys).toEqual(['identifier', 'title', '@self.viewedAt'])
+		expect(keys).toEqual(['title', '@self.viewedAt'])
 
-		const when = recent.content.columns[2]
+		const when = recent.content.columns[1]
 		expect(when.formatter).toBe('daysSince')
 		expect(when.cellClass).toBe('cn-cell--muted cn-cell--end')
 		// The lens carries the order; the tile still declares none of its own.
@@ -151,19 +151,25 @@ describe('the Recently opened tile', () => {
 
 	/**
 	 * The date column stays inside the tile (my-work-cards-and-team-tiles-read-right,
-	 * finding F7). The tile is about 340px wide and its three columns asked for
-	 * about 490px, so the date was cut off. Fixed layout makes the declared
-	 * widths hold; the title gives way and ends in an ellipsis.
+	 * finding F7). The tile is about 340px wide and three columns asked for about
+	 * 490px, so the date was cut off. The board DqDashboard draws two columns:
+	 * the title with the case number as a muted line under it, and the date.
+	 * The title wraps rather than pushing the table wider.
 	 */
-	it('keeps the number and the date at their width, and lets the title give way', () => {
-		const content = recentTile().content
-		const [number, title, when] = content.columns
+	it('draws the number under the title, so the date keeps its place in a narrow tile', () => {
+		const [title, when] = recentTile().content.columns
 
-		expect(content.fixedLayout).toBe(true)
-		expect(CnDataTable.props).toHaveProperty('fixedLayout')
-		expect(number.width).toBeTruthy()
-		expect(when.width).toBeTruthy()
-		expect(title.width).toBeUndefined()
-		expect(title.cellClass.split(' ')).toContain('cn-cell--truncate')
+		expect(title.key).toBe('title')
+		expect(title.secondary).toBe('identifier')
+		expect(title.cellClass.split(' ')).toContain('cn-cell--wrap')
+		expect(when.cellClass.split(' ')).toContain('cn-cell--end')
+		// The library draws `secondary` as a second line (zuiddrecht-pixel-gaps).
+		expect(
+			CnDataTable.methods.secondaryValue.call(
+				{ getCellValue: (row, key) => row[key] },
+				{ identifier: '2026-0004' },
+				title,
+			),
+		).toBe('2026-0004')
 	})
 })

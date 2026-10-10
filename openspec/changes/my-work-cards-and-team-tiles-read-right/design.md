@@ -18,9 +18,16 @@ An object-list widget fetches no schema for its rows, so a schema's
 `format: date` never reaches the cell. The column declares it itself, the same
 way other dossiq lists already do for `sendDate`.
 
-## The recent tile gives way on the title
+## The recent tile takes the board's shape
 
-nextcloud-vue is making narrow object tables shrink their title column on their
-own. The manifest side is to say which column gives way: the number and the date
-get a width under `fixedLayout`, and the title carries `cn-cell--truncate` so it
-ends in an ellipsis with the full title as tooltip.
+The board DqDashboard draws Recent geopend as a title with the case number under
+it and the date on the right. CnDataTable's `secondary` draws exactly that second
+line, so the number moves under the title and the table has two columns. The
+title carries `cn-cell--wrap`, so a long title wraps rather than widening the
+table past the tile.
+
+Fixed layout with column widths was tried first and measured live: the tile hides
+its header, a declared width only reaches the table through its header cells,
+and the three columns split the tile evenly (114px each), which cut the title
+to a third of the tile. nextcloud-vue is making narrow object tables shrink their
+title on their own as well; this shape does not depend on that.

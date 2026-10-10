@@ -926,22 +926,16 @@
 								},
 								"limit": 5
 							},
-							"_columnsNote": "my-work-cards-and-team-tiles-read-right, finding F7. The tile is four grid columns (about 340px) and the three columns asked for about 490px, so the date, the one column that says when, was cut off on the right. `fixedLayout` makes the declared widths authoritative: the number and the date keep theirs, and the title takes what is left and ends in an ellipsis (`cn-cell--truncate`, full title in its tooltip). nextcloud-vue makes narrow object tables shrink their title on its own as well; these widths say which column gives way when it does.",
-							"fixedLayout": true,
+							"_columnsNote": "my-work-cards-and-team-tiles-read-right, finding F7. The tile is four grid columns (about 340px), and three columns (number, title, date) asked for about 490px, so the date, the one column that says when, was cut off on the right. The board DqDashboard draws this tile as two columns: the title with the case number as a muted line under it, and the date on the right. So the number is the title's `secondary` line, the title wraps (`cn-cell--wrap`) instead of pushing the table wider, and the date keeps one line at the end. No widths are declared: the tile hides its header, and a width only reaches a table through its header cells.",
 							"columns": [
 								{
-									"key": "identifier",
-									"width": "6.5em",
-									"cellClass": "cn-cell--muted"
-								},
-								{
 									"key": "title",
-									"cellClass": "cn-cell--strong cn-cell--truncate"
+									"secondary": "identifier",
+									"cellClass": "cn-cell--strong cn-cell--wrap"
 								},
 								{
 									"key": "@self.viewedAt",
 									"formatter": "daysSince",
-									"width": "8.5em",
 									"cellClass": "cn-cell--muted cn-cell--end"
 								}
 							],
