@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Settings\MenuStructure;
+use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -56,6 +57,7 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IRequest;
+use OCP\IUserSession;
 use OCP\Util;
 
 /**
@@ -125,12 +127,16 @@ class DashboardController extends Controller {
 	 * @param IInitialState $initialState Page initial state, for the roadmap feature list.
 	 * @param IAppConfig    $appConfig    App configuration, for the case-plan read preference.
 	 * @param IEventDispatcher $eventDispatcher The dispatcher the Files and Viewer load events go through.
+	 * @param WooReportSwitches|null $wooReportSwitches The Woo review report switches; null leaves every report hidden.
+	 * @param IUserSession|null $userSession The session, for whether the user reads the throughput report.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IInitialState $initialState,
 		private readonly IAppConfig $appConfig,
 		private readonly IEventDispatcher $eventDispatcher,
+		private readonly ?WooReportSwitches $wooReportSwitches = null,
+		private readonly ?IUserSession $userSession = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -187,9 +193,34 @@ class DashboardController extends Controller {
 		);
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 		$this->initialState->provideInitialState('version', $this->installedVersion());
+		$this->initialState->provideInitialState('woo_reports', $this->wooReports());
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
+
+	/**
+	 * Which Woo review reports this user is offered, so the menu shows the screen only then.
+	 *
+	 * The throughput report is offered only while it is switched on AND the
+	 * user is in its reader group; the server checks both again on every read.
+	 * The parties report is not offered yet: its route waits on the corpus
+	 * collection (woo-review-reports, section 4).
+	 *
+	 * @return array{throughput: bool} What the user is offered.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	private function wooReports(): array {
+		$user = $this->userSession?->getUser();
+		if ($this->wooReportSwitches === null || $user === null) {
+			return ['throughput' => false];
+		}
+
+		return [
+			'throughput' => $this->wooReportSwitches->isOn(switch: WooReportSwitches::THROUGHPUT)
+				&& $this->wooReportSwitches->isThroughputReader(userId: $user->getUID()),
+		];
+	}//end wooReports()
 
 	/**
 	 * The dossiq version Nextcloud has installed.

@@ -27,8 +27,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
+use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -182,7 +184,14 @@ class SettingsController extends Controller {
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function update(): JSONResponse {
 		$data = $this->request->getParams();
-		$config = $this->settingsService->updateSettings($data);
+		try {
+			$config = $this->settingsService->updateSettings($data);
+		} catch (RefusedException $e) {
+			return new JSONResponse(
+				['success' => false, 'error' => $e->getRule(), 'message' => $this->refusalSentence(rule: $e->getRule())],
+				$e->getStatus()
+			);
+		}
 
 		$this->recordIntegrationSaves(saved: $data);
 
@@ -193,6 +202,23 @@ class SettingsController extends Controller {
 			]
 		);
 	}//end update()
+
+	/**
+	 * The translated sentence for a refused settings save.
+	 *
+	 * @param string $rule The refusal rule.
+	 *
+	 * @return string The sentence.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	private function refusalSentence(string $rule): string {
+		if ($rule === WooReportSwitches::RULE_NEEDS_READERS) {
+			return $this->l10n->t('Name an existing reader group before switching the throughput report on.');
+		}
+
+		return $this->l10n->t('These settings could not be saved.');
+	}//end refusalSentence()
 
 	/**
 	 * Tell the Integrations page what this save means for each connection.
