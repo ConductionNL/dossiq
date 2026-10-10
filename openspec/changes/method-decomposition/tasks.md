@@ -186,3 +186,41 @@ top-down would decompose methods chosen by a year-old ranking.
 
 62 of the 65 tasks are open. Re-rank against a fresh count before touching any of them, or the
 first thing this change buys is churn in the wrong twelve files.
+
+## Re-ranked 2026-10-10 (lane L11), and the slices built against it
+
+Fresh count on `development` @`3a715bb7c`: **275 `@SuppressWarnings(PHPMD.*)` in `lib/`**, of which
+76 are method complexity (CyclomaticComplexity 36, NPathComplexity 29, ExcessiveMethodLength 11).
+Those 76 sit in thirteen files, every one of them in the ZGW surface except three singletons:
+ZgwService 15, ZrcController 12, ZtcController 10, ZgwZtcRulesService 7, ZgwBrcRulesService 6,
+ZgwZrcRulesService 6, DrcController 5, ZgwDrcRulesService 4, AcController 4, ZgwJwtValidator 2,
+LoadDefaultZgwMappings 2, ZgwRulesBase 1, ContactMomentService 1, PlanItemCascade 1.
+StaticAccess (67) and UnusedFormalParameter (49) are the larger buckets but are not complexity;
+they stay out of this change.
+
+The method below replaces the "live instance" deferral above. Each slice first pins the
+method's every branch through its public callers with a characterisation test (same refusal,
+code, detail and enriched body), watches it green on the untouched code, then decomposes, then
+reruns it. A ZGW rules method is a pure function of the body plus OpenRegister lookups, so a
+characterisation test with a mapped ObjectService is a sufficient safety net; the
+"217 erroring tests" premise of 2026-06 no longer holds (the touched suites run green).
+`.debt-baseline.json` is lowered in the same commit (the ratchet rewrites it).
+
+- [x] Slice 1, `ZgwZrcRulesService` (6 complexity + 2 unused-parameter suppressions gone):
+      `validateCaseFields()` is a sequence of one rule per method (`checkIdentificatieImmutable`,
+      `checkCommunicatiekanaal`, `checkRelevanteAndereZaken`, `checkGegevensgroep` for
+      opschorting and verlenging, `checkHoofdzaak`, `applyBetalingsindicatie`,
+      `checkArchiefstatus`); `validateProductenOfDiensten()` reads the zaaktype's products
+      through `allowedProducts()`; `validateSubResourceType()` resolves the zaak's zaaktype
+      through `getCaseTypeUuidOfCase()` and lost its never-read `$caseTypeField` parameter.
+      Characterisation: `tests/Unit/Service/ZgwZrcCaseFieldRulesTest.php` (27 tests). The
+      class-level ExcessiveClassComplexity (153 against 50) and ExcessiveClassLength stay: they
+      need a class split, not a method split.
+- [ ] Slice 2, `ZgwBrcRulesService` (6)
+- [ ] Slice 3, `ZgwZtcRulesService` (7)
+- [ ] Slice 4, `ZgwDrcRulesService` (4)
+- [ ] Slice 5, `ZgwService` (15), in several PRs
+- [ ] Slice 6, the controllers (ZrcController 12, ZtcController 10, DrcController 5); AcController
+      waits until #3298 (which edits it) lands
+- [ ] Slice 7, the singletons (ZgwJwtValidator, LoadDefaultZgwMappings, ZgwRulesBase,
+      ContactMomentService, PlanItemCascade)
