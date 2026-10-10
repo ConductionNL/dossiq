@@ -369,6 +369,9 @@ test.describe('decision outcomes on the case', () => {
 			title: `${RUN_PREFIX} besluit ${days}`,
 			caseType: machine.caseTypeId,
 			status: machine.statusReceived,
+			// An address a transport can take the besluit to: since decision
+			// 148 a beschikking no transport took stays signed.
+			initiatorSourceId: `besluit-${days}@example.nl`,
 		})
 
 		return objectId(created)

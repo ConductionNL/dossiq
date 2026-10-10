@@ -80,40 +80,50 @@ from `today`.
 
 ## 4. The report groups by the real case type
 
-- [ ] 4.1 `DeadlineReportingService::aggregateByType()` resolves the case type through
+- [x] 4.1 `DeadlineReportingService::aggregateByType()` resolves the case type through
   `deadlineInstance.case`, then the definition, and otherwise uses `unresolved` with the ids
   listed. Do the case lookup in one batched search, not one search per row (REQ-WTR-004).
   - **fails today**: `tests/Unit/Service/DeadlineReportingServiceTest.php`
     `testWooTermsAreGroupedUnderTheWooCaseType` and `testNoTermIsReportedUnderUnknown`.
   - Through the caller: `tests/Unit/Controller/DeadlineReportingControllerTest.php`
     `testTheQuarterlyRouteGroupsByCaseType`.
-- [ ] 4.2 Add `received`, `met`, `missed`, `running`, `suspended` and `metShare` per type.
+  - Done: `caseTypesOf()` reads cases, case types and definitions in three `_ids`-restricted
+    searches; keys are the case type identifier (what a definition names), with `title` beside it;
+    `metadata.unresolvedInstances` lists the rest. The through-the-caller test lives in
+    `DeadlineReportingControllerContractTest` (the controller's test class). The old fixture gave
+    each instance an undeclared `caseType`; it now reads through real case rows.
+- [x] 4.2 Add `received`, `met`, `missed`, `running`, `suspended` and `metShare` per type.
   Existing keys keep their meaning (REQ-WTR-005).
   - unit: `testMetMissedRunningAndSuspendedAreCounted` with the four-term fixture of the scenario.
   - If the dashboard widget reading `/api/termijn/reports/kwartaal` shows per-type rows, it shows
     the case type title. Test this with vitest only if the widget changes.
+  - Done: the six keys per type; `TdQuarterlyWidget.vue` shows `row.title` (falls back to the key),
+    `tests/vitest/tdQuarterlyWidgetCaseTypeTitle.spec.js`.
 
 ## 5. End to end and live
 
 - [ ] 5.1 `tests/e2e/woo-term-rolls.spec.ts`: create a Woo case through the API with a start date
   whose term ends on a configured holiday, and read the `deadline` back. Extend it once and then
-  twice. Cite REQ-WTR-001 and REQ-WTR-003.
+  twice. Cite REQ-WTR-001 and REQ-WTR-003. (live pass, decision 139: written as
+  `tests/e2e/woo-term-rolls.spec.ts`, asserting the dates `one-term-engine` computes: the case
+  deadline is the statutory instance's, and the one extension counts from the unrolled end)
 - [ ] 5.2 Live check after merge on the dev instance: one Woo case started on 2026-11-27 through
   the portal intake. Read `deadline` and the term instance's `endDateCurrent` through the
   OpenRegister API, and record both. This proves the removed calculation no longer overwrites the
-  listener.
+  listener. (live pass, decision 139. Since `one-term-engine` the calculation stays as the fallback
+  for a case with no statutory term, so the check reads that the instance's date wins.)
 
 ## 6. Verify and deliver
 
-- [ ] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it.
-- [ ] 6.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter`
+- [x] 6.1 `TMPDIR` set to a sibling directory beside the clone, never inside it.
+- [x] 6.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter`
   on the touched classes and judge by the `Tests:` line. `TermijnService` and
   `DeadlineExtensionService` are central, so run the full unit suite once before push.
-- [ ] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
+- [x] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
   `npm run lint`, `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg that `code-quality.yml` requires. Then run hydra's
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
+- [x] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured. (not projectable: no coverage driver here, and `development`'s last green push run, 35823727270 on 23 Sep, published no clover artifact. The PR body lists the test class that pins each added class instead.)
 - [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means
   merged on `development` with CI green. Rows 10.9 and 16.2 then read `yes` (build), and
   `production` only with a store release.

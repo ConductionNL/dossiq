@@ -39,6 +39,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DeadlineReportingController;
 use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -56,6 +58,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\DeadlineReportingService
  * @uses \OCA\Dossiq\Service\Reporting\ReportingAudience
  * @uses \OCA\Dossiq\Service\Term\FirstResponseOutcome
+ * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
+ * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
  */
 class DeadlineReportingControllerContractTest extends TestCase {
 
@@ -532,4 +536,52 @@ class DeadlineReportingControllerContractTest extends TestCase {
 		self::assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
 	}//end testFirstResponseReportIsUnavailableRatherThanFiveHundredWithoutItsService()
 
+	/**
+	 * REQ-WTR-004 through the route: GET kwartaal groups each term by the case
+	 * type of its case, over the real reporting service.
+	 *
+	 * @return void
+	 */
+	public function testTheQuarterlyRouteGroupsByCaseType(): void {
+		$this->signIn();
+		$store = new FakeTermijnStore();
+		$store->seed('caseType', ['id' => 'ct-woo', 'identifier' => 'woo-verzoek', 'title' => 'Woo-verzoek']);
+		foreach (['w1', 'w2'] as $id) {
+			$store->seed('case', ['id' => 'case-' . $id, 'caseType' => 'ct-woo']);
+			$store->seed('deadlineInstance', [
+				'id' => $id,
+				'case' => 'case-' . $id,
+				'startDate' => '2026-10-05T09:00:00+02:00',
+				'endDateCurrent' => '2026-11-02',
+				'status' => 'lopend',
+			]);
+		}
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'termijn_instance_schema' => 'deadlineInstance',
+				'termijn_definitie_schema' => 'deadlineDefinition',
+				'case_schema' => 'case',
+				'case_type_schema' => 'caseType',
+				default => '',
+			}
+		);
+		$controller = new DeadlineReportingController(
+			appName: 'dossiq',
+			request: $this->request,
+			service: new DeadlineReportingService($settings),
+			userSession: $this->userSession,
+			logger: $this->logger,
+			audience: $this->audience,
+		);
+
+		$data = $controller->quarterlyReport(period: '2026-Q4')->getData();
+
+		$this->assertSame(['woo-verzoek'], array_keys($data['perType']));
+		$this->assertSame(2, $data['perType']['woo-verzoek']['totaal']);
+		$this->assertSame([], $data['metadata']['unresolvedInstances']);
+	}//end testTheQuarterlyRouteGroupsByCaseType()
 }//end class
