@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -29,7 +29,7 @@ namespace OCA\Dossiq\Woo;
 /**
  * Validates a Woo request and reduces it to what the case keeps.
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  */
 class WooRequestForm {
 
@@ -62,7 +62,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When it cannot be used.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 */
 	public function normalise(array $request): array {
 		$fields = [];
@@ -141,7 +141,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When a value is not one of the kinds.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
 	 */
 	private function kinds(mixed $value): array {
 		if (is_array($value) === false) {
@@ -181,7 +181,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When it is given and is not in the list.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
 	 */
 	private function oneOf(string $value, array $allowed, string $refusal): string {
 		if ($value === '' || in_array($value, $allowed, true) === true) {
@@ -200,7 +200,7 @@ class WooRequestForm {
 	 *
 	 * @throws WooRequestRefused When it is given and is not an address.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
 	 */
 	private function email(string $value): string {
 		if ($value === '' || filter_var($value, FILTER_VALIDATE_EMAIL) !== false) {

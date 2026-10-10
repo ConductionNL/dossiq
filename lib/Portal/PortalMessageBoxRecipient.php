@@ -17,7 +17,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-message-box-recipient/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
  * no Nextcloud user, where OpenRegister's RBAC would answer nothing. The
  * message id is the only input.
  *
- * @spec openspec/changes/portal-message-box-recipient/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalMessageBoxRecipient {
 	use SearchesObjects;
@@ -80,7 +80,7 @@ class PortalMessageBoxRecipient {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-message-box-recipient/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function forMessage(string $messageId): ?string {
 		$objectService = $this->settingsService->getObjectService();

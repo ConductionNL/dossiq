@@ -73,6 +73,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'RealignStatutoryVocabulary' => 'repairs rows an earlier rename touched; a fresh install never acquires them',
 		'MigrateArchivalToOpenRegister' => 'one-way migration of existing archival rows',
 		'MoveDocumentsIntoCaseFolders' => 'moves existing document files into their case folders; a fresh install has none',
+		'CopyMessageAttachmentsIntoMessageFolders' => 'copies existing portal message attachments into the message folder; a fresh install has none',
 		'MigratePartnersToOrganisations' => 'moves existing ketenpartner rows onto Organisation',
 		'MigrateTenantsToOrganisations' => 'moves existing legacy tenant rows onto Organisation; a fresh install has none',
 		'MigrateSubsidieRegelingToCaseType' => 'moves existing subsidieRegeling rows onto case types',

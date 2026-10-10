@@ -22,7 +22,7 @@ dossiq#3152.
 
 ## 3. Live check
 
-- [ ] 3.1 As a DigiD dev session with a seeded case: portaliq's `GET /portal/api/citizen/cases/dossiq/case/{id}` answers the case (no `portal-writes-not-declared`), an amendment and a withdrawal succeed, and each lands on the dossiq timeline through `PortalClientWriteListener` (closes dossiq#3152's second half).
+- [ ] 3.1 As a DigiD dev session with a seeded case: portaliq's `GET /portal/api/citizen/cases/dossiq/case/{id}` answers the case (no `portal-writes-not-declared`), an amendment and a withdrawal succeed, and each lands on the dossiq timeline through `PortalClientWriteListener` (closes dossiq#3152's second half). (live pass, decision 139; archived 10 Oct under decision 139, recipe in dossiq STATE.md "Still owed")
 
 ## 4. Validation
 

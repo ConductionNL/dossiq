@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Opens a Woo request case for a resident, optionally from their dossier.
  *
- * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  */
 class WooRequestIntake {
 
@@ -106,9 +106,9 @@ class WooRequestIntake {
 	 * @throws WooRequestRefused When the request is unusable, the dossier is not the resident's,
 	 *                           or the register or case type is missing.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
 	public function start(array $request): array {
 		$wooRequest = (new WooRequestForm())->normalise(request: $request);
@@ -132,6 +132,7 @@ class WooRequestIntake {
 			caseType: $caseType,
 			subjectRef: $subjectRef,
 			wooRequest: $wooRequest,
+			branch: $this->branchOf(value: ($request['branch'] ?? null)),
 		);
 		$caseId = $saved['id'];
 
@@ -159,7 +160,7 @@ class WooRequestIntake {
 	 *
 	 * @return string The path, starting with `/index.php`.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 */
 	public function publicationPath(string $publicationId): string {
 		$catalogSlug = $this->settingsService->getConfigValue('woo_publication_catalog_slug', 'publication');
@@ -179,7 +180,7 @@ class WooRequestIntake {
 	 *
 	 * @throws WooRequestRefused NOT_FOUND when it is absent or someone else's.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
 	private function ownedCollection(object $objectService, string $collectionId, string $subjectRef): array {
 		$collection = null;
@@ -240,6 +241,27 @@ class WooRequestIntake {
 	}//end caseType()
 
 	/**
+	 * The branch number a request carries, or '' when it carries none or no
+	 * twelve-digit vestigingsnummer.
+	 *
+	 * @param mixed $value The branch as the request carries it.
+	 *
+	 * @return string The branch, or ''.
+	 */
+	private function branchOf(mixed $value): string {
+		$branch = '';
+		if (is_scalar($value) === true) {
+			$branch = trim((string)$value);
+		}
+
+		if (preg_match('/^[0-9]{12}$/', $branch) !== 1) {
+			return '';
+		}
+
+		return $branch;
+	}//end branchOf()
+
+	/**
 	 * Write the case and answer its uuid.
 	 *
 	 * @param object                $objectService The OpenRegister ObjectService.
@@ -247,12 +269,20 @@ class WooRequestIntake {
 	 * @param array<string, mixed>  $caseType      The Woo request case type.
 	 * @param string                $subjectRef    The resident.
 	 * @param array<string, string> $wooRequest    The request as the case keeps it.
+	 * @param string                $branch        The branch number a company filed under, or ''.
 	 *
 	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when the write fails.
 	 */
-	private function writeCase(object $objectService, string $register, array $caseType, string $subjectRef, array $wooRequest): array {
+	private function writeCase(
+		object $objectService,
+		string $register,
+		array $caseType,
+		string $subjectRef,
+		array $wooRequest,
+		string $branch='',
+	): array {
 		$case = [
 			'title' => $wooRequest['onderwerp'],
 			'description' => $wooRequest['omschrijving'],
@@ -264,6 +294,11 @@ class WooRequestIntake {
 			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
 			'wooRequest' => $wooRequest,
 		];
+		// THE BRANCH A COMPANY FILED UNDER, so a session restricted to that
+		// branch lists the case (portal-case-list-declarations D3).
+		if ($branch !== '') {
+			$case['portalBranch'] = $branch;
+		}
 
 		// THE REQUESTER DETAILS ALSO ANSWER THE CASE TYPE'S OWN QUESTIONS.
 		// The Woo type declares verzoekerNaam, verzoekerEmail and
@@ -411,7 +446,7 @@ class WooRequestIntake {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
 	private function recordSource(object $objectService, array $collection, string $caseId): void {
 		$reference = self::SOURCE_PREFIX . $caseId;
@@ -461,7 +496,7 @@ class WooRequestIntake {
 	 *
 	 * @return array<string, mixed>|null The object, or null when it does not exist.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 */
 	private function findUnscoped(object $objectService, int|string $register, int|string $schema, string $id): ?array {
 		try {

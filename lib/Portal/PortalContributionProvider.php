@@ -374,7 +374,7 @@ class PortalContributionProvider {
 	 *
 	 * @return string|null The applicant's BSN, or null.
 	 *
-	 * @spec openspec/changes/portal-message-box-recipient/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function messageBoxRecipient(string $messageId): ?string {
 		if ($this->messageBox === null) {
@@ -396,7 +396,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, mixed>> `{id, title, kind, date, file, mimeType?, size?}` per document.
 	 *
-	 * @spec openspec/changes/portal-case-documents/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseDocuments(string $caseId): array {
 		if ($this->documents === null) {
@@ -418,7 +418,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, mixed>> The messages, or [] without a reader.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseMessages(string $caseId): array {
 		if ($this->messages === null) {
@@ -641,6 +641,12 @@ class PortalContributionProvider {
 			'actions' => [],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
+		// A COMPANY THAT SIGNS IN WITH eHERKENNING GETS `supplier` from
+		// portaliq's preset, and follows its own permit case there too. The
+		// case collection is the resident's declaration, scoped by the same
+		// `portalSubject`, so a company reads only what it filed itself
+		// (portal-case-list-declarations D1).
+		$contribution['collections'][] = (new CitizenManifest())->caseCollection();
 		$contribution['pages'] = $this->pages->forCollections(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
 
 		return $contribution;
