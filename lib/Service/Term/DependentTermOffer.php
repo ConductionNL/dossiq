@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
 /**
  * Makes and settles the offer a moved term creates for its dependents.
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+ * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
 class DependentTermOffer {
 	/**
@@ -109,7 +109,7 @@ class DependentTermOffer {
 	 *
 	 * @return array<int, array{caseId: string, title: string}> The waiting cases.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function dependentsOf(string $sourceCaseId): array {
 		if (trim($sourceCaseId) === '') {
@@ -165,7 +165,7 @@ class DependentTermOffer {
 	 *
 	 * @return int How many offers were written.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function offer(string $sourceCaseId, string $sourceTitle, int $daysImpact): int {
 		if ($daysImpact <= 0) {
@@ -208,7 +208,7 @@ class DependentTermOffer {
 	 *
 	 * @return array{refused?: string, event?: array<string, mixed>} The outcome.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function accept(string $taskId, ?string $actor): array {
 		$offer = $this->offerOn(taskId: $taskId);
@@ -265,7 +265,7 @@ class DependentTermOffer {
 	 *
 	 * @return bool True when the task was completed.
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function decline(string $taskId, ?string $actor): bool {
 		if ($this->offerOn(taskId: $taskId) === null) {

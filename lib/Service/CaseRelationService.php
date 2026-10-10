@@ -239,15 +239,25 @@ class CaseRelationService {
 		}
 
 		$originRelations = $this->codec->decode(case: $origin);
-		if ($this->codec->hasPair(relations: $originRelations, caseId: $targetId, natureRelationship: $natureRelationship) === true) {
+		if ($this->codec->hasPair(relations: $originRelations, caseId: $targetId, natureRelationship: $natureRelationship) === true
+			|| in_array(
+				$targetId,
+				($this->codec->typedLinks(case: $origin)[$this->codec->typedProperty(natureRelationship: $natureRelationship) ?? ''] ?? []),
+				true
+			) === true
+		) {
 			return ['ok' => false, 'reason' => 'duplicate'];
 		}
 
-		$originRelations[] = $this->codec->buildEntry(
-			caseId: $targetId,
-			natureRelationship: $natureRelationship,
-			notes: $notes
-		);
+		// `relatedCases` is ZGW's relevanteAndereZaken. The waits-on pair is not
+		// a ZGW aardRelatie and lives on the relation primitive only.
+		if ($this->isPrimitiveOnly(natureRelationship: $natureRelationship) === false) {
+			$originRelations[] = $this->codec->buildEntry(
+				caseId: $targetId,
+				natureRelationship: $natureRelationship,
+				notes: $notes
+			);
+		}
 
 		// The link is written ONCE, on the case that declared it, into the
 		// property whose relation type names both halves. The far side is not
@@ -267,6 +277,23 @@ class CaseRelationService {
 
 		return ['ok' => true];
 	}//end addRelation()
+
+	/**
+	 * Whether a relation type is carried by the relation primitive alone.
+	 *
+	 * The waits-on pair was declared on OpenRegister's typed relations
+	 * (`blockingCases`, relation type `waitsOn`) and has no ZGW equivalent,
+	 * so it is never written into `relatedCases`.
+	 *
+	 * @param string $natureRelationship Relation type.
+	 *
+	 * @return bool True when the type is never written into `relatedCases`.
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 */
+	private function isPrimitiveOnly(string $natureRelationship): bool {
+		return $natureRelationship === self::RELATION_WAITS_ON;
+	}//end isPrimitiveOnly()
 
 	/**
 	 * Reject a relation request whose inputs cannot form a valid peer relation.
@@ -496,10 +523,21 @@ class CaseRelationService {
 			);
 		}//end foreach
 
-		if ($promoted !== $links) {
+		// A waits-on entry written into `relatedCases` before the pair moved
+		// onto the primitive is promoted above and dropped from the list here.
+		$kept = array_values(
+			array_filter(
+				$relations,
+				fn (array $relation): bool => $this->isPrimitiveOnly(
+					natureRelationship: (string)($relation['aardRelatie'] ?? '')
+				) === false
+			)
+		);
+
+		if ($promoted !== $links || count($kept) !== count($relations)) {
 			$this->store->persistRelations(
 				case: $case,
-				relations: $relations,
+				relations: $kept,
 				typedLinks: $promoted
 			);
 		}

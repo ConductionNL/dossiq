@@ -19,5 +19,15 @@ Tier: V1. Kind: code. Row Q3.21.
   panel's note.
 - [x] 3.1 `tests/e2e/dependent-term.spec.ts`; `openspec validate
   dependent-term-follows-predecessor --strict`.
-- [ ] 4.1 [blocked: openregister `relation-types-with-inverses`] move the
-  pair onto the relation primitive and drop it from `relatedCases` (D-4).
+- [x] 4.1 Move the pair onto the relation primitive and drop it from
+  `relatedCases` (D-4). openregister `relation-types-with-inverses` landed
+  (#3764). The pair was already declared there (`x-openregister-relation-types`
+  key `waitsOn`, property `blockingCases`) and the offer already reads the
+  relation rows; what was left is that `CaseRelationService::addRelation()`
+  no longer writes `waitsOn` into `relatedCases`, refuses a second waits-on
+  from the same side on the typed list, and `normalise()` moves a legacy
+  waits-on entry out of `relatedCases`.
+  - `tests/Unit/Service/CaseRelationServiceTest.php`
+    (`testWaitsOnIsNotWrittenIntoRelatedCases`,
+    `testNormaliseMovesALegacyWaitsOnOntoThePrimitive`; red before the change:
+    `dossiq/dq-l1-logs/red-dependent-term.log`)

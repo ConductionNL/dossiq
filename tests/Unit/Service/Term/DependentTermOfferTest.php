@@ -34,7 +34,7 @@ use RuntimeException;
  * A term that moved is offered to the cases waiting on it, and nothing moves
  * until a person says so.
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 class DependentTermOfferTest extends TestCase {
 	/**
