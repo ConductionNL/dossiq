@@ -76,7 +76,7 @@ class AdminSettings implements IDelegatedSettings {
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
-	 * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getForm(): TemplateResponse {
 		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
