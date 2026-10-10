@@ -56,6 +56,8 @@ interface DrcLifecycleObjectServiceStub {
  * Characterisation tests for the EIO delete, update and chunked create.
  *
  * @covers \OCA\Dossiq\Controller\DrcController
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwSearchScope
+ * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
 class DrcEioLifecycleTest extends TestCase {
 
