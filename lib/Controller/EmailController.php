@@ -27,7 +27,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Exception\RecipientOptedOutException;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseEmailService;
+use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\OptOutGate;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -97,17 +99,12 @@ class EmailController extends Controller {
 				$data['attachments'] ?? [],
 				$category,
 			);
-			return new JSONResponse($result);
+			return $this->answer(result: $result);
 		} catch (RecipientOptedOutException $e) {
 			return $this->refused(exception: $e);
+		} catch (RefusedException $e) {
+			return $this->refusedSend(exception: $e);
 		} catch (\RuntimeException $e) {
-			// M4: Never expose internal error details (SMTP host/credentials) to callers.
-			// 'email_send_failed' is the sentinel thrown by CaseEmailService when the
-			// transport layer itself fails; surface a safe generic message for that case.
-			if ($e->getMessage() === 'email_send_failed') {
-				return new JSONResponse(['error' => 'email_send_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-			}
-
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}//end try
 	}//end send()
@@ -136,15 +133,12 @@ class EmailController extends Controller {
 				$data['templateId'] ?? '',
 				$data['to'] ?? '',
 			);
-			return new JSONResponse($result);
+			return $this->answer(result: $result);
 		} catch (RecipientOptedOutException $e) {
 			return $this->refused(exception: $e);
+		} catch (RefusedException $e) {
+			return $this->refusedSend(exception: $e);
 		} catch (\RuntimeException $e) {
-			// M4: Surface generic error for transport failures.
-			if ($e->getMessage() === 'email_send_failed') {
-				return new JSONResponse(['error' => 'email_send_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-			}
-
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}//end try
 	}//end sendFromTemplate()
@@ -230,6 +224,49 @@ class EmailController extends Controller {
 			Http::STATUS_CONFLICT
 		);
 	}//end refused()
+
+	/**
+	 * Answer a send the Mail account took.
+	 *
+	 * A message the account took but could not send yet is queued there and
+	 * recorded on the case; the caller still hears that sending is unavailable
+	 * right now (503), never a plain 200 (REQ-IMF-11).
+	 *
+	 * @param array<string, mixed> $result The service's result.
+	 *
+	 * @return JSONResponse 200 when sent, 503 with `state: queued` when queued.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	private function answer(array $result): JSONResponse {
+		if (($result['state'] ?? OutboundState::SENT) === OutboundState::QUEUED) {
+			return new JSONResponse(
+				['error' => 'mail-account-unavailable', 'sent' => false] + $result,
+				Http::STATUS_SERVICE_UNAVAILABLE
+			);
+		}
+
+		return new JSONResponse($result);
+	}//end answer()
+
+	/**
+	 * Answer a send refused before it reached the Mail account.
+	 *
+	 * A sender-not-held refusal is 422, mail-account-unavailable is 503. No Mail or
+	 * SMTP detail reaches the caller: the sentence is dossiq's own.
+	 *
+	 * @param RefusedException $exception The refusal.
+	 *
+	 * @return JSONResponse The refusal, with its rule as `error`.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-a-teams-mail-carries-that-teams-sender-identity-req-imf-12
+	 */
+	private function refusedSend(RefusedException $exception): JSONResponse {
+		return new JSONResponse(
+			['error' => $exception->getRule(), 'message' => $exception->getSentence(), 'sent' => false],
+			$exception->getStatus()
+		);
+	}//end refusedSend()
 
 	/**
 	 * Read and decode the JSON request body.

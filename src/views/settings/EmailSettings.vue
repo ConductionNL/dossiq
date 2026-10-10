@@ -173,7 +173,7 @@
 				{{
 					t(
 						'dossiq',
-						'The address dossiq sends from. Leave it empty and dossiq refuses to send at all.',
+						'The address term notices and service mail are sent from. Leave it empty and dossiq does not send them. Mail a handler writes about a case leaves from the Nextcloud Mail account.',
 					)
 				}}
 			</p>

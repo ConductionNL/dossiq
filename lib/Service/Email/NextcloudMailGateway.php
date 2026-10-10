@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service\Email;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -59,6 +60,10 @@ use Throwable;
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) The eleventh is sendMessage(),
+ *  the outbound half of the same Mail coupling (inbound-mail-filters 8.1). Design D-1
+ *  keeps every `OCA\Mail` symbol in this one class, so a second gateway class for
+ *  sending would split the coupling this suppression exists to keep countable.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — the complexity is the price of
  *  design D-1: ONE class names every `OCA\Mail` symbol, guards each one and answers
  *  a documented empty value when Mail is absent. Splitting it would spread that
@@ -103,6 +108,32 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * Mail's administered allow list.
 	 */
 	private const TRUSTED_SENDER_SERVICE = 'OCA\\Mail\\Service\\TrustedSenderService';
+
+	/**
+	 * Mail's outbox: saves a message for an account and sends it through the account's own transport.
+	 */
+	private const OUTBOX_SERVICE = 'OCA\\Mail\\Service\\OutboxService';
+
+	/**
+	 * Mail's outbox row. Built with `new`, never through the container, which
+	 * would hand every caller the same shared instance.
+	 */
+	private const LOCAL_MESSAGE = 'OCA\\Mail\\Db\\LocalMessage';
+
+	/**
+	 * `LocalMessage::TYPE_OUTGOING`.
+	 */
+	private const TYPE_OUTGOING = 0;
+
+	/**
+	 * `LocalMessage::STATUS_IMAP_SENT_MAILBOX_FAIL`: the SMTP send went through, filing the copy did not.
+	 */
+	private const STATUS_SENT_NOT_FILED = 11;
+
+	/**
+	 * `LocalMessage::STATUS_PROCESSED`: sent and filed.
+	 */
+	private const STATUS_PROCESSED = 12;
 
 	/**
 	 * Constructor.
@@ -505,6 +536,145 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	}//end unpackSynchronisation()
 
 	/**
+	 * Send one message through a Mail account, on that account's own authentication.
+	 *
+	 * Saves the message in Mail's outbox for the account and asks Mail to send
+	 * it. Mail opens the connection with the credential it holds, files the
+	 * copy in the account's sent folder, and keeps a message it could not send
+	 * in its outbox, where its own background job retries it. dossiq never
+	 * touches SMTP, a password or an OAuth token here.
+	 *
+	 * Attachments are handed over as `cloud` attachments: Mail reads each path
+	 * from the sending user's own files and checks the download permission
+	 * itself, which is the same boundary dossiq's attachment resolver drew.
+	 *
+	 * @param integer              $accountId The account the message leaves from.
+	 * @param array<string, mixed> $message   to, subject, html, plain, attachments.
+	 *
+	 * @return array{state: string, outboxId: int|null} What became of it.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function sendMessage(int $accountId, array $message): array {
+		$unavailable = ['state' => OutboundState::UNAVAILABLE, 'outboxId' => null];
+
+		$account = $this->account(accountId: $accountId);
+		$outbox  = $this->outbox();
+		if ($account === null || $outbox === null) {
+			return $unavailable;
+		}
+
+		$recipients = [];
+		foreach ((array)($message['to'] ?? []) as $address) {
+			$recipients[] = ['email' => (string)$address];
+		}
+
+		$attachments = [];
+		foreach ((array)($message['attachments'] ?? []) as $path) {
+			$attachments[] = ['type' => 'cloud', 'fileName' => (string)$path];
+		}
+
+		try {
+			$saved = $outbox->saveMessage(
+				$account,
+				$this->localMessage(accountId: $accountId, message: $message),
+				$recipients,
+				[],
+				[],
+				$attachments
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: Nextcloud Mail did not take the message into its outbox',
+				['account' => $accountId, 'error' => $e->getMessage()]
+			);
+			return $unavailable;
+		}
+
+		$outboxId = (int)$this->call(entity: $saved, method: 'getId', fallback: 0);
+		if ($outboxId <= 0) {
+			$outboxId = null;
+		}
+
+		try {
+			$sent = $outbox->sendMessage($saved, $account);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: Nextcloud Mail could not send the message now; it stays in the outbox',
+				['account' => $accountId, 'outboxId' => $outboxId, 'error' => $e->getMessage()]
+			);
+			return ['state' => OutboundState::QUEUED, 'outboxId' => $outboxId];
+		}
+
+		return ['state' => $this->stateOf(sent: $sent), 'outboxId' => $outboxId];
+	}//end sendMessage()
+
+	/**
+	 * Mail's outbox service, or null when Mail is absent or moved it.
+	 *
+	 * @return object|null The outbox.
+	 */
+	private function outbox(): ?object {
+		$outbox = $this->service(name: self::OUTBOX_SERVICE);
+		if ($outbox === null || class_exists(self::LOCAL_MESSAGE) === false
+			|| method_exists($outbox, 'saveMessage') === false || method_exists($outbox, 'sendMessage') === false
+		) {
+			return null;
+		}
+
+		return $outbox;
+	}//end outbox()
+
+	/**
+	 * Build Mail's outbox row for one message.
+	 *
+	 * @param integer              $accountId The account.
+	 * @param array<string, mixed> $message   subject, html, plain.
+	 *
+	 * @return object The unsaved LocalMessage.
+	 *
+	 * @throws RuntimeException When Mail moved its outbox row class; the caller treats it as unavailable.
+	 */
+	private function localMessage(int $accountId, array $message): object {
+		$class = self::LOCAL_MESSAGE;
+		if (class_exists($class) === false) {
+			throw new RuntimeException('Nextcloud Mail has no outbox row class');
+		}
+
+		$local = new $class();
+		$local->setType(self::TYPE_OUTGOING);
+		$local->setAccountId($accountId);
+		$local->setSubject((string)($message['subject'] ?? ''));
+		$local->setBodyHtml((string)($message['html'] ?? ''));
+		$local->setBodyPlain((string)($message['plain'] ?? ''));
+		$local->setHtml(true);
+		// Due now, so Mail's own outbox job picks it up again if this send fails.
+		$local->setSendAt(time());
+
+		return $local;
+	}//end localMessage()
+
+	/**
+	 * Map the status Mail's send chain left on a message to a delivery state.
+	 *
+	 * @param object $sent The message after Mail's send chain.
+	 *
+	 * @return string SENT, SENT_NOT_FILED or QUEUED.
+	 */
+	private function stateOf(object $sent): string {
+		$status = (int)$this->call(entity: $sent, method: 'getStatus', fallback: -1);
+		if ($status === self::STATUS_PROCESSED) {
+			return OutboundState::SENT;
+		}
+
+		if ($status === self::STATUS_SENT_NOT_FILED) {
+			return OutboundState::SENT_NOT_FILED;
+		}
+
+		return OutboundState::QUEUED;
+	}//end stateOf()
+
+	/**
 	 * Turn the event's message entities into the rows intake reads.
 	 *
 	 * @param mixed $rows Whatever the event handed over.
@@ -565,6 +735,12 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	/**
 	 * Call a getter on a Mail entity, or answer the fallback.
 	 *
+	 * `is_callable()`, not `method_exists()`: Mail's entities answer most
+	 * getters (`getStatus`, `getSubject`) through `Entity::__call()`, which
+	 * `method_exists()` cannot see, so it would answer the fallback for a
+	 * getter that is really there. An unknown property throws from
+	 * `__call()` and lands in the catch below.
+	 *
 	 * @param object $entity   The entity.
 	 * @param string $method   The getter.
 	 * @param mixed  $fallback What to answer when the getter is not there.
@@ -574,7 +750,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
 	private function call(object $entity, string $method, mixed $fallback): mixed {
-		if (method_exists($entity, $method) === false) {
+		if (is_callable([$entity, $method]) === false) {
 			return $fallback;
 		}
 
