@@ -29,11 +29,13 @@ and three adapters; nothing in dossiq answered the event it dispatches.
   deadline and look like working intake.
 - [x] 2.2 The correspondent is written onto `initiatorSourceId` so
   `AcknowledgementService` can reach it, and no person record is created.
-- [ ] 2.3 The attachments. NOT DONE HERE, and the spec says so rather than
+- Out of scope, as the spec says (2026-10-10, lane L4: moved out of the checklist because
+  the requirement itself declares both as follow-ups, not owed work):
+  - 2.3 The attachments. NOT DONE HERE, and the spec says so rather than
   implying otherwise: putting a channel's files in the case folder is a seam
   with its own refusals (size, scan verdict, naming). Follow-up
   `channel-attachments-reach-the-case`.
-- [ ] 2.4 Resolving a correspondent to a party dossiq already holds.
+  - 2.4 Resolving a correspondent to a party dossiq already holds.
   Follow-up `channel-correspondents-resolve-to-parties`.
 
 ## 3. The three things that decide whether it is safe

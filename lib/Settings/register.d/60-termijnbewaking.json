@@ -206,7 +206,7 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.4.0",
+        "version": "1.5.0",
         "x-schema-org": "schema:Action",
         "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
@@ -324,6 +324,11 @@
             "type": "string",
             "title": "Engine Timer Id",
             "description": "Uuid of the OpenRegister FlowTimer that measures this term"
+          },
+          "timerBreachesAfterLastDay": {
+            "type": "boolean",
+            "title": "Timer breaches after the last day",
+            "description": "Set once the engine timer is anchored at the day after the start day, so it breaches the day after the term's last day and never on it. The upgrade re-arms every running term without it, once."
           },
           "pauseTimerId": {
             "type": "string",

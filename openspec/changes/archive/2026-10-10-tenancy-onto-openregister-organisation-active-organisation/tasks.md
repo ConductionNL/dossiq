@@ -92,7 +92,7 @@ getters are magic; the service returns `null` for a user with no active organisa
   - Evidence: `run-hydra-gates.sh --base origin/development` output for gate 23, pasted in the PR
     body: no `or-capability:tenant-boundary` finding, and `TenantAuthenticationService.php` printed
     as suppressed for rule 4 only.
-- [ ] 4.2 `tests/e2e/tenant-follows-the-active-organisation.spec.ts`: a user who belongs to two
+- [ ] 4.2 (spec written, four tests in `tests/e2e/tenant-follows-the-active-organisation.spec.ts`; live pass, decision 139) `tests/e2e/tenant-follows-the-active-organisation.spec.ts`: a user who belongs to two
   organisations sets one active through OpenRegister, and a dossiq write is checked against that
   organisation's mandate matrix; suspending it refuses the next dossiq write; an admin reads its
   usage from `GET /apps/openregister/api/organisations/{uuid}/usage`. Cite REQ-TAO-002, REQ-TAO-003
@@ -105,5 +105,5 @@ getters are magic; the service returns `null` for a user with no active organisa
   and any other leg `code-quality.yml` requires. Then
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates that ran. The coverage
   guard needs tests for every added statement.
-- [ ] 4.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on
+- [x] 4.5 (merged as dossiq#3483 on 2026-10-09; its only red checks were Hydra Gates, the inherited gate 23 count, and Quality Report, landed under decision 125) One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on
   any commit. Done means merged on `development` with CI green.

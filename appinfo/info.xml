@@ -622,6 +622,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  the system identity; idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\ReconcileCaseDeadlinesWithTerms</step>
+            <!-- one-term-engine (REQ-OTE-05, REQ-OTE-08): a beslistermijn timer
+                 armed before this release breached on the term's last day.
+                 Every running statutory term's timer is cancelled and armed
+                 again at the day after the start day, once, marked by
+                 timerBreachesAfterLastDay. Counted, non-fatal. Post-migration
+                 only: a fresh install has no running terms. -->
+            <step>OCA\Dossiq\Repair\RearmBeslistermijnTimers</step>
             <!-- Rewrites stored flows that still name a retired node type
                  (RetiredNodeMap). Post-migration only: a fresh install has
                  no stored flow to rewrite. -->
@@ -767,6 +774,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateCommitteesToDecidiq        raises existing committees; none are seeded
               ArmTermijnEngineTimers            arms existing TermijnInstances; none exist yet
               ReconcileCaseDeadlinesWithTerms   writes existing case deadlines from their terms; none exist yet
+              RearmBeslistermijnTimers          re-arms existing running term timers; none exist yet
               RetireOriRegister                 retires a register a fresh install never had
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
