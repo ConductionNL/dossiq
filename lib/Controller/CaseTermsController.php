@@ -190,6 +190,8 @@ class CaseTermsController extends Controller {
 				pauseReason: (string)($body['pauseReason'] ?? ''),
 				rationale: (string)($body['rationale'] ?? ''),
 				party: (string)($body['party'] ?? ''),
+				kind: (string)($body['kind'] ?? AanvullingsverzoekService::KIND_DOCUMENTS),
+				question: (string)($body['question'] ?? ''),
 			);
 
 		} catch (RefusedException $e) {
