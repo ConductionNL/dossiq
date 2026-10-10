@@ -595,17 +595,14 @@ $extra = [
     ['name' => 'cmmnCase#terminate', 'url' => '/api/case/{caseId}/cmmn-plan/terminate', 'verb' => 'POST'],
     ['name' => 'cmmnCase#signal',    'url' => '/api/case/{caseId}/cmmn-plan/signal',    'verb' => 'POST'],
 
-        // SaaS Tenant CRUD + lifecycle — backed by the `tenant` register schema
-        // (chain member tenant-zaaksysteem-saas-01). Admin-only via the
-        // SecurityMiddleware default; #[AuthorizedAdminSetting] on each method.
-    ['name' => 'tenantSaas#index',   'url' => '/api/saas/tenants',                  'verb' => 'GET'],
-    ['name' => 'tenantSaas#create',  'url' => '/api/saas/tenants',                  'verb' => 'POST'],
-    ['name' => 'tenantSaas#show',    'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'GET'],
-    ['name' => 'tenantSaas#update',  'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'PATCH'],
+        // The tenant CRUD + lifecycle routes retired with the tenant admin store
+        // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister
+        // Organisation, administered through OpenRegister's organisation endpoints.
 
-        // SaaS metered billing (chain member 10) — aggregate usage + run Shillinq invoicing.
-    ['name' => 'tenantSaas#billingSummary', 'url' => '/api/saas/tenants/{tenantId}/billing/{month}',     'verb' => 'GET'],
-    ['name' => 'tenantSaas#runBilling',     'url' => '/api/saas/tenants/{tenantId}/billing/{month}/run', 'verb' => 'POST'],
+        // SaaS metered billing (chain member 10) — aggregate usage + run Shillinq
+        // invoicing. Same URLs as before; billing stays in dossiq (decision 2b).
+    ['name' => 'tenantBilling#summary', 'url' => '/api/saas/tenants/{tenantId}/billing/{month}',     'verb' => 'GET'],
+    ['name' => 'tenantBilling#run',     'url' => '/api/saas/tenants/{tenantId}/billing/{month}/run', 'verb' => 'POST'],
 
         // SaaS onboarding (chain member 07) — checklist init/progress/complete + go-live activation.
     ['name' => 'tenantOnboarding#initialise', 'url' => '/api/saas/tenants/{tenantId}/onboarding/initialise',     'verb' => 'POST'],
@@ -829,6 +826,7 @@ $extra = [
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
+    ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
     // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
     // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],

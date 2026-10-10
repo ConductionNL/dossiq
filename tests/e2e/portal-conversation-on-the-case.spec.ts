@@ -92,7 +92,7 @@ test.describe('The handler answers a resident from the case', () => {
 		await cleanupRunObjects(request, token)
 	})
 
-	// @e2e openspec/changes/communication-portal-conversation-on-the-case/specs/portal-contribution/spec.md#answer-a-residents-question-from-the-case
+	// @e2e openspec/specs/portal-contribution/spec.md#answer-a-residents-question-from-the-case
 	test('the question shows with an open follow-up, and the reply answers it', async ({
 		page,
 		request,
