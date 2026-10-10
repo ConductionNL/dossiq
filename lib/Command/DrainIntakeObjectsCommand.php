@@ -128,6 +128,8 @@ class DrainIntakeObjectsCommand extends Command {
 	 * Configure the command.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:intake:drain-portaalverzoek')
