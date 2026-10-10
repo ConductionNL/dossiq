@@ -47,10 +47,6 @@ use Throwable;
  * Which statutory term decides a case's deadline, and the write that applies it.
  *
  * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
- *
- * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
- * constants and four pure predicates over an array, with no state, no I/O and
- * nothing to inject. The same reasoning, word for word, as on CaseTermsService.
  */
 class CaseDeadlineMirror {
 
@@ -99,7 +95,7 @@ class CaseDeadlineMirror {
 	public static function decidingInstance(array $instances): ?array {
 		$newest = null;
 		foreach ($instances as $instance) {
-			if (TermKind::ofInstance($instance) !== TermKind::STATUTORY) {
+			if (self::kindIsStatutory(instance: $instance) === false) {
 				continue;
 			}
 
@@ -127,8 +123,23 @@ class CaseDeadlineMirror {
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function isStatutory(array $instance): bool {
-		return TermKind::ofInstance($instance) === TermKind::STATUTORY;
+		return self::kindIsStatutory(instance: $instance);
 	}//end isStatutory()
+
+	/**
+	 * The rule {@see TermKind::ofInstance()} applies, read off its constants: an
+	 * instance is statutory unless it names another known kind, so one written
+	 * before kinds existed is statutory too.
+	 *
+	 * @param array<string, mixed> $instance The instance.
+	 *
+	 * @return bool True for a statutory term.
+	 */
+	private static function kindIsStatutory(array $instance): bool {
+		$kind = (string)($instance['kind'] ?? '');
+
+		return $kind === TermKind::STATUTORY || in_array($kind, TermKind::ALL, true) === false;
+	}//end kindIsStatutory()
 
 	/**
 	 * Bring the case in line after this instance was saved, when it is statutory.
