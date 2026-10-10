@@ -98,8 +98,8 @@ class ManifestController extends Controller {
 			return new JSONResponse([], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$visible = $this->menuCaseTypes->visibleCaseTypes();
-		if (count($visible) === 0) {
+		$offered = $this->menuCaseTypes->offeredCaseTypes(userId: $user->getUID());
+		if (count($offered) === 0) {
 			return new JSONResponse(['menu' => []]);
 		}
 
@@ -116,7 +116,7 @@ class ManifestController extends Controller {
 			],
 		];
 
-		$chosen = $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $visible);
+		$chosen = $this->menuCaseTypes->chosen(userId: $user->getUID(), visible: $offered);
 		foreach ($chosen as $index => $caseType) {
 			$menu[] = [
 				'id' => 'ct-' . $caseType['id'],
