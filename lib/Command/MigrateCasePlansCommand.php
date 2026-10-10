@@ -54,6 +54,8 @@ class MigrateCasePlansCommand extends Command {
 	 * Name, arguments and options.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-002-in-flight-cases-are-drained-losslessly
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:cmmn:migrate-case-plans')
