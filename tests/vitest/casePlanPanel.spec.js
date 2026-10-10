@@ -86,8 +86,21 @@ vi.mock('@nextcloud/initial-state', () => ({
 
 vi.mock('../../src/store/store.js', () => ({ initializeStores: async () => ({}) }))
 
+/** What the object store answers for the case's caseType. Replaced per test. */
+let caseTypeAnswer = null
+/** Every caseType id the panel read. */
+let caseTypeReads = []
+
 vi.mock('../../src/store/modules/object.js', () => ({
-	useObjectStore: () => ({ fetchObject: async () => caseAnswer }),
+	useObjectStore: () => ({
+		fetchObject: async (type, id) => {
+			if (type === 'caseType') {
+				caseTypeReads.push(id)
+				return caseTypeAnswer
+			}
+			return caseAnswer
+		},
+	}),
 }))
 
 vi.mock('../../src/services/cmmnApi.js', () => ({
@@ -198,6 +211,8 @@ beforeEach(() => {
 	planAnswer = vi.fn()
 	localPlanAnswer = vi.fn().mockResolvedValue(LOCAL_PLAN)
 	caseAnswer = {}
+	caseTypeAnswer = null
+	caseTypeReads = []
 	prefer = true
 })
 
@@ -311,5 +326,70 @@ describe('CasePlanPanel read preference', () => {
 
 		expect(localPlanAnswer).toHaveBeenCalledWith('case-1')
 		expect(wrapper.vm.source).toBe('local')
+	})
+})
+
+describe('CasePlanPanel asks OpenRegister only when it can hold a plan', () => {
+	// Round 5: every case page fired GET /apps/openregister/api/cases/{id} and
+	// got a 404, because dossiq projects a plan only for a CMMN caseType and
+	// asked for one on every case. These pin that a BPMN case no longer asks,
+	// and that every case that might have rows still does.
+
+	it('does not ask OpenRegister for the plan of a BPMN case', async () => {
+		planAnswer.mockRejectedValue({ response: { status: 404 } })
+		caseAnswer = { caseType: 'ct-bpmn', casePlanState: '' }
+		caseTypeAnswer = { id: 'ct-bpmn', handlingModel: 'bpmn' }
+
+		const wrapper = await mountPanel()
+
+		expect(caseTypeReads).toEqual(['ct-bpmn'])
+		expect(planAnswer).not.toHaveBeenCalled()
+		expect(wrapper.vm.source).toBe('none')
+		expect(wrapper.find('[data-testid="case-plan-empty"]').exists()).toBe(true)
+	})
+
+	it('reads a caseType without a handlingModel as BPMN, as the projection does', async () => {
+		caseAnswer = { caseType: 'ct-old' }
+		caseTypeAnswer = { id: 'ct-old' }
+
+		await mountPanel()
+
+		expect(planAnswer).not.toHaveBeenCalled()
+	})
+
+	it('asks OpenRegister for the plan of a CMMN case', async () => {
+		planAnswer.mockResolvedValue(PLAN)
+		caseAnswer = { caseType: 'ct-cmmn' }
+		caseTypeAnswer = { id: 'ct-cmmn', handlingModel: 'cmmn' }
+
+		const wrapper = await mountPanel()
+
+		expect(planAnswer).toHaveBeenCalledWith('case-1')
+		expect(wrapper.text()).toContain('Controle')
+	})
+
+	it('still asks when the caseType cannot be read, so an outage stays visible', async () => {
+		planAnswer.mockRejectedValue({ response: { status: 500 } })
+		caseAnswer = { caseType: 'ct-unknown' }
+		caseTypeAnswer = null
+
+		const wrapper = await mountPanel()
+
+		expect(planAnswer).toHaveBeenCalled()
+		expect(wrapper.find('[data-testid="case-plan-error"]').exists()).toBe(true)
+	})
+
+	it('still asks for a BPMN case that carries a blob, which may be mid-drain', async () => {
+		planAnswer.mockResolvedValue(PLAN)
+		caseAnswer = {
+			caseType: 'ct-bpmn',
+			casePlanState: '{"planItemStates":{"intake":"active"}}',
+		}
+		caseTypeAnswer = { id: 'ct-bpmn', handlingModel: 'bpmn' }
+
+		const wrapper = await mountPanel()
+
+		expect(planAnswer).toHaveBeenCalled()
+		expect(wrapper.vm.source).toBe('openregister')
 	})
 })
