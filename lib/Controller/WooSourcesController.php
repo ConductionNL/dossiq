@@ -44,8 +44,6 @@ use OCP\IUserSession;
 /**
  * The three Gather documents endpoints, each behind a per-case guard.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
  */
 class WooSourcesController extends Controller {
