@@ -25,6 +25,13 @@ cannot record the notice as sent.
 - **WHEN** dossiq sends a stage notice
 - **THEN** the delivery result SHALL have `status` `sent`, channel `digital-post` and `messageId` `ip-123`
 
+#### Scenario: A beschikking no transport took stays not sent
+- **GIVEN** a signed beschikking whose requester has no portal subject, no BSN and no e-mail address
+- **WHEN** a handler sends it
+- **THEN** the beschikking SHALL stay `signed`, with no objection term started
+- **AND** the case timeline SHALL get an internal "Beschikking niet verzonden" line with reason code `no-channel`, and no public line
+- **AND** a beschikking a transport took SHALL store that transport's channel and message id under `dispatch`
+
 #### Scenario: The old router cannot fake a send
 - **GIVEN** the codebase after this change
 - **WHEN** `BerichtenboxRoutingService` is asked to route a notice

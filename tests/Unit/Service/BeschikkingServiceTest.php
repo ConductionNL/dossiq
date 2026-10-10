@@ -27,8 +27,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\BerichtenboxService;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
+use OCA\Dossiq\Service\Beschikking\BeschikkingDelivery;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
@@ -38,6 +40,9 @@ use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StateMachineService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
@@ -137,7 +142,8 @@ class FakeObjectService {
  *
  * @covers \OCA\Dossiq\Service\BeschikkingService
  *
- * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
+ * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingDelivery
+ * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
  * @uses \OCA\Dossiq\Service\Beschikking\AuditPacketBuilder
  * @uses \OCA\Dossiq\Service\Beschikking\BeschikkingRepository
  * @uses \OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler
@@ -190,6 +196,20 @@ class BeschikkingServiceTest extends TestCase {
 	private CaseRemedy $remedy;
 
 	/**
+	 * What digital post answers, driven per test. A tracked message by default.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $postAnswer = [];
+
+	/**
+	 * Every digital-post send, as handed to the transport.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $posted = [];
+
+	/**
 	 * Set up fixtures with a wired-up service graph.
 	 *
 	 * @return void
@@ -232,13 +252,32 @@ class BeschikkingServiceTest extends TestCase {
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$stateMachine = new StateMachineService($settings, $logger);
-		$routing = new BerichtenboxRoutingService($logger);
+
+		// The real sender over a digital-post double: the transport is the
+		// one thing a unit test may not call, and what it answers is exactly
+		// what verzend() must act on.
+		$this->posted = [];
+		$this->postAnswer = ['externalMessageId' => 'mijnoverheid-msg-1', 'sentAt' => '2026-10-10T09:00:00+02:00'];
+		$post = $this->createMock(BerichtenboxService::class);
+		$post->method('sendMessage')->willReturnCallback(
+			function (string $caseId, string $bsn, string $subject, string $body, string $typeCode, ?string $attachmentFileId = null, string $category = 'case-update'): array {
+				$this->posted[] = compact('caseId', 'bsn', 'subject', 'body', 'typeCode', 'category');
+
+				return $this->postAnswer;
+			}
+		);
+		$cases = $this->createMock(CaseStatusStore::class);
+		$cases->method('loadCase')->willReturn(['id' => 'zaak-2026-wmo-1', 'identifier' => 'ZAAK-2026-1']);
+		$delivery = new BeschikkingDelivery(
+			new RequesterNoticeSender(email: $this->createMock(TermNoticeSender::class), digitalPost: $post),
+			$cases,
+		);
 
 		$signingAdapter = new MockSigningAdapter();
 
 		$this->service = new BeschikkingService(
 			$stateMachine,
-			$routing,
+			$delivery,
 			new MockTemplateEngineAdapter(),
 			$signingAdapter,
 			new OpenRegisterArchivalAdapter($this->createMock(ContainerInterface::class), $logger),
@@ -269,15 +308,17 @@ class BeschikkingServiceTest extends TestCase {
 	/**
 	 * Compose a beschikking in the ontwerp status with a rendered PDF.
 	 *
+	 * @param array<string, mixed> $addressee Who the beschikking is addressed to.
+	 *
 	 * @return array<string, mixed> The composed beschikking (for chaining).
 	 */
-	private function composeWmo(): array {
+	private function composeWmo(array $addressee = ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'messageBoxConfirmed' => true]): array {
 		$decision = $this->service->compose(
 			'zaak-2026-wmo-1',
 			'tpl-wmo-v1',
 			[
 				'decisionType' => 'toekenning',
-				'addressee' => ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'messageBoxConfirmed' => true],
+				'addressee' => $addressee,
 				'rationale' => 'Toegekend op basis van onderzoek.',
 			],
 		);
@@ -439,11 +480,105 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertCount(1, $delivered);
 		$this->assertSame('zaak-2026-wmo-1', $delivered[0]['caseId']);
 		$this->assertSame('public', $delivered[0]['visibility']);
-		$this->assertNotSame('', $delivered[0]['fields']['channel']);
+		$this->assertSame('digital-post', $delivered[0]['fields']['channel']);
 		$this->assertNotSame('', $delivered[0]['fields']['sentOn']);
 		$this->assertSame($id, $delivered[0]['fields']['beschikkingId']);
 		$this->assertSame('toekenning', $delivered[0]['fields']['decisionType']);
 	}//end testADeliveredBeschikkingIsOnThePublicTimeline()
+
+	/**
+	 * A beschikking no transport took is not marked sent (decision 148).
+	 *
+	 * 🔴 IT WAS. verzend() asked the routing service for a channel name, which
+	 * calls nothing, then set the status to `sent`, started the six weeks to
+	 * object and wrote a PUBLIC "Beschikking verzonden" line, for a letter
+	 * nobody received. Here the requester has no address anywhere, so nothing
+	 * can take it: the decision stays signed, no clock starts, and the line
+	 * that says why is internal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testABeschikkingNoTransportTookIsNotMarkedSent(): void {
+		// Addressed to a burger with no BSN, on a case with no address.
+		$id = $this->composeWmo(['type' => 'burger', 'name' => 'M. Jansen'])['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+		$refused = null;
+		try {
+			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+		} catch (RefusedException $e) {
+			$refused = $e;
+		}
+
+		$this->assertNotNull($refused, 'verzend() must refuse when no transport took the beschikking');
+		$this->assertSame('beschikking-no-address', $refused->getRule());
+		$this->assertSame('signed', ($this->service->find($id)['currentStatus'] ?? null), 'it stays not-sent');
+		$this->assertSame([], $this->objects->searchObjectsBySlug('dossiq', 'bezwaarTrigger', ['decisionId' => $id]), 'no objection clock starts');
+
+		$public = array_filter($this->entries, static fn (array $entry): bool => $entry['visibility'] === 'public');
+		$this->assertSame([], array_values($public), 'nothing public says it was sent');
+
+		$internal = array_values(array_filter($this->entries, static fn (array $entry): bool => $entry['kind'] === 'beschikking-verzonden'));
+		$this->assertCount(1, $internal);
+		$this->assertSame('internal', $internal[0]['visibility']);
+		$this->assertSame('Beschikking niet verzonden', $internal[0]['message']);
+		$this->assertSame('no-channel', $internal[0]['fields']['reasonCode']);
+	}//end testABeschikkingNoTransportTookIsNotMarkedSent()
+
+	/**
+	 * A transport that refuses leaves the beschikking signed, with its sentence (decision 148).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testABeschikkingDigitalPostRefusedStaysSigned(): void {
+		$this->postAnswer = ['refused' => true, 'code' => 'no-message-box', 'error' => 'This person has no MijnOverheid message box.'];
+
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+
+		try {
+			$this->service->verzend($id, 'afdelingsmanager-wmo-15');
+			$this->fail('verzend() must refuse when digital post refused and no other channel exists');
+		} catch (RefusedException $e) {
+			$this->assertSame('beschikking-not-sent', $e->getRule());
+			$this->assertSame('This person has no MijnOverheid message box.', $e->getSentence());
+			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+		}
+
+		$this->assertCount(1, $this->posted, 'digital post was asked, on the addressee BSN');
+		$this->assertSame('123456789', $this->posted[0]['bsn']);
+		$this->assertSame('signed', ($this->service->find($id)['currentStatus'] ?? null));
+		$this->assertSame('no-message-box', ($this->entries[0]['fields']['reasonCode'] ?? null));
+		$this->assertSame('internal', ($this->entries[0]['visibility'] ?? null));
+	}//end testABeschikkingDigitalPostRefusedStaysSigned()
+
+	/**
+	 * A sent beschikking stores the channel and message id the transport answered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testASentBeschikkingCarriesTheTransportsMessageId(): void {
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		$this->assertSame('sent', $sent['currentStatus']);
+		$this->assertSame('digital-post', $sent['dispatch']['notificationChannel']);
+		$this->assertSame('mijnoverheid-msg-1', $sent['dispatch']['messageId']);
+		$this->assertSame('besluit', $this->posted[0]['category']);
+		$this->assertSame('beschikking', $this->posted[0]['typeCode']);
+		$this->assertStringStartsWith('Besluit over uw zaak', $this->posted[0]['subject']);
+		$this->assertStringContainsString('Toegekend op basis van onderzoek.', $this->posted[0]['body']);
+	}//end testASentBeschikkingCarriesTheTransportsMessageId()
 
 	/**
 	 * Mandaat is rejected when the approver level cannot cover the bedrag. [V03]

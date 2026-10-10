@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\BeschikkingController;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -236,4 +237,27 @@ class BeschikkingControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
 	}//end testVerzendInvalidTransitionConflict()
+
+	/**
+	 * A beschikking no transport took answers the refusal, not a 500 (decision 148).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testVerzendNotSentAnswersTheRefusal(): void {
+		$this->authenticate();
+		$this->service->method('verzend')->willThrowException(
+			new RefusedException(
+				rule: 'beschikking-no-address',
+				sentence: 'This case has no address for the requester, so the beschikking was not sent. Add an address, then send it again.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			)
+		);
+
+		$response = $this->controller->verzend('besch-1');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertStringContainsString('no address', json_encode($response->getData()));
+	}//end testVerzendNotSentAnswersTheRefusal()
 }//end class

@@ -34,13 +34,13 @@ use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\BezwaarTermijnJob;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
+use OCA\Dossiq\Service\Beschikking\BeschikkingDelivery;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\SettingsService;
@@ -152,7 +152,7 @@ class BezwaarTermijnJobServiceAccountTest extends TestCase {
 
 		$decisions = new BeschikkingService(
 			stateMachine: new StateMachineService(settingsService: $settings, logger: new NullLogger()),
-			berichtenbox: $this->createMock(BerichtenboxRoutingService::class),
+			delivery: $this->createMock(BeschikkingDelivery::class),
 			templateAdapter: $this->createMock(TemplateEngineAdapterInterface::class),
 			signingAdapter: $this->createMock(SigningAdapterInterface::class),
 			archivalAdapter: new OpenRegisterArchivalAdapter(
