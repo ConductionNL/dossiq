@@ -21,12 +21,12 @@
 		</p>
 
 		<ul
-v-if="chosen.length > 0"
+			v-if="chosen.length > 0"
 			class="menu-case-types__list"
 			:aria-label="t('dossiq', 'Case types in my menu, in this order')"
 			data-testid="menu-case-types-list">
 			<li
-v-for="(caseType, index) in chosen"
+				v-for="(caseType, index) in chosen"
 				:key="caseType.id"
 				class="menu-case-types__row"
 				:class="{ 'menu-case-types__row--dragging': dragIndex === index }"
@@ -37,7 +37,7 @@ v-for="(caseType, index) in chosen"
 				@drop.prevent="onDropRow(index)"
 				@dragend="dragIndex = null">
 				<button
-type="button"
+					type="button"
 					class="menu-case-types__handle"
 					:aria-label="moveLabel(caseType, index)"
 					:title="t('dossiq', 'Drag, or use the arrow keys, to move')"
@@ -51,8 +51,12 @@ type="button"
 				</span>
 				<span class="menu-case-types__label">{{ caseType.title }}</span>
 				<NcButton
-variant="tertiary"
-					:aria-label="t('dossiq', '{name}, remove from my menu', { name: caseType.title })"
+					variant="tertiary"
+					:aria-label="
+						t('dossiq', '{name}, remove from my menu', {
+							name: caseType.title,
+						})
+					"
 					:title="t('dossiq', 'Remove from my menu')"
 					data-testid="menu-case-types-remove"
 					@click="remove(index)">
@@ -62,12 +66,15 @@ variant="tertiary"
 				</NcButton>
 			</li>
 		</ul>
-		<p v-else-if="loaded" class="menu-case-types__empty" data-testid="menu-case-types-empty">
+		<p
+			v-else-if="loaded"
+			class="menu-case-types__empty"
+			data-testid="menu-case-types-empty">
 			{{ t('dossiq', 'Your menu shows no case types yet. Add one below.') }}
 		</p>
 
 		<NcSelect
-:modelValue="null"
+			:modelValue="null"
 			class="menu-case-types__add"
 			:options="addable"
 			label="title"
@@ -77,10 +84,18 @@ variant="tertiary"
 			data-testid="menu-case-types-add"
 			@update:modelValue="add" />
 		<p class="menu-case-types__hint">
-			{{ t('dossiq', 'You see the case types you have access to. A case type you add goes to the bottom of the list.') }}
+			{{
+				t(
+					'dossiq',
+					'You see the case types you have access to. A case type you add goes to the bottom of the list.',
+				)
+			}}
 		</p>
 
-		<p class="hidden-visually" aria-live="polite" data-testid="menu-case-types-status">
+		<p
+			class="hidden-visually"
+			aria-live="polite"
+			data-testid="menu-case-types-status">
 			{{ status }}
 		</p>
 	</div>
@@ -145,7 +160,10 @@ export default {
 			this.available = available
 			this.loaded = true
 		} catch {
-			this.loadError = t('dossiq', 'Your case types could not be loaded. Reload the page to try again.')
+			this.loadError = t(
+				'dossiq',
+				'Your case types could not be loaded. Reload the page to try again.',
+			)
 		}
 	},
 
@@ -185,7 +203,9 @@ export default {
 			await this.reorder(index, target)
 			// The row moved, so its handle did too: keep the focus on it.
 			this.$nextTick(() => {
-				this.$el.querySelectorAll('[data-testid="menu-case-types-move"]')[target]?.focus()
+				this.$el
+					.querySelectorAll('[data-testid="menu-case-types-move"]')
+					[target]?.focus()
 			})
 		},
 
@@ -257,7 +277,9 @@ export default {
 			}
 
 			if (await this.save([...this.chosen, caseType])) {
-				this.status = t('dossiq', '{name} added to your menu', { name: caseType.title })
+				this.status = t('dossiq', '{name} added to your menu', {
+					name: caseType.title,
+				})
 			}
 		},
 
@@ -271,7 +293,9 @@ export default {
 		async remove(index) {
 			const removed = this.chosen[index]
 			if (await this.save(this.chosen.filter((_, i) => i !== index))) {
-				this.status = t('dossiq', '{name} removed from your menu', { name: removed.title })
+				this.status = t('dossiq', '{name} removed from your menu', {
+					name: removed.title,
+				})
 			}
 		},
 
@@ -286,7 +310,9 @@ export default {
 			const before = this.chosen
 			this.chosen = list
 			try {
-				this.chosen = await saveMenuCaseTypes(list.map((caseType) => caseType.id))
+				this.chosen = await saveMenuCaseTypes(
+					list.map((caseType) => caseType.id),
+				)
 				return true
 			} catch {
 				this.chosen = before
