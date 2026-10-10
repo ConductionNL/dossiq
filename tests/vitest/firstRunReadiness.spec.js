@@ -108,7 +108,7 @@ describe('the screen an administrator reads it on', () => {
 		expect(adminRoot).toContain('id="section-first-run"')
 		expect(adminRoot).toContain('<FirstRunTab')
 		expect(adminRoot.indexOf('section-first-run')).toBeLessThan(
-			adminRoot.indexOf('Case Type Management'),
+			adminRoot.indexOf('<CaseTypeAdmin'),
 		)
 	})
 
