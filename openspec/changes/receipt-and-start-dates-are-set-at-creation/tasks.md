@@ -18,5 +18,5 @@
 - [ ] 3.2 Frontend lane: drop `startDate` from the five create dialogs'
   `includeFields` in `src/manifest.json`, from `src/utils/caseCreateForm.js`,
   and from `tests/e2e/case-create-form.spec.ts`'s expected fields.
-- [ ] 3.3 Design system: drop Startdatum and Ontvangen op from the
-  DqNieuweZaak board.
+- [x] 3.3 Design system: drop Startdatum and Ontvangen op from the
+  DqNieuweZaak board. Done in ConductionNL/design-system#209.

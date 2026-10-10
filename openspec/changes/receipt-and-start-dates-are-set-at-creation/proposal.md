@@ -48,3 +48,5 @@ the Woo answer, so the term never used what the handler typed.
 - Hiding a case type's own question from the create form. The
   `x-openregister-extends-form` declaration renders every definition of the
   chosen type, and nextcloud-vue offers no way to keep one off the form.
+  Since nextcloud-vue 2.79.0 it does (`hideOnCreate`); the Woo
+  `receiptDate` question takes it in `adopt-nextcloud-vue-2-79`.
