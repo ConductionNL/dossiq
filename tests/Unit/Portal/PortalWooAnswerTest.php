@@ -50,6 +50,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\AanvullingsverzoekResolutionService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  */
 class PortalWooAnswerTest extends TestCase {
 
