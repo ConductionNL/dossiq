@@ -57,12 +57,24 @@
       `deviatingPenaltyPaymentRegime`). Retire `WOODeadlineCheckJob`; remove its allowlist entry.
       NOTE: the WOO service owns its own notified-thresholds list — migrate it to
       `notificatiesVerstuurd`-style dedup consulted by the shared listener.
-- [ ] 2.2 **Bezwaar** — `Beschikking/BezwaarTermijnScheduler` + `BezwaarTermijnJob`: the
+- [x] 2.2 **Bezwaar** — `Beschikking/BezwaarTermijnScheduler` + `BezwaarTermijnJob`: the
       bezwaartermijn (6 weeks after bekendmaking, AWB 6:7) is anchor-shaped — arm with
       `anchorEvent: bekendmaking`, and use `supersede()` when the bekendmaking moves. Retire
       `BezwaarTermijnJob`; remove its allowlist entry. NOTE: the scheduler currently advances
       beschikking status from cron; that transition becomes a listener consuming the timer fire,
       keeping the state machine in `StateMachineService`.
+      Built 10 Oct (lane L7): `lib/Service/Beschikking/BezwaarArchiveTimer.php` arms one timer per
+      active `bezwaarTrigger`, anchored on the bekendmaking (`anchorEvent: bekendmaking`) and
+      breaching at the start of its `archiveDate`, the first day the job acted
+      (`archiveDate <= today`). A moved bekendmaking or archive date re-arms through cancel-then-
+      arm (the same supersede shape as the advice timer, rather than the engine's in-place
+      `supersede()`). The job's act moved to `BezwaarArchiveTrigger::process()`, which reads the
+      trigger FRESH so an objection registered after arming still prevents the archive, and
+      archives through `BeschikkingService::archive()` (its state machine). The scheduler never
+      advanced status itself on this path; the job did, and that is now the timer-fire listener
+      `BezwaarArchiveTimerFiredListener`. `BezwaarArchiveTimerListener` syncs on saves,
+      `lib/Repair/ArmBezwaarArchiveTimers.php` arms the triggers running at upgrade. Job, its two
+      tests and its allowlist entry are gone. Live check owed (live pass, decision 139).
 - [ ] 2.3 **DSO** — `DsoDeadlineJob` advances case status from cron: replace with an armed timer
       per DSO-zaak and a `FlowTimerFiredEvent` consumer that drives the SAME
       `StatusTransitionService` path a user action takes (no cron-only transition code). Retire
@@ -73,9 +85,20 @@
       reference) can never hold, and the only writer of such cases was removed earlier. The job,
       `VergaderingCaseService`, their tests and the allowlist entry are gone; there was nothing
       to arm a timer for.
-- [ ] 2.5 **Advice** — `AdviceDeadlineJob` (the fifth sibling, found during phase 1's structural
+- [x] 2.5 **Advice** — `AdviceDeadlineJob` (the fifth sibling, found during phase 1's structural
       sweep): advice-request deadlines onto armed timers; retire the job; remove its allowlist
-      entry.
+      entry. Built 10 Oct (lane L7): `lib/Service/Advice/AdviceTimer.php` arms one `due`/`none`
+      timer per open `adviesAanvraag`, anchored at midnight today with an SLA of the days left
+      plus one, so the `slaBreached:0` rung lands on the first day after the deadline and the
+      `preBreach:<reminderDays+1>` rung on `deadline - advice_reminder_days`, the job's two days
+      (fixture: `tests/Unit/Service/Advice/AdviceTimerTest.php`). `AdviceTimerListener` re-syncs
+      on every save that moves the status or the deadline (supersede: cancel, then arm);
+      `AdviceTimerFiredListener` turns the rungs into `dispatchReminder()` and `expireAdvice()`
+      as the background service account; `lib/Repair/ArmAdviceTimers.php` arms the requests open
+      at upgrade and expires the overdue ones. The job, its test and its allowlist entry are
+      gone; wiring asserted from `tests/Unit/AppInfo/TermijnTimerRegistrarTest.php`. Live check
+      owed (live pass, decision 139): an advice request with a deadline 5 days out arms a timer
+      (`occ` / OR flow timers list) whose reminder fires on day 2 and expiry on day 6.
 - [ ] 2.6 Shared: extend `TermijnTimerFiredListener` (or split per engine) on `metadata.kind`;
       each retirement carries its own fixture pair for the date arithmetic that moves.
 
