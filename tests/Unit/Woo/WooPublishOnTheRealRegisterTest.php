@@ -55,6 +55,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooCaseLedger
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Woo\WooResultLink
  */
 class WooPublishOnTheRealRegisterTest extends TestCase {
 

@@ -215,4 +215,33 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		);
 	}//end testAtLeastOneShippedDefinitionBindsToAShippedCaseType()
 
+	/**
+	 * The register's Omgevingsvergunning starts a statutory term.
+	 *
+	 * The sweep above reads the VTH and case-flow seeds only. The
+	 * Omgevingsvergunning case type the register ships (slug and identifier
+	 * `omgevingsvergunning`, P56D) had no definition, so a case filed through
+	 * the new case form started no term at all (finding B5, 10 Oct). Pinned
+	 * here by name, with the duration and extension the case type declares.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/omgevingsvergunning-starts-its-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function testTheRegistersOmgevingsvergunningHasATermijnDefinitie(): void {
+		$caseType = null;
+		foreach (($this->readJson('/../../../lib/Settings/dossiq_register.json')['components']['objects'] ?? []) as $object) {
+			if (($object['@self']['schema'] ?? '') === 'caseType' && ($object['@self']['slug'] ?? '') === 'omgevingsvergunning') {
+				$caseType = $object;
+			}
+		}
+
+		self::assertIsArray($caseType, 'The register must ship the omgevingsvergunning case type.');
+
+		$definition = ($this->shippedDefinitions()['omgevingsvergunning'] ?? null);
+		self::assertIsArray($definition, 'No shipped TermijnDefinitie binds to omgevingsvergunning.');
+		self::assertSame($this->days($caseType['processingDeadline'] ?? null), (int)$definition['standardDurationDays']);
+		self::assertSame($this->days($caseType['extensionPeriod'] ?? null), (int)$definition['extensionCapacity']);
+	}//end testTheRegistersOmgevingsvergunningHasATermijnDefinitie()
+
 }//end class
