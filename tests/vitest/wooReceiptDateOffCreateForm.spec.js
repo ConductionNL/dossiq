@@ -20,8 +20,15 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const readJson = (...parts) =>
-	JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
+/**
+ * Read a JSON file from the repository.
+ *
+ * @param {...string} parts Path segments under the repository root.
+ * @return {object} The parsed file.
+ */
+function readJson(...parts) {
+	return JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
+}
 
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const definitionSchema = register.components.schemas.propertyDefinition
@@ -43,7 +50,15 @@ const template = readJson(
 	'woo-verzoek.json',
 ).propertyDefinitions
 
-const receiptOf = (rows) => rows.find((row) => row.name === 'receiptDate')
+/**
+ * The receiptDate definition among a list of definitions.
+ *
+ * @param {Array<object>} rows Definition records.
+ * @return {object|undefined} The receiptDate definition.
+ */
+function receiptOf(rows) {
+	return rows.find((row) => row.name === 'receiptDate')
+}
 
 describe('the Woo receipt date is off the create form', () => {
 	it('is declared on the propertyDefinition schema, so OpenRegister keeps it', () => {
