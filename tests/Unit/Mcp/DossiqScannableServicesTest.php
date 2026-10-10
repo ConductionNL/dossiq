@@ -153,6 +153,33 @@ class DossiqScannableServicesTest extends TestCase {
 	}//end testEveryToolDeclaresWhatTheScannerAndTheGrantMatrixRead()
 
 	/**
+	 * No curated tool class writes through ObjectService: each one calls the
+	 * service its controller calls (REQ-MCP-204, task 3.2). The derived
+	 * surface staying read-only is DossiqMcpDialectTest's job.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-204-guard-enforcing-write-tools-one-per-action-on-the-owning-service
+	 */
+	public function testNoToolClassReachesPastItsOwningService(): void {
+		$checked = 0;
+		foreach ((new DossiqScannableServices())->getScannableServiceClasses() as $class) {
+			if (str_starts_with($class, 'OCA\\Dossiq\\Service\\Mcp\\') === false) {
+				continue;
+			}
+
+			$source = (string)file_get_contents((string)(new ReflectionClass($class))->getFileName());
+			foreach (['ObjectService', 'getObjectService', 'saveObject', 'updateObject', 'patchObject', 'deleteObject'] as $needle) {
+				$this->assertStringNotContainsString($needle, $source, $class . ' reaches past its owning service: ' . $needle);
+			}
+
+			$checked++;
+		}
+
+		$this->assertSame(5, $checked, 'Expected the five tool classes under Service\\Mcp.');
+	}//end testNoToolClassReachesPastItsOwningService()
+
+	/**
 	 * The list is registered under the alias OpenRegister resolves.
 	 *
 	 * @return void
