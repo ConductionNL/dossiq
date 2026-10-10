@@ -210,7 +210,8 @@
             "indicatiestelling": {
                 "slug": "indicatiestelling",
                 "icon": "ClipboardPulseOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "title": "Needs assessment",
                 "description": "WMO-assessment record met geadviseerde ondersteuningsvorm, omvang en duur. OpenRegister-backed.",
                 "type": "object",
@@ -503,7 +504,8 @@
             "gezinsplan": {
                 "slug": "gezinsplan",
                 "icon": "FileTreeOutline",
-                "version": "1.2.0",
+                "version": "1.2.1",
+                "searchable": false,
                 "title": "Family plan",
                 "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
                 "type": "object",
@@ -1061,7 +1063,8 @@
             "reIntegratieTraject": {
                 "slug": "reIntegratieTraject",
                 "icon": "StairsUp",
-                "version": "1.1.0",
+                "version": "1.1.1",
+                "searchable": false,
                 "title": "Return to work trajectory",
                 "description": "Participatiewet re-integratietraject met instrumenten (loonkostensubsidie, scholing, jobcoaching), tegenprestatie en vrijstellingen. OpenRegister-backed.",
                 "type": "object",

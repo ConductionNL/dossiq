@@ -251,9 +251,49 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   When both ship, this task becomes: link the identified caller from
   pipelinq's panel to `ContactDetail`/`OrganisationDetail`, and the spec
   scenario currently excluded on `kcc-klantcontact-integratie` is included.
-- [ ] 4.3 [blocked: Tier B B22, BRP and KvK subscriptions through integriq]
+- [x] 4.3 (2026-10-10, decision 156: B22 landed as openregister#3656
+  `registry-subscriptions` plus integriq's `registry-subscription-connector`
+  (BrpVolgindicatieProvider `brp`, KvkMutatieProvider `kvk`). Dossiq's side:
+  `brpPerson` (1.3.0) and `kvkCompany` (1.2.0) in
+  `lib/Settings/register.d/25-brp-kvk.json` declare `x-openregister-registry`
+  (identity `citizenServiceNumber` / `kvkNumber`, owned name, birth,
+  residence, indicatieGeheim / tradeName, legalForm, address), and
+  `lib/Listener/RequesterRegistrySubscriptionListener.php` with
+  `lib/Service/Registry/RequesterRegistrySubscription.php` requests a
+  subscription when a case names such a row as its requester, leaving a
+  requested or active one alone; `tests/Unit/Service/Registry/RequesterRegistrySubscriptionTest.php`)
   Refresh `brpPerson` and `kvkCompany` rows from the source; the index reads
   whatever the register set holds until then.
+- [ ] 4.4 (live pass, decision 139) Refresh a requester from the BRP and
+  the KvK, in place. Needs: openregister#4547 (inbound update is a PATCH;
+  before it, an update nulled the BSN and every other field) and
+  integriq#2655 (decision 178: integriq maps the source's field names onto
+  `brpPerson`/`kvkCompany` properties; before it, every update was refused
+  with a 422 naming `naam`/`verblijfplaats`). Recipe:
+  1. Instance with both PRs, dossiq's register imported (`brpPerson` 1.3.0,
+     `kvkCompany` 1.2.0). Integriq: sources `brp-haalcentraal` and
+     `kvk-mutatieservice` in mock mode; set
+     `occ config:app:set integriq registry_subscription.connector_credential --value <base64 user:app-password>`.
+  2. File a case whose requester is a seeded `brpPerson` (BSN 999993653).
+     Read the row: `@self.registry.state` is `requested`, then `active`
+     after the listener runs. `occ config:app:get integriq registry_subscription.targets.brp`
+     names `brpPerson` for that BSN (the slug, not the schema id).
+  3. Control, separating OpenRegister from integriq: as the connector user,
+     `POST /index.php/apps/openregister/api/registry/brp/updates` with
+     `{"identity":"999993653","properties":{"residence":{"straat":"Nieuwstraat"}},"eventReference":"live-1"}`
+     answers 200 with the row in `applied`; the same body with
+     `verblijfplaats` answers 422. The row keeps its BSN and `name`.
+  4. Queue a change at the BRP mock (`gewijzigd: {naam: {...}, verblijfplaats: {...}}`
+     for that BSN), then `occ background-job:execute` the
+     `RegistrySubscriptionPollJob` id with `--force-execute`. The row's
+     `name` and `residence` change in place, the BSN is unchanged, and the
+     audit trail has a `registry:brp` entry naming `name, residence`. The
+     integriq log has no `registry-subscription.update.rejected`.
+  5. Repeat 2 to 4 for a `kvkCompany` requester (KvK 69599084, `handelsnaam`
+     to `tradeName`).
+  Known gap to check, not a failure of this task: `displayName` is not an
+  owned property, so after a name change it still shows the old name until
+  something recomputes it.
 
 ## 5. Verification
 
