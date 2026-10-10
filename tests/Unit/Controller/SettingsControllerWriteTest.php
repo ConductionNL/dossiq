@@ -48,6 +48,7 @@ use Psr\Container\ContainerInterface;
  * against a controller that silently wrote nothing.
  *
  * @covers \OCA\Dossiq\Controller\SettingsController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class SettingsControllerWriteTest extends TestCase {
 
@@ -215,4 +216,45 @@ class SettingsControllerWriteTest extends TestCase {
 			);
 		}//end foreach
 	}//end testTheSettingsWriteRefusesEveryoneButAnAdmin()
+
+	/**
+	 * A save the service refuses answers its status and the translated sentence, and is no success.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	public function testARefusedThroughputSwitchAnswers422WithTheSentence(): void {
+		$this->request->method('getParams')->willReturn(['wooReviewerThroughputReport' => 'true']);
+		$this->settingsService->method('updateSettings')->willThrowException(
+			new \OCA\Dossiq\Exception\RefusedException(
+				rule: 'woo-throughput-needs-reader-group',
+				sentence: 'Name an existing reader group before switching the throughput report on.',
+				status: 422
+			)
+		);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => 'NL: ' . $text);
+
+		$controller = new SettingsController(
+			request: $this->request,
+			container: $this->createMock(ContainerInterface::class),
+			appManager: $this->createMock(IAppManager::class),
+			settingsService: $this->settingsService,
+			groupManager: $this->createMock(IGroupManager::class),
+			userSession: $this->createMock(IUserSession::class),
+			l10n: $l10n
+		);
+		$response = $controller->update();
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame(
+			[
+				'success' => false,
+				'error' => 'woo-throughput-needs-reader-group',
+				'message' => 'NL: Name an existing reader group before switching the throughput report on.',
+			],
+			$response->getData()
+		);
+	}//end testARefusedThroughputSwitchAnswers422WithTheSentence()
 }//end class

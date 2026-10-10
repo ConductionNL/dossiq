@@ -30,8 +30,10 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\ConfigurationImport;
 use OCA\Dossiq\Service\Settings\OpenRegisterBridge;
+use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -366,9 +368,20 @@ class SettingsService {
 	 *
 	 * @return array
 	 *
+	 * @throws \OCA\Dossiq\Exception\RefusedException When the throughput report would go on without an existing reader group.
+	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function updateSettings(array $data): array {
+		// Refused before anything is written, so a refused save changes nothing.
+		// Only a save that touches the throughput switch or its readers is checked.
+		if (array_key_exists(WooReportSwitches::THROUGHPUT, $data) === true
+			|| array_key_exists(WooReportSwitches::READERS, $data) === true
+		) {
+			$this->wooReportSwitches()->assertSaveAllowed(data: $data);
+		}
+
 		foreach (self::CONFIG_KEYS as $key) {
 			if (isset($data[$key]) === true) {
 				$this->appConfig->setValueString(Application::APP_ID, $key, (string)$data[$key]);
@@ -379,6 +392,23 @@ class SettingsService {
 
 		return $this->getSettings();
 	}//end updateSettings()
+
+	/**
+	 * The Woo review report switches, built on the group manager the container holds.
+	 *
+	 * Built here rather than injected so the constructor keeps the shape its
+	 * ~180 injection sites use.
+	 *
+	 * @return WooReportSwitches The switches.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	private function wooReportSwitches(): WooReportSwitches {
+		return new WooReportSwitches(
+			appConfig: $this->appConfig,
+			groupManager: $this->container->get(IGroupManager::class),
+		);
+	}//end wooReportSwitches()
 
 	/**
 	 * Get a single configuration value by key.

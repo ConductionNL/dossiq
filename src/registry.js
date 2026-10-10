@@ -241,6 +241,7 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
+import WooReportsView from './views/woo/WooReportsView.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 // Ask whether this case already exists, before it does.
@@ -1332,6 +1333,11 @@ const registry = {
 		kind: 'page',
 		component: MailIntakeLogView,
 		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
+	},
+	WooReportsView: {
+		kind: 'page',
+		component: WooReportsView,
+		_note: 'Named by src/manifest.d/86-woo-reports.json. A custom page because the reader-group check and the audit record of every read live in WooReportController.',
 	},
 	StoreGallery: {
 		kind: 'page',

@@ -813,6 +813,8 @@ $extra = [
     ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
     ['name' => 'wOOAssessment#publishDecision', 'url' => '/api/cases/{id}/woo/publish',        'verb' => 'POST'],
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
+    // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
+    ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
