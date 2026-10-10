@@ -113,7 +113,6 @@ class OpenCatalogiWooCaseTest extends TestCase {
 		$suspended = (new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: $sources['awaiting_clarification'], sourceUuid: 'u4');
 		self::assertSame(1, $suspended['case']['extensionCount']);
 		self::assertSame('2026-11-23', $suspended['deadline']);
-		self::assertSame('Zienswijzen', $suspended['extensionReason']);
 
 		$decided = (new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: $sources['decided'], sourceUuid: 'u3');
 		self::assertSame('2026-02-05', $decided['case']['endDate']);

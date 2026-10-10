@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.0",
+          "version": "1.2.0",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -125,6 +125,132 @@
         "isDraft": false,
         "extensionAllowed": true,
         "extensionPeriod": "P14D",
+        "recordImports": [
+          {
+            "key": "opencatalogi-woo-requests",
+            "sourceApp": "opencatalogi",
+            "sourceRegister": "publication",
+            "sourceSchema": "wooRequest",
+            "statusField": "status",
+            "statuses": {
+              "received": {
+                "status": "3c0f5a00-0000-4000-a000-00000000b001",
+                "term": "running"
+              },
+              "in_progress": {
+                "status": "3c0f5a00-0000-4000-a000-00000000b004",
+                "term": "running"
+              },
+              "awaiting_clarification": {
+                "status": "3c0f5a00-0000-4000-a000-00000000b002",
+                "term": "suspended"
+              },
+              "decided": {
+                "status": "3c0f5a00-0000-4000-a000-00000000b008",
+                "term": "closed"
+              },
+              "withdrawn": {
+                "status": "3c0f5a00-0000-4000-a000-00000000b008",
+                "term": "closed",
+                "result": "3c0f5a00-0000-4000-a000-00000000c004"
+              }
+            },
+            "fields": [
+              {
+                "to": "title",
+                "from": "requestedInformation",
+                "maxLength": 120,
+                "required": true
+              },
+              {
+                "to": "description",
+                "from": "requestedInformation"
+              },
+              {
+                "to": "startDate",
+                "from": "receivedAt",
+                "as": "date",
+                "required": true
+              },
+              {
+                "to": "receivedAt",
+                "from": "receivedAt",
+                "as": "dateTime"
+              },
+              {
+                "to": "intakeChannel",
+                "from": "channel",
+                "values": {
+                  "web": "website",
+                  "email": "email",
+                  "post": "post",
+                  "counter": "balie",
+                  "phone": "phone"
+                },
+                "default": "other"
+              },
+              {
+                "to": "extensionCount",
+                "from": "extensionCount",
+                "as": "integer"
+              },
+              {
+                "to": "endDate",
+                "from": "decidedAt",
+                "as": "date"
+              },
+              {
+                "to": "wooRequest.onderwerp",
+                "from": "requestedInformation",
+                "maxLength": 120
+              },
+              {
+                "to": "wooRequest.omschrijving",
+                "from": "requestedInformation"
+              },
+              {
+                "to": "wooRequest.origin",
+                "value": "opencatalogi"
+              },
+              {
+                "to": "wooRequest.originReference",
+                "from": "@id"
+              },
+              {
+                "to": "wooRequest.verzoekerNaam",
+                "from": "requesterName"
+              },
+              {
+                "to": "wooRequest.verzoekerEmail",
+                "from": "requesterEmail"
+              },
+              {
+                "to": "wooRequest.verzoekerTelefoon",
+                "from": "requesterPhone"
+              },
+              {
+                "to": "wooRequest.verzoekerAdres",
+                "from": "requesterAddress"
+              }
+            ],
+            "matchField": "wooRequest.originReference",
+            "formerReference": {
+              "application": "opencatalogi",
+              "from": "reference"
+            },
+            "term": {
+              "endDate": "dueAt",
+              "extensions": "extensionCount",
+              "extensionReason": "extensionReason",
+              "closedOn": "decidedAt"
+            },
+            "stamp": {
+              "caseId": "migratedTo",
+              "at": "migratedAt"
+            },
+            "sourceTimerField": "termTimer"
+          }
+        ],
         "publicationRequired": true,
         "internalOrExternal": "extern",
         "handlerAction": "Beoordelen en beslissen op WOO-verzoek",

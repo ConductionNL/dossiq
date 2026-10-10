@@ -94,8 +94,8 @@ dossiq, read on `development` at 55bbc761:
    scenarios against dossiq: the start told at intake, four weeks, one two-week extension and no
    second, the suspension while clarification is awaited, the Awt roll on the engine calendar, and
    the report's met, missed, running and suspended.
-4. **An idempotent import.** `OCA\Dossiq\Woo\OpenCatalogiWooImport::run()` (and
-   `occ dossiq:woo:import-opencatalogi`) turns every stored opencatalogi `wooRequest` into a dossiq
+4. **An idempotent import.** The generic case-record import (`OCA\Dossiq\Service\Import\CaseRecordImport`,
+   `occ dossiq:case:import-records woo-verzoek`, decision 182), configured on the Woo case type, turns every stored opencatalogi `wooRequest` into a dossiq
    Woo case: status mapped, start date, suspensions, extension and deadline carried, the term re-armed
    on a FlowTimer with its remaining time exactly once (the REQ-TOT-006 pattern), and the old
    reference kept as a searchable alias. It answers the count still unmigrated.
@@ -107,7 +107,7 @@ dossiq, read on `development` at 55bbc761:
 
 - opencatalogi's own code. Its forward, its repair step, the read-only schema and the removal are
   `opencatalogi/woo-request-intake-hands-over-to-dossiq` (wave 3). That change calls
-  `WooRequestIntake::receive()` and `OpenCatalogiWooImport::run()` and tests its side of each call.
+  `WooRequestIntake::receive()` and `CaseRecordImport::run()` and tests its side of each call.
 - portaliq's code. Repointing `PortalWooRequestDelivery` is `portaliq/woo-intake-delivers-to-dossiq`
   (wave 3).
 - `WooRequestIntake::start()` and its two origins, `portal` and `pipelinq`. The dossier rules

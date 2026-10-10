@@ -90,32 +90,28 @@ are where local stubs lie).
   `register.d/39-search-declarations.json`, and bump the register version (REQ-WTO-004).
   - unit: `tests/Unit/Settings/CaseSchemaTest.php` `testFormerReferencesIsDeclaredAndSearchable`.
   - Built (10 Oct): register 0.20.27, `matchType: exact` like `identifier` (a whole reference, not half).
-- [ ] 4.2 Add `lib/Woo/OpenCatalogiWooImport.php` with `run(bool $dryRun = false): array` per
-  REQ-WTO-004. Resolve opencatalogi's register and `wooRequest` schema by slug through
-  OpenRegister, as the system, `_rbac: false`. Find an existing case by
-  `wooRequest.originReference` before creating. Arm the timer through the same arming code
-  `ArmTermijnEngineTimers` uses (REQ-TOT-006), with SLA `days(startDate to deadline)`, and suspend
-  at once for a suspended source. Stamp `migratedTo` and `migratedAt` last (REQ-WTO-004).
-  - **fails today** (the class does not exist): `tests/Unit/Woo/OpenCatalogiWooImportTest.php`
-    `testARunningRequestMovesWithItsRemainingTime`, `testAnExtendedSuspendedRequestKeepsBoth`,
-    `testEveryStatusMapsToItsStage` (all five), `testASecondRunImportsNothingAndArmsNothing`,
-    `testAHalfFinishedRequestIsCompletedNotDuplicated`,
+- [x] 4.2 The import, generic per decision 182 (amended 10 Oct): no `OpenCatalogiWooImport`. The
+  capability is `case-record-import` (`specs/case-record-import/spec.md`, REQ-CRI-001 to 003) and the
+  Woo part is the `recordImports` declaration on the Woo case type (REQ-WTO-004).
+  - Built: `lib/Service/Import/CaseRecordImport.php` (`run()`, `dryRun()`), the declaration reader
+    `lib/Service/Import/RecordCaseMapping.php`, the OpenRegister side `lib/Service/Import/RecordImportStore.php`,
+    and the term carry `lib/Service/Term/TermCarryOver.php` (generic term-engine behaviour: cancel the fresh
+    timer, write the source's end, extensions and status, re-arm through `armBeslistermijn` with the breach
+    mark, suspend at once, record each extension). `caseType.recordImports` declared in
+    `lib/Settings/dossiq_register.json` (caseType 1.17.0, register 0.20.28); the opencatalogi declaration on
+    the Woo case type in `register.d/81-woo-verzoek.json` (object 1.2.0).
+  - Tests: `tests/Unit/Service/Import/CaseRecordImportTest.php` runs the Woo case type's real declaration over
+    `tests/Fixtures/opencatalogi-woo-requests.json`: `testARunningRequestMovesWithItsRemainingTime`,
+    `testAnExtendedSuspendedRequestKeepsBoth`, `testEveryStatusMapsToItsStage`,
+    `testASecondRunImportsNothingAndArmsNothing`, `testAHalfFinishedRequestIsCompletedNotDuplicated`,
     `testARefusedStampIsAFailureNotAMigration`, `testOpencatalogisTimerIsNeverTouched`,
-    `testWithoutOpencatalogiNothingIsImported`.
-  - Use opencatalogi's real `wooRequest` shape as the fixture: copy one object of each status
-    from `lib/Settings/opencatalogi_mock_register.json` at 35999c29 into
-    `tests/Fixtures/opencatalogi-woo-requests.json` and cite the source line.
-  - Part built (10 Oct): the per-request mapping `lib/Woo/OpenCatalogiWooCase.php` (status to stage,
-    start, requester, channel, `formerReferences`, extension count, end date, withdrawn result) with
-    `tests/Unit/Woo/OpenCatalogiWooCaseTest.php` (`testEveryStatusMapsToItsStage` and four more) on the
-    fixture (rows 1-3 from the mock register lines 1903-1966; rows 4-5 constructed, the mock has no
-    `awaiting_clarification` or `withdrawn` request). The stamp it needs is opencatalogi#1897. Open: `run()`
-    itself (find, write, carry the term, stamp), the term carry over `TermijnService`/`TermijnTimerService`.
-- [ ] 4.3 Add `lib/Command/ImportOpenCatalogiWooRequests.php` (`dossiq:woo:import-opencatalogi`,
-  `--dry-run`) and register it in `appinfo/info.xml` (REQ-WTO-004).
-  - Through the caller: `tests/Unit/Command/ImportOpenCatalogiWooRequestsTest.php`
-    `testTheCommandPrintsTheUnmigratedCount`, built on the real import class with a register
-    double.
+    `testWithoutOpencatalogiNothingIsImported`, `testEveryWrittenCaseFitsTheCaseSchema` (real schema). Plus
+    `RecordCaseMappingTest`, `RecordImportStoreTest`, `tests/Unit/Service/Term/TermCarryOverTest.php`.
+  - `lib/Woo/OpenCatalogiWooCase.php` (#3608) is now unused by the import: the refactor programme removes it.
+- [x] 4.3 The command, generic: `lib/Command/ImportCaseRecordsCommand.php`
+  (`dossiq:case:import-records <caseType> [--import=<key>] [--dry-run]`), registered in `appinfo/info.xml`.
+  - Through the caller: `tests/Unit/Command/ImportCaseRecordsCommandTest.php`
+    `testTheCommandPrintsTheUnmigratedCount`, built on the real import class with an in-memory register.
 - [ ] 4.4 Search: a case is found by a former reference (REQ-WTO-004).
   - e2e `tests/e2e/woo-takeover.spec.ts`: seed one imported case and search "WOO-2026-A1B2C3" on
     the cases list. Cite REQ-WTO-004.
@@ -169,7 +165,7 @@ are where local stubs lie).
   delivery job on the dev instance (or the provider method through a test route if portaliq is not
   installed in CI) and read the case back with its `deadline`. Cite REQ-WTO-001 and REQ-WTO-002.
 - [ ] 6.2 Live check after merge on the dev instance: create two opencatalogi `wooRequest` objects
-  (one running, one suspended), run `occ dossiq:woo:import-opencatalogi`, and record the output,
+  (one running, one suspended), run `occ dossiq:case:import-records woo-verzoek`, and record the output,
   the two cases' `deadline`, the two FlowTimers' fire moments and the sources' `migratedTo`. Run it
   a second time and record that nothing changed.
 

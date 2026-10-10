@@ -1,25 +1,27 @@
 <?php
 
 /**
- * Every stored opencatalogi Woo request is imported exactly once: its case
- * written, its term carried, and only then the source stamped.
+ * Every record a case type declares an import for is imported exactly once:
+ * its case written, its term carried, and only then the source stamped. The
+ * declaration under test is the one the seeded Woo case type carries
+ * (register.d/81-woo-verzoek.json), over opencatalogi's own request shape.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Dossiq\Tests\Unit\Woo
+ * @package   OCA\Dossiq\Tests\Unit\Service\Import
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-every-stored-opencatalogi-request-is-imported-exactly-once-req-wto-004
+ * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
  */
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Service\Import;
 
 use DateTime;
 use DateTimeImmutable;
@@ -28,10 +30,11 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
-use OCA\Dossiq\Woo\OpenCatalogiWooCase;
-use OCA\Dossiq\Woo\OpenCatalogiWooImport;
-use OCA\Dossiq\Woo\OpenCatalogiWooTerm;
-use OCA\Dossiq\Woo\WooRequestIntake;
+use OCA\Dossiq\Service\Import\CaseRecordImport;
+use OCA\Dossiq\Service\Import\RecordCaseMapping;
+use OCA\Dossiq\Service\Import\RecordImportStore;
+use OCA\Dossiq\Service\Term\TermCarryOver;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -43,18 +46,36 @@ use RuntimeException;
  * Runs the import over opencatalogi's own request shape (tests/Fixtures/opencatalogi-woo-requests.json)
  * in an in-memory register, with the term engine played by doubles.
  *
- * @covers \OCA\Dossiq\Woo\OpenCatalogiWooImport
- * @uses   \OCA\Dossiq\Woo\OpenCatalogiWooCase
- * @uses   \OCA\Dossiq\Woo\OpenCatalogiWooTerm
- * @uses   \OCA\Dossiq\Woo\WooReceivedAnswers
- * @uses   \OCA\Dossiq\Woo\WooRequestForm
- * @uses   \OCA\Dossiq\Woo\WooRequestRefused
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @covers \OCA\Dossiq\Service\Import\CaseRecordImport
+ * @covers \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @covers \OCA\Dossiq\Service\Import\RecordImportStore
+ * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
-class OpenCatalogiWooImportTest extends TestCase {
+class CaseRecordImportTest extends TestCase {
 
 	use MakesCaseDateNormaliser;
+
+	/**
+	 * The seeded Woo case type's uuid.
+	 */
+	private const CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001';
+
+	/**
+	 * Its status uuids, as its declaration maps them.
+	 */
+	private const STAGE = [
+		'received' => '3c0f5a00-0000-4000-a000-00000000b001',
+		'in_progress' => '3c0f5a00-0000-4000-a000-00000000b004',
+		'awaiting_clarification' => '3c0f5a00-0000-4000-a000-00000000b002',
+		'decided' => '3c0f5a00-0000-4000-a000-00000000b008',
+		'withdrawn' => '3c0f5a00-0000-4000-a000-00000000b008',
+	];
+
+	/**
+	 * The result a withdrawn request ends with.
+	 */
+	private const RESULT_WITHDRAWN = '3c0f5a00-0000-4000-a000-00000000c004';
 
 	/**
 	 * The register both apps' rows live in.
@@ -106,9 +127,17 @@ class OpenCatalogiWooImportTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->store = new InMemoryRegister();
-		$fixture = json_decode((string)file_get_contents(dirname(__DIR__, 2) . '/Fixtures/opencatalogi-woo-requests.json'), true);
+		$fixture = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/Fixtures/opencatalogi-woo-requests.json'), true);
 		foreach ($fixture['requests'] as $row) {
 			$this->store->seed(schema: 'wooRequest', uuid: $row['id'], row: $row);
+		}
+
+		$fragment = json_decode((string)file_get_contents(dirname(__DIR__, 4) . '/lib/Settings/register.d/81-woo-verzoek.json'), true);
+		foreach ($fragment['components']['objects'] as $object) {
+			if (($object['id'] ?? '') === self::CASE_TYPE) {
+				unset($object['@self']);
+				$this->store->seed(schema: 'caseType', uuid: self::CASE_TYPE, row: $object);
+			}
 		}
 	}//end setUp()
 
@@ -150,9 +179,9 @@ class OpenCatalogiWooImportTest extends TestCase {
 	 * @param bool                  $installed Whether opencatalogi is installed.
 	 * @param InMemoryRegister|null $store     Another store, when the test needs one.
 	 *
-	 * @return OpenCatalogiWooImport
+	 * @return CaseRecordImport
 	 */
-	private function import(bool $installed = true, ?InMemoryRegister $store = null): OpenCatalogiWooImport {
+	private function import(bool $installed = true, ?InMemoryRegister $store = null): CaseRecordImport {
 		$store = ($store ?? $this->store);
 
 		/** @var SettingsService&MockObject $settings */
@@ -163,6 +192,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 				'register' => 'dossiq',
 				'case_schema' => 'case',
 				'result_schema' => 'result',
+				'case_type_schema' => 'caseType',
 			][$key] ?? $default
 		);
 
@@ -174,15 +204,32 @@ class OpenCatalogiWooImportTest extends TestCase {
 
 		$dates = $this->caseDates();
 
-		return new OpenCatalogiWooImport(
+		return new CaseRecordImport(
 			settingsService: $settings,
 			appManager: $apps,
-			mapper: new OpenCatalogiWooCase(dates: $dates),
-			term: new OpenCatalogiWooTerm(terms: $this->terms($store), timers: $this->timers(), dates: $dates),
-			time: $time,
-			logger: $this->createMock(LoggerInterface::class),
+			mapping: new RecordCaseMapping(dates: $dates),
+			term: new TermCarryOver(terms: $this->terms($store), timers: $this->timers(), dates: $dates),
+			store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $time, logger: $this->createMock(LoggerInterface::class)),
 		);
 	}//end import()
+
+	/**
+	 * The Woo case type's declared import, run once.
+	 *
+	 * @param bool                  $installed Whether opencatalogi is installed.
+	 * @param InMemoryRegister|null $store     Another store.
+	 * @param bool                  $dryRun    Count only.
+	 *
+	 * @return array<string, mixed> The one import's answer.
+	 */
+	private function runImport(bool $installed = true, ?InMemoryRegister $store = null, bool $dryRun = false): array {
+		$method = ($dryRun === true) ? 'dryRun' : 'run';
+		$answer = $this->import(installed: $installed, store: $store)->{$method}(caseType: self::CASE_TYPE);
+		self::assertSame(self::CASE_TYPE, $answer['caseType']);
+		self::assertCount(1, $answer['imports']);
+
+		return $answer['imports'][0];
+	}//end runImport()
 
 	/**
 	 * The term service: binds a fresh P28D instance per written case, as
@@ -291,13 +338,13 @@ class OpenCatalogiWooImportTest extends TestCase {
 		$this->only(['received']);
 		$source = $this->source('received');
 
-		$answer = $this->import()->run();
+		$answer = $this->runImport();
 
 		$cases = $this->casesFor($source['id']);
 		self::assertCount(1, $cases);
 		self::assertSame('2026-03-02', $cases[0]['startDate']);
-		self::assertSame(OpenCatalogiWooCase::STATUS['received'], $cases[0]['status']);
-		self::assertSame(WooRequestIntake::CASE_TYPE_ID, $cases[0]['caseType']);
+		self::assertSame(self::STAGE['received'], $cases[0]['status']);
+		self::assertSame(self::CASE_TYPE, $cases[0]['caseType']);
 		self::assertSame('2026-03-30', $this->instances[$cases[0]['id']]['endDateCurrent']);
 		self::assertSame([], $this->armed, 'the fresh timer already ends on dueAt');
 
@@ -307,7 +354,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 		self::assertSame(1, $answer['imported']);
 		self::assertSame(0, $answer['unmigrated']);
 		self::assertSame(
-			[['requestId' => $source['id'], 'reference' => 'WOO-2026-0001', 'caseId' => $cases[0]['id'], 'termTimer' => 'woo-term-0001']],
+			[['requestId' => $source['id'], 'reference' => 'WOO-2026-0001', 'caseId' => $cases[0]['id'], 'sourceTimer' => 'woo-term-0001']],
 			$answer['migrated']
 		);
 	}//end testARunningRequestMovesWithItsRemainingTime()
@@ -322,7 +369,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 		$this->only(['awaiting_clarification']);
 		$source = $this->source('awaiting_clarification');
 
-		$this->import()->run();
+		$this->runImport();
 
 		$caseId = $this->casesFor($source['id'])[0]['id'];
 		$term = $this->instances[$caseId];
@@ -341,18 +388,18 @@ class OpenCatalogiWooImportTest extends TestCase {
 	 * @return void
 	 */
 	public function testEveryStatusMapsToItsStage(): void {
-		$answer = $this->import()->run();
+		$answer = $this->runImport();
 
 		self::assertSame(5, $answer['imported']);
 		self::assertSame([], $answer['failed']);
-		foreach (OpenCatalogiWooCase::STATUS as $status => $stage) {
+		foreach (self::STAGE as $status => $stage) {
 			$cases = $this->casesFor($this->source($status)['id']);
 			self::assertCount(1, $cases, $status);
 			self::assertSame($stage, $cases[0]['status'], $status);
 		}
 
 		$withdrawn = $this->casesFor($this->source('withdrawn')['id'])[0]['id'];
-		self::assertSame([['case' => $withdrawn, 'resultType' => OpenCatalogiWooCase::RESULT_WITHDRAWN, 'id' => 'generated-1']], $this->store->all('result'));
+		self::assertSame([['case' => $withdrawn, 'resultType' => self::RESULT_WITHDRAWN, 'id' => 'generated-1']], $this->store->all('result'));
 		self::assertSame('completed', $this->instances[$this->casesFor($this->source('decided')['id'])[0]['id']]['status']);
 	}//end testEveryStatusMapsToItsStage()
 
@@ -362,11 +409,11 @@ class OpenCatalogiWooImportTest extends TestCase {
 	 * @return void
 	 */
 	public function testASecondRunImportsNothingAndArmsNothing(): void {
-		$this->import()->run();
+		$this->runImport();
 		$armed = $this->armed;
 		$cases = count($this->store->all('case'));
 
-		$again = $this->import()->run();
+		$again = $this->runImport();
 
 		self::assertSame(0, $again['imported']);
 		self::assertSame(5, $again['alreadyImported']);
@@ -386,7 +433,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 		$source = $this->source('in_progress');
 		$this->engine = false;
 
-		$first = $this->import()->run();
+		$first = $this->runImport();
 
 		self::assertSame(0, $first['imported']);
 		self::assertSame(1, $first['unmigrated']);
@@ -395,7 +442,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 		self::assertArrayNotHasKey('migratedTo', $this->store->row('wooRequest', $source['id']));
 
 		$this->engine = true;
-		$second = $this->import()->run();
+		$second = $this->runImport();
 
 		$cases = $this->casesFor($source['id']);
 		self::assertCount(1, $cases, 'only one case refers to the source');
@@ -447,7 +494,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 		$store->rows = $this->store->rows;
 		$this->store = $store;
 
-		$answer = $this->import(store: $store)->run();
+		$answer = $this->runImport(store: $store);
 
 		self::assertSame(0, $answer['imported']);
 		self::assertSame([], $answer['migrated']);
@@ -462,7 +509,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 	 * @return void
 	 */
 	public function testOpencatalogisTimerIsNeverTouched(): void {
-		$answer = $this->import()->run();
+		$answer = $this->runImport();
 
 		$touched = array_merge($this->armed, $this->cancelled, $this->suspended);
 		foreach ($this->store->all('wooRequest') as $source) {
@@ -475,7 +522,7 @@ class OpenCatalogiWooImportTest extends TestCase {
 
 		self::assertEqualsCanonicalizing(
 			['woo-term-0001', 'woo-term-0002', 'woo-term-0003', 'woo-term-0004', 'woo-term-0005'],
-			array_column($answer['migrated'], 'termTimer')
+			array_column($answer['migrated'], 'sourceTimer')
 		);
 	}//end testOpencatalogisTimerIsNeverTouched()
 
@@ -485,10 +532,10 @@ class OpenCatalogiWooImportTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutOpencatalogiNothingIsImported(): void {
-		$answer = $this->import(installed: false)->run();
+		$answer = $this->runImport(installed: false);
 
 		self::assertSame(
-			['installed' => false, 'imported' => 0, 'alreadyImported' => 0, 'failed' => [], 'unmigrated' => 0, 'migrated' => []],
+			['key' => 'opencatalogi-woo-requests', 'sourceApp' => 'opencatalogi', 'installed' => false, 'imported' => 0, 'alreadyImported' => 0, 'failed' => [], 'unmigrated' => 0, 'migrated' => []],
 			$answer
 		);
 		self::assertSame(0, $this->store->writes);
@@ -500,11 +547,67 @@ class OpenCatalogiWooImportTest extends TestCase {
 	 * @return void
 	 */
 	public function testADryRunCountsAndWritesNothing(): void {
-		$answer = $this->import()->run(dryRun: true);
+		$answer = $this->runImport(dryRun: true);
 
 		self::assertSame(5, $answer['unmigrated']);
 		self::assertSame(0, $answer['imported']);
 		self::assertSame(0, $this->store->writes);
 		self::assertSame([], $this->armed);
 	}//end testADryRunCountsAndWritesNothing()
+	/**
+	 * Every case the declaration writes fits the merged case schema.
+	 *
+	 * @return void
+	 */
+	public function testEveryWrittenCaseFitsTheCaseSchema(): void {
+		$this->runImport();
+
+		$real = new RealSchemaValidator();
+		self::assertCount(5, $this->store->all('case'));
+		foreach ($this->store->all('case') as $case) {
+			unset($case['id']);
+			self::assertSame([], $real->errors(slug: 'case', payload: $case), json_encode($case));
+		}
+
+		$extended = $this->casesFor($this->source('in_progress')['id'])[0];
+		self::assertSame([['application' => 'opencatalogi', 'reference' => 'WOO-2026-0002']], $extended['formerReferences']);
+		self::assertSame('email', $extended['intakeChannel']);
+		self::assertSame('2026-02-09T11:30:00+00:00', (new DateTimeImmutable($extended['receivedAt']))->setTimezone(new \DateTimeZone('UTC'))->format(DATE_ATOM));
+	}//end testEveryWrittenCaseFitsTheCaseSchema()
+
+	/**
+	 * A record the declaration cannot read (undeclared status, no question,
+	 * a channel outside the list) is listed as failed, and no case is written.
+	 *
+	 * @return void
+	 */
+	public function testARecordTheDeclarationCannotReadFailsAndWritesNothing(): void {
+		$this->only(['received', 'in_progress', 'decided']);
+		$this->store->rows['wooRequest'][$this->source('received')['id']]['status'] = 'archived';
+		$this->store->rows['wooRequest'][$this->source('in_progress')['id']]['requestedInformation'] = '  ';
+		$this->store->rows['wooRequest'][$this->source('decided')['id']]['channel'] = 'pigeon';
+
+		$answer = $this->runImport();
+
+		self::assertSame(0, $answer['imported']);
+		self::assertSame(3, $answer['unmigrated']);
+		$reasons = implode(' | ', array_column($answer['failed'], 'reason'));
+		self::assertStringContainsString('does not declare: archived', $reasons);
+		self::assertStringContainsString('no readable requestedInformation', $reasons);
+		self::assertStringContainsString('channel must be one of', $reasons);
+		self::assertSame([], $this->store->all('case'));
+	}//end testARecordTheDeclarationCannotReadFailsAndWritesNothing()
+
+	/**
+	 * An unknown case type, or another import key, runs nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownCaseTypeOrImportRunsNothing(): void {
+		self::assertSame(['caseType' => '', 'imports' => []], $this->import()->run(caseType: 'no-such-type'));
+
+		$byIdentifier = $this->import()->run(caseType: 'woo-verzoek', importKey: 'another-import');
+		self::assertSame(['caseType' => self::CASE_TYPE, 'imports' => []], $byIdentifier);
+		self::assertSame(0, $this->store->writes);
+	}//end testAnUnknownCaseTypeOrImportRunsNothing()
 }//end class

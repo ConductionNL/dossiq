@@ -113,35 +113,30 @@ Every scenario SHALL name the opencatalogi test it mirrors.
 
 ### Requirement: Every stored opencatalogi request is imported exactly once (REQ-WTO-004)
 
-`OCA\Dossiq\Woo\OpenCatalogiWooImport::run(bool $dryRun = false): array` SHALL read every
-`wooRequest` object in opencatalogi's register as the system and SHALL answer
-`{imported: int, alreadyImported: int, failed: list<{requestId, reference, reason}>, unmigrated: int, migrated: list<{requestId, reference, caseId, termTimer}>}`.
-`unmigrated` SHALL count the source requests that carry no `migratedTo`. The command
-`occ dossiq:woo:import-opencatalogi [--dry-run]` SHALL call it and print the same numbers.
+The import is the generic `case-record-import` capability (REQ-CRI-001 to REQ-CRI-003, decision
+182); what is Woo about it is configuration. The seeded Woo case type (`woo-verzoek`,
+`register.d/81-woo-verzoek.json`) SHALL declare one `recordImports` entry, key
+`opencatalogi-woo-requests`, that reads every `wooRequest` object in opencatalogi's `publication`
+register, and `occ dossiq:case:import-records woo-verzoek` SHALL run it. `unmigrated` SHALL count the
+source requests that carry no `migratedTo`.
 
-For each source request it SHALL:
+The declaration SHALL:
 
-1. find an existing case whose `wooRequest.origin` is `opencatalogi` and whose
-   `wooRequest.originReference` is the source uuid, and skip the create when one exists;
-2. otherwise write a Woo case with `startDate` from `receivedAt`, the requester from the request,
-   `intakeChannel` from `channel`, and the old reference in a new case property
-   `formerReferences` (list of `{application: 'opencatalogi', reference}`), declared searchable;
+1. match an existing case on `wooRequest.originReference` (the source uuid, written with
+   `wooRequest.origin` `opencatalogi`), so a second run writes no second case;
+2. write `startDate` and `receivedAt` from `receivedAt`, the requester into `wooRequest`
+   (`verzoekerNaam`, `verzoekerEmail`, `verzoekerTelefoon`, `verzoekerAdres`), the question into
+   `title` and `wooRequest.onderwerp` (cut at 120 characters) and `description` and
+   `wooRequest.omschrijving`, `intakeChannel` from `channel` (`web` website, `email`, `post`,
+   `counter` balie, `phone`; empty is `other`), and the old reference in `formerReferences`
+   (`{application: 'opencatalogi', reference}`), declared searchable;
 3. map the status: `received` to "Ontvangst", `in_progress` to "Beoordelen documenten",
    `awaiting_clarification` to "Beoordeling ontvankelijkheid" with the term suspended, `decided` to
-   "Afgehandeld" with `endDate` from `decidedAt`, and `withdrawn` to "Afgehandeld" with the result
-   "Ingetrokken";
-4. carry the term: the deadline the source reports (`dueAt` after its extension and suspensions),
-   `extensionCount` and `extensionReason`, and arm a FlowTimer for every open case with the SLA
-   spanning `startDate` to that deadline, suspended at once when the source is suspended, exactly
-   once (REQ-TOT-006);
-5. only after the case and its timer both exist, stamp the source with `migratedTo` (the case
-   uuid) and `migratedAt`.
-
-A request whose case or timer could not be completed SHALL NOT be stamped, SHALL be listed in
-`failed` with the reason, and SHALL be completed by the next run without a second case. The import
-SHALL never stop or alter opencatalogi's own term timer. It SHALL answer each one in `migrated`
-so the caller can stop it. A stamp write that opencatalogi's schema refuses SHALL count the
-request as failed, never as migrated.
+   "Afgehandeld" with `endDate` from `decidedAt` and the term closed, and `withdrawn` to "Afgehandeld"
+   with the result "Ingetrokken";
+4. carry the term from `dueAt` (after its extension and suspensions), `extensionCount` and
+   `extensionReason` (REQ-CRI-003; one extension is the case type's `extensionPeriod`, P14D);
+5. stamp `migratedTo` (the case uuid) and `migratedAt`, and answer `termTimer` as the source timer.
 
 #### Scenario: A running request moves with its remaining time
 - **GIVEN** an opencatalogi `wooRequest` WOO-2026-A1B2C3, `received` on 2026-10-05, `dueAt` 2026-11-02, no extension
@@ -173,7 +168,7 @@ request as failed, never as migrated.
 
 #### Scenario: No opencatalogi, nothing to import
 - **GIVEN** opencatalogi is not installed
-- **WHEN** `occ dossiq:woo:import-opencatalogi` runs
+- **WHEN** `occ dossiq:case:import-records woo-verzoek` runs
 - **THEN** it SHALL say opencatalogi is not installed, answer zeros, exit 0 and write nothing
 
 ### Requirement: The decision and inventory are drafted from the organisation's templates (REQ-WTO-005)

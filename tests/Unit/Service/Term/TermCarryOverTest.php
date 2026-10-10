@@ -1,39 +1,39 @@
 <?php
 
 /**
- * A taken-over Woo case's statutory term lands on the date opencatalogi
+ * An imported case's statutory term lands on the date the source system
  * already told the requester, extended and suspended where the source was.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Dossiq\Tests\Unit\Woo
+ * @package   OCA\Dossiq\Tests\Unit\Service\Term
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-every-stored-opencatalogi-request-is-imported-exactly-once-req-wto-004
+ * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-an-imported-records-running-term-is-carried-onto-the-case-req-cri-003
  */
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Service\Term;
 
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
-use OCA\Dossiq\Woo\OpenCatalogiWooTerm;
+use OCA\Dossiq\Service\Term\TermCarryOver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * @covers \OCA\Dossiq\Woo\OpenCatalogiWooTerm
+ * @covers \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
-class OpenCatalogiWooTermTest extends TestCase {
+class TermCarryOverTest extends TestCase {
 
 	use MakesCaseDateNormaliser;
 
@@ -65,10 +65,10 @@ class OpenCatalogiWooTermTest extends TestCase {
 	/**
 	 * The class under test.
 	 *
-	 * @return OpenCatalogiWooTerm
+	 * @return TermCarryOver
 	 */
-	private function term(): OpenCatalogiWooTerm {
-		return new OpenCatalogiWooTerm(terms: $this->terms, timers: $this->timers, dates: $this->caseDates());
+	private function term(): TermCarryOver {
+		return new TermCarryOver(terms: $this->terms, timers: $this->timers, dates: $this->caseDates());
 	}//end term()
 
 	/**
@@ -92,23 +92,27 @@ class OpenCatalogiWooTermTest extends TestCase {
 	}//end freshInstances()
 
 	/**
-	 * A mapped source as OpenCatalogiWooCase answers it.
+	 * A source term state.
 	 *
 	 * @param bool   $open       Open or closed.
-	 * @param bool   $suspended  Waiting on the requester.
+	 * @param bool   $suspended  Suspended.
 	 * @param string $deadline   The source's end date.
 	 * @param int    $extensions The source's extension count.
-	 * @param string $endDate    The decision date of a closed request.
+	 * @param string $endDate    The day a closed source closed.
 	 *
 	 * @return array<string, mixed>
 	 */
 	private function mapped(bool $open, bool $suspended, string $deadline, int $extensions = 0, string $endDate = ''): array {
-		$case = ['extensionCount' => $extensions];
-		if ($endDate !== '') {
-			$case['endDate'] = $endDate;
+		$state = TermCarryOver::STATE_RUNNING;
+		if ($suspended === true) {
+			$state = TermCarryOver::STATE_SUSPENDED;
 		}
 
-		return ['case' => $case, 'open' => $open, 'suspended' => $suspended, 'deadline' => $deadline, 'result' => ''];
+		if ($open === false) {
+			$state = TermCarryOver::STATE_CLOSED;
+		}
+
+		return ['state' => $state, 'endDate' => $deadline, 'extensions' => $extensions, 'extensionReason' => '', 'closedOn' => $endDate];
 	}//end mapped()
 
 	/**
@@ -122,9 +126,9 @@ class OpenCatalogiWooTermTest extends TestCase {
 		$this->timers->expects(self::never())->method('armBeslistermijn');
 		$this->terms->expects(self::never())->method('updateTermijnInstance');
 
-		$answer = $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: true, suspended: false, deadline: '2026-03-09'));
+		$answer = $this->term()->carry(caseId: 'case-1', term: $this->mapped(open: true, suspended: false, deadline: '2026-03-09'), definitionSlug: 'type-a', extensionDays: 14);
 
-		self::assertSame(['outcome' => OpenCatalogiWooTerm::KEPT, 'instance' => 'term-1', 'timer' => 'fresh-timer'], $answer);
+		self::assertSame(['outcome' => TermCarryOver::KEPT, 'instance' => 'term-1', 'timer' => 'fresh-timer'], $answer);
 	}//end testARunningRequestOnItsOwnDateKeepsTheFreshTimer()
 
 	/**
@@ -134,7 +138,7 @@ class OpenCatalogiWooTermTest extends TestCase {
 	 */
 	public function testAnExtendedRequestMovesItsTermToTheSourcesEnd(): void {
 		$this->terms->method('instancesForCase')->willReturn($this->freshInstances());
-		$this->terms->method('getTermijnDefinitie')->with('woo-verzoek')->willReturn(['countExtensions' => 1]);
+		$this->terms->method('getTermijnDefinitie')->with('type-a')->willReturn(['countExtensions' => 1, 'legalBasis' => 'Basis 1']);
 		$this->timers->expects(self::once())->method('cancelForInstance')->with('term-1', self::anything());
 
 		$patches = [];
@@ -147,18 +151,18 @@ class OpenCatalogiWooTermTest extends TestCase {
 		$this->timers->expects(self::once())->method('armBeslistermijn')
 			->with(
 				self::callback(static fn (array $instance): bool => $instance['endDateCurrent'] === '2026-04-06' && $instance['engineTimerId'] === ''),
-				['countExtensions' => 1]
+				['countExtensions' => 1, 'legalBasis' => 'Basis 1']
 			)
 			->willReturn('carried-timer');
 		$this->timers->expects(self::never())->method('suspendBeslistermijn');
 		$this->terms->expects(self::once())->method('recordEvent')
-			->with('term-1', 'verdaging', 'Woo 4.4 lid 2', 'Zienswijzen', 14);
+			->with('term-1', 'verdaging', 'Basis 1', 'Zienswijzen', 14);
 
 		$mapped = $this->mapped(open: true, suspended: false, deadline: '2026-04-06', extensions: 1);
 		$mapped['extensionReason'] = 'Zienswijzen';
-		$answer = $this->term()->carry(caseId: 'case-1', mapped: $mapped);
+		$answer = $this->term()->carry(caseId: 'case-1', term: $mapped, definitionSlug: 'type-a', extensionDays: 14);
 
-		self::assertSame(['outcome' => OpenCatalogiWooTerm::CARRIED, 'instance' => 'term-1', 'timer' => 'carried-timer'], $answer);
+		self::assertSame(['outcome' => TermCarryOver::CARRIED, 'instance' => 'term-1', 'timer' => 'carried-timer'], $answer);
 		self::assertSame(['countExtensions' => 1, 'status' => 'verlengd', 'engineTimerId' => '', 'endDateCurrent' => '2026-04-06'], $patches[0]);
 		self::assertSame(['engineTimerId' => 'carried-timer', 'timerBreachesAfterLastDay' => true], $patches[1]);
 	}//end testAnExtendedRequestMovesItsTermToTheSourcesEnd()
@@ -175,9 +179,9 @@ class OpenCatalogiWooTermTest extends TestCase {
 		$this->timers->expects(self::never())->method('armBeslistermijn');
 		$this->terms->expects(self::never())->method('recordEvent');
 
-		$answer = $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: true, suspended: false, deadline: '2026-04-06', extensions: 1));
+		$answer = $this->term()->carry(caseId: 'case-1', term: $this->mapped(open: true, suspended: false, deadline: '2026-04-06', extensions: 1), definitionSlug: 'type-a', extensionDays: 14);
 
-		self::assertSame(OpenCatalogiWooTerm::KEPT, $answer['outcome']);
+		self::assertSame(TermCarryOver::KEPT, $answer['outcome']);
 	}//end testATermCarriedBeforeIsKept()
 
 	/**
@@ -196,9 +200,9 @@ class OpenCatalogiWooTermTest extends TestCase {
 			->with(self::callback(static fn (array $instance): bool => $instance['engineTimerId'] === 't2'), self::isType('string'), null)
 			->willReturn(true);
 
-		$answer = $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: true, suspended: true, deadline: '2026-03-09'));
+		$answer = $this->term()->carry(caseId: 'case-1', term: $this->mapped(open: true, suspended: true, deadline: '2026-03-09'), definitionSlug: 'type-a', extensionDays: 14);
 
-		self::assertSame(OpenCatalogiWooTerm::CARRIED, $answer['outcome']);
+		self::assertSame(TermCarryOver::CARRIED, $answer['outcome']);
 	}//end testASuspendedRequestIsPausedAndItsTimerSuspended()
 
 	/**
@@ -212,9 +216,9 @@ class OpenCatalogiWooTermTest extends TestCase {
 			->with('term-1', self::callback(static fn ($d): bool => $d !== null && $d->format('Y-m-d') === '2026-02-05'), '', self::isType('string'));
 		$this->timers->expects(self::never())->method('armBeslistermijn');
 
-		$answer = $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: false, suspended: false, deadline: '2026-02-09', endDate: '2026-02-05'));
+		$answer = $this->term()->carry(caseId: 'case-1', term: $this->mapped(open: false, suspended: false, deadline: '2026-02-09', endDate: '2026-02-05'), definitionSlug: 'type-a', extensionDays: 14);
 
-		self::assertSame(['outcome' => OpenCatalogiWooTerm::COMPLETED, 'instance' => 'term-1', 'timer' => ''], $answer);
+		self::assertSame(['outcome' => TermCarryOver::COMPLETED, 'instance' => 'term-1', 'timer' => ''], $answer);
 	}//end testAClosedRequestCompletesTheTerm()
 
 	/**
@@ -228,9 +232,9 @@ class OpenCatalogiWooTermTest extends TestCase {
 		$this->timers->method('armBeslistermijn')->willReturn(null);
 		$this->timers->expects(self::never())->method('suspendBeslistermijn');
 
-		$answer = $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: true, suspended: true, deadline: '2026-04-06', extensions: 1));
+		$answer = $this->term()->carry(caseId: 'case-1', term: $this->mapped(open: true, suspended: true, deadline: '2026-04-06', extensions: 1), definitionSlug: 'type-a', extensionDays: 14);
 
-		self::assertSame(['outcome' => OpenCatalogiWooTerm::NOT_ARMED, 'instance' => 'term-1', 'timer' => ''], $answer);
+		self::assertSame(['outcome' => TermCarryOver::NOT_ARMED, 'instance' => 'term-1', 'timer' => ''], $answer);
 	}//end testARefusedTimerIsNotArmed()
 
 	/**
@@ -246,8 +250,8 @@ class OpenCatalogiWooTermTest extends TestCase {
 		$this->timers->expects(self::never())->method('cancelForInstance');
 		$this->terms->expects(self::never())->method('markTermijnCompleted');
 
-		$missing = ['outcome' => OpenCatalogiWooTerm::MISSING, 'instance' => '', 'timer' => ''];
-		self::assertSame($missing, $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: true, suspended: false, deadline: '2026-04-06')));
-		self::assertSame($missing, $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: false, suspended: false, deadline: '')));
+		$missing = ['outcome' => TermCarryOver::MISSING, 'instance' => '', 'timer' => ''];
+		self::assertSame($missing, $this->term()->carry(caseId: 'case-1', term: $this->mapped(open: true, suspended: false, deadline: '2026-04-06'), definitionSlug: 'type-a', extensionDays: 14));
+		self::assertSame($missing, $this->term()->carry(caseId: 'case-1', term: $this->mapped(open: false, suspended: false, deadline: ''), definitionSlug: 'type-a', extensionDays: 14));
 	}//end testNoStatutoryTermIsMissing()
 }//end class
