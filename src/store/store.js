@@ -10,6 +10,16 @@ export async function initializeStores() {
 	const config = await settingsStore.fetchSettings()
 
 	if (config) {
+		// inspection-checklists-onto-task 4.1: the one checklist template
+		// schema, read by the inspection panel. Registered by slug; the panel's
+		// read threw "not registered" before this.
+		if (config.register) {
+			objectStore.registerObjectType(
+				'inspectionChecklistTemplate',
+				'inspectionChecklistTemplate',
+				config.register,
+			)
+		}
 		if (config.register && config.case_schema) {
 			objectStore.registerObjectType(
 				'case',

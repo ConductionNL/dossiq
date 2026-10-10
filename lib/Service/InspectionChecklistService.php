@@ -3,8 +3,9 @@
 /**
  * Dossiq Inspection Checklist Service
  *
- * Admin CRUD on `inspectionChecklist` schemas and per-case completion via
- * `inspectionResult` records. Used by the checklist admin UI and the
+ * Admin CRUD on `inspectionChecklistTemplate` objects (the one template
+ * schema since inspection-checklists-onto-task 4.1) and per-case completion
+ * via `inspectionResult` records (moving onto Task in 4.2). Used by the checklist admin UI and the
  * mobiel-inspectie consumer.
  *
  * @category Service
@@ -27,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -47,6 +49,13 @@ class InspectionChecklistService {
 	use SearchesObjects;
 
 	/**
+	 * Maps the editor's flat view onto the template schema and back.
+	 *
+	 * @var InspectionTemplateMapper
+	 */
+	private InspectionTemplateMapper $mapper;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings bridge to OpenRegister
@@ -58,16 +67,22 @@ class InspectionChecklistService {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->mapper = new InspectionTemplateMapper();
 	}//end __construct()
 
 	/**
-	 * List all inspection checklists, optionally filtered by case type ref.
+	 * Every checklist template, in the settings editor's flat view.
 	 *
-	 * @param string|null $caseTypeRef Optional UUID of the case type to filter by
+	 * Templates are `inspectionChecklistTemplate` objects since
+	 * inspection-checklists-onto-task 4.1; the editor keeps its flat shape
+	 * (`name`, `caseTypeRef`, `active`, `items`) through
+	 * {@see InspectionTemplateMapper}.
 	 *
-	 * @return array<int, array<string, mixed>> List of checklist objects
+	 * @param string|null $caseTypeRef Optional case type uuid to filter on.
 	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
+	 * @return array<int, array<string, mixed>> The checklists.
+	 *
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
 	public function listChecklists(?string $caseTypeRef = null): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -76,18 +91,16 @@ class InspectionChecklistService {
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
-		$schema = 'inspectionChecklist';
 		$params = ['_limit' => 100, '_order' => 'name'];
-
 		if ($caseTypeRef !== null && $caseTypeRef !== '') {
-			$params['caseTypeRef'] = $caseTypeRef;
+			$params['caseType'] = $caseTypeRef;
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(
+			$templates = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $schema,
+				schema: InspectionTemplateMapper::SCHEMA,
 				filters: $params
 			);
 		} catch (Throwable $e) {
@@ -97,99 +110,55 @@ class InspectionChecklistService {
 			);
 			return [];
 		}
+
+		return array_map(fn (array $template): array => $this->mapper->toFlat(template: $template), $templates);
 	}//end listChecklists()
 
 	/**
-	 * Create a new inspection checklist.
+	 * Create a checklist template from the editor's flat payload.
 	 *
-	 * @param array<string, mixed> $data Checklist data (name, caseTypeRef, items, active, validFrom)
+	 * @param array<string, mixed> $data The flat checklist.
 	 *
-	 * @return array<string, mixed> Created checklist object
+	 * @return array<string, mixed> The created checklist, flat.
 	 *
-	 * @throws RuntimeException If OpenRegister is unavailable
+	 * @throws RuntimeException When OpenRegister is unavailable.
 	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
 	public function createChecklist(array $data): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$template = $this->mapper->fromFlat(flat: $data);
+		$template['version'] = (int)($data['version'] ?? 1);
 
-		$register = $this->settingsService->getConfigValue('register');
-
-		$data['version'] = $data['version'] ?? 1;
-		$data['active'] = $data['active'] ?? true;
-
-		$result = $objectService->saveObject(
-			register: $register,
-			schema: 'inspectionChecklist',
-			object: $data
-		);
-
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true) {
-			return get_object_vars(object: $result);
-		}
-
-		return [];
+		return $this->saveTemplate(template: $template, id: null);
 	}//end createChecklist()
 
 	/**
-	 * Update an existing inspection checklist.
+	 * Update a checklist template, moving its version up by one.
 	 *
-	 * Bumps the version number on every update to support versioned
-	 * in-progress inspections.
+	 * @param string               $id   The template uuid.
+	 * @param array<string, mixed> $data The flat checklist.
 	 *
-	 * @param string $id UUID of the checklist to update
-	 * @param array<string, mixed> $data Updated fields
+	 * @return array<string, mixed> The updated checklist, flat.
 	 *
-	 * @return array<string, mixed> Updated checklist object
+	 * @throws RuntimeException When OpenRegister is unavailable.
 	 *
-	 * @throws RuntimeException If OpenRegister is unavailable
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
 	public function updateChecklist(string $id, array $data): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
+		$template = $this->mapper->fromFlat(flat: $data);
+		$template['version'] = ((int)($data['version'] ?? 1) + 1);
 
-		$register = $this->settingsService->getConfigValue('register');
-
-		$data['id'] = $id;
-		$data['version'] = ($data['version'] ?? 1) + 1;
-
-		$result = $objectService->saveObject(
-			register: $register,
-			schema: 'inspectionChecklist',
-			object: $data
-		);
-
-		if (is_array($result) === true) {
-			return $result;
-		} return [];
+		return $this->saveTemplate(template: $template, id: $id);
 	}//end updateChecklist()
 
 	/**
-	 * Delete an inspection checklist.
+	 * Delete a checklist template.
 	 *
-	 * ⚠️ The identifier parameter on `ObjectService::deleteObject()` is named
-	 * `$uuid`, not `$id`. This method shipped passing `id:` as a named argument,
-	 * so every call raised `Unknown named parameter $id`, was swallowed by the
-	 * catch below, and returned false — the admin Delete button 500'd on every
-	 * checklist and no checklist has ever been deleted through the UI. Verified
-	 * against a live instance before and after this change.
+	 * @param string $id The template uuid.
 	 *
-	 * @param string $id UUID of the checklist to delete
+	 * @return boolean True when deleted.
 	 *
-	 * @return bool True on success
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
+	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
 	public function deleteChecklist(string $id): bool {
 		$objectService = $this->settingsService->getObjectService();
@@ -203,7 +172,7 @@ class InspectionChecklistService {
 			$objectService->deleteObject(
 				uuid: $id,
 				register: $register,
-				schema: 'inspectionChecklist'
+				schema: InspectionTemplateMapper::SCHEMA
 			);
 			return true;
 		} catch (Throwable $e) {
@@ -214,6 +183,33 @@ class InspectionChecklistService {
 			return false;
 		}
 	}//end deleteChecklist()
+
+	/**
+	 * Save a template and answer it flat.
+	 *
+	 * @param array<string, mixed> $template The template.
+	 * @param string|null          $id       Its uuid on an update.
+	 *
+	 * @return array<string, mixed> The saved checklist, flat.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 */
+	private function saveTemplate(array $template, ?string $id): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		$saved = $this->saveObjectAsArray(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: InspectionTemplateMapper::SCHEMA,
+			object: $template,
+			uuid: $id
+		);
+
+		return $this->mapper->toFlat(template: ($saved ?? $template));
+	}//end saveTemplate()
 
 	/**
 	 * Submit an inspection result for a case.
