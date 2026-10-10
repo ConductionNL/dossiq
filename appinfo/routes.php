@@ -720,7 +720,7 @@ $extra = [
     ['name' => 'beschikking#akkoord',     'url' => '/api/beschikkingen/{id}/akkoord',          'verb' => 'PATCH'],
     ['name' => 'beschikking#onderteken',  'url' => '/api/beschikkingen/{id}/onderteken',       'verb' => 'PATCH'],
     ['name' => 'beschikking#verzend',     'url' => '/api/beschikkingen/{id}/verzend',          'verb' => 'PATCH'],
-    ['name' => 'beschikking_successor#create', 'url' => '/api/beschikkingen/{id}/successor', 'verb' => 'POST'],
+    ['name' => 'beschikkingSuccessor#create', 'url' => '/api/beschikkingen/{id}/successor', 'verb' => 'POST'],
     ['name' => 'beschikking#update',      'url' => '/api/beschikkingen/{id}',                  'verb' => 'PATCH'],
 
         // ── Consultation (advice requests and responses) ─────────────────
