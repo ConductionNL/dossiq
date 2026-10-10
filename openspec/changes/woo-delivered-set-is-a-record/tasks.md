@@ -42,7 +42,7 @@ first and seen red.
     `testAnAssessmentOutsideTheSetCanStillChange`. Construct the real event classes.
   - Through the caller: `tests/Unit/AppInfo/ApplicationTest.php`
     `testTheDeliveredSetGuardIsRegistered`.
-- [ ] 2.2 (openregister's file-write half, object-archive-state W.1 to W.5, is NOT merged on 10 Oct: a changed file is caught by re-verification only. Decision 156: build W.1-W.5 in openregister as a dependency PR, then set the marker here) File writes: if openregister's `object-archive-state` file-write half is merged, set its
+- [x] 2.2 (`WooDeliveredSetWriter::keepTheDeliveredBytes()` copies the bytes that went out into the set's folder; `freeze()` sets OpenRegister's marker (state `geleverd`) through `ArchiveHandler`, and the withdraw stamp lifts it for its one write; fragment 86 declares `x-openregister-archive`; `WooDeliveredSetGuard` lets a metadata-only write (the marker) through; tests `WooDeliveredSetWriterTest::testAFrozenFileRefusesAWrite`, `::testWithoutThePlatformFreezeTheSetIsStillRecorded`, `WooDeliveredSetGuardTest::testAFreezeMarkerOnAFrozenSetIsNotADataChange`; red in dq-l10-logs/red-frozenfile.log. The file refusal itself is openregister's, built as dependency PR build/dep-dossiq-file-write-freeze (object-archive-state W.1-W.5); archive this change only after that has landed) File writes: if openregister's `object-archive-state` file-write half is merged, set its
   frozen marker on the delivered files at freeze and test that a write is refused
   (`testAFrozenFileRefusesAWrite`). If it is not merged, do not build a dossiq copy of it; say in
   the PR body that a changed file is caught by re-verification only, and leave this box open with

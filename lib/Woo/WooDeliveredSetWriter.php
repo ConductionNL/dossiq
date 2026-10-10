@@ -72,6 +72,16 @@ class WooDeliveredSetWriter {
 	public const SET_NOT_WRITTEN = 'woo_delivered_set_not_written';
 
 	/**
+	 * OpenRegister's archive handler, which freezes an object and its files.
+	 */
+	public const ARCHIVE_HANDLER = 'OCA\OpenRegister\Service\Object\ArchiveHandler';
+
+	/**
+	 * The state a frozen set's OpenRegister marker names, so a refused file write says why.
+	 */
+	public const FREEZE_STATE = 'geleverd';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService      $settings    Bridge to OpenRegister.
@@ -205,8 +215,55 @@ class WooDeliveredSetWriter {
 			throw new RuntimeException(self::SET_NOT_WRITTEN);
 		}
 
+		$this->keepTheDeliveredBytes(setId: $this->idOf(row: $stored), delivered: $delivered);
+
 		return $stored;
 	}//end open()
+
+	/**
+	 * Copy the bytes that go out into the set's own folder.
+	 *
+	 * REQ-WDS-002: the record of what went out must not change. The delivered
+	 * files themselves stay where they are on the case, and those can still be
+	 * edited; re-verification catches that. The copy in the set's own folder is
+	 * frozen with the set (OpenRegister object-archive-state REQ-OAS-007), so
+	 * the bytes that went out stay readable as they were. A copy that cannot be
+	 * written is logged, never a reason to stop the delivery: the hashes still
+	 * record what went out.
+	 *
+	 * @param string                           $setId     The set.
+	 * @param array<int, array<string, mixed>> $delivered The delivered entries with `fileName` and `content`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function keepTheDeliveredBytes(string $setId, array $delivered): void {
+		$fileService = $this->settings->getFileService();
+		if ($fileService === null || $delivered === []) {
+			return;
+		}
+
+		foreach (array_values($delivered) as $index => $entry) {
+			$bytes = (string)base64_decode((string)($entry['content'] ?? ''), true);
+			$name = trim((string)($entry['fileName'] ?? ''));
+			if ($name === '') {
+				$name = 'document-' . ($index + 1);
+			}
+
+			$this->quietly(
+				what: 'keep a delivered file in the set folder',
+				operation: fn () => $fileService->addFile(
+					objectEntity: $setId,
+					fileName: sprintf('%03d-%s', ($index + 1), $name),
+					content: $bytes,
+					share: false,
+					tags: ['woo-delivered'],
+					registerId: $this->settings->getConfigValue('register'),
+				)
+			);
+		}
+	}//end keepTheDeliveredBytes()
 
 	/**
 	 * Freeze the set with its publication.
@@ -227,7 +284,53 @@ class WooDeliveredSetWriter {
 			id: $setId,
 			changes: ['status' => self::STATUS_FROZEN, 'publication' => $publicationId]
 		);
+
+		$this->quietly(what: 'set OpenRegister\'s freeze on the delivered set', operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId));
 	}//end freeze()
+
+	/**
+	 * Set OpenRegister's freeze marker on the set, which also freezes its files.
+	 *
+	 * With the marker, OpenRegister refuses every write to the set's data and
+	 * to the files in its folder, through its files API and through Files or
+	 * WebDAV (REQ-OAS-007). dossiq's own guard keeps refusing data writes too,
+	 * so an OpenRegister without the file half still has the data frozen.
+	 *
+	 * @param string $setId         The set.
+	 * @param string $publicationId The publication it went out as.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	private function platformFreeze(string $setId, string $publicationId): void {
+		$handler = $this->settings->getOpenRegisterClass(self::ARCHIVE_HANDLER);
+		if ($handler === null) {
+			return;
+		}
+
+		[, $register, $schema] = $this->store();
+		$handler->freeze($setId, 'Woo-levering, publicatie ' . $publicationId, self::FREEZE_STATE, $register, $schema);
+	}//end platformFreeze()
+
+	/**
+	 * Lift OpenRegister's freeze for the one write a frozen set accepts, the withdraw stamp.
+	 *
+	 * @param string $setId The set.
+	 *
+	 * @return bool True when a freeze was lifted and must be set again.
+	 */
+	private function platformUnfreeze(string $setId): bool {
+		$handler = $this->settings->getOpenRegisterClass(self::ARCHIVE_HANDLER);
+		if ($handler === null) {
+			return false;
+		}
+
+		[, $register, $schema] = $this->store();
+		$handler->unfreeze($setId, 'Woo-intrekking stempelen', $register, $schema);
+
+		return true;
+	}//end platformUnfreeze()
 
 	/**
 	 * Delete a pending set whose publication failed.
@@ -260,13 +363,26 @@ class WooDeliveredSetWriter {
 				continue;
 			}
 
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $this->idOf(row: $set),
-				changes: ['withdrawnAt' => (new DateTimeImmutable())->format('c')]
-			);
+			$setId = $this->idOf(row: $set);
+			$lifted = false;
+			$this->quietly(what: 'lift OpenRegister\'s freeze for the withdraw stamp', operation: function () use ($setId, &$lifted): void {
+				$lifted = $this->platformUnfreeze(setId: $setId);
+			});
+
+			try {
+				$this->patchObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $schema,
+					id: $setId,
+					changes: ['withdrawnAt' => (new DateTimeImmutable())->format('c')]
+				);
+			} finally {
+				if ($lifted === true) {
+					$publicationId = (string)($set['publication'] ?? '');
+					$this->quietly(what: 'set OpenRegister\'s freeze again after the withdraw stamp', operation: fn () => $this->platformFreeze(setId: $setId, publicationId: $publicationId));
+				}
+			}
 		}
 	}//end markWithdrawn()
 

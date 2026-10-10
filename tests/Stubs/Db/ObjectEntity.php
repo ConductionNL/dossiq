@@ -118,6 +118,33 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	}//end getDeleted()
 
 	/**
+	 * The freeze marker, as OpenRegister's object-archive-state writes it.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private ?array $frozen = null;
+
+	/**
+	 * Set the freeze marker, as `ArchiveHandler::freeze()` does.
+	 *
+	 * @param array<string, mixed>|null $frozen The marker.
+	 *
+	 * @return void
+	 */
+	public function setFrozen(?array $frozen): void {
+		$this->frozen = $frozen;
+	}//end setFrozen()
+
+	/**
+	 * Get the freeze marker.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public function getFrozen(): ?array {
+		return $this->frozen;
+	}//end getFrozen()
+
+	/**
 	 * Get the object UUID.
 	 *
 	 * @return string|null
@@ -247,6 +274,12 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 			'retention' => $this->retention,
 			'deleted' => $this->deleted,
 		];
+
+		// Like the real class: the freeze marker is metadata beside the data.
+		// Only when set, so rows that never met a freeze serialise as before.
+		if ($this->frozen !== null) {
+			$data['@self']['frozen'] = $this->frozen;
+		}
 
 		// 🔴 TOP-LEVEL id, because the real class guarantees one.
 		//

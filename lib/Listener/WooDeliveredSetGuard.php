@@ -55,6 +55,11 @@ class WooDeliveredSetGuard implements IEventListener {
 	private const ASSESSMENT_SLUG = 'wooDocumentAssessment';
 
 	/**
+	 * The data keys of a set; anything else (`@self`, `id`) is metadata.
+	 */
+	private const SET_KEYS = ['case', 'decision', 'status', 'deliveredAt', 'deliveredBy', 'supersedes', 'publication', 'items', 'setHash'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService       $settings The configured schemas.
@@ -150,14 +155,39 @@ class WooDeliveredSetGuard implements IEventListener {
 			return null;
 		}
 
+		// OpenRegister's freeze marker lives in `@self`, beside the data. Setting
+		// or lifting it on a frozen set changes no data, so it is not a change
+		// this guard refuses (REQ-WDS-002 with OpenRegister REQ-OAS-007).
+		if ($new !== null && $this->changesNoData(old: $old, new: $new) === true) {
+			return null;
+		}
+
 		return (string)($old['deliveredAt'] ?? 'an earlier date');
 	}//end frozenSetRefusal()
 
 	/**
-	 * Whether an update only adds the first `withdrawnAt`.
+	 * Whether an update leaves every data key as it was: a metadata-only write, such as OpenRegister's freeze marker.
 	 *
 	 * @param array<string, mixed> $old The stored set.
 	 * @param array<string, mixed> $new The new set.
+	 *
+	 * @return bool
+	 */
+	private function changesNoData(array $old, array $new): bool {
+		foreach (array_merge(self::SET_KEYS, ['withdrawnAt']) as $key) {
+			if (json_encode($old[$key] ?? null) !== json_encode($new[$key] ?? null)) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end changesNoData()
+
+	/**
+	 * Whether the update adds the first `withdrawnAt` and changes nothing else.
+	 *
+	 * @param array<string, mixed> $old The stored set.
+	 * @param array<string, mixed> $new The set as it would be written.
 	 *
 	 * @return bool
 	 */
@@ -166,7 +196,7 @@ class WooDeliveredSetGuard implements IEventListener {
 			return false;
 		}
 
-		foreach (['case', 'decision', 'status', 'deliveredAt', 'deliveredBy', 'supersedes', 'publication', 'items', 'setHash'] as $key) {
+		foreach (self::SET_KEYS as $key) {
 			if (json_encode($old[$key] ?? null) !== json_encode($new[$key] ?? null)) {
 				return false;
 			}
