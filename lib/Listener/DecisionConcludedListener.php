@@ -64,6 +64,12 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The listener joins the decision
+ * app's outcome to everything a concluded decision touches in dossiq: the besluit,
+ * the advisory committee record, the waiting flow run and the declared product.
+ * Each collaborator is one of those effects; splitting them would duplicate the
+ * case resolution every effect depends on.
+ *
  * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
  */
 class DecisionConcludedListener implements IEventListener {
@@ -201,9 +207,7 @@ class DecisionConcludedListener implements IEventListener {
 				subjectId: $subjectId
 			);
 
-			// Decision 172: a case type may declare a product (a permit, a
-			// licence) that this outcome issues or changes; the case type
-			// decides which outcome does. After the besluit; never throws.
+			// Decision 172: the product the case type declares; never throws.
 			$this->products?->onConcludedDecision(
 				caseId: $caseId,
 				decisionId: $decisionId,

@@ -86,50 +86,90 @@ class CaseOutcomeProductIssuer {
 	 * @param string      $status     The outcome status the decision app reported.
 	 * @param string|null $decidedAt  When it concluded (ISO 8601), or null.
 	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
+	 */
+	public function onConcludedDecision(string $caseId, string $decisionId, string $status, ?string $decidedAt): void {
+		try {
+			$this->issueFor(caseId: $caseId, decisionId: $decisionId, status: $status, decidedAt: $decidedAt);
+		} catch (Throwable $e) {
+			// The decision stands whether or not its product could be written.
+			$this->logger->warning(
+				'Dossiq: the decision concluded, but the product it issues could not be written',
+				['case' => $caseId, 'decision' => $decisionId, 'error' => $e->getMessage()]
+			);
+		}
+	}//end onConcludedDecision()
+
+	/**
+	 * Issue or change the product the case type declares for this outcome.
+	 *
+	 * A register failure propagates to the caller.
+	 *
+	 * @param string      $caseId     The case the decision is about.
+	 * @param string      $decisionId The concluded decision.
+	 * @param string      $status     The outcome status the decision app reported.
+	 * @param string|null $decidedAt  When it concluded (ISO 8601), or null.
+	 *
 	 * @return array<string, mixed>|null The product written or changed, or null.
 	 *
 	 * @spec openspec/changes/portal-permits-as-held-products/tasks.md#2.1
 	 */
-	public function onConcludedDecision(string $caseId, string $decisionId, string $status, ?string $decidedAt): ?array {
+	public function issueFor(string $caseId, string $decisionId, string $status, ?string $decidedAt): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		if ($objectService === null || $register === '' || trim($caseId) === '') {
 			return null;
 		}
 
-		try {
-			$case = $this->read(objectService: $objectService, register: $register, schema: 'case', id: $caseId);
-			$type = $this->read(objectService: $objectService, register: $register, schema: 'caseType', id: (string)(($case ?? [])['caseType'] ?? ''));
-			$declared = (($type ?? [])['issuesPermit'] ?? null);
-			if ($case === null || is_array($declared) === false || $declared === []) {
-				return null;
-			}
-
-			$issueOn = (array)($declared['issueOn'] ?? self::DEFAULT_ISSUE_ON);
-			if (in_array(strtolower(trim($status)), array_map('strtolower', $issueOn), true) === false) {
-				return null;
-			}
-
-			if (is_array($declared['changesProduct'] ?? null) === true) {
-				return $this->change(objectService: $objectService, register: $register, case: $case, declared: $declared);
-			}
-
-			return $this->issue(
-				objectService: $objectService,
-				register: $register,
-				case: $case,
-				declared: $declared,
-				decisionId: $decisionId,
-				decidedAt: $decidedAt
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the decision concluded, but the product it issues could not be written',
-				['case' => $caseId, 'decision' => $decisionId, 'error' => $e->getMessage()]
-			);
+		$case = $this->read(objectService: $objectService, register: $register, schema: 'case', id: $caseId);
+		$declared = $this->declarationFor(objectService: $objectService, register: $register, case: $case);
+		if ($case === null || $declared === null) {
 			return null;
-		}//end try
+		}
+
+		$issueOn = (array)($declared['issueOn'] ?? self::DEFAULT_ISSUE_ON);
+		if (in_array(strtolower(trim($status)), array_map('strtolower', $issueOn), true) === false) {
+			return null;
+		}
+
+		if (is_array($declared['changesProduct'] ?? null) === true) {
+			return $this->change(objectService: $objectService, register: $register, case: $case, declared: $declared);
+		}
+
+		return $this->issue(
+			objectService: $objectService,
+			register: $register,
+			case: $case,
+			declared: $declared,
+			decisionId: $decisionId,
+			decidedAt: $decidedAt
+		);
 	}//end onConcludedDecision()
+
+	/**
+	 * The product declaration of the case's type, or null when it declares none.
+	 *
+	 * @param object                    $objectService OpenRegister's object service.
+	 * @param string                    $register      The register.
+	 * @param array<string, mixed>|null $case          The case.
+	 *
+	 * @return array<string, mixed>|null The declaration.
+	 */
+	private function declarationFor(object $objectService, string $register, ?array $case): ?array {
+		if ($case === null) {
+			return null;
+		}
+
+		$type = $this->read(objectService: $objectService, register: $register, schema: 'caseType', id: (string)($case['caseType'] ?? ''));
+		$declared = (($type ?? [])['issuesPermit'] ?? null);
+		if (is_array($declared) === false || $declared === []) {
+			return null;
+		}
+
+		return $declared;
+	}//end declarationFor()
 
 	/**
 	 * Write the case's product, once per decision.

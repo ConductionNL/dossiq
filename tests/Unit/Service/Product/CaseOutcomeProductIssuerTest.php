@@ -176,7 +176,7 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnApprovedDecisionIssuesThePermitOnce(): void {
-		$permit = $this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: '2026-10-08T14:00:00+02:00');
+		$permit = $this->issuer->issueFor(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: '2026-10-08T14:00:00+02:00');
 
 		$this->assertNotNull($permit);
 		$this->assertCount(1, $this->objects->saved);
@@ -195,7 +195,7 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'permit', payload: $written));
 
 		// The same outcome delivered again writes nothing new.
-		$this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: '2026-10-08T14:00:00+02:00');
+		$this->issuer->issueFor(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: '2026-10-08T14:00:00+02:00');
 		$this->assertCount(1, $this->objects->saved);
 	}//end testAnApprovedDecisionIssuesThePermitOnce()
 
@@ -207,14 +207,14 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 	 */
 	public function testNoPermitWithoutAnIssuingTypeOrAHolder(): void {
 		$this->objects->store['caseType'][self::TYPE_ID]['issuesPermit'] = null;
-		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
+		$this->assertNull($this->issuer->issueFor(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 
 		$this->setUp();
 		$this->objects->store['case'][self::CASE_ID]['portalSubject'] = '';
-		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
+		$this->assertNull($this->issuer->issueFor(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 		$this->assertSame([], $this->objects->saved);
 
-		$this->assertNull($this->issuer->onConcludedDecision(caseId: 'missing', decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
+		$this->assertNull($this->issuer->issueFor(caseId: 'missing', decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 	}//end testNoPermitWithoutAnIssuingTypeOrAHolder()
 
 	/**
@@ -226,12 +226,12 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 	public function testAnApprovedChangeCaseSetsTheNewPlate(): void {
 		$this->objects->store['permit']['permit-1'] = ['id' => 'permit-1', 'portalSubject' => 'subj-sanne', 'status' => 'active', 'kenteken' => 'GZ482K'];
 
-		$permit = $this->issuer->onConcludedDecision(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null);
+		$permit = $this->issuer->issueFor(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null);
 		$this->assertSame('HX901B', $permit['kenteken']);
 		$this->assertSame('HX901B', $this->objects->store['permit']['permit-1']['kenteken']);
 
 		$this->objects->store['permit']['permit-1'] = ['id' => 'permit-1', 'portalSubject' => 'subj-other', 'status' => 'active', 'kenteken' => 'GZ482K'];
-		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
+		$this->assertNull($this->issuer->issueFor(caseId: self::CHANGE_CASE_ID, decisionId: self::DECISION_ID, status: 'approved', decidedAt: null));
 		$this->assertSame('GZ482K', $this->objects->store['permit']['permit-1']['kenteken']);
 	}//end testAnApprovedChangeCaseSetsTheNewPlate()
 
@@ -242,10 +242,10 @@ class CaseOutcomeProductIssuerTest extends TestCase {
 	 * @return void
 	 */
 	public function testOnlyADeclaredOutcomeIssues(): void {
-		$this->assertNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'rejected', decidedAt: null));
+		$this->assertNull($this->issuer->issueFor(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'rejected', decidedAt: null));
 		$this->assertSame([], $this->objects->saved);
 
 		$this->objects->store['caseType'][self::TYPE_ID]['issuesPermit']['issueOn'] = ['granted'];
-		$this->assertNotNull($this->issuer->onConcludedDecision(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'Granted', decidedAt: null));
+		$this->assertNotNull($this->issuer->issueFor(caseId: self::CASE_ID, decisionId: self::DECISION_ID, status: 'Granted', decidedAt: null));
 	}//end testOnlyADeclaredOutcomeIssues()
 }//end class

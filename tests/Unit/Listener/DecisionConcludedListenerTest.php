@@ -439,8 +439,7 @@ class DecisionConcludedListenerTest extends TestCase {
 			$products = $this->createMock(CaseOutcomeProductIssuer::class);
 			$products->expects($this->once())
 				->method('onConcludedDecision')
-				->with('case-9', 'dec-1', $status, '2026-06-15T10:00:00+00:00')
-				->willReturn(null);
+				->with('case-9', 'dec-1', $status, '2026-06-15T10:00:00+00:00');
 
 			$listener = new DecisionConcludedListener(
 				settingsService: $settings,
