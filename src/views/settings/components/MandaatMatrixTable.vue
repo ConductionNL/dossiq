@@ -149,12 +149,12 @@ export default {
 
 .mandaat-matrix-table__badge--ok {
 	background: var(--color-success);
-	color: var(--color-main-background);
+	color: var(--color-success-text);
 }
 
 .mandaat-matrix-table__badge--alert {
 	background: var(--color-error);
-	color: var(--color-main-background);
+	color: var(--color-error-text);
 }
 
 .mandaat-matrix-table__badge--neutral {

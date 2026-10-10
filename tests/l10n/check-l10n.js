@@ -237,6 +237,13 @@ const MANIFEST_TEXT_FIELDS = new Set([
 	'emptyText', 'placeholder', 'subtitle', 'helpText',
 ])
 
+// Fields whose VALUE is a map of rendered strings, keyed by something that is
+// not text. `lensReasonTexts` (nextcloud-vue#1421) maps `<lens>.<reason>` to
+// the sentence an object-table shows when a personal lens cannot answer;
+// CnDataTable runs each one through the app's translate function, exactly as
+// it does `emptyText`, so each value is a key the catalogue must carry.
+const MANIFEST_TEXT_MAPS = new Set(['lensReasonTexts'])
+
 function recordManifestStrings (node, file, trail) {
 	if (Array.isArray(node)) {
 		node.forEach((v, i) => recordManifestStrings(v, file, `${trail}[${i}]`))
@@ -250,7 +257,16 @@ function recordManifestStrings (node, file, trail) {
 			continue
 		}
 		const where = trail ? `${trail}.${key}` : key
-		if (MANIFEST_TEXT_FIELDS.has(key) && typeof value === 'string' && value.trim()) {
+		if (MANIFEST_TEXT_MAPS.has(key) && value !== null && typeof value === 'object' && !Array.isArray(value)) {
+			for (const [mapKey, text] of Object.entries(value)) {
+				if (typeof text === 'string' && text.trim()) {
+					if (!used.has(text)) {
+						used.set(text, new Set())
+					}
+					used.get(text).add(`${path.relative(ROOT, file)}:${where}.${mapKey}`)
+				}
+			}
+		} else if (MANIFEST_TEXT_FIELDS.has(key) && typeof value === 'string' && value.trim()) {
 			const k = value
 			if (!used.has(k)) {
 				used.set(k, new Set())

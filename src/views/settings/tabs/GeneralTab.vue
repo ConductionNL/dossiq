@@ -653,7 +653,7 @@ export default {
 
 .form-group label.required::after {
 	content: ' *';
-	color: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .general-tab__textarea {
@@ -688,7 +688,7 @@ export default {
 
 .field-error {
 	display: block;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 12px;
 	margin-top: 4px;
 }

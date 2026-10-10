@@ -668,7 +668,7 @@ export default {
 	font-size: 11px;
 	font-weight: 500;
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .status-type-row__role,
@@ -720,7 +720,7 @@ export default {
 }
 
 .statuses-tab__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 }
 
