@@ -22,7 +22,7 @@
 			type="error"
 			data-testid="prerequisites-blocking">
 			{{ t('dossiq', 'Dossiq cannot run until this is installed:') }}
-			{{ missingRequired.map((row) => row.id).join(', ') }}
+			{{ missingRequired.map((row) => row.name || row.id).join(', ') }}
 		</NcNoteCard>
 
 		<h4>{{ t('dossiq', 'Platform') }}</h4>
@@ -36,8 +36,14 @@
 				</span>
 			</li>
 			<li data-testid="prerequisite-nextcloud">
+				<span :class="markClass(nextcloud.present)">
+					{{ mark(nextcloud.present) }}
+				</span>
 				{{ t('dossiq', 'Nextcloud') }} {{ nextcloud.min }}
 				{{ t('dossiq', 'to') }} {{ nextcloud.max }}
+				<span v-if="nextcloud.running" class="prerequisites__detail">
+					({{ t('dossiq', 'this instance runs') }} {{ nextcloud.running }})
+				</span>
 			</li>
 		</ul>
 
@@ -60,7 +66,7 @@
 				:key="row.id"
 				:data-testid="`prerequisite-app-${row.id}`">
 				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.id }}
+				{{ row.name || row.id }}
 				<span class="prerequisites__detail">{{ row.unlocks }}</span>
 			</li>
 		</ul>
@@ -72,7 +78,7 @@
 				:key="row.id"
 				:data-testid="`prerequisite-app-${row.id}`">
 				<span :class="markClass(row.present)">{{ mark(row.present) }}</span>
-				{{ row.id }}
+				{{ row.name || row.id }}
 				<span class="prerequisites__detail">{{ row.unlocks }}</span>
 			</li>
 		</ul>
@@ -97,7 +103,13 @@ export default {
 
 		return {
 			php: state.php ?? { required: '', running: '', present: false },
-			nextcloud: state.nextcloud ?? { min: '', max: '' },
+			nextcloud: state.nextcloud ?? {
+				min: '',
+				max: '',
+				running: '',
+				present: false,
+			},
+
 			extensions: state.extensions ?? [],
 			required: state.apps?.required ?? [],
 			optional: state.apps?.optional ?? [],
@@ -108,6 +120,7 @@ export default {
 		/**
 		 * @return {Array} The required apps this instance does not have.
 		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
+		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
 		 */
 		missingRequired() {
 			return this.required.filter((row) => row.present !== true)
@@ -158,18 +171,31 @@ export default {
 	padding: 2px 0;
 }
 
+/*
+ * Fill and ink in matching pairs. Since Nextcloud 32 `--color-success` and
+ * `--color-error` are light FILLS; used as ink they were near-invisible on the
+ * page background (round-4 cloud check). Each fill has a `-text` partner
+ * that meets WCAG AA on it, in the light and the dark theme.
+ */
 .prerequisites__mark {
 	display: inline-block;
-	font-weight: bold;
+	box-sizing: border-box;
 	min-width: 72px;
+	margin-inline-end: 8px;
+	padding: 0 8px;
+	border-radius: var(--border-radius-pill, 999px);
+	font-weight: bold;
+	text-align: center;
 }
 
 .prerequisites__mark--present {
-	color: var(--color-success);
+	background: var(--color-success);
+	color: var(--color-success-text);
 }
 
 .prerequisites__mark--missing {
-	color: var(--color-error);
+	background: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .prerequisites__detail {

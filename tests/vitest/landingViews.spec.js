@@ -115,15 +115,16 @@ describe('the landing page in the full structure', () => {
 			)
 			expect(widget, widget.id).toEqual(withoutNotes(source))
 		}
-		// The shared queue is the dashboard's own preset, which reads the
-		// Queue page's filter.
+		// The team queue is the dashboard's own preset: the Queue page's
+		// filter narrowed to the reader's own teams (my-teams-queue).
 		const preset = dashboard.config.userWidgets.find(
 			(item) => item.id === 'your-teams-queue',
 		)
 		expect(team[0]).toEqual({ id: preset.id, ...preset.widget })
-		expect(team[0].content.filter).toEqual(
-			page(manifest.pages, 'Queue').config.filter,
-		)
+		expect(team[0].content.filter).toEqual({
+			...page(manifest.pages, 'Queue').config.filter,
+			assignedGroup: '@myGroups',
+		})
 	})
 
 	it('gives My team a sentence for when it has nothing to draw', () => {

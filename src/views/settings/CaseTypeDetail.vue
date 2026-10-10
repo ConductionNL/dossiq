@@ -546,12 +546,12 @@ export default {
 }
 
 .case-type-detail__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-bottom: 12px;
 }
 
 .case-type-detail__success {
-	color: var(--color-success);
+	color: var(--color-success-text);
 	margin-bottom: 12px;
 }
 

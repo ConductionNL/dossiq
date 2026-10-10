@@ -130,7 +130,7 @@ test.describe('code lists from concepts', () => {
 		return stored
 	}
 
-	// @e2e openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md#options-come-from-the-scheme
+	// @e2e openspec/specs/property-definition-management/spec.md#options-come-from-the-scheme
 	test('options come from the scheme', async ({ page, request }) => {
 		const tab = await openProperties(page)
 		const name = `${RUN_PREFIX} Wijk`
@@ -148,7 +148,7 @@ test.describe('code lists from concepts', () => {
 		)
 	})
 
-	// @e2e openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md#inline-lists-still-work
+	// @e2e openspec/specs/property-definition-management/spec.md#inline-lists-still-work
 	test('inline lists still work', async ({ page, request }) => {
 		const tab = await openProperties(page)
 		const name = `${RUN_PREFIX} Kanaal`
@@ -165,7 +165,7 @@ test.describe('code lists from concepts', () => {
 		await expect(row.locator('[data-testid="property-scheme"]')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md#options-come-from-the-scheme
+	// @e2e openspec/specs/property-definition-management/spec.md#options-come-from-the-scheme
 	test('a field carrying both is told which one wins', async ({ page }) => {
 		const tab = await openProperties(page)
 		await nameField(tab).fill(`${RUN_PREFIX} Reden`)
