@@ -34,6 +34,7 @@ use OCA\Dossiq\AppInfo\Registrar\BootRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\LifecycleRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ServiceRegistrar;
+use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -104,6 +105,17 @@ class Application extends App implements IBootstrap {
 		$context->registerServiceAlias(
 			\OCA\Dossiq\Repair\ValueMigrationPort::class,
 			\OCA\Dossiq\Repair\DbValueMigrationPort::class
+		);
+
+		// ADR-063: the classes OpenRegister scans for dossiq's curated
+		// #[McpTool] methods, under the alias it resolves in THIS app's own
+		// container (openregister#390: the shared container does not see it).
+		// The key is spelled out and bound here, in Application.php, because the
+		// orphaned-write-capability gate reads exactly this file for the binding;
+		// a unit test pins it to DossiqScannableServices::ALIAS.
+		$context->registerServiceAlias(
+			'OCA\\OpenRegister\\Mcp\\IMcpScannableServices::dossiq',
+			DossiqScannableServices::class
 		);
 
 		// What this app hands to OpenRegister's lifecycle engine.
