@@ -9,6 +9,16 @@ used for writing because it stores any string: the dedicated endpoint validates
 the ids against the case types the user may see, so a stale or foreign id never
 reaches the menu.
 
+## Which case types are offered
+
+Amended by `case-type-handling-teams`. `MenuCaseTypesService::offeredCaseTypes()`
+narrows the visible case types (below) to those whose handling teams
+(`CaseTypeHandling::teams()`: the default group plus `handling.teams`) include
+a Nextcloud group the user is in. When that leaves nothing, because the user is
+in none of those groups, it offers every visible case type. The offered list
+replaces the visible one for the picker's `available`, for reading `chosen` and
+for cleaning on save.
+
 ## Reading the case types
 
 `MenuCaseTypesService::visibleCaseTypes()` searches the configured

@@ -50,10 +50,12 @@ heading "My case types", and a pencil beside the heading opens the settings.
   existing user loses an entry on upgrade. Saving an empty list is a choice and
   is kept (the menu then shows only the caption).
 - The picker offers the current versions of the case types the user may see
-  (OpenRegister RBAC, `supersededBy` empty). The board's hint says "the case
-  types your team handles cases in"; dossiq has no team-to-case-type relation to
-  read that from, so the hint says what is true: the case types you have access
-  to.
+  (OpenRegister RBAC, `supersededBy` empty) that a team the user is in handles,
+  as the board's hint says ("the case types your team handles cases in"). The
+  team link is the case type's handling teams, built in `case-type-handling-teams`
+  (REQ-CT-44). A user in no handling team is offered every case type they may
+  see. Amended 2026-10-09 by Ruben's decision; the first version offered every
+  case type the user may see, because the link did not exist yet.
 - The open-case counts drawn on the board beside each case type are not
   built here: counting per case type is a query per row on every settings
   load. Left open.
