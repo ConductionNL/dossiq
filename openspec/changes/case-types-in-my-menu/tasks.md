@@ -42,7 +42,15 @@ Kind: code. Board canon: DqZijbalk and DqPersoonlijkeInstellingen
 - [ ] 4.1 nextcloud-vue: CnAppNav draws a caption's `href` as a pencil link in
   `NcAppNavigationCaption`'s actions slot. Until then the caption's `href` is
   inert and the section is reached from the user menu.
-- [ ] 4.2 The open-case count beside each case type on the board.
+  (10 Oct, L3: still open on nextcloud-vue 2.76.0; written to
+  for-ruben/dossiq-sibling-asks.md. Another repo, not built here.)
+- [ ] 4.2 The open-case count beside each case type on the board
+  (DqPersoonlijkeInstellingen draws "Zaaktype Woo-verzoek · 19 open zaken").
+  (not run: a case holds the uuid of the case type VERSION it was opened on, and
+  the picker offers current versions only, so the count has to span every version
+  of a case type. How OpenRegister answers a scalar `caseType` filter given a list
+  of uuids, or a terms facet on it, needs a live check first; built blind it shows
+  a confident wrong number. Live pass, decision 139.)
 
 ## 5. Amendment (2026-10-09)
 
