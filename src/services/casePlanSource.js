@@ -147,3 +147,36 @@ export function normaliseLocalPlanItems(items) {
 		position: index,
 	}))
 }
+
+/**
+ * Whether OpenRegister could hold a plan for a case, before asking it.
+ *
+ * dossiq projects a plan onto OpenRegister only for a case whose caseType has
+ * `handlingModel: cmmn` (CasePlanProjectionService::projectAtCaseStart, which
+ * reads an absent handlingModel as `bpmn`). For every other case the read
+ * could only answer 404, and it did, on every case page: a red request in the
+ * console for a case that was never meant to have a plan.
+ *
+ * It answers "ask" whenever it is not SURE. A case that still carries a blob
+ * may be mid-drain with rows already committed, and a caseType that cannot be
+ * read says nothing either way; both still ask, so the panel's fail-closed rule
+ * keeps seeing every outage.
+ *
+ * @param {object}      facts              What is known about the case.
+ * @param {boolean}     facts.hasLocalBlob Whether the case still carries a blob.
+ * @param {object|null} facts.caseType     The case's caseType, or null when unread.
+ * @return {boolean} False only when OpenRegister certainly holds no plan.
+ * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/case-plan-read/spec.md
+ */
+export function mayHoldOpenRegisterPlan({
+	hasLocalBlob = false,
+	caseType = null,
+} = {}) {
+	if (hasLocalBlob) {
+		return true
+	}
+	if (caseType === null || typeof caseType !== 'object') {
+		return true
+	}
+	return String(caseType.handlingModel ?? 'bpmn') === 'cmmn'
+}
