@@ -33,7 +33,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+ * @spec openspec/specs/case-priority/spec.md
  */
 class CasePriorityDerivationListener implements IEventListener {
 	/**
@@ -94,7 +94,7 @@ class CasePriorityDerivationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	 * @spec openspec/specs/case-priority/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatingEvent === true) {
