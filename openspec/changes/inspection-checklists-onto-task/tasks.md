@@ -46,12 +46,25 @@ delta specs and validates strictly.
         (`tests/vitest/inspectionStore.spec.js`), and `src/store/store.js`
         registers the type: the panel's template read threw "not registered"
         before. The store's own template writes had no caller and are gone.
-  - [ ] 4.2 Runs onto Task. `InspectionRunService` (create and complete one
-        inspection task, the outcome rule, the photo and required gates on
-        the frozen snapshot); the two VTH result endpoints and the store and
-        panel on it; repair step carrying `inspectieRapport`,
-        `inspectionChecklistRun` and `inspectionResult` onto tasks, keyed on
-        `legacyRef`; `tests/e2e/inspection-runs-on-task.spec.ts`.
+  - [x] 4.2 Runs onto Task. `lib/Service/Inspection/InspectionRunService.php`
+        creates one `inspection` task (template, version, snapshot,
+        metadata `location`/`capturedOffline`/`capturedAt`/`inspection`;
+        `syncState` is not stored) and completes it with responses, evidence
+        and the outcome; a run that breaks the photo or required gate writes
+        nothing. `InspectionAnswers` normalises stack A, C and native answers
+        onto ja/nee/nvt and holds the one outcome rule. Both VTH result
+        endpoints go through it (`InspectionChecklistController`; the old
+        `submitResult`/`getResultsForCase` and their helpers are gone from
+        `InspectionChecklistService`). The store submits and reads through
+        those endpoints and the panel names items by `id`. Repair step
+        `CarryInspectionRunsOntoTasks` imports every `inspectieRapport`,
+        `inspectionChecklistRun` and `inspectionResult` once, keyed on
+        `metadata.legacyRef` (mapping in `InspectionRunCarryOver`). Tests:
+        `InspectionRunServiceTest`, `InspectionAnswersTest`,
+        `InspectionRunCarryOverTest`, `CarryInspectionRunsOntoTasksTest`,
+        the updated controller test and `inspectionStore.spec.js`; e2e: two
+        new tests in `tests/e2e/vth-inspection-result-authz.spec.ts`, whose
+        fixture now seeds a template (written, live pass per decision 139).
   - [ ] 4.2b The offline field-inspection leaf (nextcloud-vue builtin,
         configured in `src/main.js`) replays results as object creates on
         `checklistResult` and reads `inspectionChecklist` with a flat

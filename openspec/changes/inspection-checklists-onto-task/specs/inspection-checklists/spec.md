@@ -13,7 +13,7 @@ The system SHALL store every inspection checklist as one `inspectionChecklistTem
 - **WHEN** an admin creates a new checklist "Bouwtoezicht fase 1 - Fundering" linked to case type "Toezichtzaak Bouw"
 - **THEN** the system SHALL create an `inspectionChecklistTemplate` object with: name, caseType (reference), version (integer, starting at 1), status (draft), sections, each with ordered items
 - **THEN** each item SHALL support: id, order, label, responseType (yes_no_na / text / getal / meerkeuze / photo / meting), required, photoRequired (nooit / if_no / altijd), choices, helpText, weight and parent
-- @e2e tests/e2e/inspection-runs-on-task.spec.ts
+- @e2e tests/e2e/vth-inspection-result-authz.spec.ts
 
 #### Scenario: Version checklist
 
@@ -44,7 +44,7 @@ The system SHALL record every completed inspection checklist as one OpenRegister
 - **THEN** the system SHALL complete a task on the case with: kind `inspection`, the template id and version, the inspector as assignee and completer, the answers as responses and the location in the task's metadata
 - **THEN** each answer SHALL record: itemId, value (ja / nee / nvt for a yes_no_na item), comment, numericValue for a getal or meting item, photos (Nextcloud file ids)
 - **THEN** the outcome SHALL be determined over the answered items that apply: "conform" when none is nee, "non_conform" when none conforms, "partly_conform" otherwise
-- @e2e tests/e2e/inspection-runs-on-task.spec.ts
+- @e2e tests/e2e/vth-inspection-result-authz.spec.ts
 
 #### Scenario: Photo capture on failed items
 
@@ -59,7 +59,7 @@ The system SHALL record every completed inspection checklist as one OpenRegister
 - **WHEN** an inspector submits a run with outcome "non_conform" (2 items answered nee)
 - **THEN** the system SHALL create a follow-up task on the case: "Opvolging vereist: 2 afwijkingen geconstateerd"
 - **THEN** the follow-up task SHALL reference the inspection task
-- @e2e tests/e2e/inspection-runs-on-task.spec.ts
+- @e2e exclude the panel and the follow-up are client surfaces left to the live pass (decision 139); the run shape they read is asserted by vth-inspection-result-authz.spec.ts and InspectionRunServiceTest, the follow-up by inspectionStore.spec.js
 
 #### Scenario: Older runs are carried onto tasks once
 
@@ -80,14 +80,14 @@ The system SHALL display an inspection panel on the case dashboard for Toezicht 
 - **WHEN** a user views the case dashboard for a Toezichtzaak Bouw with 3 active checklist templates
 - **THEN** the "Inspecties" panel SHALL show: inspection progress ("Inspectie 1/3 voltooid"), counting a template as done when a completed inspection task names it
 - **THEN** completed inspections SHALL show: date, inspector name, result badge (conform=green, non_conform=red, partly_conform=orange)
-- @e2e tests/e2e/inspection-runs-on-task.spec.ts
+- @e2e exclude the panel and the follow-up are client surfaces left to the live pass (decision 139); the run shape they read is asserted by vth-inspection-result-authz.spec.ts and InspectionRunServiceTest, the follow-up by inspectionStore.spec.js
 
 #### Scenario: Expand rapport details
 
 - **WHEN** a user clicks on a completed inspection in the panel
 - **THEN** the system SHALL expand to show each answer: item label, value, comment, linked photos
 - **THEN** items answered nee SHALL be highlighted with a warning icon
-- @e2e tests/e2e/inspection-runs-on-task.spec.ts
+- @e2e exclude the panel and the follow-up are client surfaces left to the live pass (decision 139); the run shape they read is asserted by vth-inspection-result-authz.spec.ts and InspectionRunServiceTest, the follow-up by inspectionStore.spec.js
 
 #### Scenario: Multiple inspections per phase
 

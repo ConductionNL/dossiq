@@ -317,16 +317,20 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 		// `submitResult()` mapped the Throwable to a 500, and the old
 		// `not.toBe(403)` assertion reported green over it for as long as this
 		// test has existed. Nothing was ever stored, on any run.
+		//
+		// Since inspection-checklists-onto-task 4.1 a template is an
+		// `inspectionChecklistTemplate`, and a submitted result is an
+		// OpenRegister task filled against it (4.2).
 		const checklist = await createObject(
 			adminApi,
 			adminToken,
-			'inspectionChecklist',
+			'inspectionChecklistTemplate',
 			{
 				name: `${RUN_PREFIX} Toezichtchecklist`,
 				version: 1,
-				caseTypeRef: caseType.id,
-				active: true,
-				items: [],
+				status: 'active',
+				caseType: caseType.id,
+				sections: [{ name: `${RUN_PREFIX} Toezichtchecklist`, items: [] }],
 			},
 		)
 		checklistId = objectId(checklist)
@@ -355,38 +359,15 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 	})
 
 	test.afterAll(async () => {
-		// 🔴 THE RESULTS THIS FILE NOW CREATES ARE ITS OWN TO REMOVE. The
-		// acceptance test stores a real `inspectionResult`, and unlike every
-		// other fixture here its body carries no `RUN_PREFIX` string — only a
-		// case uuid and a uid — so the global-setup residue sweep, which
-		// matches on the prefix, cannot find it. Left alone these accumulate
-		// one row per run, for ever.
-		if (adminCleanup !== null && caseId !== '') {
-			const stored = await adminCleanup
-				.get(
-					`/index.php/apps/dossiq/api/vth/cases/${caseId}/inspection-results`,
-					{ headers: { 'OCS-APIRequest': 'true' } },
-				)
-				.then((res) => res.json())
-				.catch(() => null)
-			const rows = Array.isArray(stored) ? stored : (stored?.results ?? [])
-			for (const row of rows) {
-				const rowId = String(row?.id ?? row?.uuid ?? '')
-				if (rowId !== '') {
-					await deleteObject(
-						adminCleanup,
-						adminCleanupToken,
-						'inspectionResult',
-						rowId,
-					).catch(() => {})
-				}
-			}
-		}
+		// The results this file creates are inspection TASKS since
+		// inspection-checklists-onto-task 4.2, and OpenRegister has no DELETE
+		// for a task by design (a completed task is terminal and audited). They
+		// stay on the fixture case, which the global residue sweep removes.
 		if (adminCleanup !== null && checklistId !== '') {
 			await deleteObject(
 				adminCleanup,
 				adminCleanupToken,
-				'inspectionChecklist',
+				'inspectionChecklistTemplate',
 				checklistId,
 			).catch(() => {})
 		}
@@ -487,6 +468,43 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 			mine.map((row: any) => String(row?.case?.id ?? row?.case ?? '')),
 			`every stored result read back for case ${caseId} must name that case`,
 		).toEqual(mine.map(() => caseId))
+	})
+
+	// @e2e openspec/specs/inspection-checklists/spec.md#complete-inspection-checklist
+	//
+	// inspection-checklists-onto-task 4.2: a submitted run is ONE completed
+	// task of kind `inspection` on the case, filled against the template, with
+	// the outcome the server decides. The seeded template has no items, so
+	// nothing applies and the rule's verdict is `conform`.
+	test('a submitted run is a completed inspection task with its outcome', async () => {
+		const { status, body } = await postJson(inspector, submitUrl(caseId), {
+			checklistId,
+			items: [],
+			remarks: `${RUN_PREFIX} run`,
+		})
+		expect(status, `the run must be recorded; ${JSON.stringify(body ?? {}).slice(0, 300)}`).toBe(201)
+		expect(body?.state, 'the run task is completed in the same request').toBe('completed')
+		expect(body?.result, 'no item applies, so nothing failed').toBe('conform')
+		expect(body?.checklist, 'the task names the template it was filled against').toBe(checklistId)
+
+		const readBack = await readResults(inspector, caseId)
+		const run = readBack.results.find((row: any) => String(row?.id ?? '') === String(body?.id ?? ''))
+		expect(run, 'the run must be readable back from the case').toBeTruthy()
+		expect(run?.remarks).toBe(`${RUN_PREFIX} run`)
+	})
+
+	// @e2e openspec/specs/inspection-checklists/spec.md#create-inspection-checklist
+	test('a checklist template is listed in the editor\'s shape', async () => {
+		expect(adminCleanup, 'the admin context must be open').not.toBeNull()
+		const res = await (adminCleanup as APIRequestContext).get('/index.php/apps/dossiq/api/vth/checklists', {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
+		expect(res.status()).toBe(200)
+		const rows = await res.json()
+		const mine = (Array.isArray(rows) ? rows : []).find((row: any) => String(row?.id ?? '') === checklistId)
+		expect(mine, 'the seeded template must be listed').toBeTruthy()
+		expect(mine?.active, 'an active template reads as active').toBe(true)
+		expect(Array.isArray(mine?.items), 'the editor reads one flat items list').toBe(true)
 	})
 
 	// @e2e openspec/specs/inspection-checklists/spec.md#another-authenticated-account-is-refused

@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\InspectionChecklistController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Inspection\InspectionRunService;
 use OCA\Dossiq\Service\InspectionChecklistService;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
@@ -69,6 +70,11 @@ class InspectionChecklistControllerTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * @var InspectionRunService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private InspectionRunService $runs;
+
+	/**
 	 * @var InspectionChecklistController
 	 */
 	private InspectionChecklistController $controller;
@@ -84,6 +90,7 @@ class InspectionChecklistControllerTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+		$this->runs = $this->createMock(InspectionRunService::class);
 
 		$this->controller = new InspectionChecklistController(
 			appName: 'dossiq',
@@ -92,6 +99,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			userSession: $this->userSession,
 			logger: $this->logger,
 			caseAccessGuard: $this->caseAccessGuard,
+			runs: $this->runs,
 		);
 	}//end setUp()
 
@@ -164,8 +172,8 @@ class InspectionChecklistControllerTest extends TestCase {
 		// that. It now has to state the relationship it always assumed.
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
-		$this->inspectionChecklistService
-			->method('getResultsForCase')
+		$this->runs
+			->method('runsForCase')
 			->willReturn([]);
 
 		$response = $this->controller->getResults(id: 'case-uuid');
@@ -185,9 +193,9 @@ class InspectionChecklistControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($mockUser);
 
 		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(false);
-		$this->inspectionChecklistService
+		$this->runs
 			->expects($this->never())
-			->method('getResultsForCase');
+			->method('runsForCase');
 
 		$response = $this->controller->getResults(id: 'someone-elses-case');
 
@@ -220,9 +228,9 @@ class InspectionChecklistControllerTest extends TestCase {
 
 		// Stored state disagrees: this account does not handle the case.
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(false);
-		$this->inspectionChecklistService
+		$this->runs
 			->expects($this->never())
-			->method('submitResult');
+			->method('submit');
 
 		$response = $this->controller->submitResult(id: 'someone-elses-case');
 
@@ -255,9 +263,9 @@ class InspectionChecklistControllerTest extends TestCase {
 		$this->request->method('getParams')->willReturn(['checklistId' => 'checklist-uuid']);
 
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(false);
-		$this->inspectionChecklistService
+		$this->runs
 			->expects($this->never())
-			->method('submitResult');
+			->method('submit');
 
 		$response = $this->controller->submitResult(id: 'someone-elses-case');
 
@@ -287,9 +295,9 @@ class InspectionChecklistControllerTest extends TestCase {
 		]);
 
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->inspectionChecklistService
+		$this->runs
 			->expects($this->once())
-			->method('submitResult')
+			->method('submit')
 			->willReturn(['id' => 'result-uuid', 'completedBy' => 'inspecteur-a']);
 
 		$response = $this->controller->submitResult(id: 'case-uuid');
@@ -320,9 +328,9 @@ class InspectionChecklistControllerTest extends TestCase {
 		// The guard admits an admin on any case; see CaseAccessGuard's own
 		// decision table.
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->inspectionChecklistService
+		$this->runs
 			->expects($this->once())
-			->method('submitResult')
+			->method('submit')
 			->willReturn(['id' => 'result-uuid']);
 
 		$response = $this->controller->submitResult(id: 'any-case');
@@ -387,8 +395,8 @@ class InspectionChecklistControllerTest extends TestCase {
 			'answers' => [],
 		]);
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->inspectionChecklistService
-			->method('submitResult')
+		$this->runs
+			->method('submit')
 			->willThrowException(
 				new OpenRegisterValidationException(
 					message: "Property 'checklist' should match format 'uuid' but 'e2e-checklist' does not"
@@ -425,8 +433,8 @@ class InspectionChecklistControllerTest extends TestCase {
 
 		$this->request->method('getParams')->willReturn(['checklistId' => 'checklist-uuid']);
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->inspectionChecklistService
-			->method('submitResult')
+		$this->runs
+			->method('submit')
 			->willThrowException(
 				new OpenRegisterCustomValidationException(
 					message: 'Referenced object for property case does not exist',
@@ -463,8 +471,8 @@ class InspectionChecklistControllerTest extends TestCase {
 
 		$this->request->method('getParams')->willReturn(['checklistId' => 'checklist-uuid']);
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
-		$this->inspectionChecklistService
-			->method('submitResult')
+		$this->runs
+			->method('submit')
 			->willThrowException(new \TypeError('Argument #1 must be of type string, null given'));
 
 		$response = $this->controller->submitResult(id: 'case-uuid');

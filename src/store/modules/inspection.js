@@ -4,6 +4,8 @@
  * Manages inspection checklists, inspection reports, photo uploads,
  * and follow-up task creation for VTH supervision cases.
  */
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import { defineStore } from 'pinia'
 import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
@@ -17,7 +19,15 @@ import { useObjectStore } from './object.js'
  */
 export function flattenTemplate(template) {
 	const sections = Array.isArray(template?.sections) ? template.sections : []
-	const items = sections.flatMap((section) => (Array.isArray(section?.items) ? section.items : []))
+	const items = sections
+		.flatMap((section) => (Array.isArray(section?.items) ? section.items : []))
+		.map((item) => ({
+			...item,
+			// The panel's form reads stack A's names: `type`, and a photo
+			// gate that is on or off for a failed answer.
+			type: item.type || item.responseType,
+			photoRequired: item.photoRequired === true || ['if_no', 'altijd'].includes(item.photoRequired),
+		}))
 	return { ...template, items }
 }
 
@@ -110,25 +120,24 @@ export const useInspectionStore = defineStore('inspection', {
 		},
 
 		/**
-		 * Fetch inspection reports for a case.
+		 * Fetch the inspection runs of a case.
+		 *
+		 * Runs are OpenRegister tasks of kind `inspection` since
+		 * inspection-checklists-onto-task 4.2; dossiq's results endpoint
+		 * answers them in the shape this panel reads.
 		 *
 		 * @param {string} caseId UUID of the case
-		 * @return {Promise<Array>} Reports
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @return {Promise<Array>} Runs
+		 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
 		 */
 		async fetchReports(caseId) {
 			this.loading = true
 			this.error = null
 			try {
-				const objectStore = useObjectStore()
-				const response = await objectStore.fetchCollection(
-					'inspectieRapport',
-					{
-						case: caseId,
-						limit: 100,
-					},
+				const response = await axios.get(
+					generateUrl('/apps/dossiq/api/vth/cases/{id}/inspection-results', { id: caseId }),
 				)
-				this.reports = response?.results || response || []
+				this.reports = Array.isArray(response?.data) ? response.data : []
 				return this.reports
 			} catch (error) {
 				this.error = error.message
@@ -140,59 +149,40 @@ export const useInspectionStore = defineStore('inspection', {
 		},
 
 		/**
-		 * Create an inspection report with auto-calculated result.
+		 * Submit an inspection run.
 		 *
-		 * @param {object} reportData Report data with items array
-		 * @return {Promise<object|null>} Created report
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * The server checks the run against the frozen template, records it as
+		 * one completed task and decides its outcome, so the result is read
+		 * from the answer, never computed here.
+		 *
+		 * @param {object} reportData Run data: `case`, `checklist`, `items`, optional `remarks`, `location`
+		 * @return {Promise<object|null>} The recorded run
+		 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 		 */
 		async createReport(reportData) {
 			this.loading = true
 			this.error = null
 			try {
-				const items = reportData.items || []
-				const failedItems = items.filter(
-					(item) => item.result === 'fail',
-				).length
-				const nvtItems = items.filter((item) => item.result === 'nvt').length
-				const totalItems = items.length
-
-				// Auto-calculate overall result
-				let result = 'conform'
-				if (failedItems > 0 && failedItems < totalItems - nvtItems) {
-					result = 'partly_conform'
-				} else if (failedItems > 0) {
-					result = 'non_conform'
-				}
-
-				const report = {
-					...reportData,
-					result,
-					failedItems,
-					followUpRequired: failedItems > 0,
-					inspectionDate:
-						reportData.inspectionDate || new Date().toISOString(),
-				}
-
-				const objectStore = useObjectStore()
-				const saved = await objectStore.saveObject(
-					'inspectieRapport',
-					report,
+				const response = await axios.post(
+					generateUrl('/apps/dossiq/api/vth/cases/{id}/inspection-result', { id: reportData.case }),
+					{
+						checklistId: reportData.checklist,
+						items: reportData.items || [],
+						remarks: reportData.remarks,
+						location: reportData.location,
+						inspectionDate: reportData.inspectionDate || new Date().toISOString(),
+					},
 				)
+				const saved = response.data
 				this.reports.push(saved)
 
-				// Create follow-up task if non-conformities found
-				if (failedItems > 0) {
-					await this.createFollowUpTask(
-						reportData.case,
-						failedItems,
-						saved.id,
-					)
+				if (saved.failedItems > 0) {
+					await this.createFollowUpTask(reportData.case, saved.failedItems, saved.id)
 				}
 
 				return saved
 			} catch (error) {
-				this.error = error.message
+				this.error = error?.response?.data?.message || error.message
 				console.error('Error creating report:', error)
 				return null
 			} finally {

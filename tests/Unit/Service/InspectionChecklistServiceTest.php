@@ -99,42 +99,6 @@ class InspectionChecklistServiceTest extends TestCase {
 	}//end testCreateChecklistThrowsWhenNoOpenRegister()
 
 	/**
-	 * Test that submitResult throws when OpenRegister unavailable.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
-	 */
-	public function testSubmitResultThrowsWhenNoOpenRegister(): void {
-		$this->settingsService->method('getObjectService')->willReturn(null);
-
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('OpenRegister is not available');
-
-		$this->service->submitResult(
-			caseId: 'case-uuid',
-			checklistId: 'checklist-uuid',
-			resultData: ['answers' => []],
-			completedBy: 'user1'
-		);
-	}//end testSubmitResultThrowsWhenNoOpenRegister()
-
-	/**
-	 * Test that getResultsForCase returns empty array when OpenRegister unavailable.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/vth-module/tasks.md#task-4
-	 */
-	public function testGetResultsForCaseReturnsEmptyWhenNoOpenRegister(): void {
-		$this->settingsService->method('getObjectService')->willReturn(null);
-
-		$result = $this->service->getResultsForCase(caseId: 'case-uuid');
-
-		$this->assertSame(expected: [], actual: $result);
-	}//end testGetResultsForCaseReturnsEmptyWhenNoOpenRegister()
-
-	/**
 	 * Test that deleteChecklist returns false when OpenRegister unavailable.
 	 *
 	 * @return void
