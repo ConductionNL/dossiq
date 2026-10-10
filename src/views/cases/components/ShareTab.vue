@@ -261,7 +261,7 @@ export default {
 		/**
 		 * @param {string} state one of live, paused, expired, revoked.
 		 * @return {string} what the handler reads on the badge.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 		 */
 		stateLabel(state) {
 			const labels = {
@@ -276,7 +276,7 @@ export default {
 		/**
 		 * @param {string} capabilities the comma-separated capability list.
 		 * @return {string} what the holder may do, in words.
-		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 		 */
 		capabilityLabel(capabilities) {
 			const labels = {

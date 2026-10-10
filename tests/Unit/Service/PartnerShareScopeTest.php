@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -235,6 +236,48 @@ class PartnerShareScopeTest extends TestCase {
 	 *
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-recorded-scope-travels-with-the-share-req-cst-02
 	 */
+	/**
+	 * The partner share the service writes is one the real caseShare schema accepts.
+	 *
+	 * A partner share carries no public token, so `token` cannot be required
+	 * (case-sharing-mints-access-links 3.5). Validated against the merged live
+	 * register, with the exact payload the service handed to the store.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md
+	 */
+	public function testTheWrittenPartnerShareIsValidAgainstTheRealSchema(): void {
+		$this->store->seed(
+			schema: 'toestemming',
+			uuid: 'consent-1',
+			row: [
+				'caseId' => 'case-1',
+				'grantedByBsn' => '999990627',
+				'grantedDate' => '2026-01-10',
+				'validTo' => '2099-12-31',
+				'withdrawn' => false,
+				'recipientParties' => ['zorgpartner-bv'],
+				'tegegevens' => ['ondersteuningsplan'],
+			],
+		);
+
+		$this->sharing()->createPartnerShare(
+			caseId: 'case-1',
+			partnerId: 'zorgpartner-bv',
+			permissionLevel: 'read',
+			createdBy: 'jan',
+		);
+
+		self::assertCount(1, $this->shares->shares);
+		self::assertArrayNotHasKey('token', $this->shares->shares[0]);
+		self::assertSame(
+			[],
+			(new RealSchemaValidator())->errors(slug: 'caseShare', payload: $this->shares->shares[0]),
+			'The register refuses a partner share it requires a token on.'
+		);
+	}//end testTheWrittenPartnerShareIsValidAgainstTheRealSchema()
+
 	public function testAConsentForAnotherPartnerWritesNoShare(): void {
 		$this->store->seed(
 			schema: 'toestemming',

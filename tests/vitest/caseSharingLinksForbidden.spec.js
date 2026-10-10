@@ -19,7 +19,7 @@
  * an admin bullet it never checked, so an admin was refused on their own
  * instance. See `tests/Unit/Service/Sharing/CaseAccessPolicyAdminTest.php`.
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
  */
 
 import axios from '@nextcloud/axios'
