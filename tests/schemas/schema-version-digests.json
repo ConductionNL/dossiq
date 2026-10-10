@@ -1395,22 +1395,6 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
-    "lib/Settings/register.d/77-supplier-notices.json::caseSupplierInvoice": {
-        "version": "1.1.0",
-        "digest": "4bee8fa1049753166a3acda06f0e960c28ad3f05c8e5a16ee0df80514e089c9d"
-    },
-    "lib/Settings/register.d/77-supplier-notices.json::supplierContract": {
-        "version": "1.1.0",
-        "digest": "5d33ed8fbf5b572044317346aa3d57f4df90c5b23e59866692c50452653761e5"
-    },
-    "lib/Settings/register.d/77-supplier-notices.json::supplierMessage": {
-        "version": "1.1.0",
-        "digest": "c446e96e65bd9ad9db058f2a4b4db26a93235d10b187c1c95d3ab14500fa919c"
-    },
-    "lib/Settings/register.d/77-supplier-notices.json::supplierTender": {
-        "version": "1.1.0",
-        "digest": "bf0a9d9109be4f750520a0d4a707b13457589c8e9040d950308fcaf586aae6d0"
-    },
     "lib/Settings/register.d/79-planninq-projects-leaf.json::case": {
         "version": "",
         "digest": "a03ddc03548b6f4f1e1b67d743e8eb531b859ee26edabf38bc67d2d223249af9"
