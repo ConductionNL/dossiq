@@ -183,7 +183,7 @@ test.describe('The duplicate warning at intake', () => {
 		return dialog
 	}
 
-	// @e2e openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md#a-likely-duplicate-is-shown
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#a-likely-duplicate-is-shown
 	test('names the open case this one looks like, with a link to it', async ({
 		page,
 	}) => {
@@ -216,7 +216,7 @@ test.describe('The duplicate warning at intake', () => {
 		}).toPass({ timeout: 30000 })
 	})
 
-	// @e2e openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
 	test('offers a handler no way past a case type that blocks', async ({
 		page,
 	}) => {
@@ -234,7 +234,7 @@ test.describe('The duplicate warning at intake', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
+	// @e2e openspec/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
 	test('offers a coordinator a way past, once they say why', async ({ page }) => {
 		expect(
 			await ocs('post', '/ocs/v2.php/cloud/groups', {

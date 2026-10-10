@@ -34,12 +34,18 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<NcEmptyContent v-if="!loading && !tenantId">
+		<!--
+			The words go in `name`. NcEmptyContent renders the slots icon,
+			name, description and action and no default slot, so the text that
+			sat in #default never reached the page and the section showed a
+			bare icon (round-4 cloud check).
+		-->
+		<NcEmptyContent
+			v-if="!loading && !tenantId"
+			data-testid="tenant-onboarding-empty"
+			:name="t('dossiq', 'Select a tenant to view onboarding progress.')">
 			<template #icon>
 				<AccountTie :size="48" />
-			</template>
-			<template #default>
-				{{ t('dossiq', 'Select a tenant to view onboarding progress.') }}
 			</template>
 		</NcEmptyContent>
 
@@ -504,7 +510,7 @@ export default {
 }
 
 .tenant-onboarding__step-icon {
-	color: var(--color-success);
+	color: var(--color-success-text);
 }
 
 .tenant-onboarding__step-body {
@@ -538,7 +544,7 @@ export default {
 	gap: 12px;
 	padding: 12px;
 	background: var(--color-success);
-	color: var(--color-main-background);
+	color: var(--color-success-text);
 	border-radius: var(--border-radius);
 }
 
@@ -547,7 +553,7 @@ export default {
 	gap: 12px;
 	padding: 12px;
 	background: var(--color-warning);
-	color: var(--color-main-background);
+	color: var(--color-warning-text);
 	border-radius: var(--border-radius);
 }
 
