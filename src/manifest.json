@@ -615,20 +615,20 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {
@@ -1126,20 +1126,20 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {
@@ -1706,11 +1706,6 @@
 			"route": "/queue",
 			"type": "index",
 			"title": "Queue",
-			"splitView": {
-				"enabled": true,
-				"breakpoint": 1024,
-				"paneWidth": "42%"
-			},
 			"_note": "The one queue: every case that is open and that nobody has picked up. It is a FILTER over `case`, not a collection of its own, so this is a plain type:index rather than a bespoke view. `assignee: \"IS NULL\"` is the literal sentinel every OpenRegister condition builder matches by value. The suffix spelling `assignee_isnull=true` was dead when this page shipped: the only code that mentioned it had no callers, and `isnull` was missing from MagicSearchHandler::COMPARISON_OPERATORS, so the filter contributed no condition at all. Fixed in openregister `isnull-filter-operator`; the sentinel is kept because it also works on instances that do not yet carry that change. `isFinalStatus: false` keeps closed cases out; it is a real boolean on every case row, not a derived one, so plain equality reaches it. `statusHiddenInLists: false` is the third condition, added by lifecycle-acts-on-the-case REQ-LIFE-01, and it is kept LITERALLY EQUAL to the Cases page Unclaimed chip for the reason that note gives: the two lists answer the same question and a drift between them is invisible. Assigning a case removes it from here and puts it on that person's Assigned to me; All cases shows it either way. The caseType folder sidebar is the same control the Cases index uses, so the queue narrows by case type without a second page. WHY THIS IS A PAGE AND NOT A `menu[].query` PRESET, which is what gate-68 (ADR-097 Decision 5) proposes for a second index over an already-indexed schema: a preset is only a link into the target page, where the query filters and the reader's own facet filters share one map, so a facet interaction can widen the queue back to every case. A base filter on the page itself cannot be cleared by the person reading it, and that is the property that makes the queue trustworthy. Assigned to me is a page for the same reason.",
 			"config": {
 				"register": "dossiq",
@@ -1726,7 +1721,7 @@
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
-				"includeFields": ["caseType", "title", "requester", "description", "assignee", "impact", "urgency", "confidentiality", "intakeChannel", "startDate", "plannedEndDate"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
 					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
@@ -1734,8 +1729,8 @@
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
 				"createSuccessRoute": "CaseDetail",
 				"createSuccessMessage": "Case created.",
-				"formSize": "large",
-				"formColumns": 2,
+				"formSize": "normal",
+				"formColumns": 1,
 				"viewModes": ["table", "cards"],
 				"showViewAction": false,
 				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of registry.js (a `kind: 'handler'` entry), because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
@@ -1841,11 +1836,6 @@
 			"route": "/cases",
 			"type": "index",
 			"title": "Cases",
-			"splitView": {
-				"enabled": true,
-				"breakpoint": 1024,
-				"paneWidth": "42%"
-			},
 			"manualOrder": true,
 			"actionsComponent": "CaseListExportAction",
 			"slots": {
@@ -1897,7 +1887,7 @@
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
-				"includeFields": ["caseType", "title", "requester", "description", "assignee", "impact", "urgency", "confidentiality", "intakeChannel", "startDate", "plannedEndDate"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
 					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
@@ -1905,8 +1895,8 @@
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
 				"createSuccessRoute": "CaseDetail",
 				"createSuccessMessage": "Case created.",
-				"formSize": "large",
-				"formColumns": 2,
+				"formSize": "normal",
+				"formColumns": 1,
 				"viewModes": ["table", "cards", "map"],
 				"mapConfig": {
 					"geoField": "geometry",
@@ -7480,22 +7470,22 @@
 						"type": "open-form",
 						"label": "New case",
 						"icon": "FolderPlusOutline",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"register": "dossiq",
 						"schema": "case",
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {
@@ -7772,22 +7762,22 @@
 						"type": "open-form",
 						"label": "New case",
 						"icon": "FolderPlusOutline",
-						"size": "large",
-						"columns": 2,
+						"size": "normal",
+						"columns": 1,
 						"register": "dossiq",
 						"schema": "case",
 						"includeFields": [
 							"caseType",
 							"title",
 							"requester",
-							"description",
-							"assignee",
-							"impact",
-							"urgency",
-							"confidentiality",
 							"intakeChannel",
+							"description",
 							"startDate",
-							"plannedEndDate"
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
 						],
 						"fieldOverrides": {
 							"description": {

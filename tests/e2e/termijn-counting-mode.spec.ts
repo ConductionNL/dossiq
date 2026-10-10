@@ -69,7 +69,7 @@ test.describe('A term declares how it counts', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md#scenario-the-mode-is-visible-in-settings
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#the-mode-is-visible-in-settings
 	test('The mode is shown on the settings tab and offered in the editor', async ({
 		page,
 		playwright,

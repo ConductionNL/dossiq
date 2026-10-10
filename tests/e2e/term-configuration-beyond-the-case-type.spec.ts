@@ -84,8 +84,8 @@ test.describe('A term is more than one number on one case type', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#scenario-a-missed-first-response-stores-how-late-it-was
-	// @e2e openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#scenario-a-met-first-response-is-recorded-too
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-missed-first-response-stores-how-late-it-was
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-met-first-response-is-recorded-too
 	test('A missed first response stores how late it was, and a met one is recorded too', async ({
 		playwright,
 		baseURL,
@@ -136,8 +136,8 @@ test.describe('A term is more than one number on one case type', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#scenario-one-case-type-two-municipal-norms
-	// @e2e openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#scenario-a-disputed-date-can-be-explained
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#one-case-type-two-municipal-norms
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-disputed-date-can-be-explained
 	test('One case type carries two municipal norms, and each case says which it got', async ({
 		playwright,
 		baseURL,
@@ -193,7 +193,7 @@ test.describe('A term is more than one number on one case type', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#scenario-the-clock-stops-while-the-case-sits-with-an-adviser
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#the-clock-stops-while-the-case-sits-with-an-adviser
 	test('The clock stops while the case sits outside the statuses its term runs in', async ({
 		playwright,
 		baseURL,
