@@ -85,10 +85,11 @@ are where local stubs lie).
 
 ## 4. The import
 
-- [ ] 4.1 Declare `formerReferences` (array of `{application, reference}`) on the case in
+- [x] 4.1 Declare `formerReferences` (array of `{application, reference}`) on the case in
   `lib/Settings/dossiq_register.json`, add it to the case search declaration in
   `register.d/39-search-declarations.json`, and bump the register version (REQ-WTO-004).
   - unit: `tests/Unit/Settings/CaseSchemaTest.php` `testFormerReferencesIsDeclaredAndSearchable`.
+  - Built (10 Oct): register 0.20.27, `matchType: exact` like `identifier` (a whole reference, not half).
 - [ ] 4.2 Add `lib/Woo/OpenCatalogiWooImport.php` with `run(bool $dryRun = false): array` per
   REQ-WTO-004. Resolve opencatalogi's register and `wooRequest` schema by slug through
   OpenRegister, as the system, `_rbac: false`. Find an existing case by
