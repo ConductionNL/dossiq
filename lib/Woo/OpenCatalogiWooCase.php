@@ -81,7 +81,7 @@ class OpenCatalogiWooCase {
 	 * @param array<string, mixed> $source     The opencatalogi `wooRequest` row.
 	 * @param string               $sourceUuid Its uuid.
 	 *
-	 * @return array{case: array<string, mixed>, open: bool, suspended: bool, deadline: string, result: string}
+	 * @return array{case: array<string, mixed>, open: bool, suspended: bool, deadline: string, result: string, extensionReason: string}
 	 *
 	 * @throws WooRequestRefused INVALID when the row cannot be a Woo case: no
 	 *                           question, an unknown status or channel, or no
@@ -139,6 +139,7 @@ class OpenCatalogiWooCase {
 			'suspended' => ($status === 'awaiting_clarification'),
 			'deadline' => (string)$this->dates->toCalendarDateOrNull(value: ($source['dueAt'] ?? null)),
 			'result' => $result,
+			'extensionReason' => trim((string)($source['extensionReason'] ?? '')),
 		];
 	}//end fromSource()
 

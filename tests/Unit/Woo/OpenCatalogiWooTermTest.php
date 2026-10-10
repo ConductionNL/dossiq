@@ -151,13 +151,34 @@ class OpenCatalogiWooTermTest extends TestCase {
 			)
 			->willReturn('carried-timer');
 		$this->timers->expects(self::never())->method('suspendBeslistermijn');
+		$this->terms->expects(self::once())->method('recordEvent')
+			->with('term-1', 'verdaging', 'Woo 4.4 lid 2', 'Zienswijzen', 14);
 
-		$answer = $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: true, suspended: false, deadline: '2026-04-06', extensions: 1));
+		$mapped = $this->mapped(open: true, suspended: false, deadline: '2026-04-06', extensions: 1);
+		$mapped['extensionReason'] = 'Zienswijzen';
+		$answer = $this->term()->carry(caseId: 'case-1', mapped: $mapped);
 
 		self::assertSame(['outcome' => OpenCatalogiWooTerm::CARRIED, 'instance' => 'term-1', 'timer' => 'carried-timer'], $answer);
 		self::assertSame(['countExtensions' => 1, 'status' => 'verlengd', 'engineTimerId' => '', 'endDateCurrent' => '2026-04-06'], $patches[0]);
 		self::assertSame(['engineTimerId' => 'carried-timer', 'timerBreachesAfterLastDay' => true], $patches[1]);
 	}//end testAnExtendedRequestMovesItsTermToTheSourcesEnd()
+
+	/**
+	 * A second run over a term it already carried finds it carried, and arms nothing.
+	 *
+	 * @return void
+	 */
+	public function testATermCarriedBeforeIsKept(): void {
+		$carried = $this->freshInstances();
+		$carried[1] = array_merge($carried[1], ['status' => 'verlengd', 'countExtensions' => 1, 'endDateCurrent' => '2026-04-06', 'engineTimerId' => 'carried-timer']);
+		$this->terms->method('instancesForCase')->willReturn($carried);
+		$this->timers->expects(self::never())->method('armBeslistermijn');
+		$this->terms->expects(self::never())->method('recordEvent');
+
+		$answer = $this->term()->carry(caseId: 'case-1', mapped: $this->mapped(open: true, suspended: false, deadline: '2026-04-06', extensions: 1));
+
+		self::assertSame(OpenCatalogiWooTerm::KEPT, $answer['outcome']);
+	}//end testATermCarriedBeforeIsKept()
 
 	/**
 	 * A request waiting on the requester is paused and its new timer suspended at once.

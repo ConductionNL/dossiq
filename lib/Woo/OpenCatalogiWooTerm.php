@@ -64,6 +64,11 @@ class OpenCatalogiWooTerm {
 	public const MISSING = 'missing';
 
 	/**
+	 * What one Woo extension is worth (Woo art. 4.4 lid 2: two weeks).
+	 */
+	private const EXTENSION_DAYS = 14;
+
+	/**
 	 * Why, as the engine and the trail will read it.
 	 */
 	private const REASON = 'Termijn overgenomen uit opencatalogi bij de overname van het Woo-verzoek';
@@ -86,7 +91,7 @@ class OpenCatalogiWooTerm {
 	 * Carry the source's term onto the case just written for it.
 	 *
 	 * @param string                                                                   $caseId The written case.
-	 * @param array{case: array<string, mixed>, open: bool, suspended: bool, deadline: string} $mapped What {@see OpenCatalogiWooCase::fromSource()} answered.
+	 * @param array{case: array<string, mixed>, open: bool, suspended: bool, deadline: string, extensionReason?: string} $mapped What {@see OpenCatalogiWooCase::fromSource()} answered.
 	 *
 	 * @return array{outcome: string, instance: string, timer: string} What happened to the clock.
 	 *
@@ -118,8 +123,35 @@ class OpenCatalogiWooTerm {
 			return ['outcome' => self::KEPT, 'instance' => $instanceId, 'timer' => (string)($instance['engineTimerId'] ?? '')];
 		}
 
-		return $this->rearm(instance: $instance, deadline: $deadline, extensions: $extensions, suspended: $suspended);
+		$carried = $this->rearm(instance: $instance, deadline: $deadline, extensions: $extensions, suspended: $suspended);
+		$this->recordExtensions(instanceId: $instanceId, extensions: $extensions, reason: trim((string)($mapped['extensionReason'] ?? '')));
+
+		return $carried;
 	}//end carry()
+
+	/**
+	 * Put the source's extensions on the term's trail, so the case reads why its end moved.
+	 *
+	 * The end date itself is already the source's; these rows carry the reason
+	 * and keep a later rebind from losing the extension (TermRearm replays them).
+	 *
+	 * @param string $instanceId The statutory instance.
+	 * @param int    $extensions How often the source was extended.
+	 * @param string $reason     The source's extension reason, or ''.
+	 *
+	 * @return void
+	 */
+	private function recordExtensions(string $instanceId, int $extensions, string $reason): void {
+		for ($i = 0; $i < $extensions; $i++) {
+			$this->terms->recordEvent(
+				termInstanceId: $instanceId,
+				type: 'verdaging',
+				basis: 'Woo 4.4 lid 2',
+				rationale: ($reason !== '' ? $reason : self::REASON),
+				daysImpact: self::EXTENSION_DAYS,
+			);
+		}
+	}//end recordExtensions()
 
 	/**
 	 * Cancel the fresh timer, write the source's term and arm it again.
@@ -135,16 +167,11 @@ class OpenCatalogiWooTerm {
 		$instanceId = (string)($instance['id'] ?? '');
 		$this->timers->cancelForInstance(instanceId: $instanceId, reason: self::REASON);
 
-		$status = 'lopend';
-		if ($extensions > 0) {
-			$status = 'verlengd';
-		}
-
-		if ($suspended === true) {
-			$status = 'paused';
-		}
-
-		$patch = ['countExtensions' => $extensions, 'status' => $status, 'engineTimerId' => ''];
+		$patch = [
+			'countExtensions' => $extensions,
+			'status' => $this->statusFor(extensions: $extensions, suspended: $suspended),
+			'engineTimerId' => '',
+		];
 		if ($deadline !== '') {
 			$patch['endDateCurrent'] = $deadline;
 		}
@@ -184,11 +211,35 @@ class OpenCatalogiWooTerm {
 	private function unchanged(array $instance, string $deadline, int $extensions, bool $suspended): bool {
 		$current = (string)$this->dates->toCalendarDateOrNull(value: ($instance['endDateCurrent'] ?? null));
 
-		return $suspended === false
-			&& $extensions === 0
+		// A second run over a half-finished request finds the term it carried
+		// the first time; reading the instance against the source, rather than
+		// against "no extension, not suspended", is what keeps that run from
+		// arming the same term twice.
+		return (string)($instance['status'] ?? '') === $this->statusFor(extensions: $extensions, suspended: $suspended)
+			&& (int)($instance['countExtensions'] ?? 0) === $extensions
 			&& ($deadline === '' || $deadline === $current)
 			&& (string)($instance['engineTimerId'] ?? '') !== '';
 	}//end unchanged()
+
+	/**
+	 * The instance status a source's term state reads as.
+	 *
+	 * @param int  $extensions How often the source was extended.
+	 * @param bool $suspended  Whether the source waits.
+	 *
+	 * @return string `paused`, `verlengd` or `lopend`.
+	 */
+	private function statusFor(int $extensions, bool $suspended): string {
+		if ($suspended === true) {
+			return 'paused';
+		}
+
+		if ($extensions > 0) {
+			return 'verlengd';
+		}
+
+		return 'lopend';
+	}//end statusFor()
 
 	/**
 	 * The case's statutory instance that is not completed, when there is one.
