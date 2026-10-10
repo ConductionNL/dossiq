@@ -25652,6 +25652,165 @@
         "readAt": null,
         "lastError": "This address opted out (instance).",
         "simulated": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooDocumentReview",
+          "slug": "woodocumentreview-woodocumentreview-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "documentRef": "Voorbeeld Documentref 1",
+        "relevance": "unmarked",
+        "relevanceSource": "reviewer",
+        "rule": "Voorbeeld Rule 1",
+        "overturnedRule": "Voorbeeld Overturnedrule 1",
+        "markedBy": "Voorbeeld Markedby 1",
+        "markedAt": "2026-03-01T09:00:00+00:00",
+        "batch": "Voorbeeld Batch 1",
+        "depth": {},
+        "pageCount": 1,
+        "pagesRequired": [
+          1
+        ],
+        "pagesSeen": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooDocumentReview",
+          "slug": "woodocumentreview-woodocumentreview-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "documentRef": "Voorbeeld Documentref 2",
+        "relevance": "in-scope",
+        "relevanceSource": "rule",
+        "rule": "Voorbeeld Rule 2",
+        "overturnedRule": "Voorbeeld Overturnedrule 2",
+        "markedBy": "Voorbeeld Markedby 2",
+        "markedAt": "2026-03-02T09:00:00+00:00",
+        "batch": "Voorbeeld Batch 2",
+        "depth": {},
+        "pageCount": 2,
+        "pagesRequired": [
+          2
+        ],
+        "pagesSeen": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooDocumentReview",
+          "slug": "woodocumentreview-woodocumentreview-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "documentRef": "Voorbeeld Documentref 3",
+        "relevance": "out-of-scope",
+        "relevanceSource": "reviewer",
+        "rule": "Voorbeeld Rule 3",
+        "overturnedRule": "Voorbeeld Overturnedrule 3",
+        "markedBy": "Voorbeeld Markedby 3",
+        "markedAt": "2026-03-03T09:00:00+00:00",
+        "batch": "Voorbeeld Batch 3",
+        "depth": {},
+        "pageCount": 3,
+        "pagesRequired": [
+          3
+        ],
+        "pagesSeen": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooReviewBatch",
+          "slug": "wooreviewbatch-voorbeeld-name-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "name": "Voorbeeld Name 1",
+        "assignee": "Voorbeeld Assignee 1",
+        "documents": [
+          "Voorbeeld Documents 1"
+        ],
+        "filter": {},
+        "task": "Voorbeeld Task 1",
+        "status": "open"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooReviewBatch",
+          "slug": "wooreviewbatch-voorbeeld-name-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "name": "Voorbeeld Name 2",
+        "assignee": "Voorbeeld Assignee 2",
+        "documents": [
+          "Voorbeeld Documents 2"
+        ],
+        "filter": {},
+        "task": "Voorbeeld Task 2",
+        "status": "closed"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooReviewBatch",
+          "slug": "wooreviewbatch-voorbeeld-name-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "name": "Voorbeeld Name 3",
+        "assignee": "Voorbeeld Assignee 3",
+        "documents": [
+          "Voorbeeld Documents 3"
+        ],
+        "filter": {},
+        "task": "Voorbeeld Task 3",
+        "status": "open"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooTriageRule",
+          "slug": "wootriagerule-voorbeeld-name-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "name": "Voorbeeld Name 1",
+        "effect": "in-scope",
+        "conditions": {},
+        "order": 0,
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooTriageRule",
+          "slug": "wootriagerule-voorbeeld-name-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "name": "Voorbeeld Name 2",
+        "effect": "out-of-scope",
+        "conditions": {},
+        "order": 0,
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooTriageRule",
+          "slug": "wootriagerule-voorbeeld-name-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "name": "Voorbeeld Name 3",
+        "effect": "in-scope",
+        "conditions": {},
+        "order": 0,
+        "active": true
       }
     ]
   }
