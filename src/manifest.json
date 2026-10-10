@@ -588,6 +588,7 @@
 								"register": "dossiq",
 								"schema": "case",
 								"filter": {
+									"assignedGroup": "@myGroups",
 									"assignee": "IS NULL",
 									"isFinalStatus": false,
 									"statusHiddenInLists": false,
@@ -601,12 +602,13 @@
 									{ "key": "deadline", "label": "Deadline" }
 								],
 								"rowRoute": "CaseDetail",
-								"emptyText": "Nothing is waiting in the shared queue"
+								"emptyText": "Nothing is waiting for your teams",
+								"prompt": "Cases waiting for your teams show here"
 							}
 						}
 					}
 				],
-				"_userWidgetsNote": "REQ-DASH-024. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the SHARED QUEUE, the unclaimed work the Queue page is built on, and not `assignedGroup`, which is what the requirement asks for and what nothing can express today: measured 2026-09-18, `resolveFilterTokens` knows @me, @now, @today, @today±Nd, @monthStart, @quarterStart and @yearStart and no group token, the manifest schema's `sentinelFilterToken` pattern enumerates exactly those, and OpenRegister's reserved lens list carries no group lens either. A preset filtering `assignedGroup` on an unresolved token sends the literal string, matches nothing and arrives as a permanently empty card, which is the failure this requirement was written to prevent. The group-scoped variant waits on a `@myGroups` token in nextcloud-vue's `resolveFilterTokens` plus its pattern in `sentinelTokens.js`; that is the library's half and is recorded on this change rather than guessed at here.",
+				"_userWidgetsNote": "REQ-DASH-024, my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
 				"description": "Case volume, status and performance across the team",
 				"headerActions": [
 					{
@@ -1150,7 +1152,7 @@
 						}
 					}
 				],
-				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the shared queue (the Dashboard's `your-teams-queue` preset, the Queue page's own filter) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. `userLayout` is back on this page (landing-view-layouts): since nextcloud-vue 2.69.0 a reader's arrangement is kept per view, under `dashboard-layout.MyWorkHome.view.<view>`, so My work and My team each remember their own layout while the manifest still decides which widgets they hold. `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
+				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the reader's team queue (the Dashboard's `your-teams-queue` preset: the Queue page's own filter narrowed to `assignedGroup: @myGroups`) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. `userLayout` is back on this page (landing-view-layouts): since nextcloud-vue 2.69.0 a reader's arrangement is kept per view, under `dashboard-layout.MyWorkHome.view.<view>`, so My work and My team each remember their own layout while the manifest still decides which widgets they hold. `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
 				"viewsLabel": "Whose work",
 				"defaultView": "mine",
 				"views": [
@@ -1391,6 +1393,7 @@
 									"register": "dossiq",
 									"schema": "case",
 									"filter": {
+										"assignedGroup": "@myGroups",
 										"assignee": "IS NULL",
 										"isFinalStatus": false,
 										"statusHiddenInLists": false,
@@ -1413,7 +1416,8 @@
 										}
 									],
 									"rowRoute": "CaseDetail",
-									"emptyText": "Nothing is waiting in the shared queue"
+									"emptyText": "Nothing is waiting for your teams",
+									"prompt": "Cases waiting for your teams show here"
 								}
 							},
 							{
@@ -1961,7 +1965,7 @@
 						"type": "handler"
 					}
 				],
-				"_teamColumnNote": "one-team-model. `assignedGroup` holds a Nextcloud group id, so the Team column reads the field itself: nothing to expand, and the server can sort a flat string. It used to be a $ref to an organisatieRol read through `extend` as `assignedGroup.roleName`, while the handover wrote group ids into the same field, so the column showed a name for some cases and nothing for the rest. The column shows the group id, which is what the handover dialog and the case type name too; a group display name needs a group cell in nextcloud-vue. The Team FACET comes from `facetable: true` on the property and now counts group ids.",
+				"_teamColumnNote": "one-team-model, my-teams-queue. `assignedGroup` holds a Nextcloud group id, so the Team column reads the field itself: nothing to expand, and the server can sort a flat string. It used to be a $ref to an organisatieRol read through `extend` as `assignedGroup.roleName`, while the handover wrote group ids into the same field, so the column showed a name for some cases and nothing for the rest. `widget: group` is nextcloud-vue's group cell (nextcloud-group-surfaces): it shows the group's display name, looked up once per group id per page, and the id while the name loads or when the group cannot be found. The library also picks it on its own for a property marked `referenceType: nextcloud-group`; the column names it so the intent reads here. It stays sortable on the stored id. The Team FACET comes from `facetable: true` on the property and counts group ids.",
 				"_quickFiltersNote": "one-case-list, D1 revised: the Queue page and the My Work page stay exactly as they are, and no menu entry changes. These chips only add the lenses to the list that already exists. Unclaimed carries the SAME two conditions as Queue's base filter (`assignee: \"IS NULL\"`, `isFinalStatus: false`), literally equal so the two lists cannot drift; the manifest vitest asserts that equality rather than trusting it. ALL IS THE DEFAULT, not Mine: `resolveInitialQuickFilterIndex` activates the chip marked `default` (and the FIRST chip when none is), so a Mine default would silently narrow every reader's first paint to their own cases and make an empty list look like an empty register. Ruben's revision to the change's own 'Mine is the default' decision; the same pattern parties-on-the-case established. Overdue spells its operator as the flat `deadline[lt]` key, not the nested `{ deadline: { lt } }` object: `buildQueryString` JSON-stringifies a nested object value, which reaches the API as the literal string `{\"lt\":\"@today\"}` and matches nothing. `@today` resolves client-side to `YYYY-MM-DD` at fetch time. Due this week (lists-that-answer) is the half-open window `[@today, @today+7d)`, written as TWO flat keys on the same field: OpenRegister's MagicSearchHandler reads `gte` and `lt` in separate `isset` branches and ANDs them, and PHP parses `deadline[gte]=` and `deadline[lt]=` into one nested array, so the pair survives the trip. `lt` rather than `lte` on the far edge, so a case due on day seven belongs to next week's chip and not to two chips at once. lifecycle-acts-on-the-case REQ-LIFE-01: every WORKING lens now carries `statusHiddenInLists: false`, not only All. A status an administrator marked hidden used to empty one chip and leave the same cases filling Overdue, Due this week, Mine, Unclaimed, the Queue, My Work and the dashboard tiles beside it, so the list and the count disagreed and neither said why. Two lenses deliberately do NOT carry it. Closed is the lens a person explicitly filtered onto the terminal statuses, and hidden statuses are mostly those, so filtering there would empty the one list that is supposed to hold them. The same reasoning keeps it off the Completed this month tile. Hidden means out of the WORKING list, never out of search and never off the case's own page.",
 				"quickFilters": [
 					{
@@ -2176,7 +2180,8 @@
 					"assignee",
 					{
 						"key": "assignedGroup",
-						"label": "Team"
+						"label": "Team",
+						"widget": "group"
 					},
 					{
 						"key": "deadline",
