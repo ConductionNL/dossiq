@@ -29,11 +29,11 @@ namespace OCA\Dossiq\Dashboard;
 
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCP\Dashboard\Model\WidgetItem;
 use OCP\IL10N;
 use OCP\IURLGenerator;
-use Throwable;
 
 /**
  * Maps queue items onto widget items: soonest due first, at most the host's
@@ -59,8 +59,9 @@ class QueueWidgetItems {
 	/**
 	 * Constructor.
 	 *
-	 * @param IURLGenerator $url  URL generator.
-	 * @param IL10N         $l10n Translations.
+	 * @param IURLGenerator      $url   URL generator.
+	 * @param IL10N              $l10n  Translations.
+	 * @param CaseDateNormaliser $dates The one rule for what a date is, and its zone.
 	 *
 	 * @return void
 	 *
@@ -69,6 +70,7 @@ class QueueWidgetItems {
 	public function __construct(
 		private readonly IURLGenerator $url,
 		private readonly IL10N $l10n,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -197,11 +199,7 @@ class QueueWidgetItems {
 			return null;
 		}
 
-		try {
-			return new DateTimeImmutable($raw);
-		} catch (Throwable) {
-			return null;
-		}
+		return $this->dates->tryParse(value: $raw);
 	}//end dueDate()
 
 	/**

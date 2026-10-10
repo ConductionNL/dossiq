@@ -31,6 +31,7 @@ use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCP\IL10N;
 use OCP\IURLGenerator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -45,6 +46,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
  */
 class SignaleringWidgetsTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The mocked L10N service.
@@ -256,7 +259,7 @@ class SignaleringWidgetsTest extends TestCase {
 			$this->l10n,
 			$this->url,
 			$this->createMock(EngineTaskSource::class),
-			new QueueWidgetItems(url: $this->url, l10n: $this->l10n),
+			new QueueWidgetItems(url: $this->url, l10n: $this->l10n, dates: $this->caseDates()),
 			$this->createMock(LoggerInterface::class)
 		);
 

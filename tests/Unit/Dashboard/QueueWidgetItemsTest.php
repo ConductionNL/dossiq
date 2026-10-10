@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Queue\QueueItem;
 use OCP\Dashboard\Model\WidgetItem;
 use OCP\IL10N;
 use OCP\IURLGenerator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,6 +38,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Dashboard\QueueWidgetItems
  */
 class QueueWidgetItemsTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The mapper under test, over doubled URL and translation services.
@@ -66,7 +69,7 @@ class QueueWidgetItemsTest extends TestCase {
 			static fn (string $singular, string $plural, int $count): string => str_replace('%n', (string)$count, ($count === 1 ? $singular : $plural))
 		);
 
-		$this->items = new QueueWidgetItems(url: $url, l10n: $l10n);
+		$this->items = new QueueWidgetItems(url: $url, l10n: $l10n, dates: $this->caseDates());
 
 	}//end setUp()
 

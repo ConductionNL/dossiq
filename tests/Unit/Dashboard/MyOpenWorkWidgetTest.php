@@ -39,6 +39,7 @@ use OCP\Dashboard\Model\WidgetButton;
 use OCP\Dashboard\Model\WidgetItem;
 use OCP\IL10N;
 use OCP\IURLGenerator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -52,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Queue\Source\EngineTaskSource
  */
 class MyOpenWorkWidgetTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * Doubled translations.
@@ -248,7 +251,7 @@ class MyOpenWorkWidgetTest extends TestCase {
 		return new MyOpenWorkWidget(
 			l10n: $this->l10n,
 			queue: $queue,
-			items: new QueueWidgetItems(url: $this->url, l10n: $this->l10n)
+			items: new QueueWidgetItems(url: $this->url, l10n: $this->l10n, dates: $this->caseDates())
 		);
 
 	}//end widget()
@@ -266,7 +269,7 @@ class MyOpenWorkWidgetTest extends TestCase {
 			l10n: $this->l10n,
 			url: $this->url,
 			tasks: $source,
-			items: new QueueWidgetItems(url: $this->url, l10n: $this->l10n),
+			items: new QueueWidgetItems(url: $this->url, l10n: $this->l10n, dates: $this->caseDates()),
 			logger: ($logger ?? $this->createMock(LoggerInterface::class))
 		);
 
