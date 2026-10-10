@@ -63,6 +63,8 @@ namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+use OCA\Dossiq\Woo\WooReceivedAnswers;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use Throwable;
 
 /**
@@ -346,6 +348,7 @@ class PortalContributionProvider {
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
+	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
@@ -353,9 +356,37 @@ class PortalContributionProvider {
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
+		private readonly ?WooRequestIntake $wooRequests = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
+
+	/**
+	 * Receive a Woo request a resident sent through a portal form.
+	 *
+	 * The same name, arguments and first five answer keys as opencatalogi's
+	 * `PortalContributionProvider::receiveWooRequest()`, so portaliq's form
+	 * delivery swaps one app id to reach dossiq (REQ-WTO-001). The form
+	 * creates the Woo case directly; nothing is queued in between
+	 * (decision 179).
+	 *
+	 * @param array<string, mixed> $answers    The resident's answers, in opencatalogi's keys.
+	 * @param string               $receivedAt When the resident sent it (ISO 8601).
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	public function receiveWooRequest(array $answers, string $receivedAt = ''): array {
+		if ($this->wooRequests === null) {
+			return array_merge(
+				WooReceivedAnswers::EMPTY_ANSWER,
+				['outcome' => 'unavailable', 'message' => 'The Woo request intake is not available.']
+			);
+		}
+
+		return $this->wooRequests->receive(answers: $answers, receivedAt: $receivedAt, origin: 'portal-form');
+	}//end receiveWooRequest()
 
 	/**
 	 * The identity an inbox message goes to in the resident's government

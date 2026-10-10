@@ -41,6 +41,9 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Woo\WooReceivedAnswers;
+use OCA\Dossiq\Woo\WooRequestForm;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -113,6 +116,8 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class AcknowledgementDutyTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The in-memory case store.
@@ -502,4 +507,51 @@ class AcknowledgementDutyTest extends TestCase {
 
 		return $sender;
 	}//end sentNotices()
+
+	/**
+	 * Row 10.8 (woo-request-takes-over-from-opencatalogi 2.1): the confirmation
+	 * of a Woo request received through the portal form names the day it was
+	 * received, the day its term starts and its due date.
+	 *
+	 * The case is the one `WooRequestIntake::receive()` writes, built with the
+	 * same mapping (WooReceivedAnswers, WooRequestForm), plus the stamp
+	 * IntakeTermStartListener writes on create (a Friday morning, so the term
+	 * starts on arrival), and the statutory term the case-created listener binds.
+	 *
+	 * @return void
+	 */
+	public function testTheAcknowledgementNamesTheStartAndTheDueDate(): void {
+		$answers = [
+			'requestedInformation' => 'Alle e-mails over de brug.',
+			'requesterName' => 'Sanne de Groot',
+			'requesterEmail' => 'sanne@example.org',
+			'channel' => 'web',
+		];
+		$map = new WooReceivedAnswers(dates: $this->caseDates());
+		$wooRequest = (new WooRequestForm())->normalise(request: $map->toRequest(answers: $answers, origin: 'portal-form'));
+		$case = [
+			'id' => 'case-woo',
+			'caseType' => 'ct-woo',
+			'identifier' => 'WOO-2026-0007',
+			'title' => $wooRequest['onderwerp'],
+		] + $map->intake(answers: $answers, origin: 'portal-form', receivedAt: '2026-11-27T10:00:00+01:00') + [
+			'wooRequest' => $wooRequest,
+			'termStartsAt' => '2026-11-27T10:00:00+01:00',
+			'receivedOutsideWorkingHours' => false,
+		];
+		$this->store->cases['case-woo'] = $case;
+		$this->term = ['id' => 'ti-woo', 'case' => 'case-woo', 'endDateCurrent' => '2026-12-28'];
+		// The Woo case type keeps its requester in the request as sent, and says so
+		// (register.d/81-woo-verzoek.json); without the declaration no address is found.
+		$this->caseType = ['acknowledgement' => ['addressFields' => ['wooRequest.verzoekerEmail']]];
+
+		$result = $this->service()->acknowledge(caseId: 'case-woo');
+
+		self::assertTrue(condition: $result['sent'], message: (string)($result['reason'] ?? ''));
+		$body = $result['payload']['body'];
+		self::assertStringContainsString(needle: 'ontvangen op 27', haystack: $body);
+		self::assertStringContainsString(needle: 'beslistermijn start op 27', haystack: $body);
+		self::assertStringContainsString(needle: '2026-12-28', haystack: $body);
+		self::assertSame(expected: 'sanne@example.org', actual: $this->store->cases['case-woo']['outboundCommunications'][0]['recipient']);
+	}//end testTheAcknowledgementNamesTheStartAndTheDueDate()
 }//end class

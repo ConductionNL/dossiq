@@ -153,25 +153,31 @@ class DocumentRecordStore {
 	 *
 	 * @param string $caseId The case uuid.
 	 * @param string $recordId The record uuid.
+	 * @param array<string, mixed> $extra More fields for a NEW join, such as the `provenance` a
+	 *        document linked through Gather documents carries; an existing join is left as it is.
 	 *
 	 * @return bool True when a join was created.
 	 *
 	 * @spec openspec/specs/document-projection/spec.md
+	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-every-gathered-document-records-where-it-was-found-req-woo-014
 	 */
-	public function ensureJoin(string $caseId, string $recordId): bool {
+	public function ensureJoin(string $caseId, string $recordId, array $extra = []): bool {
 		if ($this->joinsFor(recordId: $recordId, caseId: $caseId) !== []) {
 			return false;
 		}
 
 		[$objectService, $register] = $this->requireRegister();
 		$objectService->saveObject(
-			object: [
-				'case' => $caseId,
-				'informatieobject' => $recordId,
-				// The schema's enum spells it this way, and createJoin() writes the same.
-				'natureRelationshipDisplay' => 'Hoort at omgekeerd',
-				'registrationDate' => date('Y-m-d\TH:i:s\Z'),
-			],
+			object: array_merge(
+				$extra,
+				[
+					'case' => $caseId,
+					'informatieobject' => $recordId,
+					// The schema's enum spells it this way, and createJoin() writes the same.
+					'natureRelationshipDisplay' => 'Hoort at omgekeerd',
+					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
+				]
+			),
 			register: $register,
 			schema: $this->schema(key: 'dossier_zaakinformatieobject_schema'),
 		);

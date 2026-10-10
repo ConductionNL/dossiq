@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.23"
+        "version": "0.20.28"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.16.0",
+                "version": "1.17.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -287,6 +287,113 @@
                         "type": "string",
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
                         "title": "Extension period"
+                    },
+                    "recordImports": {
+                        "type": "array",
+                        "title": "Record imports",
+                        "description": "How another app's stored records become cases of this type (case-record-import). Each entry names the source app, register and schema, maps source fields onto case fields (dot paths reach nested objects), maps each source status onto a case status and a term state (running, suspended or closed, with an optional result type), names the source fields that carry the term (endDate, extensions, extensionReason, closedOn), the case field that holds the source uuid (matchField), the former reference kept, and the source fields stamped once a record has moved. Run with occ dossiq:case:import-records.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "key",
+                                "sourceApp",
+                                "sourceRegister",
+                                "sourceSchema",
+                                "statuses",
+                                "fields",
+                                "matchField",
+                                "stamp"
+                            ],
+                            "properties": {
+                                "key": {
+                                    "title": "Key",
+                                    "type": "string",
+                                    "maxLength": 64,
+                                    "description": "Names this import, for --import."
+                                },
+                                "sourceApp": {
+                                    "title": "Source app",
+                                    "type": "string",
+                                    "description": "The app id whose records are imported; nothing runs when it is not installed."
+                                },
+                                "sourceRegister": {
+                                    "title": "Source register",
+                                    "type": "string",
+                                    "description": "The source register, by slug."
+                                },
+                                "sourceSchema": {
+                                    "title": "Source schema",
+                                    "type": "string",
+                                    "description": "The source schema, by slug."
+                                },
+                                "statusField": {
+                                    "title": "Status field",
+                                    "type": "string",
+                                    "description": "The source field holding its status. Defaults to status."
+                                },
+                                "statuses": {
+                                    "title": "Statuses",
+                                    "type": "object",
+                                    "description": "Source status onto {status, term, result}: the case status uuid, the term state running, suspended or closed, and an optional result type uuid.",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "properties": {
+                                            "status": {
+                                                "type": "string"
+                                            },
+                                            "term": {
+                                                "title": "Term state",
+                                                "type": "string",
+                                                "enum": [
+                                                    "running",
+                                                    "suspended",
+                                                    "closed"
+                                                ]
+                                            },
+                                            "result": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                "fields": {
+                                    "title": "Fields",
+                                    "type": "array",
+                                    "description": "Each {to, from | value, as, maxLength, values, default, required}. from @id reads the record's uuid; as is text, date, dateTime or integer.",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "to"
+                                        ]
+                                    }
+                                },
+                                "matchField": {
+                                    "title": "Match field",
+                                    "type": "string",
+                                    "description": "The case field (dot path) that holds the source uuid, so a second run finds the case it wrote."
+                                },
+                                "formerReference": {
+                                    "title": "Former reference",
+                                    "type": "object",
+                                    "description": "{application, from}: the source number kept in formerReferences."
+                                },
+                                "term": {
+                                    "title": "Term fields",
+                                    "type": "object",
+                                    "description": "Source field names for endDate, extensions, extensionReason and closedOn."
+                                },
+                                "stamp": {
+                                    "title": "Stamp fields",
+                                    "type": "object",
+                                    "description": "{caseId, at}: the source fields written once the case and its timer exist."
+                                },
+                                "sourceTimerField": {
+                                    "title": "Source timer field",
+                                    "type": "string",
+                                    "description": "The source field naming its own timer, answered so the caller can stop it; the import never touches it."
+                                }
+                            }
+                        }
                     },
                     "maxSuspensionDays": {
                         "type": "integer",
@@ -2615,6 +2722,30 @@
                         "description": "Free words that group this case across case types (e.g. spoed, wijk-noord)",
                         "title": "Tags",
                         "facetable": true
+                    },
+                    "formerReferences": {
+                        "type": "array",
+                        "title": "Former references",
+                        "description": "The numbers this request carried in the application that held it before dossiq, such as the WOO- reference opencatalogi gave a Woo request. Kept so a requester who quotes the old number still finds the case.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "application": {
+                                    "type": "string",
+                                    "title": "Application",
+                                    "description": "The application that gave the reference, for example opencatalogi."
+                                },
+                                "reference": {
+                                    "type": "string",
+                                    "title": "Reference",
+                                    "description": "The reference as that application gave it."
+                                }
+                            },
+                            "required": [
+                                "application",
+                                "reference"
+                            ]
+                        }
                     },
                     "caseType": {
                         "type": "string",

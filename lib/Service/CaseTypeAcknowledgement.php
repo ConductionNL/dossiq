@@ -95,6 +95,7 @@ class CaseTypeAcknowledgement {
 		'defaultChannel' => 'email',
 		'contentOnPlatform' => false,
 		'language' => 'nl',
+		'addressFields' => [],
 	];
 
 	/**
@@ -137,8 +138,50 @@ class CaseTypeAcknowledgement {
 			$declaration['language'] = (string)self::DEFAULTS['language'];
 		}
 
+		$declaration['addressFields'] = array_values(
+			array_filter(
+				array_map(static fn (mixed $path): string => trim((string)$path), (array)$declaration['addressFields']),
+				static fn (string $path): bool => $path !== ''
+			)
+		);
+
 		return $declaration;
 	}//end declarationFor()
+
+	/**
+	 * The e-mail addresses a case keeps where its case type declares them.
+	 *
+	 * A case type that keeps its sender in an object of its own (the request
+	 * as sent, a form's answers) names the path, so the duty is not refused for
+	 * want of an address the case does carry.
+	 *
+	 * @param array<string, mixed> $case     The case row.
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The addresses, lowercased, in declared order.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/burger-notifications/spec.md#requirement-a-case-type-declares-where-its-senders-address-is-kept-req-ack-addr-001
+	 */
+	public function addressesOn(array $case, array $caseType): array {
+		$addresses = [];
+		foreach ($this->declarationFor(caseType: $caseType)['addressFields'] as $path) {
+			$value = $case;
+			foreach (explode('.', $path) as $key) {
+				$value = ((array)$value)[$key] ?? null;
+			}
+
+			if (is_string($value) === false) {
+				continue;
+			}
+
+			$address = strtolower(trim($value));
+			if (filter_var($address, FILTER_VALIDATE_EMAIL) !== false) {
+				$addresses[] = $address;
+			}
+		}
+
+		return $addresses;
+	}//end addressesOn()
 
 	/**
 	 * Does this case owe its sender an acknowledgement of receipt.

@@ -975,6 +975,12 @@
 					"export-dossier": {
 						"group": "Dossier"
 					},
+					"woo-search-plan": {
+						"group": "Dossier"
+					},
+					"woo-gather-documents": {
+						"group": "Dossier"
+					},
 					"case-rebind": {
 						"group": "Case"
 					},

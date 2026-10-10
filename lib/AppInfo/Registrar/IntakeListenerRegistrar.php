@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\WooStartFromListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
@@ -61,6 +62,12 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: VergunningaanvraagCreatedListener::class
+		);
+		// A new Woo request that names an earlier one starts from its
+		// configuration (woo-request-corpus-collection REQ-WRC-005).
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: WooStartFromListener::class
 		);
 		// Integriq writes the activity mapping onto its dso_verzoek in an
 		// update, so the case is made on that write.
