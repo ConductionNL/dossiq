@@ -301,7 +301,9 @@ describe('the notifications switch of your follow', () => {
 		const not = await mountStrip({ '@self': { watching: false } })
 		expect(not.find('[data-testid="case-follow-notify"]').exists()).toBe(false)
 
-		const on = await mountStrip({ '@self': { watching: true, watchNotify: true } })
+		const on = await mountStrip({
+			'@self': { watching: true, watchNotify: true },
+		})
 		const bell = on.find('[data-testid="case-follow-notify"]')
 		expect(bell.exists()).toBe(true)
 		expect(bell.attributes('aria-pressed')).toBe('true')
@@ -309,7 +311,9 @@ describe('the notifications switch of your follow', () => {
 	})
 
 	it('turns notifications off with a PUT carrying notify false, and keeps the follow', async () => {
-		const wrapper = await mountStrip({ '@self': { watching: true, watchNotify: true } })
+		const wrapper = await mountStrip({
+			'@self': { watching: true, watchNotify: true },
+		})
 		await wrapper.find('[data-testid="case-follow-notify"]').trigger('click')
 		await wrapper.vm.$nextTick()
 
@@ -318,23 +322,39 @@ describe('the notifications switch of your follow', () => {
 			{ notify: false },
 		)
 		expect(axios.delete).not.toHaveBeenCalled()
-		expect(wrapper.find('[data-testid="case-follow-toggle"]').attributes('aria-pressed')).toBe('true')
-		expect(wrapper.find('[data-testid="case-follow-notify"]').attributes('aria-pressed')).toBe('false')
+		expect(
+			wrapper
+				.find('[data-testid="case-follow-toggle"]')
+				.attributes('aria-pressed'),
+		).toBe('true')
+		expect(
+			wrapper
+				.find('[data-testid="case-follow-notify"]')
+				.attributes('aria-pressed'),
+		).toBe('false')
 	})
 
 	it('puts the bell back and says what the server said when the write is refused', async () => {
 		axios.put.mockRejectedValueOnce({ response: { data: { message: 'Nope' } } })
-		const wrapper = await mountStrip({ '@self': { watching: true, watchNotify: false } })
+		const wrapper = await mountStrip({
+			'@self': { watching: true, watchNotify: false },
+		})
 		await wrapper.find('[data-testid="case-follow-notify"]').trigger('click')
 		await new Promise((r) => setTimeout(r, 0))
 
-		expect(wrapper.find('[data-testid="case-follow-notify"]').attributes('aria-pressed')).toBe('false')
+		expect(
+			wrapper
+				.find('[data-testid="case-follow-notify"]')
+				.attributes('aria-pressed'),
+		).toBe('false')
 		expect(mockShowError).toHaveBeenCalledWith('Nope')
 	})
 
 	it('reads an absent switch as on, the way every follow notified before', () => {
 		expect(notifiesOf({ '@self': { watching: true } })).toBe(true)
-		expect(notifiesOf({ '@self': { watching: true, watchNotify: false } })).toBe(false)
+		expect(notifiesOf({ '@self': { watching: true, watchNotify: false } })).toBe(
+			false,
+		)
 	})
 })
 

@@ -267,8 +267,14 @@ test.describe('The case number and the follows that replaced the star', () => {
 
 		await page.reload(PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-follow-toggle')).toHaveAttribute('aria-pressed', 'true')
-		await expect(page.getByTestId('case-follow-notify')).toHaveAttribute('aria-pressed', 'false')
+		await expect(page.getByTestId('case-follow-toggle')).toHaveAttribute(
+			'aria-pressed',
+			'true',
+		)
+		await expect(page.getByTestId('case-follow-notify')).toHaveAttribute(
+			'aria-pressed',
+			'false',
+		)
 
 		expect(errors).toEqual([])
 	})
@@ -313,9 +319,7 @@ test.describe('The case number and the follows that replaced the star', () => {
 		await page.getByRole('menuitem', { name: /follow/i }).click()
 
 		await expect
-			.poll(async () =>
-				(await lens('_watching')).map((c: any) => objectId(c)),
-			)
+			.poll(async () => (await lens('_watching')).map((c: any) => objectId(c)))
 			.toContain(cases.rowStar)
 
 		expect(errors).toEqual([])
@@ -334,7 +338,9 @@ test.describe('The case number and the follows that replaced the star', () => {
 		expect(followed).not.toContain(cases.alsoUnstarred)
 		// The deprecated alias, for one release: an app still asking for
 		// favourites gets the follows.
-		expect((await lens('_favourite')).map((c: any) => objectId(c)).sort()).toEqual([...followed].sort())
+		expect(
+			(await lens('_favourite')).map((c: any) => objectId(c)).sort(),
+		).toEqual([...followed].sort())
 	})
 
 	/**

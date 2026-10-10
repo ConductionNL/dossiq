@@ -122,8 +122,15 @@ export async function unfollow(id, register = CASE_REGISTER, schema = CASE_SCHEM
  *
  * @spec openspec/changes/one-follow-control/specs/case-management/spec.md
  */
-export async function setNotify(id, notify, register = CASE_REGISTER, schema = CASE_SCHEMA) {
-	const { data } = await axios.put(`${objectUrl(id, register, schema)}/watch`, { notify: notify === true })
+export async function setNotify(
+	id,
+	notify,
+	register = CASE_REGISTER,
+	schema = CASE_SCHEMA,
+) {
+	const { data } = await axios.put(`${objectUrl(id, register, schema)}/watch`, {
+		notify: notify === true,
+	})
 
 	return data ?? {}
 }
