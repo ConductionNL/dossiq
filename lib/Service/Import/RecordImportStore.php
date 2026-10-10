@@ -208,11 +208,13 @@ class RecordImportStore {
 	 * @param array<string, mixed> $caseType      The case type.
 	 * @param array<string, mixed> $import        The declaration.
 	 *
-	 * @return array<string, string> Source uuid to case uuid.
+	 * @return array<string, string>|null Source uuid to case uuid; null when the cases
+	 *         could not be read, which is not the same as none: importing over an
+	 *         unread list would write a half-finished case a second time.
 	 *
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
 	 */
-	public function casesBySource(object $objectService, array $caseType, array $import): array {
+	public function casesBySource(object $objectService, array $caseType, array $import): ?array {
 		$matchField = (string)($import['matchField'] ?? '');
 		if ($matchField === '') {
 			return [];
@@ -227,7 +229,7 @@ class RecordImportStore {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('RecordImportStore: the existing cases could not be read', ['error' => $e->getMessage()]);
-			return [];
+			return null;
 		}
 
 		$bySource = [];
