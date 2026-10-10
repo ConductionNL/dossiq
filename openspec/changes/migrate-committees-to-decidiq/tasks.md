@@ -61,8 +61,24 @@
 - **acceptance_criteria**:
   - GIVEN decidiq absent THEN reads fall back locally with no error
   - GIVEN a migrated committee with `active: false` THEN the archive refusal still fires
-- [ ] Implement
-- [ ] Test
+- [x] Implement — `lib/Service/Governance/GovernanceBodyReader.php` asks decidiq over
+  its read seam (`GovernanceBodyStateRequestedEvent`, decidiq#1694) by
+  `governanceBodyId` or (`dossiq`, committee id), the key the write raised the
+  body under, and lays `active`, the name and the roster over the local row.
+  Not answered, failed, or not yet migrated: the local row, no error.
+  `AdvisoryCommitteeService::assertCommitteeAcceptsReferrals()` resolves through
+  it before the archive check. Of the files first listed here, only
+  `AdvisoryCommitteeService` reads the committee to decide anything:
+  `PanelIndependenceChecker` reads no committee row,
+  `BezwaarAdviceRequestedListener` reaches it through `autoAssignDefaultCommittee()`,
+  and `BezwaarAuditTrail`, `SettingsService` and `SchemaSlugMap` only name the
+  schema key.
+- [x] Test — `tests/Unit/Service/Governance/GovernanceBodyReaderTest.php`: a found
+  body overrides active, name and roster and is asked by the write's key;
+  absent, failing and not-migrated all fall back; a committee archived in
+  decidiq refuses a new referral through the real `AdvisoryCommitteeService`;
+  without decidiq the local row decides. The event stub mirrors decidiq#1694
+  (`tests/Stubs/Decidiq/Event/GovernanceBodyStateRequestedEvent.php`).
 
 ### Task 4: Retire the local schema
 - **spec_ref**: all
