@@ -875,7 +875,7 @@ describe('Archive and Restore on the case page', () => {
 		expect(iconsSource).toContain('\n\tArchiveOutline,\n')
 	})
 
-	it('hides the seven write actions on an archived case and keeps the lifecycle menu', () => {
+	it('hides the eight write actions on an archived case and keeps the lifecycle menu', () => {
 		// REQ-CM-43. The marker is read off the case object the page already
 		// holds, so the gate costs no round trip. The operator is `empty`,
 		// because OpenRegister leaves the key off until a case is archived.
@@ -889,6 +889,9 @@ describe('Archive and Restore on the case page', () => {
 			'link-object',
 			'log-contact',
 			'generate-document',
+			// documents-on-the-case 3.3: generating from a template writes a
+			// document onto the case, so it is gated with the dialog beside it.
+			'generate-from-template',
 			'case-acknowledgement-met',
 			'plan-follow-up',
 			// A reminder is work somebody is asked to do on the case, so it is

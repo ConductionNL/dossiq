@@ -2912,6 +2912,7 @@ OC.L10N.register(
         "Generate Beschikking": "Beschikking genereren",
         "Generate beschikking": "Beschikking genereren",
         "Generate document": "Document genereren",
+        "Generate from a template": "Genereren uit een sjabloon",
         "Generate random secret": "Willekeurig geheim genereren",
         "Generate summary": "Samenvatting genereren",
         "Generating a document needs the Filinq app. Ask your administrator to install and enable Filinq.": "Voor het maken van een document is de app Filinq nodig. Vraag uw beheerder om Filinq te installeren en in te schakelen.",

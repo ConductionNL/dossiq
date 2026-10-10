@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseFolderNodeListener;
+use OCA\Dossiq\Listener\ShippedFlowIdsListener;
+use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeDeletedEvent;
@@ -57,5 +59,9 @@ class DocumentListenerRegistrar {
 		foreach (self::NODE_EVENTS as $event) {
 			$context->registerEventListener(event: $event, listener: CaseFolderNodeListener::class);
 		}
+
+		// Documents-on-the-case 3.3: the page's `@resolve:generate_document_flow`
+		// reads the shipped flow's per-instance uuid from initial state.
+		$context->registerEventListener(event: BeforeTemplateRenderedEvent::class, listener: ShippedFlowIdsListener::class);
 	}//end register()
 }//end class

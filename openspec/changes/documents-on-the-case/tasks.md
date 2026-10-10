@@ -266,6 +266,31 @@ criteria under a task are plain bullets.
   **3.3 stays unticked.** Implementation (here and upstream) is blocked on
   Ruben resolving RN-1. 3.2 remains the shipped interim.
 
+  **BUILT 2026-10-10 (lane L4 round 4, decision 154, on `build/dq-l4-6`).**
+  Ruben answered Q-dossiq-L4-2: keep the dialog AND make filinq's node
+  directly callable. dossiq ships the flow "Generate a document"
+  (`lib/Settings/register.d/96-generate-document-flow.json`: trigger
+  `manual`, `openregister.trigger-manual` -> `generate`
+  (`filinq.generate-document`, `requestingApp` dossiq, `format` pdf) ->
+  `openregister.end`; case schema 1.41.0, register 0.20.24). The flow's
+  per-instance uuid reaches the page as initial state `generate_document_flow`
+  (`lib/Service/Flow/ShippedFlowIds.php`, provided by `lib/Listener/ShippedFlowIdsListener.php` on BeforeTemplateRenderedEvent;
+  test `tests/Unit/Service/Flow/ShippedFlowIdsTest.php`), and the case header
+  carries `generate-from-template`, `type: run-node`, `flowId:
+  @resolve:generate_document_flow`, `nodeId: generate`, gated on
+  `@self.archived` like the dialog it sits beside (vitest
+  `tests/vitest/generateFromTemplateAction.spec.js`). The picker is the
+  node's own config form, so there is no `@pick:` token (D-2, D-3 resolved
+  by nextcloud-vue's run-node action). BeschikkingComposerDialog stays.
+  Depends on filinq#1411 (DirectGenerateDocumentNode implements
+  IFlowDirectlyInvokable) and openregister#4553 (the caller's config reaches
+  the node); both open on 10 Oct, built against their branches. Tick after
+  both land and the live pass shows a document filed on the case. Live
+  recipe: adopt nothing (a direct run is attributed to the caller); open a
+  case, Generate from a template, pick a template, expect a PDF in the case
+  folder and a 201 from `/api/flows/{uuid}/nodes/generate/run` (live pass,
+  decision 139).
+
 - [x] 4.1 `lib/Settings/register.d/46-demo-cases-english.json` (or the
   dossier seed beside it): two `informatieobject` rows on one demo case
   with different types, one tagged `bezwaar`, directions incoming and

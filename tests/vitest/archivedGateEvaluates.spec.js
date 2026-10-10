@@ -5,9 +5,9 @@
  *
  * The archive gate on the case page, asked of the library's own evaluator.
  *
- * `caseActionsMenu.spec.js` reads the DECLARATION of the seven gated header
+ * `caseActionsMenu.spec.js` reads the DECLARATION of the gated header
  * actions. That is all it ever did, and the declaration was `eq null` for
- * weeks: it read correct and hid all seven on every working case. A gate is
+ * weeks: it read correct and hid every one on every working case. A gate is
  * only tested by evaluating it against the object the page really holds.
  *
  * jsdom, because the evaluator imports `@nextcloud/auth`, which reads
@@ -28,10 +28,10 @@ const manifest = JSON.parse(
 const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
 
 describe('the archive gate on the case page', () => {
-	it('shows the seven write actions on a case that is not archived, by the library evaluator', async () => {
+	it('shows the eight write actions on a case that is not archived, by the library evaluator', async () => {
 		// The test above reads the declaration. This one asks the library's own
 		// evaluator, because the declaration was `eq null` for weeks and read
-		// correct while it hid all seven on every working case.
+		// correct while it hid every one on every working case.
 		//
 		// The `@self` block is the one a live, non-archived case answered on
 		// 2026-10-05: 24 keys and no `archived` among them. OpenRegister adds
@@ -71,7 +71,7 @@ describe('the archive gate on the case page', () => {
 		const gated = caseDetail().config.headerActions.filter(
 			(action) => action.visibleWhen?.field === '@self.archived',
 		)
-		expect(gated).toHaveLength(7)
+		expect(gated).toHaveLength(8)
 		for (const action of gated) {
 			expect(
 				await evaluateVisibleWhen(action.visibleWhen, { object: working }),

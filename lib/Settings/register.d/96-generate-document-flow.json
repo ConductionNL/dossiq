@@ -1,0 +1,55 @@
+{
+    "components": {
+        "schemas": {
+            "case": {
+                "configuration": {
+                    "x-openregister-flows": [
+                        {
+                            "name": "Generate a document",
+                            "app": "dossiq",
+                            "description": "Generates one document from a template on the case it is run on, and files it on that case. Started by hand from the case header (documents-on-the-case 3.3): the header action runs the generate node directly, the template picker comes from the node's own config form, and filinq renders and stores the file. Nothing triggers it on its own.",
+                            "trigger": "manual",
+                            "triggerRegister": "dossiq",
+                            "executionMode": "sync",
+                            "limits": {
+                                "maxTransitions": 10
+                            },
+                            "nodes": [
+                                {
+                                    "id": "start",
+                                    "type": "openregister.trigger-manual",
+                                    "config": {}
+                                },
+                                {
+                                    "id": "generate",
+                                    "type": "filinq.generate-document",
+                                    "config": {
+                                        "requestingApp": "dossiq",
+                                        "format": "pdf"
+                                    }
+                                },
+                                {
+                                    "id": "end",
+                                    "type": "openregister.end",
+                                    "config": {}
+                                }
+                            ],
+                            "edges": [
+                                {
+                                    "id": "e-start",
+                                    "from": "start",
+                                    "to": "generate"
+                                },
+                                {
+                                    "id": "e-end",
+                                    "from": "generate",
+                                    "to": "end"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
