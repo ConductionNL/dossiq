@@ -107,16 +107,7 @@ class DsoIntakeCasePayload {
 			'procedureType' => $procedureType,
 			'permitApplicationRef' => $permitApplicationId,
 			'startDate' => $submissionDate,
-		];
-
-		// The submission moment, when the record carries one with a time, is
-		// when the request was received: the term starts there, not at the
-		// moment this case row is written (REQ-TERM-043). A bare date says
-		// only the day, and the start date already carries that.
-		$receivedAt = $this->submissionMoment(submitted: $submitted);
-		if ($receivedAt !== null) {
-			$case['receivedAt'] = $receivedAt;
-		}
+		] + $this->receivedAtField(submitted: $submitted);
 
 		$summary = trim((string)($permitApplication['mappedSummary'] ?? ''));
 		if ($summary !== '') {
@@ -231,22 +222,29 @@ class DsoIntakeCasePayload {
 	}//end determineProcedureType()
 
 	/**
-	 * The submission moment, ATOM, when the record names one with a time.
+	 * The `receivedAt` field the submission gives its case, or none.
+	 *
+	 * The submission moment, when the record carries one with a time, is when
+	 * the request was received: the term starts there, not at the moment the
+	 * case row is written (REQ-TERM-043). A bare date says only the day, and
+	 * the start date already carries that.
 	 *
 	 * @param string $submitted The record's `submissionDate` or `indieningsdatum`.
 	 *
-	 * @return string|null The moment, or null for a bare date or an unreadable value.
+	 * @return array<string, string> `['receivedAt' => moment]`, or [].
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
 	 */
-	private function submissionMoment(string $submitted): ?string {
+	private function receivedAtField(string $submitted): array {
 		$submitted = trim($submitted);
 		if (preg_match('/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/', $submitted) !== 1) {
-			return null;
+			return [];
 		}
 
 		try {
-			return (new DateTimeImmutable($submitted))->format(DateTimeInterface::ATOM);
+			return ['receivedAt' => (new DateTimeImmutable($submitted))->format(DateTimeInterface::ATOM)];
 		} catch (Throwable $e) {
-			return null;
+			return [];
 		}
-	}//end submissionMoment()
+	}//end receivedAtField()
 }//end class

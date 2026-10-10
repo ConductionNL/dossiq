@@ -1,19 +1,19 @@
 # Tasks: receipt-and-start-dates-are-set-at-creation
 
-- [ ] 1.1 `IntakeTermStart::arrivalOf()` reads the case's `receiptDate`
+- [x] 1.1 `IntakeTermStart::arrivalOf()` reads the case's `receiptDate`
   answer after `receivedAt`; a day-only receipt compares the flag by day
   (D-2, D-5). `tests/Unit/Service/IntakeTermStartTest.php`.
-- [ ] 1.2 `CaseReceiptDates` computes `startDate` and the `receiptDate`
+- [x] 1.2 `CaseReceiptDates` computes `startDate` and the `receiptDate`
   answer, each only when empty (D-3).
-- [ ] 1.3 `IntakeTermStartListener` writes the stamp and the dates in one
+- [x] 1.3 `IntakeTermStartListener` writes the stamp and the dates in one
   write; dates are written when the calendar does not answer (D-1, D-4).
   `tests/Unit/Listener/IntakeTermStartListenerTest.php`, through the real
   listener.
-- [ ] 1.4 `DeadlineCaseCreatedListener` starts the term from an imported
+- [x] 1.4 `DeadlineCaseCreatedListener` starts the term from an imported
   `receiptDate` (through `arrivalOf()`).
-- [ ] 2.1 `ChannelIntake` and `DsoIntakeCasePayload` write `receivedAt`
+- [x] 2.1 `ChannelIntake` and `DsoIntakeCasePayload` write `receivedAt`
   (D-6, REQ-TERM-043).
-- [ ] 3.1 Woo `receiptDate` definition: `isRequired` false in
+- [x] 3.1 Woo `receiptDate` definition: `isRequired` false in
   `register.d/81-woo-verzoek.json` and `templates/woo-verzoek.json`.
 - [ ] 3.2 Frontend lane: drop `startDate` from the five create dialogs'
   `includeFields` in `src/manifest.json`, from `src/utils/caseCreateForm.js`,

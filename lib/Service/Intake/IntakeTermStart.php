@@ -103,14 +103,13 @@ class IntakeTermStart {
 	 * that case, on purpose: see the note on this class.
 	 *
 	 * @param DateTimeImmutable $receivedAt The moment the submission arrived.
-	 * @param bool              $dayOnly    Whether that moment is known to the day only.
 	 *
 	 * @return array<string, mixed> The three fields, or [].
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
-	public function stampFor(DateTimeImmutable $receivedAt, bool $dayOnly = false): array {
+	public function stampFor(DateTimeImmutable $receivedAt): array {
 		$startsAt = $this->calendar->firstWorkingMomentAtOrAfter(moment: $receivedAt);
 		if ($startsAt === null) {
 			$this->logger?->warning(
@@ -124,7 +123,10 @@ class IntakeTermStart {
 		return [
 			self::RECEIVED_AT => $receivedAt->format('c'),
 			self::TERM_STARTS_AT => $startsAt->format('c'),
-			self::OUTSIDE => $this->startedLater(receivedAt: $receivedAt, startsAt: $startsAt, dayOnly: $dayOnly),
+			// STRICT INEQUALITY OF THE INSTANT, not of the date. The engine
+			// answers the moment given when it is inside the working week, so
+			// equality is exactly "the clock started when you pressed send".
+			self::OUTSIDE => ($startsAt->getTimestamp() !== $receivedAt->getTimestamp()),
 		];
 	}//end stampFor()
 
@@ -144,31 +146,16 @@ class IntakeTermStart {
 	 */
 	public function stampForCase(array $case): array {
 		$receipt = $this->receiptOf(case: $case);
-
-		return $this->stampFor(receivedAt: $receipt['moment'], dayOnly: $receipt['dayOnly']);
-	}//end stampForCase()
-
-	/**
-	 * Whether the term starts later than the request was received.
-	 *
-	 * STRICT INEQUALITY OF THE INSTANT, not of the date, for a receipt with a
-	 * time. The engine answers the moment given when it is inside the working
-	 * week, so equality is exactly "the clock started when you pressed send".
-	 * Only a receipt known to the day alone is compared by day.
-	 *
-	 * @param DateTimeImmutable $receivedAt The receipt.
-	 * @param DateTimeImmutable $startsAt   The first working moment.
-	 * @param bool              $dayOnly    Whether the receipt names a day only.
-	 *
-	 * @return bool True when the term starts later.
-	 */
-	private function startedLater(DateTimeImmutable $receivedAt, DateTimeImmutable $startsAt, bool $dayOnly): bool {
-		if ($dayOnly === true) {
-			return ($startsAt->format('Y-m-d') !== $receivedAt->format('Y-m-d'));
+		$stamp = $this->stampFor(receivedAt: $receipt['moment']);
+		if ($stamp === [] || $receipt['dayOnly'] === false) {
+			return $stamp;
 		}
 
-		return ($startsAt->getTimestamp() !== $receivedAt->getTimestamp());
-	}//end startedLater()
+		$stamp[self::OUTSIDE] = (substr((string)$stamp[self::TERM_STARTS_AT], 0, 10) !== $receipt['moment']->format('Y-m-d'));
+
+		return $stamp;
+	}//end stampForCase()
+
 
 	/**
 	 * The moment a case's term starts: its `termStartsAt`.

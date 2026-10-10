@@ -300,12 +300,7 @@ class ChannelIntake {
 			// dateAdd(startDate, caseType.processingDeadline), so a startDate
 			// left out means no deadline at all.
 			'startDate' => $this->facts->receivedDate(message: $message),
-		];
-
-		$receivedAt = $this->facts->receivedMoment(message: $message);
-		if ($receivedAt !== null) {
-			$object['receivedAt'] = $receivedAt;
-		}
+		] + $this->facts->receivedAtField(message: $message);
 
 		foreach (self::ACCEPTED_FIELDS as $field) {
 			$value = ($payload[$field] ?? null);

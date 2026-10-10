@@ -60,7 +60,7 @@ message's `receivedAt`, a DSO permit application from its `submissionDate`
 when that carries a time.
 
 #### Scenario: a DSO submission on Sunday evening
-@e2e exclude a background intake with no screen; covered in tests/Unit/Service/Dso/DsoIntakeCasePayloadTest.php::testTheSubmissionMomentIsTheReceipt
+@e2e exclude a background intake with no screen; covered in tests/Unit/Service/DsoCaseWritesMatchTheRealSchemaTest.php::testTheSubmissionMomentIsTheReceipt; the channel half in tests/Unit/Listener/IntakeMessageRoutedListenerTest.php::testARoutedMessageOpensACaseAndAnswersTheSlot
 
 - **GIVEN** a DSO permit application submitted on Sunday 2026-10-04 at 20:00
 - **WHEN** dossiq creates its case on Monday
