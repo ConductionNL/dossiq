@@ -186,7 +186,7 @@ class CaseRecordImport {
 			$sourceId = $this->store->idOf(row: $source);
 			$skipped = $this->skippedAs(source: $source, sourceId: $sourceId, stampField: $stampField, dryRun: $dryRun);
 			if ($skipped !== '') {
-				$answer[$skipped]++;
+				$answer[$skipped] = ((int)$answer[$skipped] + 1);
 				continue;
 			}
 
