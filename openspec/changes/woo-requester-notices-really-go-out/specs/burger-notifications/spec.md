@@ -3,12 +3,16 @@
 ### Requirement: A requester notice goes out through a real channel or is recorded as not sent (REQ-WRN-001)
 
 Every notice dossiq sends to a requester SHALL be handed to a real transport: the portal inbox
-(a `portaalBericht` in dossiq's register), e-mail (`CaseEmailService::sendEmail()`), or digital
-post (`BerichtenboxService::sendMessage()` over `BerichtenboxAdapterInterface`). The send SHALL
+(a `portaalBericht` in dossiq's register), e-mail (`TermNoticeSender::send()`, which asks
+integriq's opt-out first, sends each notice once and needs no signed-in user), or digital post
+(`BerichtenboxService::sendMessage()` over `BerichtenboxAdapterInterface`). The send SHALL
 return a delivery result with `status` either `sent` or `not-sent`. A `sent` result SHALL carry the
 transport's own message id: the `portaalBericht` uuid, the mail's message id, or integriq's tracked
 message id. A `not-sent` result SHALL carry a reason code and a sentence. No code path SHALL
-derive, hash or invent a message id for a notice no transport accepted.
+derive, hash or invent a message id for a notice no transport accepted. A caller of
+`TermijnNotificationService::sendTermijnNotification()` receives a `not-sent` result on the
+`NoticeNotSentException` it throws (`getDelivery()`), so a caller that does not read a status
+cannot record the notice as sent.
 
 #### Scenario: No transport answers, so nothing reads as sent
 - **GIVEN** a Woo case whose requester has only a BSN, and an instance without integriq
@@ -31,8 +35,9 @@ derive, hash or invent a message id for a notice no transport accepted.
 The sender SHALL choose the channel in this order and SHALL record which one it used:
 
 1. the portal inbox, when the case carries a `portalSubject` and portaliq is installed;
-2. digital post, when the requester's BSN (person) or OIN (organisation) is known and the
-   requester confirmed the message box;
+2. digital post, when the requester's BSN is known (a person whose `initiatorSourceId` is nine
+   digits); whether the requester's message box takes it is integriq's answer, which refuses
+   when it does not;
 3. e-mail, when the case carries a requester e-mail address (`verzoekerEmail`, or an address
    `CaseContactDirectory::collectAddresses()` returns);
 4. otherwise `not-sent` with reason code `no-channel` and the sentence that the case has no

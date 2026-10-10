@@ -340,6 +340,30 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testASecondWooExtensionAnswers409()
 
 	/**
+	 * Without an ExtensionNotice wired the extension stands, and the answer
+	 * says the requester was not told (REQ-WRN-005).
+	 *
+	 * @return void
+	 */
+	public function testAnExtensionWithoutANoticeSaysTheRequesterWasNotTold(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['reason', '', 'Zienswijzen van derden']]);
+		$this->deadlineService->method('extendDeadline')->willReturn(
+			['caseId' => 'case-uuid-001', 'deadline' => '2026-11-16', 'termInstanceId' => 'ti-1', 'extensionReason' => 'Zienswijzen van derden']
+		);
+
+		$response = $this->controller->extendDeadline('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('2026-11-16', $response->getData()['deadline']);
+		$this->assertSame('not-sent', $response->getData()['noticeStatus']);
+		$this->assertSame('notice-not-wired', $response->getData()['noticeReasonCode']);
+	}//end testAnExtensionWithoutANoticeSaysTheRequesterWasNotTold()
+
+	/**
 	 * CreateDecision returns 422 when outstanding documents exist.
 	 *
 	 * Acceptance criterion: unassessed document → blocked with explicit error.

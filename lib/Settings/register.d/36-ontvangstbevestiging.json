@@ -180,19 +180,19 @@
           "outboundCommunications": {
             "type": "array",
             "title": "Outbound communications",
-            "description": "What this case sent the applicant on its own, one entry per message: the moment, the channel, the recipient and the version of the template it was rendered from. Cluster 23's outbound log renders these rather than keeping a second set.",
+            "description": "What this case sent the applicant on its own, one entry per message: the moment, the channel, whether a transport took it and with which message id, or why not. Cluster 23's outbound log renders these rather than keeping a second set.",
             "items": {
               "type": "object",
               "properties": {
                 "moment": {
                   "type": "string",
                   "title": "Moment",
-                  "description": "Which declared moment this message was sent at."
+                  "description": "When this message was sent: acknowledgement, information-request, stage, extension, decision or transfer."
                 },
                 "channel": {
                   "type": "string",
                   "title": "Channel",
-                  "description": "The channel it went out through."
+                  "description": "The channel it went out through: portal-inbox, digital-post or email. Empty when nothing took it."
                 },
                 "recipient": {
                   "type": "string",
@@ -213,12 +213,67 @@
                   "type": "string",
                   "format": "date-time",
                   "title": "Sent at",
-                  "description": "When it went out."
+                  "description": "When a transport took it. Only on a sent message."
                 },
                 "contentWithheld": {
                   "type": "boolean",
                   "title": "Content withheld",
                   "description": "Whether the case content stayed on the platform and the message only said one was waiting."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "sent",
+                    "not-sent"
+                  ],
+                  "title": "Status",
+                  "description": "Whether a transport took the message. Not sent means nobody received it."
+                },
+                "messageId": {
+                  "type": "string",
+                  "title": "Message id",
+                  "description": "The transport's own id for the message: the portal message, the mail or integriq's tracked letter. Only on a sent message."
+                },
+                "reasonCode": {
+                  "type": "string",
+                  "title": "Reason code",
+                  "description": "Why the message was not sent, as a code. Only on a message that was not sent."
+                },
+                "reason": {
+                  "type": "string",
+                  "title": "Reason",
+                  "description": "Why the message was not sent, in one sentence. Only on a message that was not sent."
+                },
+                "channelsTried": {
+                  "type": "array",
+                  "title": "Channels tried",
+                  "description": "Every channel that refused the message before one took it, or before it was given up.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "channel": {
+                        "type": "string",
+                        "title": "Channel",
+                        "description": "The channel that refused."
+                      },
+                      "reasonCode": {
+                        "type": "string",
+                        "title": "Reason code",
+                        "description": "Why it refused, as a code."
+                      },
+                      "reason": {
+                        "type": "string",
+                        "title": "Reason",
+                        "description": "Why it refused, in one sentence."
+                      }
+                    }
+                  }
+                },
+                "attemptedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "title": "Attempted at",
+                  "description": "When the message was handed to the first channel."
                 }
               }
             }
