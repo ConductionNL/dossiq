@@ -293,10 +293,23 @@ programme and the reason wave 1 goes first.
       `tests/e2e/task-completion-resumes-the-run.spec.ts` opens that page on a
       task the flow engine created, which is the one shape that can only
       resolve through this rebuild.
-- [ ] 2.5 `DossiqAskPersonNode` carries a form, so the answer is recorded and
+- [x] 2.5 `DossiqAskPersonNode` carries a form, so the answer is recorded and
       not merely the fact of an answer. This is the capability dossiq cannot
       have today and gets for free from the abstraction.
-- [ ] 2.6 Confirm the VTODO projection reaches NC Tasks for a dossiq task, and
+
+      **Done by dossiq#2997** (`the-ask-step-asks-for-fields`, archived), checked
+      2026-10-10. The step takes OpenRegister's six flat form keys
+      (`formKind`, `formSchema`, `formAction`, `formFields`, `formId`,
+      `formRequireChecklist`), `validateConfig()` refuses a declaration the
+      performer could not fill through the engine's own `TaskFormReader`, and
+      the engine resolves the form from the run's pinned graph, so dossiq
+      writes no form onto the task. The answer is written by OpenRegister's
+      `complete` verb from its `data` object onto the subject the form is
+      declared over. Pinned by `tests/Unit/Flow/AskPersonFormDeclarationTest.php`
+      and `tests/e2e/ask-step-form.spec.ts`; the requirement is
+      "An ask may ask for fields, and the engine resolves them" in
+      `openspec/specs/case-flow-human-steps/spec.md`.
+- [ ] 2.6 (live pass, decision 139: a provisioned instance with cron, or `helpers/occ.ts` driving the projection job) Confirm the VTODO projection reaches NC Tasks for a dossiq task, and
       that ticking it off there completes the engine task through
       `TaskVtodoWriteBackGate`. Dossiq writes no CalDAV code (D-4).
 
@@ -335,16 +348,17 @@ programme and the reason wave 1 goes first.
 
       This cluster is therefore the FIRST to reach its done state, and it is
       the one row the proposal graded field-verified.
-- [ ] 2.8 e2e: a task created by a transition, completed with a form, resuming
+- [ ] 2.8 (all three halves written; the form half has not run yet: live pass, decision 139) e2e: a task created by a transition, completed with a form, resuming
       a suspended flow run.
 
-      TWO OF THE THREE ARE COVERED. The middle one is not, and cannot be
-      until 2.5 exists.
+      ALL THREE HALVES ARE NOW WRITTEN. The middle one was written on
+      2026-10-10 once 2.5 was confirmed built, and has not run against an
+      instance yet. Tick this when the live pass has run it green.
 
       | Half | Where |
       |---|---|
       | created by a transition | `checklist-per-status.spec.ts` — a real transition, its tasks read back out of `/api/flow-tasks`, one completed through the engine's verb |
-      | completed **with a form** | NOWHERE. Blocked on 2.5: the ask carries no form, so there is no answer for a test to submit |
+      | completed **with a form** | `task-completed-with-a-form.spec.ts` (written 2026-10-10, not yet run: live pass, decision 139) — an ask declaring `description` as required, a completion without it refused naming the field, a completion with it read back from the case, and the run carried past the ask |
       | resuming a suspended run | `task-completion-resumes-the-run.spec.ts` (remove-casetask 5.2), which isolates the wake from the heartbeat and also pins the withdrawn-ask refusal |
 
       Left unticked on purpose. Ticking it on two of three would record the
@@ -385,6 +399,14 @@ continued, not replaced.
       Four decisions (2a-2d in that change) now block the Move step.
       `tenantOnboardingTask` is re-filed to the task cluster: it is a step, a
       completedBy, a completedAt and a blockedReason, which is a `Task`.
+
+      **State 2026-10-10.** The decisions are made (2a to 2h, Q1 to Q7) and
+      most of the move has landed: `tenant-isolation-names-the-control-that-runs`
+      (#3476), the active organisation (#3483, archived) and the dry run plus
+      repair step (#3486). Gate 23 still counts six `Tenant*.php` files. Four
+      wait on that change's task 6.3, a person's dry run on the dev instance
+      (Q-dossiq-L5-1); the two onboarding files wait on the `skipped` mapping
+      of `remove-casetask` task 7.1 (Q-dossiq-L5-2).
 - [ ] 4.2 **Documents** onto `File` + the files leaf (7 schemas, including
       `usageRights`, which is ZGW `gebruiksrechten` and belongs here rather
       than with access control). Existing

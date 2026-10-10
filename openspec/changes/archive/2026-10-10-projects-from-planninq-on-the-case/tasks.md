@@ -9,8 +9,8 @@ Tier: V1. Kind: config. Half: planninq `integration-case-bridge`.
 
 ## 2. Live check
 
-- [ ] 2.1 With planninq's case scope landed and checking the `dossiq` app id: the case page shows "Projects" with the case's projects, "New project" opens planninq's dialog with the case title, and on an instance without planninq the panel is absent (design D2).
+- [ ] 2.1 (live pass, decision 139) With planninq's case scope landed and checking the `dossiq` app id: the case page shows "Projects" with the case's projects, "New project" opens planninq's dialog with the case title, and on an instance without planninq the panel is absent (design D2).
 
 ## 3. Validation
 
-- [ ] 3.1 `openspec validate projects-from-planninq-on-the-case --strict`, `npm run lint`, `composer check:strict` once before push.
+- [x] 3.1 `openspec validate projects-from-planninq-on-the-case --strict`, `npm run lint`, `composer check:strict` once before push. (validate exits 0, 2026-10-10; lint and check:strict ran in the L4 checkpoint chain, see the PR body)

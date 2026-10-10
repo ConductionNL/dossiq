@@ -22,7 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCP\Notification\IManager as INotificationManager;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -89,6 +93,16 @@ class WOODeadlineServiceTest extends TestCase {
 	private WOODeadlineService $service;
 
 	/**
+	 * @var TermDefinitions&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private TermDefinitions $definitions;
+
+	/**
+	 * @var DeadlineExtensionService&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private DeadlineExtensionService $extensions;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -98,11 +112,27 @@ class WOODeadlineServiceTest extends TestCase {
 		$this->notificationManager = $this->createMock(INotificationManager::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$this->definitions = $this->createMock(TermDefinitions::class);
+		$this->definitions->method('activeFor')->willReturnCallback(
+			static fn (string $caseType): ?array => $caseType === 'woo-verzoek'
+				? ['standardDurationDays' => 28, 'extensionCapacity' => 14, 'countExtensions' => 1]
+				: null
+		);
+		$this->definitions->method('endDateFor')->willReturnCallback(
+			static fn (DateTimeImmutable $start, int $days): DateTimeImmutable => $start->modify('+' . $days . ' days')
+		);
+		$this->definitions->method('countedEndDateFor')->willReturnCallback(
+			static fn (DateTimeImmutable $start, int $days): DateTimeImmutable => $start->modify('+' . $days . ' days')
+		);
+		$this->extensions = $this->createMock(DeadlineExtensionService::class);
+
 		$this->service = new WOODeadlineService(
-			$this->settingsService,
-			$this->notificationManager,
-			$this->logger,
-			$this->caseDates(),
+			settingsService: $this->settingsService,
+			notificationManager: $this->notificationManager,
+			logger: $this->logger,
+			dates: $this->caseDates(),
+			definitions: $this->definitions,
+			extensions: $this->extensions,
 		);
 	}//end setUp()
 
@@ -147,32 +177,98 @@ class WOODeadlineServiceTest extends TestCase {
 	}//end testCalculateRefusesADayMonthYearValue()
 
 	/**
-	 * ExtendDeadline throws when extension already applied.
+	 * Without an administered Woo term definition the term is not counted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testCalculateRefusesWithoutADefinition(): void {
+		$service = new WOODeadlineService(
+			settingsService: $this->settingsService,
+			notificationManager: $this->notificationManager,
+			logger: $this->logger,
+			dates: $this->caseDates(),
+		);
+
+		try {
+			$service->calculate('2026-05-01');
+			self::fail('A Woo term without a definition must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('woo-term-definition-missing', $e->getRule());
+			self::assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+		}
+	}//end testCalculateRefusesWithoutADefinition()
+
+	/**
+	 * The extension goes through the term engine on the statutory term.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testExtendDeadlineExtendsTheStatutoryTerm(): void {
+		$this->extensions->expects(self::once())->method('extendStatutoryTermOfCase')
+			->with('case-uuid-001', 'Complex request', 14, self::isInstanceOf(\Closure::class))
+			->willReturn([
+				'previous' => '2026-05-29',
+				'instance' => ['id' => 'ti-1', 'status' => 'verlengd', 'endDateCurrent' => '2026-06-12', 'countExtensions' => 1],
+			]);
+
+		$result = $this->service->extendDeadline('case-uuid-001', 'Complex request');
+
+		self::assertSame('2026-05-29', $result['previousDeadline']);
+		self::assertSame('2026-06-12', $result['deadline']);
+		self::assertSame(1, $result['countExtensions']);
+	}//end testExtendDeadlineExtendsTheStatutoryTerm()
+
+	/**
+	 * The two weeks count from the original end of the first four, unrolled.
+	 *
+	 * A request received on Saturday 2 May 2026 has its four weeks end on
+	 * Saturday 30 May, which the Algemene termijnenwet carries to Monday
+	 * 1 June. The extension counts from the Saturday (Ruben, 2026-10-09):
+	 * 13 June, which the engine then rolls in turn.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 */
+	public function testTheExtensionCountsFromTheUnrolledOriginalEnd(): void {
+		$base = null;
+		$this->extensions->method('extendStatutoryTermOfCase')->willReturnCallback(
+			static function (string $caseId, string $rationale, int $days, \Closure $baseOf) use (&$base): array {
+				$base = $baseOf(['id' => 'ti-1', 'startDate' => '2026-05-02T10:00:00+02:00', 'endDateCurrent' => '2026-06-01']);
+				return ['previous' => '2026-06-01', 'instance' => ['endDateCurrent' => '2026-06-15', 'countExtensions' => 1]];
+			}
+		);
+
+		$this->service->extendDeadline('case-uuid-001', 'Veel documenten');
+
+		self::assertSame('2026-05-30', $base, 'From the Saturday the four weeks end on, not the Monday it rolled to.');
+	}//end testTheExtensionCountsFromTheUnrolledOriginalEnd()
+
+	/**
+	 * A second extension is refused with 409, not a 500.
 	 *
 	 * Acceptance criterion: second extension attempt returns error.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
-	public function testExtendDeadlineThrowsOnSecondExtension(): void {
-		$objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
-		// Return a case that already has deadlineVerlengd = 1.
-		$objectServiceMock->method('find')->willReturn([
-			'id' => 'case-uuid-001',
-			'expectedResolution' => '2026-05-29',
-			'deadlineVerlengd' => 1,
-		]);
+	public function testExtendDeadlineRefusesASecondExtension(): void {
+		$this->extensions->method('extendStatutoryTermOfCase')
+			->willThrowException(new RefusedException(rule: 'extension-ceiling-reached', sentence: 'This term has had every extension it allows (1).'));
 
-		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-		$this->settingsService->method('getConfigValue')->willReturnMap([
-			['register', '', 'dossiq'],
-			['case_schema', '', 'case'],
-		]);
-
-		$this->expectException(\InvalidArgumentException::class);
-		$this->expectExceptionMessageMatches('/Only one deadline extension/i');
-
-		$this->service->extendDeadline('case-uuid-001', 'Complex request');
-	}//end testExtendDeadlineThrowsOnSecondExtension()
+		try {
+			$this->service->extendDeadline('case-uuid-001', 'Complex request');
+			self::fail('A second extension must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('extension-ceiling-reached', $e->getRule());
+			self::assertSame(409, $e->getStatus());
+		}
+	}//end testExtendDeadlineRefusesASecondExtension()
 
 	/**
 	 * ExtendDeadline throws when reason is empty.
@@ -180,10 +276,13 @@ class WOODeadlineServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testExtendDeadlineThrowsForEmptyReason(): void {
-		$this->expectException(\InvalidArgumentException::class);
-		$this->expectExceptionMessageMatches('/reason is required/i');
-
-		$this->service->extendDeadline('case-uuid-001', '');
+		try {
+			$this->service->extendDeadline('case-uuid-001', '');
+			self::fail('An extension without a reason must be refused.');
+		} catch (RefusedException $e) {
+			self::assertSame('woo-extension-reason-missing', $e->getRule());
+			self::assertSame(422, $e->getStatus());
+		}
 	}//end testExtendDeadlineThrowsForEmptyReason()
 
 	/**
@@ -209,7 +308,7 @@ class WOODeadlineServiceTest extends TestCase {
 		$objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
 		$objectServiceMock->method('find')->willReturn([
 			'id' => 'case-uuid-001',
-			'expectedResolution' => '2099-12-31',
+			'deadline' => '2099-12-31',
 		]);
 
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);

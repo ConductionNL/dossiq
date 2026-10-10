@@ -108,10 +108,10 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 5. The screen and the live check
 
-- [ ] 5.1 `tests/e2e/bezwaar-awb-history.spec.ts`: request advice on a bezwaar with a default
+- [ ] 5.1 (spec written in `tests/e2e/bezwaar-awb-history.spec.ts`; live pass, decision 139) `tests/e2e/bezwaar-awb-history.spec.ts`: request advice on a bezwaar with a default
   committee configured, open the advice request, open History, and see the
   `dossiq.bezwaar.panel-member-added` entry with its actor. Cite REQ-BAT-002.
-- [ ] 5.2 Live check after merge on the dev instance: one bezwaar with a scheduled hearing. Read the
+- [ ] 5.2 (live pass, decision 139) Live check after merge on the dev instance: one bezwaar with a scheduled hearing. Read the
   `hearingSession` trail through OpenRegister's audit trail API filtered on
   `action=dossiq.bezwaar.*`, and run the repair step once on an instance with old entries. Record
   both in the issue.
@@ -127,5 +127,5 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
   `scripts/run-hydra-gates.sh --base origin/development`, count the gates that ran, and paste gate
   23's output: rule 2 prints `BezwaarAuditTrail.php` as compliant. The coverage guard needs tests for
   every added statement.
-- [ ] 6.3 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on
+- [x] 6.3 (merged as dossiq#3484 on 2026-10-09; its only red checks were Hydra Gates, the inherited gate 23 count, and Quality Report, landed under decision 125) One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on
   any commit. Done means merged on `development` with CI green.

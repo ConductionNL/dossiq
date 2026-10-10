@@ -82,6 +82,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'ArmAdviceTimers' => 'arms existing open advice requests; none exist yet',
 		'ArmBezwaarArchiveTimers' => 'arms existing bezwaar triggers; none exist yet',
 		'ReconcileCaseDeadlinesWithTerms' => 'writes existing case deadlines from their terms; none exist yet',
+		'RearmBeslistermijnTimers' => 're-arms existing running term timers; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',
 		'RewriteRetiredFlowNodes' => 'rewrites stored flows; a fresh install has none',
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
