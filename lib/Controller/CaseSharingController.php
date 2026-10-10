@@ -210,7 +210,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse The refusal.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function refusedMint(array $share): JSONResponse {
 		$status = Http::STATUS_BAD_GATEWAY;
@@ -235,7 +235,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return array<int, string> The list
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function asList(mixed $value, array $fallback): array {
 		if (is_array($value) === true) {
@@ -257,7 +257,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return string|null The text, or null
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	private function optionalText(mixed $value): ?string {
 		if ($value === null) {

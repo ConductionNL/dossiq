@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use Throwable;
 /**
  * Writes one timeline entry per recorded communication.
  *
- * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+ * @spec openspec/specs/case-history-surface/spec.md
  */
 class CaseTimeline {
 
@@ -111,7 +111,7 @@ class CaseTimeline {
 	 *
 	 * @return boolean True when an entry can be written.
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function isAvailable(): bool {
 		if ($this->settings->isOpenRegisterAvailable() === false) {
@@ -133,7 +133,7 @@ class CaseTimeline {
 	 *
 	 * @return string The entry uuid, or '' when nothing was written.
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	public function record(
 		string $caseId,
