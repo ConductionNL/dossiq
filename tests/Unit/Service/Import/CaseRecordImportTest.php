@@ -453,6 +453,53 @@ class CaseRecordImportTest extends TestCase {
 	}//end testAHalfFinishedRequestIsCompletedNotDuplicated()
 
 	/**
+	 * Existing cases that cannot be read stop the run: an unread list is not an
+	 * empty one, and importing over it would write a half-finished case twice.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-record-import/spec.md#requirement-every-declared-source-record-is-imported-exactly-once-req-cri-002
+	 */
+	public function testUnreadableCasesStopTheRunInsteadOfDuplicating(): void {
+		$this->only(['in_progress']);
+		$store = new class extends InMemoryRegister {
+			/**
+			 * Fails every read of the case schema.
+			 *
+			 * @param string               $register      Ignored.
+			 * @param string               $schema        The schema slug.
+			 * @param array<string, mixed> $filters       Equality filters.
+			 * @param bool                 $_rbac         Ignored.
+			 * @param bool                 $_multitenancy Ignored.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(
+				string $register,
+				string $schema,
+				array $filters = [],
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				if ($schema === 'case') {
+					throw new RuntimeException('the case table is locked');
+				}
+
+				return parent::searchObjectsBySlug($register, $schema, $filters, $_rbac, $_multitenancy);
+			}
+		};
+		$store->rows = $this->store->rows;
+		$this->store = $store;
+		$casesBefore = count($store->all('case'));
+
+		$answer = $this->runImport(store: $store);
+
+		self::assertSame(0, $answer['imported']);
+		self::assertStringContainsString('existing cases could not be read', $answer['failed'][0]['reason']);
+		self::assertCount($casesBefore, $store->all('case'), 'no case is written over an unread list');
+	}//end testUnreadableCasesStopTheRunInsteadOfDuplicating()
+
+	/**
 	 * A stamp opencatalogi refuses, or drops, is a failure, never a migration.
 	 *
 	 * @return void
