@@ -99,6 +99,35 @@
 				</template>
 			</section>
 
+			<section
+				v-if="prompts && prompts.length > 0"
+				class="case-ai-features__questions"
+				data-testid="case-ai-questions">
+				<h4>{{ t('dossiq', 'Questions') }}</h4>
+				<ul class="case-ai-features__prompts">
+					<li v-for="prompt in prompts" :key="prompt.id || prompt.label">
+						<NcButton
+							:disabled="asking"
+							:data-testid="`case-ai-question-${prompt.id}`"
+							@click="ask(prompt)">
+							{{ prompt.label }}
+						</NcButton>
+					</li>
+				</ul>
+				<div
+					v-if="answer"
+					class="case-ai-features__output"
+					data-testid="case-ai-question-answer">
+					{{ answer }}
+				</div>
+				<p
+					v-if="answerFailed"
+					class="case-ai-features__unreadable"
+					data-testid="case-ai-question-failed">
+					{{ answerFailed }}
+				</p>
+			</section>
+
 			<p
 				v-if="features === null"
 				class="case-ai-features__unreadable"
@@ -224,7 +253,9 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import { converse } from '../../services/assistantApi.js'
 import {
 	AiFeatureRefusal,
 	refusalSentence,
@@ -233,6 +264,7 @@ import {
 import {
 	fetchCaseDocuments,
 	fetchCaseFeatures,
+	fetchCasePrompts,
 	fetchReportGroup,
 	groupView,
 	whereItRuns,
@@ -261,6 +293,10 @@ export default {
 			documents: [],
 			group: groupView({ declared: false }),
 			runs: {},
+			prompts: [],
+			asking: false,
+			answer: '',
+			answerFailed: '',
 		}
 	},
 
@@ -285,11 +321,13 @@ export default {
 				return
 			}
 
-			const [features, group] = await Promise.all([
+			const [features, group, prompts] = await Promise.all([
 				fetchCaseFeatures(this.objectId),
 				fetchReportGroup(this.objectId),
+				fetchCasePrompts(),
 			])
 			this.features = features
+			this.prompts = prompts || []
 			this.group = groupView(group)
 
 			const runs = {}
@@ -312,6 +350,29 @@ export default {
 				? await fetchCaseDocuments(this.objectId)
 				: []
 			this.loading = false
+		},
+
+		/**
+		 * Ask the assistant one of hermiq's prompts about this case.
+		 *
+		 * @param {object} prompt The prompt, as hermiq holds it.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-prompts-offered-on-a-case-come-from-hermiq
+		 */
+		async ask(prompt) {
+			this.asking = true
+			this.answer = ''
+			this.answerFailed = ''
+			try {
+				const result = await converse(this.objectId, prompt.prompt)
+				this.answer = String(result?.reply ?? '')
+			} catch (error) {
+				this.answerFailed =
+					String(error?.response?.data?.error ?? '')
+					|| t('dossiq', 'The assistant did not answer.')
+			} finally {
+				this.asking = false
+			}
 		},
 
 		/**

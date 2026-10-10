@@ -380,4 +380,48 @@ class AssistantControllerTest extends TestCase {
 		}
 	}//end testAnAbsentHermiqReportsEveryDeclaredFeatureUnavailable()
 
+	/**
+	 * The prompts offered on a case are hermiq's, read under dossiq's case scope,
+	 * in hermiq's order; a row without text is not offered (REQ-AIC-06).
+	 *
+	 * @return void
+	 */
+	public function testThePromptsOfferedOnACaseComeFromHermiq(): void {
+		$client = $this->createMock(HermiqAiFeatureClient::class);
+		$client->expects(self::once())
+			->method('prompts')
+			->with(AssistantController::CASE_PROMPT_SCOPE)
+			->willReturn(
+				[
+					['id' => 'p-2', 'label' => 'Open documents', 'prompt' => 'Which documents still need review?'],
+					['id' => 'p-3', 'label' => 'Empty', 'prompt' => '  '],
+					['id' => 'p-1', 'label' => 'Summary', 'prompt' => 'Summarise the mails.'],
+				]
+			);
+
+		$response = $this->controller(aiFeatureClient: $client)->prompts();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(
+			[
+				['id' => 'p-2', 'label' => 'Open documents', 'prompt' => 'Which documents still need review?'],
+				['id' => 'p-1', 'label' => 'Summary', 'prompt' => 'Summarise the mails.'],
+			],
+			$response->getData()['prompts']
+		);
+	}//end testThePromptsOfferedOnACaseComeFromHermiq()
+
+	/**
+	 * Without the client, or without a session, no prompt is offered.
+	 *
+	 * @return void
+	 */
+	public function testPromptsAreRefusedWithoutASessionAndEmptyWithoutHermiq(): void {
+		self::assertSame([], $this->controller()->prompts()->getData()['prompts']);
+
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->userSession->method('getUser')->willReturn(null);
+		self::assertSame(Http::STATUS_UNAUTHORIZED, $this->controller()->prompts()->getStatus());
+	}//end testPromptsAreRefusedWithoutASessionAndEmptyWithoutHermiq()
+
 }//end class

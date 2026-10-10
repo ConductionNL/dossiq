@@ -17,9 +17,11 @@ import axios from '@nextcloud/axios'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CaseAiFeaturesPanel from '../../src/components/case/CaseAiFeaturesPanel.vue'
+import { converse } from '../../src/services/assistantApi.js'
 import {
 	fetchCaseDocuments,
 	fetchCaseFeatures,
+	fetchCasePrompts,
 	fetchReportGroup,
 } from '../../src/services/caseAiFeaturesApi.js'
 
@@ -44,8 +46,10 @@ vi.mock('../../src/services/caseAiFeaturesApi.js', async (importOriginal) => {
 		fetchCaseFeatures: vi.fn(),
 		fetchReportGroup: vi.fn(),
 		fetchCaseDocuments: vi.fn(),
+		fetchCasePrompts: vi.fn(),
 	}
 })
+vi.mock('../../src/services/assistantApi.js', () => ({ converse: vi.fn() }))
 
 /** A feature hermiq offers on premise. */
 const SUMMARY = {
@@ -106,6 +110,9 @@ describe('CaseAiFeaturesPanel', () => {
 		vi.mocked(fetchCaseDocuments).mockResolvedValue([
 			{ id: '42', title: 'besluit.pdf' },
 		])
+		vi.mocked(fetchCasePrompts).mockReset()
+		vi.mocked(fetchCasePrompts).mockResolvedValue([])
+		vi.mocked(converse).mockReset()
 	})
 
 	it("renders a redaction refusal naming the feature and hermiq's gate", async () => {
@@ -269,6 +276,58 @@ describe('CaseAiFeaturesPanel', () => {
 			wrapper.find('[data-testid="case-ai-features-unreadable"]').exists(),
 		).toBe(true)
 		expect(wrapper.find('[data-testid="case-ai-features-empty"]').exists()).toBe(
+			false,
+		)
+	})
+	it("offers hermiq's prompts and shows the answer to one", async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([])
+		vi.mocked(fetchCasePrompts).mockResolvedValue([
+			{
+				id: 'p-1',
+				label: 'Samenvatting van de mails',
+				prompt: 'Vat de mails samen.',
+			},
+		])
+		vi.mocked(converse).mockResolvedValue({
+			reply: 'Drie mails, alle van de aanvrager.',
+		})
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
+		await flushPromises()
+
+		expect(converse).toHaveBeenCalledWith('c-1', 'Vat de mails samen.')
+		expect(wrapper.find('[data-testid="case-ai-question-answer"]').text()).toBe(
+			'Drie mails, alle van de aanvrager.',
+		)
+	})
+
+	it("shows the assistant's refusal when a question is not answered", async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([])
+		vi.mocked(fetchCasePrompts).mockResolvedValue([
+			{ id: 'p-1', label: 'Vraag', prompt: 'Vraag?' },
+		])
+		vi.mocked(converse).mockRejectedValue({
+			response: { data: { error: 'Blocked by guardrail.' } },
+		})
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		await wrapper.find('[data-testid="case-ai-question-p-1"]').trigger('click')
+		await flushPromises()
+
+		expect(wrapper.find('[data-testid="case-ai-question-failed"]').text()).toBe(
+			'Blocked by guardrail.',
+		)
+	})
+
+	it('renders no questions when hermiq offers none', async () => {
+		vi.mocked(fetchCaseFeatures).mockResolvedValue([])
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		expect(wrapper.find('[data-testid="case-ai-questions"]').exists()).toBe(
 			false,
 		)
 	})

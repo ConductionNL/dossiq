@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261010173012</version>
+    <version>0.4.47-unstable.20261010222121</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -771,6 +771,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 is kept. In BOTH blocks: integriq may come before dossiq or after.
             -->
             <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
+            <!--
+                Ships the initial assistant prompt library into hermiq
+                (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
+                every prompt an administrator touched, so a rerun restores
+                nothing. In BOTH blocks: hermiq may come before dossiq or after.
+            -->
+            <step>OCA\Dossiq\Repair\ShipAssistantPrompts</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -1004,6 +1011,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 is kept. In BOTH blocks: integriq may come before dossiq or after.
             -->
             <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
+            <!--
+                Ships the initial assistant prompt library into hermiq
+                (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
+                every prompt an administrator touched, so a rerun restores
+                nothing. In BOTH blocks: hermiq may come before dossiq or after.
+            -->
+            <step>OCA\Dossiq\Repair\ShipAssistantPrompts</step>
         </install>
     </repair-steps>
 

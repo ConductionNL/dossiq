@@ -249,3 +249,21 @@ export function groupView(answer) {
 		nearDuplicates,
 	}
 }
+
+/**
+ * The prompts the assistant offers on a case, as hermiq holds them, in the
+ * administrator's order. dossiq keeps no prompt text of its own.
+ *
+ * @return {Promise<Array<{id: string, label: string, prompt: string}>|null>} The prompts, or null when they could not be read.
+ * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-prompts-offered-on-a-case-come-from-hermiq
+ */
+export async function fetchCasePrompts() {
+	try {
+		const { data } = await axios.get(
+			generateUrl('/apps/dossiq/api/assistant/prompts'),
+		)
+		return Array.isArray(data?.prompts) ? data.prompts : []
+	} catch {
+		return null
+	}
+}

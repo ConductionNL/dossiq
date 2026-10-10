@@ -163,4 +163,35 @@ test.describe('AI features on the case', () => {
 			'case-9',
 		)
 	})
+	// @e2e openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#the-prompts-offered-on-a-case-come-from-hermiq
+	test("the questions offered are hermiq's prompts, in hermiq's order", async ({
+		page,
+	}) => {
+		await fakeHermiq(page, { declared: false, available: false, group: null })
+		await page.route('**/apps/dossiq/api/assistant/prompts', (route) =>
+			route.fulfill({
+				json: {
+					prompts: [
+						{
+							id: 'p-2',
+							label: 'Samenvatting van de mails',
+							prompt: 'Vat de mails samen.',
+						},
+						{
+							id: 'p-1',
+							label: 'Wat is de volgende stap?',
+							prompt: 'Volgende stap?',
+						},
+					],
+				},
+			}),
+		)
+		await openAssistant(page)
+
+		const questions = page.getByTestId('case-ai-questions').getByRole('button')
+		await expect(questions).toHaveText([
+			'Samenvatting van de mails',
+			'Wat is de volgende stap?',
+		])
+	})
 })
