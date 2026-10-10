@@ -344,7 +344,7 @@ class PipelinqCaseController extends Controller {
 			return $this->notSignedIn();
 		}
 
-		// pipelinq reads its own register under the caller's session, so a
+		// Pipelinq reads its own register under the caller's session, so a
 		// programme the caller may not see is not offered.
 		return new JSONResponse($this->programmes->programmes());
 	}//end programmeOptions()

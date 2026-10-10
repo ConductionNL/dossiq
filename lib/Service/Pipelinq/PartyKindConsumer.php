@@ -145,7 +145,7 @@ class PartyKindConsumer {
 			return ['source' => 'dossiq', 'kinds' => $this->vocabulary->kinds()];
 		}
 
-		// pipelinq answers a map keyed by code. A list is what a surface walks.
+		// Pipelinq answers a map keyed by code. A list is what a surface walks.
 		return [
 			'source' => 'pipelinq',
 			'kinds' => array_values(array_filter($answer['value'], static fn ($kind): bool => is_array($kind) === true)),
