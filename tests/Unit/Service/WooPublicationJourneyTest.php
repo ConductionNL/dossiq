@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @covers \OCA\Dossiq\Woo\WooCaseLedger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Woo\WooResultLink
  */
 class WooPublicationJourneyTest extends TestCase {
 
