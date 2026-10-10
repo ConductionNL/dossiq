@@ -699,6 +699,7 @@
 								"name": "Cases"
 							},
 							"icon": "FolderOutline",
+							"iconPlacement": "end",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -726,6 +727,7 @@
 								}
 							},
 							"icon": "AlertCircleOutline",
+							"iconPlacement": "end",
 							"variant": "error",
 							"format": {
 								"style": "decimal",
@@ -751,6 +753,7 @@
 								}
 							},
 							"icon": "CheckCircleOutline",
+							"iconPlacement": "end",
 							"variant": "success",
 							"format": {
 								"style": "decimal",
@@ -776,6 +779,7 @@
 								}
 							},
 							"icon": "ClipboardCheckOutline",
+							"iconPlacement": "end",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -803,6 +807,7 @@
 							"label": "SLA Compliance",
 							"caption": "met their deadline",
 							"icon": "ChartLine",
+							"iconPlacement": "end",
 							"route": {
 								"name": "Doorlooptijd"
 							},
@@ -1440,6 +1445,7 @@
 										"name": "Cases"
 									},
 									"icon": "FolderOutline",
+									"iconPlacement": "end",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
@@ -1467,6 +1473,7 @@
 										}
 									},
 									"icon": "AlertCircleOutline",
+									"iconPlacement": "end",
 									"variant": "error",
 									"format": {
 										"style": "decimal",
@@ -1492,6 +1499,7 @@
 										}
 									},
 									"icon": "CheckCircleOutline",
+									"iconPlacement": "end",
 									"variant": "success",
 									"format": {
 										"style": "decimal",

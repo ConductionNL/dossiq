@@ -1187,6 +1187,7 @@
 								}
 							},
 							"icon": "AlertCircleOutline",
+							"iconPlacement": "end",
 							"variant": "error",
 							"format": {
 								"style": "decimal",
@@ -1204,6 +1205,7 @@
 							"label": "Within deadline",
 							"caption": "met their deadline",
 							"icon": "ChartLine",
+							"iconPlacement": "end",
 							"route": {
 								"name": "Doorlooptijd"
 							},
