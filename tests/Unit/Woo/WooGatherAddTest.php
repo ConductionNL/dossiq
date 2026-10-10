@@ -53,6 +53,14 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Woo\WooGatherAdd
  * @covers \OCA\Dossiq\Woo\WooPickRefused
+ * @uses   \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentDefaults
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
+ * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class WooGatherAddTest extends TestCase {
 
