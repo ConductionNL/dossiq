@@ -36,8 +36,11 @@ use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -127,6 +130,12 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
 		);
+		// A draft binds no term; sending it does (decision 180). By name, so
+		// an OpenRegister without the draft lifecycle never sends it.
+		$context->registerEventListener(
+			event: ReceiptMoment::ACTIVATED_EVENT,
+			listener: DeadlineCaseCreatedListener::class
+		);
 
 		// The chain of custody starts where the case was registered. Without
 		// this the chain would begin at the first MOVE, which reads as though
@@ -137,12 +146,20 @@ class WorkflowListenerRegistrar {
 			listener: CustodyCaseCreatedListener::class
 		);
 
-		// When the request arrived, and when its clock starts. Written once at
-		// creation and never recomputed: the stamp is a record of what the
-		// citizen was told, not a derivation of what today's calendar says.
+		// When the request arrived, and when its clock starts. Written once,
+		// INSIDE the save that receives the case (the create, or the save that
+		// sends a draft), so the create answer carries it (decision 179). The
+		// priority puts it before OpenRegister's calculation listener, which
+		// counts the fallback deadline from the start date written here.
 		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: IntakeTermStartListener::class
+			event: ObjectCreatingEvent::class,
+			listener: IntakeTermStartListener::class,
+			priority: IntakeTermStartListener::PRIORITY
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: IntakeTermStartListener::class,
+			priority: IntakeTermStartListener::PRIORITY
 		);
 
 		// A phase carries its own clock, and the clock moves when the case
@@ -173,6 +190,10 @@ class WorkflowListenerRegistrar {
 		// is down cannot stop a case being created.
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
+			listener: AcknowledgementOnCreateListener::class
+		);
+		$context->registerEventListener(
+			event: ReceiptMoment::ACTIVATED_EVENT,
 			listener: AcknowledgementOnCreateListener::class
 		);
 	}//end registerTermijnListeners()

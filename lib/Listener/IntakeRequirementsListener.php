@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -81,6 +82,7 @@ class IntakeRequirementsListener implements IEventListener {
 	 * @param DuplicatePolicy    $duplicates       What this case type does about a case that already exists.
 	 * @param IUserSession       $userSession      Who is filing the case.
 	 * @param LoggerInterface    $logger           Logger.
+	 * @param ReceiptMoment      $receipt          Tells a receipt from a draft save (decision 180).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -91,6 +93,7 @@ class IntakeRequirementsListener implements IEventListener {
 		private readonly DuplicatePolicy $duplicates,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
 
@@ -102,15 +105,25 @@ class IntakeRequirementsListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
+		// What must be answered before a case exists is checked when the case
+		// is RECEIVED: on the create of a case that is not a draft, or on the
+		// save that sends a draft. A draft may miss required data (decision 180).
 		if ($event instanceof ObjectCreatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getObject(), creating: true);
+			$entity = $event->getObject();
+			$this->inspect(event: $event, entity: $entity, creating: $this->receipt->isDraft(object: $entity) === false);
 			return;
 		}
 
 		if ($event instanceof ObjectUpdatingEvent === true) {
-			$this->inspect(event: $event, entity: $event->getNewObject(), creating: false);
+			$entity = $event->getNewObject();
+			$this->inspect(
+				event: $event,
+				entity: $entity,
+				creating: $this->receipt->leavesDraft(before: $event->getOldObject(), after: $entity)
+			);
 		}
 	}//end handle()
 

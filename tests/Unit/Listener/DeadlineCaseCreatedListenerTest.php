@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectActivatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -35,6 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeTermStart
+ * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  */
 class DeadlineCaseCreatedListenerTest extends TestCase {
 
@@ -183,4 +185,31 @@ class DeadlineCaseCreatedListenerTest extends TestCase {
 
 		self::assertCount(1, $this->otherStarts, 'The other clocks still bind.');
 	}//end testACaseTypeWithoutADefinitionWarnsAndBindsTheOtherClocks()
+
+	/**
+	 * A draft binds no term; sending it binds the term from its stamped term start.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function testADraftBindsNoTermUntilItIsSent(): void {
+		$listener = $this->listener(answer: new DateTimeImmutable('2026-10-12T08:30:00+02:00'));
+
+		$draft = new ObjectEntity();
+		$draft->setUuid('case-1');
+		$draft->setObject(['caseType' => 'ct-uuid']);
+		$draft->setStatus('draft');
+		$listener->handle(new ObjectCreatedEvent($draft));
+		self::assertCount(0, $this->starts);
+
+		$sent = new ObjectEntity();
+		$sent->setUuid('case-1');
+		$sent->setObject(['caseType' => 'ct-uuid', 'termStartsAt' => '2026-10-12T08:30:00+02:00']);
+		$sent->setStatus('active');
+		$listener->handle(new ObjectActivatedEvent($sent, new DateTimeImmutable('2026-10-11T21:40:00+02:00')));
+
+		self::assertCount(1, $this->starts);
+		self::assertSame('2026-10-12T08:30:00+02:00', $this->starts[0]?->format('c'));
+	}//end testADraftBindsNoTermUntilItIsSent()
 }//end class

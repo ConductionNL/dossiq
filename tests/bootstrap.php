@@ -667,6 +667,13 @@ if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === 
 // `::class`, which does not autoload, so the registration is silent at runtime
 // without openregister and reads to the analysers as a class that does not
 // exist. Declaration-only, shared with psalm and phpstan.
+// a-request-form-opens-the-case-at-once: the event OpenRegister sends when a
+// draft leaves draft (openregister#4566), so the receipt listeners' tests can
+// drive it.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectActivatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectActivatedEvent.php';
+}
+
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
 }
