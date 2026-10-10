@@ -38,8 +38,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Termijn\TermKindClassifier;
-
 /**
  * The kind a term instance carries (REQ-TERM-060).
  *
@@ -149,9 +147,13 @@ final class TermKind {
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
 	public static function ofInstance(array $instance): string {
-		// The rule lives in the injected classifier, so this answer and an
-		// injected caller's answer cannot drift apart.
-		return (new TermKindClassifier())->ofInstance(instance: $instance);
+		$kind = (string)($instance['kind'] ?? '');
+
+		if (self::isKnown(kind: $kind) === true) {
+			return $kind;
+		}
+
+		return self::STATUTORY;
 	}//end ofInstance()
 
 	/**

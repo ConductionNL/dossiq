@@ -61,6 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
+use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
@@ -315,6 +316,37 @@ class WorkingDayRoll {
 			return null;
 		}
 	}//end endAfter()
+
+	/**
+	 * The end date N days after a start, falling back to calendar days.
+	 *
+	 * For a lead time that is not statutory (the planned end, the internal
+	 * target): a date is better than none, so when the calendar does not
+	 * answer the days are counted as calendar days and the shortfall is said
+	 * in the log. A statutory term never uses this; it asks {@see endAfter()}.
+	 *
+	 * @param DateTimeImmutable $start The day the term starts.
+	 * @param int               $days  How many days it runs.
+	 * @param string            $mode  `calendarDays` or `workingDays`.
+	 *
+	 * @return DateTimeImmutable The end date.
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 */
+	public function endAfterOrCalendarDays(DateTimeImmutable $start, int $days, string $mode): DateTimeImmutable {
+		$computed = $this->endAfter(start: $start, days: $days, mode: $mode);
+		if ($computed !== null) {
+			return $computed;
+		}
+
+		$this->logger?->warning(
+			'Dossiq termijn: a lead time declares working days and the organisation calendar did not answer, '
+			. 'so it was counted in calendar days and ends earlier than declared',
+			['days' => $days]
+		);
+
+		return $start->add(new DateInterval('P' . max(0, $days) . 'D'));
+	}//end endAfterOrCalendarDays()
 
 	/**
 	 * How many days lie between two dates, counted in one mode.

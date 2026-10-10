@@ -25,6 +25,7 @@ The Woo decision term is rolled by the Algemene termijnenwet on the engine calen
 - Dependencies: none. Followed by `dossiq/woo-request-takes-over-from-opencatalogi` (https://github.com/ConductionNL/dossiq/issues/3289) and `dossiq/woo-case-screens-and-objections` (https://github.com/ConductionNL/dossiq/issues/3290).
 - Decisions: D1 (dossiq owns the Woo request and its term) and D13 (10.9 and 16.2 are re-mapped here).
 - Build rules: openspec/woo-build-rules.md
+- Rescoped 2026-10-10: the rolled case deadline, the rolled API end dates and the Woo extension (REQ-WTR-001 to 003) were built by `one-term-engine`, whose `woo-case-type` delta replaces this change's. What stays here is the quarterly report (REQ-WTR-004, REQ-WTR-005).
 
 ## The law
 

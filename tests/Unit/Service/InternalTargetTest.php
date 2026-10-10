@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\TermKind;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -34,7 +35,6 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseTermsService
  * @covers \OCA\Dossiq\Service\TermKind
- * @uses \OCA\Dossiq\Service\Termijn\TermKindClassifier
  */
 class InternalTargetTest extends TestCase {
 	use BindsTermFixtures;
@@ -112,6 +112,39 @@ class InternalTargetTest extends TestCase {
 		self::assertSame(TermKind::INTERNAL, $this->written[0]['kind']);
 		self::assertSame('2026-10-01', $this->written[0]['endDateCurrent']);
 	}//end testBothTermsRun()
+
+	/**
+	 * The internal target counts working days on the administered calendar.
+	 *
+	 * Thirty working days from Tuesday 1 September is 13 October, not the
+	 * 1 October a calendar-day count gives (REQ-OTE-04).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 */
+	public function testTheInternalTargetCountsWorkingDays(): void {
+		$calendar = $this->createMock(WorkingDayRoll::class);
+		$calendar->expects(self::once())->method('endAfterOrCalendarDays')
+			->with(self::anything(), 30, WorkingDayRoll::MODE_WORKING_DAYS)
+			->willReturn(new DateTimeImmutable('2026-10-13'));
+		$timers = $this->createMock(TermijnTimerService::class);
+		$timers->method('rollTermEndFor')->willReturnArgument(0);
+		$service = new CaseTermsService(
+			termService: $this->termService,
+			declarations: $this->declarations,
+			timers: $timers,
+			logger: new NullLogger(),
+			calendar: $calendar,
+		);
+		$this->declarations->method('forCaseType')->willReturn(
+			$this->declared(['leadTimeDays' => 56, 'internalTargetDays' => 30])
+		);
+
+		$service->bindForCase(caseId: 'c1', caseTypeId: 'ct1', start: new DateTimeImmutable('2026-09-01'));
+
+		self::assertSame('2026-10-13', $this->written[0]['endDateCurrent']);
+	}//end testTheInternalTargetCountsWorkingDays()
 
 	/**
 	 * The internal target is not in the portal view of the case.

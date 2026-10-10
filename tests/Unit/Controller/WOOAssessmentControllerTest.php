@@ -313,8 +313,8 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testExtendDeadlineReturns400ForEmptyReason()
 
 	/**
-	 * REQ-WTR-003: a second Woo extension answers 409 with the rule and the
-	 * Woo sentence, not a 500.
+	 * A second Woo extension answers 409 with the term engine's rule and
+	 * sentence, not a 500 (one-term-engine REQ: only one extension allowed).
 	 *
 	 * @return void
 	 */
@@ -327,16 +327,16 @@ class WOOAssessmentControllerTest extends TestCase {
 
 		$this->deadlineService->method('extendDeadline')->willThrowException(
 			new RefusedException(
-				rule: 'woo-one-extension',
-				sentence: 'This term was already extended. Woo art. 4.4 lid 2 allows one extension of at most two weeks.',
+				rule: 'extension-ceiling-reached',
+				sentence: 'This term has had every extension it allows.',
 			)
 		);
 
 		$response = $this->controller->extendDeadline('case-uuid-001');
 
 		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		$this->assertSame('woo-one-extension', $response->getData()['error']);
-		$this->assertStringContainsString('Woo art. 4.4 lid 2', $response->getData()['message']);
+		$this->assertSame('extension-ceiling-reached', $response->getData()['error']);
+		$this->assertSame('This term has had every extension it allows.', $response->getData()['message']);
 	}//end testASecondWooExtensionAnswers409()
 
 	/**
