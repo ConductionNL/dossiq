@@ -7,12 +7,11 @@
  * no automated proof of their wire behaviour.
  *
  * The interesting part of this controller is its error mapping. `send()` and
- * `sendFromTemplate()` both catch `\RuntimeException` and then SPLIT on the
- * message: the sentinel `email_send_failed` — thrown by CaseEmailService when
- * the transport itself fails — becomes a 500 whose body is exactly that
- * sentinel, because the underlying exception text would otherwise carry SMTP
- * host and credential detail to the caller (M4). Every other RuntimeException
- * is a caller-fixable validation error and becomes a 400 carrying its message.
+ * `sendFromTemplate()` SPLIT their failures: a Mail account that cannot be
+ * reached is a `RefusedException` (`mail-account-unavailable`) and becomes a
+ * 503 carrying dossiq's own rule and sentence, never the transport's exception
+ * text (M4). Every other RuntimeException is a caller-fixable validation error
+ * and becomes a 400 carrying its message.
  * Collapsing those two arms — one 500 for everything, or one 400 for
  * everything — is the realistic defect, and it is invisible from a happy-path
  * test, so both arms are pinned separately here.
