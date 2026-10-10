@@ -1,7 +1,7 @@
 <template>
 	<div class="step-config-panel">
 		<div class="step-config-panel__header">
-			<h4>{{ t('dossiq', 'Step Configuration') }}</h4>
+			<h4>{{ t('dossiq', 'Step configuration') }}</h4>
 			<div class="step-config-panel__header-actions">
 				<NcButton
 					v-if="!readOnly"

@@ -55,6 +55,58 @@ class FakeMenuCaseTypeObjectService {
 	public function searchObjectsBySlug(string $register, string $schema, array $filters=[]): array {
 		return $this->rows;
 	}//end searchObjectsBySlug()
+
+	/**
+	 * What the facet query answers, or null to throw.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	public ?array $facetAnswer = ['facets' => []];
+
+	/**
+	 * Every facet query asked, in order.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	public array $facetQueries = [];
+
+	/**
+	 * Count calls, which the counts must never make.
+	 *
+	 * @var int
+	 */
+	public int $countCalls = 0;
+
+	/**
+	 * Mimic OpenRegister ObjectService::getFacetsForObjects().
+	 *
+	 * @param array<string, mixed> $query The query.
+	 *
+	 * @return array<string, mixed> The answer.
+	 *
+	 * @throws \RuntimeException When the answer is null.
+	 */
+	public function getFacetsForObjects(array $query=[]): array {
+		$this->facetQueries[] = $query;
+		if ($this->facetAnswer === null) {
+			throw new \RuntimeException('facet store down');
+		}
+
+		return $this->facetAnswer;
+	}//end getFacetsForObjects()
+
+	/**
+	 * Mimic OpenRegister ObjectService::count(), and record that it was asked.
+	 *
+	 * @param array<string, mixed> $query The query.
+	 *
+	 * @return int Always 0.
+	 */
+	public function count(array $query=[]): int {
+		$this->countCalls++;
+
+		return 0;
+	}//end count()
 }//end class
 
 /**
@@ -62,6 +114,7 @@ class FakeMenuCaseTypeObjectService {
  *
  * @covers \OCA\Dossiq\Service\MenuCaseTypesService
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\CaseType\OpenCaseCounts
  */
 class MenuCaseTypesServiceTest extends TestCase {
 
@@ -77,8 +130,14 @@ class MenuCaseTypesServiceTest extends TestCase {
 	 *
 	 * @return MenuCaseTypesService
 	 */
-	private function service(array $rows, string $stored='', ?IConfig $config=null, array $groups=[]): MenuCaseTypesService {
-		$objectService = new FakeMenuCaseTypeObjectService();
+	private function service(
+		array $rows,
+		string $stored='',
+		?IConfig $config=null,
+		array $groups=[],
+		?FakeMenuCaseTypeObjectService $objectService=null
+	): MenuCaseTypesService {
+		$objectService ??= new FakeMenuCaseTypeObjectService();
 		$objectService->rows = $rows;
 
 		$settings = $this->createMock(SettingsService::class);
@@ -88,6 +147,7 @@ class MenuCaseTypesServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'dossiq',
 					'case_type_schema' => 'caseType',
+					'case_schema' => 'case',
 					default => '',
 				};
 			}
@@ -301,4 +361,140 @@ class MenuCaseTypesServiceTest extends TestCase {
 
 		$this->assertCount(MenuCaseTypesService::MAX_ENTRIES, $service->save('u', $ids, $service->visibleCaseTypes()));
 	}//end testSaveCapsTheList()
+	/**
+	 * Each offered case type carries its open cases, from ONE facet query.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	public function testEachCaseTypeShowsItsOpenCasesFromOneQuery(): void {
+		$store = new FakeMenuCaseTypeObjectService();
+		$store->facetAnswer = [
+			'facets' => [
+				'caseType' => [
+					'type' => 'terms',
+					'data' => ['buckets' => [['key' => 'w', 'results' => 19], ['key' => 'b', 'results' => 7]]],
+				],
+			],
+		];
+		$service = $this->service(
+			rows: [['id' => 'w', 'title' => 'Woo-verzoek'], ['id' => 'b', 'title' => 'Bezwaar'], ['id' => 'k', 'title' => 'Klacht']],
+			objectService: $store
+		);
+
+		$counted = $service->withOpenCaseCounts(caseTypes: $service->offeredCaseTypes(userId: 'u'));
+
+		$this->assertSame(
+			['b' => 7, 'k' => 0, 'w' => 19],
+			array_column($counted, 'openCases', 'id'),
+			'A case type the facet does not name has no open cases.'
+		);
+		$this->assertCount(1, $store->facetQueries, 'One aggregate query, not one per case type.');
+		$this->assertSame(0, $store->countCalls);
+
+		$query = $store->facetQueries[0];
+		$this->assertSame(['caseType' => ['type' => 'terms']], $query['_facets']);
+		$this->assertSame(0, $query['isFinalStatus']);
+		$this->assertSame(0, $query['statusHiddenInLists']);
+		$this->assertSame(0, $query['isDraft']);
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'case'], $query['@self']);
+	}//end testEachCaseTypeShowsItsOpenCasesFromOneQuery()
+
+	/**
+	 * A case on an older version counts for the version in use.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	public function testACaseOnAnOlderVersionCountsForTheVersionInUse(): void {
+		$store = new FakeMenuCaseTypeObjectService();
+		$store->facetAnswer = [
+			'facets' => [
+				'caseType' => ['buckets' => [['key' => 'v1', 'results' => 3], ['key' => 'v2', 'results' => 2], ['value' => 'v0', 'count' => 1]]],
+			],
+		];
+		$service = $this->service(
+			rows: [
+				['id' => 'v0', 'title' => 'Aanvraag', 'supersededBy' => 'v1'],
+				['id' => 'v1', 'title' => 'Aanvraag', 'supersededBy' => 'v2'],
+				['id' => 'v2', 'title' => 'Aanvraag'],
+			],
+			objectService: $store
+		);
+
+		$counted = $service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes());
+
+		$this->assertSame([['id' => 'v2', 'title' => 'Aanvraag', 'openCases' => 6]], $counted);
+	}//end testACaseOnAnOlderVersionCountsForTheVersionInUse()
+
+	/**
+	 * A cycle in supersededBy cannot hang the request.
+	 *
+	 * @return void
+	 */
+	public function testASupersededCycleEnds(): void {
+		$store = new FakeMenuCaseTypeObjectService();
+		$store->facetAnswer = ['facets' => ['caseType' => ['buckets' => [['key' => 'x', 'results' => 1]]]]];
+		$service = $this->service(
+			rows: [
+				['id' => 'x', 'title' => 'X', 'supersededBy' => 'y'],
+				['id' => 'y', 'title' => 'Y', 'supersededBy' => 'x'],
+				['id' => 'c', 'title' => 'C'],
+			],
+			objectService: $store
+		);
+
+		$counted = $service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes());
+
+		$this->assertSame([['id' => 'c', 'title' => 'C', 'openCases' => 0]], $counted);
+	}//end testASupersededCycleEnds()
+
+	/**
+	 * An unknown count is null, never 0, and a failing facet is passed on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/menu-case-type-counts/specs/case-type-navigation/spec.md#requirement-req-ctn-006-the-picker-says-how-many-open-cases-each-case-type-has
+	 */
+	public function testAnUnreadableCountIsNullNotZero(): void {
+		$noFacet = new FakeMenuCaseTypeObjectService();
+		$noFacet->facetAnswer = ['facets' => []];
+		$service = $this->service(rows: [['id' => 'w', 'title' => 'Woo-verzoek']], objectService: $noFacet);
+		$this->assertNull(
+			$service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes())[0]['openCases'],
+			'An answer without the caseType facet is not an answer of zero.'
+		);
+		$this->assertSame(
+			[['id' => 'w', 'title' => 'Woo-verzoek', 'openCases' => null]],
+			$service->withUnknownOpenCaseCounts(caseTypes: [['id' => 'w', 'title' => 'Woo-verzoek']])
+		);
+
+		$throwing = new FakeMenuCaseTypeObjectService();
+		$throwing->facetAnswer = null;
+		$service = $this->service(rows: [['id' => 'w', 'title' => 'Woo-verzoek']], objectService: $throwing);
+		$this->expectException(\RuntimeException::class);
+		$service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes());
+	}//end testAnUnreadableCountIsNullNotZero()
+	/**
+	 * A superseded row whose replacement is not a plain id is skipped, not folded.
+	 *
+	 * @return void
+	 */
+	public function testAnExpandedSupersededByIsNotFollowed(): void {
+		$store = new FakeMenuCaseTypeObjectService();
+		$store->facetAnswer = ['facets' => ['caseType' => ['buckets' => [['key' => 'old', 'results' => 2]]]]];
+		$service = $this->service(
+			rows: [
+				['id' => 'old', 'title' => 'Aanvraag', 'supersededBy' => ['id' => 'new']],
+				['id' => 'new', 'title' => 'Aanvraag'],
+			],
+			objectService: $store
+		);
+
+		$counted = $service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes());
+
+		$this->assertSame([['id' => 'new', 'title' => 'Aanvraag', 'openCases' => 0]], $counted);
+	}//end testAnExpandedSupersededByIsNotFollowed()
 }//end class

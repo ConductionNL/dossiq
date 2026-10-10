@@ -382,7 +382,7 @@ export default {
 		 *
 		 * @return {string} The translated hint.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		thresholdHint() {
 			return t(
@@ -547,7 +547,7 @@ export default {
 		 * @param {unknown} value The stored value.
 		 * @return {string} The text, '' when none is stored.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		thresholdText(value) {
 			return value === undefined || value === null ? '' : String(value)
@@ -564,7 +564,7 @@ export default {
 		 * @param {string} raw What the person typed.
 		 * @param {number} max The upper bound.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/case-types/spec.md
+		 * @spec openspec/specs/case-types/spec.md
 		 */
 		updateThreshold(field, raw, max) {
 			const { value, error } = readThresholdOverride(raw, max)
@@ -653,7 +653,7 @@ export default {
 
 .form-group label.required::after {
 	content: ' *';
-	color: var(--color-error);
+	color: var(--color-error-text);
 }
 
 .general-tab__textarea {
@@ -688,7 +688,7 @@ export default {
 
 .field-error {
 	display: block;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 12px;
 	margin-top: 4px;
 }

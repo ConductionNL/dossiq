@@ -144,7 +144,7 @@ test.afterAll(async () => {
 })
 
 test.describe('what a case must answer before it exists', () => {
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md#requirement-a-case-type-declares-what-must-be-answered-before-a-case-exists-req-triage-01
+	// @e2e openspec/specs/semantic-case-intake/spec.md#a-case-cannot-be-created-without-its-channel
 	test('a case cannot be created without its channel', async () => {
 		const response = await api.post(CASE_URL, {
 			headers: { requesttoken: token },
@@ -159,7 +159,7 @@ test.describe('what a case must answer before it exists', () => {
 		expect(await response.text()).toContain('communicationChannel')
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md#requirement-a-case-type-declares-what-must-be-answered-before-a-case-exists-req-triage-01
+	// @e2e openspec/specs/semantic-case-intake/spec.md#the-confidentiality-is-asked-for-at-creation
 	test('the confidentiality is asked for at creation', async ({ page }) => {
 		trackDossiqErrors(page)
 		const response = await api.get(requirementsUrl(declaringCaseTypeId), {
@@ -173,7 +173,7 @@ test.describe('what a case must answer before it exists', () => {
 		)
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md#requirement-a-case-type-declares-what-must-be-answered-before-a-case-exists-req-triage-01
+	// @e2e openspec/specs/semantic-case-intake/spec.md#an-internal-case-type-may-ask-for-neither
 	test('a case type that declares nothing still opens a case', async () => {
 		// 🔴 THE CONTROL, AND THE BLAST-RADIUS GUARD. Every case type on an
 		// upgraded instance is this one, and its cases must go on being created
@@ -186,7 +186,7 @@ test.describe('what a case must answer before it exists', () => {
 		expect(objectId(seeded)).not.toBe('')
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md#requirement-a-case-type-declares-what-must-be-answered-before-a-case-exists-req-triage-01
+	// @e2e openspec/specs/semantic-case-intake/spec.md#required-before-complete-is-not-required-before-creation
 	test('a field required before completion does not refuse the creation', async () => {
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} incomplete`,
@@ -200,7 +200,7 @@ test.describe('what a case must answer before it exists', () => {
 })
 
 test.describe('the classification that is an access rule', () => {
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md#requirement-a-classification-that-is-an-access-rule-is-required-before-the-case-exists-req-triage-02
+	// @e2e openspec/specs/semantic-case-intake/spec.md#an-unclassified-case-is-not-created
 	test('an unclassified case is not created', async () => {
 		const response = await api.post(CASE_URL, {
 			headers: { requesttoken: token },
@@ -214,7 +214,7 @@ test.describe('the classification that is an access rule', () => {
 		expect(await response.text()).toContain('classification')
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md#requirement-a-classification-that-is-an-access-rule-is-required-before-the-case-exists-req-triage-02
+	// @e2e openspec/specs/semantic-case-intake/spec.md#the-four-facets-are-recorded-when-declared
 	test('the four facets are recorded when declared', async () => {
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} classified`,
@@ -244,7 +244,7 @@ test.describe('the classification that is an access rule', () => {
 })
 
 test.describe('who may be assigned at creation', () => {
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-a-case-type-narrows-who-may-be-assigned-at-creation-req-triage-03
+	// @e2e openspec/specs/kcc-routing/spec.md#the-picker-offers-only-the-declared-groups
 	test('the picker offers only the declared groups', async () => {
 		const response = await api.get(requirementsUrl(narrowedCaseTypeId), {
 			headers: { requesttoken: token },
@@ -258,7 +258,7 @@ test.describe('who may be assigned at creation', () => {
 		expect(declaration.narrowsNothing).toBe(false)
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-a-case-type-narrows-who-may-be-assigned-at-creation-req-triage-03
+	// @e2e openspec/specs/kcc-routing/spec.md#the-api-refuses-a-group-the-picker-never-offered
 	test('the API refuses a group the picker never offered', async () => {
 		const response = await api.post(CASE_URL, {
 			headers: { requesttoken: token },
@@ -275,7 +275,7 @@ test.describe('who may be assigned at creation', () => {
 		expect(body).toContain('case type')
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-a-case-type-narrows-who-may-be-assigned-at-creation-req-triage-03
+	// @e2e openspec/specs/kcc-routing/spec.md#a-case-type-with-no-narrowing-keeps-every-choice
 	test('a case type with no narrowing keeps every choice', async () => {
 		const response = await api.get(requirementsUrl(undeclaredCaseTypeId), {
 			headers: { requesttoken: token },
@@ -288,7 +288,7 @@ test.describe('who may be assigned at creation', () => {
 })
 
 test.describe('a refused case goes somewhere, per Awb 2:3', () => {
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-a-refused-intake-goes-to-a-named-department-and-role-req-triage-04
+	// @e2e openspec/specs/kcc-routing/spec.md#a-refused-case-lands-somewhere-per-awb-23
 	test('a refused case lands at its declared destination', async () => {
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} to refuse`,
@@ -308,7 +308,7 @@ test.describe('a refused case goes somewhere, per Awb 2:3', () => {
 		expect(record.refusedBy).not.toBe('')
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-a-refused-intake-goes-to-a-named-department-and-role-req-triage-04
+	// @e2e openspec/specs/kcc-routing/spec.md#a-refused-case-is-not-a-lost-case
 	test('a refused case is not a lost case', async ({ page }) => {
 		trackDossiqErrors(page)
 		const seeded = await seedCase(api, token, {
@@ -332,7 +332,7 @@ test.describe('a refused case goes somewhere, per Awb 2:3', () => {
 		).toBeVisible()
 	})
 
-	// @e2e openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md#requirement-a-refused-intake-goes-to-a-named-department-and-role-req-triage-04
+	// @e2e openspec/specs/kcc-routing/spec.md#refusal-with-no-declared-destination-is-refused
 	test('refusal with no declared destination is refused, saying so', async () => {
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} nowhere to go`,

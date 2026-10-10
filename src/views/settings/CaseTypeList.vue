@@ -14,9 +14,11 @@
 			column, which is exactly the split the library documents.
 		-->
 		<CnIndexPage
-			:title="t('dossiq', 'Case Types')"
+			:title="t('dossiq', 'Case types')"
 			:description="t('dossiq', 'Configure case types')"
-			:schema="schema"
+			:schema="listSchema"
+			:includeColumns="columns"
+			:columnOverrides="columnOverrides"
 			:objects="caseTypes"
 			:loading="loading"
 			:selectable="true"
@@ -132,6 +134,7 @@ import ShapeOutlineIcon from 'vue-material-design-icons/ShapeOutline.vue'
 import StarIcon from 'vue-material-design-icons/Star.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { useSettingsStore } from '../../store/modules/settings.js'
+import { CASE_TYPE_COLUMNS, orderedListSchema } from '../../utils/caseTypeColumns.js'
 import { formatDuration } from '../../utils/durationHelpers.js'
 
 export default {
@@ -167,6 +170,39 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		settingsStore() {
 			return useSettingsStore()
+		},
+
+		/**
+		 * The columns the list shows, title first.
+		 *
+		 * @return {Array<string>} The column keys.
+		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		 */
+		columns() {
+			return [...CASE_TYPE_COLUMNS]
+		},
+
+		/**
+		 * Header words the schema gets wrong for this list.
+		 *
+		 * The schema titles `isDraft` "Is Draft", Title Case and a question
+		 * where the cell answers "Draft" or "Published".
+		 *
+		 * @return {object} Per-column overrides.
+		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		 */
+		columnOverrides() {
+			return { isDraft: { label: t('dossiq', 'Draft or published') } }
+		},
+
+		/**
+		 * The schema with those columns put in reading order.
+		 *
+		 * @return {object|null} The schema copy.
+		 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+		 */
+		listSchema() {
+			return orderedListSchema(this.schema, CASE_TYPE_COLUMNS)
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
@@ -422,7 +458,7 @@ export default {
 }
 
 .default-star {
-	color: var(--color-warning);
+	color: var(--color-warning-text);
 }
 
 .ct-badge {
@@ -435,7 +471,7 @@ export default {
 
 .ct-badge--published {
 	background: var(--color-success);
-	color: white;
+	color: var(--color-success-text);
 }
 
 .ct-badge--draft {
@@ -444,7 +480,7 @@ export default {
 }
 
 .validity--expired {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-weight: 500;
 }
 
@@ -454,7 +490,7 @@ export default {
 }
 
 .ct-error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	margin-top: 12px;
 	padding: 8px;
 	background: var(--color-error-light, rgba(var(--color-error-rgb), 0.1));

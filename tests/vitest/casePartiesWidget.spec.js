@@ -261,6 +261,12 @@ describe('the Team column and the Mine chip', () => {
 			// Beside the personal assignee, never instead of it.
 			expect(keys).toContain('assignee')
 			expect(keys.indexOf(property)).toBeGreaterThan(keys.indexOf('assignee'))
+			// my-teams-queue: the group cell shows the team's display name,
+			// not the raw group id (nextcloud-vue nextcloud-group-surfaces).
+			const team = config.columns.find(
+				(column) => typeof column === 'object' && column.key === property,
+			)
+			expect(team && team.widget).toBe('group')
 		},
 	)
 

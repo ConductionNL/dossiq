@@ -79,7 +79,7 @@
 }
 
 .edit-error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 13px;
 	margin: 4px 0;
 }
@@ -91,7 +91,7 @@
 }
 
 .sub-entity-tab__error {
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 13px;
 	margin-top: 12px;
 }

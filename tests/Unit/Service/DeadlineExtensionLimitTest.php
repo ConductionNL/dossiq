@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\DeadlineExtensionService
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class DeadlineExtensionLimitTest extends TestCase {
 	use BindsTermFixtures;
