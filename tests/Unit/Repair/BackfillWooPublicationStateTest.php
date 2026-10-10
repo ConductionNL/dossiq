@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Repair\BackfillWooPublicationState
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Woo\WooResultLink
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class BackfillWooPublicationStateTest extends TestCase {
@@ -144,14 +145,16 @@ class BackfillWooPublicationStateTest extends TestCase {
 		$published = $this->store->row(schema: 'case', uuid: 'c-pub');
 		$this->assertSame('published', $published['wooPublicationStatus']);
 		$this->assertSame('https://gemeente.example/apps/opencatalogi/publications/p-1', $published['wooPublicationUrl']);
+		$this->assertSame(['label' => 'Bekijk wat openbaar is gemaakt', 'url' => 'https://gemeente.example/apps/opencatalogi/publications/p-1'], $published['resultLink']);
 		$this->assertSame('withdrawn', $this->store->row(schema: 'case', uuid: 'c-wd')['wooPublicationStatus']);
+		$this->assertNull($this->store->row(schema: 'case', uuid: 'c-wd')['resultLink']);
 		$this->assertSame('ready', $this->store->row(schema: 'case', uuid: 'c-ready')['wooPublicationStatus']);
 		$this->assertArrayNotHasKey('wooPublicationStatus', $this->store->row(schema: 'case', uuid: 'c-other'));
 
 		$schema = new RealSchemaValidator();
 		foreach (['c-pub', 'c-wd', 'c-ready'] as $uuid) {
 			$row = $this->store->row(schema: 'case', uuid: $uuid);
-			$changes = array_intersect_key($row, ['wooPublicationStatus' => true, 'wooPublicationUrl' => true]);
+			$changes = array_intersect_key($row, ['wooPublicationStatus' => true, 'wooPublicationUrl' => true, 'resultLink' => true]);
 			$this->assertSame([], $schema->errors(slug: 'case', payload: $changes, creating: false), $uuid);
 		}
 	}//end testEachWooCaseGetsTheStateItsDecisionHolds()

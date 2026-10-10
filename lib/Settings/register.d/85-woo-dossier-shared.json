@@ -1,0 +1,64 @@
+{
+  "_note": "woo-dossier-shared-with-the-requester. The requester answers a question from Mijn zaken (REQ-WDS-001): the request keeps the answer as written and says whether it asks for documents or for a clarification (REQ-WDS-004). The case carries two fields in the shapes of portaliq's portalCase (portaliq woo-dossier-in-my-cases REQ-WDM-002 and REQ-WDM-003): termNote, the sentence about the term, and resultLink, where the decision is public. Written by dossiq only.",
+  "components": {
+    "schemas": {
+      "aanvullingsverzoek": {
+        "version": "1.3.0",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "aanvulling",
+              "verduidelijking"
+            ],
+            "default": "aanvulling",
+            "title": "Kind",
+            "description": "Whether the request asks for missing documents or for a clarification of a Woo request that is too broad (Woo art. 4.1 lid 5). A clarification asks one question and lists no documents.",
+            "facetable": true,
+            "inputControl": "select"
+          },
+          "applicantAnswer": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Answer from the applicant",
+            "description": "What the applicant wrote back from the portal, as they wrote it. Only the handler closes the request.",
+            "inputControl": "textarea"
+          },
+          "applicantAnsweredAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Answered in the portal at",
+            "description": "When the applicant sent their answer from the portal."
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "termNote": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Term note",
+            "description": "One sentence for the requester about the term: standing still, or extended with the reason. Empty while the term runs. Set by dossiq, not by hand.",
+            "visible": false
+          },
+          "resultLink": {
+            "type": "object",
+            "title": "Result link",
+            "description": "Where the requester reads what was made public. Set by dossiq when the Woo decision is published, cleared when the publication is withdrawn.",
+            "properties": {
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "visible": false
+          }
+        }
+      }
+    }
+  }
+}

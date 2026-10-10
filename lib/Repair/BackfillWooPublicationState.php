@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Woo\WooResultLink;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
 use OCP\Migration\IOutput;
@@ -226,7 +227,7 @@ class BackfillWooPublicationState implements IRepairStep {
 	 * @param string                $register      The register.
 	 * @param string                $caseSchema    The case schema.
 	 * @param string                $caseId        The case UUID.
-	 * @param array<string, string> $state         The fields to show.
+	 * @param array<string, string> $state         The fields to show, before the result link.
 	 *
 	 * @return string One of written|unchanged|missing|failed.
 	 */
@@ -238,11 +239,13 @@ class BackfillWooPublicationState implements IRepairStep {
 				return 'missing';
 			}
 
-			if ($this->alreadyShows(case: $case, state: $state) === true) {
+			// The requester's link travels with the state, as it does on publish and withdraw.
+			$changes = array_merge($state, (new WooResultLink())->changesFor(state: $state));
+			if ($this->alreadyShows(case: $case, state: $changes) === true) {
 				return 'unchanged';
 			}
 
-			$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId, changes: $state);
+			$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId, changes: $changes);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the Woo publication state backfill could not write a case',
@@ -257,14 +260,14 @@ class BackfillWooPublicationState implements IRepairStep {
 	/**
 	 * Whether the case already carries every field of the state.
 	 *
-	 * @param array<string, mixed>  $case  The stored case.
-	 * @param array<string, string> $state The fields to show.
+	 * @param array<string, mixed> $case  The stored case.
+	 * @param array<string, mixed> $state The fields to show.
 	 *
 	 * @return bool
 	 */
 	private function alreadyShows(array $case, array $state): bool {
 		foreach ($state as $key => $value) {
-			if ((string)($case[$key] ?? '') !== $value) {
+			if (json_encode($case[$key] ?? null) !== json_encode($value)) {
 				return false;
 			}
 		}
