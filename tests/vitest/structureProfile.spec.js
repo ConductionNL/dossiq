@@ -22,7 +22,7 @@
  * The gates read `src/menu-layout.json` only (gate-53), so the no-loss rule
  * for the simple file is held here and nowhere else.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md
  * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 

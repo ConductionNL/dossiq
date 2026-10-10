@@ -80,7 +80,7 @@ test.describe('The simple structure', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#a-case-handler-opens-dossiq-on-a-new-instance
+	// @e2e openspec/specs/nav-dedup-and-grouping/spec.md#a-case-handler-opens-dossiq-on-a-new-instance
 	// Two captions since d5252bdbd: the first group (Dashboard, My work, Team
 	// queue) has no caption, as on DqZijbalk, and Cases and Relations keep
 	// theirs. The StartCaption this asserted is the one that commit removed.
@@ -122,7 +122,7 @@ test.describe('The simple structure', () => {
 		})
 	})
 
-	// @e2e openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#a-page-that-left-the-menu-is-one-link-away
+	// @e2e openspec/specs/nav-dedup-and-grouping/spec.md#a-page-that-left-the-menu-is-one-link-away
 	test('your queue is one link away from My work, and its page still opens by address', async ({
 		page,
 	}) => {

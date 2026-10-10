@@ -360,7 +360,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-028
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-028
 		 */
 		showDashboardLink() {
 			const pages = this.cnManifest?.pages
@@ -375,7 +375,7 @@ export default {
 		 *
 		 * @return {Array<{id: string, label: string}>}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		caseTypeOptions() {
 			return Object.entries(this.caseTypeMap)
@@ -389,7 +389,7 @@ export default {
 		 *
 		 * @return {string}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		boardTitle() {
 			return this.caseTypeFilter?.label
@@ -406,7 +406,7 @@ export default {
 		 *
 		 * @return {{columns: Array<object>, casesByStatus: {[key: string]: Array<object>}}}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		narrowedBoard() {
 			return narrowBoard({
@@ -420,7 +420,7 @@ export default {
 		/**
 		 * @return {Array<object>} The columns to draw.
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		visibleColumns() {
 			return this.narrowedBoard.columns
@@ -429,7 +429,7 @@ export default {
 		/**
 		 * @return {{[key: string]: Array<object>}} The cases to draw, per column.
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		visibleCasesByStatus() {
 			return this.narrowedBoard.casesByStatus
@@ -496,7 +496,7 @@ export default {
 	 *
 	 * @return {Promise<void>}
 	 *
-	 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+	 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 	 */
 	async mounted() {
 		// Register the OR object types before fetching — this page may mount
@@ -1304,7 +1304,7 @@ export default {
 		 * @param {Array<object>} list The column's list as drawn.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		onColumnCases(columnId, list) {
 			this.casesByStatus[columnId] = mergeColumnBack(

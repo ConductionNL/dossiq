@@ -22,7 +22,7 @@
  *   The board's rule, or nothing.
  * @return {'overdue'|'warning'|'ok'|null} The severity, or null without a deadline.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+ * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
  */
 export function cardDueSeverity(daysRemaining, dueRule) {
 	if (daysRemaining === null || daysRemaining === undefined) {
@@ -55,7 +55,7 @@ export function cardDueSeverity(daysRemaining, dueRule) {
  * @param {number} value The rule's number.
  * @return {boolean} Whether the rule holds.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+ * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
  */
 function holds(days, op, value) {
 	if (!Number.isFinite(value)) {

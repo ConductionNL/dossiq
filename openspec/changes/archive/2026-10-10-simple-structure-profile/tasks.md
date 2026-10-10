@@ -24,5 +24,5 @@ Kind: code. Pilot for pipelinq, decidiq and learniq.
 - [x] 3.3 `tests/Unit/Service/Settings/MenuStructureTest.php`.
 - [x] 3.4 `tests/e2e/simple-structure-menu.spec.ts`, and
   `tests/e2e/ci-seed.sh` puts the CI instance on `full`.
-- [ ] 4.1 Live check on a dev instance by the coordinator: the simple menu, the
+- [ ] 4.1 (live pass, decision 139) Live check on a dev instance by the coordinator: the simple menu, the
   admin choice, and the seven write actions on a working case.
