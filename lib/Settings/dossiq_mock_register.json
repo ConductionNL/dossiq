@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.4",
+    "version": "1.3.5",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -3898,13 +3898,12 @@
       "caseShare": {
         "slug": "caseShare",
         "icon": "ShareVariant",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:CreativeWork",
         "title": "Case share",
         "description": "Token- or partner-based share over a case for external collaboration",
         "type": "object",
         "required": [
-          "token",
           "caseId",
           "shareType",
           "permissionLevel"
@@ -25507,6 +25506,60 @@
         "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
         "successorOffsetWorkingDays": 0,
         "ownerRole": "juridisch-medewerker"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "kind": "parkeren-bewoner",
+        "portalSubject": "Voorbeeld Portalsubject 1",
+        "theme": "Voorbeeld Theme 1",
+        "case": "00000000-0000-4000-8000-000000000000",
+        "decision": "00000000-0000-4000-8000-000000000000",
+        "validFrom": "2026-03-01",
+        "validUntil": "2026-03-01",
+        "status": "active",
+        "kenteken": "ABCDEF",
+        "adres": "Voorbeeld Adres 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "kind": "parkeren-bezoeker",
+        "portalSubject": "Voorbeeld Portalsubject 2",
+        "theme": "Voorbeeld Theme 2",
+        "case": "00000000-0000-4000-8000-000000000001",
+        "decision": "00000000-0000-4000-8000-000000000001",
+        "validFrom": "2026-03-02",
+        "validUntil": "2026-03-02",
+        "status": "suspended",
+        "kenteken": "BCDEFG",
+        "adres": "Voorbeeld Adres 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "kind": "parkeren-bedrijf",
+        "portalSubject": "Voorbeeld Portalsubject 3",
+        "theme": "Voorbeeld Theme 3",
+        "case": "00000000-0000-4000-8000-000000000002",
+        "decision": "00000000-0000-4000-8000-000000000002",
+        "validFrom": "2026-03-03",
+        "validUntil": "2026-03-03",
+        "status": "revoked",
+        "kenteken": "CDEFGH",
+        "adres": "Voorbeeld Adres 3"
       },
       {
         "@self": {

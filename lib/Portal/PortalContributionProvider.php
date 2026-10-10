@@ -201,6 +201,11 @@ class PortalContributionProvider {
 		// notice links to a case that shows the link. A public URL, nothing
 		// internal.
 		'wooPublicationUrl',
+		// THE TERM IN WORDS AND WHERE THE RESULT IS PUBLIC, in the shapes of
+		// portaliq's portalCase (woo-dossier-shared-with-the-requester
+		// REQ-WDS-002 and REQ-WDS-003). Both are written by dossiq only.
+		'termNote',
+		'resultLink',
 	];
 
 	/**

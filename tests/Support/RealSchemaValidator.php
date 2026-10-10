@@ -106,12 +106,12 @@ class RealSchemaValidator {
 	 */
 	private function jsonSchema(array $schema, bool $creating): array {
 		$out = ['type' => 'object', 'properties' => []];
-		$required = (array)($schema['required'] ?? []);
+		$required = array_values((array)($schema['required'] ?? []));
 		foreach (($schema['properties'] ?? []) as $name => $property) {
-			$out['properties'][$name] = $this->property(property: (array)$property);
-			if (in_array($name, $required, true) === false) {
-				$out['properties'][$name] = $this->acceptNull(property: $out['properties'][$name]);
-			}
+			$out['properties'][$name] = $this->widenOptional(
+				property: $this->property(property: (array)$property),
+				required: in_array($name, $required, true)
+			);
 		}
 
 		if ($creating === true && empty($schema['required']) === false) {
@@ -122,27 +122,36 @@ class RealSchemaValidator {
 	}//end jsonSchema()
 
 	/**
-	 * OpenRegister's widening of an optional top-level property to null
-	 * (ValidateObject): a typed property accepts null, except an enum that
-	 * does not list null, which must be a listed value or left out.
+	 * A top-level property that is not required also accepts null, as OpenRegister widens it.
 	 *
-	 * @param array<string, mixed> $property The JSON Schema property.
+	 * Mirrors ValidateObject (openregister development, the loop "For non-required
+	 * fields, allow null values by modifying the type"): an enum without null
+	 * stays strict. Without this a writer that clears an optional field with
+	 * null reads as refused here and is accepted by the real store.
+	 *
+	 * @param array<string, mixed> $property The property.
+	 * @param bool                 $required Whether the schema requires it.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function acceptNull(array $property): array {
-		if (is_array($property['enum'] ?? null) === true && in_array(null, $property['enum'], true) === false) {
+	private function widenOptional(array $property, bool $required): array {
+		if ($required === true || isset($property['type']) === false) {
 			return $property;
 		}
 
-		if (is_string($property['type'] ?? null) === true) {
-			$property['type'] = [$property['type'], 'null'];
-		} else if (is_array($property['type'] ?? null) === true && in_array('null', $property['type'], true) === false) {
-			$property['type'][] = 'null';
+		if (isset($property['enum']) === true && in_array(null, (array)$property['enum'], true) === false) {
+			return $property;
 		}
 
+		$types = (array)$property['type'];
+		if (in_array('null', $types, true) === false) {
+			$types[] = 'null';
+		}
+
+		$property['type'] = $types;
+
 		return $property;
-	}//end acceptNull()
+	}//end widenOptional()
 
 	/**
 	 * One property, keeping only the keywords a JSON-Schema validator judges on.
