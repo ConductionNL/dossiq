@@ -31,11 +31,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -139,7 +139,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 						// the associative arrays this loop expects.
 						$cases = $this->searchObjectsAsArrays(
 							objectService: $objectService,
-							register: TenantSaasService::REGISTER,
+							register: Application::REGISTER_SLUG,
 							schema: 'case',
 							filters: [
 								'caseTypeSlug' => $caseTypeSlug,
@@ -229,7 +229,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 				contractRef: (string)($case['contractRef'] ?? ''),
 				decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
 				subject: [
-					'subjectRegister' => TenantSaasService::REGISTER,
+					'subjectRegister' => Application::REGISTER_SLUG,
 					'subjectSchema' => 'case',
 					'subjectId' => $caseUuid,
 					'subjectLabel' => (string)($case['title'] ?? $caseTypeSlug),
@@ -248,7 +248,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep {
 					updates: ['decisionRef' => $newDecisionRef],
 					schemaSlug: 'case',
 				),
-				register: TenantSaasService::REGISTER,
+				register: Application::REGISTER_SLUG,
 				schema: 'case',
 				uuid: $caseUuid,
 			);
