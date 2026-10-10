@@ -2,6 +2,13 @@
 
 All notable changes to Dossiq are documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- `dossiq-mcp-adoption`: an assistant now reads dossiq through tools OpenRegister derives from the register. Twelve schemas declare a read-only `x-openregister-mcp` block, which gives 20 tools such as `dossiq.case.search` and `dossiq.statusRecord.search`. No tool writes, and none filters on a citizen's BSN or name.
+- BREAKING (MCP surface): the hand-written tools `dossiq.listProcesses` and `dossiq.getProcessDetails` are removed. Use `dossiq.case.search`, `dossiq.case.get` and `dossiq.statusRecord.search`. OpenRegister RBAC is now the only gate, the same one the dossiq screens use.
+
 ## [0.3.4] - 2026-07-25
 
 ### Changed

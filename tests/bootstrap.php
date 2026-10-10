@@ -423,15 +423,6 @@ if (getenv('DOSSIQ_REAL_FLOW_ENGINE') === '1'
 
 unset($dossiqOpenRegisterLib, $dossiqOpenRegisterVendor);
 
-// IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
-// ai-chat-companion-orchestrator) is absent. DossiqToolProvider implements
-// OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
-// interface is present (e.g. when the openregister app is installed). Must be
-// in place before \OC_App::loadApp('dossiq') below tries to load that class.
-if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-	include_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
-}
-
 // Decision-event stubs — loaded when the decision app is absent so the dossiq
 // delegation services + DecisionConcludedListener can be unit-tested against its
 // event contract. These stubs no-op when the real classes are present.

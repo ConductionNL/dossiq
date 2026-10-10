@@ -8,5 +8,5 @@
   "phpunit.skips": 6,
   "psalm.blanketHandlers": 17,
   "psalm.inlineSuppressions": 286,
-  "psalm.referencedClasses": 79
+  "psalm.referencedClasses": 78
 }
