@@ -477,4 +477,24 @@ class MenuCaseTypesServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes());
 	}//end testAnUnreadableCountIsNullNotZero()
+	/**
+	 * A superseded row whose replacement is not a plain id is skipped, not folded.
+	 *
+	 * @return void
+	 */
+	public function testAnExpandedSupersededByIsNotFollowed(): void {
+		$store = new FakeMenuCaseTypeObjectService();
+		$store->facetAnswer = ['facets' => ['caseType' => ['buckets' => [['key' => 'old', 'results' => 2]]]]];
+		$service = $this->service(
+			rows: [
+				['id' => 'old', 'title' => 'Aanvraag', 'supersededBy' => ['id' => 'new']],
+				['id' => 'new', 'title' => 'Aanvraag'],
+			],
+			objectService: $store
+		);
+
+		$counted = $service->withOpenCaseCounts(caseTypes: $service->visibleCaseTypes());
+
+		$this->assertSame([['id' => 'new', 'title' => 'Aanvraag', 'openCases' => 0]], $counted);
+	}//end testAnExpandedSupersededByIsNotFollowed()
 }//end class
