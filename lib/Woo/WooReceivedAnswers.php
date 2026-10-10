@@ -31,8 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use DateTimeImmutable;
-use Throwable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 
 /**
  * Maps opencatalogi's Woo answer keys onto the request a Woo case keeps.
@@ -40,6 +39,16 @@ use Throwable;
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
  */
 class WooReceivedAnswers {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseDateNormaliser $dates The one reader of a date and the tenant's time zone.
+	 */
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+	) {
+	}//end __construct()
 
 	/**
 	 * The longest subject a case title takes, in characters.
@@ -140,8 +149,8 @@ class WooReceivedAnswers {
 	 * How the request came in, as the case keeps it.
 	 *
 	 * `startDate` and `receivedAt` are the moment the requester sent it, not
-	 * the moment a delivery job reached dossiq (Awb 4:1, REQ-WTO-002); now
-	 * only when no readable moment was given.
+	 * the moment a delivery job reached dossiq (Awb 4:1, REQ-WTO-002), read
+	 * in the tenant's time zone; now only when no readable moment was given.
 	 *
 	 * @param array<string, mixed> $answers    The form answers.
 	 * @param string               $origin     The origin.
@@ -154,10 +163,10 @@ class WooReceivedAnswers {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
 	 */
 	public function intake(array $answers, string $origin, string $receivedAt): array {
-		$moment = $this->moment(receivedAt: $receivedAt);
+		$moment = ($this->dates->tryParse(value: trim($receivedAt)) ?? $this->dates->now());
 		$intake = [
 			'startDate' => $moment->format('Y-m-d'),
-			'receivedAt' => $moment->format('c'),
+			'receivedAt' => $moment->format(\DateTimeInterface::ATOM),
 			'intakeChannel' => $this->intakeChannel(answers: $answers, origin: $origin),
 		];
 
@@ -168,27 +177,6 @@ class WooReceivedAnswers {
 
 		return $intake;
 	}//end intake()
-
-	/**
-	 * The moment the requester sent the request.
-	 *
-	 * @param string $receivedAt What the caller said, ISO 8601.
-	 *
-	 * @return DateTimeImmutable That moment, or now when it is empty or does not read as a date.
-	 */
-	private function moment(string $receivedAt): DateTimeImmutable {
-		$receivedAt = trim($receivedAt);
-		if ($receivedAt !== '') {
-			try {
-				return new DateTimeImmutable($receivedAt);
-			} catch (Throwable $e) {
-				// Unreadable: the term counts from now, as an empty one does.
-				unset($e);
-			}
-		}
-
-		return new DateTimeImmutable();
-	}//end moment()
 
 	/**
 	 * The subject: the request itself, cut on a word boundary when it is long.

@@ -27,6 +27,7 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooReceivedTerm;
 use OCA\Dossiq\Woo\WooRequestIntake;
@@ -50,8 +51,11 @@ use stdClass;
  * @uses \OCA\Dossiq\Woo\WooRequesterProperties
  * @uses \OCA\Dossiq\Woo\WooWrittenCase
  * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class WooRequestIntakeReceiveTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The deadline the term engine mirrors onto a written case, or '' for none.
@@ -198,6 +202,7 @@ class WooRequestIntakeReceiveTest extends TestCase {
 			urlGenerator: $urls,
 			logger: $this->createMock(LoggerInterface::class),
 			receivedTerm: new WooReceivedTerm(settingsService: $settings, terms: $terms, timeline: $this->timeline),
+			dates: $this->caseDates(),
 		);
 	}//end intake()
 

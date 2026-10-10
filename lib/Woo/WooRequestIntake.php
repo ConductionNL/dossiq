@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
@@ -105,12 +106,15 @@ class WooRequestIntake {
 	 * @param LoggerInterface $logger          Logger.
 	 * @param WooReceivedTerm|null $receivedTerm Reads back the term a received case got. Null
 	 *                                           only where receive() is never called.
+	 * @param CaseDateNormaliser|null $dates      Reads when the requester sent it. Null only
+	 *                                           where receive() is never called.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly LoggerInterface $logger,
 		private readonly ?WooReceivedTerm $receivedTerm = null,
+		private readonly ?CaseDateNormaliser $dates = null,
 	) {
 	}//end __construct()
 
@@ -197,8 +201,12 @@ class WooRequestIntake {
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-armed-means-a-term-runs-counted-from-when-the-requester-sent-it-req-wto-002
 	 */
 	public function receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array {
-		$answersMap = new WooReceivedAnswers();
 		try {
+			if ($this->dates === null) {
+				throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The date reader is not available.');
+			}
+
+			$answersMap = new WooReceivedAnswers(dates: $this->dates);
 			$wooRequest = (new WooRequestForm())->normalise(request: $answersMap->toRequest(answers: $answers, origin: $origin));
 			$intake = $answersMap->intake(answers: $answers, origin: $origin, receivedAt: $receivedAt);
 
@@ -219,10 +227,8 @@ class WooRequestIntake {
 			$caseType = $this->caseType(objectService: $objectService, register: $register);
 			$saved = $this->writeCase(objectService: $objectService, register: $register, caseType: $caseType, wooRequest: $wooRequest, intake: $intake);
 		} catch (WooRequestRefused $e) {
-			$outcome = 'refused';
-			if ($e->getReason() === WooRequestRefused::UNAVAILABLE) {
-				$outcome = 'unavailable';
-			}
+			// An unavailable dependency is `unavailable`; every other refusal is `refused`.
+			$outcome = ([WooRequestRefused::UNAVAILABLE => 'unavailable'][$e->getReason()] ?? 'refused');
 
 			return array_merge(WooReceivedAnswers::EMPTY_ANSWER, ['outcome' => $outcome, 'message' => $e->getDetail()]);
 		}//end try

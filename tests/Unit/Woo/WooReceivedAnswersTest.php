@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooRequestRefused;
 use PHPUnit\Framework\TestCase;
@@ -27,8 +28,11 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Woo\WooReceivedAnswers
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
+ * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class WooReceivedAnswersTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * Every answer key lands on its request field.
@@ -36,7 +40,7 @@ class WooReceivedAnswersTest extends TestCase {
 	 * @return void
 	 */
 	public function testEveryAnswerKeyLandsOnItsField(): void {
-		$request = (new WooReceivedAnswers())->toRequest(
+		$request = (new WooReceivedAnswers(dates: $this->caseDates()))->toRequest(
 			answers: [
 				'requestedInformation' => '  Adviezen   Stationsweg ',
 				'requesterName' => 'J. de Vries',
@@ -71,7 +75,7 @@ class WooReceivedAnswersTest extends TestCase {
 	 * @return void
 	 */
 	public function testALongRequestIsCutOnAWordBoundary(): void {
-		$answers = new WooReceivedAnswers();
+		$answers = new WooReceivedAnswers(dates: $this->caseDates());
 		$words = $answers->toRequest(answers: ['requestedInformation' => str_repeat('abcdefghi ', 20)], origin: 'portal-form');
 		self::assertSame(rtrim(str_repeat('abcdefghi ', 12)), $words['onderwerp']);
 
@@ -85,7 +89,7 @@ class WooReceivedAnswersTest extends TestCase {
 	 * @return void
 	 */
 	public function testChannelsMapAndAnUnknownOneIsRefused(): void {
-		$answers = new WooReceivedAnswers();
+		$answers = new WooReceivedAnswers(dates: $this->caseDates());
 		foreach (['web' => 'website', 'email' => 'email', 'post' => 'post', 'counter' => 'balie', 'phone' => 'phone'] as $from => $to) {
 			self::assertSame($to, $answers->intakeChannel(answers: ['channel' => $from], origin: 'portal-form'));
 		}
@@ -103,7 +107,7 @@ class WooReceivedAnswersTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnotherOriginOrNothingAskedIsRefused(): void {
-		$answers = new WooReceivedAnswers();
+		$answers = new WooReceivedAnswers(dates: $this->caseDates());
 		foreach ([[['requestedInformation' => 'x'], 'portal'], [['requestedInformation' => ''], 'portal-form']] as [$given, $origin]) {
 			try {
 				$answers->toRequest(answers: $given, origin: $origin);

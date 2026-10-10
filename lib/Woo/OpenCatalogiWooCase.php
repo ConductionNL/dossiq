@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\CaseDateNormaliser;
+
 /**
  * Maps one opencatalogi `wooRequest` onto a dossiq Woo case.
  *
@@ -64,6 +66,16 @@ class OpenCatalogiWooCase {
 	public const OPEN = ['received', 'in_progress', 'awaiting_clarification'];
 
 	/**
+	 * Constructor.
+	 *
+	 * @param CaseDateNormaliser $dates The one reader of a date and the tenant's time zone.
+	 */
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+	) {
+	}//end __construct()
+
+	/**
 	 * The case one source request becomes.
 	 *
 	 * @param array<string, mixed> $source     The opencatalogi `wooRequest` row.
@@ -84,7 +96,7 @@ class OpenCatalogiWooCase {
 		}
 
 		$receivedAt = trim((string)($source['receivedAt'] ?? ''));
-		if ($receivedAt === '' || strtotime($receivedAt) === false) {
+		if ($receivedAt === '' || $this->dates->tryParse(value: $receivedAt) === null) {
 			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The request has no readable receipt moment.');
 		}
 
@@ -97,7 +109,7 @@ class OpenCatalogiWooCase {
 			'channel' => ($source['channel'] ?? null),
 			'originReference' => $sourceUuid,
 		];
-		$map = new WooReceivedAnswers();
+		$map = new WooReceivedAnswers(dates: $this->dates);
 		$wooRequest = (new WooRequestForm())->normalise(request: $map->toRequest(answers: $answers, origin: self::APPLICATION));
 
 		$case = [
@@ -111,8 +123,8 @@ class OpenCatalogiWooCase {
 			'extensionCount' => max(0, (int)($source['extensionCount'] ?? 0)),
 		];
 
-		$decidedAt = substr(trim((string)($source['decidedAt'] ?? '')), 0, 10);
-		if ($status === 'decided' && $decidedAt !== '') {
+		$decidedAt = $this->dates->toCalendarDateOrNull(value: ($source['decidedAt'] ?? null));
+		if ($status === 'decided' && $decidedAt !== null) {
 			$case['endDate'] = $decidedAt;
 		}
 
@@ -125,7 +137,7 @@ class OpenCatalogiWooCase {
 			'case' => $case,
 			'open' => in_array($status, self::OPEN, true),
 			'suspended' => ($status === 'awaiting_clarification'),
-			'deadline' => substr(trim((string)($source['dueAt'] ?? '')), 0, 10),
+			'deadline' => (string)$this->dates->toCalendarDateOrNull(value: ($source['dueAt'] ?? null)),
 			'result' => $result,
 		];
 	}//end fromSource()

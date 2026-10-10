@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\OpenCatalogiWooCase;
 use OCA\Dossiq\Woo\WooRequestRefused;
@@ -33,8 +34,11 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Woo\WooReceivedAnswers
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Woo\WooRequestRefused
+ * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class OpenCatalogiWooCaseTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The fixture rows, keyed by status.
@@ -68,7 +72,7 @@ class OpenCatalogiWooCaseTest extends TestCase {
 		$sources = $this->sources();
 		self::assertEqualsCanonicalizing(array_keys($expected), array_keys($sources));
 		foreach ($expected as $status => [$stage, $open, $suspended, $result]) {
-			$mapped = (new OpenCatalogiWooCase())->fromSource(source: $sources[$status], sourceUuid: $sources[$status]['id']);
+			$mapped = (new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: $sources[$status], sourceUuid: $sources[$status]['id']);
 			self::assertSame($stage, $mapped['case']['status'], $status);
 			self::assertSame($open, $mapped['open'], $status);
 			self::assertSame($suspended, $mapped['suspended'], $status);
@@ -83,11 +87,12 @@ class OpenCatalogiWooCaseTest extends TestCase {
 	 */
 	public function testARunningRequestCarriesItsStartDeadlineAndReference(): void {
 		$source = $this->sources()['received'];
-		$mapped = (new OpenCatalogiWooCase())->fromSource(source: $source, sourceUuid: $source['id']);
+		$mapped = (new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: $source, sourceUuid: $source['id']);
 		$case = $mapped['case'];
 
 		self::assertSame('2026-03-02', $case['startDate']);
-		self::assertSame('2026-03-02T09:00:00+00:00', $case['receivedAt']);
+		// Read in the tenant's zone (Europe/Amsterdam): the same moment.
+		self::assertSame('2026-03-02T10:00:00+01:00', $case['receivedAt']);
 		self::assertSame('2026-03-30', $mapped['deadline']);
 		self::assertSame('website', $case['intakeChannel']);
 		self::assertSame('opencatalogi', $case['wooRequest']['origin']);
@@ -105,11 +110,11 @@ class OpenCatalogiWooCaseTest extends TestCase {
 	 */
 	public function testAnExtendedSuspendedRequestKeepsBothAndADecidedOneItsEndDate(): void {
 		$sources = $this->sources();
-		$suspended = (new OpenCatalogiWooCase())->fromSource(source: $sources['awaiting_clarification'], sourceUuid: 'u4');
+		$suspended = (new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: $sources['awaiting_clarification'], sourceUuid: 'u4');
 		self::assertSame(1, $suspended['case']['extensionCount']);
 		self::assertSame('2026-11-23', $suspended['deadline']);
 
-		$decided = (new OpenCatalogiWooCase())->fromSource(source: $sources['decided'], sourceUuid: 'u3');
+		$decided = (new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: $sources['decided'], sourceUuid: 'u3');
 		self::assertSame('2026-02-05', $decided['case']['endDate']);
 		self::assertSame('post', $decided['case']['intakeChannel']);
 		self::assertSame('Postbus 1234, 1000 AA Amsterdam', $decided['case']['wooRequest']['verzoekerAdres']);
@@ -123,7 +128,7 @@ class OpenCatalogiWooCaseTest extends TestCase {
 	public function testEveryMappedCaseFitsTheCaseSchema(): void {
 		$real = new RealSchemaValidator();
 		foreach ($this->sources() as $status => $source) {
-			$case = (new OpenCatalogiWooCase())->fromSource(source: $source, sourceUuid: $source['id'])['case'];
+			$case = (new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: $source, sourceUuid: $source['id'])['case'];
 			self::assertSame([], $real->errors(slug: 'case', payload: $case), $status . ' ' . json_encode($case));
 		}
 	}//end testEveryMappedCaseFitsTheCaseSchema()
@@ -137,7 +142,7 @@ class OpenCatalogiWooCaseTest extends TestCase {
 		$source = $this->sources()['received'];
 		foreach ([['status' => 'archived'], ['receivedAt' => ''], ['requestedInformation' => '']] as $broken) {
 			try {
-				(new OpenCatalogiWooCase())->fromSource(source: array_merge($source, $broken), sourceUuid: 'u1');
+				(new OpenCatalogiWooCase(dates: $this->caseDates()))->fromSource(source: array_merge($source, $broken), sourceUuid: 'u1');
 				self::fail('Accepted ' . json_encode($broken));
 			} catch (WooRequestRefused $e) {
 				self::assertSame(WooRequestRefused::INVALID, $e->getReason());
