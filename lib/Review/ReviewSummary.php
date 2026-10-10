@@ -43,6 +43,7 @@ class ReviewSummary {
 	 * @param DocumentRelevance $reviews The relevance store.
 	 * @param WOODocumentAssessmentService $assessments The verdicts and the outstanding list.
 	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
+	 * @param ReviewConfiguration $configuration Whether the case type switches document review on.
 	 *
 	 * @return void
 	 */
@@ -51,6 +52,7 @@ class ReviewSummary {
 		private readonly DocumentRelevance $reviews,
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly WooCaseDocuments $caseDocuments,
+		private readonly ReviewConfiguration $configuration,
 	) {
 	}//end __construct()
 
@@ -76,6 +78,7 @@ class ReviewSummary {
 		}
 
 		return [
+			'enabled' => (($this->configuration->forCase(caseId: $caseId)['enabled'] ?? false) === true),
 			'documents' => count($documents),
 			'relevance' => $this->reviews->count(documentRefs: $documents, reviews: $reviews),
 			'verdicts' => $verdicts,

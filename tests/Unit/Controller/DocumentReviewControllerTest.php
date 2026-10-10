@@ -50,6 +50,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\DocumentRelevance
  * @covers \OCA\Dossiq\Review\ReviewBatches
  * @covers \OCA\Dossiq\Review\PagesSeen
+ * @covers \OCA\Dossiq\Review\ReviewConfiguration
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
@@ -90,7 +91,7 @@ class DocumentReviewControllerTest extends TestCase {
 	 * @return DocumentReviewController The controller.
 	 */
 	private function controller(bool $read = true, bool $mutate = true, array $params = []): DocumentReviewController {
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch'];
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch', 'case_schema' => 'case', 'case_type_schema' => 'caseType'];
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
@@ -122,6 +123,7 @@ class DocumentReviewControllerTest extends TestCase {
 				reviews: $reviews,
 				assessments: $assessments,
 				caseDocuments: $caseDocuments,
+				configuration: new ReviewConfiguration(settingsService: $settings),
 			),
 			batches: new ReviewBatches(
 				settingsService: $settings,
@@ -156,6 +158,20 @@ class DocumentReviewControllerTest extends TestCase {
 		$this->assertSame(['openbaar' => 2, 'deels_openbaar' => 1, 'niet_openbaar' => 1, 'total' => 4], $data['verdicts']);
 		$this->assertEqualsCanonicalizing(['doc-4', 'doc-5', 'doc-9'], $data['outstanding']['documents']);
 	}//end testTheSummaryReportsRelevanceBesideVerdicts()
+
+	/**
+	 * The summary says whether the case type switches document review on, so the case page can stay silent otherwise.
+	 *
+	 * @return void
+	 */
+	public function testTheSummarySaysWhetherTheCaseTypeEnablesReview(): void {
+		$this->assertFalse($this->controller()->summary(id: 'case-x')->getData()['enabled']);
+
+		$this->store->seed(schema: 'caseType', uuid: 'type-woo', row: ['documentReview' => ['enabled' => true]]);
+		$this->store->seed(schema: 'case', uuid: 'case-x', row: ['caseType' => 'type-woo']);
+
+		$this->assertTrue($this->controller()->summary(id: 'case-x')->getData()['enabled']);
+	}//end testTheSummarySaysWhetherTheCaseTypeEnablesReview()
 
 	/**
 	 * A reviewer marks a document, and a rule's marking it changes is recorded as overturned.
