@@ -194,6 +194,18 @@ class WOOAssessmentController extends Controller {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function tellRequester(array $extended): array {
+		// The term engine already told the requester: every statutory
+		// extension does, in DeadlineExtensionService (decision 166). Its
+		// answer is passed on, and the requester is not told twice.
+		if (isset($extended['noticeStatus']) === true) {
+			return [
+				'noticeStatus' => (string)$extended['noticeStatus'],
+				'noticeChannel' => (string)($extended['noticeChannel'] ?? ''),
+				'noticeReasonCode' => (string)($extended['noticeReasonCode'] ?? ''),
+				'noticeReason' => (string)($extended['noticeReason'] ?? ''),
+			];
+		}
+
 		if ($this->extensionNotice === null) {
 			return [
 				'noticeStatus' => 'not-sent',

@@ -129,7 +129,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 	 *
 	 * @return WOOAssessmentController The controller.
 	 */
-	private function controller(string $reason): WOOAssessmentController {
+	private function controller(string $reason, bool $engineTells = false): WOOAssessmentController {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
@@ -161,13 +161,21 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 			requester: new RequesterNoticeSender(email: $email, settings: $settings, appManager: $apps, writer: new CaseFieldWriter()),
 		);
 
+		$notice = new ExtensionNotice(settings: $settings, notifications: $notifications, logger: $logger);
+		// As DI wires it since decision 166: the term engine tells the
+		// requester of every statutory extension, the Woo route included.
+		$engineNotice = null;
+		if ($engineTells === true) {
+			$engineNotice = $notice;
+		}
+
 		$deadlines = new WOODeadlineService(
 			settingsService: $settings,
 			notificationManager: $this->createMock(INotificationManager::class),
 			logger: $logger,
 			dates: $this->caseDates(),
 			definitions: new TermDefinitions(settingsService: $settings, logger: $logger, timer: $timer),
-			extensions: new DeadlineExtensionService(termService: $terms, dates: $this->caseDates(), timerService: $timer, mirror: $mirror),
+			extensions: new DeadlineExtensionService(termService: $terms, dates: $this->caseDates(), timerService: $timer, mirror: $mirror, notice: $engineNotice),
 		);
 
 		$user = $this->createMock(IUser::class);
@@ -191,7 +199,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 			new CaseAccessGuard(settingsService: $settings, groupManager: $groups, logger: $logger),
 			$logger,
 			$this->createMock(IL10N::class),
-			new ExtensionNotice(settings: $settings, notifications: $notifications, logger: $logger),
+			$notice,
 		);
 	}//end controller()
 
@@ -222,6 +230,26 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 		self::assertSame('extension', $records[0]['moment']);
 		self::assertSame('sent', $records[0]['status']);
 	}//end testExtendingTellsTheRequesterWithTheReason()
+
+	/**
+	 * Decision 166: the term engine tells the requester of every statutory
+	 * extension, so the Woo route passes that answer on and does not tell the
+	 * requester a second time. The portal channel has no dedupe of its own, so
+	 * two calls would be two messages.
+	 *
+	 * @return void
+	 */
+	public function testTheWooRouteDoesNotTellTheRequesterTwice(): void {
+		$this->store->seed('case', ['id' => 'case-woo', 'identifier' => 'WOO-2026-7', 'portalSubject' => 'ps-abc', 'deadline' => '2026-11-02']);
+
+		$response = $this->controller(reason: 'Veel documenten van derden', engineTells: true)->extendDeadline('case-woo');
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame('sent', $response->getData()['noticeStatus']);
+		self::assertSame('portal-inbox', $response->getData()['noticeChannel']);
+		self::assertCount(1, $this->store->findObjects('dossiq', 'portaalBericht'), 'one extension, one message');
+		self::assertCount(1, $this->store->get('case', 'case-woo')['outboundCommunications']);
+	}//end testTheWooRouteDoesNotTellTheRequesterTwice()
 
 	/**
 	 * REQ-WRN-005 "The extension notice could not go out": the term is extended,

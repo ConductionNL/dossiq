@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
+use OCA\Dossiq\Service\Termijn\ExtensionNotice;
 use ReflectionClass;
 use RuntimeException;
 
@@ -58,6 +59,13 @@ class DeadlineExtensionService {
 	public const MODE_SUPERVISOR = 'supervisor';
 
 	/**
+	 * The keys of the notice part of an extension's answer.
+	 *
+	 * @var string[]
+	 */
+	public const NOTICE_KEYS = ['noticeStatus', 'noticeChannel', 'noticeReasonCode', 'noticeReason'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService.
@@ -71,6 +79,9 @@ class DeadlineExtensionService {
 	 *        behaviour this change replaces rather than a new silence.
 	 * @param CaseDeadlineMirror|null $mirror Which statutory term decides a case, for an
 	 *        extension asked for by case ({@see extendStatutoryTermOfCase()}).
+	 * @param ExtensionNotice|null $notice Tells the requester that a statutory term was
+	 *        extended, with the reason and the new end (Awb 4:14 lid 3, decision 166).
+	 *        The one notice method for every route that extends a statutory term.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -78,6 +89,7 @@ class DeadlineExtensionService {
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermDeclarationReader $declarations = null,
 		private readonly ?CaseDeadlineMirror $mirror = null,
+		private readonly ?ExtensionNotice $notice = null,
 	) {
 	}//end __construct()
 
@@ -131,7 +143,8 @@ class DeadlineExtensionService {
 	 * @param (\Closure(array<string, mixed>): string)|null $baseOf The day the days count
 	 *        from, as `Y-m-d`, given the term; null counts from its current end.
 	 *
-	 * @return array{previous: string, instance: array<string, mixed>} The end before, and the extended term.
+	 * @return array{previous: string, instance: array<string, mixed>, notice: array<string, string>}
+	 *         The end before, the extended term, and whether the requester was told.
 	 *
 	 * @throws RefusedException When the case has no running statutory term, or it has had
 	 *         every extension it allows (409), or a declared period refuses it (422).
@@ -186,7 +199,13 @@ class DeadlineExtensionService {
 			);
 		}
 
-		return ['previous' => $previous, 'instance' => $extended];
+		// The requester was told (or not) inside requestExtension(); the answer
+		// carries it so a route never tells them a second time.
+		return [
+			'previous' => $previous,
+			'instance' => $extended,
+			'notice' => array_intersect_key($extended, array_flip(self::NOTICE_KEYS)),
+		];
 	}//end extendStatutoryTermOfCase()
 
 	/**
@@ -310,8 +329,53 @@ class DeadlineExtensionService {
 			actor: $context['actor'],
 		);
 
-		return $updated ?? $instance;
+		// EVERY STATUTORY EXTENSION TELLS THE REQUESTER (Awb 4:14 lid 3,
+		// decision 166), whichever route asked for it: the Woo route through
+		// extendStatutoryTermOfCase(), the generic termijn#verleng, a case
+		// lifecycle extend, a followed dependent term. The extension stands
+		// whatever becomes of the notice; the answer says whether it went out.
+		return ($updated ?? $instance) + $this->tellRequester(
+			instance: $instance,
+			termInstanceId: $termInstanceId,
+			rationale: $rationale,
+			newEndDate: $newEndDate,
+		);
 	}//end applyExtension()
+
+	/**
+	 * Tell the requester about a statutory extension, or say why nobody did.
+	 *
+	 * @param array<string, mixed> $instance       The term before the extension.
+	 * @param string               $termInstanceId The term.
+	 * @param string               $rationale      Why it was extended.
+	 * @param string               $newEndDate     The new end (Y-m-d).
+	 *
+	 * @return array<string, string> The notice keys, or [] for a term that is not statutory or no sender.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) TermKind is a vocabulary with a private constructor; ofInstance() is its reader.
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 */
+	private function tellRequester(array $instance, string $termInstanceId, string $rationale, string $newEndDate): array {
+		// Only the citizen's own term: a planned end, a phase term or an
+		// internal target is the team's plan, not a promise to the requester.
+		if (TermKind::ofInstance(instance: $instance) !== TermKind::STATUTORY) {
+			return [];
+		}
+
+		// No sender wired: claim nothing, so a route with its own fallback
+		// (the Woo controller) still answers that the requester was not told.
+		if ($this->notice === null) {
+			return [];
+		}
+
+		return $this->notice->tell(
+			caseId: (string)($instance['case'] ?? ''),
+			instanceId: $termInstanceId,
+			reason: $rationale,
+			newEnd: $newEndDate,
+		);
+	}//end tellRequester()
 
 	/**
 	 * The requested end date, rolled off a day the Awt does not let a term end on.

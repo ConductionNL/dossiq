@@ -91,6 +91,18 @@ failure line in the PR body.
   - Check `TermLetters::render('extension', ...)` (lib/Service/Termijn/TermLetters.php line 78)
     prints the reason and the new end date. Test:
     `tests/Unit/Service/Termijn/TermLettersTest.php` `testTheExtensionLetterCarriesItsReason`. Done.
+- [x] 3.2 Every statutory extension tells the requester, not only a Woo one (decision 166,
+  Q-dossiq-R1; Awb 4:14 lid 3). `DeadlineExtensionService::applyExtension()`, which
+  `requestExtension()`, `requestSupervisorExtension()` and `extendStatutoryTermOfCase()` all go
+  through, calls `ExtensionNotice::tell()` for a statutory term and answers the notice keys; a
+  planned, phase or internal term tells nobody. The Woo route passes that answer on:
+  `WOODeadlineService::extendDeadline()` carries it, and `WOOAssessmentController::tellRequester()`
+  uses it instead of telling the requester a second time (falling back to its own call only when
+  the term engine has no sender wired).
+  - `tests/Unit/Service/StatutoryExtensionNoticeTest.php` (generic route tells, by-case tells
+    once, non-statutory tells nobody, no sender claims nothing)
+  - `tests/Unit/Controller/WOOAssessmentControllerExtensionNoticeTest.php`
+    `testTheWooRouteDoesNotTellTheRequesterTwice` (one portal message, one record)
 
 ## 4. The record on the case
 
