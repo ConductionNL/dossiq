@@ -813,9 +813,16 @@ $extra = [
     ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
     ['name' => 'wOOAssessment#publishDecision', 'url' => '/api/cases/{id}/woo/publish',        'verb' => 'POST'],
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
+    // Re-verify what a Woo delivery sent out (woo-delivered-set-is-a-record REQ-WDS-003).
+    ['name' => 'wooDeliveredSet#verify', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/verify', 'verb' => 'GET'],
+    ['name' => 'wooDeliveredSet#item', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}', 'verb' => 'GET', 'requirements' => ['index' => '\d+']],
+    ['name' => 'wooDeliveredSet#file', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}/{side}', 'verb' => 'GET', 'requirements' => ['index' => '\d+', 'side' => 'original|delivered']],
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
+    // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
+    // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
+    ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are

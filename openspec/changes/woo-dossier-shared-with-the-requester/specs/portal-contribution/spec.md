@@ -8,7 +8,7 @@ status: proposed
 
 ### Requirement: The requester answers a question from Mijn zaken, and the answer lands on the open request (REQ-WDS-001)
 
-The citizen manifest SHALL declare an endpoint action `beantwoordVraag` on the collection `vragenAanU`, for the audiences `citizen` and `client`, scoped to the row's `portalSubject`. It SHALL take `antwoord` (text, required, at most 4000 characters) and up to five files. dossiq SHALL accept it only for a request in the state `open` on a case of the same portal subject; any other request SHALL be refused with 404 and nothing written. On acceptance dossiq SHALL call `AanvullingsverzoekResolutionService::recordAnswer(caseId, received: [], complete: false, userId: 'portal', when: now)`, store the text on the request as the requester's answer, file every attachment on the case as an incoming document of the requester, and call `ApplicantPortalActs::recordWrite()` with act `answer` so the handler is told. The request SHALL stay `open` and the term SHALL stay paused until the handler records the request complete, as `termijn-pause-extension` already requires.
+The citizen manifest SHALL declare an endpoint action `beantwoordVraag` on the collection `vragenAanU`, for the audiences `citizen` and `client`, scoped to the row's `portalSubject`. It SHALL take `antwoord` (text, required, at most 4000 characters). It SHALL declare `files: {field: bijlagen, max: 5, maxBytes: 10485760}`, so the requester can add up to five files of at most 10 MB under "Bestanden toevoegen" (board ZaakWooVerzoek); portaliq forwards them multipart (portaliq row-action-carries-files REQ-RAF-001). dossiq SHALL check the number and size again and refuse with 422 before anything is written, and SHALL store each file in the case's folder, where the document projection files it as an incoming document; a file that cannot be stored SHALL be logged and SHALL NOT undo the answer. dossiq SHALL accept it only for a request in the state `open` on a case of the same portal subject; any other request SHALL be refused with 404 and nothing written. On acceptance dossiq SHALL call `AanvullingsverzoekResolutionService::recordAnswer(caseId, received: [], complete: false, userId: 'portal', when: now)`, store the text on the request as the requester's answer, and call `ApplicantPortalActs::recordWrite()` with act `answer`, naming `documents` among the fields when files were stored, so the handler is told. The request SHALL stay `open` and the term SHALL stay paused until the handler records the request complete, as `termijn-pause-extension` already requires.
 
 #### Scenario: The requester answers the clarification question
 - **GIVEN** a Woo case 2026-0087 with an open `aanvullingsverzoek` of kind `verduidelijking`, asked on 6 October 2026
@@ -17,6 +17,13 @@ The citizen manifest SHALL declare an endpoint action `beantwoordVraag` on the c
 - **AND** the handler gets one notification and one timeline entry on the case
 - **AND** the term of the case is still paused
 - e2e: `tests/e2e/woo-dossier-shared-with-the-requester.spec.ts` "the requester answers the clarification question"
+
+#### Scenario: The answer brings a file
+<!-- @e2e exclude Multipart through portaliq's live forward; proven by PortalWooAnswerTest::testTheAttachmentsAreFiledOnTheCase (file stored on the case) and portaliq's PortalRowActionControllerTest::testDeclaredFilesAreForwardedWithTheBody. Live pass: the e2e above with a file added. -->
+- **GIVEN** the same open request
+- **WHEN** the requester adds `speeltuinen.pdf` under "Bestanden toevoegen" and sends the answer
+- **THEN** `speeltuinen.pdf` is stored in the case's folder and shows among the case's incoming documents
+- **AND** the handler's notification names the documents with the answer
 
 #### Scenario: Somebody else's question is not answerable
 <!-- @e2e exclude Fail-closed scope check at the portal seam; proven by PortalWooAnswerTest::testAnotherSubjectsRequestIsRefused, which asserts 404 and zero writes. -->

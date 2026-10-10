@@ -25593,6 +25593,81 @@
         "assessedBy": "admin",
         "assessedAt": "2026-03-03T09:00:00+00:00"
       },
+        {
+          "@self": {
+            "register": "dossiq",
+            "schema": "wooDeliveredSet",
+            "slug": "woodeliveredset-1"
+          },
+          "case": "00000000-0000-4000-8000-000000000000",
+          "decision": "demo-decision-1",
+          "status": "frozen",
+          "deliveredAt": "2026-03-04T10:00:00+00:00",
+          "deliveredBy": "admin",
+          "publication": "demo-publication-1",
+          "items": [
+            {
+              "assessment": "demo-assessment-1",
+              "classification": "openbaar",
+              "deliveredRef": "00000000-0000-4000-8000-000000000100",
+              "originalRef": "00000000-0000-4000-8000-000000000100",
+              "fileName": "document-1.pdf",
+              "size": 11,
+              "sha256": "63b0221edf521fbb30571759bd3c4391c86b4eaff92c8cc83aed8fa7353801b3"
+            }
+          ],
+          "setHash": "6382946e8be79d4eaf6aa7263fbc019ba3664b2fd10d1fe38568ae2fdf80741a"
+        },
+        {
+          "@self": {
+            "register": "dossiq",
+            "schema": "wooDeliveredSet",
+            "slug": "woodeliveredset-2"
+          },
+          "case": "00000000-0000-4000-8000-000000000001",
+          "decision": "demo-decision-2",
+          "status": "frozen",
+          "deliveredAt": "2026-03-05T10:00:00+00:00",
+          "deliveredBy": "admin",
+          "publication": "demo-publication-2",
+          "items": [
+            {
+              "assessment": "demo-assessment-2",
+              "classification": "openbaar",
+              "deliveredRef": "00000000-0000-4000-8000-000000000101",
+              "originalRef": "00000000-0000-4000-8000-000000000101",
+              "fileName": "document-2.pdf",
+              "size": 11,
+              "sha256": "448804ec8e4e319bdfcfb876ac6e40c90d15535b4f83dfb3cef51fff82034e9b"
+            }
+          ],
+          "setHash": "82cfc2fd530b2286836ab4578a1519663acb9b13bf3aa4c955bc05f3a67ee12b"
+        },
+        {
+          "@self": {
+            "register": "dossiq",
+            "schema": "wooDeliveredSet",
+            "slug": "woodeliveredset-3"
+          },
+          "case": "00000000-0000-4000-8000-000000000002",
+          "decision": "demo-decision-3",
+          "status": "frozen",
+          "deliveredAt": "2026-03-06T10:00:00+00:00",
+          "deliveredBy": "admin",
+          "publication": "demo-publication-3",
+          "items": [
+            {
+              "assessment": "demo-assessment-3",
+              "classification": "deels_openbaar",
+              "deliveredRef": "00000000-0000-4000-8000-000000000103",
+              "originalRef": "00000000-0000-4000-8000-000000000102",
+              "fileName": "document-3.pdf",
+              "size": 11,
+              "sha256": "fb5d6e17f59360e33b489a84b1312aaaacd90c827fb583124a00e8e5ff947098"
+            }
+          ],
+          "setHash": "59c579cbb95165b48274c47cb52d43e67f53851c15555039ecd53ba58972ffe4"
+        },
       {
         "@self": {
           "register": "dossiq",

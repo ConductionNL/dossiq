@@ -13,7 +13,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
  */
 
 declare(strict_types=1);
@@ -125,7 +125,7 @@ class WooDossierReturnTest extends TestCase {
 	 * than writing null. OpenRegister refused the null on :8080, so the
 	 * decision never came back to the dossier (Woo journey e2e J5, 1 Oct 2026).
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 *
 	 * @return void
 	 */

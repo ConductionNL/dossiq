@@ -35,7 +35,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/tasks.md#task-1.2
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-decision-schema-declares-the-woo-fields-its-writers-send-req-wpi-006
  */
 
 declare(strict_types=1);

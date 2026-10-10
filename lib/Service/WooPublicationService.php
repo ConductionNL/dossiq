@@ -170,41 +170,64 @@ class WooPublicationService {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function selectDisclosableDocuments(array $assessments, callable $documentLoader): array {
-		$disclosable = [];
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader)['documents'];
+	}//end selectDisclosableDocuments()
+
+	/**
+	 * The disclosable documents and, beside each, what the delivered set records of it.
+	 *
+	 * The same matrix as selectDisclosableDocuments(), which reads its first
+	 * half: `niet_openbaar` is never delivered, `deels_openbaar` only as its
+	 * finalized redaction, `openbaar` as itself. The second half names the
+	 * assessment, the file that went out and the original it came from
+	 * (woo-delivered-set-is-a-record REQ-WDS-001); the original never goes
+	 * into the publication.
+	 *
+	 * @param array<int, array<string, mixed>> $assessments    The case's document assessments.
+	 * @param callable                         $documentLoader `fn(string $documentRef): ?array`.
+	 *
+	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function collectDelivery(array $assessments, callable $documentLoader): array {
+		$documents = [];
+		$items = [];
 
 		foreach ($assessments as $assessment) {
 			$classification = (string)($assessment['classification'] ?? '');
-
-			if ($classification === 'niet_openbaar') {
-				continue;
-			}
-
+			$originalRef = (string)($assessment['documentRef'] ?? '');
+			$deliveredRef = '';
 			if ($classification === 'openbaar') {
-				$documentRef = (string)($assessment['documentRef'] ?? '');
-				$document = $documentLoader($documentRef);
-				if ($document !== null) {
-					$disclosable[] = $document;
-				}
+				$deliveredRef = $originalRef;
+			} else if ($classification === 'deels_openbaar') {
+				// No finalized redaction yet: excluded. Never fall back to the original.
+				$deliveredRef = (string)($assessment['redactedDocumentRef'] ?? '');
+			}
 
+			if ($deliveredRef === '') {
 				continue;
 			}
 
-			if ($classification === 'deels_openbaar') {
-				$redactedRef = $assessment['redactedDocumentRef'] ?? null;
-				if (empty($redactedRef) === true) {
-					// No finalized redaction yet — exclude. Never fall back to the original.
-					continue;
-				}
-
-				$redactedDocument = $documentLoader((string)$redactedRef);
-				if ($redactedDocument !== null) {
-					$disclosable[] = $redactedDocument;
-				}
+			$document = $documentLoader($deliveredRef);
+			if ($document === null) {
+				continue;
 			}
+
+			$documents[] = $document;
+			$items[] = [
+				'assessment' => (string)($assessment['id'] ?? ($assessment['uuid'] ?? (($assessment['@self'] ?? [])['id'] ?? ''))),
+				'classification' => $classification,
+				'deliveredRef' => $deliveredRef,
+				'originalRef' => $originalRef,
+				'fileName' => (string)($document['fileName'] ?? ($document['title'] ?? '')),
+				'content' => (string)($document['content'] ?? ''),
+			];
 		}//end foreach
 
-		return $disclosable;
-	}//end selectDisclosableDocuments()
+		return ['documents' => $documents, 'items' => $items];
+	}//end collectDelivery()
 
 	/**
 	 * Build the OpenCatalogi publication payload for a WOO decision.
@@ -215,7 +238,7 @@ class WooPublicationService {
 	 * @return array<string, mixed> The publication payload.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function buildPayload(array $case, array $decision): array {
 		$category = $this->categoryMapper->forDecision($decision);
@@ -263,8 +286,8 @@ class WooPublicationService {
 	 * @throws RuntimeException When the decision or case cannot be loaded.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
 	 */
 	public function publish(string $caseId, string $decisionId = ''): array {
 		$availability = $this->checkAvailability();
@@ -293,7 +316,8 @@ class WooPublicationService {
 			decisionId: $decisionId,
 		);
 
-		$disclosable = $this->loadDisclosableDocuments(objectService: $objectService, register: $register, caseId: $caseId);
+		$delivery = $this->loadDelivery(objectService: $objectService, register: $register, caseId: $caseId);
+		$disclosable = $delivery['documents'];
 		if (count($disclosable) === 0) {
 			return ['available' => false, 'reason' => 'no_publishable_documents'];
 		}
@@ -301,15 +325,29 @@ class WooPublicationService {
 		$payload = $this->buildPayload(case: $case, decision: $decision);
 		$existingId = (string)($decision['wooPublication']['publicationId'] ?? '');
 
+		// THE SET FIRST (woo-delivered-set-is-a-record REQ-WDS-001): what goes
+		// out is recorded before it goes out, frozen after, deleted on failure.
 		try {
-			$publicationId = $this->sendPublicationToOpenCatalogi(payload: $payload, disclosable: $disclosable, existingId: $existingId);
+			$delivered = $this->caseLedger->deliver(
+				caseId: $caseId,
+				decisionId: $decisionId,
+				items: $delivery['items'],
+				send: fn (): string => $this->sendPublicationToOpenCatalogi(payload: $payload, disclosable: $disclosable, existingId: $existingId),
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'WooPublicationService::publish failed',
 				['app' => Application::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
-			return ['available' => false, 'reason' => 'opencatalogi_api_error'];
+			$reason = 'opencatalogi_api_error';
+			if ($e->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
+				$reason = 'delivered_set_not_written';
+			}
+
+			return ['available' => false, 'reason' => $reason];
 		}
+
+		$publicationId = $delivered['publicationId'];
 
 		$publicationUrl = $this->buildPublicationUrl(publicationId: $publicationId);
 
@@ -341,8 +379,10 @@ class WooPublicationService {
 			'available' => true,
 			'publicationId' => $publicationId,
 			'publicationUrl' => $publicationUrl,
+			'deliveredSet' => $delivered['setId'],
 		];
 	}//end publish()
+
 
 
 
@@ -382,9 +422,9 @@ class WooPublicationService {
 	 * @param string $register The dossiq register slug.
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array<int, array<string, mixed>> The disclosable documents.
+	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
 	 */
-	private function loadDisclosableDocuments(object $objectService, string $register, string $caseId): array {
+	private function loadDelivery(object $objectService, string $register, string $caseId): array {
 		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 		$documentSchema = $this->settingsService->getConfigValue('document_schema');
 
@@ -411,8 +451,8 @@ class WooPublicationService {
 			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $documentSchema, id: $documentRef);
 		};
 
-		return $this->selectDisclosableDocuments(assessments: $assessments, documentLoader: $documentLoader);
-	}//end loadDisclosableDocuments()
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader);
+	}//end loadDelivery()
 
 	/**
 	 * Create-or-update the publication in OpenCatalogi and attach every
@@ -466,7 +506,7 @@ class WooPublicationService {
 	 * @throws RuntimeException When the decision cannot be loaded.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	public function withdraw(string $decisionId, string $caseId = ''): array {
 		$availability = $this->checkAvailability();
@@ -519,6 +559,9 @@ class WooPublicationService {
 		$decision['wooPublication']['status'] = self::STATUS_WITHDRAWN;
 		$decision['wooPublication']['withdrawnAt'] = date('c');
 
+		// The set stays frozen and records the withdraw (REQ-WDS-002).
+		$this->caseLedger->markWithdrawn(caseId: (string)($decision['case'] ?? $caseId), publicationId: $publicationId);
+
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 
 		$this->caseLedger->writeCaseState(
@@ -546,7 +589,7 @@ class WooPublicationService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	private function attachDisclosableFile(string $ocRegister, string $ocSchema, string $publicationId, array $document): void {
 		$content = ($document['content'] ?? null);

@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-one-hierarchical-list-of-grounds-in-dossiqs-register-req-wrg-002
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-one-hierarchical-list-of-grounds-in-dossiqs-register-req-wrg-002
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -42,7 +42,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-one-hierarchical-list-of-grounds-in-dossiqs-register-req-wrg-002
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-one-hierarchical-list-of-grounds-in-dossiqs-register-req-wrg-002
  */
 class WooRefusalGroundDeleteGuard implements IEventListener {
 
@@ -89,7 +89,7 @@ class WooRefusalGroundDeleteGuard implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-one-hierarchical-list-of-grounds-in-dossiqs-register-req-wrg-002
+	 * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-one-hierarchical-list-of-grounds-in-dossiqs-register-req-wrg-002
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectDeletingEvent === false) {
