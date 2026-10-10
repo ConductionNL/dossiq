@@ -44,6 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
@@ -164,9 +165,10 @@ class AcknowledgementService {
 	 *
 	 * @return array<string, mixed> `{sent: bool, reason?: string, duty: array, record?: array}`.
 	 *
-	 * @throws RefusedException When the case carries no address to confirm to.
+	 * @throws RefusedException When the case carries no address, or no transport took the acknowledgement.
 	 *
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
 	 */
 	public function acknowledge(string $caseId, int $attempt = 1): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -192,64 +194,67 @@ class AcknowledgementService {
 			return ['sent' => false, 'reason' => 'already-met', 'duty' => $duty];
 		}
 
-		$recipient = $this->recipientFor(case: $case);
+		$recipient = $this->addressOn(case: $case);
 		$channel = $this->declaration->channelFor(case: $case, caseType: $caseType);
 		$withheld = $this->declaration->contentStaysOnPlatform(caseType: $caseType);
 
-		$sentAt = (new DateTimeImmutable())->format('c');
 		$term = $this->termService->getTermijnInstanceForZaak(caseId: $caseId);
 
-		$payload = $this->notifications->sendTermijnNotification(
-			CaseTypeAcknowledgement::TEMPLATE,
-			(string)($term['id'] ?? ($term['uuid'] ?? '')),
-			$recipient,
-			$this->contextFor(
-				case: $case,
-				caseType: $caseType,
-				term: $term,
-				channel: $channel,
-				withheld: $withheld,
-			),
+		$context = $this->contextFor(
+			case: $case,
+			caseType: $caseType,
+			term: $term,
+			channel: $channel,
+			withheld: $withheld,
 		);
-
-		$record = [
-			'moment' => CaseTypeAcknowledgement::MOMENT_RECEIVED,
-			'channel' => $channel,
+		$context['recordExtras'] = [
 			'recipient' => $recipient,
-			'template' => CaseTypeAcknowledgement::TEMPLATE,
 			'templateVersion' => self::TEMPLATE_VERSION,
-			'sentAt' => $sentAt,
 			'contentWithheld' => $withheld,
 		];
+
+		// The sender picks the channel (portal inbox, digital post, e-mail),
+		// calls its transport and records the result on the case. A notice no
+		// transport took throws, so nothing below runs for it (REQ-WRN-003).
+		try {
+			$payload = $this->notifications->sendTermijnNotification(
+				CaseTypeAcknowledgement::TEMPLATE,
+				(string)($term['id'] ?? ($term['uuid'] ?? '')),
+				$recipient,
+				$context,
+				$case,
+			);
+		} catch (NoticeNotSentException $e) {
+			throw $this->notSent(caseId: $caseId, notice: $e);
+		}
+
+		$dispatch = (array)($payload['dispatch'] ?? []);
+		$sentAt = (string)($dispatch['sentAt'] ?? '');
+		$record = (array)($dispatch['record'] ?? []);
 
 		$met = [
 			'required' => true,
 			'status' => self::STATUS_MET,
-			'channel' => $channel,
+			'channel' => (string)($dispatch['channel'] ?? ''),
 			'recipient' => $recipient,
 			'sentAt' => $sentAt,
 			'attempts' => $attempt,
 			'lastError' => '',
 		];
 
-		$this->write(
-			caseId: $caseId,
-			changes: [
-				'acknowledgementDuty' => $met,
-				'outboundCommunications' => $this->appendRecord(case: $case, record: $record),
-			],
-		);
+		$this->write(caseId: $caseId, changes: ['acknowledgementDuty' => $met]);
 
 		// PUBLIC, because the acknowledgement is the one message on this path
 		// the applicant has already received. Withholding its own line from
 		// the timeline the portal reads would tell a citizen nothing was sent
-		// on the very act the law requires be sent to them.
+		// on the very act the law requires be sent to them. Written only here,
+		// after a transport took it, with the transport's own moment.
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::ACKNOWLEDGEMENT,
 			message: 'Ontvangstbevestiging verzonden',
 			fields: [
-				'channel' => (string)$channel,
+				'channel' => (string)$met['channel'],
 				'recipient' => (string)$recipient,
 				'template' => CaseTypeAcknowledgement::TEMPLATE,
 				'sentAt' => $sentAt,
@@ -259,11 +264,58 @@ class AcknowledgementService {
 
 		$this->logger->info(
 			'Dossiq acknowledgement: receipt of case {case} confirmed through {channel}',
-			['case' => $caseId, 'channel' => $channel, 'attempt' => $attempt],
+			['case' => $caseId, 'channel' => $met['channel'], 'attempt' => $attempt],
 		);
 
 		return ['sent' => true, 'duty' => $met, 'record' => $record, 'payload' => $payload];
 	}//end acknowledge()
+
+	/**
+	 * The refusal for an acknowledgement no transport took, after an internal line says so.
+	 *
+	 * INTERNAL, never public: the citizen's timeline must not read that we
+	 * confirmed receipt, and telling them we tried and failed is not what the
+	 * portal is for. The handler reads why on the case.
+	 *
+	 * @param string                 $caseId The case UUID.
+	 * @param NoticeNotSentException $notice What the sender answered.
+	 *
+	 * @return RefusedException The refusal, carrying the transport's sentence.
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 */
+	private function notSent(string $caseId, NoticeNotSentException $notice): RefusedException {
+		$delivery = $notice->getDelivery();
+		$code = $notice->getReasonCode();
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::ACKNOWLEDGEMENT,
+			message: 'Ontvangstbevestiging niet verzonden',
+			fields: [
+				'template' => CaseTypeAcknowledgement::TEMPLATE,
+				'reasonCode' => $code,
+				'reason' => $notice->getMessage(),
+				'channelsTried' => count((array)($delivery['channelsTried'] ?? [])),
+			],
+			visibility: CaseTimeline::INTERNAL,
+		);
+
+		if ($code === 'no-channel') {
+			return new RefusedException(
+				rule: 'acknowledgement-no-address',
+				sentence: 'This case carries no address, so receipt could not be confirmed. '
+					. 'Add the applicant\'s address, or record that you confirmed it another way.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return new RefusedException(
+			rule: 'acknowledgement-not-sent',
+			sentence: $notice->getMessage(),
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
+	}//end notSent()
 
 	/**
 	 * Record that an attempt failed, and whether any are left.
@@ -398,39 +450,6 @@ class AcknowledgementService {
 
 		return $this->dutyOn(case: $case);
 	}//end dutyFor()
-
-	/**
-	 * The address this acknowledgement goes to.
-	 *
-	 * 🔴 A REFUSAL, NOT AN EMPTY SEND. `CaseContactDirectory` says in its own
-	 * docblock that none of the fields it reads is declared on today's `case`
-	 * schema, so for most cases it answers nothing at all. An empty recipient
-	 * handed to a mail transport is a message that goes nowhere and reports
-	 * success, which is exactly the shape that let this duty ship unperformed
-	 * the first time. So a case with no address refuses, with a status and a
-	 * sentence a handler can act on, and the duty stays visible on the case.
-	 *
-	 * @param array<string, mixed> $case The case row.
-	 *
-	 * @return string The address.
-	 *
-	 * @throws RefusedException When nothing on the case is an address.
-	 *
-	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
-	 */
-	public function recipientFor(array $case): string {
-		$address = $this->addressOn(case: $case);
-		if ($address !== '') {
-			return $address;
-		}
-
-		throw new RefusedException(
-			rule: 'acknowledgement-no-address',
-			sentence: 'This case carries no address, so receipt could not be confirmed. '
-				. 'Add the applicant\'s address, or record that you confirmed it another way.',
-			status: RefusedException::STATUS_UNPROCESSABLE,
-		);
-	}//end recipientFor()
 
 	/**
 	 * The first usable address on the case, or the empty string.
