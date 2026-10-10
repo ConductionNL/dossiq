@@ -48,13 +48,13 @@ Dossiq MUST expose `dossiq.listOverdueComplaints` via `#[McpTool]` on `Complaint
 Dossiq MUST expose exactly these write tools via `#[McpTool]`, each on the named owning service so that every guard, clock, mandate check and notification of the human path also runs on the agent path, and each declaring the listed `scope` and `reach` (Hermiq treats these declarations as the enforcement floor):
 
 - `dossiq.transitionCase` — `StatusTransitionService` (guard evaluation, `statusRecord` emission, automatic actions, termijn recalculation); `scope: "update"`, `reach: "instance"`.
-- `dossiq.reassignCase` — `CaseReassignmentService`; `scope: "update"`, `reach: "instance"`.
-- `dossiq.completeTask` — workflow engine step completion (`WorkflowEngineService`), never a raw `task` object write; `scope: "update"`, `reach: "instance"`.
+- `dossiq.reassignCase` — `CaseAssignmentService::reassign()` (the single-case form of the caseload release, coordinators only, the receiver notified); `scope: "update"`, `reach: "instance"`.
+- `dossiq.completeTask` — workflow engine step completion (`CaseTaskActions::complete()`, the engine task verb the case page uses), never a raw `task` object write; `scope: "update"`, `reach: "instance"`.
 - `dossiq.extendDeadline` — `DeadlineExtensionService`; `scope: "update"`, `reach: "instance"`.
 - `dossiq.pauseDeadline` / `dossiq.resumeDeadline` — `DeadlinePauseService`; `scope: "update"`, `reach: "instance"`.
 - `dossiq.scheduleAppointment` — `AppointmentService`; `scope: "create"`, `reach: "external"` (notifies the citizen).
 - `dossiq.cancelAppointment` — `AppointmentService`; `scope: "update"`, `reach: "external"`.
-- `dossiq.draftBeschikking` — `BeschikkingGenerationService`, draft only; `scope: "create"`, `reach: "user"`.
+- `dossiq.draftBeschikking` — `BeschikkingService::compose()`, draft only; `scope: "create"`, `reach: "user"`.
 
 No curated write MUST bypass its owning service to write through `ObjectService`, and no derived (`x-openregister-mcp`) write verb MUST be declared on any Dossiq schema (REQ-MCP-102 stands).
 
@@ -88,21 +88,22 @@ Every curated (two-segment) Dossiq tool MUST explicitly declare a `reach` from t
 - **WHEN** the tool catalogue is enumerated
 - **THEN** every curated Dossiq tool SHALL carry an explicit valid `reach`, and `dossiq.scheduleAppointment` / `dossiq.cancelAppointment` SHALL resolve to `external`
 
-### Requirement: REQ-MCP-206 — Human approval gates on high-impact writes
+### Requirement: REQ-MCP-206 — Human approval of AI writes is hermiq's policy
 
-The following tools MUST be declared approval-gated, such that an invocation produces a pending approval (Hermiq `ApprovalService`, EU AI Act Art. 14 human oversight) and the side effect occurs only after a human approves: `dossiq.reassignCase`, `dossiq.extendDeadline`, `dossiq.pauseDeadline`, `dossiq.resumeDeadline`, `dossiq.scheduleAppointment`, `dossiq.cancelAppointment`, `dossiq.draftBeschikking`, and `dossiq.transitionCase` when the target `statusType.isFinal` is true. `dossiq.transitionCase` to a non-final status and `dossiq.completeTask` MAY execute ungated. Operators MAY tighten (gate more), never loosen below this declaration.
+Whether an AI write waits for a human (Hermiq `ApprovalService`, EU AI Act Art. 14 human oversight) MUST be decided by hermiq's policy alone (decision 176). Dossiq MUST NOT declare an approval floor or an approval posture on any tool, and MUST NOT ship a grant or a `#noapproval` waiver. What dossiq owes is a classification hermiq can gate on: every curated write tool MUST declare `readOnlyHint: false` and its `scope`, so that `ToolGrantResolver::requiresGrant()` classifies it as a write and hermiq holds every invocation an agent was not explicitly granted as a pending approval. An operator who wants a write to run without a human grants it per agent, or waives the confirmation on one grant entry with hermiq's `#noapproval` fragment; both are hermiq settings, made in hermiq.
 
-#### Scenario: Reassignment waits for a human
+#### Scenario: Reassignment waits for a human when the agent holds no grant
 
-- **WHEN** an agent is told "Henk is out sick — move his open bezwaar cases to Fatima" and invokes `dossiq.case.search(filters: { assignee: "henk", isFinalStatus: false })` followed by `dossiq.reassignCase` per case
-- **THEN** each reassignment SHALL pend as an approval and no case SHALL move until the user approves it
-- **AND** approved reassignments SHALL execute through `CaseReassignmentService` with its normal notifications
+- **GIVEN** an agent with no grant for `dossiq.reassignCase`
+- **WHEN** it is told "Henk is out sick — move his open bezwaar cases to Fatima" and invokes `dossiq.case.search(filters: { assignee: "henk", isFinalStatus: false })` followed by `dossiq.reassignCase` per case
+- **THEN** each reassignment SHALL pend as an approval in hermiq and no case SHALL move until a user approves it
+- **AND** approved reassignments SHALL execute through `CaseAssignmentService::reassign()` with its normal notifications
 
-#### Scenario: Closing a case is gated, routine flow is not
+#### Scenario: Dossiq declares no approval floor
 
-- **WHEN** an agent invokes `dossiq.transitionCase` toward a status whose `statusType.isFinal` is true
-- **THEN** the invocation SHALL pend for approval
-- **AND** the same tool toward a non-final status SHALL execute directly (subject to grants and guards)
+- **WHEN** the curated tool attributes under `lib/` are inspected
+- **THEN** every write tool SHALL declare `readOnlyHint: false` and a `scope`
+- **AND** no tool SHALL carry an approval declaration, and no grant or waiver SHALL ship with dossiq
 
 ### Requirement: REQ-MCP-207 — Standing refusals
 
