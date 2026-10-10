@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseFieldWriter
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class RequesterNoticeSenderTest extends TestCase {
 	use MakesRealTermNoticeSender;
