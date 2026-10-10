@@ -127,6 +127,12 @@ class OnboardingSteps {
 	 *
 	 * @return array<string, array{id: string, step: string, status: string, completedBy: string, completedAt: string}> The steps.
 	 *
+	 * @psalm-suppress UndefinedClass `OCA\OpenRegister\Db\TaskInboxCriteria`
+	 *   is OpenRegister's class, reached by name, and OpenRegister is not on
+	 *   dossiq's psalm include path. Psalm folds `new $criteriaClass(...)`
+	 *   back into a class reference; the catch below handles the class being
+	 *   absent at runtime. Same binding as EngineInboxQuery::envelope().
+	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md
 	 */
 	public function forTenant(string $tenantId, string $actor): array {
