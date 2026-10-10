@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
@@ -47,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
@@ -82,6 +84,7 @@ class WooCollectionReportTest extends TestCase {
 			store: new DocumentRecordStore(settingsService: $settings),
 			assessments: new WOODocumentAssessmentService(settingsService: $settings, userSession: $this->createMock(IUserSession::class), logger: $logger, caseDocuments: $caseDocuments),
 			plans: new WooSearchPlans(settingsService: $settings),
+			provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
 		);
 
 		$this->register->seed('wooSearchPlan', 'plan-1', [

@@ -45,6 +45,13 @@ first and seen red. Build every OpenRegister double from the real class signatur
   - Through the caller: `tests/Unit/Controller/WooCollectionControllerTest.php`
     `testTheReportRefusesAUserWithoutCaseAccess`.
   - done: `lib/Woo/WooCollection.php`, `lib/Controller/WooCollectionController.php`; `tests/Unit/Woo/WooCollectionReportTest.php`, `tests/Unit/Controller/WooCollectionControllerTest.php`.
+- [x] 2.3 Generic provenance reader (decision 182, REQ-DPV-001/002 in `specs/document-provenance`):
+  `lib/Service/Zaakdossier/CaseDocumentProvenance.php` (`of`, `forCase`, `select`, `matches`,
+  `valuesOf`) reads custodian, sourceSystem and the other provenance fields of any case's documents;
+  `WooCollection` reads through it; the provenance fragment's text names no procedure
+  (informatieobject 1.4.1, zaakinformatieobject 1.2.1). Review batches and triage rules filter on
+  `CaseDocumentProvenance::FILTER_FIELDS`.
+  - done: `tests/Unit/Service/Zaakdossier/CaseDocumentProvenanceTest.php`.
 
 ## 3. Exclusions and reconciliation
 

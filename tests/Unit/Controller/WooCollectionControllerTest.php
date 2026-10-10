@@ -28,6 +28,7 @@ use OCA\Dossiq\Controller\WooCollectionController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -56,6 +57,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Woo\WooSources
  */
@@ -143,6 +145,7 @@ class WooCollectionControllerTest extends TestCase {
 				store: new DocumentRecordStore(settingsService: $settings),
 				assessments: new WOODocumentAssessmentService(settingsService: $settings, userSession: $session, logger: $logger, caseDocuments: $caseDocuments),
 				plans: $plans,
+				provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
 			),
 			queries: new WooCollectionQueries(settingsService: $settings, rootFolder: $root, sources: $this->createMock(WooSources::class), caseDocuments: $caseDocuments),
 			accessGuard: $guard,
