@@ -7,9 +7,15 @@ today** must be run on `origin/development` first and seen red. Do not use a sta
 the bound unless one is already in `composer.lock`; the exact binomial bound is a bisection over the
 binomial CDF, and the tests pin its values.
 
+
+**Decision 182 (10 Oct).** This change builds part of the generic document review capability. Its
+requirements REQ-WRS-001 to REQ-WRS-003 live in `woo-review-triage/specs/document-review/spec.md`.
+Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes under
+`/api/cases/{id}/review/`. The paths and names below were rewritten to the built ones.
+
 ## 1. The stopping rule
 
-- [ ] 1.1 Add schema `wooStoppingRule` in `lib/Settings/register.d/88-woo-recall.json` and bump the
+- [ ] 1.1 Add schema `stoppingRule` in `lib/Settings/register.d/88-review-recall.json` and bump the
   register version (REQ-WRS-001). Give it the private authorization block of `woo-review-triage`
   REQ-WRT-006 and no `x-openregister-hierarchy` key (OpenRegister refuses a parent that references
   another schema, and the schema would fail to import). Add it to the grant table of
@@ -18,12 +24,12 @@ binomial CDF, and the tests pin its values.
   - **fails today**: `tests/Unit/Settings/WooChildSchemasTest.php`
     `testTheStoppingRuleIsPrivateAndDeclaresNoHierarchy`, and
     `tests/Unit/Woo/WooAssessmentAccessTest.php` `testTheStoppingRuleIsGrantedToTheAssigneeOnly`.
-- [ ] 1.2 POST `/api/cases/{id}/woo/stopping-rule`, case mutation guard, refused once any document is
+- [ ] 1.2 POST `/api/cases/{id}/review/stopping-rule`, case mutation guard, refused once any document is
   marked. A listener on OpenRegister's updating and deleting events refuses direct writes once review
   started; construct the real event classes in its test (REQ-WRS-001).
-  - **fails today**: `tests/Unit/Woo/WooStoppingRuleTest.php` `testARuleIsDeclaredBeforeReview`,
+  - **fails today**: `tests/Unit/Review/StoppingRulesTest.php` `testARuleIsDeclaredBeforeReview`,
     `testARuleCannotChangeOnceReviewStarted`, `testAnOutOfRangeTargetIsRefused`.
-  - Through the caller: `tests/Unit/Controller/WooRecallControllerTest.php`
+  - Through the caller: `tests/Unit/Controller/RecallControllerTest.php`
     `testDeclaringAfterTheFirstMarkingAnswers409`.
 
 ## 2. Sample and estimate
@@ -37,14 +43,14 @@ binomial CDF, and the tests pin its values.
   - Class and tests built ahead (`lib/Woo/RecallEstimator.php`, `tests/Unit/Woo/RecallEstimatorTest.php`,
     all four named tests, red first: class absent). Left unticked: its caller is the samples route of 2.2,
     which waits on `woo-review-triage` batches.
-- [ ] 2.2 Add schema `wooRecallSample` and POST `/api/cases/{id}/woo/recall/samples` with `{size}`,
+- [ ] 2.2 Add schema `recallSample` and POST `/api/cases/{id}/review/recall/samples` with `{size}`,
   case mutation guard. Draw with a stored seed, create a sample batch through the
   `woo-review-triage` batch service, and record sample judgements apart from the review marking
   (REQ-WRS-002).
-  - **fails today**: `tests/Unit/Woo/WooRecallSampleTest.php` `testTheSampleIsDrawnFromTheNullSetOnly`,
+  - **fails today**: `tests/Unit/Review/RecallSamplesTest.php` `testTheSampleIsDrawnFromTheNullSetOnly`,
     `testTheSameSeedDrawsTheSameDocuments`, `testAJudgementDoesNotChangeTheReviewMarking`,
     `testNoEstimateUntilEveryDocumentIsJudged`.
-  - Through the caller: `WooRecallControllerTest::testDrawingRefusesWithoutMutationAccess`.
+  - Through the caller: `RecallControllerTest::testDrawingRefusesWithoutMutationAccess`.
 - [ ] 2.3 A `Recall` section on the Woo case page showing the rule, every sample and estimate with n,
   k, N, found, the confidence and the date, and the gap to the target (REQ-WRS-002).
   - `npm run check:manifest` exits 0.
@@ -53,7 +59,7 @@ binomial CDF, and the tests pin its values.
 
 - [ ] 3.1 When a sample completes, compare the lower bound with the rule and write `stoppingRuleMet`
   once, with the internal timeline entry (REQ-WRS-003).
-  - **fails today**: `tests/Unit/Woo/WooRecallSampleTest.php` `testMeetingTheRuleIsRecordedOnce`,
+  - **fails today**: `tests/Unit/Review/RecallSamplesTest.php` `testMeetingTheRuleIsRecordedOnce`,
     `testBelowTheTargetRecordsNothing`, `testWithoutARuleNothingIsRecorded`.
   - Live check after merge: read the `stoppingRuleMet` record's audit trail entry through the
     OpenRegister API on the dev instance and record it.

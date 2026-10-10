@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,7 +32,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
  * switches it on and configures it here: the review depth per document type
  * today. A case whose type says nothing gets the defaults, every page.
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
  */
 class ReviewConfiguration {
 
@@ -57,7 +57,7 @@ class ReviewConfiguration {
 	 *
 	 * @return array<string, mixed> The block.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
 	 */
 	public function forCase(string $caseId): array {
 		$case = $this->row(schemaKey: 'case_schema', id: $caseId);
@@ -81,7 +81,7 @@ class ReviewConfiguration {
 	 *
 	 * @return array<string, mixed> The depth by document type.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
 	 */
 	public function reviewDepth(string $caseId): array {
 		$depth = ($this->forCase(caseId: $caseId)['reviewDepth'] ?? []);

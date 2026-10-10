@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
  * @covers \OCA\Dossiq\Woo\WooCaseDocuments
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
 class ReviewBatchesTest extends TestCase {
 

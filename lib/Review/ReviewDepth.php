@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -33,7 +33,7 @@ use Random\Randomizer;
  * when the page count arrives after the batch was made, and when someone
  * checks the sample afterwards.
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
  */
 class ReviewDepth {
 
@@ -54,7 +54,7 @@ class ReviewDepth {
 	 *
 	 * @return array{mode: string, sampleSize?: int, seed?: int} The depth to record on the review.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
 	 */
 	public function depthFor(array $reviewDepth, string $type): array {
 		$entry = ($reviewDepth[$type] ?? null);
@@ -82,7 +82,7 @@ class ReviewDepth {
 	 *
 	 * @return list<int> The required pages.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
 	 */
 	public function pagesRequired(array $depth, ?int $pageCount): array {
 		if ($pageCount === null || $pageCount < 1) {
@@ -109,7 +109,7 @@ class ReviewDepth {
 	 *
 	 * @return string The type, or '' when the document says nothing about it.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
 	 */
 	public function typeOf(array $document): string {
 		$type = trim((string)($document['informatieobjecttype'] ?? ''));

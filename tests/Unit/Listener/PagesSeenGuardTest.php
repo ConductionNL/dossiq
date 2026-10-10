@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
  * @covers \OCA\Dossiq\Review\PagesSeen
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
 class PagesSeenGuardTest extends TestCase {
 

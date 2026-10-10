@@ -348,7 +348,7 @@ class WOODocumentAssessmentService {
 	 *
 	 * @return list<string> The outstanding documents.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	private function outstandingOf(string $caseId, array $allDocs, array $assessedDocIds): array {
 		if ($this->reviews === null) {

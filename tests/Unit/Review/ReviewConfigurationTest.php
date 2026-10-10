@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-review-depth-is-set-per-document-type-and-recorded-req-wrt-004
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
  */
 class ReviewConfigurationTest extends TestCase {
 

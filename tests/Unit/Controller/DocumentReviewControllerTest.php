@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\ReviewBatches
  * @covers \OCA\Dossiq\Review\PagesSeen
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
 class DocumentReviewControllerTest extends TestCase {
 

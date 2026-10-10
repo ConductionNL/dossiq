@@ -34,7 +34,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Repair\CreateDocumentReviews
  * @covers \OCA\Dossiq\Review\DocumentRelevance
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
 class CreateDocumentReviewsTest extends TestCase {
 

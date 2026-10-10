@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -33,7 +33,7 @@ use OCA\Dossiq\Exception\RefusedException;
  * the bulk assessment, the OpenRegister write guard, the decision and the
  * publication all ask this class.
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
 class PagesSeen {
 
@@ -68,7 +68,7 @@ class PagesSeen {
 	 *
 	 * @throws RefusedException When no page is given or the review cannot be written.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function record(string $caseId, string $documentRef, array $pages, ?int $pageCount, string $userId): array {
 		$pages = array_values(array_unique(array_filter($pages, static fn (int $page): bool => $page >= 1)));
@@ -112,7 +112,7 @@ class PagesSeen {
 	 *
 	 * @return list<int> The unseen required pages, ascending.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function unseenPages(array $review): array {
 		$seen = [];
@@ -135,7 +135,7 @@ class PagesSeen {
 	 *
 	 * @return list<int> The unseen required pages.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function unseenFor(string $caseId, string $documentRef): array {
 		$review = ($this->reviews->forCase(caseId: $caseId)[$documentRef] ?? []);
@@ -153,7 +153,7 @@ class PagesSeen {
 	 *
 	 * @return array<string, list<int>> The unseen pages by document.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function unseenInCase(string $caseId): array {
 		if ($this->reviews->isAvailable() === false) {
@@ -182,7 +182,7 @@ class PagesSeen {
 	 *
 	 * @return string The sentence.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function sentence(array $pages): string {
 		return 'Open these pages before giving a verdict: ' . implode(', ', $pages) . '.';
@@ -197,7 +197,7 @@ class PagesSeen {
 	 *
 	 * @throws RefusedException With 409 while a required page is unseen.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function assertAllSeen(string $caseId): void {
 		if ($this->unseenInCase(caseId: $caseId) !== []) {
@@ -217,7 +217,7 @@ class PagesSeen {
 	 *
 	 * @return array<string, string> `['pagesSeen' => sentence]`, or empty.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function refusalFor(string $caseId, array $assessment): array {
 		if (empty($assessment['classification']) === true || empty($assessment['documentRef']) === true) {

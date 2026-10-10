@@ -365,7 +365,7 @@ class WooPublicationService {
 	 *
 	 * @return array<string, list<int>> The unseen pages by document; empty without the review schema.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	private function unseenPages(string $caseId): array {
 		return ($this->pagesSeen?->unseenInCase(caseId: $caseId) ?? []);

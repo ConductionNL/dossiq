@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -39,7 +39,7 @@ use Throwable;
  * a review reads as `unmarked`, so a document nobody looked at is never
  * taken for one that was set aside.
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */
 class DocumentRelevance {
 
@@ -77,7 +77,7 @@ class DocumentRelevance {
 	 *
 	 * @return bool True when OpenRegister and the review schema are configured.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	public function isAvailable(): bool {
 		return $this->settingsService->getObjectService() !== null
@@ -92,7 +92,7 @@ class DocumentRelevance {
 	 *
 	 * @return array<string, array<string, mixed>> The reviews by documentRef.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	public function forCase(string $caseId): array {
 		if ($this->isAvailable() === false || $caseId === '') {
@@ -124,7 +124,7 @@ class DocumentRelevance {
 	 *
 	 * @return string One of self::RELEVANCES.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	public static function relevanceOf(array $reviews, string $documentRef): string {
 		$relevance = (string)(($reviews[$documentRef] ?? [])['relevance'] ?? self::UNMARKED);
@@ -143,7 +143,7 @@ class DocumentRelevance {
 	 *
 	 * @return array{unmarked: int, inScope: int, outOfScope: int} The counts.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	public function count(array $documentRefs, array $reviews): array {
 		$counts = ['unmarked' => 0, 'inScope' => 0, 'outOfScope' => 0];
@@ -169,7 +169,7 @@ class DocumentRelevance {
 	 *
 	 * @return list<string> The outstanding documents.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	public function outstanding(string $caseId, array $documentIds, array $assessed): array {
 		$available = $this->isAvailable();
@@ -207,7 +207,7 @@ class DocumentRelevance {
 	 *
 	 * @throws RefusedException When the relevance is unknown or the review cannot be written.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
 	 */
 	public function mark(string $caseId, string $documentRef, string $relevance, string $userId): array {
 		if (in_array($relevance, self::RELEVANCES, true) === false) {
@@ -237,7 +237,7 @@ class DocumentRelevance {
 	 *
 	 * @return PagesSeen The pages seen, over these reviews.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function pages(): PagesSeen {
 		return new PagesSeen(reviews: $this, depth: new ReviewDepth());
@@ -252,7 +252,7 @@ class DocumentRelevance {
 	 *
 	 * @throws RefusedException When the review cannot be written.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	public function save(array $review): array {
 		if ($this->isAvailable() === false) {

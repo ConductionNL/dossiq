@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -38,7 +38,7 @@ use Throwable;
  * so it can be declared or replaced only while every document of the case is
  * still unmarked.
  *
- * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
 class StoppingRules {
 
@@ -82,7 +82,7 @@ class StoppingRules {
 	 *
 	 * @return array<string, mixed>|null The rule.
 	 *
-	 * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
 	 */
 	public function forCase(string $caseId): ?array {
 		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
@@ -112,7 +112,7 @@ class StoppingRules {
 	 *
 	 * @return bool True once review started.
 	 *
-	 * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
 	 */
 	public function reviewStarted(string $caseId): bool {
 		foreach ($this->reviews->forCase(caseId: $caseId) as $review) {
@@ -136,7 +136,7 @@ class StoppingRules {
 	 *
 	 * @throws RefusedException When out of range, after review started, or when it cannot be stored.
 	 *
-	 * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
 	 */
 	public function declare(string $caseId, float $targetRecall, float $confidence, string $userId): array {
 		if ($targetRecall < 0.5 || $targetRecall > 0.99 || in_array($confidence, self::CONFIDENCES, true) === false) {

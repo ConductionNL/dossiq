@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -44,7 +44,7 @@ use OCP\IUserSession;
  * Every route checks the case through CaseAccessGuard in its body: reading
  * the summary needs read access to the case, marking needs mutation access.
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
  */
 class DocumentReviewController extends Controller {
 
@@ -82,7 +82,7 @@ class DocumentReviewController extends Controller {
 	 *
 	 * @return JSONResponse The summary, or the refusal.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	#[NoAdminRequired]
 	public function summary(string $id): JSONResponse {
@@ -106,7 +106,7 @@ class DocumentReviewController extends Controller {
 	 *
 	 * @return JSONResponse The saved review, or the refusal.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
 	 */
 	#[NoAdminRequired]
 	public function relevance(string $id, string $documentRef): JSONResponse {
@@ -140,7 +140,7 @@ class DocumentReviewController extends Controller {
 	 *
 	 * @return JSONResponse `{results: [...]}`, or the refusal.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	#[NoAdminRequired]
 	public function batches(string $id): JSONResponse {
@@ -163,7 +163,7 @@ class DocumentReviewController extends Controller {
 	 *
 	 * @return JSONResponse The batch (201), or the refusal; a taken document answers 409 with `taken`.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	#[NoAdminRequired]
 	public function createBatch(string $id): JSONResponse {
@@ -213,7 +213,7 @@ class DocumentReviewController extends Controller {
 	 *
 	 * @return JSONResponse The saved review with its unseen required pages, or the refusal.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	#[NoAdminRequired]
 	public function pagesSeen(string $id, string $documentRef): JSONResponse {

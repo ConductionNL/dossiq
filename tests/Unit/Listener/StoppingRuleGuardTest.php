@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\StoppingRuleGuard
  * @covers \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
  *
- * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
  */
 class StoppingRuleGuardTest extends TestCase {
 

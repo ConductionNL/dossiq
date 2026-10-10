@@ -96,7 +96,7 @@ class WOODecisionService {
 	 * @throws \InvalidArgumentException If any document has not been assessed
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function assembleDecision(string $caseId, array $decisionData = []): array {
 		// Guard: all documents must be assessed before a besluit can be created.
@@ -282,7 +282,7 @@ class WOODecisionService {
 	 *
 	 * @return array<string, list<int>> The unseen pages by document; empty without the review.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function unseenPages(string $caseId): array {
 		return ($this->pagesSeen?->unseenInCase(caseId: $caseId) ?? []);

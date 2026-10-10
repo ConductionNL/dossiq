@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -41,7 +41,7 @@ use Throwable;
  * finds the work in their own task list before any verdict is made. A
  * document is in at most one open batch.
  *
- * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
 class ReviewBatches {
 
@@ -110,7 +110,7 @@ class ReviewBatches {
 	 *
 	 * @throws RefusedException When the filter names a field the reviews do not carry.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	public function select(string $caseId, array $documents, array $filter): array {
 		if ($filter === []) {
@@ -144,7 +144,7 @@ class ReviewBatches {
 	 *
 	 * @return array<string, string> The batch name by document.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	public function taken(string $caseId, array $documents): array {
 		$open = [];
@@ -180,7 +180,7 @@ class ReviewBatches {
 	 *
 	 * @throws RefusedException When the batch is incomplete, a document is not on the case or in another open batch, or nothing can be stored.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	public function create(string $caseId, string $name, string $assignee, array $documents, string $userId, array $filter = []): array {
 		$name = trim($name);
@@ -246,7 +246,7 @@ class ReviewBatches {
 	 *
 	 * @throws RefusedException When the batch cannot be stored.
 	 *
-	 * @spec openspec/changes/woo-review-recall-and-stopping/specs/woo-review-recall/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
 	 */
 	public function createSampleBatch(string $caseId, string $sampleId, string $assignee, array $documents, string $userId): array {
 		$name = $this->l10n->t('Recall sample of %d documents', [count($documents)]);
@@ -278,7 +278,7 @@ class ReviewBatches {
 	 *
 	 * @return list<array<string, mixed>> The batches.
 	 *
-	 * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	public function forCase(string $caseId, array $assessed): array {
 		$listed = [];
