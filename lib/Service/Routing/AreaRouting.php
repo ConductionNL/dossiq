@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ namespace OCA\Dossiq\Service\Routing;
 /**
  * Turns the area held on a case into the team and role a rule routes to.
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 class AreaRouting {
 	/**
@@ -86,7 +86,7 @@ class AreaRouting {
 	 * @return array{roleType: string, team: string, fallbackUsed: bool, reason: string}
 	 *         What to route to, and whether the area decided it.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function resolve(array $rule, array $case, ?array $caseType = null): array {
 		$roleType = (string)($rule['roleType'] ?? '');
@@ -170,7 +170,7 @@ class AreaRouting {
 	 *
 	 * @return array{roleType: string, team: string, fallbackUsed: bool, reason: string} The fallback.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	private function fallback(array $rule, array $case, ?array $caseType): array {
 		$held = [];

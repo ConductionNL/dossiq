@@ -6,7 +6,9 @@
  * Action endpoint for manual recomputation of step assignees on a case.
  * Generic CRUD over routing rules themselves lives on the workflow template
  * and is served by the OpenRegister manifest renderer — this controller
- * only owns the engine action `POST /api/cases/{id}/reroute`.
+ * only owns the engine actions `POST /api/cases/{id}/reroute` (recompute
+ * every step's candidates) and `POST /api/cases/{id}/route` (route the case
+ * to one person by a rule, arming the rule's take-back window).
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -30,6 +32,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\RoleResolverService;
+use OCA\Dossiq\Service\Routing\CaseRouter;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -56,6 +59,7 @@ class RoutingController extends Controller {
 	 * @param string $appName App name
 	 * @param IRequest $request Request
 	 * @param RoleResolverService $resolver Resolver service
+	 * @param CaseRouter $router Routes a case to one person and arms its take-back window
 	 * @param SettingsService $settingsService Settings bridge
 	 * @param IUserSession $userSession User session
 	 * @param IGroupManager $groupManager Group manager
@@ -65,6 +69,7 @@ class RoutingController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly RoleResolverService $resolver,
+		private readonly CaseRouter $router,
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
@@ -150,6 +155,51 @@ class RoutingController extends Controller {
 			);
 		}//end try
 	}//end reroute()
+
+	/**
+	 * Route the case to one person by a routing rule.
+	 *
+	 * The body is the rule: `strategy`, `roleType` (or `roleTypes`), and
+	 * optionally `team`, `areaTeams`, `fallback` and `takeBackAfter`
+	 * ({value, unit: hours|businessDays|calendarDays}). The person picked
+	 * becomes the case's assignee; the rule and the moment are kept on the
+	 * case as `routing`, and a declared take-back window is armed. The
+	 * assignee's first status move or edit accepts the case (decision 164).
+	 *
+	 * @param string $id The case UUID
+	 *
+	 * @return JSONResponse `{caseId, assignee, team, areaFallbackUsed, reason, takeBack}`
+	 *
+	 * @auth admin-only, like reroute: routing writes the assignee of a case
+	 * whatever the caller's own role on it, so it is restricted to server
+	 * admins, enforced in the body via IGroupManager::isAdmin().
+	 *
+	 * @spec openspec/changes/archive/2026-10-10-routing-by-weight-position-and-area/tasks.md
+	 */
+	public function route(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->groupManager->isAdmin($user->getUID()) === false) {
+			return new JSONResponse(['error' => 'Admin-rechten op de zaak vereist'], Http::STATUS_FORBIDDEN);
+		}
+
+		$rule = $this->request->getParams();
+		if (trim((string)($rule['strategy'] ?? '')) === '') {
+			return new JSONResponse(['error' => 'Een routeringsregel heeft een strategie nodig'], Http::STATUS_BAD_REQUEST);
+		}
+
+		try {
+			return new JSONResponse($this->router->route(caseId: $id, rule: $rule));
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'route on case ' . $id, e: $e);
+		} catch (Throwable $e) {
+			$this->logger->error('Dossiq: routing failed for case ' . $id . ': ' . $e->getMessage());
+			return new JSONResponse(['error' => 'Routeren mislukt'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end route()
 
 	/**
 	 * Resolve every routable step on a case to its assignees.

@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.23"
+        "version": "0.20.24"
     },
     "x-openregister": {
         "type": "application",
@@ -1581,7 +1581,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.40.0",
+                "version": "1.41.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3928,6 +3928,35 @@
                         "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
                         "title": "Area address id",
                         "readOnly": true
+                    },
+                    "routing": {
+                        "type": "object",
+                        "title": "Routing",
+                        "description": "How this case was last routed to a person: the rule (strategy, roleType or roleTypes, team, areaTeams, fallback, and the optional take-back window `takeBackAfter` {value, unit: hours|businessDays|calendarDays}), who it went to and when, and when that person accepted it. Accepting is the assignee's first status move or first edit of the case; there is no accept button (decision 164). While `acceptedAt` is empty and the rule declares a window, an engine timer is armed: when it passes, the case returns to the pool and is routed on by the same rule.",
+                        "readOnly": true,
+                        "properties": {
+                            "rule": {"type": "object", "title": "Routing rule", "description": "The rule the case was routed by, kept so a take-back routes it on the same way."},
+                            "routedTo": {"type": "string", "title": "Routed to", "description": "The Nextcloud user the case was routed to."},
+                            "routedAt": {"type": "string", "format": "date-time", "title": "Routed at", "description": "When the case was routed. The take-back window counts from here."},
+                            "acceptedAt": {"type": "string", "format": "date-time", "title": "Accepted at", "description": "When the person it was routed to first moved its status or edited it. Empty means not yet accepted."}
+                        }
+                    },
+                    "routingTakeBacks": {
+                        "type": "array",
+                        "title": "Routing take-backs",
+                        "description": "Every time this case came back to its pool because nobody accepted it within the rule's window: who had it, why it came back, who has it now. Without this the case looks as though it was never routed to the first person. An entry with outcome `kept` means the pool had nobody else, so the case stayed.",
+                        "readOnly": true,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "from": {"type": "string", "title": "From", "description": "The person the case was taken back from."},
+                                "to": {"type": "string", "title": "To", "description": "The person who holds it now."},
+                                "reason": {"type": "string", "title": "Reason", "description": "Why it came back, e.g. not-accepted-within-window."},
+                                "at": {"type": "string", "format": "date-time", "title": "At", "description": "When it came back."},
+                                "window": {"type": "object", "title": "Window", "description": "The window that passed, {value, unit}. Absent when the rule declared none."},
+                                "outcome": {"type": "string", "enum": ["taken-back", "kept"], "title": "Outcome", "description": "taken-back: another member has it now; kept: nobody else was in the pool."}
+                            }
+                        }
                     }
                 },
                 "searchable": true

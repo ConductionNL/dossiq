@@ -212,7 +212,7 @@ class RoleResolverService {
 	 *
 	 * @return array<string, mixed> The rule, with the area's team and role on it.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	private function withArea(array $rule, array $case): array {
 		$resolved = $this->area->resolve(rule: $rule, case: $case, caseType: null);
