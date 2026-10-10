@@ -157,7 +157,7 @@ class IntegrationStatusService {
 	 *
 	 * @return array{status: string, message: string}|null The status and its words, or null without the readers.
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function templatesStatus(): ?array {
 		if ($this->templateChoice === null || $this->appConfig === null) {
@@ -188,7 +188,7 @@ class IntegrationStatusService {
 	 *
 	 * @return bool True when the report was sent.
 	 *
-	 * @spec openspec/changes/beschikking-renders-through-filinq-when-installed/tasks.md#2-the-card
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function recordTemplates(): bool {
 		$status = $this->templatesStatus();
