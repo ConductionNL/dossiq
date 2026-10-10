@@ -72,7 +72,7 @@ The proposal counted five files referencing `WorkingDayCalculator`, and
 those five are all inside the 37. A sixth file references it at
 `16f00124a`, `lib/Service/Milestone/StalledCaseDetector.php`, which does no
 date arithmetic of its own and so is not one of the 37. Two of the five,
-`lib/Service/Kcc/SlaCalculator.php` and the calculator itself, have the
+`lib/Service/Kcc/SlaCalculator.php` (since retired) and the calculator itself, have the
 verdict `neither`, which is why three rather than five statutory files
 reached a calendar before this change.
 
@@ -113,7 +113,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Doorlooptijd/DeadlineComplianceCalculator.php` | 168 | neither | | month buckets for a compliance trend |
 | `lib/Service/DsoCaseService.php` | 310 | statutory | `WorkingDayCalculator` | the Omgevingswet term; the day walk is already the calculator's |
 | `lib/Service/DwangsomUitbetalingService.php` | 101 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
-| `lib/Service/Kcc/SlaCalculator.php` | 183, 218 | neither | `WorkingDayCalculator` | an intraday KCC service norm in seconds and minutes |
+| `lib/Service/Kcc/CallbackRetrySchedule.php` | 71 | neither | | the wait before the next callback attempt, 15 minutes doubling to a day. It replaced `Kcc/SlaCalculator.php` (retired by `termijnbewaking-op-engine-timers` 4.1), whose channel SLAs nothing read; a retry wait is not a deadline and has no calendar |
 | `lib/Service/NoticeOfDefaultService.php` | 171 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |

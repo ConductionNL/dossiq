@@ -132,11 +132,19 @@
 
 ## Phase 4: KCC (staged)
 
-- [ ] 4.1 Retire `Kcc/SlaCalculator` (the name-for-name duplicate): `CallbackService` and the KCC
+- [x] 4.1 Retire `Kcc/SlaCalculator` (the name-for-name duplicate): `CallbackService` and the KCC
       routing consult the engine `SlaCalculator` against the organisation calendar; the KCC
       callback SLA (2 working hours) becomes `{value: 2, unit: hours}` timers on the callback
       object with the KCC ladder as escalationRules. Fixture pair: identical due moments for the
       documented KCC cases before and after.
+      Built 10 Oct (lane L7), read off the code first: the only production caller of
+      `Kcc/SlaCalculator` was `CallbackService::applyAttempt()`, for the retry backoff. Its channel
+      SLA tables (`deadlineFor()`, `isBreached()`) had no caller in `lib/` or `src/`, and no KCC
+      routing consults an SLA in dossiq any more (the agent panel moved to pipelinq), so there was
+      no SLA to arm a timer for and no fixture pair to keep. The backoff moved to
+      `lib/Service/Kcc/CallbackRetrySchedule.php` (`tests/Unit/Service/Kcc/CallbackRetryScheduleTest.php`,
+      ported from the retired test); the calculator and its test are gone; the date audit and the
+      no-local-calendar control file follow.
 - [ ] 4.2 Sweep `lib/` for remaining `->diff(` deadline math outside the allowlisted calculation
       classes; tighten the structural test's allowlist to empty.
 
