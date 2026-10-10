@@ -193,7 +193,8 @@ class MigrateTenantsToOrganisations implements IRepairStep {
 			}
 
 			$offset += self::PAGE;
-		} while (count($rows) === self::PAGE);
+			$full = (count($rows) === self::PAGE);
+		} while ($full === true);
 
 		return array_keys($refs);
 	}//end memberOrganisations()

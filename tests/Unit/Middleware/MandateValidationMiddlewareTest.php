@@ -37,7 +37,6 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Middleware\MandateValidationMiddleware
@@ -63,7 +62,6 @@ class MandateValidationMiddlewareTest extends TestCase {
 			context: $this->activeOrganisationContext(active: null, stored: [], memberships: []),
 			authService: $this->createMock(TenantAuthenticationService::class),
 			tenantService: $this->createMock(TenantService::class),
-			logger: $this->createMock(LoggerInterface::class),
 			auditTrail: $this->createMock(TenantAuditTrailService::class),
 		);
 	}
@@ -131,7 +129,6 @@ class MandateValidationMiddlewareTest extends TestCase {
 			context: $context,
 			authService: $auth,
 			tenantService: $tenantService,
-			logger: $this->createMock(LoggerInterface::class),
 			auditTrail: ($auditTrail ?? $this->createMock(TenantAuditTrailService::class)),
 		);
 
