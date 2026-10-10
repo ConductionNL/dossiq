@@ -105,7 +105,7 @@ class TermTools {
 
 		try {
 			return $this->extension->requestExtension($deadlineId, $rationale, $endDate, $documentLink);
-		} catch (RuntimeException | InvalidArgumentException $e) {
+		} catch (RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
 	}//end extendDeadline()
@@ -147,7 +147,7 @@ class TermTools {
 
 		try {
 			return $this->pause->registerPauze($deadlineId, $durationDays, $rationale, $documentLink, $pauseReason);
-		} catch (RuntimeException | InvalidArgumentException $e) {
+		} catch (RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
 	}//end pauseDeadline()
@@ -189,7 +189,7 @@ class TermTools {
 
 		try {
 			return $this->pause->resumeAfterPauze($deadlineId, $resumeAt);
-		} catch (RuntimeException | InvalidArgumentException $e) {
+		} catch (RuntimeException $e) {
 			return $this->refusal(e: $e);
 		}
 	}//end resumeDeadline()
