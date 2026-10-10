@@ -623,7 +623,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
@@ -1134,7 +1133,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
@@ -1721,7 +1719,7 @@
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
 					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
@@ -1887,7 +1885,7 @@
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
 					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
@@ -7454,7 +7452,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
@@ -7746,7 +7743,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",

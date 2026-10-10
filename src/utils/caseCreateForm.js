@@ -40,7 +40,6 @@ export function caseCreateFormProps() {
 			'urgency',
 			'confidentiality',
 			'intakeChannel',
-			'startDate',
 			'plannedEndDate',
 		],
 		fieldOverrides: {
