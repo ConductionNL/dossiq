@@ -1441,19 +1441,19 @@
     },
     "lib/Settings/register.d/86-woo-corpus.json::wooCollectionQuery": {
         "version": "1.0.0",
-        "digest": "3c82b2857a71d749fe69d064c44961c7a48881daba54ec032c50f657f439603e"
+        "digest": "e6eeadd8dbd64df210b97f659b11229f75fdf45d30734456271ebec1620ddb8c"
     },
     "lib/Settings/register.d/86-woo-corpus.json::wooExclusion": {
         "version": "1.0.0",
-        "digest": "95596547780794d238024e0920605dc23eb7fec24e714b9ed5e4a534dccd14ef"
+        "digest": "581bbf366c66f21249943b5d5e670d904291cdf795aa10a3787bac288180edc0"
     },
     "lib/Settings/register.d/86-woo-corpus.json::wooRequestConfiguration": {
         "version": "1.0.0",
-        "digest": "6bc3a9f64f217d4d61b600ff1bda540a7eb8a3c60a65eaea3dbf0eaec99c7ec7"
+        "digest": "e340f984d8c0ce27ae04738e2f77d732b7337c862d159bcaa4154bbb9baa406f"
     },
     "lib/Settings/register.d/86-woo-corpus.json::wooSearchPlan": {
         "version": "1.0.0",
-        "digest": "8e5bedcf5fb223da48f1d59281e3437f9ef1fa566925a0c5aa09af18db540483"
+        "digest": "741410186bc4660b177865856a3a90313d8164e1f6c0125e503cad9b519b53ae"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",
