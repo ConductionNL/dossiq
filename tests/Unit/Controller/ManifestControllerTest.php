@@ -69,6 +69,8 @@ class FakeCaseTypeObjectService {
  * Unit tests for ManifestController.
  *
  * @covers \OCA\Dossiq\Controller\ManifestController
+ * @uses \OCA\Dossiq\Service\MenuCaseTypesService
+ * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
  */
 class ManifestControllerTest extends TestCase {
 
