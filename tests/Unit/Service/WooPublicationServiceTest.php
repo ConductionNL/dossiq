@@ -83,6 +83,7 @@ interface WooPublicationObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses \OCA\Dossiq\Woo\WooResultLink
  */
 class WooPublicationServiceTest extends TestCase {
 

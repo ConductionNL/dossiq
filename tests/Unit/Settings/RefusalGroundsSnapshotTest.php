@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-refusal-grounds-list/specs/woo-refusal-grounds/spec.md#requirement-a-release-time-snapshot-ships-for-the-redaction-fallback-req-wrg-008
+ * @spec openspec/specs/woo-refusal-grounds/spec.md#requirement-a-release-time-snapshot-ships-for-the-redaction-fallback-req-wrg-008
  */
 
 declare(strict_types=1);
