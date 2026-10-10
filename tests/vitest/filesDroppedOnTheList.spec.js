@@ -11,14 +11,16 @@
  * @spec openspec/changes/files-dropped-on-the-list/specs/case-dashboard-view/spec.md
  */
 
-import CnFilesBrowser from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/CnFilesBrowser.vue'
-import CnFilesTab from '@conduction/nextcloud-vue/src/components/CnObjectSidebar/CnFilesTab.vue'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+import CnFilesBrowser from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/CnFilesBrowser.vue'
+import CnFilesTab from '@conduction/nextcloud-vue/src/components/CnObjectSidebar/CnFilesTab.vue'
 
 const ROOT = path.resolve(__dirname, '../..')
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+)
 
 /**
  * Find a widget by id anywhere in the manifest.
@@ -60,7 +62,11 @@ describe('files dropped on the list', () => {
 	})
 
 	it('asks for the button, the drop state and the hint', () => {
-		expect(widget.props).toMatchObject({ uploadButton: true, dropOverlay: true, dropHint: true })
+		expect(widget.props).toMatchObject({
+			uploadButton: true,
+			dropOverlay: true,
+			dropHint: true,
+		})
 	})
 
 	// The tabs widget renders this leaf bare, so the props land on the files
