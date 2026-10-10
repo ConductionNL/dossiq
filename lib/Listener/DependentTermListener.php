@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+ * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
  */
 class DependentTermListener implements IEventListener {
 	use SearchesObjects;
@@ -82,7 +82,7 @@ class DependentTermListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
+	 * @spec openspec/specs/related-case-linking/spec.md#requirement-a-moved-term-is-offered-to-its-dependents-req-rcl-11
 	 */
 	public function handle(Event $event): void {
 		try {
