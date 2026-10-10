@@ -146,21 +146,16 @@ class ZtcRelatedTypeLookup {
 			return [];
 		}
 
-		try {
-			$iotUrls = [];
-			foreach ($this->searchRows(objectService: $objectService, mapping: $ziotMapping, params: ['caseType' => $uuid]) as $ziotData) {
-				$iotRef = $ziotData['informatieobjecttype'] ?? '';
-				if ($iotRef !== '') {
-					$sameName = $this->sameNameDocumentTypeUrls(objectService: $objectService, iotMapping: $iotMapping, iotRef: $iotRef, baseUrl: $baseUrl);
-					array_push($iotUrls, ...$sameName);
-				}
+		$iotUrls = [];
+		foreach ($this->searchRowsOrNone(objectService: $objectService, mapping: $ziotMapping, params: ['caseType' => $uuid]) as $ziotData) {
+			$iotRef = $ziotData['informatieobjecttype'] ?? '';
+			if ($iotRef !== '') {
+				$sameName = $this->sameNameDocumentTypeUrls(objectService: $objectService, iotMapping: $iotMapping, iotRef: $iotRef, baseUrl: $baseUrl);
+				array_push($iotUrls, ...$sameName);
 			}
-
-			return array_values(array_unique($iotUrls));
-		} catch (\Throwable $e) {
-			// Proceed without ZIOT enrichment.
-			return [];
 		}
+
+		return array_values(array_unique($iotUrls));
 	}//end caseTypeDocumentTypeUrls()
 
 	/**
@@ -210,17 +205,15 @@ class ZtcRelatedTypeLookup {
 			return [];
 		}
 
-		try {
-			$urls = [];
-			foreach ($this->searchIds(objectService: $objectService, mapping: $mapping, params: ['caseType' => $uuid]) as $id) {
+		$urls = [];
+		foreach ($this->searchRowsOrNone(objectService: $objectService, mapping: $mapping, params: ['caseType' => $uuid]) as $row) {
+			$id = $row['id'] ?? ($row['@self']['id'] ?? '');
+			if ($id !== '') {
 				$urls[] = $baseUrl.'/'.$resource.'/'.$id;
 			}
-
-			return $urls;
-		} catch (\Throwable $e) {
-			// Proceed without this enrichment.
-			return [];
 		}
+
+		return $urls;
 	}//end urlsOfObjectsFor()
 
 	/**
@@ -261,6 +254,29 @@ class ZtcRelatedTypeLookup {
 			$objectService->searchObjectsPaginated(query: $query)['results'] ?? []
 		);
 	}//end searchRows()
+
+	/**
+	 * Search a mapping's objects, answering none when the search fails.
+	 *
+	 * A failed search only means a list stays unenriched on a read, so it degrades to an empty
+	 * answer and is logged rather than failing the read.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService
+	 * @param array $mapping The ZGW mapping
+	 * @param array $params The search filters
+	 *
+	 * @return array<array> The matching objects, or none
+	 */
+	private function searchRowsOrNone(object $objectService, array $mapping, array $params): array {
+		try {
+			return $this->searchRows(objectService: $objectService, mapping: $mapping, params: $params);
+		} catch (\Throwable $e) {
+			$this->zgwService->getLogger()->warning(
+				'ZTC enrichment: the search of '.$mapping['sourceSchema'].' failed, so its list stays unenriched: '.$e->getMessage()
+			);
+			return [];
+		}
+	}//end searchRowsOrNone()
 
 	/**
 	 * Search a mapping's objects and return their ids, skipping rows without one.

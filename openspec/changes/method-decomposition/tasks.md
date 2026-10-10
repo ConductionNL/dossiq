@@ -272,5 +272,10 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         private helper. The controller went from 1,324 to about 800 lines. New classes, one
         test: `tests/Unit/Service/Zgw/ZtcCrossReferenceTest.php` (8 tests); the existing
         `ZtcControllerContractTest` still passes.
+  - [x] The swallowing-catch ratchet (`ServiceCatchReturnsNullTest`, ceiling 259) holds:
+        the two `ZgwService::resolveParentZaaktypeDraft*` sites collapsed into one
+        (`ZgwParentStateResolver::draftState`), and the two ZTC catches that moved from the
+        controller into `lib/Service` share one logged `searchRowsOrNone()`. 259 sites, 259
+        allowed, both new entries classed with a reason.
 - [ ] Slice 7, the singletons (ZgwJwtValidator, LoadDefaultZgwMappings, ZgwRulesBase,
       ContactMomentService, PlanItemCascade)

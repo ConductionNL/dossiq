@@ -53,20 +53,7 @@ class ZgwPatchMerger {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function merge(array $existingData, array $body, array $englishData, array $mappingConfig): array {
-		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
-
-		if (isset($existingData['identifier']) === true && is_int($existingData['identifier']) === true) {
-			$existingData['identifier'] = (string)$existingData['identifier'];
-		}
-
-		// Track which keys were originally arrays before json_encode for Twig.
-		$arrayKeys = [];
-		foreach ($existingData as $key => $value) {
-			if (is_array($value) === true) {
-				$arrayKeys[] = $key;
-				$existingData[$key] = json_encode($value);
-			}
-		}
+		$stored = $this->storedForTwig(existingData: $existingData);
 
 		$reverseMap = $mappingConfig['reverseMapping'] ?? [];
 		$patchData  = [];
@@ -76,27 +63,64 @@ class ZgwPatchMerger {
 			}
 		}
 
-		$merged = array_merge($existingData, $patchData);
+		$merged = array_merge($stored['data'], $patchData);
 
 		// Restore fields that were originally arrays, but skip fields that are stored as JSON
 		// strings in the schema (referenceProcess, relatedCaseTypes, ...): those must remain
 		// JSON-encoded strings for OpenRegister validation.
 		$jsonStringFields = $this->jsonStringFields(reverseMap: $reverseMap, reverseCast: $mappingConfig['reverseCast'] ?? []);
-		foreach ($arrayKeys as $key) {
-			if (in_array($key, $jsonStringFields, true) === true
-				|| isset($merged[$key]) === false || is_string($merged[$key]) === false
-			) {
-				continue;
-			}
-
-			$decoded = json_decode($merged[$key], true);
-			if (is_array($decoded) === true) {
-				$merged[$key] = $decoded;
-			}
+		foreach (array_diff($stored['arrayKeys'], $jsonStringFields) as $key) {
+			$merged[$key] = $this->decodedArray(value: $merged[$key] ?? null);
 		}
 
 		return $merged;
 	}//end merge()
+
+	/**
+	 * The stored object as it travels through the merge: identity fields dropped, an integer
+	 * identifier as a string, and arrays JSON-encoded (as Twig would see them).
+	 *
+	 * @param array $existingData The stored object, serialised
+	 *
+	 * @return array{data: array, arrayKeys: array<int|string>} The prepared object and the keys that were arrays
+	 */
+	private function storedForTwig(array $existingData): array {
+		unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
+
+		if (isset($existingData['identifier']) === true && is_int($existingData['identifier']) === true) {
+			$existingData['identifier'] = (string)$existingData['identifier'];
+		}
+
+		$arrayKeys = [];
+		foreach ($existingData as $key => $value) {
+			if (is_array($value) === true) {
+				$arrayKeys[] = $key;
+				$existingData[$key] = json_encode($value);
+			}
+		}
+
+		return ['data' => $existingData, 'arrayKeys' => $arrayKeys];
+	}//end storedForTwig()
+
+	/**
+	 * A JSON string that decodes to an array becomes that array; anything else stays.
+	 *
+	 * @param mixed $value The merged value
+	 *
+	 * @return mixed The array, or the value unchanged
+	 */
+	private function decodedArray(mixed $value): mixed {
+		if (is_string($value) === false) {
+			return $value;
+		}
+
+		$decoded = json_decode($value, true);
+		if (is_array($decoded) === true) {
+			return $decoded;
+		}
+
+		return $value;
+	}//end decodedArray()
 
 	/**
 	 * The English fields whose reverse-mapping template reads a ZGW field the body carries.
