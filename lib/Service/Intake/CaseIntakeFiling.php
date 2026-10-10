@@ -120,9 +120,10 @@ class CaseIntakeFiling {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($objectService === null || $register === '' || $schema === '') {
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'intake-storage-unavailable',
-				sentence: 'dossiq cannot reach its case register, so it filed nothing.'
+				sentence: 'dossiq cannot reach its case register, so it filed nothing.',
+				status: RefusedException::STATUS_INDETERMINATE
 			);
 		}
 
