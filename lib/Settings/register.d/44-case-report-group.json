@@ -1,0 +1,16 @@
+{
+  "_note": "ai-features-on-the-case-consume-hermiq task 4.1 (REQ-AIC-04, design D-4). The group hermiq placed a new case in, kept on the case so the case is placed exactly once: hermiq's evaluation adds the report to a group, so asking again would count the same resident twice. Only the id is kept; the count, members and near-duplicates are read from hermiq when the case is opened, because they change as more reports arrive. Written by ReportGroupingConsumer::placeCase() from ReportGroupingJob, and only for a case type that declares the report-similarity feature. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "reportGroupId": {
+            "type": "string",
+            "title": "Report group",
+            "description": "The group of similar reports this case was placed in by hermiq, when its case type groups reports. Grouping does not change the confirmations of receipt: every report still gets its own."
+          }
+        }
+      }
+    }
+  }
+}

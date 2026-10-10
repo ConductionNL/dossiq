@@ -93,6 +93,8 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Queue/PersonalAgendaItemService.php` | 177 | neither | | the fortnight the personal queue looks ahead for items a person planned on their own calendar. It is a display window on a list, not a date anybody is held to, and moving it off a Saturday would hide a Saturday appointment from the person who booked it (`one-personal-queue`) |
 | `lib/Flow/DossiqRequestDecisionNode.php` | 615 | neither | | a node timeout in minutes |
 | `lib/Listener/AcknowledgementOnCreateListener.php` | 113 | neither | | queues the acknowledgement with attempt 1 through `IJobList::add()`, the same unanchored match. No date is computed here |
+| `lib/BackgroundJob/ReportGroupingJob.php` | 93 | neither | | requeues the report grouping of a case through `IJobList::add()` when no service account is set, the same unanchored match. No date is computed here |
+| `lib/Listener/ReportGroupingOnCreateListener.php` | 88 | neither | | queues the report grouping of a created case through `IJobList::add()`, the same unanchored match. No date is computed here |
 | `lib/Listener/CaseInheritedDeadlineListener.php` | 181 | statutory | engine calendar | a deelzaak inherits the parent case type's term, so it inherits the term's end date |
 | `lib/Service/Actions/ScheduleReminderHandler.php` | 162, 167 | neither | | when a reminder background job runs |
 | `lib/Service/Archival/ArchivalNominationDeriver.php` | 259 | neither | | a retention period counted in years, where a weekend cannot move the answer |
@@ -147,7 +149,10 @@ consults for the day a date lands on, after this change.
 `ontvangstbevestiging` added them, and both are `->add(` matches on
 `IJobList`, not on a date. They carry the verdict `neither` for the reason
 this file already names: two of the five patterns cannot be anchored to a
-date type. The counts below describe the reading, not the table.
+date type. `lib/BackgroundJob/ReportGroupingJob.php` and
+`lib/Listener/ReportGroupingOnCreateListener.php` arrived later the same way,
+with `ai-features-on-the-case-consume-hermiq`, and carry the same verdict for
+the same reason. The counts below describe the reading, not the table.
 
 `lib/Service/Termijn/TermDefinitions.php` and
 `lib/Service/Termijn/TermEndRoll.php` are the third and the fourth. Neither existed at

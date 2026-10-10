@@ -23,8 +23,13 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
   - `lib/Service/Assistant/HermiqAiFeatureClient.php::featureResidency()`,
     joined in `AssistantController::aiFeatures()`; test
     `AssistantControllerTest::testAFeatureHermiqDoesNotKnowIsUnavailableAndNotLocal`.
-- [ ] 2.2 An absent hermiq reports every declared feature as unavailable, never
+- [x] 2.2 An absent hermiq reports every declared feature as unavailable, never
   as local.
+  - Tests: `tests/Unit/Service/Assistant/HermiqAiFeatureClientTest.php`
+    (absent: empty map and no request; unreachable: empty map; a refusal keeps
+    hermiq's gate) and
+    `AssistantControllerTest::testAnAbsentHermiqReportsEveryDeclaredFeatureUnavailable`
+    over the real client.
 - [ ] 3.1 A feature that reads a document carries the reference, and a request
   without one is refused before it is sent (D-3).
   - `lib/Service/Ai/CaseAiFeatureGateway.php`
@@ -33,9 +38,28 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
   - `src/components/case/CaseAiFeaturesPanel.vue`
 - [ ] 4.1 Ask hermiq which group an incoming report belongs to, and render the
   count with the near-duplicates beside it (D-4).
-  - `lib/Service/Ai/ReportGroupingConsumer.php`
-- [ ] 4.2 A group changes no confirmation of receipt: the count owed is read
+  - Backend built: `lib/Service/Ai/ReportGroupingConsumer.php`. A case type
+    declares grouping as `aiFeatures["report-similarity"]` (hermiq's own name:
+    its endpoint and audit action). hermiq's evaluation ADDS the report to a
+    group, so a new case is placed exactly once, off the request
+    (`Listener/ReportGroupingOnCreateListener` -> `BackgroundJob/ReportGroupingJob`,
+    as the background service account), and the group id is kept on the case
+    (`case.reportGroupId`, register fragment 44, register 0.20.26). Opening the
+    case reads the group as it now stands, never placing it again:
+    `GET /api/report-group?caseId=` (`ReportGroupController::show`, through
+    `HermiqAiFeatureClient::group()`).
+  - Tests: `ReportGroupingConsumerTest`, `ReportGroupingOnCreateListenerTest`,
+    `ReportGroupingJobTest`, `ReportGroupControllerTest`,
+    `ObjectListenerRegistrarTest::testTheReportGroupingIsRegisteredOnCreation`.
+  - Open: rendering the count and near-duplicates on the case (Vue, board
+    DqZaakAssistent).
+- [x] 4.2 A group changes no confirmation of receipt: the count owed is read
   from the reports, never from the group.
+  - `ReportGroupingConsumer::confirmationsOwed()` counts distinct reports and
+    takes no group; the acknowledgement stays queued per case by
+    `AcknowledgementOnCreateListener`, which the grouping does not touch.
+    Tests: `ReportGroupingConsumerTest::testGroupingDoesNotReduceTheConfirmationsOwed`
+    and `::testDossiqHoldsNoSimilarityScoringOfItsOwn`.
 - [x] 5.1 Declare a create-only intake tool annotated as hermiq's grant
   requires, and the read tools for the outbound surface (D-5).
   - `lib/Service/Mcp/IntakeTools.php` (`dossiq.fileCase`: `citizenIntake` mark,
