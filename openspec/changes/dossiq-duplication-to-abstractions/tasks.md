@@ -309,7 +309,7 @@ programme and the reason wave 1 goes first.
       and `tests/e2e/ask-step-form.spec.ts`; the requirement is
       "An ask may ask for fields, and the engine resolves them" in
       `openspec/specs/case-flow-human-steps/spec.md`.
-- [ ] 2.6 Confirm the VTODO projection reaches NC Tasks for a dossiq task, and
+- [ ] 2.6 (live pass, decision 139: a provisioned instance with cron, or `helpers/occ.ts` driving the projection job) Confirm the VTODO projection reaches NC Tasks for a dossiq task, and
       that ticking it off there completes the engine task through
       `TaskVtodoWriteBackGate`. Dossiq writes no CalDAV code (D-4).
 
