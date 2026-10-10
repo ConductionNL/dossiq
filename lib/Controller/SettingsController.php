@@ -27,7 +27,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\App\IAppManager;
@@ -185,7 +184,12 @@ class SettingsController extends Controller {
 		$data = $this->request->getParams();
 		try {
 			$config = $this->settingsService->updateSettings($data);
-		} catch (RefusedException $e) {
+		} catch (RuntimeException $e) {
+			// A refusal (RefusedException) names its rule and status; anything else is not ours to answer.
+			if (method_exists($e, 'getRule') === false || method_exists($e, 'getStatus') === false) {
+				throw $e;
+			}
+
 			return new JSONResponse(
 				['success' => false, 'error' => $e->getRule(), 'message' => $this->refusalSentence(rule: $e->getRule())],
 				$e->getStatus()
