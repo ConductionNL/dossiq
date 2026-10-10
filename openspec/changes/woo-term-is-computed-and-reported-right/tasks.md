@@ -130,12 +130,11 @@ from `today`.
 
 - [ ] 5.1 `tests/e2e/woo-term-rolls.spec.ts`: create a Woo case through the API with a start date
   whose term ends on a configured holiday, and read the `deadline` back. Extend it once and then
-  twice. Cite REQ-WTR-001 and REQ-WTR-003. (not run: written as `tests/e2e/woo-term-rolls.spec.ts`;
-  no live instance in this lane, disk under 1 GB)
+  twice. Cite REQ-WTR-001 and REQ-WTR-003. (live pass, decision 139: written as `tests/e2e/woo-term-rolls.spec.ts`)
 - [ ] 5.2 Live check after merge on the dev instance: one Woo case started on 2026-11-27 through
   the portal intake. Read `deadline` and the term instance's `endDateCurrent` through the
   OpenRegister API, and record both. This proves the removed calculation no longer overwrites the
-  listener. (not run: live, after merge)
+  listener. (live pass, decision 139)
 
 ## 6. Verify and deliver
 
