@@ -190,6 +190,7 @@ class CaseTermsController extends Controller {
 				pauseReason: (string)($body['pauseReason'] ?? ''),
 				rationale: (string)($body['rationale'] ?? ''),
 				party: (string)($body['party'] ?? ''),
+				question: $this->clarificationOf(body: $body),
 			);
 
 		} catch (RefusedException $e) {
@@ -211,6 +212,23 @@ class CaseTermsController extends Controller {
 		// only ever returns a request that was really sent and really recorded.
 		return new JSONResponse(['sent' => true, 'suspended' => true, 'request' => $record]);
 	}//end requestInformation()
+
+	/**
+	 * The question of a clarification, or null when the body asks for documents.
+	 *
+	 * @param array<string, mixed> $body The request body.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+	 */
+	private function clarificationOf(array $body): ?string {
+		if ((string)($body['kind'] ?? '') !== AanvullingsverzoekService::KIND_CLARIFICATION) {
+			return null;
+		}
+
+		return (string)($body['question'] ?? '');
+	}//end clarificationOf()
 
 	/**
 	 * The aanvulling arrived: resume the term and record what came in.
