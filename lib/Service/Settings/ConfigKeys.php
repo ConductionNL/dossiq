@@ -377,5 +377,11 @@ class ConfigKeys {
 		// Which structure the app shows: `simple` (the default) or `full`
 		// (simple-structure-profile). Read through MenuStructure::normalise().
 		'menu_structure',
+		// The Woo review reports (woo-review-reports, decision D9): both off
+		// until an administrator says yes. WooReportSwitches reads them and
+		// refuses the throughput switch without an existing reader group.
+		'wooReviewerThroughputReport',
+		'wooReviewerThroughputReaders',
+		'wooCollectionPartiesReport',
 	];
 }//end class

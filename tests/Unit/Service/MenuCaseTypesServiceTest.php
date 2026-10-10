@@ -117,6 +117,8 @@ class FakeMenuCaseTypeObjectService {
  * @covers \OCA\Dossiq\Service\MenuCaseTypesService
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\CaseType\OpenCaseCounts
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class MenuCaseTypesServiceTest extends TestCase {
 

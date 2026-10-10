@@ -703,6 +703,17 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  and the case differs. Idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
+            <!-- communication-portal-conversation-on-the-case D-2: each portal
+                 message's attachments are copied into the message folder portaliq
+                 serves, once, behind a persisted key. Post-migration only: a
+                 fresh install has no portal messages. -->
+            <step>OCA\Dossiq\Repair\CopyMessageAttachmentsIntoMessageFolders</step>
+            <!-- portal-contact-channel-follows-the-resident D3: names every case
+                 whose communicationChannel is not a channel slug; writes nothing. -->
+            <step>OCA\Dossiq\Repair\ReportCommunicationChannelValues</step>
+            <!-- site-business-and-authorisation D2: a portal case filed before
+                 portalParty existed gets subject:<portalSubject>, once. -->
+            <step>OCA\Dossiq\Repair\BackfillPortalParty</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
@@ -834,6 +845,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
+              CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder; a fresh install has none
+              ReportCommunicationChannelValues  names existing cases whose channel is not a slug; a fresh install has none
+              BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made

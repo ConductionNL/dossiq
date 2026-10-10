@@ -5,7 +5,8 @@
  *
  * Orchestrates the full beschikking lifecycle: composition (via the Docudesk
  * template-engine adapter), mandaat-verificatie at the akkoord step, eIDAS-TSP
- * signing (via the OpenConnector signing adapter), Berichtenbox delivery, the
+ * signing (via the OpenConnector signing adapter), delivery through the
+ * requester notice sender (sent only when a transport took it), the
  * field-edit immutability contract, and the verifiable audit-pakket export.
  *
  * All state changes go through StateMachineService, which enforces the formal
@@ -42,12 +43,14 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
+use OCA\Dossiq\Service\Beschikking\BeschikkingDelivery;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -76,7 +79,7 @@ class BeschikkingService {
 	 * Constructor.
 	 *
 	 * @param StateMachineService $stateMachine The state-machine guard.
-	 * @param BerichtenboxRoutingService $berichtenbox The Berichtenbox routing service.
+	 * @param BeschikkingDelivery $delivery Sends the decision notice through a real transport.
 	 * @param TemplateEngineAdapterInterface $templateAdapter The Docudesk template adapter.
 	 * @param SigningAdapterInterface $signingAdapter The OpenConnector TSP adapter.
 	 * @param ArchivalAdapterInterface $archivalAdapter The OpenRegister archival adapter.
@@ -92,7 +95,7 @@ class BeschikkingService {
 	 */
 	public function __construct(
 		private readonly StateMachineService $stateMachine,
-		private readonly BerichtenboxRoutingService $berichtenbox,
+		private readonly BeschikkingDelivery $delivery,
 		private readonly TemplateEngineAdapterInterface $templateAdapter,
 		private readonly SigningAdapterInterface $signingAdapter,
 		private readonly ArchivalAdapterInterface $archivalAdapter,
@@ -293,9 +296,12 @@ class BeschikkingService {
 	}//end onderteken()
 
 	/**
-	 * Deliver the beschikking via Berichtenbox and transition to verzonden. [T09]
+	 * Send the beschikking to the requester and, only when a transport took it, transition to sent. [T09]
 	 *
-	 * Creates a BezwaarTrigger with a 6-week bezwaartermijn (Awb 6:7).
+	 * Creates a BezwaarTrigger with the objection term (Awb 6:7) once the
+	 * letter went out. A beschikking no transport took stays where it was: no
+	 * status change, no clock, no public line. An internal line says why, and
+	 * the refusal carries the transport's sentence (decision 148).
 	 *
 	 * @param string $decisionId The beschikking UUID.
 	 * @param string $actor The dispatching user's UID.
@@ -303,8 +309,10 @@ class BeschikkingService {
 	 * @return array<string, mixed> The updated beschikking.
 	 *
 	 * @throws RuntimeException On a missing beschikking or invalid transition.
+	 * @throws RefusedException When no transport took the beschikking.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T09
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
 	 */
 	public function verzend(string $decisionId, string $actor): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -321,7 +329,10 @@ class BeschikkingService {
 		// behaving exactly as it did.
 		$declaredDays = $this->remedy->termDaysFor(caseId: (string)($decision['caseId'] ?? ''));
 
-		$dispatch = $this->berichtenbox->routeToBerichtenbox($decision);
+		$dispatch = $this->delivery->deliver(decision: $decision, decisionId: $decisionId);
+		if (($dispatch['status'] ?? '') !== RequesterNoticeSender::STATUS_SENT) {
+			throw $this->notSent(decision: $decision, dispatch: $dispatch, decisionId: $decisionId);
+		}
 
 		$bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
 		$term = $this->bezwaarScheduler->computeTermijn(
@@ -329,7 +340,13 @@ class BeschikkingService {
 			termDays: $declaredDays,
 		);
 
-		$decision['dispatch'] = $dispatch;
+		// What the transport answered, not a channel we picked: the channel
+		// that took it and the message id it gave back.
+		$decision['dispatch'] = [
+			'notificationChannel' => (string)($dispatch['channel'] ?? ''),
+			'messageId' => (string)($dispatch['messageId'] ?? ''),
+			'sentAt' => (string)($dispatch['sentAt'] ?? ''),
+		];
 		$decision['announcementDate'] = $bekendmaking;
 		$decision['objectionTermEndDate'] = $term['endDate'];
 		$decision['reminderDate'] = $term['herinnering'];
@@ -361,7 +378,7 @@ class BeschikkingService {
 			['actor' => $actor, 'actorType' => 'employee', 'trigger' => 'manual'],
 		);
 
-		$this->recordDelivery(decision: $saved, dispatch: $dispatch, decisionId: $decisionId);
+		$this->recordDelivery(decision: $saved, channel: (string)($dispatch['channel'] ?? ''), decisionId: $decisionId);
 
 		return $saved;
 	}//end verzend()
@@ -370,24 +387,24 @@ class BeschikkingService {
 	 * Put the delivered beschikking on the case timeline, for both readers.
 	 *
 	 * PUBLIC BY CONSTRUCTION, NOT BY A TICKED BOX. The applicant is holding
-	 * this letter: it reached their berichtenbox or their doormat, and the six
-	 * weeks they have to object started the day it went. A timeline that showed
-	 * them everything except the decision they are objecting to would be the
-	 * one entry worth hiding least.
+	 * this letter: a transport took it and answered with its own message id,
+	 * and the weeks they have to object started the day it went. A timeline
+	 * that showed them everything except the decision they are objecting to
+	 * would be the one entry worth hiding least.
 	 *
 	 * The entry carries the channel and the day it went, and nothing about the
 	 * addressee. Who it was sent to is on the beschikking; a public line is the
 	 * last place to repeat it.
 	 *
 	 * @param array<string, mixed> $decision   The saved beschikking.
-	 * @param array<string, mixed> $dispatch   What the routing service answered.
+	 * @param string               $channel    The channel whose transport took it.
 	 * @param string               $decisionId The beschikking uuid.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
-	private function recordDelivery(array $decision, array $dispatch, string $decisionId): void {
+	private function recordDelivery(array $decision, string $channel, string $decisionId): void {
 		$caseId = trim((string)($decision['caseId'] ?? ''));
 		if ($caseId === '') {
 			return;
@@ -398,10 +415,7 @@ class BeschikkingService {
 			kind: TimelineKinds::DECISION_SENT,
 			message: 'Beschikking verzonden',
 			fields: [
-				'channel' => (string)($dispatch['notificationChannel'] ?? ''),
-				// The announcement date the beschikking itself carries. The
-				// routing service no longer answers a sent moment, because it
-				// calls no transport (REQ-WRN-001).
+				'channel' => $channel,
 				'sentOn' => (string)($decision['announcementDate'] ?? ''),
 				'decisionType' => (string)($decision['decisionType'] ?? ''),
 				'reference' => (string)($decision['reference'] ?? ''),
@@ -410,6 +424,57 @@ class BeschikkingService {
 			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 	}//end recordDelivery()
+
+	/**
+	 * The refusal for a beschikking no transport took, after an internal line says so.
+	 *
+	 * INTERNAL, never public: the citizen's timeline must not read that the
+	 * decision was sent. The handler reads why on the case.
+	 *
+	 * @param array<string, mixed> $decision   The beschikking.
+	 * @param array<string, mixed> $dispatch   The sender's not-sent result.
+	 * @param string               $decisionId The beschikking uuid.
+	 *
+	 * @return RefusedException The refusal, carrying the transport's sentence.
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	private function notSent(array $decision, array $dispatch, string $decisionId): RefusedException {
+		$code = (string)($dispatch['reasonCode'] ?? 'not-sent');
+		$reason = (string)($dispatch['reason'] ?? 'No transport took the beschikking, so it was not sent.');
+
+		$caseId = trim((string)($decision['caseId'] ?? ''));
+		if ($caseId !== '') {
+			$this->timeline->record(
+				caseId: $caseId,
+				kind: TimelineKinds::DECISION_SENT,
+				message: 'Beschikking niet verzonden',
+				fields: [
+					'reasonCode' => $code,
+					'reason' => $reason,
+					'channelsTried' => count((array)($dispatch['channelsTried'] ?? [])),
+					'reference' => (string)($decision['reference'] ?? ''),
+					'beschikkingId' => $decisionId,
+				],
+				visibility: CaseTimeline::INTERNAL,
+			);
+		}
+
+		if ($code === 'no-channel') {
+			return new RefusedException(
+				rule: 'beschikking-no-address',
+				sentence: 'This case has no address for the requester, so the beschikking was not sent. '
+					. 'Add an address, then send it again.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return new RefusedException(
+			rule: 'beschikking-not-sent',
+			sentence: $reason,
+			status: RefusedException::STATUS_INDETERMINATE,
+		);
+	}//end notSent()
 
 	/**
 	 * Field-edit a beschikking, honouring the immutability contract. [T11]

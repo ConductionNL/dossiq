@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Throwable;
  * handler's user id is nothing a resident needs, and their own subject
  * reference is a pseudonym the portal keeps server-side.
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalCaseMessages {
 	use SearchesObjects;
@@ -82,7 +82,7 @@ class PortalCaseMessages {
 	 *
 	 * @return array<int, array<string, mixed>> `{id, subject, body, receivedAt, direction, senderName, read, attachments}` per message.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -110,7 +110,7 @@ class PortalCaseMessages {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function isTheResidents(array $message, string $resident): bool {
 		$direction = (string)($message['direction'] ?? '');

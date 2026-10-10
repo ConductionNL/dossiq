@@ -30,7 +30,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ namespace OCA\Dossiq\Service\Settings;
 /**
  * The structure setting: its key, its two values and how a stored value reads.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md
  */
 class MenuStructure {
 
@@ -76,7 +76,7 @@ class MenuStructure {
 	 *
 	 * @return string `simple` or `full`.
 	 *
-	 * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+	 * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
 	 */
 	public function normalise(string $stored): string {
 		if (strtolower(trim($stored)) === self::FULL) {
