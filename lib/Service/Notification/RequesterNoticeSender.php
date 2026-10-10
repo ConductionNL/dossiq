@@ -405,12 +405,14 @@ class RequesterNoticeSender {
 	 * @return string `statutory`, `besluit` or `case-update`.
 	 */
 	private function postCategoryFor(string $template, string $moment): string {
-		if (in_array($template, TermNoticeSender::STATUTORY, true) === true) {
-			return 'statutory';
-		}
-
+		// A decision travels as a besluit, though its mail is statutory too
+		// (decision 158): digital post has a category of its own for it.
 		if ($moment === 'decision') {
 			return 'besluit';
+		}
+
+		if (in_array($template, TermNoticeSender::STATUTORY, true) === true) {
+			return 'statutory';
 		}
 
 		return 'case-update';

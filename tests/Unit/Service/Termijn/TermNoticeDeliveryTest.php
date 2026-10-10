@@ -358,6 +358,33 @@ class TermNoticeDeliveryTest extends TestCase {
 	}//end testTheAcknowledgementIsStatutoryAndCarriesNoLink()
 
 	/**
+	 * Decision 158: a beschikking announcement is statutory mail (Awb 3:41). It
+	 * reaches a requester who opted out of case mail, without a link.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+	 */
+	public function testABeschikkingIsStatutoryAndReachesAnOptedOutRequester(): void {
+		$this->optOuts->optOut('burger@example.nl');
+
+		$result = $this->sender()->send(
+			template: 'beschikking',
+			instanceId: 'besch-1',
+			recipient: 'burger@example.nl',
+			caseRef: 'case-1',
+			subject: 'Uw besluit B-2026-7',
+			body: 'Het besluit op uw aanvraag staat klaar.',
+			dedupeKey: 'beschikking:besch-1',
+		);
+
+		self::assertSame('statutory', $this->optOuts->log[0]['category']);
+		self::assertCount(1, $this->sent, 'the opt-out does not stop a statutory notice');
+		self::assertStringNotContainsString('unsubscribe', strtolower($this->sent[0]->plainBody));
+		self::assertNotSame([], $result);
+	}//end testABeschikkingIsStatutoryAndReachesAnOptedOutRequester()
+
+	/**
 	 * Without integriq a service notice is refused, and the next run may try again.
 	 *
 	 * @return void

@@ -87,6 +87,11 @@ failure line in the PR body.
     took the beschikking. Failed asserting that null is not null.` (the status went to `sent`).
     Controller: `testVerzendNotSentAnswersTheRefusal`, red `Failed asserting that 500 is identical
     to 422.` New class test: `Beschikking/BeschikkingDeliveryTest` (5 cases).
+  - Decision 158 (Q-dossiq-L12-2): the beschikking's e-mail is statutory mail (Awb 3:41), so it
+    reaches a requester who opted out of case mail and carries no unsubscribe link
+    (`TermNoticeSender::STATUTORY`); digital post still files it as `besluit`. Test:
+    `TermNoticeDeliveryTest::testABeschikkingIsStatutoryAndReachesAnOptedOutRequester`, red without
+    it: `NoticeNotSentException: The recipient asked not to receive these messages.`
 
 ## 3. The extension reaches the requester
 

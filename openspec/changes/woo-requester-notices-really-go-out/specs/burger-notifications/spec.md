@@ -12,7 +12,17 @@ message id. A `not-sent` result SHALL carry a reason code and a sentence. No cod
 derive, hash or invent a message id for a notice no transport accepted. A caller of
 `TermijnNotificationService::sendTermijnNotification()` receives a `not-sent` result on the
 `NoticeNotSentException` it throws (`getDelivery()`), so a caller that does not read a status
-cannot record the notice as sent.
+cannot record the notice as sent. The beschikking's e-mail SHALL travel under integriq's
+`statutory` purpose, like the acknowledgement of receipt: announcing a besluit is a legal duty
+(Awb 3:41), so a case-mail opt-out SHALL NOT stop it and it SHALL carry no unsubscribe link.
+
+#### Scenario: A beschikking reaches a requester who opted out of case mail
+- **GIVEN** a requester who opted out of case mail and has only an e-mail address
+- **WHEN** a handler sends a signed beschikking
+- **THEN** integriq SHALL be asked under the `statutory` purpose and the mail SHALL go out
+- **AND** the mail SHALL carry no unsubscribe link
+
+@e2e exclude Needs integriq holding an opt-out and a captured outgoing mail, which the e2e instance does not provide; asserted in PHPUnit by TermNoticeDeliveryTest::testABeschikkingIsStatutoryAndReachesAnOptedOutRequester.
 
 #### Scenario: No transport answers, so nothing reads as sent
 - **GIVEN** a Woo case whose requester has only a BSN, and an instance without integriq
