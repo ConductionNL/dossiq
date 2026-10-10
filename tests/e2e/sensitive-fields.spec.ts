@@ -213,7 +213,7 @@ test.describe('sensitive fields behind an extra permission', () => {
 		}
 	})
 
-	// @e2e openspec/changes/sensitive-fields-declared/specs/security-hardening/spec.md#a-handler-outside-the-group-does-not-see-the-bsn
+	// @e2e openspec/specs/security-hardening/spec.md#a-handler-outside-the-group-does-not-see-the-bsn
 	// @e2e security-hardening::a-handler-outside-the-group-does-not-see-the-bsn
 	//
 	// BREAKS IF: the `authorization.read` block is dropped, renamed, or written
@@ -237,7 +237,7 @@ test.describe('sensitive fields behind an extra permission', () => {
 		expect(Object.keys(asHandler)).not.toContain(SENSITIVE_FIELD)
 	})
 
-	// @e2e openspec/changes/sensitive-fields-declared/specs/security-hardening/spec.md#a-reveal-is-audited
+	// @e2e openspec/specs/security-hardening/spec.md#a-reveal-is-audited
 	// @e2e security-hardening::a-reveal-is-audited
 	//
 	// BREAKS IF: the reveal is served without an audit row. The audit is
@@ -268,7 +268,7 @@ test.describe('sensitive fields behind an extra permission', () => {
 		).toContain(SENSITIVE_FIELD)
 	})
 
-	// @e2e openspec/changes/sensitive-fields-declared/specs/security-hardening/spec.md#a-handler-outside-the-group-does-not-see-the-bsn
+	// @e2e openspec/specs/security-hardening/spec.md#a-handler-outside-the-group-does-not-see-the-bsn
 	// @e2e security-hardening::a-handler-outside-the-group-does-not-see-the-bsn
 	//
 	// THE REQUIRED-FIELD HAZARD, ASKED RATHER THAN ASSUMED. `citizenServiceNumber`

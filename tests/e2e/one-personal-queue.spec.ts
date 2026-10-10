@@ -84,7 +84,7 @@ test.describe('One personal queue', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-caseworker-opens-one-page-not-six
+	// @e2e openspec/specs/my-work/spec.md#a-caseworker-opens-one-page-not-six
 	test('One page holds the work every mechanism put there', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
 		await navToRoute(page, '/my-queue')
@@ -105,7 +105,7 @@ test.describe('One personal queue', () => {
 		expect(errors, errors.join('\n')).toEqual([])
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/add-work-queue/spec.md#a-new-mechanism-reaches-the-queue-by-declaring-itself
+	// @e2e openspec/specs/add-work-queue/spec.md#a-new-mechanism-reaches-the-queue-by-declaring-itself
 	test('Each group says what takes its items off the queue', async ({ page }) => {
 		await navToRoute(page, '/my-queue')
 
@@ -116,7 +116,7 @@ test.describe('One personal queue', () => {
 		)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#an-item-closes-with-its-work
+	// @e2e openspec/specs/my-work/spec.md#an-item-closes-with-its-work
 	test('An item leaves when the task it points at is completed', async ({
 		page,
 		playwright,
@@ -144,7 +144,7 @@ test.describe('One personal queue', () => {
 		).toBeVisible()
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-person-cannot-dismiss-live-work
+	// @e2e openspec/specs/my-work/spec.md#a-person-cannot-dismiss-live-work
 	test('Live work cannot be dismissed, and the group can be hidden instead', async ({
 		page,
 	}) => {
@@ -172,7 +172,7 @@ test.describe('One personal queue', () => {
 		).toBeVisible()
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#the-digest-arrives-at-the-chosen-time
+	// @e2e openspec/specs/my-work/spec.md#the-digest-arrives-at-the-chosen-time
 	test('A digest is composed when work is waiting, and not when none is', async ({
 		page,
 	}) => {
@@ -200,7 +200,7 @@ test.describe('One personal queue', () => {
 		expect((await settings.json()).enabled).toBe(true)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#everything-touched-today-in-one-place
+	// @e2e openspec/specs/my-work/spec.md#everything-touched-today-in-one-place
 	test('The end-of-day screen lists what was opened today', async ({ page }) => {
 		// Open the case first: "touched" is the register's per-reader read
 		// state, so a case nobody opened must NOT appear, and this is the
@@ -218,7 +218,7 @@ test.describe('One personal queue', () => {
 		).toBeVisible(PAGE_LOAD)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#an-update-is-recorded-per-item
+	// @e2e openspec/specs/my-work/spec.md#an-update-is-recorded-per-item
 	test('An update written on the end-of-day screen lands on the case', async ({
 		page,
 	}) => {
@@ -261,7 +261,7 @@ test.describe('One personal queue', () => {
 			.toContain(`${RUN_PREFIX} handled the intake`)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-planned-item-with-no-case
+	// @e2e openspec/specs/my-work/spec.md#a-planned-item-with-no-case
 	test('A planned item reaches the queue and is not a case', async ({ page }) => {
 		await navToRoute(page, '/my-queue')
 		await page
@@ -295,8 +295,8 @@ test.describe('One personal queue', () => {
 		)
 	})
 
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#a-personal-triage-lane-on-a-shared-case
-	// @e2e openspec/changes/one-personal-queue/specs/my-work/spec.md#the-cases-own-status-is-unchanged
+	// @e2e openspec/specs/my-work/spec.md#a-personal-triage-lane-on-a-shared-case
+	// @e2e openspec/specs/my-work/spec.md#the-cases-own-status-is-unchanged
 	test('A personal stage is private and leaves the case status alone', async ({
 		page,
 	}) => {

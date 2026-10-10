@@ -1,7 +1,5 @@
 <template>
 	<div class="ai-settings-tab">
-		<h2>{{ t('dossiq', 'AI-Assisted Processing') }}</h2>
-
 		<NcLoadingIcon v-if="loadState === 'loading'" :size="32" />
 
 		<!--
@@ -33,7 +31,7 @@
 			<template v-if="settings.ai_enabled">
 				<!-- Model configuration -->
 				<div class="ai-settings-tab__section">
-					<h3>{{ t('dossiq', 'Model Configuration') }}</h3>
+					<h3>{{ t('dossiq', 'Model configuration') }}</h3>
 
 					<div class="form-group">
 						<label>{{ t('dossiq', 'Model type') }}</label>
@@ -128,7 +126,7 @@
 
 				<!-- Privacy -->
 				<div class="ai-settings-tab__section">
-					<h3>{{ t('dossiq', 'Privacy & Compliance') }}</h3>
+					<h3>{{ t('dossiq', 'Privacy and compliance') }}</h3>
 					<NcCheckboxRadioSwitch
 						:modelValue="settings.ai_pii_stripping"
 						@update:modelValue="
@@ -165,7 +163,7 @@
 
 				<!-- Health check -->
 				<div class="ai-settings-tab__section">
-					<h3>{{ t('dossiq', 'Connection Test') }}</h3>
+					<h3>{{ t('dossiq', 'Connection test') }}</h3>
 					<NcButton :disabled="healthLoading" @click="testHealth">
 						{{ t('dossiq', 'Test connection') }}
 					</NcButton>

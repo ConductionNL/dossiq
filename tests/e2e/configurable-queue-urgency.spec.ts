@@ -130,7 +130,7 @@ test.describe('configurable-queue-urgency', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-urgency-is-the-default-sort
+	// @e2e openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-urgency-is-the-default-sort
 	test('Urgency is the default, and it ranks by the score', async ({ page }) => {
 		await openMyWork(page)
 
@@ -141,7 +141,7 @@ test.describe('configurable-queue-urgency', () => {
 		).toEqual([HIGH, LOW])
 	})
 
-	// @e2e openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-toggling-to-newest-re-sorts
+	// @e2e openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-toggling-to-newest-re-sorts
 	test('Newest re-sorts by start date', async ({ page }) => {
 		await openMyWork(page)
 
@@ -154,7 +154,7 @@ test.describe('configurable-queue-urgency', () => {
 			.toEqual([LOW, HIGH])
 	})
 
-	// @e2e openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md#scenario-normal-tier-shows-no-chip
+	// @e2e openspec/specs/werkvoorraad-intelligent-queue/spec.md#scenario-normal-tier-shows-no-chip
 	test('every seeded card carries a pill, and the normal tier is no coloured chip', async ({
 		page,
 	}) => {
@@ -173,7 +173,7 @@ test.describe('configurable-queue-urgency', () => {
 		}
 	})
 
-	// @e2e openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md#scenario-the-section-shows-the-defaults
+	// @e2e openspec/specs/admin-settings/spec.md#scenario-the-section-shows-the-defaults
 	test('the admin section shows the defaults', async ({ page }) => {
 		await page.goto(SETTINGS)
 		const section = page.locator('[data-testid="queue-urgency-settings"]')
@@ -193,7 +193,7 @@ test.describe('configurable-queue-urgency', () => {
 		).toHaveValue('0.5')
 	})
 
-	// @e2e openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md#scenario-a-saved-threshold-comes-back-after-a-reload
+	// @e2e openspec/specs/admin-settings/spec.md#scenario-a-saved-threshold-comes-back-after-a-reload
 	test('a saved threshold comes back after a reload', async ({ page }) => {
 		await page.goto(SETTINGS)
 		const section = page.locator('[data-testid="queue-urgency-settings"]')

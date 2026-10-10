@@ -66,7 +66,7 @@ import {
  * app. Saves through the app's own admin-guarded settings write, the same one
  * the consultation section uses.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export default {
 	name: 'QueueUrgencySettingsTab',
@@ -91,7 +91,7 @@ export default {
 		 *
 		 * @return {Array<{field: string, label: string, hint: string}>} The fields.
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		fields() {
 			return [
@@ -136,7 +136,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/configurable-queue-urgency/specs/admin-settings/spec.md
+		 * @spec openspec/specs/admin-settings/spec.md
 		 */
 		async save() {
 			this.saved = false
