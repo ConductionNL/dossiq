@@ -212,6 +212,22 @@ class WorkingDayRollTest extends TestCase {
 	}
 
 	/**
+	 * A lead time that is not statutory still gets a date without a calendar.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 */
+	public function testALeadTimeFallsBackToCalendarDaysWithoutACalendar(): void {
+		$thursday = new DateTimeImmutable('2026-09-10T09:00:00+02:00');
+
+		$this->assertSame(
+			'2026-09-20',
+			$this->degraded()->endAfterOrCalendarDays(start: $thursday, days: 10, mode: WorkingDayRoll::MODE_WORKING_DAYS)->format('Y-m-d')
+		);
+	}
+
+	/**
 	 * A roll built around a calculator that answers a fixed instant.
 	 *
 	 * Not a PHPUnit double: the engine class is not on this repository's

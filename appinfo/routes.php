@@ -675,7 +675,7 @@ $extra = [
         // ── VTH Module: checklist results, advice, LHS lookup ─
         // A DSO verzoek has no route here: integriq receives it and
         // VergunningaanvraagCreatedListener makes the case (one path).
-        // @spec openspec/changes/dso-single-intake-path/specs/vth-dso-integration/spec.md
+        // @spec openspec/specs/vth-dso-integration/spec.md
         // @spec openspec/changes/vth-module/tasks.md#task-8
     ['name' => 'lhs#lookup',          'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
 

@@ -1581,7 +1581,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.38.0",
+                "version": "1.39.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2947,9 +2947,16 @@
                         "type": "string",
                         "format": "date",
                         "readOnly": true,
-                        "description": "Processing deadline. Computed declaratively by OpenRegister as startDate + the case type's processingDeadline (x-openregister-calculations.deadline).",
+                        "description": "Processing deadline. While the case has a statutory term, this is that term's current end date, after pauses, extensions and the Algemene termijnenwet roll, and it moves when the term moves. Only a case without a statutory term falls back to startDate + the case type's processingDeadline (x-openregister-calculations.deadline).",
                         "title": "Deadline",
                         "order": 11
+                    },
+                    "statutoryDeadline": {
+                        "type": "string",
+                        "format": "date",
+                        "visible": false,
+                        "description": "The statutory term's current end date, written by the term engine whenever the term moves. Read deadline instead: it carries the same date, and a fallback when the case has no statutory term.",
+                        "title": "Statutory term end"
                     },
                     "confidentiality": {
                         "type": "string",
