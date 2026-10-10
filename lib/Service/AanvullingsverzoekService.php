@@ -260,6 +260,8 @@ class AanvullingsverzoekService {
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return string The case type id.
+	 *
+	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
 	 */
 	protected function caseTypeOf(string $caseId): string {
 		try {

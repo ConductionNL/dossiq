@@ -48,11 +48,15 @@
             "properties": {
               "label": {
                 "type": "string",
-                "maxLength": 80
+                "maxLength": 80,
+                "title": "Link text",
+                "description": "The words the requester reads on the link."
               },
               "url": {
                 "type": "string",
-                "format": "uri"
+                "format": "uri",
+                "title": "Link address",
+                "description": "The address of the publication, always the case's own Woo publication link."
               }
             },
             "visible": false
