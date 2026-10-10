@@ -99,9 +99,11 @@ describe('SearchIndexTab', () => {
 
 		expect(wrapper.find('[data-testid="search-index-tables"]').text()).toBe('2')
 		expect(wrapper.find('[data-testid="search-index-indexes"]').text()).toBe('2')
-		expect(wrapper.find('[data-testid="search-index-last-run"]').text()).toBe(
-			'2026-09-15T22:00:00+00:00',
-		)
+		// A date a person reads, not the ISO string the API carries.
+		const lastRun = wrapper.find('[data-testid="search-index-last-run"]').text()
+		expect(lastRun).toContain('2026')
+		expect(lastRun).not.toBe('2026-09-15T22:00:00+00:00')
+		expect(lastRun).not.toBe('')
 	})
 
 	it('says a rebuild is safe when the platform can do it concurrently', async () => {

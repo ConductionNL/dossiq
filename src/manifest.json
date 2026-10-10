@@ -82,7 +82,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "right",
 						"title": "All your cases",
-						"body": "You work from this list: every case in the organisation, open and closed.",
+						"body": "You work from this list: the open cases in your teams.",
 						"task": "Click All cases in the menu",
 						"target": {
 							"kind": "nav-item",
@@ -121,7 +121,7 @@
 						"optional": true,
 						"allowManualNext": true,
 						"title": "Where case types come from",
-						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look; you do not need to make one, 88 ship with the app.",
+						"body": "Every case follows a case type, its blueprint. The case type decides the statuses a case moves through, how long it may take, who handles it and what may be decided. Have a look. You do not need to make one: dossiq ships with a set of them.",
 						"task": "Open Advanced, then Case types",
 						"target": {
 							"kind": "nav-item",
@@ -169,8 +169,8 @@
 						"id": "done",
 						"sinceVersion": "0.2.17",
 						"placement": "top",
-						"title": "Your first case is on the board",
-						"body": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
+						"title": "Your first case is on the dashboard",
+						"body": "The dashboard tracks progress as cases move through it. The documentation covers the rest.",
 						"task": "Open the documentation",
 						"target": {
 							"kind": "selector",
@@ -5230,25 +5230,32 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "wooRefusalGround",
+				"showTitle": true,
 				"_note": "woo-refusal-grounds-list REQ-WRG-003. The settled grounds of design D-2 (decision 133). Sorted by code with the broader ground beside each, so the list reads as the tree: 5.1, then 5.1.1 and its letters, then 5.1.2 and its letters. Add creates a narrower ground under a parent code; editing the status to retired is how a ground is retired, because WooRefusalGroundDeleteGuard refuses a delete while anything cites it. No board on identity.conduction.nl/screens draws this page.",
 				"columns": [
 					{
-						"key": "code"
+						"key": "code",
+						"label": "Code"
 					},
 					{
-						"key": "label"
+						"key": "label",
+						"label": "Ground"
 					},
 					{
-						"key": "parent"
+						"key": "parent",
+						"label": "Broader ground"
 					},
 					{
-						"key": "kind"
+						"key": "kind",
+						"label": "Kind"
 					},
 					{
-						"key": "citable"
+						"key": "citable",
+						"label": "Citable"
 					},
 					{
-						"key": "status"
+						"key": "status",
+						"label": "Status"
 					}
 				],
 				"defaultSort": "code",

@@ -927,7 +927,7 @@ export default {
 
 .status-type-form__error {
 	display: block;
-	color: var(--color-error);
+	color: var(--color-error-text);
 	font-size: 12px;
 	margin-top: 8px;
 }
