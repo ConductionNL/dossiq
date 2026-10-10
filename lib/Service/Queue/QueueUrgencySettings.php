@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 /**
  * Reads the admin's queue thresholds and weights.
  *
- * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 class QueueUrgencySettings {
 
@@ -57,7 +57,7 @@ class QueueUrgencySettings {
 	 *
 	 * @return UrgencyProfile The profile every case starts from.
 	 *
-	 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 	 */
 	public function profile(): UrgencyProfile {
 		return new UrgencyProfile(

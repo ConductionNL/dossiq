@@ -118,7 +118,7 @@ test.describe('Every statutory term lands on a working day', () => {
 		return { status: res.status(), body: decoded }
 	}
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
 	//
 	// Awb 4:5. Fourteen days credited onto 12 December 2026 is Tweede
 	// Kerstdag, a Saturday, and the term cannot end on one.
@@ -144,7 +144,7 @@ test.describe('Every statutory term lands on a working day', () => {
 		).toBe('paused')
 	})
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
 	//
 	// THE CONTROL. The same fourteen days onto a Monday two days later land
 	// on the same Monday, 28 December, without any roll. A service that
@@ -165,7 +165,7 @@ test.describe('Every statutory term lands on a working day', () => {
 		).toBe('2026-12-28')
 	})
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#a-pause-credit-lands-on-a-holiday
 	//
 	// Awb 4:15, the other half of REQ-TERM-018's third scenario: the unused
 	// remainder comes off and the result lands on a working day too.
@@ -196,7 +196,7 @@ test.describe('Every statutory term lands on a working day', () => {
 		).toBe('lopend')
 	})
 
-	// @e2e openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#the-ingebrekestelling-grace-ends-on-a-sunday
+	// @e2e openspec/specs/termijnbewaking-schemas/spec.md#the-ingebrekestelling-grace-ends-on-a-sunday
 	//
 	// Awb 4:17. Fourteen days from a receipt on Sunday 7 June 2026 is Sunday
 	// 21 June, and the dwangsom cannot start running on one.
