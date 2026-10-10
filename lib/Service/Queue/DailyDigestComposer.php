@@ -83,7 +83,7 @@ class DailyDigestComposer {
 		}
 
 		$late = array_values(
-			array_filter($items, static fn (array $item): bool => (($item['tier'] ?? '') === 'overdue'))
+			array_filter($items, static fn (array $item): bool => (($item['deadlineTier'] ?? '') === 'overdue'))
 		);
 
 		$named = [];
@@ -92,7 +92,7 @@ class DailyDigestComposer {
 				'id' => (string)$item['id'],
 				'title' => (string)$item['title'],
 				'source' => (string)$item['source'],
-				'tier' => (string)($item['tier'] ?? 'normal'),
+				'deadlineTier' => (string)($item['deadlineTier'] ?? 'normal'),
 			];
 		}
 

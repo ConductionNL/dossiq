@@ -41,6 +41,7 @@ import {
 	getRequestToken,
 	objectId,
 	REGISTER,
+	removeTeams,
 	RUN_PREFIX,
 	seedCase,
 	seedStateMachine,
@@ -61,10 +62,11 @@ let token: string
 let caseTypeId = ''
 
 /**
- * The organisatieRol uuid each named unit resolves to.
+ * The Nextcloud group id each named unit resolves to.
  *
- * `case.assignedGroup` is a uuid reference, so a unit this file talks about by
- * name has to exist as a row before a case can be held by it.
+ * `case.assignedGroup` is a Nextcloud group id (one-team-model), and the
+ * custody chain asks Nextcloud who is in it, so a unit this file talks about
+ * by name has to exist as a group before a case can be held by it.
  */
 const teams: Record<string, string> = {}
 
@@ -81,16 +83,18 @@ test.beforeAll(async ({ playwright }) => {
 
 test.afterAll(async () => {
 	await cleanupRunObjects(api, token)
+	await removeTeams(api)
 	await api.dispose()
 })
 
 /**
  * Seed one case held by a named unit.
  *
- * The unit is named here and stored as the uuid of its `organisatieRol`,
- * because that is what `case.assignedGroup` declares. Passing the name
- * answered `400 Property 'assignedGroup' should match format 'uuid'` in
- * `beforeAll`, and every test in this file died there.
+ * The unit is named here and stored as the id of its Nextcloud group,
+ * because that is what `case.assignedGroup` holds. When it was declared a
+ * uuid reference, passing the name answered `400 Property 'assignedGroup'
+ * should match format 'uuid'` in `beforeAll`, and every test in this file
+ * died there.
  *
  * @param unit The organisation unit that holds it.
  * @param title A short title, prefixed with this run's marker by seedCase.
@@ -110,7 +114,10 @@ test.describe('@spec REQ-CUS-01 the chain of custody', () => {
 
 		const handed = await api.post(caseApi(caseId, 'handover'), {
 			headers: { requesttoken: token },
-			data: { team: 'toezicht', reason: 'Dit is handhaving, geen vergunning' },
+			data: {
+				team: teams.toezicht,
+				reason: 'Dit is handhaving, geen vergunning',
+			},
 		})
 		expect(
 			handed.ok(),
@@ -133,7 +140,7 @@ test.describe('@spec REQ-CUS-01 the chain of custody', () => {
 		).toBe(second.from)
 		expect(first.open).toBe(false)
 		expect(second.open).toBe(true)
-		expect(second.organisationUnit).toBe('toezicht')
+		expect(second.organisationUnit).toBe(teams.toezicht)
 		expect(
 			second.reason,
 			'The reason for the move and the person who made it are on the new holding.',
@@ -151,7 +158,7 @@ test.describe('@spec REQ-CUS-01 the chain of custody', () => {
 
 		await api.post(caseApi(caseId, 'handover'), {
 			headers: { requesttoken: token },
-			data: { team: 'toezicht', reason: 'Handhaving' },
+			data: { team: teams.toezicht, reason: 'Handhaving' },
 		})
 
 		const read = await api.get(caseApi(caseId, 'custody'))
@@ -167,7 +174,7 @@ test.describe('@spec REQ-CUS-01 the chain of custody', () => {
 		expect(
 			answer.holding.organisationUnit,
 			'On the day of a transfer the case belongs to the unit that TOOK it, or the day reads as two units.',
-		).toBe('toezicht')
+		).toBe(teams.toezicht)
 	})
 })
 

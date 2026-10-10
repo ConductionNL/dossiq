@@ -9,10 +9,12 @@ is right on the first render.
 #### Scenario: A case handler opens dossiq on a new instance
 - **GIVEN** an instance where `menu_structure` was never set
 - **WHEN** a case handler opens dossiq
-- **THEN** the main menu MUST show nine entries under the captions Start, Cases
-  and Relations
+- **THEN** the main menu MUST show eight entries, the first group without a
+  caption and the others under the captions Cases and Relations, with the
+  caption My case types between them (amended by case-types-in-my-menu)
 - **AND** the entries MUST be Dashboard, My work, Team queue, All cases, Board,
-  Tasks, Woo requests, Contacts and Organisations, in that order
+  Tasks, Contacts and Organisations, in that order
+- **AND** the case types the user chose MUST stand under My case types
 
 #### Scenario: An administrator brings the full menu back
 @e2e exclude The e2e instance runs on the full structure for the whole suite (tests/e2e/ci-seed.sh sets it), and MenuStructureTest plus structureProfile.spec.js cover the setting itself.
@@ -66,8 +68,9 @@ menu opens.
 - **AND** every entry the full structure has in settings MUST still be there
 
 #### Scenario: Woo requests open the cases list narrowed to Woo
-@e2e exclude The link's target is asserted in structureProfile.spec.js against the seeded case type; the list reading `?caseType=` is library behaviour.
-- **GIVEN** the simple structure
-- **WHEN** a case handler chooses Woo requests
+@e2e exclude The Woo default and the entry's target are asserted in MenuCaseTypesServiceTest and ManifestControllerTest; the list reading `?caseType=` is library behaviour.
+- **GIVEN** the simple structure and a user who never chose their menu case types
+- **WHEN** a case handler chooses Woo requests under My case types
 - **THEN** the cases list MUST open filtered on the Woo request case type that
   `register.d/81-woo-verzoek.json` seeds
+- **AND** the entry MUST come from the user's menu choice (case-types-in-my-menu), not from a fixed entry in the profile
