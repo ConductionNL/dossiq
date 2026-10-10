@@ -38,6 +38,10 @@ export function notificationLabels() {
 			'I am registered as a substitute',
 		),
 		'workDigest.workDigestReady': t('dossiq', 'My work digest is ready'),
+		'supplierMessage.newSupplierMessage': t('dossiq', 'A supplier gets a new message'),
+		'supplierContract.contractExpiring': t('dossiq', 'A supplier contract is about to end'),
+		'caseSupplierInvoice.invoiceDue': t('dossiq', 'A supplier invoice is almost due'),
+		'supplierTender.tenderPublished': t('dossiq', 'A tender award is published'),
 		// Listed on instances that still carry a task schema with this rule.
 		taskAssigned: t('dossiq', 'A task is assigned to me'),
 	}
