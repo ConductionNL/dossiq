@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCP\App\IAppManager;
@@ -132,7 +133,7 @@ class TenantConfigurationService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantConfiguration',
 						'tenantRef' => $tenantId,
 					],
@@ -310,7 +311,7 @@ class TenantConfigurationService {
 
 			return $objectService->saveObject(
 				object: $next,
-				register: TenantSaasService::REGISTER,
+				register: Application::REGISTER_SLUG,
 				schema: 'tenantConfiguration',
 				uuid: $uuidArg
 			);

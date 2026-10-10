@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\TenantOrganisationResolver;
-use OCA\Dossiq\Service\TenantSaasService;
 use OCA\OpenRegister\Db\Organisation;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -52,24 +51,15 @@ interface OrganisationMapperStub {
  */
 class TenantOrganisationResolverTest extends TestCase {
 	/**
-	 * Every tenant id the legacy `tenant` schema was asked for, in order.
+	 * A resolver over a fake OpenRegister.
 	 *
-	 * @var array<int, string>
-	 */
-	private array $legacyReads = [];
-
-	/**
-	 * A resolver over a fake OpenRegister and a fake legacy store.
-	 *
-	 * @param array<string, Organisation>      $organisations Organisations by uuid.
-	 * @param array<string, array<string,mixed>> $legacy      Legacy tenant rows by uuid.
-	 * @param bool                             $openRegister Whether OpenRegister is installed.
+	 * @param array<string, Organisation> $organisations Organisations by uuid.
+	 * @param bool                        $openRegister  Whether OpenRegister is installed.
 	 *
 	 * @return TenantOrganisationResolver The resolver.
 	 */
 	private function resolverOver(
 		array $organisations,
-		array $legacy = [],
 		bool $openRegister = true,
 	): TenantOrganisationResolver {
 		$mapper = $this->createMock(OrganisationMapperStub::class);
@@ -94,19 +84,9 @@ class TenantOrganisationResolverTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($mapper);
 
-		$saas = $this->createMock(TenantSaasService::class);
-		$saas->method('getById')->willReturnCallback(
-			function (string $tenantId) use ($legacy): ?array {
-				$this->legacyReads[] = $tenantId;
-
-				return ($legacy[$tenantId] ?? null);
-			}
-		);
-
 		return new TenantOrganisationResolver(
 			appManager: $appManager,
 			container: $container,
-			tenantSaas: $saas,
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}
@@ -132,22 +112,13 @@ class TenantOrganisationResolverTest extends TestCase {
 	}
 
 	/**
-	 * The Organisation is what resolves, and the legacy row is not read at all.
-	 *
-	 * This is the whole point of the step, so it is asserted twice over. The
-	 * returned row must be the Organisation's, AND the legacy `tenant` schema
-	 * must not have been asked. Without the second assertion a resolver that
-	 * read both and merged them would pass.
-	 *
-	 * Mutation: move the legacy read above the Organisation lookup in
-	 * `resolve()` and this reddens on the slug.
+	 * The Organisation is what resolves.
 	 *
 	 * @return void
 	 */
-	public function testTheOrganisationResolvesAndTheLegacyTenantIsNotRead(): void {
+	public function testTheOrganisationResolves(): void {
 		$resolver = $this->resolverOver(
 			organisations: ['org-a' => $this->organisation(uuid: 'org-a', slug: 'from-organisation', status: 'active')],
-			legacy: ['org-a' => ['uuid' => 'org-a', 'slug' => 'from-legacy-tenant', 'status' => 'active']],
 		);
 
 		$tenant = $resolver->resolve(tenantId: 'org-a');
@@ -156,47 +127,33 @@ class TenantOrganisationResolverTest extends TestCase {
 		$this->assertSame('from-organisation', $tenant['slug']);
 		$this->assertSame('org-a', $tenant['uuid']);
 		$this->assertSame('org-a', $tenant['id']);
-		$this->assertSame([], $this->legacyReads, 'the legacy tenant schema must not be read when an Organisation resolves');
 	}
 
 	/**
-	 * An instance that has not migrated yet still resolves its tenant.
+	 * A tenant id with no Organisation resolves to nothing, and no legacy store is asked (REQ-TOO-003).
 	 *
-	 * The fallback is what makes this half of the step reversible. Step 5
-	 * removes it together with the `tenant` schema it reads.
+	 * The fallback onto the retired `tenant` admin store is gone: the resolver
+	 * takes no `TenantSaasService` at all, so nothing it could read remains.
 	 *
 	 * @return void
 	 */
-	public function testATenantWithNoOrganisationStillResolvesFromTheLegacyRow(): void {
-		$resolver = $this->resolverOver(
-			organisations: [],
-			legacy: ['tenant-a' => ['uuid' => 'tenant-a', 'slug' => 'not-yet-migrated', 'status' => 'active']],
+	public function testATenantIdWithNoOrganisationResolvesToNothing(): void {
+		$this->assertNull($this->resolverOver(organisations: [])->resolve(tenantId: 'tenant-a'));
+
+		$parameters = array_map(
+			static fn (\ReflectionParameter $p): string => (string) $p->getType(),
+			(new \ReflectionMethod(TenantOrganisationResolver::class, '__construct'))->getParameters()
 		);
-
-		$tenant = $resolver->resolve(tenantId: 'tenant-a');
-
-		$this->assertNotNull($tenant);
-		$this->assertSame('not-yet-migrated', $tenant['slug']);
-		$this->assertSame(['tenant-a'], $this->legacyReads);
+		$this->assertNotContains('OCA\\Dossiq\\Service\\TenantSaasService', $parameters, 'The legacy reader must not be injected any more.');
 	}
 
 	/**
-	 * A tenant id nothing answers to resolves to nothing.
+	 * The empty tenant id is refused.
 	 *
 	 * @return void
 	 */
-	public function testATenantIdNothingAnswersToResolvesToNull(): void {
-		$this->assertNull($this->resolverOver(organisations: [], legacy: [])->resolve(tenantId: 'ghost'));
-	}
-
-	/**
-	 * The empty tenant id is refused before either store is asked.
-	 *
-	 * @return void
-	 */
-	public function testTheEmptyTenantIdIsRefusedWithoutAskingAnything(): void {
-		$this->assertNull($this->resolverOver(organisations: [], legacy: [])->resolve(tenantId: ''));
-		$this->assertSame([], $this->legacyReads);
+	public function testTheEmptyTenantIdIsRefused(): void {
+		$this->assertNull($this->resolverOver(organisations: [])->resolve(tenantId: ''));
 	}
 
 	/**
@@ -238,21 +195,16 @@ class TenantOrganisationResolverTest extends TestCase {
 	}
 
 	/**
-	 * Without OpenRegister there is no Organisation to resolve, and the legacy
-	 * row answers instead rather than the request failing.
+	 * Without OpenRegister there is no Organisation, so there is no tenant.
 	 *
 	 * @return void
 	 */
-	public function testWithoutOpenRegisterTheLegacyRowAnswers(): void {
+	public function testWithoutOpenRegisterThereIsNoTenant(): void {
 		$resolver = $this->resolverOver(
 			organisations: ['org-a' => $this->organisation(uuid: 'org-a', slug: 'from-organisation', status: 'active')],
-			legacy: ['org-a' => ['uuid' => 'org-a', 'slug' => 'from-legacy-tenant', 'status' => 'active']],
 			openRegister: false,
 		);
 
-		$tenant = $resolver->resolve(tenantId: 'org-a');
-
-		$this->assertNotNull($tenant);
-		$this->assertSame('from-legacy-tenant', $tenant['slug']);
+		$this->assertNull($resolver->resolve(tenantId: 'org-a'));
 	}
 }//end class
