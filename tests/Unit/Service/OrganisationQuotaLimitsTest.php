@@ -57,6 +57,7 @@ interface QuotaLimitMapperStub {
 
 /**
  * @covers \OCA\Dossiq\Service\OrganisationQuotaLimits
+ * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
  */
 class OrganisationQuotaLimitsTest extends TestCase {
 	/**

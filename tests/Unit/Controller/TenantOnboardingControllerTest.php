@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Controller\TenantOnboardingController
  * @covers \OCA\Dossiq\Service\TenantOnboardingService
  * @covers \OCA\Dossiq\Service\TenantService
+ * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
  */
 class TenantOnboardingControllerTest extends TestCase {
 	use MakesTenantAnchors;
