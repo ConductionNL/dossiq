@@ -36,7 +36,9 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Woo\WooCollection;
 use OCA\Dossiq\Woo\WooGatherAdd;
+use OCA\Dossiq\Woo\WooSearchPlans;
 use OCA\Dossiq\Woo\WooSources;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -70,7 +72,15 @@ class WooGatherAddTest extends TestCase {
 		'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject',
 		'dossier_informatieobjecttype_schema' => 'informatieobjecttype',
 		'woo_assessment_schema' => 'wooDocumentAssessment',
+		'woo_exclusion_schema' => 'wooExclusion',
+		'woo_search_plan_schema' => 'wooSearchPlan',
+		'woo_request_configuration_schema' => 'wooRequestConfiguration',
 	];
+
+	/**
+	 * The recorded plan's custodians.
+	 */
+	private const CUSTODIANS = ['Wethouder Ruimte', 'Afdeling Vergunningen'];
 
 	private InMemoryRegister $register;
 
@@ -238,6 +248,15 @@ class WooGatherAddTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
+		$caseDocuments = new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class));
+		$collection = new WooCollection(
+			settingsService: $this->settings,
+			caseDocuments: $caseDocuments,
+			store: $store,
+			assessments: new WOODocumentAssessmentService(settingsService: $this->settings, userSession: $session, logger: $this->createMock(LoggerInterface::class), caseDocuments: $caseDocuments),
+			plans: new WooSearchPlans(settingsService: $this->settings),
+		);
+
 		return new WooGatherAdd(
 			rootFolder: $rootFolder,
 			store: $store,
@@ -246,6 +265,8 @@ class WooGatherAddTest extends TestCase {
 			accessGuard: $guard,
 			l10n: $l10n,
 			logger: $this->createMock(LoggerInterface::class),
+			collection: $collection,
+			caseDocuments: $caseDocuments,
 		);
 	}//end service()
 
@@ -283,13 +304,12 @@ class WooGatherAddTest extends TestCase {
 		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
 			picks: [
-				['source' => 'files', 'key' => '11', 'location' => 'Team Ruimte'],
-				['source' => 'files', 'key' => '12', 'location' => 'Team Verkeer'],
-				['source' => 'files', 'key' => '13', 'location' => 'Directie'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '11', 'location' => 'Team Ruimte'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '12', 'location' => 'Team Verkeer'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '13', 'location' => 'Directie'],
 			],
 			terms: 'Stationsweg',
-			user: $this->user,
-		);
+			user: $this->user, custodians: self::CUSTODIANS);
 
 		self::assertSame(['added', 'added', 'refused'], array_column($results, 'status'));
 		self::assertSame('not-readable', $results[2]['reason']);
@@ -306,7 +326,7 @@ class WooGatherAddTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFileOutsideTheCallersFolderIsRefused(): void {
-		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'key' => '77']], terms: 'x', user: $this->user);
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '77']], terms: 'x', user: $this->user, custodians: self::CUSTODIANS);
 
 		self::assertSame('refused', $results[0]['status']);
 		self::assertSame('not-readable', $results[0]['reason']);
@@ -323,10 +343,9 @@ class WooGatherAddTest extends TestCase {
 
 		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
-			picks: [['source' => 'files', 'key' => '11', 'location' => 'Team Ruimte/notulen.pdf']],
+			picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '11', 'location' => 'Team Ruimte/notulen.pdf']],
 			terms: 'bouwvergunning 2024',
-			user: $this->user,
-		);
+			user: $this->user, custodians: self::CUSTODIANS);
 
 		$record = $this->register->row('informatieobject', $results[0]['documentId']);
 		self::assertSame('files', $record['provenance']['source']);
@@ -350,10 +369,9 @@ class WooGatherAddTest extends TestCase {
 	public function testADocumentOfAnotherCaseIsLinkedNotCopied(): void {
 		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
-			picks: [['source' => 'cases', 'key' => self::LINKED_DOC, 'location' => 'Omgevingsvergunning Stationsweg']],
+			picks: [['source' => 'cases', 'custodian' => 'Wethouder Ruimte', 'key' => self::LINKED_DOC, 'location' => 'Omgevingsvergunning Stationsweg']],
 			terms: 'Stationsweg',
-			user: $this->user,
-		);
+			user: $this->user, custodians: self::CUSTODIANS);
 
 		self::assertSame('added', $results[0]['status']);
 		self::assertSame(self::LINKED_DOC, $results[0]['documentId']);
@@ -377,16 +395,16 @@ class WooGatherAddTest extends TestCase {
 	 */
 	public function testALinkTheCallerMayNotReadOrAlreadyHasIsRefused(): void {
 		$this->readsOtherCase = false;
-		$refused = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
+		$refused = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'custodian' => 'Wethouder Ruimte', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user, custodians: self::CUSTODIANS);
 		self::assertSame('not-readable', $refused[0]['reason']);
 
 		$this->readsOtherCase = true;
 		$service = $this->service();
-		$service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
-		$again = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user);
+		$service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'custodian' => 'Wethouder Ruimte', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user, custodians: self::CUSTODIANS);
+		$again = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'custodian' => 'Wethouder Ruimte', 'key' => self::LINKED_DOC]], terms: 'x', user: $this->user, custodians: self::CUSTODIANS);
 		self::assertSame('already-on-case', $again[0]['reason']);
 
-		$missing = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'key' => 'no-such-document']], terms: 'x', user: $this->user);
+		$missing = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'cases', 'custodian' => 'Wethouder Ruimte', 'key' => 'no-such-document']], terms: 'x', user: $this->user, custodians: self::CUSTODIANS);
 		self::assertSame('not-found', $missing[0]['reason']);
 	}//end testALinkTheCallerMayNotReadOrAlreadyHasIsRefused()
 
@@ -401,13 +419,12 @@ class WooGatherAddTest extends TestCase {
 		$results = $this->service()->addPicks(
 			caseId: self::CASE_ID,
 			picks: [
-				['source' => 'microsoft365', 'key' => 'driveItem:d1:i1', 'location' => 'Ruimte / Gedeelde documenten'],
-				['source' => 'microsoft365', 'key' => 'message:m9'],
-				['source' => 'elsewhere', 'key' => 'x'],
+				['source' => 'microsoft365', 'custodian' => 'Wethouder Ruimte', 'key' => 'driveItem:d1:i1', 'location' => 'Ruimte / Gedeelde documenten'],
+				['source' => 'microsoft365', 'custodian' => 'Wethouder Ruimte', 'key' => 'message:m9'],
+				['source' => 'elsewhere', 'custodian' => 'Wethouder Ruimte', 'key' => 'x'],
 			],
 			terms: 'Stationsweg',
-			user: $this->user,
-		);
+			user: $this->user, custodians: self::CUSTODIANS);
 
 		self::assertSame(['added', 'refused', 'refused'], array_column($results, 'status'));
 		self::assertSame(['', 'not-fetched', 'unknown-source'], array_column($results, 'reason'));
@@ -424,10 +441,95 @@ class WooGatherAddTest extends TestCase {
 		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/a.pdf', fileId: 11, content: 'a');
 		$this->register->seed('informatieobject', 'listener-made', ['fileId' => 900, 'fileName' => 'a.pdf', 'title' => 'a']);
 
-		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'key' => '11']], terms: 't', user: $this->user);
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '11']], terms: 't', user: $this->user, custodians: self::CUSTODIANS);
 
 		self::assertSame('listener-made', $results[0]['documentId']);
 		self::assertCount(2, $this->register->all('informatieobject'), 'the seeded linked doc and the listener\'s record, nothing more');
 	}//end testARecordTheListenerAlreadyMadeIsReused()
-}//end class
+	/**
+	 * REQ-WRC-002: a pick without one of the plan's custodians is refused alone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
+	 */
+	public function testAPickWithoutAPlanCustodianIsRefusedAlone(): void {
+		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/a.pdf', fileId: 11, content: 'a');
+		$this->userFiles[12] = $this->fileDouble(path: '/pjansen/files/b.pdf', fileId: 12, content: 'b');
 
+		$results = $this->service()->addPicks(
+			caseId: self::CASE_ID,
+			picks: [
+				['source' => 'files', 'custodian' => 'Iemand anders', 'key' => '11'],
+				['source' => 'files', 'custodian' => 'Afdeling Vergunningen', 'key' => '12'],
+			],
+			terms: 't',
+			user: $this->user,
+			custodians: self::CUSTODIANS,
+		);
+
+		self::assertSame(['refused', 'added'], array_column($results, 'status'));
+		self::assertSame('custodian-required', $results[0]['reason']);
+		self::assertSame([], $this->register->all('wooExclusion'), 'a pick without a custodian never arrived, so it is no exclusion');
+	}//end testAPickWithoutAPlanCustodianIsRefusedAlone()
+
+	/**
+	 * REQ-WRC-002: provenance carries the custodian and the system, and validates against the document schema.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
+	 */
+	public function testProvenanceCarriesCustodianAndSystem(): void {
+		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/a.pdf', fileId: 11, content: 'a');
+
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'custodian' => 'Afdeling Vergunningen', 'key' => '11']], terms: 't', user: $this->user, custodians: self::CUSTODIANS);
+
+		$provenance = $this->register->row('informatieobject', $results[0]['documentId'])['provenance'];
+		self::assertSame('Afdeling Vergunningen', $provenance['custodian']);
+		self::assertSame('files', $provenance['sourceSystem']);
+		self::assertSame([], (new RealSchemaValidator())->errors(slug: 'informatieobject', payload: ['provenance' => $provenance], creating: false));
+	}//end testProvenanceCarriesCustodianAndSystem()
+
+	/**
+	 * REQ-WRC-003 "A duplicate is listed, not silently dropped".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
+	 */
+	public function testADuplicateIsListedNotAdded(): void {
+		$this->userFiles[11] = $this->fileDouble(path: '/pjansen/files/Ruimte/notulen.pdf', fileId: 11, content: 'dezelfde bytes');
+		$this->userFiles[12] = $this->fileDouble(path: '/pjansen/files/Verkeer/notulen-kopie.pdf', fileId: 12, content: 'dezelfde bytes');
+		$service = $this->service();
+
+		$first = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '11']], terms: 't', user: $this->user, custodians: self::CUSTODIANS);
+		$second = $service->addPicks(caseId: self::CASE_ID, picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '12', 'location' => 'Verkeer']], terms: 't', user: $this->user, custodians: self::CUSTODIANS);
+
+		self::assertSame('excluded', $second[0]['status']);
+		self::assertSame('duplicate', $second[0]['reason']);
+		self::assertCount(1, $this->caseFiles, 'no second document was added');
+		$exclusion = $this->register->all('wooExclusion')[0];
+		self::assertSame('duplicate', $exclusion['reason']);
+		self::assertSame($first[0]['documentId'], $exclusion['duplicateOf']);
+		self::assertSame(hash('sha256', 'dezelfde bytes'), $exclusion['sha256']);
+		self::assertSame([], (new RealSchemaValidator())->errors(slug: 'wooExclusion', payload: $exclusion));
+	}//end testADuplicateIsListedNotAdded()
+
+	/**
+	 * REQ-WRC-003: an unreadable pick is recorded, so what arrived reconciles.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
+	 */
+	public function testAnUnreadablePickIsRecorded(): void {
+		$results = $this->service()->addPicks(caseId: self::CASE_ID, picks: [['source' => 'microsoft365', 'custodian' => 'Wethouder Ruimte', 'key' => 'message:9', 'location' => 'Postvak']], terms: 't', user: $this->user, custodians: self::CUSTODIANS);
+
+		self::assertSame('refused', $results[0]['status']);
+		$exclusion = $this->register->all('wooExclusion')[0];
+		self::assertSame('unreadable', $exclusion['reason']);
+		self::assertSame('Wethouder Ruimte', $exclusion['custodian']);
+		self::assertSame('Postvak', $exclusion['location']);
+	}//end testAnUnreadablePickIsRecorded()
+}//end class

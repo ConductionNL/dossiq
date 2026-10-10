@@ -69,6 +69,8 @@ class WooGatherAdd {
 	 * @param CaseAccessGuard           $accessGuard Whether the caller may read the case a linked document is on.
 	 * @param IL10N                     $l10n        The refusal sentences.
 	 * @param LoggerInterface           $logger      Logs a pick that failed for a reason the caller cannot fix.
+	 * @param WooCollection             $collection  Records a duplicate or unreadable pick as an exclusion.
+	 * @param WooCaseDocuments          $caseDocuments The case's documents, for the duplicate check.
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
@@ -78,6 +80,8 @@ class WooGatherAdd {
 		private readonly CaseAccessGuard $accessGuard,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly WooCollection $collection,
+		private readonly WooCaseDocuments $caseDocuments,
 	) {
 	}//end __construct()
 
@@ -89,20 +93,22 @@ class WooGatherAdd {
 	 *                                                 the other case's document uuid, or integriq's handle.
 	 * @param string                           $terms  The search terms the picks were found with.
 	 * @param IUser                            $user   The caller.
+	 * @param array<int, string>               $custodians The recorded plan's custodians; every pick names one.
 	 *
-	 * @return array<int, array<string, mixed>> One `{key, source, status, documentId, reason, message}` per pick.
+	 * @return array<int, array<string, mixed>> One `{key, source, status, documentId, reason, message}` per pick;
+	 *         `status` is added, excluded (recorded as an exclusion, such as a duplicate) or refused.
 	 *
 	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-picked-results-become-documents-on-the-case-req-woo-013
 	 * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-every-gathered-document-records-where-it-was-found-req-woo-014
 	 */
-	public function addPicks(string $caseId, array $picks, string $terms, IUser $user): array {
+	public function addPicks(string $caseId, array $picks, string $terms, IUser $user, array $custodians): array {
 		$results = [];
 		foreach ($picks as $pick) {
 			if (is_array($pick) === false) {
 				continue;
 			}
 
-			$results[] = $this->addOne(caseId: $caseId, pick: $pick, terms: $terms, user: $user);
+			$results[] = $this->addOne(caseId: $caseId, pick: $pick, terms: $terms, user: $user, custodians: $custodians);
 		}
 
 		return $results;
@@ -115,14 +121,22 @@ class WooGatherAdd {
 	 * @param array<string, mixed> $pick   The pick.
 	 * @param string               $terms  The search terms.
 	 * @param IUser                $user   The caller.
+	 * @param array<int, string>   $custodians The plan's custodians.
 	 *
 	 * @return array<string, mixed> The answer for this pick.
 	 */
-	private function addOne(string $caseId, array $pick, string $terms, IUser $user): array {
+	private function addOne(string $caseId, array $pick, string $terms, IUser $user, array $custodians): array {
 		$source = (string)($pick['source'] ?? '');
 		$key = trim((string)($pick['key'] ?? ''));
+		$custodian = trim((string)($pick['custodian'] ?? ''));
+		if (in_array($custodian, $custodians, true) === false) {
+			return $this->answer(key: $key, source: $source, documentId: '', reason: 'custodian-required');
+		}
+
 		$provenance = [
 			'source' => $source,
+			'sourceSystem' => $source,
+			'custodian' => $custodian,
 			'location' => (string)($pick['location'] ?? ''),
 			'terms' => $terms,
 			'searchedAt' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -137,6 +151,7 @@ class WooGatherAdd {
 				default => throw new WooPickRefused('unknown-source'),
 			};
 		} catch (WooPickRefused $refused) {
+			$this->recordUnreadable(caseId: $caseId, reason: $refused->getMessage(), provenance: $provenance, user: $user);
 			return $this->answer(key: $key, source: $source, documentId: '', reason: $refused->getMessage());
 		} catch (Throwable $e) {
 			$this->logger->warning('WooGatherAdd: a pick could not be added', ['case' => $caseId, 'source' => $source, 'error' => $e->getMessage()]);
@@ -252,8 +267,28 @@ class WooGatherAdd {
 	 * @return string The document record uuid.
 	 *
 	 * @throws RuntimeException When the file cannot be stored or no record results.
+	 * @throws WooPickRefused   `duplicate` when the case holds the same bytes; recorded as an exclusion.
 	 */
 	private function store(string $caseId, string $fileName, string $content, array $provenance): string {
+		$sha256 = hash('sha256', $content);
+		$duplicateOf = $this->duplicateOf(caseId: $caseId, sha256: $sha256);
+		if ($duplicateOf !== '') {
+			$this->collection->record(
+				caseId: $caseId,
+				fields: [
+					'source' => $provenance['source'],
+					'location' => $provenance['location'],
+					'fileName' => $fileName,
+					'sha256' => $sha256,
+					'duplicateOf' => $duplicateOf,
+					'custodian' => $provenance['custodian'],
+					'reason' => 'duplicate',
+					'excludedBy' => $provenance['searchedBy'],
+				]
+			);
+			throw new WooPickRefused('duplicate');
+		}
+
 		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
 		if ($fileId <= 0) {
 			throw new RuntimeException('The stored file could not be read back');
@@ -299,6 +334,52 @@ class WooGatherAdd {
 	}//end projectStoredFile()
 
 	/**
+	 * The case document holding the same bytes, or ''.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param string $sha256 The candidate's hash.
+	 *
+	 * @return string The document uuid, or ''.
+	 */
+	private function duplicateOf(string $caseId, string $sha256): string {
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$record = ($this->store->findRecord(recordId: $documentId) ?? []);
+			if ((string)($record['integrity']['value'] ?? '') === $sha256) {
+				return $documentId;
+			}
+		}
+
+		return '';
+	}//end duplicateOf()
+
+	/**
+	 * Record a pick that could not be read as an exclusion, so what arrived reconciles.
+	 *
+	 * @param string               $caseId     The case uuid.
+	 * @param string               $reason     The pick's refusal.
+	 * @param array<string, mixed> $provenance Where it was found.
+	 * @param IUser                $user       The caller.
+	 *
+	 * @return void
+	 */
+	private function recordUnreadable(string $caseId, string $reason, array $provenance, IUser $user): void {
+		if (in_array($reason, ['not-readable', 'not-fetched'], true) === false) {
+			return;
+		}
+
+		$this->collection->record(
+			caseId: $caseId,
+			fields: [
+				'source' => $provenance['source'],
+				'location' => $provenance['location'],
+				'custodian' => $provenance['custodian'],
+				'reason' => 'unreadable',
+				'excludedBy' => $user->getUID(),
+			]
+		);
+	}//end recordUnreadable()
+
+	/**
 	 * One pick's answer.
 	 *
 	 * @param string $key        The pick's key.
@@ -312,6 +393,10 @@ class WooGatherAdd {
 		$status = 'refused';
 		if ($reason === '') {
 			$status = 'added';
+		}
+
+		if ($reason === 'duplicate') {
+			$status = 'excluded';
 		}
 
 		return [
@@ -339,6 +424,8 @@ class WooGatherAdd {
 			'already-on-case' => $this->l10n->t('This document is already on the case.'),
 			'not-fetched' => $this->l10n->t('The source did not hand over this document. Try again later.'),
 			'unknown-source' => $this->l10n->t('This source is not known.'),
+			'custodian-required' => $this->l10n->t('Pick whose files this document comes from, as the search plan names them.'),
+			'duplicate' => $this->l10n->t('The case already holds this document. It is listed as a duplicate.'),
 			default => $this->l10n->t('This document could not be added to the case.'),
 		};
 	}//end sentence()
