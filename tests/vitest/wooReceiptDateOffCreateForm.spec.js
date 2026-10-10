@@ -25,15 +25,23 @@ const readJson = (...parts) =>
 
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const definitionSchema = register.components.schemas.propertyDefinition
-const extendsForm
-	= register.components.schemas.case.properties.caseType[
+const extendsForm =
+	register.components.schemas.case.properties.caseType[
 		'x-openregister-extends-form'
 	]
 
-const seeded = readJson('lib', 'Settings', 'register.d', '81-woo-verzoek.json')
-	.components.objects.filter((row) => row['@self']?.schema === 'propertyDefinition')
-const template = readJson('lib', 'Settings', 'templates', 'woo-verzoek.json')
-	.propertyDefinitions
+const seeded = readJson(
+	'lib',
+	'Settings',
+	'register.d',
+	'81-woo-verzoek.json',
+).components.objects.filter((row) => row['@self']?.schema === 'propertyDefinition')
+const template = readJson(
+	'lib',
+	'Settings',
+	'templates',
+	'woo-verzoek.json',
+).propertyDefinitions
 
 const receiptOf = (rows) => rows.find((row) => row.name === 'receiptDate')
 
