@@ -7,6 +7,8 @@
           "portalBranch": {
             "type": "string",
             "pattern": "^[0-9]{12}$",
+            "matchType": "exact",
+            "inputControl": "text",
             "visible": false,
             "title": "Branch number",
             "description": "The branch number (vestigingsnummer) of the company that filed the case in the portal."
