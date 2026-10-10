@@ -4106,6 +4106,7 @@
         "Name or BSN": "Naam of BSN",
         "Name or UID of the adviser (person, team, or external party) being consulted.": "Naam of uid van de adviseur (persoon, team of externe partij) die om advies wordt gevraagd.",
         "Name prefix": "Voorvoegsel",
+        "Name the pages that were displayed.": "Noem de pagina's die getoond zijn.",
         "Named data slots in the case file that sentries can reference (onPart.caseFileItem / ifPart.field).": "Benoemde gegevensplekken in het zaakdossier waar sentries naar kunnen verwijzen (onPart.caseFileItem of ifPart.field).",
         "namens {who}": "namens {who}",
         "Nature": "Aard",

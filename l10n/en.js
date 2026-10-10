@@ -4092,6 +4092,7 @@ OC.L10N.register(
         "Name or BSN": "Name or BSN",
         "Name or UID of the adviser (person, team, or external party) being consulted.": "Name or UID of the adviser (person, team, or external party) being consulted.",
         "Name prefix": "Name prefix",
+        "Name the pages that were displayed.": "Name the pages that were displayed.",
         "Named data slots in the case file that sentries can reference (onPart.caseFileItem / ifPart.field).": "Named data slots in the case file that sentries can reference (onPart.caseFileItem / ifPart.field).",
         "namens {who}": "namens {who}",
         "Nature": "Nature",

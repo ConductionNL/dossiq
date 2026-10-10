@@ -79,6 +79,15 @@ PR, sections 4 to 6 the second.
   - **fails today**: `tests/Unit/Woo/WooReviewDepthTest.php` `testASampleDrawsItsSizeWithARecordedSeed`,
     `testTheSameSeedDrawsTheSamePages`, `testAnUnnamedTypeIsEveryPage`.
   - `tests/Unit/Woo/WooRequestConfigurationTest.php` `testReviewDepthIsCopied`.
+  - Built: `lib/Woo/WooReviewDepth.php` (depth per type, seeded sample through `Random\Randomizer` on `Mt19937`,
+    type = informatieobjecttype or mime class) with `WooReviewDepthTest` (the three named tests plus short and unknown
+    documents, broken entries, type resolution). `WooReviewBatches::create()` records `depth` and `pagesRequired` on
+    each review, reading `reviewDepth` from the case's `wooRequestConfiguration` (`WooReviewBatchesTest::testTheBatchRecordsTheDepthPerReview`).
+    A document of unknown length requires page 1 until the viewer reports its page count (5.1), then the pages are drawn
+    from the recorded depth and seed.
+    Open: the `reviewDepth` property on `wooRequestConfiguration` and `testReviewDepthIsCopied` belong in
+    `86-woo-corpus.json`, which lane L9 adds (woo-request-corpus-collection, PR #3597). Until it lands, no case has a
+    configuration and every type reads as every page.
 
 ## 5. Every page seen
 
@@ -87,6 +96,10 @@ PR, sections 4 to 6 the second.
   on a Woo case calls it as pages are displayed (REQ-WRT-005).
   - unit `WooReviewControllerTest::testPagesSeenAreAppendedWithTheReviewer`.
   - vitest on the viewer component: `testEachDisplayedPageIsReportedOnce`.
+  - Built (backend): `WooReviewController::pagesSeen` (read guard; `{pages, pageCount}`; answers the review with
+    `unseen`), `WooDocumentReviews::recordPagesSeen()` and `unseenPages()`;
+    `WooReviewControllerTest::testPagesSeenAreAppendedWithTheReviewer`.
+    Open: the viewer call and its vitest (board DqWooReview, design-system #191, draft).
 - [ ] 5.2 Refuse a verdict while required pages are unseen: in `WOODocumentAssessmentService::validate()`
   for `bulkAssess`, and in a listener on OpenRegister's object updating and creating events for
   `wooDocumentAssessment` (direct API writes) (REQ-WRT-005).
