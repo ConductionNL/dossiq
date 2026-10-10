@@ -212,7 +212,9 @@ export default {
 		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		tierPillClassName() {
-			return deadlineTierPillClass(this.urgencyEntry && this.urgencyEntry.deadlineTier)
+			return deadlineTierPillClass(
+				this.urgencyEntry && this.urgencyEntry.deadlineTier,
+			)
 		},
 
 		/**
@@ -224,7 +226,9 @@ export default {
 		 * @spec openspec/changes/configurable-queue-urgency/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		tierPillLabel() {
-			return deadlineTierLabel(this.urgencyEntry && this.urgencyEntry.deadlineTier)
+			return deadlineTierLabel(
+				this.urgencyEntry && this.urgencyEntry.deadlineTier,
+			)
 		},
 	},
 }

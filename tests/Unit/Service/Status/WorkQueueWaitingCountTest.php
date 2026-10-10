@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService::tallyWaitingOn
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @uses \OCA\Dossiq\Service\WorkQueueService
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md

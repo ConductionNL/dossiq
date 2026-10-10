@@ -144,6 +144,8 @@ class LifecycleFakeSource implements QueueSource {
  * @uses \OCA\Dossiq\Service\Queue\QueueItem
  * @uses \OCA\Dossiq\Service\Queue\QueueItemLifecycle
  * @uses \OCA\Dossiq\Service\Queue\QueueOrdering
+ * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
  * @uses \OCA\Dossiq\Service\Queue\QueueSourceCatalogue
  * @uses \OCA\Dossiq\Service\Queue\QueueViewPreferences
  * @uses \OCA\Dossiq\Service\WorkQueueService

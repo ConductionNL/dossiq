@@ -19,7 +19,16 @@
 	     decides between self-fetch and handed-in rows once, at setup. -->
 	<CnIndexPage
 		:key="listMode"
-		:title="t('dossiq', 'My Work')"
+		:title="t('dossiq', 'Assigned to me')"
+		:showTitle="true"
+		:headerButtons="headerButtons"
+		:countText="t('dossiq', '{total} cases in your name, most urgent first')"
+		:footerNote="
+			t(
+				'dossiq',
+				'Urgency follows from the deadline, the priority and how long a case has been idle.',
+			)
+		"
 		v-bind="listBinding"
 		:filter="filter"
 		viewMode="cards"
@@ -211,6 +220,30 @@ export default {
 
 	computed: {
 		/**
+		 * The header buttons of the board: Download, Actions, New case.
+		 *
+		 * @return {Array<object>} CnIndexPage headerButtons.
+		 *
+		 * @spec openspec/specs/my-work/spec.md
+		 */
+		headerButtons() {
+			return [
+				{
+					action: 'export',
+					label: this.t('dossiq', 'Download'),
+					icon: 'TrayArrowDown',
+				},
+				{ action: 'actions-menu', label: this.t('dossiq', 'Actions') },
+				{
+					action: 'add',
+					label: this.t('dossiq', 'New case'),
+					variant: 'primary',
+					icon: 'Plus',
+				},
+			]
+		},
+
+		/**
 		 * CnIndexPage sortKey/sortOrder for the active sort mode.
 		 *
 		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
@@ -254,7 +287,12 @@ export default {
 			const query = (this.$route && this.$route.query) || {}
 			const filters = {}
 			for (const [key, value] of Object.entries(query)) {
-				if (key.startsWith('_') || value === null || value === undefined || value === '') {
+				if (
+					key.startsWith('_')
+					|| value === null
+					|| value === undefined
+					|| value === ''
+				) {
 					continue
 				}
 				filters[key] = (Array.isArray(value) ? value : [value]).map(String)
@@ -509,7 +547,10 @@ export default {
 			if (this.listMode !== 'ranked' || !payload || !payload.key) {
 				return
 			}
-			this.rankedFilters = { ...this.rankedFilters, [payload.key]: payload.values }
+			this.rankedFilters = {
+				...this.rankedFilters,
+				[payload.key]: payload.values,
+			}
 			this.rankedPage = 1
 		},
 
