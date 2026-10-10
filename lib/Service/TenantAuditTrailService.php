@@ -332,7 +332,7 @@ class TenantAuditTrailService {
 				'key' => 'no_hardcoded_secrets',
 				'description' => 'JWT signing secret + Shillinq credentials resolved from app config',
 				'evidence' => 'PortalAssertionVerifier reads jwt_signing_secret from app config; '
-					. 'SaasServiceRegistrar builds ShillinqIntegrationService from app config',
+					. 'shillinq is asked in-process (BillablePeriodClosedEvent), so no Shillinq credential exists',
 				'status' => 'pass',
 			],
 			[
