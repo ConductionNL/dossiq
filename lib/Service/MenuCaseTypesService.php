@@ -6,8 +6,11 @@
  * The case types each user chose for the "My case types" heading of the
  * sidebar, in their own order (board DqPersoonlijkeInstellingen). The choice
  * is an IConfig user value holding a JSON array of case type uuids; every read
- * intersects it with the case types the user may see right now, so a retired
- * or no longer visible case type drops out of the menu without a write.
+ * intersects it with the case types offered to the user right now: the ones
+ * their team handles (the case type's handling teams, REQ-CT-44), or every
+ * case type they may see when they are in no handling team. So a retired, no
+ * longer visible or no longer handled case type drops out of the menu without
+ * a write.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -24,6 +27,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+ * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
  */
 
 declare(strict_types=1);
@@ -31,8 +35,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IConfig;
+use OCP\IGroupManager;
+use OCP\IUserManager;
 
 /**
  * Reads and writes the per-user list of case types in the menu.
@@ -70,12 +77,60 @@ class MenuCaseTypesService {
 	 *
 	 * @param SettingsService $settingsService Settings service (register, schema, ObjectService).
 	 * @param IConfig $config Nextcloud config (user values).
+	 * @param IGroupManager $groupManager Nextcloud groups, the one authority on who is in a team.
+	 * @param IUserManager $userManager Nextcloud users.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IConfig $config,
+		private readonly IGroupManager $groupManager,
+		private readonly IUserManager $userManager,
 	) {
 	}//end __construct()
+
+	/**
+	 * The case types offered to this user for their menu, sorted by title.
+	 *
+	 * The visible case types whose handling teams include a Nextcloud group
+	 * the user is in. When that is none, because the user is in no handling
+	 * team, every visible case type: a new employee or an instance that has
+	 * not named its teams yet gets a useful picker, not an empty one.
+	 *
+	 * @param string $userId The user.
+	 *
+	 * @return array<int, array{id: string, title: string}> The offered case types.
+	 *
+	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 */
+	public function offeredCaseTypes(string $userId): array {
+		$rows = $this->currentCaseTypes();
+
+		$userGroups = [];
+		$user = $this->userManager->get($userId);
+		if ($user !== null) {
+			$userGroups = array_flip($this->groupManager->getUserGroupIds($user));
+		}
+
+		$handled = [];
+		foreach ($rows as $row) {
+			foreach ($row['teams'] as $team) {
+				if (isset($userGroups[$team]) === true) {
+					$handled[] = $row;
+					break;
+				}
+			}
+		}
+
+		if (count($handled) === 0) {
+			$handled = $rows;
+		}
+
+		return array_map(
+			static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
+			$handled
+		);
+	}//end offeredCaseTypes()
 
 	/**
 	 * The current case types the current user may see, sorted by title.
@@ -89,6 +144,21 @@ class MenuCaseTypesService {
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 */
 	public function visibleCaseTypes(): array {
+		return array_map(
+			static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
+			$this->currentCaseTypes()
+		);
+	}//end visibleCaseTypes()
+
+	/**
+	 * The current visible case types with their handling teams, sorted by title.
+	 *
+	 * @return array<int, array{id: string, title: string, teams: array<int, string>}> The case types.
+	 *
+	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
+	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 */
+	private function currentCaseTypes(): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_type_schema');
@@ -103,6 +173,8 @@ class MenuCaseTypesService {
 			filters: ['_limit' => 500]
 		);
 
+		$handling = new CaseTypeHandling();
+
 		$caseTypes = [];
 		foreach ($rows as $row) {
 			if (empty($row['supersededBy']) === false) {
@@ -114,7 +186,11 @@ class MenuCaseTypesService {
 				continue;
 			}
 
-			$caseTypes[$uuid] = ['id' => $uuid, 'title' => (string)($row['title'] ?? $uuid)];
+			$caseTypes[$uuid] = [
+				'id' => $uuid,
+				'title' => (string)($row['title'] ?? $uuid),
+				'teams' => $handling->teams(caseType: $row),
+			];
 		}
 
 		$list = array_values($caseTypes);
@@ -126,13 +202,13 @@ class MenuCaseTypesService {
 		);
 
 		return $list;
-	}//end visibleCaseTypes()
+	}//end currentCaseTypes()
 
 	/**
 	 * The user's chosen case types, in their order, limited to what they may see.
 	 *
 	 * @param string $userId The user.
-	 * @param array<int, array{id: string, title: string}> $visible The result of visibleCaseTypes().
+	 * @param array<int, array{id: string, title: string}> $visible The result of offeredCaseTypes().
 	 *
 	 * @return array<int, array{id: string, title: string}> The chosen case types in menu order.
 	 *
@@ -164,7 +240,7 @@ class MenuCaseTypesService {
 	 *
 	 * @param string $userId The user.
 	 * @param array<int, mixed> $ids The uuids in menu order, as sent.
-	 * @param array<int, array{id: string, title: string}> $visible The result of visibleCaseTypes().
+	 * @param array<int, array{id: string, title: string}> $visible The result of offeredCaseTypes().
 	 *
 	 * @return array<int, array{id: string, title: string}> The list as stored.
 	 *

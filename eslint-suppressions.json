@@ -537,11 +537,6 @@
       "count": 3
     }
   },
-  "src/views/settings/tabs/GeneralTab.vue": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/views/settings/tabs/MandaatMatrixSettingsTab.vue": {
     "@nextcloud/l10n-enforce-ellipsis": {
       "count": 1

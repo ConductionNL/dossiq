@@ -67,7 +67,7 @@ class MenuCaseTypesControllerTest extends TestCase {
 	public function testIndexReturnsChosenAndAvailable(): void {
 		$visible = [['id' => 'a', 'title' => 'A'], ['id' => 'b', 'title' => 'B']];
 		$service = $this->createMock(MenuCaseTypesService::class);
-		$service->method('visibleCaseTypes')->willReturn($visible);
+		$service->method('offeredCaseTypes')->with('alice')->willReturn($visible);
 		$service->expects($this->once())->method('chosen')->with('alice', $visible)->willReturn([$visible[1]]);
 
 		$response = $this->controller($service)->index();
@@ -84,7 +84,7 @@ class MenuCaseTypesControllerTest extends TestCase {
 	public function testUpdateSavesForTheCurrentUser(): void {
 		$visible = [['id' => 'a', 'title' => 'A']];
 		$service = $this->createMock(MenuCaseTypesService::class);
-		$service->method('visibleCaseTypes')->willReturn($visible);
+		$service->method('offeredCaseTypes')->with('alice')->willReturn($visible);
 		$service->expects($this->once())->method('save')->with('alice', ['a', 'x'], $visible)->willReturn($visible);
 
 		$response = $this->controller($service)->update(['a', 'x']);

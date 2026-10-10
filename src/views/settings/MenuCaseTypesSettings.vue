@@ -87,7 +87,7 @@
 			{{
 				t(
 					'dossiq',
-					'You see the case types you have access to. A case type you add goes to the bottom of the list.',
+					'You see the case types your team handles cases in. A case type you add goes to the bottom of the list.',
 				)
 			}}
 		</p>
