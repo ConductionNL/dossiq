@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261010150000</version>
+    <version>0.4.47-unstable.20261010180000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -682,6 +682,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  and the case differs. Idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
+            <!-- inspection-checklists-onto-task 4.1: every inspectieChecklist and
+                 inspectionChecklist (with its checklistItem rows) becomes one
+                 inspectionChecklistTemplate carrying legacyRef. Skips what is
+                 folded; never folds a checklist half. Post-migration only: a
+                 fresh install has no older checklists. -->
+            <step>OCA\Dossiq\Repair\FoldInspectionChecklistTemplates</step>
+            <!-- inspection-checklists-onto-task 4.2: every inspectieRapport,
+                 inspectionChecklistRun and inspectionResult becomes one
+                 inspection task (OpenRegister's import path), keyed on
+                 metadata.legacyRef. After the fold, so runs find their
+                 template. Post-migration only: a fresh install has no runs. -->
+            <step>OCA\Dossiq\Repair\CarryInspectionRunsOntoTasks</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.

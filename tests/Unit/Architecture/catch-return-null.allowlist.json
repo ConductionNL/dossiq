@@ -1,5 +1,5 @@
 {
-  "ceiling": 259,
+  "ceiling": 258,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -755,13 +755,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`caseTypeBoundTo()` looks up the case type a form hash is bound to. No binding and an unanswerable search are the same answer to the caller, which offers the ordinary case-type picker instead of a pre-selected one."
-    },
-    {
-      "file": "lib/Service/InspectionChecklistService.php",
-      "method": "getResultsForCase",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getResultsForCase()` answers `return []` when the read fails; the catch logs at warning (\"Failed to get inspection results for case\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/InspectionChecklistService.php",
