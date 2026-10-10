@@ -28,12 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
-use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use RuntimeException;
-use Throwable;
 
 /**
  * An intake record, to the case payload.
@@ -241,10 +239,13 @@ class DsoIntakeCasePayload {
 			return [];
 		}
 
-		try {
-			return ['receivedAt' => (new DateTimeImmutable($submitted))->format(DateTimeInterface::ATOM)];
-		} catch (Throwable $e) {
+		// A value date_create() cannot read answers false, where the
+		// constructor would throw: an unreadable stamp claims no moment.
+		$moment = date_create_immutable($submitted);
+		if ($moment === false) {
 			return [];
 		}
+
+		return ['receivedAt' => $moment->format(DateTimeInterface::ATOM)];
 	}//end receivedAtField()
 }//end class
