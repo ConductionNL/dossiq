@@ -378,7 +378,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
 	private function publicationResponse(array $result): JSONResponse {
 		if (($result['available'] ?? false) === true) {
@@ -401,7 +401,7 @@ class WOOAssessmentController extends Controller {
 	 *
 	 * @return array{0: int, 1: string}
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
 	 */
 	private function refusal(string $reason): array {
 		return match ($reason) {

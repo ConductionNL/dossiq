@@ -21,7 +21,7 @@
  * @license   EUPL-1.2
  * @link      https://github.com/ConductionNL/dossiq
  *
- * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-decision-schema-declares-the-woo-fields-its-writers-send-req-wpi-006
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-decision-schema-declares-the-woo-fields-its-writers-send-req-wpi-006
  */
 
 declare(strict_types=1);

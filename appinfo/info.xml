@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261009150000</version>
+    <version>0.4.47-unstable.20261010130000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -631,6 +631,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  changes nothing. Unmapped codes are kept, listed on the row and in
                  the output. Post-migration only: a fresh install has none. -->
             <step>OCA\Dossiq\Repair\MapWooRefusalGroundCodes</step>
+            <!-- woo-publish-decision-from-the-case design D-2: an existing Woo
+                 case gets the publication state its decision already holds
+                 (ready, published with its url, withdrawn), so the header
+                 actions can show. Writes only a case whose state differs;
+                 marks a complete run under woo_publication_state_backfill.
+                 Non-fatal. Post-migration only: a fresh install has no cases. -->
+            <step>OCA\Dossiq\Repair\BackfillWooPublicationState</step>
             <!-- simple-case-page: existing cases get `statusRole`, the role of
                  the status they sit in. OpenRegister computes it on save, so a
                  case saved before the field existed has none. Writes one field
@@ -759,6 +766,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
+              BackfillWooPublicationState       shows the publication state on existing Woo cases; a fresh install has none
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
