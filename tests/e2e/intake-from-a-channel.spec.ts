@@ -33,7 +33,7 @@
  * without the role belongs to IntakePolicyTest: an admin cannot take a lesser
  * role in a browser.
  *
- * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+ * @spec openspec/specs/intake-from-a-channel/spec.md
  */
 
 import { expect, test } from '@playwright/test'
@@ -120,7 +120,7 @@ test.describe('A message from a channel', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md#a-triage-refusal-holds-the-message-with-its-reason
+	// @e2e openspec/specs/intake-from-a-channel/spec.md#a-triage-refusal-holds-the-message-with-its-reason
 	test('a refused channel message is on the log with its reason', async ({
 		page,
 	}) => {
@@ -136,7 +136,7 @@ test.describe('A message from a channel', () => {
 		await expect(row).toContainText('names no case type')
 	})
 
-	// @e2e openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md#a-form-submission-becomes-a-case-with-its-clock-running
+	// @e2e openspec/specs/intake-from-a-channel/spec.md#a-form-submission-becomes-a-case-with-its-clock-running
 	test('a channel message that opened a case says which one', async ({ page }) => {
 		await navToRoute(page, LOG_ROUTE)
 
@@ -158,7 +158,7 @@ test.describe('A message from a channel', () => {
 		await expect(refused).not.toContainText('Opened by routing rule')
 	})
 
-	// @e2e openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md#the-message-is-marked-routed-not-held
+	// @e2e openspec/specs/intake-from-a-channel/spec.md#the-message-is-marked-routed-not-held
 	test('the stored entry names the channel and the message', async ({
 		playwright,
 		baseURL,

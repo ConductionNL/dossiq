@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use Throwable;
  * full entry at error level: an Awb record that is lost must at least leave
  * its content in the log.
  *
- * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+ * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
  */
 class BezwaarEntryNotWrittenException extends RuntimeException {
 	/**
@@ -59,7 +59,7 @@ class BezwaarEntryNotWrittenException extends RuntimeException {
 	 *
 	 * @return array<string, mixed> The log context.
 	 *
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function logContext(): array {
 		$context = ['action' => $this->action, 'object' => $this->objectUuid, 'entry' => $this->entry];

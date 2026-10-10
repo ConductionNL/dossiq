@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use RuntimeException;
  * Its lifetime is the request: the NC DI container builds one per request,
  * so the active organisation is read at most once per request.
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+ * @spec openspec/specs/tenant-organisation-boundary/spec.md
  */
 class TenantContext {
 
@@ -70,7 +70,7 @@ class TenantContext {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function isBound(): bool {
 		return $this->resolve() !== null;
@@ -83,7 +83,7 @@ class TenantContext {
 	 *
 	 * @throws RuntimeException When the request has no tenant.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function getTenant(): array {
 		return $this->assertBound();
@@ -96,7 +96,7 @@ class TenantContext {
 	 *
 	 * @throws RuntimeException When the request has no tenant.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function getTenantId(): string {
 		$tenant = $this->assertBound();
@@ -110,7 +110,7 @@ class TenantContext {
 	 *
 	 * @throws RuntimeException When the request has no tenant.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function getSlug(): string {
 		return (string)($this->assertBound()['slug'] ?? '');
@@ -123,7 +123,7 @@ class TenantContext {
 	 *
 	 * @throws RuntimeException When the request has no tenant.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function getStatus(): string {
 		return (string)($this->assertBound()['status'] ?? '');
@@ -134,7 +134,7 @@ class TenantContext {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation-active-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function reset(): void {
 		$this->resolved = false;
