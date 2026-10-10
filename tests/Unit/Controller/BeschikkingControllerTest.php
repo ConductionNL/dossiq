@@ -41,6 +41,7 @@ use RuntimeException;
  * Unit tests for BeschikkingController.
  *
  * @covers \OCA\Dossiq\Controller\BeschikkingController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class BeschikkingControllerTest extends TestCase {
 	/**

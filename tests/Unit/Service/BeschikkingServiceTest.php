@@ -159,6 +159,8 @@ class FakeObjectService {
  * @uses \OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter
  * @uses \OCA\Dossiq\Service\StateMachineService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  */
 class BeschikkingServiceTest extends TestCase {
 
