@@ -146,6 +146,9 @@ class ApplicantMessage {
 				(string)($term['id'] ?? ($term['uuid'] ?? '')),
 				$recipient,
 				array_merge(['case' => (string)($case['identification'] ?? $caseId)], $context),
+				// The case row, so the sender also offers the portal inbox and
+				// digital post, and records the result on the case (REQ-WRN-002).
+				$case,
 			);
 		} catch (Throwable $e) {
 			// Reported, never thrown. The act that asked for this message has
@@ -189,7 +192,9 @@ class ApplicantMessage {
 	private function recipientOn(array $case): string {
 		$addresses = $this->contacts->collectAddresses(caseData: $case);
 		if ($addresses === []) {
-			return '';
+			// A resident who reads in the portal is reachable there without
+			// an e-mail address (REQ-WRN-002); the sender puts it in the inbox.
+			return trim((string)($case['portalSubject'] ?? ''));
 		}
 
 		return trim((string)reset($addresses));

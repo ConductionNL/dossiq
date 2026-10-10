@@ -23,7 +23,7 @@
   said anything about look identical from the browser, and only one of
   them is safe to present as "nothing happened yet".
 
-  @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+  @spec openspec/specs/case-history-surface/spec.md
 -->
 <template>
 	<div class="case-timeline" data-testid="case-timeline">
@@ -278,7 +278,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		kindOptions() {
 			return [{ id: '', label: t('dossiq', 'Note') }].concat(
@@ -294,7 +294,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		blockOptions() {
 			return this.textBlocks.map((block) => ({
@@ -308,7 +308,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		visibilityOptions() {
 			return [
@@ -322,7 +322,7 @@ export default {
 		 *
 		 * @return {string} The url, or '' when the case is not addressed yet.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		timelineUrl() {
 			if (!this.objectId || !this.register || !this.schema) {
@@ -343,7 +343,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 * @spec openspec/specs/case-history-surface/spec.md
 	 */
 	mounted() {
 		this.loadKinds()
@@ -361,7 +361,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the kinds are in.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		async loadKinds() {
 			try {
@@ -380,7 +380,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the blocks are in.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		async loadTextBlocks() {
 			try {
@@ -406,7 +406,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		pickBlock(block) {
 			this.chosenBlock = block || null
@@ -423,7 +423,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the timeline is re-read.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		async submit() {
 			if (!this.draft.trim() || !this.timelineUrl) {
@@ -460,7 +460,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the entries are in.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		async load() {
 			if (!this.timelineUrl) {
@@ -502,7 +502,7 @@ export default {
 		 *
 		 * @return {Array<object>} The entries to show.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		applyKindFilter(results) {
 			if (!this.kindFilter) {
@@ -520,7 +520,7 @@ export default {
 		 *
 		 * @return {string} The label.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		kindLabel(entry) {
 			if (!entry.kind) {
@@ -538,7 +538,7 @@ export default {
 		 *
 		 * @return {string} The formatted moment, or the raw value.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		moment(value) {
 			if (!value) {
@@ -560,7 +560,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the entry is rewritten.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		async togglePin(entry) {
 			await this.patch(entry, { pinned: !entry.pinned })
@@ -573,7 +573,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the entry is rewritten.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		async closeFollowUp(entry) {
 			await this.patch(entry, { followUp: 'done' })
@@ -620,7 +620,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the timeline is re-read.
 		 *
-		 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+		 * @spec openspec/specs/case-history-surface/spec.md
 		 */
 		async patch(entry, changes) {
 			try {

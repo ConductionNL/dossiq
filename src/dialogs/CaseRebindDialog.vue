@@ -28,7 +28,7 @@
   is a change of blueprint, not a new case.
 
   @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-  @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+  @spec openspec/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<NcDialog
@@ -245,7 +245,7 @@ export default {
 		 * @return {boolean} True when it may.
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		canConfirm() {
 			return (
@@ -264,7 +264,7 @@ export default {
 		 *
 		 * @return {Array<string>} Their names.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		droppedNames() {
 			return (this.preview?.impact?.dropped ?? []).map((row) => row.name)
@@ -282,7 +282,7 @@ export default {
 		 * @param {Array<string>} now The names now.
 		 * @param {Array<string>} before The names before.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		droppedNames(now, before) {
 			if (now.join('\n') !== (before ?? []).join('\n')) {
@@ -332,7 +332,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async onTargetChange() {
 			this.status = ''
@@ -346,7 +346,7 @@ export default {
 		/**
 		 * Ask the server again once a move or an answer settles.
 		 *
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		schedulePreview() {
 			clearTimeout(this.previewTimer)
@@ -363,7 +363,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async loadPreview() {
 			clearTimeout(this.previewTimer)
@@ -406,7 +406,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/specs/zaaktype-versioning/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {
