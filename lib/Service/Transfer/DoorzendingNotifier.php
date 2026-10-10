@@ -116,6 +116,9 @@ class DoorzendingNotifier {
 					'locale' => $this->localeOf(case: $case),
 					'addressee' => ['address' => $recipient],
 				],
+				// The case row, so a portal requester gets it in the portal
+				// inbox and the case records the result (REQ-WRN-002).
+				$case,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

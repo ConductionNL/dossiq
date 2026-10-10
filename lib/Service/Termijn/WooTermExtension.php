@@ -66,6 +66,8 @@ class WooTermExtension {
 	 * @param LoggerInterface            $logger       Logger.
 	 * @param TermDeclarationReader|null $declarations The case type's `extensionPeriod`.
 	 * @param TermKindClassifier|null    $kinds        Which kind a term is; the rule's own class when absent.
+	 * @param ExtensionNotice|null       $notice       Tells the requester, with the reason and the new end.
+	 *        Absent, the answer says the requester was not told.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -73,6 +75,7 @@ class WooTermExtension {
 		private readonly LoggerInterface $logger,
 		private readonly ?TermDeclarationReader $declarations = null,
 		?TermKindClassifier $kinds = null,
+		private readonly ?ExtensionNotice $notice = null,
 	) {
 		$this->kinds = ($kinds ?? new TermKindClassifier());
 	}//end __construct()
@@ -95,13 +98,15 @@ class WooTermExtension {
 	 * @param string $caseId The case UUID
 	 * @param string $reason Mandatory reason for the extension
 	 *
-	 * @return array{caseId: string, previousDeadline: string, deadline: string, extensionReason: string, countExtensions: int, termInstanceId: string}
+	 * @return array<string, mixed> The extension and whether the requester was told (noticeStatus, noticeChannel,
+	 *         noticeReasonCode, noticeReason).
 	 *
 	 * @throws \InvalidArgumentException If the reason is empty
 	 * @throws RefusedException When the case has no statutory term or its extension is used up (409)
 	 * @throws \RuntimeException When the term engine is not available
 	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	public function extend(string $caseId, string $reason): array {
 		if (trim($reason) === '') {
@@ -142,7 +147,7 @@ class WooTermExtension {
 			['app' => Application::APP_ID],
 		);
 
-		return [
+		$extended = [
 			'caseId' => $caseId,
 			'previousDeadline' => $previous,
 			'deadline' => $deadline,
@@ -150,7 +155,38 @@ class WooTermExtension {
 			'countExtensions' => (int)($updated['countExtensions'] ?? 0),
 			'termInstanceId' => (string)($instance['id'] ?? ''),
 		];
+
+		// The extension stands whatever becomes of the notice: the answer and
+		// the case say whether the requester was told (REQ-WRN-005).
+		return $extended + $this->tell(extended: $extended);
 	}//end extend()
+
+	/**
+	 * Tell the requester about the extension, or say why nobody did.
+	 *
+	 * @param array<string, mixed> $extended The extension.
+	 *
+	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 */
+	private function tell(array $extended): array {
+		if ($this->notice === null) {
+			return [
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'notice-not-wired',
+				'noticeReason' => 'No sender is wired, so the requester was not told.',
+			];
+		}
+
+		return $this->notice->tell(
+			caseId: (string)$extended['caseId'],
+			instanceId: (string)$extended['termInstanceId'],
+			reason: (string)$extended['extensionReason'],
+			newEnd: (string)$extended['deadline'],
+		);
+	}//end tell()
 
 	/**
 	 * The case's statutory term instance, newest first.

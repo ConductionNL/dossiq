@@ -195,8 +195,8 @@ class TermijnNotificationService {
 			$case['id'] = $this->caseRefOf(instance: ($instance ?? []), context: $context);
 		}
 
-		$moment = (string)($context['moment'] ?? RequesterNoticeSender::momentFor(template: $type));
 		$sender = ($this->requester ?? new RequesterNoticeSender(email: $this->sender, logger: $this->logger));
+		$moment = (string)($context['moment'] ?? $sender->momentFor(template: $type));
 
 		$dispatch = $sender->send(
 			case: $case,

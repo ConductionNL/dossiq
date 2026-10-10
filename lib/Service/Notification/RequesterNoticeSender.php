@@ -58,7 +58,6 @@ use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Service\BerichtenboxService;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
-use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
@@ -137,7 +136,7 @@ class RequesterNoticeSender {
 	 *
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
-	public static function momentFor(string $template): string {
+	public function momentFor(string $template): string {
 		return (self::MOMENTS[$template] ?? 'stage');
 	}//end momentFor()
 
@@ -227,16 +226,16 @@ class RequesterNoticeSender {
 	 */
 	private function portalInbox(array $case, array $notice): ?array {
 		$subject = trim((string)($case['portalSubject'] ?? ''));
-		if ($subject === '' || $this->appManager === null || $this->appManager->isInstalled(self::PORTAL_APP) === false) {
+		if ($subject === '' || $this->appManager?->isInstalled(self::PORTAL_APP) !== true) {
 			return null;
 		}
 
-		$objectService = $this->settings?->getObjectService();
-		$register = (string)$this->settings?->getConfigValue('register');
-		$schema = (string)$this->settings?->getConfigValue('portaal_bericht_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->storeFor(schemaKey: 'portaal_bericht_schema');
+		if ($store === null) {
 			return $this->refused(code: 'portal-inbox-unavailable', reason: 'The portal inbox is not configured, so the notice could not be put there.');
 		}
+
+		[$objectService, $register, $schema] = $store;
 
 		$sentAt = (new DateTimeImmutable())->format('c');
 		$message = [
@@ -322,7 +321,7 @@ class RequesterNoticeSender {
 		}
 
 		$messageId = trim((string)($answer['externalMessageId'] ?? ''));
-		if (isset($answer['error']) === true || $messageId === '') {
+		if ($messageId === '') {
 			// No tracked message, no send: an id we cannot show integriq gave
 			// us is exactly the fabricated id this class replaces.
 			return $this->refused(
@@ -406,7 +405,7 @@ class RequesterNoticeSender {
 	 * @return string `statutory`, `besluit` or `case-update`.
 	 */
 	private function postCategoryFor(string $template, string $moment): string {
-		if (TermNoticeSender::categoryFor(template: $template) === OptOutGate::CATEGORY_STATUTORY) {
+		if (in_array($template, TermNoticeSender::STATUTORY, true) === true) {
 			return 'statutory';
 		}
 
@@ -508,12 +507,12 @@ class RequesterNoticeSender {
 		}
 
 		$caseId = (string)($case['id'] ?? '');
-		$objectService = $this->settings?->getObjectService();
-		$register = (string)$this->settings?->getConfigValue('register');
-		$schema = (string)$this->settings?->getConfigValue('case_schema');
-		if ($caseId === '' || $objectService === null || $register === '' || $schema === '' || $this->writer === null) {
+		$store = $this->storeFor(schemaKey: 'case_schema');
+		if ($caseId === '' || $store === null || $this->writer === null) {
 			return $record;
 		}
+
+		[$objectService, $register, $schema] = $store;
 
 		try {
 			$stored = $this->runAsSystemIfAvailable(
@@ -546,6 +545,24 @@ class RequesterNoticeSender {
 
 		return $record;
 	}//end record()
+
+	/**
+	 * The object service, the register and one schema, or null when any is missing.
+	 *
+	 * @param string $schemaKey The config key of the schema.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function storeFor(string $schemaKey): ?array {
+		$objectService = $this->settings?->getObjectService();
+		$register = (string)$this->settings?->getConfigValue('register');
+		$schema = (string)$this->settings?->getConfigValue($schemaKey);
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end storeFor()
 
 	/**
 	 * The id of a saved row.

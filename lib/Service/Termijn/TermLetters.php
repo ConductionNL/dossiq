@@ -76,18 +76,9 @@ class TermLetters {
 				$body = $rendered['body'];
 				break;
 			case 'extension':
-				$newEnd = (string)($context['newEinddatum'] ?? $end);
-				$subject = 'Verlenging termijn zaak ' . $case;
-				$body = "Beste aanvrager,\n\n"
-					. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
-				// Woo art. 4.4 lid 2: the requester is told WHY, not only that
-				// the term moved (REQ-WRN-005).
-				$reason = rtrim(trim((string)($context['reason'] ?? '')), '.');
-				if ($reason !== '') {
-					$body .= 'De reden: ' . $reason . ".\n";
-				}
-
-				$body .= 'U vindt de officiele verlengingsbrief in uw burgerportaal.';
+				$rendered = $this->extension(case: $case, end: $end, context: $context);
+				$subject = $rendered['subject'];
+				$body = $rendered['body'];
 				break;
 			case 'ingebrekestelling-receipt':
 				$graceEnd = (string)($context['graceEnd'] ?? '–');
@@ -130,6 +121,35 @@ class TermLetters {
 
 		return ['subject' => $subject, 'body' => $body, 'locale' => $locale];
 	}//end render()
+
+	/**
+	 * The extension of the term, Woo art. 4.4 lid 2.
+	 *
+	 * It names the new end date and the reason, because the law asks that the
+	 * requester is told why, not only that the term moved (REQ-WRN-005).
+	 *
+	 * @param string               $case    The case kenmerk.
+	 * @param string               $end     The current end date.
+	 * @param array<string, mixed> $context The render context: `newEinddatum`, `reason`.
+	 *
+	 * @return array{subject: string, body: string}
+	 *
+	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 */
+	private function extension(string $case, string $end, array $context): array {
+		$newEnd = (string)($context['newEinddatum'] ?? $end);
+		$body = "Beste aanvrager,\n\n"
+			. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
+
+		$reason = rtrim(trim((string)($context['reason'] ?? '')), '.');
+		if ($reason !== '') {
+			$body .= 'De reden: ' . $reason . ".\n";
+		}
+
+		$body .= 'U vindt de officiele verlengingsbrief in uw burgerportaal.';
+
+		return ['subject' => 'Verlenging termijn zaak ' . $case, 'body' => $body];
+	}//end extension()
 
 	/**
 	 * The request for missing information, Awb 4:5.
