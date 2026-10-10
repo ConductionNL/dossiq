@@ -162,7 +162,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
             such cases was removed earlier. Nothing migrated to a timer.
             See openspec/changes/case-status-onto-engine-lifecycle.
         -->
-        <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
+        <!--
+            WOODeadlineCheckJob is RETIRED: a Woo request's statutory term is
+            an ordinary term instance with an armed engine timer, and its
+            ladder rungs reach the handler through the generic
+            Service/Termijn/TermHandlerNotice, on the days the term definition
+            lists in tellHandlerAt (td-woo-verzoek: 7 and 0)
+            (termijnbewaking-op-engine-timers 2.1, decision 182).
+        -->
         <!--
             lifecycle-acts-on-the-case REQ-LIFE-04: a case type may declare a
             period of no activity after which dossiq closes the case. Off by
