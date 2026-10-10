@@ -370,7 +370,8 @@ export default {
 				: []
 			const resolved = []
 			wanted.forEach((fileId) => {
-				const record = rows.find((row) => Number(row.fileId) === fileId) || null
+				const record =
+					rows.find((row) => Number(row.fileId) === fileId) || null
 				const id = record === null ? '' : String(record.id || '')
 				if (id !== '') {
 					resolved.push(id)

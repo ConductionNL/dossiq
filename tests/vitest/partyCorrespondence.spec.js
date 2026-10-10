@@ -209,7 +209,14 @@ describe('the Files tab declares its columns', () => {
 	it('labels them in sentence case with no em-dash', () => {
 		const labels = filesTab().props.columns.map((column) => column.label)
 
-		expect(labels).toEqual(['Type', 'Sender', 'Recipients', 'Keywords', 'Scan', 'Approval'])
+		expect(labels).toEqual([
+			'Type',
+			'Sender',
+			'Recipients',
+			'Keywords',
+			'Scan',
+			'Approval',
+		])
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}

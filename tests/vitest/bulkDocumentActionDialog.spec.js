@@ -361,7 +361,9 @@ describe('BulkDocumentActionDialog opened from a file row', () => {
 				})
 			return Promise.resolve({ data: {} })
 		})
-		mockPost.mockResolvedValue({ data: { results: [{ success: true }, { success: true }] } })
+		mockPost.mockResolvedValue({
+			data: { results: [{ success: true }, { success: true }] },
+		})
 
 		const wrapper = mount(BulkDocumentActionDialog, {
 			props: { mode: 'mark-final', fileIds: [77, '99', 5], caseId: 'case-1' },
