@@ -432,7 +432,7 @@ class AdvisoryCommitteeService {
 	 * @throws RuntimeException A BezwaarEntryNotWrittenException when the entry could not be written; the caller logs it with the entry.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function recordCouncilDeviation(
 		string $requestId,
