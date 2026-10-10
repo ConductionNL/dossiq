@@ -124,6 +124,20 @@
                         "description": "How many working days before the planned end you want to be warned. This warning is its own, so passing it says nothing about the statutory term.",
                         "title": "Warn on the planned end, days before"
                     },
+                    "queueCriticalDays": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 60,
+                        "description": "From how many working days before its deadline a case of this type shows as critical in the work queue. Leave it empty to use the instance default from the admin settings.",
+                        "title": "Critical from, working days left"
+                    },
+                    "queueWarningDays": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 120,
+                        "description": "From how many working days before its deadline a case of this type shows as almost due in the work queue. Leave it empty to use the instance default from the admin settings.",
+                        "title": "Almost due from, working days left"
+                    },
                     "chainTermDays": {
                         "type": "integer",
                         "minimum": 1,
