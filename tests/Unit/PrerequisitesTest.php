@@ -398,20 +398,61 @@ class PrerequisitesTest extends TestCase {
 		$rows = array_column($report['apps']['optional'], null, 'id');
 
 		$expected = [
-			'integriq' => 'openconnector',
-			'filinq' => 'docudesk',
-			'humaniq' => 'hrmq',
-			'decidiq' => 'decidesk',
-			'thematiq' => 'nldesign',
+			'integriq' => ['openconnector', 'Integriq'],
+			'filinq' => ['docudesk', 'Filinq'],
+			'humaniq' => ['hrmq', 'Humaniq'],
+			'decidiq' => ['decidesk', 'Decidiq'],
+			'thematiq' => ['nldesign', 'Thematiq'],
 		];
-		foreach ($expected as $id => $oldId) {
+		foreach ($expected as $id => [$oldId, $name]) {
 			$this->assertArrayHasKey($id, $rows, sprintf('"%s" is the row id', $id));
-			$this->assertSame($id, $rows[$id]['name'], sprintf('"%s" reads as itself', $id));
+			$this->assertSame($name, $rows[$id]['name'], sprintf('"%s" reads as "%s"', $id, $name));
 			$this->assertTrue($rows[$id]['present'], sprintf('"%s" is found under its old id "%s"', $id, $oldId));
 		}
 
-		// An app whose name did not move reads as its id.
-		$this->assertSame('portaliq', $rows['portaliq']['name']);
-		$this->assertSame('openregister', $report['apps']['required'][0]['name']);
+		// An app whose name did not move reads as its product name, not its id.
+		$this->assertSame('Portaliq', $rows['portaliq']['name']);
+		$this->assertSame('OpenRegister', $report['apps']['required'][0]['name']);
 	}//end testARenamedAppShowsItsNewNameAndKeepsItsLookupId()
+
+	/**
+	 * Every app row names the product, never the lowercase app id.
+	 *
+	 * Round 5 read "integriq, filinq, humaniq, ..." on the settings page: the
+	 * display name of a renamed app was its new id, and an app that was never
+	 * renamed showed its id. The lookup ids stay exactly as they are.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/admin-settings/spec.md
+	 */
+	public function testEveryAppRowShowsAProductNameAndKeepsItsLookupId(): void {
+		$report = (new Prerequisites())->check($this->appManager([]));
+		$rows   = array_merge($report['apps']['required'], $report['apps']['optional']);
+
+		$this->assertSame(
+			array_merge(array_keys(Prerequisites::APPS_REQUIRED), array_keys(Prerequisites::APPS_OPTIONAL)),
+			array_column($rows, 'id'),
+			'the lookup ids are the declared keys, unchanged'
+		);
+
+		$names = array_column($rows, 'name', 'id');
+		$this->assertSame(
+			[
+				'openregister' => 'OpenRegister',
+				'integriq' => 'Integriq',
+				'filinq' => 'Filinq',
+				'humaniq' => 'Humaniq',
+				'decidiq' => 'Decidiq',
+				'portaliq' => 'Portaliq',
+				'pipelinq' => 'Pipelinq',
+				'hermiq' => 'Hermiq',
+				'thematiq' => 'Thematiq',
+			],
+			$names
+		);
+		foreach ($names as $id => $name) {
+			$this->assertNotSame($id, $name, sprintf('"%s" reads as a product name, not its id', $id));
+		}
+	}//end testEveryAppRowShowsAProductNameAndKeepsItsLookupId()
 }//end class

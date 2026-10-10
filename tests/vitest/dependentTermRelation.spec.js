@@ -19,7 +19,7 @@
  *  - the days are never in the request body, which is the whole reason the
  *    endpoints take only the case and the task.
  *
- * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md
+ * @spec openspec/specs/related-case-linking/spec.md
  */
 
 import fs from 'fs'

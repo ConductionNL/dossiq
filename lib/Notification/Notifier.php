@@ -625,6 +625,7 @@ class Notifier implements INotifier {
 			'amendment' => $l->t('The applicant changed an answer in the portal. Open the case to see what changed.'),
 			'document' => $l->t('The applicant added a document in the portal. Open the case to read it.'),
 			'task-answer' => $l->t('The applicant answered a task in the portal. Open the case to see the answer.'),
+			'answer' => $l->t('The applicant answered your question in the portal. Open the case to read the answer and say whether the request is complete.'),
 			default => $l->t('Open the case to see what the applicant did.'),
 		};
 

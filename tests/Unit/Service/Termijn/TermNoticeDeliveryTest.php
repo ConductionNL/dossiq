@@ -350,7 +350,7 @@ class TermNoticeDeliveryTest extends TestCase {
 
 		$payload = $notifications->sendTermijnNotification('ontvangstbevestiging', 't1', 'burger@example.nl', ['case' => 'Z-1']);
 
-		self::assertTrue($payload['dispatch']['sent']);
+		self::assertSame('sent', $payload['dispatch']['status']);
 		self::assertSame('statutory', $this->optOuts->log[0]['category']);
 		self::assertCount(1, $this->sent);
 		self::assertStringNotContainsString('unsubscribe', strtolower($this->sent[0]->plainBody));
