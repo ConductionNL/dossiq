@@ -38,6 +38,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseType\OpenCaseCounts;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCP\IConfig;
 use OCP\IGroupManager;
 use OCP\IUserManager;
@@ -90,12 +91,14 @@ class MenuCaseTypesService {
 	 * @param IConfig $config Nextcloud config (user values).
 	 * @param IGroupManager $groupManager Nextcloud groups, the one authority on who is in a team.
 	 * @param IUserManager $userManager Nextcloud users.
+	 * @param TranslatedText $text A translatable case type title in the reader's language.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IConfig $config,
 		private readonly IGroupManager $groupManager,
 		private readonly IUserManager $userManager,
+		private readonly TranslatedText $text,
 	) {
 	}//end __construct()
 
@@ -168,6 +171,7 @@ class MenuCaseTypesService {
 	 *
 	 * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-004
 	 * @spec openspec/changes/case-type-handling-teams/specs/case-types/spec.md#requirement-a-case-type-names-the-teams-that-handle-it-req-ct-44
+	 * @spec openspec/changes/menu-case-type-titles-in-the-readers-language/specs/case-type-navigation/spec.md
 	 */
 	private function currentCaseTypes(): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -199,9 +203,18 @@ class MenuCaseTypesService {
 				continue;
 			}
 
+			// The title is declared translatable, so a row carries it as a
+			// language map. A (string) cast of that map is "Array", which is
+			// what every case type in the picker, the chosen list and the
+			// menu was called (finding B2, 10 Oct).
+			$title = $this->text->forReader(value: ($row['title'] ?? ''));
+			if ($title === '') {
+				$title = $uuid;
+			}
+
 			$caseTypes[$uuid] = [
 				'id' => $uuid,
-				'title' => (string)($row['title'] ?? $uuid),
+				'title' => $title,
 				'teams' => $handling->teams(caseType: $row),
 			];
 		}
