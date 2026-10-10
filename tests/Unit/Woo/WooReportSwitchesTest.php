@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * The switches are off unless an administrator said yes, and the throughput needs an existing reader group.
  *
  * @covers \OCA\Dossiq\Woo\WooReportSwitches
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */

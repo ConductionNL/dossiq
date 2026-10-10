@@ -33,6 +33,7 @@ use Psr\Log\LoggerInterface;
  * A throughput read is written on the audit trail of each case it counted, or refused.
  *
  * @covers \OCA\Dossiq\Woo\WooReportReadLog
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
  */

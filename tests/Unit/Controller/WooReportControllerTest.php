@@ -49,6 +49,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooThroughputReport
  * @covers \OCA\Dossiq\Woo\WooReportReadLog
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
  */

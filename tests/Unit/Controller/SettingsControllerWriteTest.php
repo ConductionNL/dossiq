@@ -48,6 +48,7 @@ use Psr\Container\ContainerInterface;
  * against a controller that silently wrote nothing.
  *
  * @covers \OCA\Dossiq\Controller\SettingsController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class SettingsControllerWriteTest extends TestCase {
 
