@@ -155,11 +155,13 @@ filter keys, its search term and its sort all go. A view sets state the reader d
 not choose and cannot see the origin of, so anything left behind is state no control
 on the page can undo.
 
-Retracts `cases-views-are-places` (requirement REQ-CM-44), which gave a view a route
-and a pinned entry in the navigation. The route was built and it worked; what it
-wrote into the address was a sort format nothing in the stack read, so the list it
-addressed came back unsorted on every reload. A view stores filters, a search term
-and a sort — not enough to be somewhere you go.
+**Reason**: the route worked, but what it wrote into the address was a sort format
+nothing in the stack reads — not `parseSortKeysFromQuery`, which seeds a list's sort
+on load, and not OpenRegister, which accepts `_order` alone. A view's sort therefore
+survived only in memory, the two keys reached `searchObjects()` as filters on
+whole-result bulk selections, and clearing the filters could remove neither them nor
+the view's own filter keys. A view stores filters, a search term and a sort, which is
+not enough to be somewhere you go.
 
 #### Scenario: A saved view narrows the list at the page's own address
 @e2e tests/e2e/a-saved-view-is-not-a-place.spec.ts
