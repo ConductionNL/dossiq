@@ -49,6 +49,18 @@ export function caseCreateFormProps() {
 			// until the library mounts `form-field` registry entries this is the
 			// binding waiting for it (see registry.js InitiatorPicker).
 			requester: { widget: 'InitiatorPicker', label: 'Requester' },
+			confidentiality: {
+				enumLabels: {
+					openbaar: 'Public',
+					beperkt_openbaar: 'Restricted public',
+					intern: 'Internal',
+					zaakvertrouwelijk: 'Case confidential',
+					vertrouwelijk: 'Confidential',
+					confidentieel: 'Classified confidential',
+					geheim: 'Secret',
+					zeer_geheim: 'Top secret',
+				},
+			},
 		},
 		// Both stay editable, and a case type carrying a defaultAssignee still
 		// wins through x-openregister-prefill: the type knows who handles it.
