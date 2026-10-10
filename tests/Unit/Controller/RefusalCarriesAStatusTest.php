@@ -386,7 +386,6 @@ class RefusalCarriesAStatusTest extends TestCase {
 			context: $this->createMock(originalClassName: TenantContext::class),
 			authService: $auth,
 			tenantService: $this->createMock(originalClassName: TenantService::class),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			auditTrail: $this->createMock(originalClassName: \OCA\Dossiq\Service\TenantAuditTrailService::class),
 		);
 	}//end mandateMiddleware()
