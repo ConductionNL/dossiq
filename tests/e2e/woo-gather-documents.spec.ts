@@ -34,9 +34,10 @@ test.describe('Gather documents on a Woo case', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#scenario-search-files-and-other-cases-at-once
-	// @e2e openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#scenario-two-files-added-one-refused
-	// @e2e openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#scenario-provenance-is-on-the-document
+	// @e2e openspec/specs/woo-case-type/spec.md#a-source-that-is-not-connected
+	// @e2e openspec/specs/woo-case-type/spec.md#search-files-and-other-cases-at-once
+	// @e2e openspec/specs/woo-case-type/spec.md#two-files-added-one-refused
+	// @e2e openspec/specs/woo-case-type/spec.md#provenance-is-on-the-document
 	test('a handler searches files, adds two, and finds them outstanding for assessment', async ({
 		page,
 		request,
@@ -74,10 +75,20 @@ test.describe('Gather documents on a Woo case', () => {
 			(source: any) => source.id,
 		)
 		expect(ids).toEqual(['files', 'cases', 'microsoft365'])
+		// A source that cannot answer says why instead of showing no results.
+		const microsoft365 = ((await sources.json()).sources ?? []).find(
+			(source: any) => source.id === 'microsoft365',
+		)
+		expect(microsoft365.available || microsoft365.reason !== '').toBeTruthy()
 
 		await page.goto(`/index.php/apps/dossiq/cases/${caseId}`, PAGE_LOAD)
 		await page.getByRole('button', { name: 'Gather documents' }).click()
 		const dialog = page.getByTestId('gather-documents-dialog')
+		if (!microsoft365.available) {
+			await expect(
+				dialog.getByTestId('gather-source-reason-microsoft365'),
+			).toContainText('Not connected')
+		}
 		await dialog.getByTestId('gather-terms').locator('input').fill(TERM)
 		await dialog.getByTestId('gather-search').click()
 
