@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds THIRTEEN tabs, and keeps holding thirteen.
+ * The case page holds FOURTEEN tabs, and keeps holding fourteen.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -103,10 +103,17 @@ const tabs = () => widget('case-panels').content.tabs
  * Thirteen is a decision, not a surrender. A fourteenth tab still reddens
  * this line, and whoever wants it writes down here what it answers that the
  * thirteen do not. That is the whole job of the number.
+ *
+ * Proposals is the fourteenth (portal-change-proposals-on-the-case). It
+ * answers what a resident asked to change through the portal and what became
+ * of the request, which Communication cannot say (it holds messages, not
+ * requests that wait for a handler's yes or no) and Work does not hold (those
+ * are tasks the handler made, not changes the resident asked for). It sits
+ * after Work because deciding on a proposal is work. The ceiling is fourteen.
  */
-const TAB_CEILING = 13
+const TAB_CEILING = 14
 
-/** The thirteen labels, in the order a handler reads them. */
+/** The fourteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-data-panel', 'Data'],
 	['case-files', 'Files'],
@@ -116,6 +123,7 @@ const EXPECTED_TABS = [
 	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
 	['case-work-panel', 'Work'],
+	['case-change-proposals', 'Proposals'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
 	['case-custody-panel', 'Custody'],
@@ -178,7 +186,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the thirteen tabs, in order', () => {
+	it('names the fourteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -356,6 +364,7 @@ describe('the container type this change depends on', () => {
 		// empty tab and logs nothing.
 		const LEAVES = {
 			'case-files': 'files',
+			'case-change-proposals': 'portaliq-change-proposal-queue',
 		}
 
 		// A leaf that lives inside a group, as `{ widgetId: [sectionWidgetId,

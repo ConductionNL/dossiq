@@ -234,6 +234,32 @@ class IntakeFanOutTest extends TestCase {
 	}//end testEachCaseNamesTheSubmission()
 
 	/**
+	 * A submission a company filed for one branch opens every case on that
+	 * branch, and one without a branch opens cases without one
+	 * (portal-case-list-declarations D3).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md
+	 */
+	public function testEveryCaseCarriesTheBranchTheSubmissionWasFiledUnder(): void {
+		$this->fanOut()->submit(
+			formCaseTypeId: 'ct-melding',
+			submission: ['title' => 'Kapotte lantaarnpaal', 'portalBranch' => '000012345678'],
+			submissionId: 'sub-1'
+		);
+		$this->assertSame('000012345678', $this->store->cases['case-1']['portalBranch']);
+		$this->assertSame('000012345678', $this->store->cases['case-2']['portalBranch']);
+
+		$this->fanOut()->submit(
+			formCaseTypeId: 'ct-melding',
+			submission: ['title' => 'Kapotte lantaarnpaal'],
+			submissionId: 'sub-2'
+		);
+		$this->assertArrayNotHasKey('portalBranch', $this->store->cases['case-3']);
+	}//end testEveryCaseCarriesTheBranchTheSubmissionWasFiledUnder()
+
+	/**
 	 * The cases know about each other.
 	 *
 	 * @return void

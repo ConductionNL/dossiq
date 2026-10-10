@@ -44,6 +44,36 @@ use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
  */
 class CitizenManifest {
 	/**
+	 * The case field holding the branch number a company filed under.
+	 */
+	public const BRANCH_FIELD = 'portalBranch';
+
+	/**
+	 * The case field holding the party a case belongs to, in portaliq's typed form.
+	 */
+	public const PARTY_FIELD = 'portalParty';
+
+	/**
+	 * The action a resident proposes a correction to their case with.
+	 */
+	public const PROPOSE_ACTION = 'proposeCaseChange';
+
+	/**
+	 * The collection of permits a resident holds.
+	 */
+	public const PERMIT_COLLECTION = 'mijnVergunningen';
+
+	/**
+	 * The action a resident asks for a new licence plate with.
+	 */
+	public const PERMIT_PLATE_ACTION = 'changePermitPlate';
+
+	/**
+	 * The case fields a resident may propose a new value for.
+	 */
+	public const PROPOSABLE_CASE_FIELDS = ['title', 'description'];
+
+	/**
 	 * What a Woo request asks, in the order the steps ask it. `collectionId`
 	 * is not here: only the dossier variant carries it, and it is hidden.
 	 */
@@ -210,8 +240,82 @@ class CitizenManifest {
 					'withinTerm',
 				],
 			],
+			$this->permitCollection(),
 		];
 	}//end collections()
+
+	/**
+	 * The permits a resident holds, as portaliq's products on the theme page.
+	 *
+	 * Portaliq renders a `kind: products` collection on the page of its
+	 * `theme` (life-domain-theme-pages): the title, the validity it computes
+	 * from the two dates, and the meta fields. The meta fields are plain
+	 * fields because portaliq drops a dotted path. A revoked permit is filtered
+	 * out by default, so a resident does not read it as theirs
+	 * (portal-permits-as-held-products D1).
+	 *
+	 * @return array<string, mixed> The collection.
+	 *
+	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 */
+	private function permitCollection(): array {
+		return [
+			'id' => self::PERMIT_COLLECTION,
+			'register' => PortalContributionProvider::REGISTER,
+			'schema' => 'permit',
+			'scopeField' => 'portalSubject',
+			'label' => 'Vergunningen',
+			'listable' => true,
+			'minTrust' => 'low',
+			'kind' => 'products',
+			'theme' => 'parkeren',
+			'fields' => ['title', 'kind', 'theme', 'validFrom', 'validUntil', 'status', 'kenteken', 'adres'],
+			'titleField' => 'title',
+			'validFromField' => 'validFrom',
+			'validUntilField' => 'validUntil',
+			'metaFields' => ['kenteken', 'adres', 'validFrom'],
+			'fieldConfigs' => [
+				'kenteken' => ['label' => 'Kenteken'],
+				'adres' => ['label' => 'Adres'],
+				'validFrom' => ['label' => 'Ingegaan op'],
+				'validUntil' => ['label' => 'Geldig tot en met'],
+			],
+			'countLabel' => ['singular' => 'vergunning', 'plural' => 'vergunningen'],
+			'defaultFilters' => ['status' => 'active'],
+			'rowActions' => [self::PERMIT_PLATE_ACTION],
+		];
+	}//end permitCollection()
+
+	/**
+	 * "Kenteken wijzigen": the new plate goes to dossiq, which opens a change
+	 * case; the permit is not written from the portal (D3). An endpoint row
+	 * action, so portaliq carries the permit's id in `permitId`.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/portal-permits-as-held-products/specs/portal-contribution/spec.md
+	 */
+	private function permitPlateAction(): array {
+		return [
+			'id' => self::PERMIT_PLATE_ACTION,
+			'label' => 'Kenteken wijzigen',
+			'summary' => 'Rijdt u in een andere auto? Zet het nieuwe kenteken op uw vergunning.',
+			'endpoint' => '/index.php/apps/dossiq/api/portal/vergunning/kenteken',
+			'method' => 'POST',
+			'rowField' => 'permitId',
+			'theme' => 'parkeren',
+			'when' => ['field' => 'kind', 'op' => 'eq', 'value' => 'parkeren-bewoner'],
+			'minTrust' => 'low',
+			'fields' => ['permitId', 'nieuwKenteken'],
+			'requiredFields' => ['nieuwKenteken'],
+			'fieldConfigs' => [
+				'permitId' => ['visible' => false],
+				'nieuwKenteken' => ['label' => 'Nieuw kenteken', 'placeholder' => 'GZ-482-K'],
+			],
+			'submitLabel' => 'Kenteken doorgeven',
+			'successMessage' => 'Wij hebben uw nieuwe kenteken ontvangen. U vindt de aanvraag onder Mijn zaken.',
+		];
+	}//end permitPlateAction()
 
 	/**
 	 * What the organisation still needs from the resident
@@ -281,12 +385,14 @@ class CitizenManifest {
 			$conversation->replyAction(),
 			$conversation->askAction(),
 			$this->amendCaseAction(),
+			$this->proposeCaseChangeAction(),
 			$this->startWooVerzoekAction(),
 			// THE SAME REQUEST WITHOUT A DOSSIER: what the home tile and the
 			// overview start (site-woo-request-in-steps D2). Same route, same
 			// steps, no `attachTo`, so portaliq offers it anywhere a resident
 			// is signed in rather than only on a dossier page.
 			$this->startWooVerzoekAlgemeenAction(),
+			$this->permitPlateAction(),
 		];
 	}//end actions()
 
@@ -309,7 +415,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	private function startWooVerzoekAction(): array {
 		// THE DOSSIER GOES IN THE FIRST STEP, hidden. Portaliq gathers every
@@ -366,7 +472,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
 	 */
 	private function startWooVerzoekAlgemeenAction(): array {
@@ -416,7 +522,7 @@ class CitizenManifest {
 	 *
 	 * @return array<string, mixed> The action.
 	 *
-	 * @spec openspec/changes/portal-citizen-writes-on-the-case/tasks.md#1.1
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	private function amendCaseAction(): array {
 		return [
@@ -448,7 +554,16 @@ class CitizenManifest {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-says-who-must-act-req-srpd-002
 	 */
-	private function caseCollection(): array {
+	public function caseCollection(): array {
+		return array_merge($this->caseDetailKeys(), $this->caseListKeys());
+	}//end caseCollection()
+
+	/**
+	 * What the case collection projects and what its detail shows.
+	 *
+	 * @return array<string, mixed> The keys.
+	 */
+	private function caseDetailKeys(): array {
 		return [
 			'id' => 'mijnZaken',
 			'register' => PortalContributionProvider::REGISTER,
@@ -457,7 +572,10 @@ class CitizenManifest {
 			'label' => 'Mijn zaken',
 			'listable' => true,
 			'minTrust' => 'low',
-			'fields' => PortalContributionProvider::CITIZEN_CASE_FIELDS,
+			// The branch and the party ride along for portaliq's branch and
+			// mandate filters only: they are not on CITIZEN_CASE_FIELDS, so the
+			// acknowledgement never quotes them.
+			'fields' => array_merge(PortalContributionProvider::CITIZEN_CASE_FIELDS, [self::BRANCH_FIELD, self::PARTY_FIELD]),
 			// WHAT THE RESIDENT READS, labelled and typed. Without these
 			// portaliq falls back to every projected field as plain text
 			// under its key, uuids included (dossiq#3143). `caseType` and
@@ -513,6 +631,17 @@ class CitizenManifest {
 					'us' => 'De gemeente is aan zet',
 				],
 			],
+		];
+	}//end caseDetailKeys()
+
+	/**
+	 * How "Mijn zaken" lists a case: what makes it a case, when it is closed,
+	 * which branch filed it, its number and its case type.
+	 *
+	 * @return array<string, mixed> The keys.
+	 */
+	private function caseListKeys(): array {
+		return [
 			// LISTED ON "MY CASES". Portaliq's merged case list keeps only
 			// collections of kind `cases` (PortalCaseListReader), and reads a
 			// row as closed when `closedField` holds a value (false does not
@@ -525,6 +654,24 @@ class CitizenManifest {
 			// drops a closed marker the collection does not project.
 			'kind' => 'cases',
 			'closedField' => 'isFinalStatus',
+			// THE PROPOSE FORM ON THE CASE. Portaliq's site finds the
+			// `propose-change` action among the collection's row actions and
+			// shows the resident's proposals beside it.
+			'rowActions' => [self::PROPOSE_ACTION],
+			// THE BRANCH A COMPANY FILED UNDER. A session restricted to one
+			// branch reads only the cases whose `portalBranch` is that branch,
+			// and a case filed before the field existed is hidden from it,
+			// which portaliq calls the safe answer (portal-case-list-declarations D3).
+			'branchField' => self::BRANCH_FIELD,
+			// THE PARTY A CASE BELONGS TO. Portaliq lists, for a session acting
+			// under a mandate, the cases whose `portalParty` is the mandate's
+			// `onBehalfOf` (site-business-and-authorisation D2).
+			'mandateField' => self::PARTY_FIELD,
+			// THE CASE NUMBER, for a session that came in with a case number
+			// instead of an account. Portaliq reads it only for a case type
+			// whose `portalIdentityKind` admits `reference`, and no case type
+			// does until portaliq checks the address against the case (D4).
+			'referenceField' => 'identifier',
 			// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
 			// portal needs to tell statuses apart; the merged case list
 			// showed it as is. portaliq shows this field instead.
@@ -539,7 +686,34 @@ class CitizenManifest {
 				'labelField' => 'title',
 			],
 		];
-	}//end caseCollection()
+	}//end caseListKeys()
+
+	/**
+	 * Proposing a correction to the case: the resident names a field and the
+	 * value it should have, and the handler accepts or rejects it on the case
+	 * page. Portaliq holds the queue, the diff and the write as the reviewer;
+	 * dossiq only says which fields may be proposed (portal-change-proposals-on-the-case D1).
+	 *
+	 * Only what the applicant supplied and can know to be wrong is proposable.
+	 * Status, result, deadlines, the assignee and the case type are the
+	 * organisation's and never are.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/portal-change-proposals-on-the-case/specs/portal-contribution/spec.md
+	 */
+	private function proposeCaseChangeAction(): array {
+		return [
+			'id' => self::PROPOSE_ACTION,
+			'type' => 'propose-change',
+			'label' => 'Wijziging voorstellen',
+			'register' => PortalContributionProvider::REGISTER,
+			'schema' => 'case',
+			'scopeField' => 'portalSubject',
+			'minTrust' => 'low',
+			'proposable' => self::PROPOSABLE_CASE_FIELDS,
+		];
+	}//end proposeCaseChangeAction()
 
 	/**
 	 * Making an objection: the start point a resident reads on the home page

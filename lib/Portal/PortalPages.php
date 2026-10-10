@@ -118,7 +118,7 @@ class PortalPages {
 			// renders the rest below it.
 			'home' => true,
 			'menu' => false,
-			'blocks' => $this->residentOverviewBlocks(collections: $collections),
+			'blocks' => $this->residentOverviewBlocks(collections: $collections, labels: $labels),
 		];
 
 		$pages[] = [
@@ -168,13 +168,15 @@ class PortalPages {
 	 * cases and the newest messages.
 	 *
 	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 * @param array<string, string>            $labels      The label per page id, and `lopendeZaken` for the running cases.
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
-	 * @spec openspec/changes/resident-overview-reads-as-designed/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
+	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
-	private function residentOverviewBlocks(array $collections): array {
+	private function residentOverviewBlocks(array $collections, array $labels = []): array {
 		// THE OVERVIEW OPENS WITH THE TIME OF DAY AND THE RESIDENT'S FIRST NAME
 		// ("Goedemiddag, Sanne"), as the Zuiddrecht design draws it. Portaliq's
 		// `greeting` block says that itself and takes the place of the plain
@@ -213,7 +215,7 @@ class PortalPages {
 			'collection' => 'mijnZaken',
 			'open' => true,
 			'limit' => 5,
-			'label' => 'Lopende zaken',
+			'label' => ($labels['lopendeZaken'] ?? 'Lopende zaken'),
 			'display' => 'compact',
 			'showAll' => true,
 			'yourTurn' => ['applicant'],

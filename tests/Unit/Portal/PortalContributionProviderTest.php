@@ -428,8 +428,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->fail('the citizen contribution must declare the page ' . $id);
 	}//end citizenPage()
 
-	public function testAdvertisesFourAudiences(): void {
-		$this->assertSame(['supplier', 'citizen', 'client', 'inspector'], $this->provider->getAudiences());
+	public function testAdvertisesFiveAudiences(): void {
+		$this->assertSame(['supplier', 'citizen', 'client', 'business', 'inspector'], $this->provider->getAudiences());
 	}
 
 	public function testPrimaryAudienceFallbackIsSupplier(): void {
@@ -451,12 +451,19 @@ class PortalContributionProviderTest extends TestCase {
 		// supplier's payment record and showed it to nobody, least of all the
 		// supplier it was about. The order is asserted because the portal
 		// renders the collections in it.
+		// `mijnZaken` comes last: a company on eHerkenning follows its own
+		// cases beside procurement (portal-case-list-declarations D1).
 		$this->assertSame(
-			['tenders', 'contracts', 'invoices', 'performance', 'messages'],
+			['tenders', 'contracts', 'invoices', 'performance', 'messages', 'mijnZaken'],
 			$ids
 		);
 		foreach ($contribution['collections'] as $collection) {
-			$this->assertSame('supplierRef', $collection['scopeField']);
+			$expected = 'supplierRef';
+			if ($collection['id'] === 'mijnZaken') {
+				$expected = 'portalSubject';
+			}
+
+			$this->assertSame($expected, $collection['scopeField']);
 		}
 	}
 
@@ -467,7 +474,7 @@ class PortalContributionProviderTest extends TestCase {
 		// `vragenAanU` is what the organisation still needs from the resident
 		// (site-resident-portal-design D1), between their cases and their
 		// messages.
-		$this->assertSame(['mijnZaken', 'vragenAanU', 'berichten', 'verzoeken'], $ids);
+		$this->assertSame(['mijnZaken', 'vragenAanU', 'berichten', 'verzoeken', 'mijnVergunningen'], $ids);
 
 		// Three creates and the one update a resident makes on their own
 		// case (dossiq#3152). The two creates that name a case were deferred until Portaliq
@@ -475,7 +482,7 @@ class PortalContributionProviderTest extends TestCase {
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
 		$this->assertSame(
-			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'startWooVerzoek', 'startWooVerzoekAlgemeen'],
+			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'proposeCaseChange', 'startWooVerzoek', 'startWooVerzoekAlgemeen', 'changePermitPlate'],
 			$actionIds
 		);
 	}
@@ -492,7 +499,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	public function testAResidentStartsAWooRequestFromTheirDossier(string $audience): void {
 		$actions = [];

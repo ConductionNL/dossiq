@@ -153,7 +153,7 @@ class PortalCaseMessagesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testTheResidentReadsTheirOwnMessagesOnTheCaseNewestFirst(): void {
 		$entries = $this->service()->forCase(self::CASE_ID);
@@ -183,7 +183,7 @@ class PortalCaseMessagesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testNoReferenceLeavesTheServer(): void {
 		foreach ($this->service()->forCase(self::CASE_ID) as $entry) {
@@ -198,7 +198,7 @@ class PortalCaseMessagesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testACaseWithoutAResidentAnswersNothing(): void {
 		$this->assertSame([], $this->service()->forCase(''));
@@ -214,7 +214,7 @@ class PortalCaseMessagesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testTheContributionAnswersCaseMessages(): void {
 		$provider = new PortalContributionProvider(null, null, null, null, $this->service());

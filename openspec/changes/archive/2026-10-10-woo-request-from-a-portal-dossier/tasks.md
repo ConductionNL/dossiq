@@ -30,7 +30,7 @@ Tier: V1. Kind: code. Contract: hydra `woo-citizen-journey` C5.
 
 ## 4. Live
 
-- [ ] 4.1 Coordinator, on :8080 after opencatalogi's `collection` lands: a
+- [ ] 4.1 Coordinator, on :8080 after opencatalogi's `collection` lands: a (live pass, decision 139; archived 10 Oct under decision 139, recipe in dossiq STATE.md "Still owed")
   resident starts a Woo request from a dossier with two items; the case shows
   in Mijn zaken with its deadline and two case objects; the dossier's
   `sourceOf` holds the case.

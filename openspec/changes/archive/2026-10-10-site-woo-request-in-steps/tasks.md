@@ -72,5 +72,5 @@ without it portaliq shows the action as one form, as today.
       the changed files (php -l, phpcs, phpmd both rulesets, phpstan, psalm) and the full
       PHPUnit suite once. No `src/` file changed, so `npm run lint` has nothing of this change
       to read; `check:schema-l10n` is green with the nine new strings in the catalogue.
-- [ ] 3.2 Live with `site-multi-step-forms`: a resident starts a request from the home page,
+- [ ] 3.2 Live with `site-multi-step-forms`: a resident starts a request from the home page, (live pass, decision 139; archived 10 Oct under decision 139, recipe in dossiq STATE.md "Still owed")
       saves on step 2, comes back, sends, and reads the case number on the confirmation.

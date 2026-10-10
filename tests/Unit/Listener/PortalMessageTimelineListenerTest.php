@@ -85,7 +85,7 @@ class PortalMessageTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testAResidentsMessageIsAnInternalEntryWithAFollowUp(): void {
 		$this->listener->handle($this->created([
@@ -124,7 +124,7 @@ class PortalMessageTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testAMessageWithoutASubjectReadsAsAQuestion(): void {
 		$this->listener->handle($this->created(['caseId' => 'case-1', 'direction' => 'citizen_to_handler', 'content' => 'Hello']));
@@ -140,7 +140,7 @@ class PortalMessageTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testTheHandlersMessageIsAPublicOutboundEntry(): void {
 		$this->listener->handle($this->created([
@@ -169,7 +169,7 @@ class PortalMessageTimelineListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function testOnlyANewMessageOnACaseIsRecorded(): void {
 		$this->listener->handle($this->created(['caseId' => 'case-1', 'direction' => 'citizen_to_handler'], 'contactmoment'));

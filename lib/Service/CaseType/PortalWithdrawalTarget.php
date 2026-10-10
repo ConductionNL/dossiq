@@ -12,7 +12,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * @version GIT: <git-id>
  * @link https://conduction.nl
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service\CaseType;
  * no move refuses a status write on it, so only "is this one of the type's
  * statuses" applies there.
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 final class PortalWithdrawalTarget {
 
@@ -61,7 +61,7 @@ final class PortalWithdrawalTarget {
 	 *
 	 * @return array{reason: string, parameters: array<int, string>}|null The refusal, or null when the withdrawal can be written.
 	 *
-	 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function refusal(array $withdrawal, array $statuses, array $moves): ?array {
 		$target = $this->text(value: ($withdrawal['targetStatus'] ?? null));
