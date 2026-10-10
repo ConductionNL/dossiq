@@ -47,7 +47,7 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
   - `npm run check:manifest` exits 0.
   - unit `WooReportControllerTest::testTheCsvHasTheSameRows`.
   - Built: `src/manifest.d/86-woo-reports.json` (menu entry gated by `visibleIf` on `woo.throughputReader`,
-    fed by the `woo_reports` initial state from `DashboardController`), `src/views/woo/WooReportsView.vue`.
+    fed by the `woo_reports` initial state from `WooReportsInitialStateListener`), `src/views/woo/WooReportsView.vue`.
     Board `DqWooRapportages` drawn in design-system#184. The parties half waits on section 4.
 
 ## 3. Mail header fields
