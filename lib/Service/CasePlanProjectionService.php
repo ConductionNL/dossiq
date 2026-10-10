@@ -121,6 +121,20 @@ class CasePlanProjectionService {
 	public const OBJECT_WRITE_EVENT = 'object.updated';
 
 	/**
+	 * The app id dossiq acts as when it calls the case layer from its own
+	 * in-process code (a listener, a command, a repair step).
+	 *
+	 * OpenRegister refuses a plan created or read with no acting identity
+	 * ("no acting identity" / "no case plan"), so the bridge's first version,
+	 * which passed `uid: null`, was a silent no-op: every case start logged
+	 * an error and created nothing. The system verbs act as `system:dossiq`
+	 * instead (openregister one-engine-bpmn-and-cmmn, PR #4544).
+	 *
+	 * @var string
+	 */
+	public const SYSTEM_APP = 'dossiq';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and config.
@@ -336,6 +350,31 @@ class CasePlanProjectionService {
 	}//end projectAtCaseStart()
 
 	/**
+	 * The converted definition of a caseType's published caseModel.
+	 *
+	 * The drain of in-flight blobs ({@see CasePlanMigrationService}) needs the
+	 * same definition the projection hands OpenRegister at case start, so both
+	 * read it from here and a case migrated later gets the plan a case
+	 * started now would get.
+	 *
+	 * @param string $caseTypeId The caseType uuid.
+	 *
+	 * @return array{settings: array<string, mixed>, items: array<int, array<string, mixed>>} The definition.
+	 *
+	 * @throws UnexpectedValueException `no_published_case_model`, or the conversion's refusal by name.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	public function definitionForCaseType(string $caseTypeId): array {
+		$model = $this->findPublishedModel(caseTypeId: $caseTypeId);
+		if ($model === null) {
+			throw new UnexpectedValueException('no_published_case_model');
+		}
+
+		return $this->convertModel(caseModel: $model);
+	}//end definitionForCaseType()
+
+	/**
 	 * Hand the converted definition to OpenRegister's case layer.
 	 *
 	 * @param object                                                                       $plans      The resolved CasePlanService.
@@ -357,13 +396,21 @@ class CasePlanProjectionService {
 			$schemaId = (int)$schema;
 		}
 
+		// An OpenRegister from before the system verbs would refuse a plan
+		// with no identity anyway; say which, instead of logging a refusal
+		// that reads like a bad model.
+		if (method_exists($plans, 'createPlanAsSystem') === false) {
+			$this->logger->warning('CasePlanProjectionService: OpenRegister predates createPlanAsSystem', ['caseId' => $caseId]);
+			return ['projected' => false, 'reason' => 'case_layer_lacks_system_verbs'];
+		}
+
 		try {
-			$plans->createPlan(
+			$plans->createPlanAsSystem(
 				objectUuid: $caseId,
 				registerId: $registerId,
 				schemaId: $schemaId,
 				definition: $definition,
-				uid: null,
+				app: self::SYSTEM_APP,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
