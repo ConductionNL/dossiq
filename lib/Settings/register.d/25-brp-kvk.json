@@ -12,9 +12,10 @@
             "brpPerson": {
                 "slug": "brpPerson",
                 "icon": "AccountOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
+                "x-openregister-registry": { "registry": "brp", "identity": "citizenServiceNumber", "owned": ["name", "birth", "residence", "indicatieGeheim"] },
                 "title": "BRP person (test register set)",
                 "description": "Simplified BRP person register set following Haal Centraal BRP Personen bevragen field naming. NOT a registry connection: seeded exclusively with official fictitious personas from the BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock), which double as the BRP contract-lane fixtures. Live BRP adapters are owned by external-integrations-test-environments.",
                 "type": "object",
@@ -136,9 +137,10 @@
             "kvkCompany": {
                 "slug": "kvkCompany",
                 "icon": "Domain",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Organization",
                 "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
+                "x-openregister-registry": { "registry": "kvk", "identity": "kvkNumber", "owned": ["tradeName", "legalForm", "address"] },
                 "title": "KvK company (test register set)",
                 "description": "Simplified KvK company register set following KvK Zoeken API field naming. NOT a registry connection: seeded exclusively with the KvK-published fictitious test companies (developers.kvk.nl test environment), which double as the KvK contract-lane fixtures. Live KvK adapters are owned by external-integrations-test-environments.",
                 "type": "object",

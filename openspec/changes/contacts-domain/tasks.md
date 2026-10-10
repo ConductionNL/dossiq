@@ -251,9 +251,24 @@ criteria under a task are plain bullets. Depends on `requester-on-the-case`
   When both ship, this task becomes: link the identified caller from
   pipelinq's panel to `ContactDetail`/`OrganisationDetail`, and the spec
   scenario currently excluded on `kcc-klantcontact-integratie` is included.
-- [ ] 4.3 [blocked: Tier B B22, BRP and KvK subscriptions through integriq]
+- [x] 4.3 (2026-10-10, decision 156: B22 landed as openregister#3656
+  `registry-subscriptions` plus integriq's `registry-subscription-connector`
+  (BrpVolgindicatieProvider `brp`, KvkMutatieProvider `kvk`). Dossiq's side:
+  `brpPerson` (1.3.0) and `kvkCompany` (1.2.0) in
+  `lib/Settings/register.d/25-brp-kvk.json` declare `x-openregister-registry`
+  (identity `citizenServiceNumber` / `kvkNumber`, owned name, birth,
+  residence, indicatieGeheim / tradeName, legalForm, address), and
+  `lib/Listener/RequesterRegistrySubscriptionListener.php` with
+  `lib/Service/Registry/RequesterRegistrySubscription.php` requests a
+  subscription when a case names such a row as its requester, leaving a
+  requested or active one alone; `tests/Unit/Service/Registry/RequesterRegistrySubscriptionTest.php`)
   Refresh `brpPerson` and `kvkCompany` rows from the source; the index reads
   whatever the register set holds until then.
+- [ ] 4.4 (live pass, decision 139) On an instance with openregister >= #3656
+  and integriq's connector configured against the BRP and KvK mocks: file a
+  case with a `brpPerson` requester, check `@self.registry.state` on the row
+  goes `requested` then `active`, change the person at the source, and check
+  the row's `name` changes in place with a `registry:brp` audit entry.
 
 ## 5. Verification
 
