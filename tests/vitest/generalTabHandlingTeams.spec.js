@@ -24,16 +24,19 @@ import { h } from 'vue'
 function stub(name) {
 	return {
 		name,
-	props: {
-		modelValue: { type: [Array, Object, String, Boolean, Number], default: null },
-		options: { type: Array, default: () => [] },
-		inputLabel: { type: String, default: '' },
-		multiple: { type: Boolean, default: false },
-	},
-	emits: ['update:modelValue'],
-	render() {
-		return h('div', { class: name, 'data-label': this.inputLabel })
-	},
+		props: {
+			modelValue: {
+				type: [Array, Object, String, Boolean, Number],
+				default: null,
+			},
+			options: { type: Array, default: () => [] },
+			inputLabel: { type: String, default: '' },
+			multiple: { type: Boolean, default: false },
+		},
+		emits: ['update:modelValue'],
+		render() {
+			return h('div', { class: name, 'data-label': this.inputLabel })
+		},
 	}
 }
 
@@ -49,7 +52,8 @@ vi.mock('@nextcloud/router', () => ({
 }))
 vi.mock('@nextcloud/axios', () => ({ default: { get: vi.fn() } }))
 
-const { default: GeneralTab } = await import('../../src/views/settings/tabs/GeneralTab.vue')
+const { default: GeneralTab } =
+	await import('../../src/views/settings/tabs/GeneralTab.vue')
 
 const GROUPS = {
 	ocs: {
@@ -69,7 +73,9 @@ const GROUPS = {
  * @return {Promise<object>} The wrapper, after the groups loaded.
  */
 async function mountWith(handling) {
-	axios.get.mockImplementation(async (url) => (url.includes('cloud/groups') ? { data: GROUPS } : { data: {} }))
+	axios.get.mockImplementation(async (url) =>
+		url.includes('cloud/groups') ? { data: GROUPS } : { data: {} },
+	)
 	const wrapper = mount(GeneralTab, { props: { form: { handling } } })
 	await flushPromises()
 
@@ -83,7 +89,9 @@ async function mountWith(handling) {
  * @return {object} The select stub.
  */
 function teamsSelect(wrapper) {
-	return wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Handling teams')
+	return wrapper
+		.findAllComponents({ name: 'NcSelect' })
+		.find((select) => select.props('inputLabel') === 'Handling teams')
 }
 
 describe('GeneralTab handling teams', () => {
@@ -103,19 +111,33 @@ describe('GeneralTab handling teams', () => {
 	})
 
 	it('writes the chosen teams into the whole handling block', async () => {
-		const handling = { defaultGroup: 'vergunningen', defaultHandler: 'lars', automaticMessages: ['extension'], intakeScreen: 'x' }
+		const handling = {
+			defaultGroup: 'vergunningen',
+			defaultHandler: 'lars',
+			automaticMessages: ['extension'],
+			intakeScreen: 'x',
+		}
 		const wrapper = await mountWith(handling)
 
-		teamsSelect(wrapper).vm.$emit('update:modelValue', [{ id: 'handhaving', label: 'Toezicht en handhaving' }])
+		teamsSelect(wrapper).vm.$emit('update:modelValue', [
+			{ id: 'handhaving', label: 'Toezicht en handhaving' },
+		])
 
-		expect(wrapper.emitted('update')).toEqual([['handling', { ...handling, teams: ['handhaving'] }]])
+		expect(wrapper.emitted('update')).toEqual([
+			['handling', { ...handling, teams: ['handhaving'] }],
+		])
 	})
 
 	it('keeps a declared team the instance no longer has, under its id', async () => {
 		const wrapper = await mountWith({ teams: ['opgeheven'] })
 		const select = teamsSelect(wrapper)
 
-		expect(select.props('modelValue')).toEqual([{ id: 'opgeheven', label: 'opgeheven' }])
-		expect(select.props('options')).toContainEqual({ id: 'opgeheven', label: 'opgeheven' })
+		expect(select.props('modelValue')).toEqual([
+			{ id: 'opgeheven', label: 'opgeheven' },
+		])
+		expect(select.props('options')).toContainEqual({
+			id: 'opgeheven',
+			label: 'opgeheven',
+		})
 	})
 })

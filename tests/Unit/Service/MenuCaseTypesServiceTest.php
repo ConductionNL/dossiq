@@ -61,6 +61,7 @@ class FakeMenuCaseTypeObjectService {
  * Unit tests for MenuCaseTypesService.
  *
  * @covers \OCA\Dossiq\Service\MenuCaseTypesService
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class MenuCaseTypesServiceTest extends TestCase {
 
