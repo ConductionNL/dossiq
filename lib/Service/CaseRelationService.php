@@ -145,7 +145,7 @@ class CaseRelationService {
 			$rows[$targetId.'|'.$type] = array_merge(
 				$entry,
 				[
-					'title'        => $this->titleOf(caseId: $targetId, entry: $entry),
+					'title'        => $this->titleOf(caseId: $targetId),
 					'direction'    => null,
 					'label'        => null,
 					'inverseLabel' => null,
@@ -166,19 +166,13 @@ class CaseRelationService {
 	 * read answers '', and the card leaves the row out rather than print an
 	 * id a handler cannot use.
 	 *
-	 * @param string               $caseId The far case uuid.
-	 * @param array<string, mixed> $entry  The stored entry.
+	 * @param string $caseId The far case uuid.
 	 *
 	 * @return string The title, or ''.
 	 *
 	 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/related-case-linking/spec.md
 	 */
-	private function titleOf(string $caseId, array $entry): string {
-		$stored = trim((string)($entry['title'] ?? ''));
-		if ($stored !== '') {
-			return $stored;
-		}
-
+	private function titleOf(string $caseId): string {
 		$case = $this->store->fetchCase(caseUuid: $caseId);
 
 		return trim((string)($case['title'] ?? ''));
