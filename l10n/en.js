@@ -6867,6 +6867,7 @@ OC.L10N.register(
         "Term instance": "Term instance",
         "Term starts at": "Term starts at",
         "Term Starts On": "Term Starts On",
+        "Term state": "Term state",
         "TermijnInstance reference": "TermijnInstance reference",
         "TermijnInstance the notice relates to": "TermijnInstance the notice relates to",
         "Terminate": "Terminate",

@@ -342,7 +342,7 @@
                                                 "type": "string"
                                             },
                                             "term": {
-                                                "title": "Term fields",
+                                                "title": "Term state",
                                                 "type": "string",
                                                 "enum": [
                                                     "running",
@@ -378,6 +378,7 @@
                                     "description": "{application, from}: the source number kept in formerReferences."
                                 },
                                 "term": {
+                                    "title": "Term fields",
                                     "type": "object",
                                     "description": "Source field names for endDate, extensions, extensionReason and closedOn."
                                 },
