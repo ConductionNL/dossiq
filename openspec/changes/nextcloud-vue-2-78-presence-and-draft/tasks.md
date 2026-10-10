@@ -19,5 +19,5 @@
 
 ## 4. Live check
 
-- [ ] 4.1 Leaving a case page sends the presence beacon and OpenRegister does not answer 405.
-- [ ] 4.2 Case list and case detail render on the new build.
+- [x] 4.1 Leaving a case page sends the presence beacon with the token in a form body, and OpenRegister (3a987bf, #4562) answers 200, not 405.
+- [x] 4.2 Case list and case detail render on the new build; a forced failed save shows "Draft kept on this device", not "Saved".
