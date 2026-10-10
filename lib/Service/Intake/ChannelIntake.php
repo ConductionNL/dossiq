@@ -57,6 +57,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use OCA\Dossiq\Service\CommunicationChannel;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -309,9 +310,20 @@ class ChannelIntake {
 			}
 
 			$text = trim((string)$value);
-			if ($text !== '') {
-				$object[$field] = $text;
+			if ($text === '') {
+				continue;
 			}
+
+			// Decision 171: the channel is a slug enum, so a message's words
+			// ("E-mail", "brief") become their slug and the words are kept.
+			// A word that names no channel writes no channel, never a value
+			// the schema refuses, which would lose the whole case.
+			if ($field === 'communicationChannel') {
+				$object = array_merge($object, array_filter((new CommunicationChannel())->normalise(value: $text), static fn ($v): bool => $v !== null));
+				continue;
+			}
+
+			$object[$field] = $text;
 		}
 
 		$description = trim((string)($message['text'] ?? ''));

@@ -50,18 +50,30 @@ goes another way. Ended cases are left alone.
 
 ## D3. The property says what it holds
 
-`communicationChannel` is re-declared, in a fragment
-`lib/Settings/register.d/78-communication-channel-slug.json`, as a string
-with the enum `email`, `portal`, `post`, `website`, `zgw-api` (the slugs
-`CaseTypeAcknowledgement` knows), `format` removed. A repair step lists any
-stored value outside the enum and leaves it for a person.
+`communicationChannel` is re-declared in `dossiq_register.json` as a nullable
+string with the enum `email`, `portal`, `post`, `website`, `zgw-api` (the slugs
+`CaseTypeAcknowledgement` knows), `format` removed. Ruben decided on 10 Oct
+(decision 171, Q-dossiq-L2-3), against the recommendation, to add the enum and
+to map ZGW URLs to slugs at the ZGW boundary, so no ZGW-created case is refused:
+
+- `CommunicationChannel` maps a ZGW `communicatiekanaal` URL to the slug an
+  administrator configured for it (`zgw_communication_channel_map`), else
+  `zgw-api`, and the words an older intake wrote ("E-mail", "brief") to their
+  slug. The value a case arrived as is kept in `communicationChannelSource`.
+- `ZgwService` runs it on every zaak write, and a zaak read answers with the
+  URL it was created with (or the configured URL of its slug, or "").
+- Channel intake normalises a message's channel the same way; a word that
+  names no channel writes no channel rather than a value the enum refuses.
+- `NormaliseCommunicationChannelValues` converts every stored value once,
+  after the register import, and names each converted case in the log.
 
 ## Declarative-vs-imperative decision (ADR-031)
 
 | Behaviour | Path | Rationale |
 |---|---|---|
 | Hearing portaliq's event and updating running cases | Imperative, a listener | A cross-app event (ADR-041) fanned out over a query. |
-| What the property holds | Declarative, a register fragment | A schema correction. |
+| What the property holds | Declarative, the register | A schema correction. |
+| Mapping ZGW URLs and intake words onto slugs | Imperative, at each boundary | The ZGW API and channel intake write the property; the mapping has to run before the enum sees the value. |
 
 ## Risks
 
