@@ -161,7 +161,7 @@ class WooThroughputReport {
 				continue;
 			}
 
-			$this->add(tally: $tally, counted: $counted);
+			$this->tallyOne(tally: $tally, counted: $counted);
 			$cases[(string)($assessment['caseRef'] ?? '')] = true;
 		}
 
@@ -184,7 +184,7 @@ class WooThroughputReport {
 	 *
 	 * @return void
 	 */
-	private function add(array &$tally, array $counted): void {
+	private function tallyOne(array &$tally, array $counted): void {
 		[$reviewer, $day, $verdict] = $counted;
 		$key = $reviewer . "\0" . $day;
 		if (isset($tally[$key]) === false) {
@@ -192,7 +192,7 @@ class WooThroughputReport {
 		}
 
 		$tally[$key]['counts'][$verdict] = ((int)($tally[$key]['counts'][$verdict] ?? 0) + 1);
-	}//end add()
+	}//end tallyOne()
 
 	/**
 	 * The reviewer, day and verdict an assessment counts under, or null when it counts nowhere.
