@@ -99,14 +99,6 @@ class Application extends App implements IBootstrap {
 		// Says when no DSO verzoek becomes a case.
 		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\DsoIntakeCheck::class);
 
-		// Storage seam for the Dutch-to-English value migration. The repair step
-		// depends on the interface so its own logic can be exercised against a
-		// fake; only this binding knows the database.
-		$context->registerServiceAlias(
-			\OCA\Dossiq\Repair\ValueMigrationPort::class,
-			\OCA\Dossiq\Repair\DbValueMigrationPort::class
-		);
-
 		// ADR-063: the classes OpenRegister scans for dossiq's curated
 		// #[McpTool] methods, under the alias it resolves in THIS app's own
 		// container (openregister#390: the shared container does not see it).
