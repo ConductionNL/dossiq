@@ -248,51 +248,10 @@
 						"widgets": [
 							{
 								"id": "simple-first-today",
-								"type": "banner",
+								"type": "custom",
 								"title": "First today",
-								"content": {
-									"layout": "attention",
-									"variant": "error",
-									"kicker": "First today",
-									"title": "Cases past their deadline",
-									"reason": "{value} of your cases are past their deadline or end today.",
-									"visibleWhen": {
-										"source": {
-											"register": "dossiq",
-											"schema": "case",
-											"filter": {
-												"assignee": "@me",
-												"isFinalStatus": false,
-												"statusHiddenInLists": false,
-												"isDraft": false,
-												"deadline[lt]": "@today+1d"
-											}
-										},
-										"op": "gt",
-										"value": 0
-									},
-									"actions": [
-										{
-											"label": "Open these cases",
-											"route": {
-												"name": "Cases",
-												"query": {
-													"assignee": "@me",
-													"isFinalStatus": "false",
-													"statusHiddenInLists": "false",
-													"isDraft": "false",
-													"deadline[lt]": "@today+1d"
-												}
-											}
-										},
-										{
-											"label": "Open the board",
-											"route": "WorkflowBoard",
-											"primary": true
-										}
-									],
-									"text": "Cases past their deadline"
-								}
+								"_note": "DqMijnWerk names ONE case, the one of yours furthest past its deadline, with its acts. The library banner counts cases and cannot name one, so FirstTodayWidget draws the library's attention card around the case it finds, and draws nothing when none of yours is due. See its registry entry.",
+								"content": {}
 							},
 							{
 								"id": "simple-my-open",
@@ -370,9 +329,9 @@
 							{
 								"id": "simple-waiting",
 								"type": "stat",
-								"title": "Awaiting applicant",
+								"title": "Waiting on the applicant",
 								"content": {
-									"label": "Awaiting applicant",
+									"label": "Waiting on the applicant",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
@@ -408,22 +367,15 @@
 								"title": "Closed this month",
 								"content": {
 									"label": "Closed this month",
+									"caption": "{lastMonthName}: {myCompletedLastMonth}",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
 									},
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"metric": "count",
-										"filter": {
-											"assignee": "@me",
-											"isFinalStatus": true,
-											"endDate": {
-												"gte": "@monthStart"
-											}
-										}
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
 									},
+									"valueField": "myCompletedCount",
 									"route": {
 										"name": "Cases",
 										"query": {
@@ -747,6 +699,7 @@
 				]
 			},
 			"slots": {
+				"widget-simple-first-today": "FirstTodayWidget",
 				"widget-simple-my-tasks": "MyWorkWidget"
 			}
 		},
