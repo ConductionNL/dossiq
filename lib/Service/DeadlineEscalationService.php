@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Termijn\TermHandlerNotice;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -70,13 +71,18 @@ class DeadlineEscalationService {
 	 *                                                      term rule and reads
 	 *                                                      the case's priority.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermHandlerNotice|null $handlerNotice Tells the case's handler on
+	 *                                              the rungs the term definition
+	 *                                              names (`tellHandlerAt`).
 	 *
 	 * @spec openspec/specs/case-priority/spec.md
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly CasePriorityRaiseService $priorityRaiseService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermHandlerNotice $handlerNotice = null,
 	) {
 	}//end __construct()
 
@@ -194,6 +200,11 @@ class DeadlineEscalationService {
 			$instanceId,
 			['notificatiesVerstuurd' => array_values(array_unique(array_map('intval', $alreadySent)))]
 		);
+
+		// Recorded first, told second: the dedup above is what keeps a re-fired
+		// rung from telling the handler twice, and a notice that fails is
+		// logged by the notice rather than undoing the record.
+		$this->handlerNotice?->tell(instance: $instance, threshold: $threshold);
 
 		return true;
 	}//end notifyThreshold()

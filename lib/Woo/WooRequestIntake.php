@@ -133,6 +133,7 @@ class WooRequestIntake {
 			subjectRef: $subjectRef,
 			wooRequest: $wooRequest,
 			branch: $this->branchOf(value: ($request['branch'] ?? null)),
+			startFrom: trim((string)($request['startFrom'] ?? '')),
 		);
 		$caseId = $saved['id'];
 
@@ -270,6 +271,7 @@ class WooRequestIntake {
 	 * @param string                $subjectRef    The resident.
 	 * @param array<string, string> $wooRequest    The request as the case keeps it.
 	 * @param string                $branch        The branch number a company filed under, or ''.
+	 * @param string                $startFrom     An earlier Woo case this request starts from, or ''.
 	 *
 	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
@@ -282,6 +284,7 @@ class WooRequestIntake {
 		string $subjectRef,
 		array $wooRequest,
 		string $branch='',
+		string $startFrom = '',
 	): array {
 		$case = [
 			'title' => $wooRequest['onderwerp'],
@@ -303,6 +306,12 @@ class WooRequestIntake {
 		// branch lists the case (portal-case-list-declarations D3).
 		if ($branch !== '') {
 			$case['portalBranch'] = $branch;
+		}
+
+		// A request that starts from an earlier one names it; WooStartFromListener
+		// copies that request's configuration once the case exists (REQ-WRC-005).
+		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $startFrom) === 1) {
+			$case['wooStartFrom'] = $startFrom;
 		}
 
 		// THE REQUESTER DETAILS ALSO ANSWER THE CASE TYPE'S OWN QUESTIONS.

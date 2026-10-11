@@ -223,7 +223,7 @@
   },
   "src/store/modules/inspection.js": {
     "no-console": {
-      "count": 6
+      "count": 5
     }
   },
   "src/store/modules/settings.js": {
