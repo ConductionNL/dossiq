@@ -10,8 +10,8 @@
  * anything else as stuf_permanent_error. A success, or another app's message,
  * is not dossiq's to report.
  *
- * Read by method, not by type: integriq is an optional runtime dependency, so
- * the event class is named only as a string in the registrar.
+ * Integriq is an optional runtime dependency, so the registrar names the event
+ * class as a string; here instanceof is false while integriq is absent.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -75,7 +75,9 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
 	 */
 	public function handle(Event $event): void {
-		if (is_a($event, self::EVENT_CLASS) === false || $event->getSourceApp() !== Application::APP_ID) {
+		// Integriq's class, optional at runtime: instanceof on an absent class is
+		// simply false, as in DeliveryConcludedListener.
+		if (($event instanceof \OCA\Integriq\Event\StufZdsCaseConcludedEvent) === false || $event->getSourceApp() !== Application::APP_ID) {
 			return;
 		}
 

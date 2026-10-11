@@ -251,7 +251,17 @@ class StufController extends Controller {
 			return new DataDisplayResponse('integriq unavailable', Http::STATUS_SERVICE_UNAVAILABLE, ['Content-Type' => 'text/plain; charset=utf-8']);
 		}
 
-		return new DataDisplayResponse($answer['body'], $answer['statusCode'], ['Content-Type' => 'text/xml; charset=utf-8']);
+		// Integriq answers 200, 400, 422 or 503; anything else is not a status
+		// this URL ever gave, so it reads as a bad gateway.
+		$status = match ($answer['statusCode']) {
+			Http::STATUS_OK => Http::STATUS_OK,
+			Http::STATUS_BAD_REQUEST => Http::STATUS_BAD_REQUEST,
+			Http::STATUS_UNPROCESSABLE_ENTITY => Http::STATUS_UNPROCESSABLE_ENTITY,
+			Http::STATUS_SERVICE_UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
+			default => Http::STATUS_BAD_GATEWAY,
+		};
+
+		return new DataDisplayResponse($answer['body'], $status, ['Content-Type' => 'text/xml; charset=utf-8']);
 	}//end inbound()
 
 	/**

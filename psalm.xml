@@ -26,6 +26,9 @@
         <file name="tests/Stubs/Integriq/Event/DeliveryConcludedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/ConnectionStatusReportedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/ConnectionRefreshRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsCaseRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsCaseConcludedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsConfirmationReceivedEvent.php" />
         <!-- OpenRegister's people-on-objects event contract. Same
              declaration-only discipline as the Integriq stubs above:
              PersonLinkListener is registered against these classes and

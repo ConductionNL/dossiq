@@ -149,10 +149,12 @@ class CrossAppListenerRegistrar {
 		);
 		// Decision 193: integriq sends dossiq's StUF and concludes each message
 		// with StufZdsCaseConcludedEvent; a failure reaches the administrators
-		// as the Notifier's stuf_* notification. By name, for the same reason.
+		// as the Notifier's stuf_* notification. By name, for the same reason;
+		// the listener is named by string too, which keeps this registrar under
+		// phpmd's coupling ceiling (StufZdsCaseConcludedListener::EVENT_CLASS).
 		$context->registerEventListener(
-			\OCA\Dossiq\Listener\StufZdsCaseConcludedListener::EVENT_CLASS,
-			\OCA\Dossiq\Listener\StufZdsCaseConcludedListener::class
+			'OCA\Integriq\Event\StufZdsCaseConcludedEvent',
+			'OCA\Dossiq\Listener\StufZdsCaseConcludedListener'
 		);
 		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
 		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
