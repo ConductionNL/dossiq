@@ -363,7 +363,7 @@ class CaseTypeResolver {
 				break;
 			}
 
-			$names[] = (string)($ancestor['title'] ?? $this->store->rowId(row: $ancestor));
+			$names[] = $this->text->textOr(value: ($ancestor['title'] ?? null), fallback: $this->store->rowId(row: $ancestor));
 		}
 
 		if (count($names) === 1) {
@@ -523,7 +523,7 @@ class CaseTypeResolver {
 	private function titleOf(string $caseTypeId): string {
 		$row = $this->store->readCaseType(caseTypeId: $caseTypeId);
 
-		return (string)($row['title'] ?? $caseTypeId);
+		return $this->text->textOr(value: ($row['title'] ?? null), fallback: $caseTypeId);
 	}//end titleOf()
 
 

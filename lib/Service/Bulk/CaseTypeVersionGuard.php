@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Service\Bulk;
 
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Throwable;
 
 /**
@@ -54,6 +55,7 @@ class CaseTypeVersionGuard {
 	 *
 	 * @param SettingsService $settingsService Register/schema configuration and the object service.
 	 * @param CaseTypeStore   $caseTypes       Case type reads.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 *
@@ -62,6 +64,7 @@ class CaseTypeVersionGuard {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeStore $caseTypes,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -93,7 +96,7 @@ class CaseTypeVersionGuard {
 			$version = (int)($caseType['version'] ?? 1);
 
 			if (isset($families[$family]) === false) {
-				$families[$family] = ['title' => (string)($caseType['title'] ?? $family), 'counts' => []];
+				$families[$family] = ['title' => $this->text->textOr(value: ($caseType['title'] ?? null), fallback: $family), 'counts' => []];
 			}
 
 			$families[$family]['counts'][$version] = (($families[$family]['counts'][$version] ?? 0) + $caseCount);

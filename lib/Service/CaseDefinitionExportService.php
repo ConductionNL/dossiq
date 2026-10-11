@@ -32,6 +32,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -97,11 +98,13 @@ class CaseDefinitionExportService {
 	 *                                 query here is what keeps the export
 	 *                                 answering the same rows the authoring
 	 *                                 screens show.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 		private readonly CaseTypeStore $caseTypes,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -310,7 +313,7 @@ class CaseDefinitionExportService {
 			'caseType' => [
 				'id' => $caseTypeId,
 				'slug' => $this->slugOf(caseType: $caseType, caseTypeId: $caseTypeId),
-				'title' => trim((string)($caseType['title'] ?? '')),
+				'title' => $this->text->textOf(value: ($caseType['title'] ?? null)),
 			],
 			'components' => $components,
 			'excludedComponents' => $excludedComponents,

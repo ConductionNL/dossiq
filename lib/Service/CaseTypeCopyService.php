@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -96,6 +97,7 @@ class CaseTypeCopyService {
 	 * @param DerivedCaseTypePayload    $payloads        What a duplicate and a version look like.
 	 * @param DerivedCaseTypeReferences $references      Pointing the copy at its own children.
 	 * @param LoggerInterface           $logger          Logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -103,6 +105,7 @@ class CaseTypeCopyService {
 		private readonly DerivedCaseTypePayload $payloads,
 		private readonly DerivedCaseTypeReferences $references,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -517,7 +520,7 @@ class CaseTypeCopyService {
 					'CaseTypeCopyService: failed to copy child object',
 					['schema' => $schema, 'exception' => $e->getMessage()]
 				);
-				$this->notCarried[] = ($configKey . ':' . (string)($child['name'] ?? ($child['title'] ?? $oldId)));
+				$this->notCarried[] = ($configKey . ':' . $this->text->textOr(value: ($child['name'] ?? ($child['title'] ?? null)), fallback: $oldId));
 				continue;
 			}
 
