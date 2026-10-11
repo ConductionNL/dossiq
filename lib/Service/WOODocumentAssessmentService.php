@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Review\DocumentRelevance;
@@ -84,6 +85,8 @@ class WOODocumentAssessmentService {
 	 *        Built over the same settings and logger when left out, because those are its only
 	 *        collaborators and a default built from them is the instance the container wires.
 	 * @param DocumentRelevance|null $reviews Each document's relevance and pages seen (woo-review-triage); null keeps every document needing a verdict.
+	 * @param CaseReviewerAccess|null $reviewerAccess Who may change an assessment and who reads it,
+	 *        when the case type keeps its assessments private to the case (case-reviewer-access).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -92,6 +95,7 @@ class WOODocumentAssessmentService {
 		private readonly ?WooCaseDocuments $caseDocuments = null,
 		?WooRefusalGrounds $refusalGrounds = null,
 		private readonly ?DocumentRelevance $reviews = null,
+		private readonly ?CaseReviewerAccess $reviewerAccess = null,
 	) {
 		$this->refusalGrounds = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
@@ -110,6 +114,7 @@ class WOODocumentAssessmentService {
 	 * @throws RuntimeException If OpenRegister unavailable
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
 	 */
 	public function bulkUpsert(string $caseId, array $assessments): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -124,14 +129,11 @@ class WOODocumentAssessmentService {
 			throw new RuntimeException('WOO assessment schema not configured');
 		}
 
-		$userId = 'system';
-		$user = $this->userSession->getUser();
-		if ($user !== null) {
-			$userId = $user->getUID();
-		}
+		$userId = ($this->userSession->getUser()?->getUID() ?? 'system');
 
 		$saved = [];
 		$errors = [];
+		$created = 0;
 
 		foreach ($assessments as $assessment) {
 			$unseen = [];
@@ -153,8 +155,11 @@ class WOODocumentAssessmentService {
 			$assessment['assessedBy'] = $userId;
 			$assessment['assessedAt'] = date('Y-m-d\TH:i:s');
 
-			// Find existing assessment for this document in this case.
-			$existing = $this->searchObjectsAsArrays(
+			// Find existing assessment for this document in this case. Read
+			// regardless of the caller, so an assessment the caller cannot see
+			// is never assessed a second time (REQ-CRA-003); only its uuid and
+			// owner are used, nothing of it is answered.
+			$existing = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
 				schema: $assessmentSchema,
@@ -166,6 +171,17 @@ class WOODocumentAssessmentService {
 			);
 
 			if (count($existing) > 0) {
+				$refusal = $this->reviewerAccess?->refusalFor(
+					caseId: $caseId,
+					record: $existing[0],
+					userId: $userId,
+					reference: (string)$assessment['documentRef']
+				);
+				if ($refusal !== null) {
+					$errors[] = $refusal;
+					continue;
+				}
+
 				$existingId = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
 				$saved[] = $objectService->saveObject(
 					object: $assessment,
@@ -181,7 +197,10 @@ class WOODocumentAssessmentService {
 				register: $register,
 				schema: $assessmentSchema,
 			);
+			$created++;
 		}//end foreach
+
+		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $created);
 
 		$outstanding = $this->getOutstanding(caseId: $caseId);
 
@@ -325,6 +344,11 @@ class WOODocumentAssessmentService {
 			caseId: $caseId,
 		);
 
+		// A document set aside before review is not waiting for assessment
+		// (woo-request-corpus-collection, REQ-WRC-003).
+		$excludedDocIds = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+		$allDocs = array_diff_key($allDocs, $excludedDocIds);
+
 		$outstanding = $this->outstandingOf(caseId: $caseId, allDocs: $allDocs, assessedDocIds: $assessedDocIds);
 
 		return [
@@ -431,6 +455,38 @@ class WOODocumentAssessmentService {
 
 		return $assessedDocIds;
 	}//end collectAssessedDocumentIds()
+
+	/**
+	 * Collect the identifiers of every document of a case that was set aside before review.
+	 *
+	 * @param object $objectService OpenRegister object service
+	 * @param mixed  $register      Configured register identifier
+	 * @param string $caseId        The case UUID
+	 *
+	 * @return array<string, bool> Excluded document identifiers as keys, empty when the schema is not configured
+	 */
+	private function collectExcludedDocumentIds(object $objectService, mixed $register, string $caseId): array {
+		$exclusionSchema = $this->settingsService->getConfigValue('woo_exclusion_schema');
+		if (empty($exclusionSchema) === true) {
+			return [];
+		}
+
+		$excluded = [];
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $exclusionSchema,
+			filters: ['case' => $caseId, '_limit' => 1000],
+		);
+		foreach ($rows as $row) {
+			$docRef = (string)($row['documentRef'] ?? '');
+			if ($docRef !== '' && (string)($row['case'] ?? '') === $caseId) {
+				$excluded[$docRef] = true;
+			}
+		}
+
+		return $excluded;
+	}//end collectExcludedDocumentIds()
 
 	/**
 	 * Check whether all documents in a case have been assessed.

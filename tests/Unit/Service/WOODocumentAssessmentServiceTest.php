@@ -23,8 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
@@ -537,4 +539,106 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$store->rows['documentReview']['r-2']['relevance'] = 'out-of-scope';
 		$this->assertTrue($service->allDocumentsAssessed(caseId: 'case-x'));
 	}//end testTheDecisionWaitsForUnmarkedDocuments()
+
+	/**
+	 * A document set aside before review leaves the outstanding list (woo-request-corpus-collection REQ-WRC-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
+	 */
+	public function testAnExcludedDocumentIsNotOutstanding(): void {
+		$register = new InMemoryRegister();
+		foreach (['doc-1', 'doc-2', 'doc-3'] as $doc) {
+			$register->seed('document', $doc, ['case' => 'case-1']);
+		}
+		$register->seed('wooDocumentAssessment', 'a-1', ['caseRef' => 'case-1', 'documentRef' => 'doc-1']);
+		$register->seed('wooExclusion', 'x-1', ['case' => 'case-1', 'documentRef' => 'doc-2', 'reason' => 'out-of-period']);
+		$register->seed('wooExclusion', 'x-2', ['case' => 'case-other', 'documentRef' => 'doc-3', 'reason' => 'duplicate']);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => [
+				'register' => 'dossiq',
+				'document_schema' => 'document',
+				'woo_assessment_schema' => 'wooDocumentAssessment',
+				'woo_exclusion_schema' => 'wooExclusion',
+			][$key] ?? $default
+		);
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+
+		$this->assertSame(['count' => 1, 'documents' => ['doc-3']], $service->getOutstanding('case-1'));
+	}//end testAnExcludedDocumentIsNotOutstanding()
+
+	/**
+	 * A service over an in-memory register with a doubled reviewer access, signed in as the user.
+	 *
+	 * @param InMemoryRegister   $register The register.
+	 * @param CaseReviewerAccess $access   The reviewer access double.
+	 * @param string             $userId   The caller.
+	 *
+	 * @return WOODocumentAssessmentService
+	 */
+	private function serviceWithAccess(InMemoryRegister $register, CaseReviewerAccess $access, string $userId): WOODocumentAssessmentService {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => [
+				'register' => 'dossiq',
+				'woo_assessment_schema' => 'wooDocumentAssessment',
+			][$key] ?? $default
+		);
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn($userId);
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return new WOODocumentAssessmentService($settings, $session, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger), reviewerAccess: $access);
+	}//end serviceWithAccess()
+
+	/**
+	 * REQ-CRA-003: a second reviewer cannot overwrite the first reviewer's assessment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testASecondReviewerCannotOverwrite(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-7', ['caseRef' => 'case-1', 'documentRef' => 'doc-7', 'classification' => 'niet_openbaar', 'assessedBy' => 'j.devries', '@self' => ['owner' => 'j.devries']]);
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->method('refusalFor')->willReturnCallback(
+			static fn (string $caseId, array $record, string $userId, string $reference): ?array => $userId === ($record['@self']['owner'] ?? '')
+				? null
+				: ['documentRef' => $reference, 'errors' => ['assessment' => 'owned-by-another-reviewer']]
+		);
+		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 0);
+
+		$result = $this->serviceWithAccess(register: $register, access: $access, userId: 'p.bakker')
+			->bulkUpsert('case-1', [['documentRef' => 'doc-7', 'classification' => 'openbaar']]);
+
+		$this->assertSame([['documentRef' => 'doc-7', 'errors' => ['assessment' => 'owned-by-another-reviewer']]], $result['errors'], 'the refusal names neither the author nor the verdict');
+		$this->assertSame('niet_openbaar', $register->row('wooDocumentAssessment', 'a-7')['classification']);
+		$this->assertCount(1, $register->all('wooDocumentAssessment'), 'no second assessment for the same document');
+	}//end testASecondReviewerCannotOverwrite()
+
+	/**
+	 * REQ-CRA-002: a created assessment is reconciled to the people on the case at once.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	public function testACreatedAssessmentReconcilesTheCase(): void {
+		$register = new InMemoryRegister();
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 1)->willReturn(['status' => 'reconciled', 'granted' => 1, 'revoked' => 0, 'refused' => 0]);
+
+		$result = $this->serviceWithAccess(register: $register, access: $access, userId: 'p.bakker')
+			->bulkUpsert('case-1', [['documentRef' => 'doc-8', 'classification' => 'openbaar']]);
+
+		$this->assertSame([], $result['errors']);
+		$this->assertCount(1, $register->all('wooDocumentAssessment'));
+	}//end testACreatedAssessmentReconcilesTheCase()
 }//end class

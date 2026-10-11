@@ -278,6 +278,16 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 			}
 		);
 		$dates->method('today')->willReturn(new \DateTimeImmutable('2026-09-18 00:00:00'));
+		$dates->method('tryParse')->willReturnCallback(
+			static function (mixed $value): ?\DateTimeImmutable {
+				$text = trim((string)(is_scalar($value) === true ? $value : ''));
+
+				return ($text === '') ? null : new \DateTimeImmutable($text);
+			}
+		);
+		$dates->method('formatMoment')->willReturnCallback(
+			static fn (\DateTimeInterface $moment): string => $moment->format(\DateTimeInterface::ATOM)
+		);
 
 		return new ChannelIntake(
 			settingsService: $settings,
@@ -346,6 +356,11 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		$this->assertSame('ct-mor', $case['caseType']);
 		$this->assertSame('teams', $case['intakeChannel']);
 		$this->assertSame('2026-09-18', $case['startDate']);
+		$this->assertSame(
+			'2026-09-18T08:30:00+00:00',
+			$case['receivedAt'],
+			'The term starts when the message arrived, not when the case row was written (REQ-TERM-043).'
+		);
 		$this->assertSame('Lantaarnpaal kapot', $case['title']);
 		$this->assertSame('case-1', $event->getCreatedRef());
 	}//end testARoutedMessageOpensACaseAndAnswersTheSlot()

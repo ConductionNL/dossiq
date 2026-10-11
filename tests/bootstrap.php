@@ -483,7 +483,10 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 // OptOutGate asks integriq by name before a case mail goes out.
 // SourceRequestedEvent rides it too (webhook-steps-through-integriq): the
 // retired webhook translation asks integriq for a Source by name.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent', 'SourceRequestedEvent', 'OutboundSendDecisionRequestedEvent'] as $stubEvent) {
+// DocumentSearchRequestedEvent and DocumentFetchRequestedEvent ride it too
+// (woo-requests-gather-documents-from-sources): WooSources searches and fetches
+// integriq's Microsoft 365 connection by name.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent', 'SourceRequestedEvent', 'OutboundSendDecisionRequestedEvent', 'DocumentSearchRequestedEvent', 'DocumentFetchRequestedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}

@@ -1,0 +1,86 @@
+{
+  "_note": "case-reviewer-access (decision 182: procedures are configuration, code is generic). A case type declares, under reviewerAccess, the records it keeps private to the case, where its reviewers are named, the supervising group and whether reviewers are barred from each other's records. CaseReviewerAccess and ObjectReadGrants apply it through OpenRegister's private scope and per-object grants. The record schemas themselves carry the private scope (see 83-woo-document-assessment.json for the first one). A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "reviewerAccess": {
+            "type": "object",
+            "title": "Reviewer access",
+            "description": "Which records of a case of this type are private to the people on the case: the assignee and the named reviewers read them, the supervising group owns them, and only their author or a supervisor changes them.",
+            "properties": {
+              "records": {
+                "type": "array",
+                "title": "Private records",
+                "description": "The records kept private to the case, each by the app setting that names its schema and the field that holds the case.",
+                "default": [],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "schemaKey": {
+                      "type": "string",
+                      "title": "Schema setting",
+                      "description": "The app setting that names the record's schema.",
+                      "maxLength": 64
+                    },
+                    "caseField": {
+                      "type": "string",
+                      "title": "Case field",
+                      "description": "The field on the record that holds the case.",
+                      "default": "case",
+                      "maxLength": 64
+                    }
+                  }
+                }
+              },
+              "reviewers": {
+                "type": "array",
+                "title": "Where reviewers are named",
+                "description": "The records that name the reviewers of a case, each by the app setting that names its schema, the field that holds the case and the field that holds the reviewer.",
+                "default": [],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "schemaKey": {
+                      "type": "string",
+                      "title": "Schema setting",
+                      "description": "The app setting that names the record's schema.",
+                      "maxLength": 64
+                    },
+                    "caseField": {
+                      "type": "string",
+                      "title": "Case field",
+                      "description": "The field on the record that holds the case.",
+                      "default": "case",
+                      "maxLength": 64
+                    },
+                    "userField": {
+                      "type": "string",
+                      "title": "Reviewer field",
+                      "description": "The field on the record that holds the reviewer's user id.",
+                      "default": "assignee",
+                      "maxLength": 64
+                    }
+                  }
+                }
+              },
+              "supervisorGroup": {
+                "type": "string",
+                "title": "Supervising group",
+                "description": "The group that owns the private records, reads all of them and may change any of them.",
+                "default": "dossiq-coordinators",
+                "maxLength": 255
+              },
+              "hideOthers": {
+                "type": "boolean",
+                "title": "Hide other reviewers' records",
+                "description": "When on, a reviewer reads only the records they made; the assignee and the supervisors still read all of them.",
+                "default": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

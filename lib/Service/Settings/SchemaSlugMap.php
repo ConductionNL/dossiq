@@ -232,6 +232,11 @@ class SchemaSlugMap {
 		// The recall of a Woo review: the stopping rule and its samples (woo-review-recall-and-stopping).
 		'stoppingRule' => 'stopping_rule_schema',
 		'recallSample' => 'recall_sample_schema',
+		// The corpus of a Woo request (woo-request-corpus-collection).
+		'wooSearchPlan' => 'woo_search_plan_schema',
+		'wooRequestConfiguration' => 'woo_request_configuration_schema',
+		'wooExclusion' => 'woo_exclusion_schema',
+		'wooCollectionQuery' => 'woo_collection_query_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).
