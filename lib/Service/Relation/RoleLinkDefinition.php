@@ -73,8 +73,6 @@ final class RoleLinkDefinition {
 	 * @param string|null $recordActorField   Record field for the acting user, or null.
 	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 */
 	private function __construct(
 		public readonly string $role,

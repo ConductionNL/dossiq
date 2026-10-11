@@ -82,8 +82,6 @@ class LinkMarkerListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-marker-rule-derives-a-flag-on-the-referenced-object-req-lcr-4
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) LinkMarkerRule is built through its validating named constructor.
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatedEvent === false && $event instanceof ObjectUpdatedEvent === false) {

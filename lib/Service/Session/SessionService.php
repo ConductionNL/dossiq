@@ -394,8 +394,6 @@ class SessionService {
 	 * @return array<string, SessionDefinition> The sessions, keyed by key.
 	 *
 	 * @throws RuntimeException When the case or its case type cannot be read.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) SessionDefinition is built through its validating named constructor.
 	 */
 	private function definitionsFor(object $objectService, string $register, string $caseId): array {
 		$case = null;

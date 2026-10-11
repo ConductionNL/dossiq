@@ -52,10 +52,6 @@ use Throwable;
  *
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The two classes over the limit are the
- * small Woo readers receive() hands its work to (WooReceivedAnswers, WooReceivedTerm). This
- * stays the one class that writes a Woo case, which is the point of it (REQ-WRI-002).
  */
 class WooRequestIntake {
 

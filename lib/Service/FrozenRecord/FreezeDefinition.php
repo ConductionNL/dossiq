@@ -79,9 +79,6 @@ final class FreezeDefinition {
 	 * @param string $message The refusal sentence.
 	 *
 	 * @throws InvalidArgumentException When the entry declares no schema or no frozen status.
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) A value object for one configuration entry: each
-	 *                                                 parameter is one key of that entry, named.
 	 */
 	public function __construct(
 		public readonly string $schema,

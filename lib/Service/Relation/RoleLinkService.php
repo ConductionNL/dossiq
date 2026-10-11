@@ -175,8 +175,6 @@ class RoleLinkService {
 	 * @return array<string, RoleLinkDefinition> The roles, keyed by role.
 	 *
 	 * @throws RuntimeException When the case or its case type cannot be read.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) RoleLinkDefinition is built through its validating named constructor.
 	 */
 	private function definitionsFor(object $objectService, string $register, string $caseId): array {
 		$case = $this->findObjectAsArray(
