@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
@@ -444,4 +445,34 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$this->assertSame('deels_openbaar', $capturedObject['classification']);
 		$this->assertSame($proposal, $result['redactionProposal']);
 	}//end testSaveRedactionProposalAttachesProposalToExistingRecord()
+	/**
+	 * A document set aside before review leaves the outstanding list (woo-request-corpus-collection REQ-WRC-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-every-exclusion-before-review-is-kept-with-its-reason-req-wrc-003
+	 */
+	public function testAnExcludedDocumentIsNotOutstanding(): void {
+		$register = new InMemoryRegister();
+		foreach (['doc-1', 'doc-2', 'doc-3'] as $doc) {
+			$register->seed('document', $doc, ['case' => 'case-1']);
+		}
+		$register->seed('wooDocumentAssessment', 'a-1', ['caseRef' => 'case-1', 'documentRef' => 'doc-1']);
+		$register->seed('wooExclusion', 'x-1', ['case' => 'case-1', 'documentRef' => 'doc-2', 'reason' => 'out-of-period']);
+		$register->seed('wooExclusion', 'x-2', ['case' => 'case-other', 'documentRef' => 'doc-3', 'reason' => 'duplicate']);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => [
+				'register' => 'dossiq',
+				'document_schema' => 'document',
+				'woo_assessment_schema' => 'wooDocumentAssessment',
+				'woo_exclusion_schema' => 'wooExclusion',
+			][$key] ?? $default
+		);
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+
+		$this->assertSame(['count' => 1, 'documents' => ['doc-3']], $service->getOutstanding('case-1'));
+	}//end testAnExcludedDocumentIsNotOutstanding()
 }//end class

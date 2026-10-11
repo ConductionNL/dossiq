@@ -336,15 +336,6 @@
 			"order": 92
 		},
 		{
-			"id": "TenantsMenu",
-			"label": "Organisations",
-			"icon": "OfficeBuildingOutline",
-			"route": "Tenants",
-			"section": "settings",
-			"order": 98,
-			"permission": "admin"
-		},
-		{
 			"id": "WmsLayersMenu",
 			"label": "Map layers",
 			"icon": "LayersOutline",
@@ -608,7 +599,7 @@
 						}
 					}
 				],
-				"_userWidgetsNote": "REQ-DASH-024, my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
+				"_userWidgetsNote": "REQ-DASH-031 (archived as REQ-DASH-024), my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
 				"description": "Case volume, status and performance across the team",
 				"headerActions": [
 					{
@@ -2274,6 +2265,7 @@
 			"component": "DeletedCasesView",
 			"_note": "case-recycle-window 1.2, the deleted lens. NOT a quickFilter chip beside All, Mine and Closed, and the reason is mechanical rather than stylistic: those chips are filters on the objects endpoint, and that endpoint excludes soft-deleted rows by design. A chip spelling `deleted: true` would send a filter OpenRegister answers with the empty set, which reads exactly like a working lens over an empty trash. The deleted rows live behind their own door, so the lens is its own place and a component that fetches from dossiq's /api/cases/deleted, which reads OpenRegister's trash and attaches the window. 🔴 WHY `type: \"custom\"` AND NOT `index`, which is what hydra gate 69 asks: an index page binds a register and a schema and fetches that same objects endpoint, so it would render an empty list here and look like a working lens over an empty trash, which is the one failure this page exists to prevent. There is no `entitySource` that can name OpenRegister's trash (checked against the installed @conduction/nextcloud-vue 2.47). The gate reds by exactly one finding, deliberately, and the unit comes back the day CnIndexPage grows such a source. Decision D10: openregister owns the recycle state and the purge, dossiq publishes the date each window ends."
 		},
+		{"id": "WooDeliveredSetDetail", "route": "/woo/delivered-sets/:id", "type": "detail", "title": "Delivered set", "config": {"register": "dossiq", "schema": "wooDeliveredSet", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. One delivered set, the record of what went out, frozen with its publication. The items list every document with the file that went out, the original, the classification and the SHA-256, so the record shows what came in beside what went out.", "documentationUrl": "https://dossiq.conduction.nl", "widgets": [{"id": "woo-delivered-set-data", "type": "data", "title": "Delivered set", "icon": "PackageVariantClosed", "content": {"title": "Delivered set", "columns": 2, "exclude": ["items"]}}, {"id": "woo-delivered-set-items", "type": "file-set-items", "title": "Items", "icon": "FileCompare", "content": {"filesUrl": "/apps/dossiq/api/cases/{case}/woo/delivered-sets/{set}/items/{index}", "classificationLabels": {"openbaar": "Public", "deels_openbaar": "Disclosed in part"}}, "_note": "The Woo case type configures the generic file set items widget (decision 182; registry type file-set-items -> FileSetItems): every delivered item with its classification and hash; Compare on a redacted item opens the original beside it (woo-delivered-set-is-a-record REQ-WDS-004, document-compare REQ-DCP-001)."}], "layout": [{"id": "1", "widgetId": "woo-delivered-set-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false}, {"id": "2", "widgetId": "woo-delivered-set-items", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6, "showTitle": true}], "sidebar": {"enabled": true, "showMetadata": true, "tabs": [{"id": "audit", "label": "History", "icon": "History", "widgets": [{"type": "audit"}]}]}}},
 		{
 			"id": "CaseDetail",
 			"route": "/cases/:id",
@@ -2672,6 +2664,10 @@
 									}
 								},
 								{
+									"label": "Delivered sets",
+									"widget": {"id": "case-woo-delivered-sets", "type": "object-list", "title": "Delivered sets", "icon": "PackageVariantClosed", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. Every delivery of the Woo decision as its own record: when it went out, its state and the set hash. A row opens the set with every item, both files and their hashes. Re-verification is GET /api/cases/{id}/woo/delivered-sets/{setId}/verify or occ dossiq:woo:verify-delivered-set.", "content": {"register": "dossiq", "schema": "wooDeliveredSet", "filter": {"case": "@objectId"}, "sort": {"field": "deliveredAt", "dir": "desc"}, "limit": 25, "columns": [{"key": "deliveredAt", "label": "Delivered"}, {"key": "status", "label": "State"}, {"key": "publication", "label": "Publication"}, {"key": "withdrawnAt", "label": "Withdrawn"}, {"key": "setHash", "label": "Set hash"}], "rowRoute": "WooDeliveredSetDetail", "emptyText": "Nothing has been delivered for publication from this case yet"}}
+								},
+								{
 									"label": "Handled elsewhere",
 									"widget": {
 										"id": "case-external-home",
@@ -3005,6 +3001,16 @@
 									}
 								},
 								{
+									"label": "Customer record",
+									"widget": {
+										"id": "case-pipelinq-contact-moments",
+										"type": "case-pipelinq-contact-moments",
+										"title": "Contact moments in the customer record",
+										"icon": "Forum",
+										"_note": "parties-and-contact-moments-consume-pipelinq 2.2 and 2.3, board DqZaakContactmomenten: pipelinq's contact moments read by MEMBERSHIP of this case, with the line saying a moment is also on other cases (a case the reader may not open counted, not named), and the two filing acts. It sits under dossiq's own Communication list rather than replacing it, because that list is dossiq's record and the one an instance without pipelinq has; this section says in words when pipelinq is absent. Rendered by TYPE (registry key case-pipelinq-contact-moments), as a section child resolves from the registry and an unknown type draws nothing."
+									}
+								},
+								{
 									"label": "Receipt confirmation",
 									"widget": {
 										"id": "case-acknowledgement",
@@ -3208,6 +3214,16 @@
 										"title": "Case type, parent & related cases",
 										"icon": "LinkVariant",
 										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3). Waits on and blokkeert appear here with no section of their own: the pair is declared on the case schema as `x-openregister-relation-types`, and this widget groups by the label OpenRegister answers per direction. A hand-written section for either half would list the same links a second time, under a name this file chose rather than the one the schema did."
+									}
+								},
+								{
+									"label": "Programme",
+									"widget": {
+										"id": "case-programme",
+										"type": "case-programme",
+										"title": "Programme",
+										"icon": "BriefcaseOutline",
+										"_note": "parties-and-contact-moments-consume-pipelinq 7.1, board DqZaakPartijen (the Programma card): the pipelinq programme this case hangs under, found by the work item that names it `dossiq:case`, with its progress and the mode that produced it, and the link dialog that shows pipelinq's refusal naming the holding programme. On the Related tab because a programme is a relation upward, like a parent case. Dossiq holds no programme and no budget. Rendered by TYPE (registry key case-programme)."
 									}
 								},
 								{
@@ -3693,31 +3709,12 @@
 					},
 					{
 						"id": "log-contact",
-						"type": "open-form",
+						"type": "open-modal",
 						"label": "Log contact",
 						"icon": "PhonePlusOutline",
-						"register": "dossiq",
-						"schema": "contactmoment",
-						"includeFields": [
-							"notificationChannel",
-							"direction",
-							"startTime",
-							"summary",
-							"callerIdentification",
-							"visibleToApplicant"
-						],
-						"fieldOverrides": {
-							"summary": {
-								"widget": "textarea"
-							}
-						},
-						"successMessage": "Contact logged on this case.",
+						"target": "LogContactDialog",
 						"props": {
-							"case": "@objectId",
-							"relatedCases": ["@objectId"],
-							"kccEmployeeId": "@me",
-							"identificationMethod": "non_geidentificeerd",
-							"nature": "informatieverzoek"
+							"caseId": "@objectId"
 						},
 						"visibleWhen": {
 							"field": "@self.archived",
@@ -3943,6 +3940,32 @@
 							"all": [
 								{ "field": "wooPublicationStatus", "op": "eq", "value": "published" },
 								{ "field": "wooPublicationUrl", "op": "notEmpty" }
+							]
+						}
+					},
+					{
+						"id": "woo-search-plan",
+						"type": "open-modal",
+						"label": "Search plan",
+						"icon": "ClipboardTextOutline",
+						"target": "WooSearchPlanDialog",
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
+						"id": "woo-gather-documents",
+						"type": "open-modal",
+						"label": "Gather documents",
+						"icon": "ClipboardSearchOutline",
+						"target": "GatherDocumentsDialog",
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
 							]
 						}
 					},
@@ -5142,51 +5165,6 @@
 			}
 		},
 		{
-			"id": "Tenants",
-			"route": "/settings/tenants",
-			"type": "index",
-			"title": "Tenants",
-			"permission": "admin",
-			"_note": "`TenantsMenu` has always declared `permission: \"admin\"`, so the nav entry was already hidden from an ordinary account. The PAGE declared nothing, and until the router guard in main.js there was nothing to declare it to — so the entry was hidden and the route rendered. The two declarations are the same claim and have to agree.",
-			"config": {
-				"register": "dossiq",
-				"schema": "tenant",
-				"columns": [
-					"displayName",
-					"slug",
-					"legalName",
-					"kvkNumber",
-					"status",
-					"tier"
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "provision",
-						"label": "Provision",
-						"icon": "Plus",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
-					},
-					{
-						"id": "view",
-						"label": "View usage",
-						"icon": "EyeOutline",
-						"permission": "admin",
-						"handler": "navigate",
-						"route": "TenantDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
 			"id": "WmsLayers",
 			"route": "/settings/wms-layers",
 			"type": "index",
@@ -5394,86 +5372,6 @@
 									"type": "audit"
 								}
 							]
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "TenantDetail",
-			"route": "/settings/tenants/:id",
-			"type": "detail",
-			"title": "Tenant",
-			"permission": "admin",
-			"config": {
-				"register": "dossiq",
-				"schema": "tenant",
-				"_note": "CONFIG/TECHNICAL archetype (multi-tenant provisioning record — legacy, superseded by OR Organisation). Admin-only, no comms. The Data widget carries identity + provisioning clock (slug, displayName, legalName, kvkNumber, tier, createdAt, activatedAt, terminatedAt). contractRef, isolationMode and dataResidency were dropped: none had a reader, isolationMode was a pure function of tier and dataResidency a hardcoded constant. The Provision + Refresh-usage admin actions are preserved as page actions, and lifecycleActions drive the status (onboarding → active → suspended → terminated). No object-lists or content leaves — a legacy provisioning record carries none. Audit history (provisioning events) is a sidebar tab.",
-				"actions": [
-					{
-						"id": "provision",
-						"label": "Provision",
-						"icon": "Plus",
-						"permission": "admin",
-						"primary": true,
-						"handler": "emit",
-						"type": "handler"
-					},
-					{
-						"id": "refresh-usage",
-						"label": "Refresh usage",
-						"icon": "Refresh",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
-					}
-				],
-				"documentationUrl": "https://dossiq.conduction.nl",
-				"widgets": [
-					{
-						"id": "tenant-data",
-						"type": "data",
-						"title": "Tenant",
-						"icon": "OfficeBuilding",
-						"content": {
-							"title": "Tenant",
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "tenant-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
-					}
-				],
-				"lifecycleActions": {
-					"field": "status"
-				},
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
 						}
 					]
 				}
@@ -7115,6 +7013,13 @@
 						"title": "Portal",
 						"icon": "AccountArrowRightOutline",
 						"_note": "portal-citizen-writes-on-the-case design D3: what the applicant may still do on their own case in the portal (portalWritable, the amendment and document windows, portalWithdrawal). Custom for the reason case-type-blueprint is: every picker offers the type's OWN statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers, and a declared form would offer a free text field for a status uuid. The save goes through OpenRegister's object API, where CaseTypePortalWithdrawalListener refuses a withdrawal the workflow cannot write; the widget shows that sentence. Same LAYOUT placement and same reason as case-type-blueprint above."
+					},
+					{
+						"id": "case-type-party-kinds",
+						"type": "custom",
+						"title": "Party kinds",
+						"icon": "AccountGroupOutline",
+						"_note": "parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype (Partijsoorten): which kinds of party a case of this type accepts, in the order handlers see them, declared into pipelinq as `dossiq:case:<case type uuid>` through PipelinqCaseController and PartyKindConsumer (a re-declaration patches pipelinq's row, never replaces it). Custom because the vocabulary is pipelinq's and the write is a declaration in another app's register, which no declared form can make; without pipelinq it lists dossiq's own three kinds read only and says nothing can be saved."
 					}
 				],
 				"layout": [
@@ -7197,6 +7102,15 @@
 						"gridY": 27,
 						"gridWidth": 12,
 						"gridHeight": 7,
+						"showTitle": true
+					},
+					{
+						"id": "10",
+						"widgetId": "case-type-party-kinds",
+						"gridX": 0,
+						"gridY": 34,
+						"gridWidth": 12,
+						"gridHeight": 6,
 						"showTitle": true
 					}
 				],
@@ -7287,7 +7201,8 @@
 			"slots": {
 				"widget-case-type-blueprint": "CaseTypeBlueprintWidget",
 				"widget-case-type-translations": "CaseTypeTranslationsWidget",
-				"widget-case-type-portal": "CaseTypePortalWidget"
+				"widget-case-type-portal": "CaseTypePortalWidget",
+				"widget-case-type-party-kinds": "CaseTypePartyKindsWidget"
 			},
 			"_note": "The case-type blueprint: identity and classification, the processing deadline and extension rules (AWB terms), the pinned workflowDefinition, sub-case types and decision types. Cases of this type are reached from the Cases index filtered by caseType rather than duplicated here. `case-type-authoring-extras` put the type's own content on the page: what it inherits from a parent, what it actually offers, the personal data it processes, and the four gestures that were API-only. NO TAB STRIP: `case-type-one-authoring-surface` owns that, and building one here would be the second strip the moment it lands. These are layout cells, and they become that strip's children when it arrives -- except `case-type-blueprint`, which cannot be a tab child while it is `type: \"custom\"`."
 		},
@@ -8341,12 +8256,6 @@
 			"schemaSlug": "wmsLayer",
 			"urlTemplate": "/apps/dossiq/settings/wms-layers/{uuid}",
 			"displayName": "Map layer"
-		},
-		{
-			"registerSlug": "dossiq",
-			"schemaSlug": "tenant",
-			"urlTemplate": "/apps/dossiq/settings/tenants/{uuid}",
-			"displayName": "Tenant"
 		},
 		{
 			"registerSlug": "dossiq",
