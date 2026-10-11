@@ -156,7 +156,8 @@ class ShippedActionVocabularyTest extends TestCase {
 	}
 
 	/**
-	 * Collect every automaticActions[]/autoActions[] entry in a decoded file.
+	 * Collect every automaticActions[]/autoActions[] entry in a decoded file,
+	 * including inside JSON-encoded string values.
 	 *
 	 * @param mixed $node The current JSON node.
 	 * @param string $path The JSON pointer walked so far.
@@ -176,6 +177,12 @@ class ShippedActionVocabularyTest extends TestCase {
 						$found[] = ['path' => $path . '.' . $key . '[' . $index . ']', 'action' => $action];
 					}
 				}
+			}
+
+			// A package stores a flow's steps and transitions as JSON strings, as
+			// the workflowTemplate schema types them; read inside those too.
+			if (is_string($value) === true && in_array(substr(ltrim($value), 0, 1), ['[', '{'], true) === true) {
+				$value = json_decode($value, true);
 			}
 
 			$this->collectActions(node: $value, path: $path . '.' . (string)$key, found: $found);
