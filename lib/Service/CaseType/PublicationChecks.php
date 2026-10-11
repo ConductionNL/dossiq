@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use Throwable;
 
@@ -66,6 +67,7 @@ class PublicationChecks {
 	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypeResolver,
@@ -76,6 +78,7 @@ class PublicationChecks {
 		private readonly RemedyClauseDeclaration $remedy,
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseTypeReachability $reachability,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -150,7 +153,7 @@ class PublicationChecks {
 			$findings[] = 'Pick the status a new case of this type starts in.';
 		}
 
-		if (trim((string)($caseType['title'] ?? '')) === '') {
+		if ($this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
 			$findings[] = 'Give the case type a title.';
 		}
 
@@ -199,7 +202,7 @@ class PublicationChecks {
 				continue;
 			}
 
-			$title = trim((string)($status['name'] ?? ($status['title'] ?? '')));
+			$title = $this->text->textOf(value: ($status['name'] ?? ($status['title'] ?? null)));
 			if ($title === '') {
 				$title = $id;
 			}
