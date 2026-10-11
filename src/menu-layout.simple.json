@@ -1512,6 +1512,58 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "CaseTypes",
+			"_note": "The case type list as DqZaaktypen draws it (relay 8): the title with its identifier under it, Domain, Processing time and Version, no folder sidebar (the Domain column carries it), and the lenses All, Published and Draft. The board also has a Meegeleverd lens and a Status pill that read origin and isDraft; those are not drawn: `origin` has no values the board names yet, so inventing a lens over it would count the wrong cases.",
+			"config": {
+				"folderSidebar": null,
+				"showTitle": true,
+				"countSubtitle": "{total} case types",
+				"columns": [
+					{
+						"key": "title",
+						"label": "Case type",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier}"
+					},
+					{
+						"key": "category",
+						"label": "Domain"
+					},
+					{
+						"key": "processingDeadline",
+						"label": "Processing time"
+					},
+					{
+						"key": "version",
+						"label": "Version"
+					}
+				],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {
+							"supersededBy": "IS NULL"
+						},
+						"default": true
+					},
+					{
+						"label": "Published",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Draft",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": true
+						}
+					}
+				]
+			}
 		}
 	]
 }
