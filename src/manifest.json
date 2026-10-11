@@ -336,15 +336,6 @@
 			"order": 92
 		},
 		{
-			"id": "TenantsMenu",
-			"label": "Organisations",
-			"icon": "OfficeBuildingOutline",
-			"route": "Tenants",
-			"section": "settings",
-			"order": 98,
-			"permission": "admin"
-		},
-		{
 			"id": "WmsLayersMenu",
 			"label": "Map layers",
 			"icon": "LayersOutline",
@@ -608,7 +599,7 @@
 						}
 					}
 				],
-				"_userWidgetsNote": "REQ-DASH-024, my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
+				"_userWidgetsNote": "REQ-DASH-031 (archived as REQ-DASH-024), my-teams-queue. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the unclaimed work of the reader's OWN teams: the Queue page's filter plus `assignedGroup: @myGroups`. A team is a Nextcloud group (one-team-model), and `@myGroups` (nextcloud-vue, nextcloud-group-surfaces) resolves to the ids of the groups the reader is in, sent as an IN filter (`assignedGroup[]=a&assignedGroup[]=b`, which OpenRegister's MagicSearchHandler turns into `assignedGroup IN (...)`). While the groups load, and for a reader in no group, the token stays unresolved and the list does not fetch but shows its `prompt`: OpenRegister reads an EMPTY IN list as no condition at all, so sending one would show every team's work to a person in no team. Until the nextcloud-vue release that carries `@myGroups` is installed, the token is unknown to the library and the list shows its prompt, never the wrong cases.",
 				"description": "Case volume, status and performance across the team",
 				"headerActions": [
 					{
@@ -2274,6 +2265,7 @@
 			"component": "DeletedCasesView",
 			"_note": "case-recycle-window 1.2, the deleted lens. NOT a quickFilter chip beside All, Mine and Closed, and the reason is mechanical rather than stylistic: those chips are filters on the objects endpoint, and that endpoint excludes soft-deleted rows by design. A chip spelling `deleted: true` would send a filter OpenRegister answers with the empty set, which reads exactly like a working lens over an empty trash. The deleted rows live behind their own door, so the lens is its own place and a component that fetches from dossiq's /api/cases/deleted, which reads OpenRegister's trash and attaches the window. 🔴 WHY `type: \"custom\"` AND NOT `index`, which is what hydra gate 69 asks: an index page binds a register and a schema and fetches that same objects endpoint, so it would render an empty list here and look like a working lens over an empty trash, which is the one failure this page exists to prevent. There is no `entitySource` that can name OpenRegister's trash (checked against the installed @conduction/nextcloud-vue 2.47). The gate reds by exactly one finding, deliberately, and the unit comes back the day CnIndexPage grows such a source. Decision D10: openregister owns the recycle state and the purge, dossiq publishes the date each window ends."
 		},
+		{"id": "WooDeliveredSetDetail", "route": "/woo/delivered-sets/:id", "type": "detail", "title": "Delivered set", "config": {"register": "dossiq", "schema": "wooDeliveredSet", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. One delivered set, the record of what went out, frozen with its publication. The items list every document with the file that went out, the original, the classification and the SHA-256, so the record shows what came in beside what went out.", "documentationUrl": "https://dossiq.conduction.nl", "widgets": [{"id": "woo-delivered-set-data", "type": "data", "title": "Delivered set", "icon": "PackageVariantClosed", "content": {"title": "Delivered set", "columns": 2, "exclude": ["items"]}}, {"id": "woo-delivered-set-items", "type": "file-set-items", "title": "Items", "icon": "FileCompare", "content": {"filesUrl": "/apps/dossiq/api/cases/{case}/woo/delivered-sets/{set}/items/{index}", "classificationLabels": {"openbaar": "Public", "deels_openbaar": "Disclosed in part"}}, "_note": "The Woo case type configures the generic file set items widget (decision 182; registry type file-set-items -> FileSetItems): every delivered item with its classification and hash; Compare on a redacted item opens the original beside it (woo-delivered-set-is-a-record REQ-WDS-004, document-compare REQ-DCP-001)."}], "layout": [{"id": "1", "widgetId": "woo-delivered-set-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false}, {"id": "2", "widgetId": "woo-delivered-set-items", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6, "showTitle": true}], "sidebar": {"enabled": true, "showMetadata": true, "tabs": [{"id": "audit", "label": "History", "icon": "History", "widgets": [{"type": "audit"}]}]}}},
 		{
 			"id": "CaseDetail",
 			"route": "/cases/:id",
@@ -2674,6 +2666,10 @@
 											}
 										}
 									}
+								},
+								{
+									"label": "Delivered sets",
+									"widget": {"id": "case-woo-delivered-sets", "type": "object-list", "title": "Delivered sets", "icon": "PackageVariantClosed", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. Every delivery of the Woo decision as its own record: when it went out, its state and the set hash. A row opens the set with every item, both files and their hashes. Re-verification is GET /api/cases/{id}/woo/delivered-sets/{setId}/verify or occ dossiq:woo:verify-delivered-set.", "content": {"register": "dossiq", "schema": "wooDeliveredSet", "filter": {"case": "@objectId"}, "sort": {"field": "deliveredAt", "dir": "desc"}, "limit": 25, "columns": [{"key": "deliveredAt", "label": "Delivered"}, {"key": "status", "label": "State"}, {"key": "publication", "label": "Publication"}, {"key": "withdrawnAt", "label": "Withdrawn"}, {"key": "setHash", "label": "Set hash"}], "rowRoute": "WooDeliveredSetDetail", "emptyText": "Nothing has been delivered for publication from this case yet"}}
 								},
 								{
 									"label": "Handled elsewhere",
@@ -5188,51 +5184,6 @@
 			}
 		},
 		{
-			"id": "Tenants",
-			"route": "/settings/tenants",
-			"type": "index",
-			"title": "Tenants",
-			"permission": "admin",
-			"_note": "`TenantsMenu` has always declared `permission: \"admin\"`, so the nav entry was already hidden from an ordinary account. The PAGE declared nothing, and until the router guard in main.js there was nothing to declare it to — so the entry was hidden and the route rendered. The two declarations are the same claim and have to agree.",
-			"config": {
-				"register": "dossiq",
-				"schema": "tenant",
-				"columns": [
-					"displayName",
-					"slug",
-					"legalName",
-					"kvkNumber",
-					"status",
-					"tier"
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "provision",
-						"label": "Provision",
-						"icon": "Plus",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
-					},
-					{
-						"id": "view",
-						"label": "View usage",
-						"icon": "EyeOutline",
-						"permission": "admin",
-						"handler": "navigate",
-						"route": "TenantDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://dossiq.conduction.nl"
-			}
-		},
-		{
 			"id": "WmsLayers",
 			"route": "/settings/wms-layers",
 			"type": "index",
@@ -5440,86 +5391,6 @@
 									"type": "audit"
 								}
 							]
-						}
-					]
-				}
-			}
-		},
-		{
-			"id": "TenantDetail",
-			"route": "/settings/tenants/:id",
-			"type": "detail",
-			"title": "Tenant",
-			"permission": "admin",
-			"config": {
-				"register": "dossiq",
-				"schema": "tenant",
-				"_note": "CONFIG/TECHNICAL archetype (multi-tenant provisioning record — legacy, superseded by OR Organisation). Admin-only, no comms. The Data widget carries identity + provisioning clock (slug, displayName, legalName, kvkNumber, tier, createdAt, activatedAt, terminatedAt). contractRef, isolationMode and dataResidency were dropped: none had a reader, isolationMode was a pure function of tier and dataResidency a hardcoded constant. The Provision + Refresh-usage admin actions are preserved as page actions, and lifecycleActions drive the status (onboarding → active → suspended → terminated). No object-lists or content leaves — a legacy provisioning record carries none. Audit history (provisioning events) is a sidebar tab.",
-				"actions": [
-					{
-						"id": "provision",
-						"label": "Provision",
-						"icon": "Plus",
-						"permission": "admin",
-						"primary": true,
-						"handler": "emit",
-						"type": "handler"
-					},
-					{
-						"id": "refresh-usage",
-						"label": "Refresh usage",
-						"icon": "Refresh",
-						"permission": "admin",
-						"handler": "emit",
-						"type": "handler"
-					}
-				],
-				"documentationUrl": "https://dossiq.conduction.nl",
-				"widgets": [
-					{
-						"id": "tenant-data",
-						"type": "data",
-						"title": "Tenant",
-						"icon": "OfficeBuilding",
-						"content": {
-							"title": "Tenant",
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "tenant-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
-					}
-				],
-				"lifecycleActions": {
-					"field": "status"
-				},
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true,
-					"tabs": [
-						{
-							"id": "audit",
-							"label": "History",
-							"icon": "History",
-							"widgets": [
-								{
-									"type": "audit"
-								}
-							]
-						},
-						{
-							"id": "version-history",
-							"label": "Version history",
-							"icon": "FileCompare",
-							"component": "VersionHistoryLeafTab"
 						}
 					]
 				}
@@ -8404,12 +8275,6 @@
 			"schemaSlug": "wmsLayer",
 			"urlTemplate": "/apps/dossiq/settings/wms-layers/{uuid}",
 			"displayName": "Map layer"
-		},
-		{
-			"registerSlug": "dossiq",
-			"schemaSlug": "tenant",
-			"urlTemplate": "/apps/dossiq/settings/tenants/{uuid}",
-			"displayName": "Tenant"
 		},
 		{
 			"registerSlug": "dossiq",

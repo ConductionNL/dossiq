@@ -32,7 +32,7 @@ use RuntimeException;
  * the way the real one does, and the schemas are the shipped fragment
  * 25-brp-kvk.json, so a fragment without the annotation fails here.
  *
- * @spec openspec/changes/contacts-domain/tasks.md#4-integrations
+ * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
  */
 class RequesterRegistrySubscriptionTest extends TestCase {
 

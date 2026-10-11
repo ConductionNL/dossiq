@@ -179,6 +179,15 @@
               "type": "string"
             }
           },
+          "tellHandlerAt": {
+            "type": "array",
+            "title": "Tell the handler at",
+            "description": "The escalation rungs, in days before the end of the term, on which the handler of the case gets a notification. 0 is the day the term runs out. Leave it empty and the escalation is recorded without telling anyone, which is how every term behaved before this was declarable.",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
           "escalationLadder": {
             "type": "array",
             "title": "Escalation ladder",

@@ -3,6 +3,7 @@
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-10-10, openspec/changes/remove-casetask task 7.1: onboarding steps moved onto the engine. OnboardingSteps reads through EngineInboxQuery and resolves its services inside each verb's own try block, so it adds no site; TenantOnboardingService::markStepComplete went, legacyRows (the one-off carry of the old rows) arrived. The ceiling stays 257.",
     "2026-10-10, openspec/changes/tenancy-onto-openregister-organisation tasks 6.9 and 6.15: TenantSaasService retired with the tenant admin store, taking its three sites (getById, getObjectService, listActive). TenantService::getObjectService arrived with the audit anchor. The ceiling went 259 to 257.",
     "Every catch (\\Throwable) under lib/Service that answers null or [] within its first three statements. ServiceCatchReturnsNullTest fails on a site that is not here, on an entry whose site is gone, and when the count passes the ceiling. The ceiling only goes down.",
     "This is a debt list with a ceiling, not an endorsement. The class and the reason on each entry were written by the triage that seeded this file on 2026-09-13 from the site's own evidence: what it returns, and whether and how it logs. They say what the site does, not that the site is right.",
@@ -29,7 +30,8 @@
     "2026-10-08, openspec/changes/tenant-isolation-names-the-control-that-runs: TenantSchemaProvisioner was deleted with the schema-per-tenant pipeline (dossiq#2470), and its two sites (listApplicationTables, shardTableMarkers) left with it. The ceiling went 265 to 263.",
     "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation: the active tenant became OpenRegister's active organisation. TenantSessionService::activeTenantId became activeTenant (same site, same answer), and TenantOrganisationResolver::readActiveOrganisation arrived. The ceiling went 263 to 264 here; the TenantService sites that leave later in the same change bring it down.",
     "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation task 3.2: TenantService keeps only isPlatformAdmin(). Its five sites (findOrganisationsByUserId, getOrganisationMapper, getTenantByGroupId, getTenantLifecycleService, getTenantStatus) left with the methods TenantController and TenantMiddleware called. The ceiling went 264 to 259.",
-    "2026-10-10, openspec/changes/ai-features-on-the-case-consume-hermiq (REQ-AIC-04): ONE site arrived with ReportGroupingConsumer::readCase, the caller's read of the case whose report group is asked for or placed. It is a read miss: a case the caller cannot read answers null exactly like one that does not exist, the catch logs at info naming the case, and the controller turns null into 404 so the endpoint cannot be used to probe for a case. The ceiling went 259 to 260 for that one site and nothing else."
+    "2026-10-10, openspec/changes/ai-features-on-the-case-consume-hermiq (REQ-AIC-04): ONE site arrived with ReportGroupingConsumer::readCase, the caller's read of the case whose report group is asked for or placed. It is a read miss: a case the caller cannot read answers null exactly like one that does not exist, the catch logs at info naming the case, and the controller turns null into 404 so the endpoint cannot be used to probe for a case. The ceiling went 259 to 260 for that one site and nothing else.",
+    "2026-10-10, openspec/changes/migrate-committees-to-decidiq (task 3): ONE site arrived with GovernanceBodyReader::ask, the read of a committee back from decidiq over its event seam. It is a degradation: when decidiq's listener throws, the catch logs at warning naming the committee and the reader keeps the local row, because a live committee must not read as gone. The ceiling went up by one for that site and nothing else."
   ],
   "classes": {
     "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -515,10 +517,10 @@
     },
     {
       "file": "lib/Service/DeadlineMonitoringSeedDataService.php",
-      "method": "existingDefinitionIds",
+      "method": "existingDefinitions",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`existingDefinitionIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`existingDefinitions()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/DeadlineReportingService.php",
@@ -750,13 +752,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`caseTypeBoundTo()` looks up the case type a form hash is bound to. No binding and an unanswerable search are the same answer to the caller, which offers the ordinary case-type picker instead of a pre-selected one."
-    },
-    {
-      "file": "lib/Service/InspectionChecklistService.php",
-      "method": "getResultsForCase",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getResultsForCase()` answers `return []` when the read fails; the catch logs at warning (\"Failed to get inspection results for case\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/InspectionChecklistService.php",
@@ -1369,10 +1364,10 @@
     },
     {
       "file": "lib/Service/TenantOnboardingService.php",
-      "method": "markStepComplete",
+      "method": "legacyRows",
       "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`markStepComplete()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: markStepComplete failed\"), so a failed read and an absent record are the same answer."
+      "class": "degradation",
+      "reason": "`legacyRows()` answers `return []` when the legacy `tenantOnboardingTask` rows cannot be read; the catch logs at warning naming the tenant (\"could not read the legacy onboarding rows\"). Nothing is carried onto the engine that run; the carry runs again on the next read, because the tenant still has no engine steps."
     },
     {
       "file": "lib/Service/TenantOrganisationResolver.php",
@@ -1821,6 +1816,13 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`readCase()` answers `return null` when the case cannot be read as the caller; the catch logs at info (\"ReportGroupingConsumer: case not readable\"), and the controller answers 404 for a case the caller cannot see exactly as for one that does not exist."
+    },
+    {
+      "file": "lib/Service/Governance/GovernanceBodyReader.php",
+      "method": "ask",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`ask()` answers `return null` when decidiq's read event throws; the catch logs at warning (\"the read from decidiq failed; using the local row\") and `resolve()` keeps the local committee row, so a failing decision app never makes a live committee read as archived."
     },
     {
       "file": "lib/Service/Zgw/ZgwParentStateResolver.php",

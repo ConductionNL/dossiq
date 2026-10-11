@@ -39,7 +39,7 @@ use Throwable;
  * that is NEW on this save is asked about, so editing a case's title does not
  * reach the BRP.
  *
- * @spec openspec/changes/contacts-domain/tasks.md#4-integrations
+ * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
  *
  * @template-implements IEventListener<Event>
  */
@@ -66,7 +66,7 @@ class RequesterRegistrySubscriptionListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/contacts-domain/tasks.md#4-integrations
+	 * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
 	 */
 	public function handle(Event $event): void {
 		try {

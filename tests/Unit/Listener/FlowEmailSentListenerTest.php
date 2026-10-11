@@ -22,8 +22,8 @@ use OCA\Dossiq\Listener\FlowEmailSentListener;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
-use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\OutboundCaseMail;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseObjectReference;
@@ -33,7 +33,6 @@ use OCA\OpenRegister\Event\FlowEmailSentEvent;
 use OCP\IAppConfig;
 use OCP\IUser;
 use OCP\IUserManager;
-use OCP\Mail\IMailer;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -101,12 +100,10 @@ class FlowEmailSentListenerTest extends TestCase {
 		);
 
 		$emails = new CaseEmailService(
-			$this->createMock(IMailer::class),
-			$appConfig,
 			new NullLogger(),
 			$repository,
 			$this->createMock(CaseContactDirectory::class),
-			$this->createMock(CaseEmailAttachmentResolver::class),
+			$this->createMock(OutboundCaseMail::class),
 			$this->createMock(RecipientAllowlist::class),
 			$timeline,
 			$this->createMock(CaseMailOptOut::class)

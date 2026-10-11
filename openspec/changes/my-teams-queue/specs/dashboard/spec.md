@@ -12,7 +12,7 @@ filter `assignedGroup` on `@myGroups` beside the Queue page's own conditions
 load, and for a reader in no group, the list SHALL NOT fetch and SHALL show
 its prompt, never every team's work.
 
-This narrows REQ-DASH-024, whose second list was the shared queue because no
+This narrows REQ-DASH-031 (archived as REQ-DASH-024), whose second list was the shared queue because no
 token could name the reader's groups.
 
 #### Scenario: A handler sees only their own teams' unclaimed cases

@@ -84,26 +84,19 @@ The internal duplication is most of the win, and it needs no OpenRegister
 change at all: three template schemas become one, and three result schemas
 become `Task`.
 
-## Decisions needed (step 3)
+## Decisions (step 3, decision 175, 10 Oct 2026)
 
-- **3a. Which template schema survives?** `inspectionChecklistTemplate`
-  (stack B) is the richest: sections, a draft/active/retired lifecycle and a
-  seed key. The proposal is to keep it and fold the other two into it.
-- **3b. Typed items: dossiq or OpenRegister?** Keep typed items in dossiq's
-  template and write answers into `Task.responses`, or first extend
-  OpenRegister's `Task.checklist` with an answer type. The second is a change
-  in openregister's `flow-task-forms` spec, which today allows only checked
-  boxes.
-- **3c. Where do GPS and offline state live?** `Task` has no column for
-  either. Options: the task's `metadata`, a dossiq satellite keyed by task
-  uuid, or a new column in OpenRegister.
-- **3d. Does stack A's mobile app move in the same change?** The mobile store
-  writes `inspectieRapport` directly. Moving it means the mobile flow writes a
-  task. The offline queue then syncs task verbs instead of object writes.
-- **3e. The archived forms-leaf decision.** `inspection-forms-via-forms-leaf`
-  routed these surfaces through Nextcloud Forms. Task 3.2 of the umbrella says
-  this change supersedes it. That needs saying in that spec, so two live
-  answers do not stand side by side.
+Ruben chose option 1 of Q-dossiq-L5-3. design.md says how.
+
+- **3a.** `inspectionChecklistTemplate` is the one template schema. The other
+  two fold into it (design D1).
+- **3b.** Typed items stay in dossiq's template. Answers go into
+  `Task.responses`. OpenRegister's `Task.checklist` is not extended (D2).
+- **3c.** GPS and offline state go into the task's `metadata`, written once at
+  create (D3).
+- **3d.** The mobile app (store and panel) moves in this change (D4).
+- **3e.** `inspection-forms-via-forms-leaf` is narrowed to advice forms; its
+  delta is in this change (D5).
 
 ## What is not in scope
 
@@ -113,5 +106,13 @@ one, but the follow-up stays its own case or task.
 
 ## Impact
 
-None yet. This change adds analysis and a task list. It moves no data,
-changes no code and retires no schema.
+- Schemas: `inspectionChecklistTemplate` grows item `id`, `weight`, `parent`
+  and template `legacyRef`. Step 5 retires `inspectieChecklist`,
+  `inspectieRapport`, `inspectionChecklistRun`, `inspectionChecklist`,
+  `inspectionResult` and `checklistItem`.
+- Runs: OpenRegister `Task`, kind `inspection`. No OpenRegister change.
+- Code: `InspectionChecklistService`, `InspectionChecklistController`, the
+  inspection store and panel, the settings checklists tab, the portal
+  inspector contribution; `ChecklistRunImmutabilityListener` retires.
+- Specs: deltas on `inspection-checklists`, `mobiel-inspectie-offline` and
+  `inspection-forms-via-forms-leaf`.

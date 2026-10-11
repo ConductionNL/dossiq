@@ -287,6 +287,10 @@ class ConfigKeys {
 		// field that did not exist. Registered here so it does.
 		'email_from_address',
 		'email_from_name',
+		// Which transport each kind of outbound mail leaves through, as a JSON
+		// map of kind to `mail-account` or `imailer` (decisions 165, 182).
+		// Empty means MailTransportPolicy::DEFAULTS.
+		'mail_transport_by_kind',
 		// Empty means "the from-address's own domain", never "no restriction".
 		'email_recipient_allowlist',
 		// Per-user mail matching (email-case-matching). Off unless an admin

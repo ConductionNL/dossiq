@@ -170,7 +170,7 @@ describe('the Log contact action', () => {
 			"axios.post(caseUrl(caseId, '/contact-moments'), moment)",
 		)
 		expect(routes).toMatch(
-			/pipelinqCase#logContactMoment'[^\n]*\/api\/cases\/\{caseId\}\/pipelinq\/contact-moments'[^\n]*'POST'/,
+			/pipelinqContactMoment#logContactMoment'[^\n]*\/api\/cases\/\{caseId\}\/pipelinq\/contact-moments'[^\n]*'POST'/,
 		)
 	})
 })

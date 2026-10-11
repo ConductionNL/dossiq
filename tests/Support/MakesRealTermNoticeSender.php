@@ -45,6 +45,7 @@ use RuntimeException;
  * Builds the real TermNoticeSender for a test.
  */
 trait MakesRealTermNoticeSender {
+	use MakesOutboundCaseMail;
 
 	/**
 	 * Every message the recording mailer was handed.
@@ -92,10 +93,11 @@ trait MakesRealTermNoticeSender {
 		$gateConfig = $this->createMock(IAppConfig::class);
 		$gateConfig->method('getValueString')->willReturnArgument(2);
 
+		$optOut = new CaseMailOptOut(new OptOutGate($dispatcher, $gateConfig, new NullLogger()), $l10n, new UnsubscribeHeaders(new NullLogger()));
+
 		return new TermNoticeSender(
-			mailer: $mailer,
-			appConfig: $appConfig,
-			optOut: new CaseMailOptOut(new OptOutGate($dispatcher, $gateConfig, new NullLogger()), $l10n, new UnsubscribeHeaders(new NullLogger())),
+			outbound: $this->outboundCaseMail(mailer: $mailer, appConfig: $appConfig, optOut: $optOut),
+			optOut: $optOut,
 			ledger: new InMemoryTermNoticeLedger(),
 			logger: new NullLogger(),
 		);

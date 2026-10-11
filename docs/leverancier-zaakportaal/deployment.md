@@ -38,8 +38,8 @@ Set these via `occ config:app:set dossiq <key> --value '<value>'`:
 | `eherkenning_client_id`        | _unset_ | OAuth client ID for the eHerkenning broker                                                   |
 | `eherkenning_client_secret`    | _unset_ | OAuth client secret (use NC secret vault — never commit)                                     |
 | `kvk_api_url`                  | _unset_ | KvK API base URL (used during supplier validation)                                           |
-| `shillinq_base_url`            | _unset_ | Shillinq invoices API base URL (only needed for parent SaaS chain)                           |
-| `shillinq_api_key`             | _unset_ | Shillinq bearer key                                                                          |
+
+Tenant invoices need no setting. Dossiq asks shillinq on the same server to draft each month's invoice, for the shillinq customer whose external reference is the tenant id. The settings `shillinq_base_url` and `shillinq_api_key` are no longer read.
 
 ## Routes
 

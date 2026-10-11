@@ -89,6 +89,8 @@ const SILENT = [
 	'publications',
 	'relatedCases',
 	'riskAssessment',
+	'routing',
+	'routingTakeBacks',
 	'selectionListClass',
 	'skippedPhases',
 	'splitMovedItems',

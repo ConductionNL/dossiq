@@ -196,6 +196,7 @@ export default {
 	watch: {
 		caseTypeId: {
 			immediate: true,
+			/** @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04 */
 			handler() {
 				this.load()
 			},

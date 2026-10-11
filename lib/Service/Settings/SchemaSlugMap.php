@@ -237,6 +237,8 @@ class SchemaSlugMap {
 		// The recall of a Woo review: the stopping rule and its samples (woo-review-recall-and-stopping).
 		'stoppingRule' => 'stopping_rule_schema',
 		'recallSample' => 'recall_sample_schema',
+		// What a Woo delivery sent out, frozen with its publication (woo-delivered-set-is-a-record).
+		'wooDeliveredSet' => 'woo_delivered_set_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

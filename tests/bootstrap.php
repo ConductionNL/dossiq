@@ -452,6 +452,12 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 	include_once __DIR__ . '/Stubs/Decidiq/Event/DecisionStateRequestedEvent.php';
 }
 
+// The read half of the governance-body contract (decidiq#1694), which
+// GovernanceBodyReader dispatches. One spelling only, for the same reason.
+if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/GovernanceBodyStateRequestedEvent.php';
+}
+
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
 // The connection-registry events (adopt-connection-registry) ride the same loop:
 // IntegrationStatusService sends them by name, exactly like the delivery seam.
@@ -502,6 +508,13 @@ foreach (['PortalClientWriteEvent', 'PortalClientWithdrawalEvent'] as $stubEvent
 // branch alone, and static analysis would report the resolution as dead code.
 if (class_exists('\\OCA\\Shillinq\\Integration\\PaymentRequestLeafProvider') === false) {
 	include_once __DIR__ . '/Stubs/Shillinq/Integration/PaymentRequestLeafProvider.php';
+}
+
+// Shillinq's invoice command (dossiq-delivers-nothing phase 5, decision 174).
+// ShillinqIntegrationService raises it by name so dossiq installs without
+// shillinq; without this stub only the absent branch could ever run.
+if (class_exists('\\OCA\\Shillinq\\Event\\BillablePeriodClosedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Event/BillablePeriodClosedEvent.php';
 }
 
 // Hermiq's oversight contract. procest resolves it by name so it stays
