@@ -279,7 +279,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 		$statusTypes = ($caseType['statusTypes'] ?? []);
 		unset($caseType['statusTypes']);
 
-		$existing = $this->index->caseTypeByTitle(schemas: $schemas, title: $title);
+		$existing = $this->existingCaseType(schemas: $schemas, caseType: $caseType, title: $title);
 
 		$caseTypeId = '';
 		if ($existing !== null) {
@@ -318,6 +318,30 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 			output: $output
 		);
 	}//end seedOne()
+
+	/**
+	 * The case type an earlier run already created, or null.
+	 *
+	 * By the seed's slug: the title is translatable and stored as a language
+	 * map, so a lookup by title never matched and every run created the type
+	 * again. A seed row without a slug still falls back to its title.
+	 *
+	 * @param array<string,string> $schemas  Register and schema names.
+	 * @param array<string,mixed>  $caseType The seed's case type.
+	 * @param string               $title    Its title.
+	 *
+	 * @return array<string,mixed>|null The stored case type, or null.
+	 *
+	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 */
+	private function existingCaseType(array $schemas, array $caseType, string $title): ?array {
+		$slug = trim((string)($caseType['slug'] ?? ''));
+		if ($slug !== '') {
+			return $this->index->caseTypeBySlug(schemas: $schemas, slug: $slug);
+		}
+
+		return $this->index->caseTypeByTitle(schemas: $schemas, title: $title);
+	}//end existingCaseType()
 
 	/**
 	 * Create the statuses this case type is missing.

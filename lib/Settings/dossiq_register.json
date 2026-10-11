@@ -1587,7 +1587,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.40.0",
+                "version": "1.41.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2630,7 +2630,8 @@
                         "title": "Case type",
                         "facetable": true,
                         "x-relation-filter": {
-                            "isDraft": false
+                            "isDraft": false,
+                            "supersededBy": "IS NULL"
                         },
                         "x-openregister-prefill": {
                             "fields": {
