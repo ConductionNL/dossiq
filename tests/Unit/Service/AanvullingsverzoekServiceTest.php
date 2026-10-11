@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\InformationRequestService;
 use OCA\Dossiq\Service\SettingsService;
@@ -380,4 +381,94 @@ class AanvullingsverzoekServiceTest extends TestCase {
 			actual: array_column($request['missingItems'], 'item')
 		);
 	}//end testBlankItemsNeverReachTheRecord()
+
+	/**
+	 * Decision 169: asking raises the resident's portal task and remembers it
+	 * on the request; a case without a portal subject raises none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
+	 */
+	public function testAskingRaisesThePortalTaskAndRemembersIt(): void {
+		$this->act->method('ask')->willReturn($this->sent());
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
+		$raisedFor = [];
+		$portalTask->method('raise')->willReturnCallback(
+			function (array $question, string $actor) use (&$raisedFor): ?string {
+				$raisedFor[] = [$question['id'], $question['portalSubject'], $question['title'], $question['items'], $question['due'], $question['source'], $actor];
+				return 'task-1';
+			}
+		);
+
+		$writes = [];
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(['act' => $this->act, 'settingsService' => $this->settings, 'logger' => new NullLogger(), 'portalTask' => $portalTask])
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'portalSubjectOf'])
+			->getMock();
+		$service->method('openFor')->willReturn(null);
+		$service->method('portalSubjectOf')->willReturn('person:bsn-hash-1');
+		$service->method('write')->willReturnCallback(
+			function (array $request, string $id = '') use (&$writes): array {
+				$writes[] = [$id, $request];
+				return array_merge($request, ['id' => ($id !== '' ? $id : 'avr-1')]);
+			}
+		);
+
+		$request = $service->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertSame([['avr-1', 'person:bsn-hash-1', 'Vul uw aanvraag aan', ['Bankafschrift'], '2026-10-01', 'dossiq.aanvullingsverzoek', 'handler1']], $raisedFor);
+		self::assertSame('task-1', $request['portalTask']);
+		self::assertSame(['avr-1', ['portalTask' => 'task-1']], $writes[1]);
+	}//end testAskingRaisesThePortalTaskAndRemembersIt()
+
+	/**
+	 * Decision 169: a write that moves a request out of `open` closes its
+	 * portal task with the stored request; a write that keeps it open does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/an-aanvullingsverzoek-is-a-portal-task/specs/termijn-pause-extension/spec.md#requirement-an-aanvullingsverzoek-is-a-task-in-the-residents-portal-req-avr-06
+	 */
+	public function testAWriteThatLeavesOpenClosesThePortalTask(): void {
+		$objects = new class {
+			/**
+			 * @param string               $objectId The id.
+			 * @param array<string, mixed> $data     The changes.
+			 * @param mixed                $register The register.
+			 * @param mixed                $schema   The schema.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function patchObject(string $objectId, array $data, mixed $register, mixed $schema): array {
+				return array_merge(['id' => $objectId, 'portalTask' => 'task-1', 'state' => 'open'], $data);
+			}
+		};
+		$this->settings->method('getObjectService')->willReturn($objects);
+		$this->settings->method('getConfigValue')->willReturn('register-1');
+
+		$closed = [];
+		$portalTask = $this->createMock(ResidentQuestionTask::class);
+		$portalTask->method('close')->willReturnCallback(
+			function (string $taskUuid, string $reason, string $source) use (&$closed): bool {
+				$closed[] = [$taskUuid, $reason, $source];
+				return true;
+			}
+		);
+		$service = new AanvullingsverzoekService(act: $this->act, settingsService: $this->settings, logger: new NullLogger(), portalTask: $portalTask);
+
+		$service->write(request: ['hersteltermijn' => '2026-11-01'], id: 'avr-1');
+		self::assertSame([], $closed);
+
+		$service->write(request: ['state' => 'answered', 'answeredBy' => 'handler1'], id: 'avr-1');
+		self::assertSame([['task-1', 'The aanvullingsverzoek is answered in dossiq.', 'dossiq.aanvullingsverzoek']], $closed);
+	}//end testAWriteThatLeavesOpenClosesThePortalTask()
 }//end class

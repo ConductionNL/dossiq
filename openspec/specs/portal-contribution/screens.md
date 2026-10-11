@@ -2,3 +2,5 @@
 - DqZaaktype https://identity.conduction.nl/screens/board?id=dossiq/DqZaaktype
 - DqBerichtVersturen https://identity.conduction.nl/screens/board?id=dossiq/DqBerichtVersturen
 - PtZaaktypeWeergave https://identity.conduction.nl/screens/board?id=portaliq/PtZaaktypeWeergave
+- MijnOverzicht https://identity.conduction.nl/screens/board?id=zuiddrecht/MijnOverzicht
+- Design backlog: DqPortaalMijnZaken (decision 157)
