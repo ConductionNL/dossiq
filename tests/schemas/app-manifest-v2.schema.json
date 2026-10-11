@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.75.0",
+	"version": "2.79.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1094,7 +1094,7 @@
 						"pillColors": {
 							"type": "object",
 							"description": "Pill value to badge variant. A value without an entry takes the default variant.",
-							"additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info"] }
+							"additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }
 						},
 						"due": { "type": "string", "description": "The date field of the footer's due text, marked by `dueRule`." },
 						"owner": { "type": "string", "description": "The field of the owner shown as an avatar (initials) at the footer's end." }
@@ -1143,7 +1143,7 @@
 				"colorMap": {
 					"type": "object",
 					"description": "Raw value to badge variant. Keys are matched ignoring case.",
-					"additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info"] }
+					"additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }
 				},
 				"labels": {
 					"type": "object",
@@ -1152,7 +1152,7 @@
 				},
 				"variant": {
 					"type": "string",
-					"enum": ["default", "primary", "success", "warning", "error", "info"],
+					"enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"],
 					"default": "default",
 					"description": "Badge variant for a value `colorMap` does not name."
 				}
@@ -3586,7 +3586,7 @@
 						},
 						"columns": {
 							"type": "array",
-							"description": "Table columns (for type='index' and type='logs'). Items may be strings (legacy shorthand) or column objects ({ key, label, sortable?, width?, formatter?, formatterOptions?, widget?, widgetProps?, format?, aggregate? }). `formatter` resolves against cnFormatters (built-ins incl. currency / conditionalPhrase — configured via `formatterOptions`); `widget` resolves against cnCellWidgets (built-ins incl. badge / fkResolve / link / avatar / date).",
+							"description": "Table columns (for type='index' and type='logs'). Items may be strings (legacy shorthand) or column objects ({ key, label, sortable?, width?, formatter?, formatterOptions?, widget?, widgetProps?, format?, aggregate?, colorMap? }). `colorMap` maps an enum column's raw values to a pill tone (default, primary, success, warning, error, info, purple, teal) and wins over the schema property's own `colorMap` / `x-color-map`. `formatter` resolves against cnFormatters (built-ins incl. currency / conditionalPhrase — configured via `formatterOptions`); `widget` resolves against cnCellWidgets (built-ins incl. badge / fkResolve / link / avatar / date).",
 							"items": {
 								"oneOf": [
 									{ "type": "string" },
@@ -4004,6 +4004,40 @@
 							"default": [],
 							"description": "type='dashboard': widget ids drawn as a KPI row above the grid, in the listed order, in an auto-fit grid (`repeat(auto-fit, minmax(200px, 1fr))`, gap 16). The named widgets are not GridStack items, so they do not reflow with the grid and are not part of the emitted layout; an id that names no widget is skipped with a development warning (screens-dashboard-parity). Maps to CnDashboardPage `kpiRow`. `dateRange.control` also accepts \"segmented\": the presets as one compact segmented group under the header."
 						},
+						"greeting": {
+							"oneOf": [
+								{ "type": "boolean" },
+								{ "type": "string", "enum": ["first", "full"] }
+							],
+							"default": false,
+							"description": "type='dashboard': greet the reader in the header subtitle. `true` or \"first\" writes \"Good afternoon, Pieter · Monday 5 October 2026\", \"full\" uses the whole display name; the page `description` follows after another middle dot (screens-dashboard-greeting-header). Maps to CnDashboardPage `greeting`."
+						},
+						"viewLinks": {
+							"type": "array",
+							"default": [],
+							"description": "type='dashboard': links drawn as small pills on the switch row under the header, right of the view switch (screens-dashboard-greeting-header). `route` is a route name or a `{ name, params, query }` location, `href` a plain URL; `label` is an i18n key. An entry without a label or a target is skipped. Maps to CnDashboardPage `viewLinks`.",
+							"items": {
+								"type": "object",
+								"required": ["label"],
+								"additionalProperties": false,
+								"properties": {
+									"label": { "type": "string", "minLength": 1 },
+									"icon": { "type": "string", "minLength": 1 },
+									"route": {
+										"oneOf": [
+											{ "type": "string", "minLength": 1 },
+											{ "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1 }, "params": { "type": "object" }, "query": { "type": "object" } } }
+										]
+									},
+									"href": { "type": "string", "minLength": 1 }
+								}
+							}
+						},
+						"showActionsMenu": {
+							"type": "boolean",
+							"default": true,
+							"description": "type='dashboard': `false` removes the page Actions menu from the header, for a board page whose header carries only the buildiq square and the primary (screens-dashboard-greeting-header). Maps to CnDashboardPage `showActionsMenu`."
+						},
 						"gridFloat": {
 							"type": "boolean",
 							"default": true,
@@ -4038,6 +4072,11 @@
 							"minLength": 1,
 							"description": "type='index', board look: free text after the footer's count, e.g. \"click a column header to sort\" (screens-index-list-parity). Maps to CnIndexPage `footerNote`."
 						},
+						"searchPlaceholder": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='index': the placeholder (and accessible name) of the list's search field, e.g. \"Search by case, number or requester\". Run through the app's translate, so an English key with a Dutch catalogue entry reads Dutch. Absent: the library's \"Search…\" (screens-index-toolbar-parity). Maps to CnIndexPage `searchPlaceholder`."
+						},
 						"bulkHint": {
 							"type": "string",
 							"minLength": 1,
@@ -4064,6 +4103,12 @@
 									"format": { "type": "string", "enum": ["csv", "excel"], "default": "csv", "description": "For `export`." }
 								}
 							}
+						},
+						"rowTitle": {
+							"type": "string",
+							"enum": ["link", "plain"],
+							"default": "link",
+							"description": "type='index' (screens-table-rows-parity): how the board look draws the table's title column. `link` (the default) is the 15px weight 600 underlined title of the DqZaken board; `plain` is the 15px bold title without an underline over a 13px muted secondary line, as the PqTickets and OcPublicaties boards draw it. The row stays clickable either way. The Nextcloud look ignores it. Maps to CnIndexPage `rowTitle`."
 						},
 						"showTypeEyebrow": {
 							"type": "boolean",

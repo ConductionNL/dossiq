@@ -229,12 +229,40 @@ describe('the cases list', () => {
 		expect(before.countSubtitle).toBeUndefined()
 	})
 
-	it('draws the view switch as the board does and drops the column filters, which the design has none of', () => {
-		// The filters stay in the filter panel; the full list keeps both.
+	it('draws the view switch as the board does', () => {
 		expect(simple.showViewToggle).toBe(true)
-		expect(simple.headerFilters).toBe(false)
 		expect(before.showViewToggle).toBeUndefined()
-		expect(before.headerFilters).toBeUndefined()
+	})
+
+	it('shows a filter funnel on every column, as DqZaken draws them on Zaak, Type, Status, Behandelaar and Termijn', () => {
+		// The board is the canon (case-search-and-lists, REQ-CSL-07). The
+		// library draws the funnels unless the page sets `headerFilters: false`
+		// or a column sets `filterable: false`, so neither may appear here.
+		expect(simple.headerFilters).not.toBe(false)
+		expect(before.headerFilters).not.toBe(false)
+		expect(simple.columns.map((column) => column.label)).toEqual([
+			'Case',
+			'Type',
+			'Status',
+			'Handler',
+			'Deadline',
+		])
+		for (const column of simple.columns) {
+			expect(column.filterable, column.key).not.toBe(false)
+		}
+		// And the library default is what makes "not false" mean "on".
+		const indexPage = read(
+			'node_modules',
+			'@conduction',
+			'nextcloud-vue',
+			'src',
+			'components',
+			'CnIndexPage',
+			'CnIndexPage.vue',
+		)
+		expect(indexPage).toMatch(
+			/headerFilters: \{\s*type: Boolean,\s*default: true,\s*\}/,
+		)
 	})
 
 	it('touches nothing else on the list', () => {
