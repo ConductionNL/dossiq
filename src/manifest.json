@@ -3571,7 +3571,7 @@
 					"tabs": [
 						{
 							"id": "audit",
-							"label": "History",
+							"label": "Audit trail",
 							"icon": "History",
 							"_note": "Placement row A05: ONE history of the case. This tab is the case timeline, CnAuditTrailTab over OpenRegister's audit trail for this object, newest first, with the actor and the action on every row. The `version-history` tab that sat beside it is GONE from THIS page: it read the same audit rows as a field diff, which is what made the case show its history twice and neither of them well. The other 13 detail pages keep theirs, and the `VersionHistoryLeafTab` registry entry stays because they resolve it; row A05 scores the case page only. Three things this tab still cannot do, each a need rather than a defect: it cannot OPEN on writes, because `actionFilter` is internal state on CnAuditTrailTab and this widget declares only `register`, `schema`, `objectId`, `title` and `maxDisplay`; it cannot EXPORT, because the tab has no export action; and it cannot carry document, note and mail events beside the audit rows, because a merged per-object feed is the OpenRegister `activity` leaf, which does not exist. Until each lands the tab opens unfiltered over writes and reads, with the Action and User filters it already renders. There is deliberately NO body tab over the same log: the tab strip carries no Timeline entry, because one log in two places is the duplication this row retires. The `case-stages` widget on the grid is not that log: it is where the case is in its process and where a handler moves it, not what has happened to it.",
 							"widgets": [
