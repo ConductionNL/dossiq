@@ -4,9 +4,34 @@
  * Manages inspection checklists, inspection reports, photo uploads,
  * and follow-up task creation for VTH supervision cases.
  */
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import { defineStore } from 'pinia'
 import { useEngineTaskStore } from './engineTask.js'
 import { useObjectStore } from './object.js'
+
+/**
+ * A template with its section items as one flat, ordered `items` list.
+ *
+ * @param {object} template An `inspectionChecklistTemplate` object
+ * @return {object} The template, with `items`
+ * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
+ */
+export function flattenTemplate(template) {
+	const sections = Array.isArray(template?.sections) ? template.sections : []
+	const items = sections
+		.flatMap((section) => (Array.isArray(section?.items) ? section.items : []))
+		.map((item) => ({
+			...item,
+			// The panel's form reads stack A's names: `type`, and a photo
+			// gate that is on or off for a failed answer.
+			type: item.type || item.responseType,
+			photoRequired:
+				item.photoRequired === true
+				|| ['if_no', 'altijd'].includes(item.photoRequired),
+		}))
+	return { ...template, items }
+}
 
 export const useInspectionStore = defineStore('inspection', {
 	state: () => ({
@@ -61,11 +86,16 @@ export const useInspectionStore = defineStore('inspection', {
 
 	actions: {
 		/**
-		 * Fetch all checklists for a case type.
+		 * Fetch the checklist templates for a case type.
+		 *
+		 * Templates are `inspectionChecklistTemplate` objects, the one template
+		 * schema (inspection-checklists-onto-task 4.1). Their items sit in
+		 * sections; the panel reads one flat `items` list, so each template is
+		 * flattened here.
 		 *
 		 * @param {string} caseTypeId UUID of the case type
 		 * @return {Promise<Array>} Checklists
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 		 */
 		async fetchChecklists(caseTypeId) {
 			this.loading = true
@@ -73,13 +103,14 @@ export const useInspectionStore = defineStore('inspection', {
 			try {
 				const objectStore = useObjectStore()
 				const response = await objectStore.fetchCollection(
-					'inspectieChecklist',
+					'inspectionChecklistTemplate',
 					{
 						caseType: caseTypeId,
 						limit: 100,
 					},
 				)
-				this.checklists = response?.results || response || []
+				const templates = response?.results || response || []
+				this.checklists = templates.map(flattenTemplate)
 				return this.checklists
 			} catch (error) {
 				this.error = error.message
@@ -91,101 +122,27 @@ export const useInspectionStore = defineStore('inspection', {
 		},
 
 		/**
-		 * Save a checklist (create or update).
+		 * Fetch the inspection runs of a case.
 		 *
-		 * @param {object} checklistData The checklist data
-		 * @return {Promise<object|null>} Saved checklist
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
-		 */
-		async saveChecklist(checklistData) {
-			this.loading = true
-			this.error = null
-			try {
-				const objectStore = useObjectStore()
-				const saved = await objectStore.saveObject(
-					'inspectieChecklist',
-					checklistData,
-				)
-				// Update local list
-				const index = this.checklists.findIndex((c) => c.id === saved.id)
-				if (index >= 0) {
-					this.checklists.splice(index, 1, saved)
-				} else {
-					this.checklists.push(saved)
-				}
-				return saved
-			} catch (error) {
-				this.error = error.message
-				console.error('Error saving checklist:', error)
-				return null
-			} finally {
-				this.loading = false
-			}
-		},
-
-		/**
-		 * Create a new version of a checklist.
-		 *
-		 * @param {object} checklist The checklist to version
-		 * @return {Promise<object|null>} New version
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
-		 */
-		async createNewVersion(checklist) {
-			const newVersion = {
-				...checklist,
-				id: undefined,
-				version: (checklist.version || 1) + 1,
-				status: 'draft',
-			}
-			// Archive old version
-			if (checklist.id) {
-				await this.saveChecklist({ ...checklist, status: 'archived' })
-			}
-			return this.saveChecklist(newVersion)
-		},
-
-		/**
-		 * Delete a checklist.
-		 *
-		 * @param {string} checklistId UUID of the checklist
-		 * @return {Promise<boolean>} Success
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
-		 */
-		async deleteChecklist(checklistId) {
-			this.loading = true
-			try {
-				const objectStore = useObjectStore()
-				await objectStore.deleteObject('inspectieChecklist', checklistId)
-				this.checklists = this.checklists.filter((c) => c.id !== checklistId)
-				return true
-			} catch (error) {
-				this.error = error.message
-				return false
-			} finally {
-				this.loading = false
-			}
-		},
-
-		/**
-		 * Fetch inspection reports for a case.
+		 * Runs are OpenRegister tasks of kind `inspection` since
+		 * inspection-checklists-onto-task 4.2; dossiq's results endpoint
+		 * answers them in the shape this panel reads.
 		 *
 		 * @param {string} caseId UUID of the case
-		 * @return {Promise<Array>} Reports
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * @return {Promise<Array>} Runs
+		 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-panel-on-case-dashboard
 		 */
 		async fetchReports(caseId) {
 			this.loading = true
 			this.error = null
 			try {
-				const objectStore = useObjectStore()
-				const response = await objectStore.fetchCollection(
-					'inspectieRapport',
-					{
-						case: caseId,
-						limit: 100,
-					},
+				const response = await axios.get(
+					generateUrl(
+						'/apps/dossiq/api/vth/cases/{id}/inspection-results',
+						{ id: caseId },
+					),
 				)
-				this.reports = response?.results || response || []
+				this.reports = Array.isArray(response?.data) ? response.data : []
 				return this.reports
 			} catch (error) {
 				this.error = error.message
@@ -197,59 +154,48 @@ export const useInspectionStore = defineStore('inspection', {
 		},
 
 		/**
-		 * Create an inspection report with auto-calculated result.
+		 * Submit an inspection run.
 		 *
-		 * @param {object} reportData Report data with items array
-		 * @return {Promise<object|null>} Created report
-		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 * The server checks the run against the frozen template, records it as
+		 * one completed task and decides its outcome, so the result is read
+		 * from the answer, never computed here.
+		 *
+		 * @param {object} reportData Run data: `case`, `checklist`, `items`, optional `remarks`, `location`
+		 * @return {Promise<object|null>} The recorded run
+		 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-rapport-creation
 		 */
 		async createReport(reportData) {
 			this.loading = true
 			this.error = null
 			try {
-				const items = reportData.items || []
-				const failedItems = items.filter(
-					(item) => item.result === 'fail',
-				).length
-				const nvtItems = items.filter((item) => item.result === 'nvt').length
-				const totalItems = items.length
-
-				// Auto-calculate overall result
-				let result = 'conform'
-				if (failedItems > 0 && failedItems < totalItems - nvtItems) {
-					result = 'partly_conform'
-				} else if (failedItems > 0) {
-					result = 'non_conform'
-				}
-
-				const report = {
-					...reportData,
-					result,
-					failedItems,
-					followUpRequired: failedItems > 0,
-					inspectionDate:
-						reportData.inspectionDate || new Date().toISOString(),
-				}
-
-				const objectStore = useObjectStore()
-				const saved = await objectStore.saveObject(
-					'inspectieRapport',
-					report,
+				const response = await axios.post(
+					generateUrl(
+						'/apps/dossiq/api/vth/cases/{id}/inspection-result',
+						{ id: reportData.case },
+					),
+					{
+						checklistId: reportData.checklist,
+						items: reportData.items || [],
+						remarks: reportData.remarks,
+						location: reportData.location,
+						inspectionDate:
+							reportData.inspectionDate || new Date().toISOString(),
+					},
 				)
+				const saved = response.data
 				this.reports.push(saved)
 
-				// Create follow-up task if non-conformities found
-				if (failedItems > 0) {
+				if (saved.failedItems > 0) {
 					await this.createFollowUpTask(
 						reportData.case,
-						failedItems,
+						saved.failedItems,
 						saved.id,
 					)
 				}
 
 				return saved
 			} catch (error) {
-				this.error = error.message
+				this.error = error?.response?.data?.message || error.message
 				console.error('Error creating report:', error)
 				return null
 			} finally {

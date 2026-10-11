@@ -41,6 +41,23 @@ use OCP\Mail\IMessage;
 class CaseMailOptOut {
 
 	/**
+	 * The category a case mail carries when nothing else is said.
+	 */
+	public const CATEGORY_CASE_UPDATE = OptOutGate::CATEGORY_CASE_UPDATE;
+
+	/**
+	 * The categories a case mail can carry. A handler picks the first two;
+	 * a template may also declare `statutory`.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CASE_MAIL_CATEGORIES = [
+		OptOutGate::CATEGORY_CASE_UPDATE,
+		OptOutGate::CATEGORY_BESLUIT,
+		OptOutGate::CATEGORY_STATUTORY,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * The header helper is optional so dossiq still loads against an
@@ -73,6 +90,28 @@ class CaseMailOptOut {
 	}//end decide()
 
 	/**
+	 * The two bodies with the link line when there is one, for a transport that takes no headers.
+	 *
+	 * A case mail sent through a Nextcloud Mail account cannot carry the RFC
+	 * 8058 headers (Mail builds its own), so the body link is all it carries
+	 * (decision 165).
+	 *
+	 * @param string                   $body        The HTML body as written.
+	 * @param array<string,mixed>|null $unsubscribe integriq's link material, or null for an exempt mail.
+	 * @param string|null              $plain       The plain body as written, when the mail has one; else the HTML without tags.
+	 *
+	 * @return array{html: string, plain: string} The bodies.
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+	 */
+	public function bodies(string $body, ?array $unsubscribe, ?string $plain = null): array {
+		return [
+			'html' => $this->htmlWithLink(body: $body, unsubscribe: $unsubscribe),
+			'plain' => $this->plainWithLink(body: ($plain ?? strip_tags($body)), unsubscribe: $unsubscribe),
+		];
+	}//end bodies()
+
+	/**
 	 * Set the bodies, with the link line when there is one, and the headers.
 	 *
 	 * @param IMessage                 $message     The message being built.
@@ -85,8 +124,9 @@ class CaseMailOptOut {
 	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
 	 */
 	public function dress(IMessage $message, string $body, ?array $unsubscribe, ?string $plain = null): void {
-		$message->setHtmlBody($this->htmlWithLink(body: $body, unsubscribe: $unsubscribe));
-		$message->setPlainBody($this->plainWithLink(body: ($plain ?? strip_tags($body)), unsubscribe: $unsubscribe));
+		$bodies = $this->bodies(body: $body, unsubscribe: $unsubscribe, plain: $plain);
+		$message->setHtmlBody($bodies['html']);
+		$message->setPlainBody($bodies['plain']);
 		if ($unsubscribe !== null && $this->unsubscribeHeaders !== null) {
 			// Best effort (RFC 8058): OpenRegister's one helper sets the
 			// headers when the mailer exposes them; the body link stays.

@@ -123,19 +123,14 @@ describe('what the simple dashboard asks OpenRegister', () => {
 			/ 86400000
 		expect(span).toBe(7)
 
-		const closed = flattened(
-			widget('simple-closed-month').content.source.filter,
-			(field) => `filter[${field}]`,
-		)
-		expect(closed.get('filter[endDate][gte]')).toMatch(DAY)
-		expect(closed.get('filter[isFinalStatus]')).toBe('true')
+		// "Closed this month" reads the KPI endpoint (the reader's own
+		// closed cases, this month and last), not a count the browser asks.
+		const closed = widget('simple-closed-month').content
+		expect(closed.endpointSource.url).toBe('/apps/dossiq/api/dashboard/kpis')
+		expect(closed.valueField).toBe('myCompletedCount')
+		expect(closed.caption).toContain('{myCompletedLastMonth}')
 
-		for (const id of [
-			'simple-my-open',
-			'simple-due-soon',
-			'simple-waiting',
-			'simple-closed-month',
-		]) {
+		for (const id of ['simple-my-open', 'simple-due-soon', 'simple-waiting']) {
 			const params = flattened(
 				widget(id).content.source.filter,
 				(f) => `filter[${f}]`,
@@ -208,17 +203,16 @@ describe('whether the First today card shows', () => {
 		expect(none.met).toBe(false)
 	})
 
-	it('carries a text, because the dashboard gives up the cell of a banner without one', () => {
-		// CnDashboardPage.isCollapsedWidget: `isBannerDef(def) && text === ''`
-		// collapses the cell BEFORE the condition is looked at, and `text` is
-		// `content.text`, never `content.title`. A met condition is not enough.
+	it('is a custom widget that counts on the declared condition, so nothing collapses its cell', () => {
+		// The card names one case through FirstTodayWidget, not a library
+		// banner, so there is no `text` for the dashboard to collapse the cell
+		// on. The widget reads the filter from the condition declared here,
+		// the one the feed (appinfo/attention.json) is asserted against.
 		const card = widget('simple-first-today')
-		expect(card.type).toBe('banner')
-		expect(card.content.text).toBeTruthy()
-		expect(card.content.text).toBe(card.content.title)
-		// The count the card names is the value the condition read.
+		expect(card.type).toBe('custom')
 		expect(card.content.reason).toContain('{value}')
-		// And the page reads the condition from where it is declared.
-		expect(card.visibleWhen ?? card.content.visibleWhen).toBeTruthy()
+		expect(card.content.visibleWhen.source.filter['deadline[lt]']).toBe(
+			'@today+1d',
+		)
 	})
 })

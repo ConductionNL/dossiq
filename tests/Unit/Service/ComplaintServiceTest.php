@@ -521,6 +521,50 @@ class ComplaintServiceTest extends TestCase {
 	}//end testGetDeadlineAlertsHonoursTheWarningWindow()
 
 	/**
+	 * The overdue list for an assistant carries no complainant (REQ-MCP-203).
+	 *
+	 * The rows carry a fully populated complainant, so a projection that let
+	 * any of it through is caught here, and an unknown field added later stays
+	 * out because the row is rebuilt from an allowlist.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-203-overdue-complaints-via-redacted-projection
+	 */
+	public function testListOverdueComplaintsNeverCarriesTheComplainant(): void {
+		$today = $this->dates->today();
+		$this->withComplaints(
+			rows: [
+				[
+					'id' => 'k-1',
+					'complaintNumber' => 'KL-2026-0007',
+					'subject' => 'Lang wachten',
+					'status' => 'received',
+					'handler' => 'henk',
+					'acknowledgementOfReceiptDeadline' => $today->modify('-3 days')->format('Y-m-d'),
+					'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d'),
+					'complainant' => ['naam' => 'Fatima El-Amrani', 'email' => 'fatima@example.org', 'telefoon' => '0612345678'],
+					'description' => 'Ik wacht al zes weken.',
+					'someFutureField' => 'kept out',
+				],
+				['id' => 'k-2', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d'), 'complainant' => ['naam' => 'Henk']],
+			]
+		);
+
+		$result = $this->service->listOverdueComplaints();
+
+		$this->assertSame(1, $result['count']);
+		$row = $result['complaints'][0];
+		$this->assertSame('KL-2026-0007', $row['complaintNumber']);
+		$this->assertTrue($row['handlingOverdue']);
+		$this->assertTrue($row['acknowledgementOverdue']);
+		$this->assertArrayNotHasKey('complainant', $row);
+		$this->assertArrayNotHasKey('description', $row);
+		$this->assertArrayNotHasKey('someFutureField', $row);
+		$this->assertStringNotContainsString('Fatima', (string)json_encode($result));
+	}//end testListOverdueComplaintsNeverCarriesTheComplainant()
+
+	/**
 	 * createComplaint sends no klachtnummer, and reports the one it got back.
 	 *
 	 * The number is `complaintNumber`'s `x-openregister-generated` declaration
