@@ -22,7 +22,7 @@
 	browser that could write a holding would be a second way for the chain to
 	disagree with the case.
 
-	@spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	@spec openspec/specs/case-management/spec.md
 -->
 <template>
 	<div class="case-custody" data-testid="case-custody">
@@ -212,7 +212,7 @@ export default {
 		 *
 		 * @return {string} The case uuid, or the empty string.
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		caseId() {
 			return String(this.objectId || this.$route?.params?.id || '')
@@ -233,7 +233,7 @@ export default {
 			 * chain was never asked for.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+			 * @spec openspec/specs/case-management/spec.md
 			 */
 			handler() {
 				this.load()
@@ -249,7 +249,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+		 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 		 */
 		async load() {
 			if (this.caseId === '') {
@@ -294,7 +294,7 @@ export default {
 		 * @param {object} request The request row.
 		 * @return {boolean} True when it can still be answered.
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 		 */
 		isOpen(request) {
 			return request?.status === 'pending' || request?.status === 'escalated'
@@ -306,7 +306,7 @@ export default {
 		 * @param {object} request The request row.
 		 * @return {boolean} True when there is something to send.
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 		 */
 		hasReason(request) {
 			return String(this.refusalReasons[request?.id] ?? '').trim() !== ''
@@ -318,7 +318,7 @@ export default {
 		 * @param {object} request The request row.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 		 */
 		async accept(request) {
 			await this.answer(() => acceptTakeover(this.caseId, request.id))
@@ -330,7 +330,7 @@ export default {
 		 * @param {object} request The request row.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 		 */
 		async refuse(request) {
 			const reason = String(this.refusalReasons[request?.id] ?? '').trim()
@@ -356,7 +356,7 @@ export default {
 		 * @param {() => Promise<object>} send The call that carries the answer.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 		 */
 		async answer(send) {
 			this.answering = true
@@ -384,7 +384,7 @@ export default {
 		 * @param {object} holding The holding row.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+		 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 		 */
 		periodOf(holding) {
 			const from = this.dateOf(holding?.from)
@@ -404,7 +404,7 @@ export default {
 		 * @param {object} request The request row.
 		 * @return {string} The sentence.
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
+		 * @spec openspec/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 		 */
 		statusOf(request) {
 			const sentences = {
@@ -426,7 +426,7 @@ export default {
 		 * @param {string} raw The stored moment.
 		 * @return {string} The date, or the raw value when it cannot be read.
 		 *
-		 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+		 * @spec openspec/specs/case-management/spec.md
 		 */
 		dateOf(raw) {
 			if (!raw) {
