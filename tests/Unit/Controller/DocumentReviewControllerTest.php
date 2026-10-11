@@ -97,7 +97,7 @@ class DocumentReviewControllerTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
 		$reviews = new DocumentRelevance(settingsService: $settings, logger: $logger);
-		$assessments = new WOODocumentAssessmentService($settings, $this->createMock(IUserSession::class), $logger, null, null, $reviews);
+		$assessments = new WOODocumentAssessmentService($settings, $this->createMock(IUserSession::class), $logger, null, null, reviews: $reviews);
 		$guard = $this->createMock(CaseAccessGuard::class);
 		$guard->method('hasCaseReadAccess')->willReturn($read);
 		$guard->method('hasCaseMutationAccess')->willReturn($mutate);

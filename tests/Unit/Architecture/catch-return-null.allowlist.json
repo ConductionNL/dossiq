@@ -1,5 +1,5 @@
 {
-  "ceiling": 263,
+  "ceiling": 264,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -1877,6 +1877,13 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`service()` answers `return null` when OpenRegister's sharing or ownership service cannot be resolved from the container; `available()` then answers false and the reconciler answers `unavailable` and writes nothing (REQ-CRA-002)."
+    },
+    {
+      "file": "lib/Service/DecisionDocument/DecisionDocumentValidator.php",
+      "method": "holds",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`holds()` answers `return null` when OpenRegister's rule evaluator is absent or cannot evaluate the condition. Null is the documented third value of its `?bool` return: the caller reads it as 'unevaluable' and reports the rule as unchecked rather than as passed or failed. A refusal is never converted into null here."
     }
   ]
 }
