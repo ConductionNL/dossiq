@@ -91,6 +91,7 @@ class PackageInstaller {
 	 * @param ShippedConfigurationService $ledger       Records what was shipped.
 	 * @param IAppConfig                  $appConfig    Holds a package's settings.
 	 * @param LoggerInterface             $logger       What an install writes about itself.
+	 * @param PackageSchemaReferences     $references   Resolves settings that name another app's schema.
 	 */
 	public function __construct(
 		private readonly PackageDirectory $packages,
@@ -100,6 +101,7 @@ class PackageInstaller {
 		private readonly ShippedConfigurationService $ledger,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
+		private readonly PackageSchemaReferences $references,
 	) {
 	}//end __construct()
 
@@ -121,6 +123,7 @@ class PackageInstaller {
 			ledger: $this->ledger,
 			appConfig: $this->appConfig,
 			logger: $this->logger,
+			references: $this->references,
 		);
 	}//end fromRoot()
 
@@ -236,13 +239,29 @@ class PackageInstaller {
 		}
 
 		$parts = (array)($manifest['parts'] ?? []);
+		$settings = [];
+		if (in_array('settings', $parts, true) === true) {
+			$resolved = $this->references->resolve(settings: (array)json_decode($files['settings.json'], true));
+			if ($resolved['missing'] !== []) {
+				return $this->outcome(
+					status: self::REFUSED,
+					id: $id,
+					version: $version,
+					message: "Package '{$id}' needs " . implode('; ', $resolved['reasons']) . '.',
+				) + ['missing' => $resolved['missing']];
+			}
+
+			$settings = $resolved['settings'];
+		}
+
 		$result = $this->writer->writePackage(package: $id, groups: $this->groups(parts: $parts, files: $files));
 		if ($result['status'] !== 'success') {
 			return $this->outcome(status: self::FAILED, id: $id, version: $version, message: $result['message']);
 		}
 
 		$recorded = $this->record(id: $id, version: $version, written: $result['written'])
-			&& $this->record(id: $id, version: $version, written: $this->notYetInThisPackage(id: $id, adopted: $result['adopted']));
+			&& $this->record(id: $id, version: $version, written: $this->notYetInThisPackage(id: $id, adopted: $result['adopted']))
+			&& $this->ledger->recordPackage(set: $id, version: $version);
 		if ($recorded === false) {
 			$this->writer->undo(written: $result['written']);
 
@@ -254,9 +273,7 @@ class PackageInstaller {
 			);
 		}
 
-		if (in_array('settings', $parts, true) === true) {
-			$this->applySettings(files: $files);
-		}
+		$this->applySettings(settings: $settings);
 
 		$this->logger->info(
 			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted, {skipped} already present',
@@ -403,12 +420,11 @@ class PackageInstaller {
 	 * An administrator's value, an empty one included, is theirs: a package
 	 * supplies a default, it does not overrule a choice.
 	 *
-	 * @param array<string, string> $files The package files.
+	 * @param array<string, mixed> $settings The settings, references already resolved to ids.
 	 *
 	 * @return void
 	 */
-	private function applySettings(array $files): void {
-		$settings = (array)json_decode($files['settings.json'], true);
+	private function applySettings(array $settings): void {
 		$present = $this->appConfig->getKeys(Application::APP_ID);
 		foreach ($settings as $key => $value) {
 			if (in_array((string)$key, $present, true) === true) {

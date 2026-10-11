@@ -26,4 +26,13 @@
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds`
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithAnotherIdentifierIsNotAdopted`
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallNeverRemovesAnAdoptedRow`
+- [x] 1.10 A setting may name another app's schema by app, register and slug, resolved at install; a missing schema refuses the package with the app named (decision 198, `PackageSchemaReferences`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingNamingAnotherAppsSchemaIsStoredAsItsIdHere`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReferenceFindsTheSchemaUnderAnOlderRegisterSlug`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingReferencedSchemaRefusesThePackageAndNamesTheApp`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReferenceToAnAppThatIsNotInstalledRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMalformedReferenceMakesThePackageInvalid`
+- [x] 1.11 Record every installed package at its version, so a package that writes no rows reports current (decision 198).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingsOnlyPackageIsCurrentOnTheSecondInstall`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testThePackageVersionRecordIsOneRowUpdatedInPlace`
 - [ ] 2.1 Convert each seeder into a package, one pull request per package, deleting the seeder classes (bezwaar and beroep, VTH, besluitvorming, subsidie, DSO, LHS). Tracked by refactor lane R1 in hydra `procedures-are-configuration` T10.

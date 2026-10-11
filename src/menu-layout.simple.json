@@ -203,43 +203,25 @@
 			"id": "MyWorkHome",
 			"_note": "The landing page in the simple structure (openspec/changes/landing-views). It carries what the dashboard carried in this structure until 7 October 2026: the greeting with its My work / My team switch, First today, four counts of MY cases, the week, my cases per step, my tasks and continue working (openspec/changes/archive/2026-10-10-simple-list-and-dashboard, whose notes on each widget still hold). THE SWITCH NOW CHANGES VIEWS, NOT PAGES. Its options carry `view` (nextcloud-vue 2.66.0 page views): My work is the `mine` view, My team the `team` view the manifest declares on this page. Before, My work opened the dashboard and My team the team queue, two pages with two headers, and the greeting stood over an empty area. THE GREETING IS THE PAGE'S OWN GRID, the views are drawn below it. `configPatch` replaces only the `mine` view's widgets and layout, so `team` stays the manifest's, one definition for both structures. `mine` keeps two widgets of the full My work page that nothing in the design replaces: Cases you follow and My archival reviews. Deadlines, Open Cases and the task table are not repeated: the week, the counts, First today and My tasks already show the same cases. THE PAGE HEADER STAYS. The dashboard hid it (`showHeader: false`), but this page's header carries the links that stand in for the menu entries this profile removes (Your queue, Assigned to me, Close out your day), and a hidden header hides them too. `simple-my-tasks` is a custom widget, so the page gains its slot.",
 			"config": {
-				"widgets": [
-					{
-						"id": "simple-greeting",
-						"type": "header",
-						"title": "Greeting",
-						"content": {
-							"greeting": true,
-							"showDate": true,
-							"ground": true,
-							"views": {
-								"ariaLabel": "Whose work",
-								"options": [
-									{
-										"label": "My work",
-										"view": "mine"
-									},
-									{
-										"label": "My team",
-										"view": "team"
-									}
-								]
-							}
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "s1",
-						"widgetId": "simple-greeting",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
-					}
-				],
+				"widgets": [],
+				"layout": [],
 				"description": "Your work today, then the team",
+				"greeting": "first",
+				"showActionsMenu": false,
+				"viewLinks": [
+					{
+						"label": "Your queue",
+						"route": "PersonalQueue"
+					},
+					{
+						"label": "Assigned to me",
+						"route": "MyWork"
+					},
+					{
+						"label": "Close out your day",
+						"route": "EndOfDay"
+					}
+				],
 				"showWidgetActions": false
 			},
 			"configPatch": {
@@ -248,51 +230,10 @@
 						"widgets": [
 							{
 								"id": "simple-first-today",
-								"type": "banner",
+								"type": "custom",
 								"title": "First today",
-								"content": {
-									"layout": "attention",
-									"variant": "error",
-									"kicker": "First today",
-									"title": "Cases past their deadline",
-									"reason": "{value} of your cases are past their deadline or end today.",
-									"visibleWhen": {
-										"source": {
-											"register": "dossiq",
-											"schema": "case",
-											"filter": {
-												"assignee": "@me",
-												"isFinalStatus": false,
-												"statusHiddenInLists": false,
-												"isDraft": false,
-												"deadline[lt]": "@today+1d"
-											}
-										},
-										"op": "gt",
-										"value": 0
-									},
-									"actions": [
-										{
-											"label": "Open these cases",
-											"route": {
-												"name": "Cases",
-												"query": {
-													"assignee": "@me",
-													"isFinalStatus": "false",
-													"statusHiddenInLists": "false",
-													"isDraft": "false",
-													"deadline[lt]": "@today+1d"
-												}
-											}
-										},
-										{
-											"label": "Open the board",
-											"route": "WorkflowBoard",
-											"primary": true
-										}
-									],
-									"text": "Cases past their deadline"
-								}
+								"_note": "DqMijnWerk names ONE case, the one of yours furthest past its deadline, with its acts. The library banner counts cases and cannot name one, so FirstTodayWidget draws the library's attention card around the case it finds, and draws nothing when none of yours is due. See its registry entry.",
+								"content": {}
 							},
 							{
 								"id": "simple-my-open",
@@ -370,9 +311,9 @@
 							{
 								"id": "simple-waiting",
 								"type": "stat",
-								"title": "Awaiting applicant",
+								"title": "Waiting on the applicant",
 								"content": {
-									"label": "Awaiting applicant",
+									"label": "Waiting on the applicant",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
@@ -408,22 +349,15 @@
 								"title": "Closed this month",
 								"content": {
 									"label": "Closed this month",
+									"caption": "{lastMonthName}: {myCompletedLastMonth}",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
 									},
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"metric": "count",
-										"filter": {
-											"assignee": "@me",
-											"isFinalStatus": true,
-											"endDate": {
-												"gte": "@monthStart"
-											}
-										}
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
 									},
+									"valueField": "myCompletedCount",
 									"route": {
 										"name": "Cases",
 										"query": {
@@ -721,32 +655,8 @@
 					}
 				}
 			},
-			"configAppend": {
-				"headerActions": [
-					{
-						"id": "open-your-queue",
-						"type": "open-page",
-						"label": "Your queue",
-						"icon": "ClipboardListOutline",
-						"target": "PersonalQueue"
-					},
-					{
-						"id": "open-assigned-to-me",
-						"type": "open-page",
-						"label": "Assigned to me",
-						"icon": "ClipboardAccountOutline",
-						"target": "MyWork"
-					},
-					{
-						"id": "open-end-of-day",
-						"type": "open-page",
-						"label": "Close out your day",
-						"icon": "ClipboardCheckOutline",
-						"target": "EndOfDay"
-					}
-				]
-			},
 			"slots": {
+				"widget-simple-first-today": "FirstTodayWidget",
 				"widget-simple-my-tasks": "MyWorkWidget"
 			}
 		},
@@ -1305,6 +1215,7 @@
 			"id": "Cases",
 			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
+				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
 				"columns": [
