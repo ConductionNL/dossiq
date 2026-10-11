@@ -58,6 +58,25 @@
 
 		<template v-else>
 			<div
+				v-if="caseKinds"
+				class="case-parties__accepted"
+				:data-source="caseKinds.source"
+				data-testid="case-parties-accepted">
+				<span class="case-parties__accepted-label">{{
+					t('dossiq', 'This case type accepts')
+				}}</span>
+				<span
+					v-for="(kind, index) in caseKinds.kinds"
+					:key="kindCode(kind)"
+					class="case-parties__accepted-kind"
+					data-testid="case-parties-accepted-kind"
+					>{{ index + 1 }}. {{ kind.label || kindCode(kind) }}</span
+				>
+				<span class="case-parties__accepted-source">{{
+					acceptedSource
+				}}</span>
+			</div>
+			<div
 				v-if="verdicts.length > 0"
 				class="case-parties__verdicts"
 				data-testid="case-parties-verdicts">
@@ -99,6 +118,18 @@
 						</span>
 						<span v-if="kindOf(party)" class="case-parties__party-kind">
 							{{ kindOf(party) }}
+						</span>
+						<span
+							v-if="notAccepted(party)"
+							class="case-parties__not-accepted"
+							data-testid="case-parties-not-accepted">
+							{{ t('dossiq', 'Kind not accepted by this case type') }}
+						</span>
+						<span
+							v-if="languageOf(party)"
+							class="case-parties__language"
+							data-testid="case-parties-language">
+							{{ languageOf(party) }}
 						</span>
 						<span v-if="party.email" class="case-parties__party-email">
 							{{ party.email }}
@@ -153,6 +184,12 @@ import {
 	rolesInOrder,
 } from '../../services/caseParties.js'
 import { documentsOfParty } from '../../services/documentCorrespondents.js'
+import {
+	fetchCasePartyKinds,
+	fetchPartyLanguage,
+	kindCode,
+	languageLine,
+} from '../../services/pipelinqCaseApi.js'
 
 export default {
 	name: 'CasePartiesWidget',
@@ -178,6 +215,10 @@ export default {
 			documents: [],
 			/** Participant reference to the party they act for. */
 			represented: {},
+			/** The kinds this case's type accepts, as pipelinq or dossiq answered. */
+			caseKinds: null,
+			/** The writing language per party uuid. */
+			languages: {},
 		}
 	},
 
@@ -218,6 +259,21 @@ export default {
 		 * @return {object} Kind key to label.
 		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
+		/**
+		 * Where the accepted kinds came from, in the handler's words.
+		 *
+		 * @return {string} The sentence.
+		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
+		 */
+		acceptedSource() {
+			return this.caseKinds?.source === 'pipelinq'
+				? t('dossiq', 'Kinds from pipelinq, in the order of the case type')
+				: t(
+						'dossiq',
+						"Dossiq's own kinds: pipelinq is not installed on this instance",
+					)
+		},
+
 		kindLabels() {
 			const labels = {}
 			for (const kind of this.listing?.kinds || []) {
@@ -313,6 +369,7 @@ export default {
 				}
 			})
 			this.partyRecords = byUuid
+			await this.loadPipelinqReads(uuids)
 			this.represented = representedByMap(await fetchCaseRoles(this.caseId))
 			await this.loadDocuments()
 			this.loading = false
@@ -328,6 +385,76 @@ export default {
 		 * @return {string} The represented party's name, '' when they act for nobody.
 		 * @spec openspec/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
 		 */
+		/**
+		 * The kinds this case's type accepts and each party's writing language.
+		 *
+		 * Neither is allowed to fail the widget: the parties are OpenRegister's
+		 * and are drawn whatever pipelinq says. A read that fails leaves its
+		 * line out rather than inventing one.
+		 *
+		 * @param {Array<string>} uuids The party uuids on the case.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
+		 */
+		async loadPipelinqReads(uuids) {
+			this.caseKinds = null
+			this.languages = {}
+			try {
+				const kinds = await fetchCasePartyKinds(this.caseId)
+				if (kinds && Array.isArray(kinds.kinds)) {
+					this.caseKinds = kinds
+				}
+			} catch {
+				this.caseKinds = null
+			}
+
+			const answers = await Promise.all(
+				uuids.map((uuid) =>
+					fetchPartyLanguage(this.caseId, uuid).catch(() => null),
+				),
+			)
+			const languages = {}
+			uuids.forEach((uuid, index) => {
+				if (answers[index]) {
+					languages[uuid] = answers[index]
+				}
+			})
+			this.languages = languages
+		},
+
+		/**
+		 * The writing language line for a party, '' when none was read.
+		 *
+		 * @param {object} party The party link.
+		 * @return {string} The line.
+		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
+		 */
+		languageOf(party) {
+			return languageLine(this.languages[party?.partyUuid] || null)
+		},
+
+		/**
+		 * Whether a party's kind is one pipelinq says this case type does not accept.
+		 *
+		 * Only pipelinq's answer can say no: dossiq's own three are a fallback
+		 * vocabulary, not a declaration.
+		 *
+		 * @param {object} party The party link.
+		 * @return {boolean} True when the kind is not accepted.
+		 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
+		 */
+		notAccepted(party) {
+			if (!party?.partyKind || this.caseKinds?.source !== 'pipelinq') {
+				return false
+			}
+
+			return !this.caseKinds.kinds.some(
+				(kind) => kindCode(kind) === party.partyKind,
+			)
+		},
+
+		kindCode,
+
 		representedBy(party) {
 			const key = party.partyUuid || party.contactUid || ''
 			const uuid = this.represented[key] || ''
@@ -375,7 +502,12 @@ export default {
 			if (!party.partyKind) {
 				return ''
 			}
-			return this.kindLabels[party.partyKind] || party.partyKind
+			const offered = (this.caseKinds?.kinds || []).find(
+				(kind) => kindCode(kind) === party.partyKind,
+			)
+			return (
+				offered?.label || this.kindLabels[party.partyKind] || party.partyKind
+			)
 		},
 
 		/**
@@ -533,10 +665,42 @@ export default {
 	}
 
 	&__party-kind,
+	&__language,
+	&__accepted-source,
 	&__party-email,
 	&__represented,
 	&__documents {
 		color: var(--color-text-maxcontrast);
+	}
+
+	&__accepted {
+		display: flex;
+		flex-wrap: wrap;
+		gap: calc(var(--default-grid-baseline) * 2);
+		align-items: center;
+		padding: calc(var(--default-grid-baseline) * 2)
+			calc(var(--default-grid-baseline) * 3);
+		border-radius: var(--border-radius-large);
+		background-color: var(--color-background-hover);
+	}
+
+	&__accepted-label {
+		font-weight: 600;
+	}
+
+	&__accepted-kind {
+		padding: 0 calc(var(--default-grid-baseline) * 2);
+		border: 1px solid var(--color-border-dark);
+		border-radius: var(--border-radius-pill);
+		font-weight: 600;
+	}
+
+	&__not-accepted {
+		padding: 0 calc(var(--default-grid-baseline) * 2);
+		border-radius: var(--border-radius-pill);
+		background-color: var(--color-warning);
+		color: var(--color-warning-text, var(--color-main-text));
+		font-size: 0.85em;
 	}
 
 	&__primary {

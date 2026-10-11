@@ -21,9 +21,14 @@
  * 🔴 EVERY CASE, ROLE AND POOL THIS SPEC CREATES IS CLEANED UP: a stray pool
  * membership changes where somebody else's run routes its work.
  *
+ * 🔴 ACCEPTING IS AN EDIT, NOT A BUTTON (decision 164). The take-back scenario
+ * that needs two working days to pass is a unit test (TakeBackTest); what an
+ * e2e can prove is the other half: the assignee's first edit stamps
+ * `routing.acceptedAt`, so the window has nothing to take back.
+ *
  * Runs against the nightly instance, not in the build loop.
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -38,6 +43,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 	showObject,
+	updateObject,
 } from './helpers/fixtures.ts'
 
 let api: APIRequestContext
@@ -53,8 +59,11 @@ let token: string
 let caseTypeId = ''
 
 function ROUTE_API(caseId: string) {
-	return `/index.php/apps/${REGISTER}/api/case/${caseId}/route`
+	return `/index.php/apps/${REGISTER}/api/cases/${caseId}/route`
 }
+
+/** The signed-in admin, who is also the only member of the acceptance pool. */
+const ADMIN = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
 
 /**
  * Bind one pool membership to a case type's pool.
@@ -85,6 +94,7 @@ test.afterAll(async () => {
 })
 
 test.describe('work is divided in proportion to what each member is there for', () => {
+	// @e2e role-based-step-routing::a-part-time-member-gets-a-smaller-share
 	test('a part-time colleague receives a smaller share over a full cycle', async () => {
 		await bindMember('e2e-aad', 1)
 		await bindMember('e2e-bea', 0.4)
@@ -110,6 +120,7 @@ test.describe('work is divided in proportion to what each member is there for', 
 })
 
 test.describe('a rule may name a position inside a team', () => {
+	// @e2e role-based-step-routing::the-senior-of-one-team-not-of-all-teams
 	test('the senior of team zuid gets it, and the senior of noord is never a candidate', async () => {
 		await bindMember('e2e-sanne', 1, 'zuid')
 		await bindMember('e2e-mo', 1, 'noord')
@@ -138,6 +149,7 @@ test.describe('a rule may name a position inside a team', () => {
 })
 
 test.describe('the case holds the area it is in, and routing reads it', () => {
+	// @e2e role-based-step-routing::the-area-team-gets-the-case
 	test('a case at an address in wijk Zuid routes to the team declared for it', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Zuid`,
@@ -159,6 +171,7 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 		expect(body.areaFallbackUsed).toBe(false)
 	})
 
+	// @e2e role-based-step-routing::changing-the-address-re-resolves-the-area
 	test('correcting the address re-resolves the area', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Verhuisd`,
@@ -178,6 +191,7 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 		expect(stored.district).toBe('Noord')
 	})
 
+	// @e2e role-based-step-routing::an-address-outside-every-boundary-uses-the-fallback
 	test('an address outside every boundary routes by the fallback and says so', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Buiten de grenzen`,
@@ -200,5 +214,43 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 		expect(body.assignee).toBeTruthy()
 		expect(body.areaFallbackUsed).toBe(true)
 		expect(body.reason).toMatch(/fallback/i)
+	})
+})
+
+test.describe('work not taken up returns to the pool', () => {
+	// @e2e role-based-step-routing::accepting-cancels-the-window
+	test("the assignee's first edit accepts the case, so nothing is taken back", async () => {
+		// A team of one, so the signed-in admin is the only candidate.
+		await bindMember(ADMIN, 1, `${RUN_PREFIX}-aanname`)
+		const caseId = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Aannemen`,
+			caseType: caseTypeId,
+		})
+
+		const answer = await api.post(ROUTE_API(caseId), {
+			headers: { requesttoken: token },
+			data: {
+				strategy: 'round-robin',
+				roleType: 'behandelaar',
+				team: `${RUN_PREFIX}-aanname`,
+				takeBackAfter: { value: 2, unit: 'businessDays' },
+			},
+		})
+		const routed = await answer.json()
+		expect(routed.assignee).toBe(ADMIN)
+
+		const before = await showObject(api, 'case', caseId)
+		expect(before.routing.routedTo).toBe(ADMIN)
+		expect(before.routing.acceptedAt ?? '').toBe('')
+
+		// The first edit by the person it was routed to.
+		await updateObject(api, token, 'case', caseId, {
+			description: `${RUN_PREFIX} gebeld met de aanvrager`,
+		})
+
+		const after = await showObject(api, 'case', caseId)
+		expect(after.assignee).toBe(ADMIN)
+		expect(after.routing.acceptedAt).toBeTruthy()
+		expect(after.routingTakeBacks ?? []).toEqual([])
 	})
 })

@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\CaseStageDatesService;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -62,6 +63,7 @@ class CaseTypeController extends Controller {
 	 * @param IRequest               $request        The request.
 	 * @param CaseTypeResolver       $resolver       The effective blueprint of a case type.
 	 * @param CaseTypePublishService $publishService Validates and publishes a draft.
+	 * @param CaseStageDatesService  $stageDates     When one case reached each status.
 	 * @param LoggerInterface        $logger         The logger.
 	 */
 	public function __construct(
@@ -69,6 +71,7 @@ class CaseTypeController extends Controller {
 		IRequest $request,
 		private readonly CaseTypeResolver $resolver,
 		private readonly CaseTypePublishService $publishService,
+		private readonly CaseStageDatesService $stageDates,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -100,6 +103,28 @@ class CaseTypeController extends Controller {
 
 		if (($blueprint['caseType'] ?? []) === []) {
 			return new JSONResponse(['error' => 'Case type not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// The stage bar of ONE case asks with `?case=<id>`: each status then
+		// carries `reachedAt`, the first day that case got there. Without the
+		// parameter the answer is the type's, unchanged.
+		$caseId = (string)$this->request->getParam('case', '');
+		if ($caseId !== '') {
+			// A read that fails leaves the bar without dates, and says so in
+			// the log: the steps themselves are still the type's.
+			try {
+				$reached = $this->stageDates->reachedDatesFor(caseId: $caseId, statusTypes: $blueprint['statusTypes']);
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'[CaseTypeController] The status moves of a case could not be read for its stage bar',
+					['caseId' => $caseId, 'exception' => $e->getMessage()]
+				);
+				$reached = [];
+			}
+
+			foreach ($blueprint['statusTypes'] as $index => $statusType) {
+				$blueprint['statusTypes'][$index]['reachedAt'] = ($reached[(string)($statusType['id'] ?? '')] ?? '');
+			}
 		}
 
 		return new JSONResponse($blueprint);

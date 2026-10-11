@@ -390,6 +390,11 @@ describe('the simple profile', () => {
 					linked.add(action.target)
 				}
 			}
+			// The My work page draws its links as pills on the view-switch
+			// row (`viewLinks`, nextcloud-vue 2.79.0), as DqMijnWerk does.
+			for (const link of page.config?.viewLinks ?? []) {
+				linked.add(link.route)
+			}
 		}
 		const lost = flat(build(fullFile).menu)
 			.filter((entry) => !shown.has(entry.id))
@@ -411,12 +416,14 @@ describe('the simple profile', () => {
 				.find((page) => page.id === pageId)
 				.config.headerActions.map((action) => action.id)
 
-		expect(actionIds(built, 'MyWorkHome')).toEqual([
-			'new-case',
-			'open-your-queue',
-			'open-assigned-to-me',
-			'open-end-of-day',
-		])
+		// DqMijnWerk: the three links are pills on the switch row, not
+		// buttons in the header.
+		expect(actionIds(built, 'MyWorkHome')).toEqual(['new-case'])
+		expect(
+			built.pages
+				.find((page) => page.id === 'MyWorkHome')
+				.config.viewLinks.map((link) => link.route),
+		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
 		expect(actionIds(built, 'Dashboard')).toEqual([
 			'new-case',
 			'open-end-of-day',
@@ -434,10 +441,12 @@ describe('the simple profile', () => {
 		}
 	})
 
-	it('builds the same 69 pages as the full profile, so every route stays', () => {
+	// 69 -> 67: tenancy step 5 retires the Tenants and TenantDetail pages.
+	// 67 -> 68: woo-delivered-set-is-a-record adds one page.
+	it('builds the same 68 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(69)
+		expect(built.pages).toHaveLength(68)
 	})
 })
 
