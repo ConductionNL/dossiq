@@ -57,6 +57,7 @@ const PENDING_CASE_LINK = [
 	'mailIntakeEntry',
 	'mandateEscalation',
 	'milestoneRecord',
+	'permit',
 	'portaalBericht',
 	'toestemming',
 ]

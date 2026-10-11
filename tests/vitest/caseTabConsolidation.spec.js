@@ -2,9 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds FOURTEEN tabs, and keeps holding fourteen.
+ * The case page holds FIFTEEN tabs, and keeps holding fifteen.
  *
- * The strip grew from ten tabs to fourteen over one programme while the app
+ * The strip grew from ten tabs to fifteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
  * nothing counting it. This file is the thing that counts it. Every assertion
  * here is about config, and config fails quietly: a tab added to the strip
@@ -110,13 +110,23 @@ const tabs = () => widget('case-panels').content.tabs
  * requests that wait for a handler's yes or no) and Work does not hold (those
  * are tasks the handler made, not changes the resident asked for). It sits
  * after Work because deciding on a proposal is work. The ceiling is fourteen.
+ *
+ * Review is the fifteenth (woo-review-triage, woo-review-recall-and-stopping).
+ * It answers where a document review stands: which documents are in or out
+ * of scope, the stopping rule and its samples, the batches and what is still
+ * open. Files holds the documents themselves and Work holds the tasks a
+ * handler made; neither says how far through a large collection a review has
+ * got, or whether it may stop. It sits after Files because the documents are
+ * what it reviews, and it shows only on a case type that enables review.
+ * The ceiling is fifteen on that reason, and the next tab writes its own.
  */
-const TAB_CEILING = 14
+const TAB_CEILING = 15
 
-/** The fourteen labels, in the order a handler reads them. */
+/** The fifteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-data-panel', 'Data'],
 	['case-files', 'Files'],
+	['case-document-review', 'Review'],
 	['case-notes-panel', 'Notes'],
 	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
@@ -186,7 +196,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the fourteen tabs, in order', () => {
+	it('names the fifteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -356,6 +366,9 @@ describe('the container type this change depends on', () => {
 			// ended and the moment the next began; a row of values per
 			// holding would look complete on a chain with a gap in it.
 			'case-custody-panel': 'case-custody-pane',
+			// Review arrived with woo-review-triage: where a document review
+			// stands. A single surface keyed by TYPE (registry.js), like the rest.
+			'case-document-review': 'document-review',
 		}
 
 		// The tabs the LIBRARY draws from another app's leaf. Files is the

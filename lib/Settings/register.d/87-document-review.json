@@ -14,7 +14,8 @@
       "documentReview": {
         "slug": "documentReview",
         "icon": "FileEyeOutline",
-        "version": "1.0.1",
+        "version": "1.0.2",
+        "searchable": false,
         "title": "Document review",
         "description": "Per document collected on a case: is it about the request at all, who or which rule said so, its batch, and the pages a reviewer saw.",
         "type": "object",
@@ -115,7 +116,8 @@
       "triageRule": {
         "slug": "triageRule",
         "icon": "Tune",
-        "version": "1.0.1",
+        "version": "1.0.2",
+        "searchable": false,
         "title": "Triage rule",
         "description": "A visible rule on a case that marks collected documents in or out of scope without a reviewer opening each one.",
         "type": "object",
@@ -168,7 +170,8 @@
       "reviewBatch": {
         "slug": "reviewBatch",
         "icon": "TrayFull",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Review batch",
         "description": "A named part of a case's in-scope documents, assigned to one reviewer through a task.",
         "type": "object",

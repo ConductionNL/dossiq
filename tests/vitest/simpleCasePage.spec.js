@@ -353,13 +353,13 @@ describe('the tabs', () => {
 	const tabsOf = (config) =>
 		config.widgets.find((widget) => widget.id === 'case-panels').content
 
-	it('shows five and keeps the other nine under More, losing none', () => {
+	it('shows five and keeps the other ten under More, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow).map((tab) => tab.label),
 		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'History'])
-		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(9)
+		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(10)
 		const widgetIds = (content) => content.tabs.map((tab) => tab.widgetId).sort()
 		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
 	})

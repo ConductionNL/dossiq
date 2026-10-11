@@ -13,7 +13,8 @@
       "stoppingRule": {
         "slug": "stoppingRule",
         "icon": "FlagCheckered",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Stopping rule",
         "description": "How much of the relevant material a review must find, declared before the first document is marked.",
         "type": "object",
@@ -63,7 +64,8 @@
       "recallSample": {
         "slug": "recallSample",
         "icon": "ChartBoxOutline",
-        "version": "1.0.0",
+        "version": "1.0.1",
+        "searchable": false,
         "title": "Recall sample",
         "description": "A random sample from the documents set aside or not yet marked, judged to estimate how much relevant material the review missed.",
         "type": "object",
