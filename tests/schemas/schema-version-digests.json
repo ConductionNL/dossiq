@@ -804,7 +804,7 @@
         "digest": "e37a0adaca52e32c69047e28defe2aeb8d55ebf266fe474288108a54ffee29cb"
     },
     "lib/Settings/dossiq_register.json::propertyDefinition": {
-        "version": "1.5.1",
+        "version": "1.6.0",
         "digest": "b4478fc7ca310f7ce4b0f0020f649f4ae8a3f9bb33b452893fcb3f0e14ee80ab"
     },
     "lib/Settings/dossiq_register.json::result": {

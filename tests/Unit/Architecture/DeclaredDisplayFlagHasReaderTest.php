@@ -199,7 +199,7 @@ class DeclaredDisplayFlagHasReaderTest extends TestCase {
 	}//end testEveryAllowlistEntryNamesItsOwner()
 
 	/**
-	 * The two flags dossiq declares today are the two it is meant to declare.
+	 * The three flags dossiq declares today are the three it is meant to declare.
 	 *
 	 * A structural test over an empty set reports the same green as one over a
 	 * full set, and the scan finding nothing is exactly how this guard would
@@ -213,7 +213,7 @@ class DeclaredDisplayFlagHasReaderTest extends TestCase {
 	 */
 	public function testTheScanSeesTheFlagsThatAreThere(): void {
 		$this->assertSame(
-			expected: ['case.statusHiddenInLists', 'statusType.hiddenInLists'],
+			expected: ['case.statusHiddenInLists', 'propertyDefinition.hideOnCreate', 'statusType.hiddenInLists'],
 			actual: $this->scanner()->declaredFlags(),
 			message: 'the display-flag scan must still find dossiq\'s declared flags'
 		);

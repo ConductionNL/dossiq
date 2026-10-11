@@ -182,6 +182,41 @@
       "validFrom": "2026-01-01"
     },
     {
+      "id": "td-parkeervergunning-bewoners",
+      "caseType": "parkeervergunning-bewoners",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-kenteken-wijzigen-parkeervergunning",
+      "caseType": "kenteken-wijzigen-parkeervergunning",
+      "kind": "planned",
+      "legalBasis": "Servicenorm, geen wettelijke beslistermijn",
+      "legalBasisSources": [],
+      "standardDurationDays": 14,
+      "standardDurationWeeks": 2,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
       "id": "td-building-permit",
       "caseType": "building-permit",
       "kind": "planned",
