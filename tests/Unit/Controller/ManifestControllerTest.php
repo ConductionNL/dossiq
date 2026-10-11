@@ -32,7 +32,6 @@ use OCP\IConfig;
 use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
-use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
@@ -123,13 +122,6 @@ class ManifestControllerTest extends TestCase {
 		$userSession->method('getUser')->willReturn($user);
 		$this->config->method('getUserValue')->willReturn($stored);
 
-		$urlGenerator = $this->createMock(IURLGenerator::class);
-		$urlGenerator->method('linkToRoute')->willReturnCallback(
-			static function (string $route, array $args): string {
-				return '/index.php/settings/user/' . $args['section'] . '#' . $route;
-			}
-		);
-
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
@@ -149,7 +141,6 @@ class ManifestControllerTest extends TestCase {
 				text: new \OCA\Dossiq\Service\Support\TranslatedText(l10n: $l10n),
 			),
 			userSession: $userSession,
-			urlGenerator: $urlGenerator,
 			l10n: $l10n,
 		);
 	}//end controller()
@@ -201,7 +192,7 @@ class ManifestControllerTest extends TestCase {
 		$this->assertSame('caption', $menu[0]['type']);
 		$this->assertSame('My case types', $menu[0]['label']);
 		$this->assertSame(30, $menu[0]['order']);
-		$this->assertSame('/index.php/settings/user/dossiq#settings.PersonalSettings.index', $menu[0]['href']);
+		$this->assertSame('#user-settings', $menu[0]['href']);
 
 		$this->assertSame('ct-uuid-b', $menu[1]['id']);
 		$this->assertSame('Bezwaar', $menu[1]['label']);

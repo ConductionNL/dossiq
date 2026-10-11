@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair\Vth;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
+
 /**
  * Coerces OpenRegister result rows into the shapes the VTH seed needs.
  *
@@ -38,6 +40,17 @@ namespace OCA\Dossiq\Repair\Vth;
  * @spec openspec/specs/vth-workflow-templates/spec.md
  */
 class VthSeedRowReader {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 */
+	public function __construct(
+		private readonly LanguageMapText $text = new LanguageMapText(),
+	) {
+	}//end __construct()
+
 	/**
 	 * Extract the first row id from an OpenRegister result set.
 	 *
@@ -105,7 +118,7 @@ class VthSeedRowReader {
 				continue;
 			}
 
-			$name = (string)($normalized['name'] ?? '');
+			$name = $this->text->textOf(value: ($normalized['name'] ?? null));
 			$id = $this->rowId(row: $normalized);
 			if ($name !== '' && $id !== '') {
 				$map[$name] = $id;

@@ -185,14 +185,6 @@
 				}
 			}
 		},
-		"card": {
-			"title": "Close out your day",
-			"text": "See what is still open today and get it ready for tomorrow.",
-			"link": {
-				"label": "To the day close",
-				"route": "EndOfDay"
-			}
-		},
 		"footer": ["settings", "Documentation"]
 	},
 	"pages": [

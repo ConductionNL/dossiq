@@ -272,12 +272,12 @@ test.describe('A case opens beside the list it came from', () => {
 		await fresh.close()
 	})
 
-	test('the personal options are in the Nextcloud personal settings @spec REQ-CPL-04', async ({
+	test('the personal options are in the user settings dialog @spec REQ-CPL-04', async ({
 		page,
 	}) => {
-		await page.goto('/settings/user/dossiq', PAGE_LOAD)
-		await expect(page.locator('#dossiq-personal-settings')).toBeVisible(
-			PAGE_LOAD,
-		)
+		await page.goto('/apps/dossiq/#user-settings', PAGE_LOAD)
+		await expect(
+			page.getByRole('dialog').locator('#settings-section_substitution'),
+		).toBeVisible(PAGE_LOAD)
 	})
 })

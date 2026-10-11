@@ -5,7 +5,7 @@
   Case types in my menu: the case types this user wants under My case types
   in dossiq's sidebar, in their own order (board DqPersoonlijkeInstellingen).
 
-  It lives in Nextcloud's personal settings, in the Dossiq section, because the
+  It lives in the in-app user settings dialog (UserSettings.vue), because the
   choice is the reader's own. Every change is saved at once, as the board says.
 
   Reordering has two ways in. A mouse drags a row by its handle; a keyboard

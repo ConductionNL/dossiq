@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -53,9 +54,11 @@ class TermCaseTypeResolver {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -86,7 +89,7 @@ class TermCaseTypeResolver {
 
 		$titlesBySlug = [];
 		foreach ($caseTypes as $caseType) {
-			$titlesBySlug[$this->caseTypeKey(caseType: $caseType)] = (string)($caseType['title'] ?? '');
+			$titlesBySlug[$this->caseTypeKey(caseType: $caseType)] = $this->text->textOf(value: ($caseType['title'] ?? null));
 		}
 
 		$byRow = [];
@@ -96,7 +99,7 @@ class TermCaseTypeResolver {
 			$caseTypeId = $this->ref(value: ($case['caseType'] ?? null));
 			if ($caseTypeId !== '' && isset($caseTypes[$caseTypeId]) === true) {
 				$key = $this->caseTypeKey(caseType: $caseTypes[$caseTypeId]);
-				$byRow[$index] = ['key' => $key, 'title' => (string)($caseTypes[$caseTypeId]['title'] ?? '')];
+				$byRow[$index] = ['key' => $key, 'title' => $this->text->textOf(value: ($caseTypes[$caseTypeId]['title'] ?? null))];
 				continue;
 			}
 

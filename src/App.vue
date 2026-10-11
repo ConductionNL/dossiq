@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <template>
 	<CnAppRoot
+		ref="appRoot"
 		:aiCompanion="true"
 		:manifest="manifest"
 		:registry="registry"
@@ -36,6 +37,20 @@
 			show a tag and could not offer the Click-to-edit that adds a first
 			one.
 		-->
+		<!--
+			The user settings dialog. Every per-person preference lives here;
+			dossiq has no Nextcloud personal settings page (Ruben, 11 Oct 2026).
+			Filling this slot drops CnAppRoot's fallback sections, so
+			UserSettings repeats credentials and gets the walkthrough replay
+			from walkthroughSettings() below.
+		-->
+		<template #user-settings>
+			<UserSettings
+				:manifest="manifest"
+				:walkthrough="walkthroughSettings()"
+				@continueWalkthrough="appRoot() && appRoot().continueWalkthroughFromSettings()"
+				@restartWalkthrough="appRoot() && appRoot().restartWalkthroughFromSettings()" />
+		</template>
 		<template #sidebar="{ pageSidebarComponent }">
 			<CnObjectSidebar
 				v-if="objectSidebarState.active"
@@ -65,16 +80,24 @@ import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { loadState } from '@nextcloud/initial-state'
 import { translate as ncT } from '@nextcloud/l10n'
 import { reactive } from 'vue'
+import UserSettings from './views/settings/UserSettings.vue'
 import { initializeStores } from './store/store.js'
 import { notificationLabels } from './utils/notificationLabels.js'
 import { supportDialogForThisLoad } from './utils/onboardingOrder.js'
 import { currentPermissions } from './utils/permissions.js'
+
+/**
+ * The location hash that opens the user settings dialog. The "My case types"
+ * caption's pencil links here (ManifestController::USER_SETTINGS_HREF).
+ */
+const USER_SETTINGS_HASH = '#user-settings'
 
 export default {
 	name: 'App',
 	components: {
 		CnAppRoot,
 		CnObjectSidebar,
+		UserSettings,
 	},
 
 	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
@@ -208,7 +231,71 @@ export default {
 		await initializeStores()
 	},
 
+	mounted() {
+		window.addEventListener('hashchange', this.openUserSettingsFromHash)
+		this.openUserSettingsFromHash()
+	},
+
+	beforeUnmount() {
+		window.removeEventListener('hashchange', this.openUserSettingsFromHash)
+	},
+
 	methods: {
+		/**
+		 * The mounted CnAppRoot, or null before it mounts.
+		 *
+		 * @return {object|null} The CnAppRoot instance.
+		 * @spec openspec/specs/personal-settings-surface/spec.md
+		 */
+		appRoot() {
+			return this.$refs.appRoot || null
+		},
+
+		/**
+		 * Open the user settings dialog when the location hash asks for it,
+		 * then drop the hash so a reload does not open it again.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/personal-settings-surface/spec.md
+		 */
+		openUserSettingsFromHash() {
+			const root = this.appRoot()
+			if (!root || window.location.hash !== USER_SETTINGS_HASH) {
+				return
+			}
+			root.userSettingsOpen = true
+			window.history.replaceState(
+				window.history.state,
+				'',
+				window.location.pathname + window.location.search,
+			)
+		},
+
+		/**
+		 * The walkthrough replay section CnAppRoot draws in its own fallback,
+		 * which filling the #user-settings slot switches off. Reads CnAppRoot's
+		 * state and labels, so the wording and the behaviour stay the library's.
+		 *
+		 * @return {object|null} Section props for UserSettings, or null without a tour.
+		 * @spec openspec/specs/personal-settings-surface/spec.md
+		 */
+		walkthroughSettings() {
+			const root = this.appRoot()
+			if (!root || !root.walkthroughEnabled) {
+				return null
+			}
+			const inProgress = Boolean(root.walkthroughProgressValue)
+			return {
+				sectionName: root.restartWalkthroughSectionName,
+				hint: root.restartWalkthroughHint,
+				inProgress,
+				continueLabel: root.continueWalkthroughLabel,
+				restartLabel: inProgress
+					? root.startOverWalkthroughLabel
+					: root.restartWalkthroughLabel,
+			}
+		},
+
 		/**
 		 * Translate function passed down to CnAppRoot / CnAppNav /
 		 * CnPageRenderer. Closes over the Nextcloud `translate` import so

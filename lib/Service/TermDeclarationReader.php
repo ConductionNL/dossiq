@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 
 /**
@@ -54,9 +55,11 @@ class TermDeclarationReader {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -248,7 +251,7 @@ class TermDeclarationReader {
 			'termDays' => $this->days(value: ($row['phaseTermDays'] ?? null)),
 			'share' => (float)($row['phaseTermShare'] ?? 0),
 			'order' => (int)($row['order'] ?? 0),
-			'name' => (string)($row['name'] ?? ''),
+			'name' => $this->text->textOf(value: ($row['name'] ?? null)),
 		];
 	}//end phaseOf()
 

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * Reads a case type's lifecycle rules and its statuses.
@@ -42,11 +43,13 @@ class CaseTypeReader {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -70,7 +73,7 @@ class CaseTypeReader {
 			'extensionAllowed' => $this->flag(value: ($row['extensionAllowed'] ?? false)),
 			'extensionPeriod' => (string)($row['extensionPeriod'] ?? ''),
 			'initialStatus' => (string)($row['initialStatus'] ?? ''),
-			'title' => (string)($row['title'] ?? ($row['name'] ?? '')),
+			'title' => $this->text->textOf(value: ($row['title'] ?? ($row['name'] ?? null))),
 		];
 	}//end read()
 

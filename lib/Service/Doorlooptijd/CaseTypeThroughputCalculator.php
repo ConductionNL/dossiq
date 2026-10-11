@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Doorlooptijd;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\WorkingClock;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * Computes average closed-case throughput per case-type.
@@ -55,9 +56,11 @@ class CaseTypeThroughputCalculator {
 	 *                                 this calculator unchanged; without it the
 	 *                                 working column is absent rather than
 	 *                                 quietly equal to the calendar-day one.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly ?WorkingClock $clock = null,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 
 	}//end __construct()
@@ -102,7 +105,7 @@ class CaseTypeThroughputCalculator {
 		foreach ($accum as $caseTypeId => $stats) {
 			$title = $caseTypeId;
 			if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
-				$title = (string)$caseTypeIndex[$caseTypeId]['title'];
+				$title = $this->text->textOf(value: $caseTypeIndex[$caseTypeId]['title']);
 			}
 
 			$out[] = [
