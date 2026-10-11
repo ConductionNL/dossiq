@@ -12,41 +12,19 @@
 	@spec openspec/specs/dashboard/spec.md
 -->
 <template>
-	<section
+	<CnBannerWidget
 		v-if="found"
-		class="cn-banner-widget cn-banner-widget--attention cn-banner-widget--error"
-		:aria-labelledby="headingId"
-		data-testid="first-today">
-		<div class="cn-banner-widget__body">
-			<p class="cn-banner-widget__kicker">
-				{{ t('dossiq', 'First today') }}
-			</p>
-			<h3 :id="headingId" class="cn-banner-widget__title">
-				{{ found.title }}
-			</h3>
-			<p class="cn-banner-widget__reason">
-				{{ reason }}
-			</p>
-		</div>
-		<div class="cn-banner-widget__actions">
-			<router-link
-				v-for="action in actions"
-				:key="action.key"
-				class="cn-banner-widget__action"
-				:class="
-					action.primary
-						? 'cn-banner-widget__action--primary'
-						: 'cn-banner-widget__action--secondary'
-				"
-				:to="action.to"
-				data-testid="first-today-action">
-				{{ action.label }}
-			</router-link>
-		</div>
-	</section>
+		layout="attention"
+		variant="error"
+		:kicker="t('dossiq', 'First today')"
+		:title="found.title"
+		:reason="reason"
+		:actions="actions"
+		data-testid="first-today" />
 </template>
 
 <script>
+import { CnBannerWidget } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import { translate as t } from '@nextcloud/l10n'
 import { useObjectStore } from '../../store/modules/object.js'
@@ -57,6 +35,8 @@ const DAY = 86400000
 
 export default {
 	name: 'FirstTodayWidget',
+
+	components: { CnBannerWidget },
 
 	// Declared on purpose: the mount script passes `title`, and the host draws
 	// the heading (hydra#316). See OverdueCasesWidget.
@@ -96,16 +76,18 @@ export default {
 		},
 
 		/**
-		 * The acts on this case, the case page last and the one that stands out.
+		 * The acts on this case, the case page the one that stands out. The
+		 * board draws four; CnBannerWidget takes two (library gap: first-today
+		 * actions), so the board link, which is in the menu, is the one left out.
 		 *
 		 * @return {Array<object>} The actions.
 		 */
 		actions() {
 			return [
 				{
-					key: 'all',
+					id: 'all',
 					label: t('dossiq', 'All cases past their deadline'),
-					to: {
+					route: {
 						name: 'Cases',
 						query: {
 							assignee: '@me',
@@ -117,15 +99,10 @@ export default {
 					},
 				},
 				{
-					key: 'board',
-					label: t('dossiq', 'Open the board'),
-					to: { name: 'WorkflowBoard' },
-				},
-				{
-					key: 'open',
+					id: 'open',
 					label: t('dossiq', 'Open case'),
 					primary: true,
-					to: { name: 'CaseDetail', params: { id: this.found.id } },
+					route: { name: 'CaseDetail', params: { id: this.found.id } },
 				},
 			]
 		},
@@ -190,119 +167,3 @@ export default {
 	},
 }
 </script>
-
-<!-- The library attention card's own rules (CnBannerWidget, scoped there, so they
-     do not reach this component): the card drawn around the case this widget finds. -->
-<style scoped>
-.cn-banner-widget {
-	width: 100%;
-}
-
-/* Attention card. The severity edge is an inset shadow, so it takes no width. */
-.cn-banner-widget--attention {
-	--cn-banner-accent: var(--color-primary-element);
-	--cn-banner-accent-text: var(--color-primary-element);
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 16px 24px;
-	box-sizing: border-box;
-	padding: 20px 24px 20px 28px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-container, var(--border-radius-large, 12px));
-	background: var(--color-main-background);
-	box-shadow: inset 4px 0 0 0 var(--cn-banner-accent);
-}
-
-.cn-banner-widget--attention.cn-banner-widget--warning {
-	--cn-banner-accent: var(--color-element-warning, var(--color-warning));
-	--cn-banner-accent-text: var(--color-text-warning, var(--color-warning-text, var(--color-main-text)));
-}
-
-.cn-banner-widget--attention.cn-banner-widget--error {
-	--cn-banner-accent: var(--color-element-error, var(--color-error));
-	--cn-banner-accent-text: var(--color-text-error, var(--color-error-text));
-}
-
-.cn-banner-widget--attention.cn-banner-widget--success {
-	--cn-banner-accent: var(--color-element-success, var(--color-success));
-	--cn-banner-accent-text: var(--color-text-success, var(--color-success-text));
-}
-
-.cn-banner-widget__body {
-	display: flex;
-	flex: 1 1 320px;
-	flex-direction: column;
-	gap: 6px;
-	min-width: 0;
-}
-
-.cn-banner-widget__kicker {
-	margin: 0;
-	font-size: 0.85em;
-	font-weight: 700;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--cn-banner-accent-text);
-}
-
-.cn-banner-widget__title {
-	margin: 0;
-	font-size: 1.3em;
-	font-weight: 700;
-	line-height: 1.3;
-	color: var(--color-main-text);
-}
-
-.cn-banner-widget__reason {
-	margin: 0;
-	color: var(--color-text-maxcontrast);
-}
-
-.cn-banner-widget__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-}
-
-.cn-banner-widget__action {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	min-height: var(--default-clickable-area, 40px);
-	margin: 0;
-	padding: 0 16px;
-	border: 1px solid var(--color-border-maxcontrast);
-	border-radius: var(--border-radius-element, var(--border-radius-large, 8px));
-	font: inherit;
-	font-weight: 600;
-	text-decoration: none;
-	cursor: pointer;
-}
-
-.cn-banner-widget__action--secondary {
-	background: var(--color-main-background);
-	color: var(--color-main-text);
-}
-
-.cn-banner-widget__action--secondary:hover {
-	background: var(--color-background-hover);
-}
-
-.cn-banner-widget__action--primary {
-	border-color: var(--color-primary-element);
-	background: var(--color-primary-element);
-	color: var(--color-primary-element-text);
-}
-
-.cn-banner-widget__action--primary:hover {
-	border-color: var(--color-primary-element-hover);
-	background: var(--color-primary-element-hover);
-}
-
-.cn-banner-widget__action:focus-visible {
-	outline: 2px solid var(--color-main-text);
-	outline-offset: 2px;
-}
-</style>

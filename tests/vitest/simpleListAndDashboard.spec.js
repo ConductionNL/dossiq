@@ -553,7 +553,7 @@ describe('the landing page', () => {
 		expect(simple.slots['widget-simple-first-today']).toBe('FirstTodayWidget')
 		expect(registrySource).toContain('FirstTodayWidget')
 		const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
-		expect(source).toMatch(/primary: true,\s+to: \{ name: 'CaseDetail'/)
+		expect(source).toMatch(/primary: true,\s+route: \{ name: 'CaseDetail'/)
 		expect(source).toContain("'deadline[lt]': tomorrow")
 	})
 
