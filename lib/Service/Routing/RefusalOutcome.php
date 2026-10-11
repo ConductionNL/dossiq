@@ -283,7 +283,7 @@ class RefusalOutcome {
 	 * @return string The Nextcloud group id, or '' when none resolves.
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
-	 * @spec openspec/changes/one-team-model/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
+	 * @spec openspec/specs/role-routing-via-or-rbac/spec.md#requirement-an-organisation-role-names-its-nextcloud-group-req-team-02
 	 */
 	private function teamFor(array $destination): string {
 		$objectService = $this->settingsService->getObjectService();

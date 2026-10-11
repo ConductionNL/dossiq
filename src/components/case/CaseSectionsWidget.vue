@@ -70,6 +70,7 @@
 
 <script>
 import { CnDetailWidgetHost } from '@conduction/nextcloud-vue'
+import { translate as t } from '@nextcloud/l10n'
 import { unfittedWidget } from './unfittedWidget.js'
 
 /**
@@ -187,7 +188,9 @@ export default {
 				.filter((entry) => entry && entry.widget && entry.widget.type)
 				.map((entry, index) => ({
 					key: entry.widget.id || `${entry.widget.type}-${index}`,
-					label: entry.label || entry.widget.title || '',
+					// The headings are manifest strings, so they go through the app's
+					// catalogue here: nothing else translates them.
+					label: t('dossiq', entry.label || entry.widget.title || ''),
 					widget: unfittedWidget(entry.widget),
 				}))
 		},

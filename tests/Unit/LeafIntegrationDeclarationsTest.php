@@ -57,9 +57,13 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 	 * `planninq-projects` is planninq's (RegisterProjectsLeafListener::LEAF_ID),
 	 * placed on the case by dossiq#3190.
 	 *
+	 * `portaliq-change-proposal-queue` is portaliq's
+	 * (RegisterProposalLeavesListener::QUEUE_LEAF_ID), placed on the case by
+	 * portal-change-proposals-on-the-case.
+	 *
 	 * @var array<int, string>
 	 */
-	private const CROSS_APP_LEAVES = ['decidesk-decisions', 'pipelinq-contact-moments', 'pipelinq-party', 'planninq-projects'];
+	private const CROSS_APP_LEAVES = ['decidesk-decisions', 'pipelinq-contact-moments', 'pipelinq-party', 'planninq-projects', 'portaliq-change-proposal-queue'];
 
 	/**
 	 * Values in `linkedTypes` that are NOT leaf ids and must not be read as one.

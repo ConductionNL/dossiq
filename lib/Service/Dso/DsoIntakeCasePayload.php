@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
+use DateTimeInterface;
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use RuntimeException;
@@ -104,7 +105,7 @@ class DsoIntakeCasePayload {
 			'procedureType' => $procedureType,
 			'permitApplicationRef' => $permitApplicationId,
 			'startDate' => $submissionDate,
-		];
+		] + $this->receivedAtField(submitted: $submitted);
 
 		$summary = trim((string)($permitApplication['mappedSummary'] ?? ''));
 		if ($summary !== '') {
@@ -217,4 +218,34 @@ class DsoIntakeCasePayload {
 
 		return 'reguliere';
 	}//end determineProcedureType()
+
+	/**
+	 * The `receivedAt` field the submission gives its case, or none.
+	 *
+	 * The submission moment, when the record carries one with a time, is when
+	 * the request was received: the term starts there, not at the moment the
+	 * case row is written (REQ-TERM-043). A bare date says only the day, and
+	 * the start date already carries that.
+	 *
+	 * @param string $submitted The record's `submissionDate` or `indieningsdatum`.
+	 *
+	 * @return array<string, string> `['receivedAt' => moment]`, or [].
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 */
+	private function receivedAtField(string $submitted): array {
+		$submitted = trim($submitted);
+		if (preg_match('/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/', $submitted) !== 1) {
+			return [];
+		}
+
+		// A value date_create() cannot read answers false, where the
+		// constructor would throw: an unreadable stamp claims no moment.
+		$moment = date_create_immutable($submitted);
+		if ($moment === false) {
+			return [];
+		}
+
+		return ['receivedAt' => $moment->format(DateTimeInterface::ATOM)];
+	}//end receivedAtField()
 }//end class

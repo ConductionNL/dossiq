@@ -1,13 +1,16 @@
 <?php
 
 /**
- * What a term came to, and the share of decided terms that were met.
+ * How a term instance is classified as met, missed, running or suspended, and
+ * the share of decided terms that were met.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Service\Termijn
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @spec openspec/specs/woo-case-type/spec.md
  */
 
 declare(strict_types=1);
@@ -18,30 +21,32 @@ use OCA\Dossiq\Service\Termijn\TermOutcome;
 use PHPUnit\Framework\TestCase;
 
 /**
- * REQ-WTO-003: met, missed, running, suspended, and no share of nothing.
- *
  * @covers \OCA\Dossiq\Service\Termijn\TermOutcome
  */
 class TermOutcomeTest extends TestCase {
 	/**
-	 * Each status lands in its outcome, and a late decision is missed.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
+	 * @return array<string, array{0: array<string, string>, 1: string}>
 	 */
-	public function testEveryStatusHasOneOutcome(): void {
-		$outcome = new TermOutcome();
+	public static function rows(): array {
+		return [
+			'completed in time' => [['status' => 'completed', 'voltooiDatum' => '2026-05-01', 'endDateCurrent' => '2026-05-02'], 'met'],
+			'completed late' => [['status' => 'completed', 'voltooiDatum' => '2026-05-03T10:00:00+00:00', 'endDateCurrent' => '2026-05-02'], 'missed'],
+			'completed without a date' => [['status' => 'completed'], 'met'],
+			'exceeded' => [['status' => 'exceeded'], 'missed'],
+			'running' => [['status' => 'lopend'], 'running'],
+			'extended' => [['status' => 'verlengd'], 'running'],
+			'paused' => [['status' => 'paused'], 'suspended'],
+			'withdrawn' => [['status' => 'withdrawn'], ''],
+			'no status' => [[], ''],
+		];
+	}
 
-		self::assertSame(TermOutcome::MET, $outcome->classify(['status' => 'completed', 'endDateCurrent' => '2026-11-02', 'voltooiDatum' => '2026-11-02']));
-		self::assertSame(TermOutcome::MET, $outcome->classify(['status' => 'completed', 'endDateCurrent' => '2026-11-02']));
-		self::assertSame(TermOutcome::MISSED, $outcome->classify(['status' => 'completed', 'endDateCurrent' => '2026-11-02', 'voltooiDatum' => '2026-11-03']));
-		self::assertSame(TermOutcome::MISSED, $outcome->classify(['status' => 'exceeded']));
-		self::assertSame(TermOutcome::SUSPENDED, $outcome->classify(['status' => 'paused']));
-		self::assertSame(TermOutcome::RUNNING, $outcome->classify(['status' => 'lopend']));
-		self::assertSame(TermOutcome::RUNNING, $outcome->classify(['status' => 'verlengd']));
-		self::assertSame(TermOutcome::RUNNING, $outcome->classify([]));
-	}//end testEveryStatusHasOneOutcome()
+	/**
+	 * @dataProvider rows
+	 */
+	public function testClassify(array $row, string $expected): void {
+		self::assertSame($expected, (new TermOutcome())->classify(row: $row));
+	}
 
 	/**
 	 * The share counts decided terms only, and nothing decided is no figure.
@@ -57,4 +62,4 @@ class TermOutcomeTest extends TestCase {
 		self::assertSame(0.0, $outcome->shareMet(met: 0, missed: 2));
 		self::assertNull($outcome->shareMet(met: 0, missed: 0));
 	}//end testTheShareIsOverDecidedTermsOnly()
-}//end class
+}

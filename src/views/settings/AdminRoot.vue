@@ -247,6 +247,19 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-woo-reports"
+			:name="t('dossiq', 'Woo review reports')"
+			:description="
+				t(
+					'dossiq',
+					'Choose which Woo review reports your organisation uses, and who may read the throughput per reviewer.',
+				)
+			"
+			:loading="!storesReady">
+			<WooReportsSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-shipped-configuration"
 			:name="t('dossiq', 'What shipped with dossiq')"
 			:description="
@@ -324,6 +337,7 @@ import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
+import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import { initializeStores } from '../../store/store.js'
 
@@ -344,6 +358,7 @@ export default {
 		SearchIndexTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
+		WooReportsSettingsTab,
 		QueueUrgencySettingsTab,
 		MandaatMatrixTab,
 		MandaatMatrixSettingsTab,

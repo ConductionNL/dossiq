@@ -84,6 +84,7 @@ class ObjectListenerRegistrar {
 		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);
+		(new WooListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**

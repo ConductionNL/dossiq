@@ -17,7 +17,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-message-box-recipient/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -46,16 +46,17 @@ use Throwable;
  * Anything else answers null, and portaliq sends nothing.
  *
  * NO DOUBLE SEND. Dossiq's own message box letters (the compose dialog through
- * BerichtenboxService, decisions and term notices through
- * BerichtenboxRoutingService) go out directly and write no portaalBericht, so
- * no inbox message is one dossiq already delivered. A path that ever writes
- * both must make this method answer null for its messages.
+ * BerichtenboxService) go out directly and write no portaalBericht. Decisions
+ * and term notices go through RequesterNoticeSender, which writes a
+ * portaalBericht OR sends digital post, never both, so no inbox message is one
+ * dossiq already delivered. A path that ever writes both must make this method
+ * answer null for its messages.
  *
  * THE READ RUNS AS THE SYSTEM. Portaliq calls this from a background job with
  * no Nextcloud user, where OpenRegister's RBAC would answer nothing. The
  * message id is the only input.
  *
- * @spec openspec/changes/portal-message-box-recipient/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalMessageBoxRecipient {
 	use SearchesObjects;
@@ -79,7 +80,7 @@ class PortalMessageBoxRecipient {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-message-box-recipient/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function forMessage(string $messageId): ?string {
 		$objectService = $this->settingsService->getObjectService();
