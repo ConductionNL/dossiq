@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\TermResolution;
+use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -433,6 +434,67 @@ class ComplaintService {
 
 		return ['overdue' => $overdue, 'warning' => $warning];
 	}//end getDeadlineAlerts()
+
+	/**
+	 * Fields of a complaint an assistant may see in a list (REQ-MCP-203).
+	 *
+	 * `complainant` is the citizen and is never one of them.
+	 *
+	 * @var array<string>
+	 */
+	private const OVERDUE_PROJECTION = [
+		'id',
+		'complaintNumber',
+		'subject',
+		'category',
+		'status',
+		'handler',
+		'acknowledgementOfReceiptDeadline',
+		'afhandelDeadline',
+	];
+
+	/**
+	 * The complaints past their handling deadline, without the complainant.
+	 *
+	 * The projection is applied HERE, on the way out, because the dialect has
+	 * no field projection and `complaint` stays get-only there. A row is
+	 * rebuilt from an allowlist rather than stripped of a denylist, so a field
+	 * added to the schema later stays out until someone names it.
+	 *
+	 * @return array{complaints: list<array<string, mixed>>, count: int}
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-203-overdue-complaints-via-redacted-projection
+	 */
+	#[McpTool(
+		name: 'listOverdueComplaints',
+		description: 'Complaints (klachten) past their handling deadline: number, subject, category, status, handler and deadlines. Never the complainant.',
+		readOnlyHint: true,
+		scope: 'read',
+		reach: 'user',
+		subject: 'complaint',
+		action: 'listOverdue'
+	)]
+	public function listOverdueComplaints(): array {
+		$today = $this->dates->today();
+		$rows = [];
+		foreach ($this->getDeadlineAlerts()['overdue'] as $complaint) {
+			$row = [];
+			foreach (self::OVERDUE_PROJECTION as $field) {
+				if (array_key_exists($field, $complaint) === true) {
+					$row[$field] = $complaint[$field];
+				}
+			}
+
+			$ackDeadline = $this->dates->tryParse($complaint['acknowledgementOfReceiptDeadline'] ?? null);
+			$row['handlingOverdue'] = true;
+			$row['acknowledgementOverdue'] = $ackDeadline !== null
+				&& $today > $ackDeadline
+				&& ($complaint['status'] ?? null) === 'received';
+			$rows[] = $row;
+		}
+
+		return ['complaints' => $rows, 'count' => count($rows)];
+	}//end listOverdueComplaints()
 
 	/**
 	 * Add working days to a date, skipping weekends and Dutch public holidays.

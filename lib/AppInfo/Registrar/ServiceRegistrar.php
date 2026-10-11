@@ -68,5 +68,6 @@ class ServiceRegistrar {
 		// listener. The pipeline cannot be autowired: an autowired one would be
 		// EMPTY, which accepts every message and looks exactly like one that ran.
 		(new MailIntakeRegistrar())->register(context: $context);
+		(new RepairPortRegistrar())->register(context: $context);
 	}//end register()
 }//end class
