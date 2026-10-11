@@ -65,6 +65,7 @@
       "extensionCapacity": 14,
       "countExtensions": 1,
       "pauseExtensionDuration": [14],
+      "tellHandlerAt": [7, 0],
       "deviatingPenaltyPaymentRegime": {
         "dailyTariff": 1500,
         "plafond": 50000,
@@ -148,6 +149,50 @@
     {
       "id": "td-cultuur-subsidie-2026",
       "caseType": "zaaktype-cultuur-subsidie-2026",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-subsidieaanvraag",
+      "caseType": "subsidieaanvraag",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-innovatiefonds-2026",
+      "caseType": "zaaktype-innovatiefonds-2026",
       "kind": "statutory",
       "legalBasis": "Awb 4:13 lid 2",
       "legalBasisSources": [

@@ -179,6 +179,15 @@
               "type": "string"
             }
           },
+          "tellHandlerAt": {
+            "type": "array",
+            "title": "Tell the handler at",
+            "description": "The escalation rungs, in days before the end of the term, on which the handler of the case gets a notification. 0 is the day the term runs out. Leave it empty and the escalation is recorded without telling anyone, which is how every term behaved before this was declarable.",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
           "escalationLadder": {
             "type": "array",
             "title": "Escalation ladder",
@@ -229,8 +238,30 @@
       },
       "deadlineInstance": {
         "slug": "deadlineInstance",
+        "configuration": {
+          "x-openregister-mcp": {
+            "enabled": true,
+            "tools": {
+              "search": {
+                "description": "Find the statutory deadlines running on cases, for example the ones about to expire.",
+                "scope": "read",
+                "readOnlyHint": true,
+                "filters": [
+                  "case",
+                  "status",
+                  "deadlineDefinition"
+                ]
+              },
+              "get": {
+                "description": "Read one statutory deadline by id: start, calculated end, current end and pauses.",
+                "scope": "read",
+                "readOnlyHint": true
+              }
+            }
+          }
+        },
         "icon": "TimerSandFull",
-        "version": "1.5.0",
+        "version": "1.5.1",
         "x-schema-org": "schema:Action",
         "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",

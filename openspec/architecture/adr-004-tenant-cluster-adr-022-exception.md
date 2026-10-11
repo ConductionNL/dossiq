@@ -53,13 +53,19 @@ suppression is printed on every gate run, with this ADR named beside it.
 - `lib/Service/TenantService.php`
 - `lib/Service/TenantAuditTrailService.php` (gate 23 rules: 4)
 - `lib/Service/TenantOrganisationResolver.php` (gate 23 rules: 4)
+- `lib/Service/TenantOnboardingService.php` (gate 23 rules: 4)
+- `lib/Controller/TenantOnboardingController.php` (gate 23 rules: 4)
 
 These are not a deferral. They are the target state. They appear here because
 the rule matches their **name**, not their behaviour, and renaming a correct
 consumer to satisfy a grep is not a fix. `TenantOrganisationResolver` reads
 only OpenRegister's `OrganisationMapper` since its fallback onto the local
 tenant store was removed (`tenancy-onto-openregister-organisation` task 6.6),
-the same case as `TenantService`.
+the same case as `TenantService`. The onboarding steps are tasks in
+OpenRegister's task engine since `remove-casetask` task 7.1, so
+`TenantOnboardingService` writes and reads them through the engine, and its
+controller is the admin route in front of it. What the service still reads in
+dossiq is the decision 2b satellites, for the go-live check.
 
 ### Kept in dossiq by decision 2b
 
@@ -111,10 +117,9 @@ has one. Ruben decided this on 2026-10-08 (Q2).
 Everything else the gate names stays red, and it should. Naming it here would
 buy silence for the work, which is the opposite of the point.
 
-Still counted, by class name so that this paragraph suppresses nothing:
-
-- `TenantOnboardingService` and `TenantOnboardingController`. These map field for
-  field onto OpenRegister's task, and move there.
+Nothing tenant-shaped is still counted under rule 4. The onboarding service and
+controller moved onto OpenRegister's task (`remove-casetask` task 7.1, decision
+144: a skipped step is `terminated` with the outcome `skipped`).
 
 Deleted, not exempted, and so named here by class only:
 
@@ -181,9 +186,8 @@ Ruben answered the three points left after that, later the same day:
   6.11 adds it. The gate reads only the ADR-wide date, so 2027-03-31 remains the backstop. Task 6.4
   deletes the class and the line.
 
-Still counted after all of it, and correctly: `TenantOnboardingService` and
-`TenantOnboardingController`. The onboarding `skipped` status mapping in `remove-casetask` task 7.1
-is the only gate 23 decision left. The paragraph "What this exception does not cover" above
+The last open point, the onboarding `skipped` status mapping in `remove-casetask` task 7.1, was
+decided on 2026-10-10 (decision 144) and built. The paragraph "What this exception does not cover" above
 predates these decisions; where it and this section differ, this section is the newer one.
 
 ## Sunset
@@ -221,9 +225,10 @@ Done, on the branches named in the changes:
   #3466: 3 tenants, no collision), the migration as a one-release repair step that also gives every
   member organisation its audit anchor, the tenant schema kept as the read-only anchor (Q4, Q6),
   the resolver without its fallback, and the tenant admin store removed.
+- `remove-casetask` task 7.1: the onboarding steps are engine tasks; a tenant's legacy
+  `tenantOnboardingTask` rows move onto the engine the first time an admin opens its onboarding.
 
 ## Next
 
 Task 6.4 in the release after: delete `TenantMigrationService` and its entry here once the repair
-step reports zero unmigrated tenants. `remove-casetask` task 7.1 moves the onboarding steps onto
-OpenRegister's task, after which the two onboarding files can be judged again.
+step reports zero unmigrated tenants.

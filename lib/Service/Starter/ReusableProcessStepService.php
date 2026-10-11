@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -63,10 +64,12 @@ class ReusableProcessStepService {
 	 *
 	 * @param StarterStore    $store  The OpenRegister seam.
 	 * @param LoggerInterface $logger Logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly StarterStore $store,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -131,7 +134,7 @@ class ReusableProcessStepService {
 
 				$users[] = [
 					'id' => $this->store->idOf(row: $caseType),
-					'title' => (string)($caseType['title'] ?? ''),
+					'title' => $this->text->textOf(value: ($caseType['title'] ?? null)),
 				];
 				break;
 			}
