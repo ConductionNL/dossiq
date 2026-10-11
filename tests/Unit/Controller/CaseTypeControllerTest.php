@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseTypeController;
+use OCA\Dossiq\Service\CaseStageDatesService;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCP\AppFramework\Http;
@@ -44,6 +45,7 @@ class CaseTypeControllerTest extends TestCase {
 	 * @param CaseTypeResolver|null       $resolver The blueprint resolver.
 	 * @param CaseTypePublishService|null $publish  The publish service.
 	 * @param string                      $note     The change note on the request.
+	 * @param CaseStageDatesService|null  $dates    The reached dates of one case.
 	 *
 	 * @return CaseTypeController The controller.
 	 */
@@ -51,6 +53,7 @@ class CaseTypeControllerTest extends TestCase {
 		?CaseTypeResolver $resolver = null,
 		?CaseTypePublishService $publish = null,
 		string $note = '',
+		?CaseStageDatesService $dates = null,
 	): CaseTypeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturn($note);
@@ -60,6 +63,7 @@ class CaseTypeControllerTest extends TestCase {
 			$request,
 			($resolver ?? $this->createMock(CaseTypeResolver::class)),
 			($publish ?? $this->createMock(CaseTypePublishService::class)),
+			($dates ?? $this->createMock(CaseStageDatesService::class)),
 			new NullLogger()
 		);
 	}//end controller()
@@ -96,6 +100,28 @@ class CaseTypeControllerTest extends TestCase {
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
 		self::assertSame($blueprint, $response->getData());
 	}//end testTheBlueprintIsReturned()
+
+	/**
+	 * Asked with a case, every status carries the day THAT case reached it.
+	 */
+	public function testAStatusCarriesTheDayTheCaseReachedIt(): void {
+		$blueprint = [
+			'caseType' => ['id' => 'ct'],
+			'statusTypes' => [['id' => 's1', 'name' => 'Ontvangen'], ['id' => 's2', 'name' => 'Besluit']],
+		];
+		$dates = $this->createMock(CaseStageDatesService::class);
+		$dates->method('reachedDatesFor')->with('case-1')->willReturn(['s1' => '2026-10-05']);
+
+		$response = $this->controller(
+			resolver: $this->resolverAnswering($blueprint),
+			note: 'case-1',
+			dates: $dates
+		)->blueprint(id: 'ct');
+
+		$statuses = $response->getData()['statusTypes'];
+		self::assertSame('2026-10-05', $statuses[0]['reachedAt']);
+		self::assertSame('', $statuses[1]['reachedAt'], 'A status not reached yet has no date.');
+	}//end testAStatusCarriesTheDayTheCaseReachedIt()
 
 	/**
 	 * 🔴 AN EMPTY BLUEPRINT IS A 404, NOT A 200 WITH EMPTY LISTS.

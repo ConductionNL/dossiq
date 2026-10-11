@@ -191,6 +191,9 @@ describe.each([
 			// three answer who they are and what is running, and a document is
 			// only meaningful against those.
 			'contact-documents',
+			// The tab strip the board draws (DqContact): the four above are
+			// its panels.
+			'contact-panels',
 		])
 		expect(widget(p, 'contact-card').content.editable).toBe(false)
 	})
@@ -220,14 +223,29 @@ describe.each([
 		})
 	})
 
-	it('fills the grid, leaving no void (ADR-062)', () => {
+	it('fills the grid with one tab strip, whose panels are the four widgets', () => {
 		const p = get()
-		const ids = p.config.layout.map((l) => l.widgetId)
-		expect(new Set(ids).size).toBe(p.config.widgets.length)
+		expect(p.config.layout.map((l) => l.widgetId)).toEqual(['contact-panels'])
 		for (const item of p.config.layout) {
 			expect(item.gridX + item.gridWidth).toBeLessThanOrEqual(12)
 			expect(item.gridWidth).toBe(12)
 		}
+		const strip = widget(p, 'contact-panels')
+		expect(strip.type).toBe('tabs')
+		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
+			'contact-card',
+			'contact-cases',
+			'contact-moments',
+			'contact-documents',
+		])
+	})
+
+	it('names the page the way the board does: breadcrumb, two quick acts, no follow', () => {
+		const c = get().config
+		expect(c.follow).toBe(false)
+		expect(c.quickActions).toEqual(['log-contact', 'new-case-for-contact'])
+		expect(c.breadcrumb.route).toMatch(/^(Contacts|Organisations)$/)
+		expect(c.sideColumn.length).toBeGreaterThan(0)
 	})
 
 	it('carries the audit sidebar, which is the timeline', () => {
