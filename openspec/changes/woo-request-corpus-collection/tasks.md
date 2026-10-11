@@ -104,6 +104,7 @@ first and seen red. Build every OpenRegister double from the real class signatur
   `testANewRequestStartsFromANamedTemplate`. If it is not merged, do not build a dossiq template
   store; leave this box open and say so in the PR body (REQ-WRC-005).
   - not done: openregister `records-saved-templates` is not built on development. Per decision 156 its build is queued in lane L9's STATE as the dependency to build next; this box stays open until it lands.
+  - dependency built (11 Oct): ConductionNL/openregister#4579 (`/api/record-templates`, tasks 1.1 and 1.2). Once it is on development, the start dialog lists `GET /api/record-templates?schema=<wooRequestConfiguration schema id>` and applies the chosen template's values; test `testANewRequestStartsFromANamedTemplate`.
 
 ## 6. End to end and live
 
