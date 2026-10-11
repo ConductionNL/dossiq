@@ -31,7 +31,11 @@ use OCA\Dossiq\Service\Assistant\CaseAssistantService;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
 use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
+use OCP\Http\Client\IClientService;
+use OCP\IAppConfig;
+use OCP\IURLGenerator;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
@@ -44,6 +48,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\AssistantController
  *
  * @uses \OCA\Dossiq\Service\Assistant\HermiqAssistantException
+ * @uses \OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient
+ * @uses \OCA\Dossiq\Service\Ai\CaseTypeAiFeatures
  */
 class AssistantControllerTest extends TestCase {
 	/**
@@ -336,5 +342,42 @@ class AssistantControllerTest extends TestCase {
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
 		self::assertSame([], $response->getData()['features']);
 	}//end testAiFeaturesAnswersAnEmptyEnvelopeWhenTheCollaboratorsAreAbsent()
+
+	/**
+	 * An absent hermiq reports every declared feature as unavailable, never as
+	 * local, and makes no request (ai-features 2.2).
+	 *
+	 * Built over the real client, so the absent path is the production one and
+	 * not a double that already answers an empty map.
+	 *
+	 * @return void
+	 */
+	public function testAnAbsentHermiqReportsEveryDeclaredFeatureUnavailable(): void {
+		$this->stubParams(['caseType' => ['aiFeatures' => ['record-summary' => 'case', 'report-similarity' => 'case']], 'surface' => 'case']);
+
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isEnabledForUser')->willReturn(false);
+		$http = $this->createMock(IClientService::class);
+		$http->expects(self::never())->method('newClient');
+
+		$client = new HermiqAiFeatureClient(
+			clientService: $http,
+			urlGenerator: $this->createMock(IURLGenerator::class),
+			appConfig: $this->createMock(IAppConfig::class),
+			appManager: $appManager,
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		$features = $this->controller(aiFeatures: new CaseTypeAiFeatures(), aiFeatureClient: $client)
+			->aiFeatures()
+			->getData()['features'];
+
+		self::assertCount(2, $features);
+		foreach ($features as $feature) {
+			self::assertFalse($feature['available']);
+			self::assertNull($feature['provider']);
+			self::assertNull($feature['residency'], 'an absent hermiq must never read as local');
+		}
+	}//end testAnAbsentHermiqReportsEveryDeclaredFeatureUnavailable()
 
 }//end class
