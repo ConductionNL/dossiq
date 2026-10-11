@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Status;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 
 /**
@@ -52,6 +53,7 @@ class StatusDeclarations {
 	 * @param DerivedStatusService $derived     Which status the case type derives.
 	 * @param StatusDwellService   $dwell       The numbers the case carries.
 	 * @param StatusDwellTimer     $timer       The engine clock behind a maximum.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly StatusTypeLookup $lookup,
@@ -59,6 +61,7 @@ class StatusDeclarations {
 		private readonly DerivedStatusService $derived,
 		private readonly StatusDwellService $dwell,
 		private readonly StatusDwellTimer $timer,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -152,7 +155,7 @@ class StatusDeclarations {
 			caseId: $caseId,
 			statusTypeId: $toStatus,
 			maximumDwell: $maximum,
-			statusName: (string)($statusType['name'] ?? ''),
+			statusName: $this->text->textOf(value: ($statusType['name'] ?? null)),
 		);
 	}//end retime()
 }//end class
