@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * Writes, freezes, discards and stamps a delivered set.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
  */
 class WooDeliveredSetWriter {
 
@@ -108,7 +108,7 @@ class WooDeliveredSetWriter {
 	 * @throws RuntimeException SET_NOT_WRITTEN when the set cannot be written; nothing is sent then.
 	 * @throws Throwable        The send's own failure, after the pending set is deleted.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function deliver(string $caseId, string $decisionId, array $delivered, callable $send): array {
 		try {
@@ -153,7 +153,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return string The hex hash.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function setHash(array $items): string {
 		$lines = [];
@@ -179,7 +179,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @throws RuntimeException When OpenRegister is unavailable or the set cannot be stored.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function open(string $caseId, string $decisionId, array $delivered): array {
 		[$objectService, $register, $schema] = $this->store();
@@ -236,7 +236,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	private function keepTheDeliveredBytes(string $setId, array $delivered): void {
 		$fileService = $this->settings->getFileService();
@@ -273,7 +273,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	public function freeze(string $setId, string $publicationId): void {
 		[$objectService, $register, $schema] = $this->store();
@@ -304,7 +304,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	private function platformFreeze(string $setId, string $publicationId): void {
 		$handler = $this->settings->getOpenRegisterClass(self::ARCHIVE_HANDLER);
@@ -342,7 +342,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function discard(string $setId): void {
 		[$objectService, $register, $schema] = $this->store();
@@ -357,7 +357,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	public function markWithdrawn(string $caseId, string $publicationId): void {
 		[$objectService, $register, $schema] = $this->store();
@@ -399,7 +399,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	public function frozenSets(string $caseId): array {
 		[$objectService, $register, $schema] = $this->store();
@@ -463,7 +463,7 @@ class WooDeliveredSetWriter {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function idOf(array $row): string {
 		return (string)($row['id'] ?? ($row['uuid'] ?? (($row['@self'] ?? [])['id'] ?? '')));

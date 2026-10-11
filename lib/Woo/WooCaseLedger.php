@@ -77,7 +77,7 @@ class WooCaseLedger {
 	 *
 	 * @throws \Throwable The send's failure, after the pending set is gone; SET_NOT_WRITTEN when the set cannot be written.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function deliver(string $caseId, string $decisionId, array $items, callable $send): array {
 		if ($this->deliveredSets === null) {
@@ -95,7 +95,7 @@ class WooCaseLedger {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
 	 */
 	public function markWithdrawn(string $caseId, string $publicationId): void {
 		try {

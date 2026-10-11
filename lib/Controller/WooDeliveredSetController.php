@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Verifies a delivered set for a user who may read its case.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  */
 class WooDeliveredSetController extends Controller {
 
@@ -77,7 +77,7 @@ class WooDeliveredSetController extends Controller {
 	 *
 	 * @return JSONResponse 200 `{verified, setHash, items}`; 403 without case read access; 404 for another case's set.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
 	 */
 	#[NoAdminRequired]
 	public function verify(string $id, string $setId): JSONResponse {
@@ -104,7 +104,7 @@ class WooDeliveredSetController extends Controller {
 	 * @return JSONResponse 200 `{original: {fileName, mimeType, readable}, delivered: {...}}`;
 	 *                      403 without case read access; 404 for another case's set or an unknown item.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
 	 */
 	#[NoAdminRequired]
 	public function item(string $id, string $setId, int $index): JSONResponse {
@@ -136,7 +136,7 @@ class WooDeliveredSetController extends Controller {
 	 *
 	 * @return DataDownloadResponse|JSONResponse The file; 403 without case read access; 404 when there is nothing to read.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-the-delivered-rendition-is-compared-with-its-original-req-wds-004
 	 */
 	#[NoAdminRequired]
 	public function file(string $id, string $setId, int $index, string $side): DataDownloadResponse|JSONResponse {
