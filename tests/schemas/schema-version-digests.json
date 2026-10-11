@@ -1455,6 +1455,14 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/87-case-type-sessions.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/87-case-type-sessions.json::hearingSession": {
+        "version": "",
+        "digest": "9024d419cd1cd7529bde30ad43169eb8dd17dc33a65c8b667dbf8e886ca8b479"
+    },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",
         "digest": "6a9121e30829215000d98df0d6957e81afd954d1b420c6c66097524546ab3c71"
