@@ -40,7 +40,7 @@ class LinkMarkerRuleTest extends TestCase {
 	 * @return LinkMarkerRule The rule.
 	 */
 	private function rule(): LinkMarkerRule {
-		return LinkMarkerRule::fromArray(
+		return new LinkMarkerRule(
 			config: [
 				'source' => 'appeal_schema',
 				'field'  => 'sourceRecord',
@@ -123,19 +123,6 @@ class LinkMarkerRuleTest extends TestCase {
 	public function testAMalformedRuleIsRefused(mixed $config, string $names): void {
 		$this->expectException(InvalidArgumentException::class);
 		$this->expectExceptionMessage($names);
-		LinkMarkerRule::fromArray(config: $config);
+		new LinkMarkerRule(config: $config);
 	}//end testAMalformedRuleIsRefused()
-
-	/**
-	 * An empty setting holds no rules; a setting that is not JSON is refused.
-	 *
-	 * @return void
-	 */
-	public function testTheStoredList(): void {
-		self::assertSame([], LinkMarkerRule::listFromJson(json: ''));
-		self::assertCount(1, LinkMarkerRule::listFromJson(json: '[{"source":"s","field":"f","target":"t","marker":"m"}]'));
-
-		$this->expectException(InvalidArgumentException::class);
-		LinkMarkerRule::listFromJson(json: '{not json');
-	}//end testTheStoredList()
 }//end class

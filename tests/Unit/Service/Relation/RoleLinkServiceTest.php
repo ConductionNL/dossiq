@@ -44,6 +44,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Relation\RoleLinkService
  * @covers \OCA\Dossiq\Service\Relation\RoleLinkDefinition
+ * @covers \OCA\Dossiq\Service\Relation\RoleLinkDefinitionReader
  */
 class RoleLinkServiceTest extends TestCase {
 
@@ -246,6 +247,6 @@ class RoleLinkServiceTest extends TestCase {
 		$errors = (new RealSchemaValidator())->errors(slug: 'caseType', payload: ['relations' => [self::REVIEWS]], creating: false);
 
 		self::assertSame([], $errors);
-		self::assertSame('decision_schema', RoleLinkDefinition::fromArray(config: self::REVIEWS)->targetSchema);
+		self::assertSame('decision_schema', (new RoleLinkDefinition(config: self::REVIEWS))->targetSchema);
 	}//end testTheRoleFitsTheRealCaseTypeSchema()
 }//end class

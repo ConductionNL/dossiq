@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Relation\LinkMarkerRule;
+use OCA\Dossiq\Service\Relation\LinkMarkerRuleReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -94,7 +95,7 @@ class LinkMarkerListener implements IEventListener {
 		}
 
 		try {
-			$rules = LinkMarkerRule::listFromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
+			$rules = (new LinkMarkerRuleReader())->fromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the link marker rules do not read: '.$e->getMessage());
 			return;

@@ -202,7 +202,7 @@ class RoleLinkService {
 			throw new RuntimeException('Case type not found');
 		}
 
-		return RoleLinkDefinition::allOf(caseType: $caseType);
+		return (new RoleLinkDefinitionReader())->allOf(caseType: $caseType);
 	}//end definitionsFor()
 
 	/**

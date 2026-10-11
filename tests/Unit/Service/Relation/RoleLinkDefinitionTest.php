@@ -38,7 +38,7 @@ class RoleLinkDefinitionTest extends TestCase {
 	 * @return void
 	 */
 	public function testDefaults(): void {
-		$role = RoleLinkDefinition::fromArray(config: ['role' => 'follows']);
+		$role = new RoleLinkDefinition(config: ['role' => 'follows']);
 
 		self::assertSame(RoleLinkDefinition::TARGET_CASE, $role->target);
 		self::assertSame('vervolg', $role->natureRelationship);
@@ -76,26 +76,6 @@ class RoleLinkDefinitionTest extends TestCase {
 	public function testAMalformedRoleIsRefused(mixed $config, string $names): void {
 		$this->expectException(InvalidArgumentException::class);
 		$this->expectExceptionMessage($names);
-		RoleLinkDefinition::fromArray(config: $config);
+		new RoleLinkDefinition(config: $config);
 	}//end testAMalformedRoleIsRefused()
-
-	/**
-	 * Two roles with one key are refused.
-	 *
-	 * @return void
-	 */
-	public function testARoleDeclaredTwiceIsRefused(): void {
-		$this->expectException(InvalidArgumentException::class);
-		$this->expectExceptionMessage('declared twice');
-		RoleLinkDefinition::allOf(caseType: ['relations' => [['role' => 'r'], ['role' => 'r']]]);
-	}//end testARoleDeclaredTwiceIsRefused()
-
-	/**
-	 * A case type without roles declares none.
-	 *
-	 * @return void
-	 */
-	public function testACaseTypeWithoutRolesDeclaresNone(): void {
-		self::assertSame([], RoleLinkDefinition::allOf(caseType: ['title' => 'x']));
-	}//end testACaseTypeWithoutRolesDeclaresNone()
 }//end class

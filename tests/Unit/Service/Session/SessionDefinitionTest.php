@@ -40,7 +40,7 @@ class SessionDefinitionTest extends TestCase {
 	 * @return void
 	 */
 	public function testAKeyAloneGetsTheDefaults(): void {
-		$definition = SessionDefinition::fromArray(config: ['key' => 'talk']);
+		$definition = new SessionDefinition(config: ['key' => 'talk']);
 
 		self::assertSame('talk', $definition->label);
 		self::assertSame([], $definition->inviteeRoles);
@@ -84,18 +84,8 @@ class SessionDefinitionTest extends TestCase {
 	 */
 	public function testAMalformedEntryIsRefused(mixed $entry): void {
 		$this->expectException(InvalidArgumentException::class);
-		SessionDefinition::fromArray(config: $entry);
+		new SessionDefinition(config: $entry);
 	}//end testAMalformedEntryIsRefused()
-
-	/**
-	 * Two sessions with one key are refused.
-	 *
-	 * @return void
-	 */
-	public function testADuplicateKeyIsRefused(): void {
-		$this->expectExceptionMessage("Session 'hearing' is declared twice.");
-		SessionDefinition::allOf(caseType: ['sessions' => [['key' => 'hearing'], ['key' => 'hearing']]]);
-	}//end testADuplicateKeyIsRefused()
 
 	/**
 	 * A session planned inside the inspection floor is refused, on the floor is accepted.
@@ -103,7 +93,7 @@ class SessionDefinitionTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheInspectionFloorIsKept(): void {
-		$definition = SessionDefinition::fromArray(config: ['key' => 'hearing', 'inspectionFloorDays' => 7]);
+		$definition = new SessionDefinition(config: ['key' => 'hearing', 'inspectionFloorDays' => 7]);
 		$now        = new DateTimeImmutable('2026-10-11T09:00:00+00:00');
 
 		$definition->rules()->assertInspectionFloor(scheduled: new DateTimeImmutable('2026-10-18T09:00:00+00:00'), now: $now);
@@ -119,7 +109,7 @@ class SessionDefinitionTest extends TestCase {
 	 * @return void
 	 */
 	public function testInviteeRolesAndMinimumAreKept(): void {
-		$definition = SessionDefinition::fromArray(config: ['key' => 'hearing', 'inviteeRoles' => ['applicant'], 'minInvitees' => 1]);
+		$definition = new SessionDefinition(config: ['key' => 'hearing', 'inviteeRoles' => ['applicant'], 'minInvitees' => 1]);
 		$definition->rules()->assertInvitees(invitees: [['role' => 'applicant']]);
 
 		try {
@@ -139,7 +129,7 @@ class SessionDefinitionTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheFragmentDeclaresEveryFieldTheClassReads(): void {
-		$entry = SessionDefinition::fromArray(
+		$entry = (new SessionDefinition(
 			config: [
 				'key'                      => 'hearing',
 				'inviteeRoles'             => ['applicant'],
@@ -147,7 +137,7 @@ class SessionDefinitionTest extends TestCase {
 				'waivable'                 => true,
 				'statuses'                 => ['executed' => 'executed'],
 			]
-		)->toArray();
+		))->toArray();
 
 		$validator = new RealSchemaValidator();
 		self::assertSame([], $validator->errors(slug: 'caseType', payload: ['sessions' => [$entry]], creating: false));

@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
  * A BROKEN ENTRY IS SKIPPED AND LOGGED, NOT FATAL. Refusing every write on
  * the instance because one entry is malformed would turn a configuration
  * slip into an outage; the package installer validates each entry with
- * {@see FreezeDefinition::fromArray()} before it writes, so a broken entry
+ * {@see FreezeDefinition::__construct()} before it writes, so a broken entry
  * here means someone edited app config by hand.
  *
  * @spec openspec/specs/frozen-record/spec.md
@@ -118,7 +118,6 @@ class FreezeRegistry {
 	 *
 	 * @return array<int, FreezeDefinition> The entries.
 	 *
-	 *
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */
 	public function definitions(): array {
@@ -140,7 +139,7 @@ class FreezeRegistry {
 
 		foreach ($entries as $index => $entry) {
 			try {
-				$this->definitions[] = FreezeDefinition::fromArray(entry: (array)$entry);
+				$this->definitions[] = new FreezeDefinition(entry: (array)$entry);
 			} catch (InvalidArgumentException $invalid) {
 				$this->logger->error(
 					'Dossiq frozen records: a configured entry is invalid and was skipped',

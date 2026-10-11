@@ -425,7 +425,7 @@ class SessionService {
 			throw new RuntimeException('Case type not found');
 		}
 
-		return SessionDefinition::allOf(caseType: $caseType);
+		return (new SessionDefinitionReader())->allOf(caseType: $caseType);
 	}//end definitionsFor()
 
 	/**

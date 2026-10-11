@@ -63,87 +63,120 @@ final class FreezeDefinition {
 	private const ENVELOPE_KEYS = ['id', 'uuid'];
 
 	/**
-	 * Constructor.
+	 * The schema id or slug the entry guards.
 	 *
-	 * @param string $schema The schema id or slug the entry guards.
-	 * @param array<int, string> $frozenStatuses The statuses from which the record is frozen.
-	 * @param string $statusField The field holding the status.
-	 * @param array<int, string> $fields Frozen fields; empty means every field not listed as mutable.
-	 * @param array<int, string> $mutableFields Fields that still move on a frozen record, when $fields is empty.
-	 * @param array<int, string> $writeOnce Fields written once and never again, at any status.
-	 * @param array<int, string> $sealFields Fields hashed into the seal when the record freezes; empty for no seal.
-	 * @param string $sealField Where the seal is stored.
-	 * @param array<string, string>|null $successor Successor numbering: series, defaultPrefix, numberField,
-	 *                                              supersedesField, supersededByField; null for none.
-	 * @param string $rule The refusal rule.
-	 * @param string $message The refusal sentence.
-	 *
-	 * @throws InvalidArgumentException When the entry declares no schema or no frozen status.
+	 * @var string
 	 */
-	public function __construct(
-		public readonly string $schema,
-		public readonly array $frozenStatuses,
-		public readonly string $statusField = 'currentStatus',
-		public readonly array $fields = [],
-		public readonly array $mutableFields = [],
-		public readonly array $writeOnce = [],
-		public readonly array $sealFields = [],
-		public readonly string $sealField = 'seal',
-		public readonly ?array $successor = null,
-		public readonly string $rule = self::DEFAULT_RULE,
-		public readonly string $message = self::DEFAULT_MESSAGE,
-	) {
-		if (trim($schema) === '') {
-			throw new InvalidArgumentException('A freeze entry must name the schema it guards.');
-		}
-
-		if ($frozenStatuses === []) {
-			throw new InvalidArgumentException(sprintf('The freeze entry for %s names no status at which the record freezes.', $schema));
-		}
-
-		if ($successor !== null && trim(($successor['series'] ?? '')) === '') {
-			throw new InvalidArgumentException(sprintf('The freeze entry for %s declares a successor without a series.', $schema));
-		}
-	}//end __construct()
+	public readonly string $schema;
 
 	/**
-	 * Read an entry from configuration.
+	 * The statuses from which the record is frozen.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $frozenStatuses;
+
+	/**
+	 * The field holding the status.
+	 *
+	 * @var string
+	 */
+	public readonly string $statusField;
+
+	/**
+	 * Frozen fields; empty means every field not listed as mutable.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $fields;
+
+	/**
+	 * Fields that still move on a frozen record, when $fields is empty.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $mutableFields;
+
+	/**
+	 * Fields written once and never again, at any status.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $writeOnce;
+
+	/**
+	 * Fields hashed into the seal when the record freezes; empty for no seal.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $sealFields;
+
+	/**
+	 * Where the seal is stored.
+	 *
+	 * @var string
+	 */
+	public readonly string $sealField;
+
+	/**
+	 * Successor numbering: series, defaultPrefix, numberField, supersedesField,
+	 * supersededByField; null for none.
+	 *
+	 * @var array<string, string>|null
+	 */
+	public readonly ?array $successor;
+
+	/**
+	 * The refusal rule.
+	 *
+	 * @var string
+	 */
+	public readonly string $rule;
+
+	/**
+	 * The refusal sentence.
+	 *
+	 * @var string
+	 */
+	public readonly string $message;
+
+	/**
+	 * Read and validate one `freeze[]` entry.
+	 *
+	 * The entry is the whole input: one key per field above, each optional
+	 * except `schema` and `frozenStatuses`.
 	 *
 	 * @param array<string, mixed> $entry One `freeze[]` entry.
 	 *
-	 * @return self The definition.
-	 *
-	 * @throws InvalidArgumentException When the entry is incomplete.
+	 * @throws InvalidArgumentException When the entry declares no schema, no frozen status, or a successor without a series.
 	 *
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */
-	public static function fromArray(array $entry): self {
-		$successor = null;
-		if (is_array(($entry['successor'] ?? null)) === true) {
-			$raw = $entry['successor'];
-			$successor = [
-				'series' => trim((string)($raw['series'] ?? '')),
-				'defaultPrefix' => trim((string)($raw['defaultPrefix'] ?? '')),
-				'numberField' => self::name(value: ($raw['numberField'] ?? null), default: 'reference'),
-				'supersedesField' => self::name(value: ($raw['supersedesField'] ?? null), default: 'supersedes'),
-				'supersededByField' => self::name(value: ($raw['supersededByField'] ?? null), default: 'supersededBy'),
-			];
+	public function __construct(array $entry) {
+		$this->schema         = trim((string)($entry['schema'] ?? ''));
+		$this->frozenStatuses = self::names(value: ($entry['frozenStatuses'] ?? []));
+		$this->statusField    = self::name(value: ($entry['statusField'] ?? null), default: 'currentStatus');
+		$this->fields         = self::names(value: ($entry['fields'] ?? []));
+		$this->mutableFields  = self::names(value: ($entry['mutableFields'] ?? []));
+		$this->writeOnce      = self::names(value: ($entry['writeOnce'] ?? []));
+		$this->sealFields     = self::names(value: ($entry['sealFields'] ?? []));
+		$this->sealField      = self::name(value: ($entry['sealField'] ?? null), default: 'seal');
+		$this->successor      = self::successorOf(value: ($entry['successor'] ?? null));
+		$this->rule           = self::name(value: ($entry['rule'] ?? null), default: self::DEFAULT_RULE);
+		$this->message        = self::name(value: ($entry['message'] ?? null), default: self::DEFAULT_MESSAGE);
+
+		if ($this->schema === '') {
+			throw new InvalidArgumentException('A freeze entry must name the schema it guards.');
 		}
 
-		return new self(
-			schema: trim((string)($entry['schema'] ?? '')),
-			frozenStatuses: self::names(value: ($entry['frozenStatuses'] ?? [])),
-			statusField: self::name(value: ($entry['statusField'] ?? null), default: 'currentStatus'),
-			fields: self::names(value: ($entry['fields'] ?? [])),
-			mutableFields: self::names(value: ($entry['mutableFields'] ?? [])),
-			writeOnce: self::names(value: ($entry['writeOnce'] ?? [])),
-			sealFields: self::names(value: ($entry['sealFields'] ?? [])),
-			sealField: self::name(value: ($entry['sealField'] ?? null), default: 'seal'),
-			successor: $successor,
-			rule: self::name(value: ($entry['rule'] ?? null), default: self::DEFAULT_RULE),
-			message: self::name(value: ($entry['message'] ?? null), default: self::DEFAULT_MESSAGE),
-		);
-	}//end fromArray()
+		if ($this->frozenStatuses === []) {
+			throw new InvalidArgumentException(sprintf('The freeze entry for %s names no status at which the record freezes.', $this->schema));
+		}
+
+		if ($this->successor !== null && $this->successor['series'] === '') {
+			throw new InvalidArgumentException(sprintf('The freeze entry for %s declares a successor without a series.', $this->schema));
+		}
+	}//end __construct()
 
 	/**
 	 * Whether a status is one at which the record is frozen.
@@ -212,6 +245,27 @@ final class FreezeDefinition {
 
 		return in_array($field, $frozen, true);
 	}//end isFrozenField()
+
+	/**
+	 * The successor numbering, defaults filled in, or null when none is declared.
+	 *
+	 * @param mixed $value The configured `successor` block.
+	 *
+	 * @return array<string, string>|null The numbering.
+	 */
+	private static function successorOf(mixed $value): ?array {
+		if (is_array($value) === false) {
+			return null;
+		}
+
+		return [
+			'series' => trim((string)($value['series'] ?? '')),
+			'defaultPrefix' => trim((string)($value['defaultPrefix'] ?? '')),
+			'numberField' => self::name(value: ($value['numberField'] ?? null), default: 'reference'),
+			'supersedesField' => self::name(value: ($value['supersedesField'] ?? null), default: 'supersedes'),
+			'supersededByField' => self::name(value: ($value['supersededByField'] ?? null), default: 'supersededBy'),
+		];
+	}//end successorOf()
 
 	/**
 	 * A trimmed name, or the default when none is given.
