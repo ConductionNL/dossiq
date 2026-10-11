@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\CaseDefinition;
 
+use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageCapabilities;
 use OCA\Dossiq\Service\CaseDefinition\PackageDirectory;
 use OCA\Dossiq\Service\CaseDefinition\PackageIds;
@@ -106,6 +107,7 @@ final class PackageTestRegister extends InMemoryRegister {
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageDirectory
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageCapabilities
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackagePartRules
+ * @covers \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
@@ -223,7 +225,7 @@ class PackageInstallerTest extends TestCase {
 			$packages,
 			new PackageValidator(new NullLogger(), new PackageIds()),
 			new PackageCapabilities($apps),
-			new PackageWriter(new NullLogger(), $settings),
+			new PackageWriter(new NullLogger(), $settings, new ExistingRowMatcher(new NullLogger())),
 			$ledger,
 			$appConfig,
 			new NullLogger(),
@@ -284,6 +286,119 @@ class PackageInstallerTest extends TestCase {
 			$this->assertSame('1.0.0', $row['setVersion']);
 		}
 	}//end testAPackageWritesEveryRowAndRecordsEachInTheLedger()
+
+	/**
+	 * Seed the fixture case type as a seeder would have written it: the same
+	 * identifier and names, random ids, statuses pointing at the random case
+	 * type id.
+	 *
+	 * @param boolean $complete False to seed only the case type and its statuses.
+	 *
+	 * @return void
+	 */
+	private function seedAsASeederWould(bool $complete = true): void {
+		$this->register->seed('caseType', 'seeded-ct', ['title' => 'Fixture request', 'identifier' => 'fixture-request']);
+		$this->register->seed('statusType', 'seeded-received', ['name' => 'Received', 'order' => 1, 'caseType' => 'seeded-ct']);
+		$this->register->seed('statusType', 'seeded-done', ['name' => 'Done', 'order' => 2, 'caseType' => 'seeded-ct']);
+		if ($complete === false) {
+			return;
+		}
+
+		$this->register->seed('roleType', 'seeded-handler', ['name' => 'Handler', 'caseType' => 'seeded-ct']);
+		$this->register->seed('workflowTemplate', 'seeded-flow', ['title' => 'Fixture request handling', 'caseType' => 'seeded-ct']);
+		$this->register->seed('propertyDefinition', 'seeded-reference', ['name' => 'reference', 'caseType' => 'seeded-ct']);
+	}//end seedAsASeederWould()
+
+	/**
+	 * A case type a seeder already wrote under a random id is adopted by its
+	 * identifier: every row is recorded in the ledger under the id it has
+	 * here, and nothing new is written (decision 190).
+	 *
+	 * @return void
+	 */
+	public function testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten(): void {
+		$this->seedAsASeederWould();
+		$before = $this->register->rows;
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(0, $outcome['written']);
+		$this->assertSame(6, $outcome['adopted']);
+		$ledger = $this->register->all('shippedOrigin');
+		unset($this->register->rows['shippedOrigin']);
+		$this->assertSame($before, $this->register->rows, 'no row was written, changed or removed');
+
+		$recorded = array_column($ledger, 'targetObject');
+		sort($recorded);
+		$this->assertSame(['seeded-ct', 'seeded-done', 'seeded-flow', 'seeded-handler', 'seeded-received', 'seeded-reference'], $recorded);
+		foreach ($ledger as $row) {
+			$this->assertSame('fixture-case-type', $row['set']);
+			$this->assertSame('1.0.0', $row['setVersion']);
+		}
+	}//end testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten()
+
+	/**
+	 * A case type with another identifier is not adopted, even with the same title.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithAnotherIdentifierIsNotAdopted(): void {
+		$this->register->seed('caseType', 'seeded-ct', ['title' => 'Fixture request', 'identifier' => 'something-else']);
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(6, $outcome['written']);
+		$this->assertSame(0, $outcome['adopted']);
+		$this->assertCount(2, $this->register->all('caseType'));
+	}//end testACaseTypeWithAnotherIdentifierIsNotAdopted()
+
+	/**
+	 * An adopted case type gets only the rows it lacks, and those point at the
+	 * ids it has here: the flow's case type and the statuses inside its
+	 * transitions are the seeded ones, not the package's.
+	 *
+	 * @return void
+	 */
+	public function testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds(): void {
+		$this->seedAsASeederWould(complete: false);
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(3, $outcome['adopted']);
+		$this->assertSame(3, $outcome['written']);
+		$this->assertCount(1, $this->register->all('caseType'));
+		$this->assertCount(2, $this->register->all('statusType'));
+		$this->assertSame('seeded-ct', $this->register->all('roleType')[0]['caseType']);
+		$this->assertSame('seeded-ct', $this->register->all('propertyDefinition')[0]['caseType']);
+
+		$flow = $this->register->all('workflowTemplate')[0];
+		$this->assertSame('seeded-ct', $flow['caseType']);
+		$this->assertStringContainsString('"fromStatus":"seeded-received"', $flow['transitions']);
+		$this->assertStringContainsString('"toStatus":"seeded-done"', $flow['transitions']);
+		$this->assertStringContainsString('"status":"seeded-received"', $flow['steps']);
+		$this->assertCount(6, $this->register->all('shippedOrigin'));
+	}//end testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds()
+
+	/**
+	 * A failed install takes back what it wrote and never what it adopted.
+	 *
+	 * @return void
+	 */
+	public function testAFailedInstallNeverRemovesAnAdoptedRow(): void {
+		$this->seedAsASeederWould(complete: false);
+		$this->register->refuse = ['Fixture request handling'];
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::FAILED, $outcome['status']);
+		$this->assertSame(['seeded-ct'], array_column($this->register->all('caseType'), 'id'));
+		$this->assertCount(2, $this->register->all('statusType'));
+		$this->assertSame([], $this->register->all('roleType'));
+		$this->assertSame([], $this->register->all('shippedOrigin'));
+	}//end testAFailedInstallNeverRemovesAnAdoptedRow()
 
 	/**
 	 * A second install of the same version writes nothing.

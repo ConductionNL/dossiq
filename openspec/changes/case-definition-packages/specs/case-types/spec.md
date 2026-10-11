@@ -58,3 +58,30 @@ The installer SHALL record every row it writes in the shipped-set ledger, with t
 - **WHEN** a newer version that adds a role installs
 - **THEN** the role SHALL be written
 - **AND** the edited case type SHALL keep the edit
+
+### Requirement: A case type a seeder already wrote is adopted, not duplicated (REQ-CT-50)
+
+A seeder wrote its case types under random ids; the package that replaces it ships fixed ids. When the installer meets a case type row whose id this instance does not hold, it SHALL look for a case type with the same `identifier`, and when one exists it SHALL adopt it: write nothing, record the existing row in the ledger under the package, and point every later row of the package that names the package's id (a plain field or inside a JSON string such as a flow's transitions) at the existing id. A row of an adopted case type SHALL be adopted when the case type holds a row of that schema with the same identifier, name, title or key, in that order; otherwise it SHALL be written, pointing at the adopted case type. A failed install SHALL never remove an adopted row. An adopted row SHALL be recorded once per package, so a newer version does not reset its fingerprint (decision 190).
+
+#### Scenario: An existing case type is adopted and nothing is written
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten
+
+- **GIVEN** an instance where a seeder wrote the fixture case type, its statuses, role, flow and property under random ids
+- **WHEN** the installer installs the fixture package
+- **THEN** no row SHALL be written, changed or removed
+- **AND** each existing row SHALL have a ledger row naming the package and its version
+
+#### Scenario: An adopted case type gets only the rows it lacks
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds
+
+- **GIVEN** an instance where a seeder wrote only the fixture case type and its statuses
+- **WHEN** the installer installs the fixture package
+- **THEN** the role, flow and property SHALL be written pointing at the existing case type
+- **AND** the flow's transitions SHALL name the existing statuses
+
+#### Scenario: Another identifier is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithAnotherIdentifierIsNotAdopted
+
+- **GIVEN** a case type with the same title but another identifier
+- **WHEN** the installer installs the fixture package
+- **THEN** the package's case type SHALL be written beside it

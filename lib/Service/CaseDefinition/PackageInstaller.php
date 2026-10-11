@@ -241,7 +241,9 @@ class PackageInstaller {
 			return $this->outcome(status: self::FAILED, id: $id, version: $version, message: $result['message']);
 		}
 
-		if ($this->record(id: $id, version: $version, written: $result['written']) === false) {
+		$recorded = $this->record(id: $id, version: $version, written: $result['written'])
+			&& $this->record(id: $id, version: $version, written: $this->notYetInThisPackage(id: $id, adopted: $result['adopted']));
+		if ($recorded === false) {
 			$this->writer->undo(written: $result['written']);
 
 			return $this->outcome(
@@ -257,12 +259,18 @@ class PackageInstaller {
 		}
 
 		$this->logger->info(
-			'Installed package {id} {version}: {written} row(s) written, {skipped} already present',
-			['id' => $id, 'version' => $version, 'written' => count($result['written']), 'skipped' => count($result['skipped'])]
+			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted, {skipped} already present',
+			[
+				'id' => $id,
+				'version' => $version,
+				'written' => count($result['written']),
+				'adopted' => count($result['adopted']),
+				'skipped' => count($result['skipped']),
+			]
 		);
 
 		return $this->outcome(status: self::INSTALLED, id: $id, version: $version, message: $result['message'])
-			+ ['written' => count($result['written']), 'skipped' => count($result['skipped'])];
+			+ ['written' => count($result['written']), 'adopted' => count($result['adopted']), 'skipped' => count($result['skipped'])];
 	}//end write()
 
 	/**
@@ -363,6 +371,31 @@ class PackageInstaller {
 
 		return true;
 	}//end record()
+
+	/**
+	 * The adopted rows this package has not recorded before.
+	 *
+	 * An adopted row is stamped once, with the row as this instance holds it
+	 * at adoption. Stamping it again on every newer version would reset its
+	 * fingerprint and hide an edit made here since.
+	 *
+	 * @param string                           $id      The package id.
+	 * @param array<int, array<string, mixed>> $adopted The rows adopted this run.
+	 *
+	 * @return array<int, array<string, mixed>> The rows to record.
+	 */
+	private function notYetInThisPackage(string $id, array $adopted): array {
+		return array_values(
+			array_filter(
+				$adopted,
+				fn (array $row): bool => $this->ledger->stateOf(
+					targetSchema: (string)$row['schema'],
+					targetObject: (string)$row['id'],
+					object: (array)$row['row'],
+				)['set'] !== $id
+			)
+		);
+	}//end notYetInThisPackage()
 
 	/**
 	 * Apply the package's settings, each only when this instance never set it.

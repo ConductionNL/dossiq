@@ -141,6 +141,7 @@
 				"label": "New case",
 				"icon": "Plus",
 				"type": "open-form",
+				"formTitle": "New case",
 				"size": "normal",
 				"columns": 1,
 				"includeFields": [
@@ -149,7 +150,6 @@
 					"requester",
 					"intakeChannel",
 					"description",
-					"startDate",
 					"plannedEndDate",
 					"assignee",
 					"confidentiality",
@@ -163,6 +163,18 @@
 					"requester": {
 						"widget": "InitiatorPicker",
 						"label": "Requester"
+					},
+					"confidentiality": {
+						"enumLabels": {
+							"openbaar": "Public",
+								"beperkt_openbaar": "Restricted public",
+								"intern": "Internal",
+								"zaakvertrouwelijk": "Case confidential",
+								"vertrouwelijk": "Confidential",
+								"confidentieel": "Classified confidential",
+								"geheim": "Secret",
+								"zeer_geheim": "Top secret"
+						}
 					}
 				},
 				"register": "dossiq",
@@ -1113,6 +1125,7 @@
 			"id": "Dashboard",
 			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"config": {
+				"description": "How the team is doing",
 				"kpiRow": [
 					"kpi-open-cases",
 					"kpi-overdue",
@@ -1171,7 +1184,6 @@
 				]
 			},
 			"configPatch": {
-				"description": "How the team is doing",
 				"widgets": {
 					"kpi-overdue": {
 						"title": "Late",
@@ -1188,6 +1200,7 @@
 								}
 							},
 							"icon": "AlertCircleOutline",
+							"iconPlacement": "end",
 							"variant": "error",
 							"format": {
 								"style": "decimal",
@@ -1205,6 +1218,7 @@
 							"label": "Within deadline",
 							"caption": "met their deadline",
 							"icon": "ChartLine",
+							"iconPlacement": "end",
 							"route": {
 								"name": "Doorlooptijd"
 							},
@@ -1366,8 +1380,7 @@
 						"icon": "Plus"
 					}
 				],
-				"showViewToggle": true,
-				"headerFilters": false
+				"showViewToggle": true
 			},
 			"configPatch": {
 				"quickFilters": {
