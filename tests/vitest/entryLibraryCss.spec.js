@@ -6,9 +6,9 @@
  *
  * The library's component styles live in one built sheet,
  * `@conduction/nextcloud-vue/css/index.css`, and webpack does not pull it in
- * through the JS import. `src/main.js` imports it; `src/personalSettings.js`
- * did not, so Settings > Personal > Dossiq rendered the notification matrix
- * without its CSS: the channel header read "Notifications Bundle these" on
+ * through the JS import. `src/main.js` imports it; the personal settings
+ * entry (retired 11 Oct 2026) once did not, so Settings > Personal > Dossiq
+ * rendered the notification matrix without its CSS: the channel header read "Notifications Bundle these" on
  * one line, with no borders and no stacking.
  *
  * @spec openspec/specs/personal-settings-surface/spec.md
@@ -29,7 +29,6 @@ const LIBRARY_CSS = /^import '@conduction\/nextcloud-vue\/css\/index\.css'$/m
 describe('entries that use the library load its stylesheet', () => {
 	it('reads the entries from webpack.config.js', () => {
 		expect(entries).toContain('main.js')
-		expect(entries).toContain('personalSettings.js')
 	})
 
 	const users = entries.filter((entry) =>
@@ -38,7 +37,7 @@ describe('entries that use the library load its stylesheet', () => {
 
 	it('finds the entries that import the library', () => {
 		expect(users).toEqual(
-			expect.arrayContaining(['main.js', 'personalSettings.js']),
+			expect.arrayContaining(['main.js']),
 		)
 	})
 
