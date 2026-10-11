@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\Lifecycle\LifecycleActorGate;
 use OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -84,6 +85,7 @@ class CaseLifecycleGateTest extends TestCase {
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			serviceAccount: $this->createMock(originalClassName: BackgroundServiceAccount::class),
+			l10n: $this->l10n(),
 		);
 	}//end gate()
 
@@ -204,6 +206,7 @@ class CaseLifecycleGateTest extends TestCase {
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			serviceAccount: $this->createMock(originalClassName: BackgroundServiceAccount::class),
+			l10n: $this->l10n(),
 		);
 
 		$this->assertFalse(condition: $gate->may(act: 'finish', case: self::CASE));
@@ -238,8 +241,65 @@ class CaseLifecycleGateTest extends TestCase {
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			serviceAccount: $this->createMock(originalClassName: BackgroundServiceAccount::class),
+			l10n: $this->l10n(),
 		);
 
 		$this->assertFalse(condition: $gate->may(act: 'archive', case: self::CASE));
 	}//end testAnUnresolvableCheckRefuses()
+
+	/**
+	 * An IL10N that formats the way Nextcloud's does, with an optional prefix
+	 * standing in for the Dutch catalogue.
+	 *
+	 * @param string $prefix Put before every translated sentence.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function l10n(string $prefix = ''): IL10N {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => $prefix.vsprintf($text, $parameters)
+		);
+		return $l10n;
+	}//end l10n()
+
+	/**
+	 * The refusal reaches the reader in their language: the sentence is a
+	 * key in dossiq's catalogue, not English text handed to the dialog as is.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/frontend-locale-completeness/spec.md
+	 */
+	public function testTheRefusalIsTranslated(): void {
+		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
+		$rules->method('roleFor')->willReturnMap(
+			[
+				['ct-1', 'finish', 'archivaris'],
+				['ct-1', 'archive', ''],
+			]
+		);
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn('bea');
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		$gate = new LifecycleActorGate(
+			rules: $rules,
+			groupManager: $this->createMock(originalClassName: IGroupManager::class),
+			userSession: $session,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->createMock(originalClassName: BackgroundServiceAccount::class),
+			l10n: $this->l10n(prefix: 'NL: '),
+		);
+
+		$this->assertSame(
+			expected: 'NL: This act needs an administrator.',
+			actual: $gate->refusalSentence(act: 'archive', case: self::CASE)
+		);
+		$this->assertSame(
+			expected: 'NL: This act needs the archivaris group.',
+			actual: $gate->refusalSentence(act: 'finish', case: self::CASE)
+		);
+	}//end testTheRefusalIsTranslated()
 }//end class
