@@ -146,6 +146,23 @@ class CaseDecisionAccessTest extends TestCase {
 		self::assertFalse($this->access->mayChange(objectUuid: self::DOCUMENT, userId: 'p.bakker'));
 	}//end testOneGuardedCaseRefusesEvenWhenAnotherIsOpen()
 
+	/**
+	 * A case-type supervisor sees a hidden decision on their case's document; nobody else is shown it.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-supervisor-of-the-case-sees-a-hidden-decision-on-its-file-req-cra-007
+	 */
+	public function testACaseTypeSupervisorSeesAHiddenDecision(): void {
+		self::assertFalse($this->access->maySee(objectUuid: self::DOCUMENT, userId: 'coordinator'), 'on no case');
+
+		$this->link(caseId: self::GUARDED_CASE);
+
+		self::assertTrue($this->access->maySee(objectUuid: self::DOCUMENT, userId: 'coordinator'));
+		self::assertTrue($this->access->maySee(objectUuid: self::GUARDED_CASE, userId: 'coordinator'));
+		self::assertFalse($this->access->maySee(objectUuid: self::DOCUMENT, userId: 'p.bakker'));
+		self::assertFalse($this->access->maySee(objectUuid: self::DOCUMENT, userId: 'other-coordinator'));
+		self::assertFalse($this->access->maySee(objectUuid: self::OPEN_CASE, userId: 'coordinator'), 'an open case shows nothing extra');
+	}//end testACaseTypeSupervisorSeesAHiddenDecision()
+
 	private function link(string $caseId): void {
 		$this->register->seed('caseDocument', 'link-' . $caseId, ['case' => $caseId, 'document' => self::DOCUMENT]);
 	}//end link()

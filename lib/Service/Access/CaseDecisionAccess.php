@@ -104,6 +104,23 @@ class CaseDecisionAccess {
 	}//end mayChange()
 
 	/**
+	 * Whether the user may see a decision hidden under hideOthers on the object.
+	 *
+	 * Only a supervisor of every guarded case the object belongs to sees it;
+	 * an object on no guarded case shows nothing beyond what OpenRegister shows.
+	 *
+	 * @param string $objectUuid The object the decision is on (a case or a document).
+	 * @param string $userId     The user who reads the decision.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-supervisor-of-the-case-sees-a-hidden-decision-on-its-file-req-cra-007
+	 */
+	public function maySee(string $objectUuid, string $userId): bool {
+		return $this->mayChange(objectUuid: $objectUuid, userId: $userId) === true;
+	}//end maySee()
+
+	/**
 	 * The case rows the object belongs to: itself when it is a case, else the cases that link it as a document.
 	 *
 	 * @param string $objectUuid The object uuid.

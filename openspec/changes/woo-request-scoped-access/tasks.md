@@ -122,6 +122,13 @@ red; put the failing line in the PR body. Double OpenRegister classes with
     case type's supervising group decides who changes another reviewer's decision; tests
     `tests/Unit/Service/Access/CaseDecisionAccessTest.php`, `tests/Unit/Listener/CaseDecisionAccessListenerTest.php`.
     Open: the Newman `redaction` folder (live pass, decision 139), and the tick waits on #4583 landing.
+  - REQ-CRA-007 (11 Oct, coordinator's decision): `CaseDecisionAccess::maySee()` and the same listener
+    on OpenRegister's `DecisionVisibilityRequestedEvent` (openregister#4592, REQ-DEC-003), so a case-type
+    supervisor sees decisions hidden under `hideOthers` on their cases; a failed read keeps it hidden.
+    Tests `CaseDecisionAccessTest::testACaseTypeSupervisorSeesAHiddenDecision`,
+    `CaseDecisionAccessListenerTest::testASupervisorOfTheCaseSeesTheHiddenDecision`,
+    `testAnyoneElseOrAFailedReadLeavesItHidden`, `CaseAccessListenerRegistrarTest`. Stub
+    `tests/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php`.
 
 ## 6. Live
 

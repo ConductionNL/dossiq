@@ -104,3 +104,21 @@ OpenRegister's answer as it was. A read that throws SHALL refuse.
 #### Scenario: A document on no guarded case
 - **GIVEN** a document linked to no case, or only to cases whose case type declares no reviewer access
 - **THEN** dossiq SHALL leave OpenRegister's answer unchanged
+
+### Requirement: A supervisor of the case sees a hidden decision on its file (REQ-CRA-007)
+
+When OpenRegister asks, through `DecisionVisibilityRequestedEvent` (openregister REQ-DEC-003),
+whether a user may see another reviewer's decision that a schema hides under `hideOthers`, dossiq
+SHALL map the decision's subject object to its cases as in REQ-CRA-006 and allow it only when at
+least one of those cases has a case type that declares reviewer access and the user supervises
+every such case (a member of its case type's supervising group, or an administrator). Otherwise
+dossiq SHALL not answer, so the decision stays hidden. A read that throws SHALL leave it hidden.
+
+#### Scenario: A case-type supervisor outside the schema's groups sees the hidden decision
+- **GIVEN** `hideOthers` on, a document linked to a case whose case type names supervising group `woo-coordinators`, which the document schema does not name, and a redaction decided by `j.devries`
+- **WHEN** a member of `woo-coordinators` reads the document's detections
+- **THEN** dossiq SHALL allow it and the decision, its ground and its verdict are shown
+
+#### Scenario: Anyone else, or a failed read, keeps it hidden
+- **WHEN** `p.bakker`, who supervises no case of the document, reads them, or the case cannot be read
+- **THEN** dossiq SHALL not allow it and the relation shows `decision: "hidden"`

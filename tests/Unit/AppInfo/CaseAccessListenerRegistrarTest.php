@@ -44,6 +44,7 @@ class CaseAccessListenerRegistrarTest extends TestCase {
 				['OCA\OpenRegister\Event\ObjectUpdatingEvent', CaseReassignGuardListener::class],
 				['OCA\OpenRegister\Event\ObjectUpdatedEvent', CaseReassignGuardListener::class],
 				['OCA\OpenRegister\Event\DecisionChangeRequestedEvent', CaseDecisionAccessListener::class],
+				['OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent', CaseDecisionAccessListener::class],
 			],
 			$registered
 		);

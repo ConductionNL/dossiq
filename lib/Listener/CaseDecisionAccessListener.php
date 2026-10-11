@@ -29,13 +29,15 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Access\CaseDecisionAccess;
 use OCA\OpenRegister\Event\DecisionChangeRequestedEvent;
+use OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Allow or refuse a change to another reviewer's decision on a case's object.
+ * Allow or refuse a change to another reviewer's decision on a case's object,
+ * and show a hidden one to a supervisor of that case.
  *
  * @implements IEventListener<Event>
  *
@@ -67,6 +69,11 @@ class CaseDecisionAccessListener implements IEventListener {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-decision-on-a-cases-file-is-changed-by-its-decider-or-a-supervisor-of-that-case-req-cra-006
 	 */
 	public function handle(Event $event): void {
+		if ($event instanceof DecisionVisibilityRequestedEvent === true) {
+			$this->answerVisibility(event: $event);
+			return;
+		}
+
 		if ($event instanceof DecisionChangeRequestedEvent === false) {
 			return;
 		}
@@ -95,4 +102,34 @@ class CaseDecisionAccessListener implements IEventListener {
 			$event->refuse(CaseDecisionAccess::REFUSAL);
 		}
 	}//end handle()
+
+	/**
+	 * Show a hidden decision to a supervisor of the object's case; leave it hidden for anyone else.
+	 *
+	 * A read that throws leaves it hidden.
+	 *
+	 * @param DecisionVisibilityRequestedEvent $event The visibility question.
+	 *
+	 * @return void
+	 */
+	private function answerVisibility(DecisionVisibilityRequestedEvent $event): void {
+		$objectUuid = trim((string)($event->getSubject()['objectUuid'] ?? ''));
+		if ($objectUuid === '') {
+			return;
+		}
+
+		try {
+			$visible = $this->access->maySee(objectUuid: $objectUuid, userId: $event->getActorId());
+		} catch (Throwable $error) {
+			$this->logger->warning(
+				'Dossiq: the case of a hidden decision could not be read; it stays hidden (REQ-CRA-007)',
+				['object' => $objectUuid, 'error' => $error->getMessage()]
+			);
+			return;
+		}
+
+		if ($visible === true) {
+			$event->allow();
+		}
+	}//end answerVisibility()
 }//end class

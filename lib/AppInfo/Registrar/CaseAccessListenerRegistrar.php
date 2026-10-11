@@ -31,13 +31,14 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Listener\CaseDecisionAccessListener;
 use OCA\Dossiq\Listener\CaseReassignGuardListener;
 use OCA\OpenRegister\Event\DecisionChangeRequestedEvent;
+use OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Registers the case reassign guard on the update before and after the save,
- * and the case's answer to OpenRegister's decision change question.
+ * and the case's answer to OpenRegister's decision change and visibility questions.
  *
  * @psalm-suppress UnusedClass
  *
@@ -68,5 +69,7 @@ class CaseAccessListenerRegistrar {
 		// REQ-CRA-006: OpenRegister asks who may change another reviewer's
 		// decision. Registered by name; without OpenRegister nothing dispatches it.
 		$context->registerEventListener(event: DecisionChangeRequestedEvent::class, listener: CaseDecisionAccessListener::class);
+		// REQ-CRA-007: and whether a case-type supervisor sees a decision hidden under hideOthers.
+		$context->registerEventListener(event: DecisionVisibilityRequestedEvent::class, listener: CaseDecisionAccessListener::class);
 	}//end register()
 }//end class
