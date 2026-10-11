@@ -9,4 +9,4 @@
 - [x] 2.1 The case page's sidebar trail is called Audit trail; tab ids and Dutch labels are unique.
   - `tests/vitest/casePageLabelsHistoryAndTourFirst.spec.js` (N-6)
 - [x] 3.1 `walkthrough_seen` initial state and the support note held back until the tour is seen.
-  - `tests/Unit/Service/Onboarding/WalkthroughCompletionTest.php`, `tests/vitest/casePageLabelsHistoryAndTourFirst.spec.js` (N-7)
+  - `tests/Unit/Service/Onboarding/WalkthroughCompletionTest.php`, `tests/Unit/Listener/WalkthroughSeenInitialStateListenerTest.php`, `tests/vitest/casePageLabelsHistoryAndTourFirst.spec.js` (N-7)

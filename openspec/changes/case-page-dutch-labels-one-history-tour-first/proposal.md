@@ -39,7 +39,7 @@ a new user's first load.
 - The sidebar tab over the audit trail on the case page is called "Audit trail"
   (Dutch "Audittrail"), so the strip's History and the sidebar's trail no longer
   share a name.
-- The page controller hands `walkthrough_seen` to the frontend, and App.vue
+- A listener on dossiq's page render hands `walkthrough_seen` to the frontend, and App.vue
   turns the support note off on a load where the welcome tour is not yet behind
   the user.
 
@@ -58,9 +58,12 @@ a new user's first load.
   `src/menu-layout.simple.json`, `src/manifest.json`, `src/App.vue`,
   `src/utils/onboardingOrder.js` (new).
 - `lib/Service/Lifecycle/LifecycleActorGate.php`,
-  `lib/Service/Onboarding/WalkthroughCompletion.php` (new),
-  `lib/Controller/DashboardController.php`, `lib/AppInfo/Registrar/BespokeServiceRegistrar.php`.
+  `lib/Service/Onboarding/WalkthroughCompletion.php`,
+  `lib/Listener/WalkthroughSeenInitialStateListener.php`,
+  `lib/AppInfo/Registrar/OnboardingListenerRegistrar.php` (new),
+  `lib/AppInfo/Registrar/ObjectListenerRegistrar.php`.
 - `l10n/en.json`, `l10n/nl.json`, `l10n/en.js`, `l10n/nl.js`.
 - Tests: `tests/vitest/casePageLabelsHistoryAndTourFirst.spec.js` (new),
-  `tests/Unit/Service/Onboarding/WalkthroughCompletionTest.php` (new),
+  `tests/Unit/Service/Onboarding/WalkthroughCompletionTest.php`,
+  `tests/Unit/Listener/WalkthroughSeenInitialStateListenerTest.php` (new),
   `tests/Unit/Service/CaseLifecycleGateTest.php`.

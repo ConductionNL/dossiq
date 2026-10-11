@@ -5,7 +5,7 @@
  *
  * A new user qualifies for two first-open overlays: the welcome tour and the
  * support note. The tour is onboarding, so it goes first, and the support note
- * waits for a later load (finding N-7). The page controller hands this answer
+ * waits for a later load (finding N-7). WalkthroughSeenInitialStateListener hands this answer
  * to the frontend as initial state, and `src/App.vue` keeps the support note
  * off on any load where the tour has not been seen yet.
  *

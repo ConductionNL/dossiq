@@ -10,7 +10,7 @@
  * "Steun Dossiq" before they had seen the app at all, and the tour only on the
  * next load (finding N-7). The tour is onboarding, so dossiq turns the support
  * note off on every load where the tour is not yet behind the user. The page
- * controller says which (`walkthrough_seen`, WalkthroughCompletion.php).
+ * render says which (`walkthrough_seen`, WalkthroughSeenInitialStateListener.php).
  * Once the tour is finished or skipped, the next load shows the note the way
  * the library always did, once.
  *
@@ -21,6 +21,6 @@
  */
 export function supportDialogForThisLoad(walkthroughSeen) {
 	// Only a definite "not seen" holds the note back. A page served without
-	// the state (an older controller) keeps the library's default.
+	// the state (an older server) keeps the library's default.
 	return walkthroughSeen !== false
 }

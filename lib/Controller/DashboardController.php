@@ -41,7 +41,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Onboarding\WalkthroughCompletion;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -126,14 +125,12 @@ class DashboardController extends Controller {
 	 * @param IInitialState $initialState Page initial state, for the roadmap feature list.
 	 * @param IAppConfig    $appConfig    App configuration, for the case-plan read preference.
 	 * @param IEventDispatcher $eventDispatcher The dispatcher the Files and Viewer load events go through.
-	 * @param WalkthroughCompletion $walkthroughCompletion Whether the caller has seen the welcome tour.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IInitialState $initialState,
 		private readonly IAppConfig $appConfig,
 		private readonly IEventDispatcher $eventDispatcher,
-		private readonly WalkthroughCompletion $walkthroughCompletion,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -190,12 +187,6 @@ class DashboardController extends Controller {
 		);
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 		$this->initialState->provideInitialState('version', $this->installedVersion());
-		// The support note waits until the welcome tour is behind the user
-		// (first-load-onboarding): src/App.vue reads this to hold it back.
-		$this->initialState->provideInitialState(
-			WalkthroughCompletion::STATE_KEY,
-			$this->walkthroughCompletion->seen()
-		);
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()

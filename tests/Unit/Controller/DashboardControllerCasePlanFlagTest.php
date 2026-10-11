@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DashboardController;
-use OCA\Dossiq\Service\Onboarding\WalkthroughCompletion;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -60,7 +59,6 @@ final class DashboardControllerCasePlanFlagTest extends TestCase {
 			$this->createMock(IInitialState::class),
 			$appConfig,
 			$this->createMock(originalClassName: IEventDispatcher::class),
-			$this->createMock(originalClassName: WalkthroughCompletion::class),
 		);
 	}//end controller()
 
@@ -107,7 +105,6 @@ final class DashboardControllerCasePlanFlagTest extends TestCase {
 			$this->createMock(IInitialState::class),
 			$appConfig,
 			$this->createMock(originalClassName: IEventDispatcher::class),
-			$this->createMock(originalClassName: WalkthroughCompletion::class),
 		);
 
 		$method = new ReflectionMethod(DashboardController::class, 'prefersOpenRegisterCasePlan');

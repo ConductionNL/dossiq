@@ -27,7 +27,9 @@ have no history in a tab strip.
 ## Tour first, support note later
 
 CnAppRoot reads `supportDialog` once, at setup, so the decision is made before
-the app mounts, from initial state. The page controller reads the preference
+the app mounts, from initial state. A BeforeTemplateRenderedEvent listener (the
+page controller sits on the coupling ceiling, as with the Woo reports state)
+reads the preference
 nextcloud-vue writes when the tour is completed or skipped
 (`walkthrough_completed_version`, the manifest's `completionConfigKey`). While it
 is empty, App.vue passes `supportDialog: false`, so the library neither shows
