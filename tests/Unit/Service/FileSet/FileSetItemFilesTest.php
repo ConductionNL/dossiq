@@ -33,7 +33,7 @@ use Psr\Log\NullLogger;
 /**
  * REQ-WDS-004: what the compare dialog reads.
  *
- * @covers \OCA\Dossiq\Woo\FileSetItemFiles
+ * @covers \OCA\Dossiq\Service\FileSet\FileSetItemFiles
  *
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects

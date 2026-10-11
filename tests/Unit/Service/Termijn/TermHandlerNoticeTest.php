@@ -35,6 +35,7 @@ use Psr\Log\LoggerInterface;
  * The handler is told on the rungs the term definition names, and on no other.
  *
  * @covers \OCA\Dossiq\Service\Termijn\TermHandlerNotice
+ * @uses \OCA\Dossiq\Service\DeadlineEscalationService
  */
 class TermHandlerNoticeTest extends TestCase {
 
