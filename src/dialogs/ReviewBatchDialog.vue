@@ -37,7 +37,11 @@
 					{{ ref }}
 				</NcCheckboxRadioSwitch>
 			</fieldset>
-			<p v-if="error" class="review-batch__error" role="alert" data-testid="review-batch-error">
+			<p
+				v-if="error"
+				class="review-batch__error"
+				role="alert"
+				data-testid="review-batch-error">
 				{{ error }}
 			</p>
 		</div>
@@ -45,7 +49,11 @@
 			<NcButton data-testid="review-batch-cancel" @click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="saving || chosen.length === 0" data-testid="review-batch-create" @click="create">
+			<NcButton
+				variant="primary"
+				:disabled="saving || chosen.length === 0"
+				data-testid="review-batch-create"
+				@click="create">
 				{{ t('dossiq', 'Make the batch') }}
 			</NcButton>
 		</template>
@@ -100,16 +108,32 @@ export default {
 			this.error = ''
 			try {
 				const { data } = await axios.post(
-					generateUrl(`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/batches`),
-					{ name: this.name.trim(), assignee: this.assignee.trim(), documents: this.chosen },
+					generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/batches`,
+					),
+					{
+						name: this.name.trim(),
+						assignee: this.assignee.trim(),
+						documents: this.chosen,
+					},
 				)
 				this.$emit('created', data)
 			} catch (e) {
 				const taken = e?.response?.data?.taken
-				const message = e?.response?.data?.message || t('dossiq', 'The Review batch cannot be stored, so nothing was assigned.')
-				this.error = taken && typeof taken === 'object'
-					? message + ' ' + Object.entries(taken).map(([ref, batch]) => `${ref}: ${batch}`).join(', ')
-					: message
+				const message =
+					e?.response?.data?.message
+					|| t(
+						'dossiq',
+						'The Review batch cannot be stored, so nothing was assigned.',
+					)
+				this.error =
+					taken && typeof taken === 'object'
+						? message
+							+ ' '
+							+ Object.entries(taken)
+								.map(([ref, batch]) => `${ref}: ${batch}`)
+								.join(', ')
+						: message
 			} finally {
 				this.saving = false
 			}

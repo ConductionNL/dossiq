@@ -43,7 +43,13 @@ export function pagesSeenUrl(caseId, documentRef) {
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
  */
-export function createPagesSeenReporter({ caseId, documentRef, delay = 400, onSaved = () => {}, onError = () => {} }) {
+export function createPagesSeenReporter({
+	caseId,
+	documentRef,
+	delay = 400,
+	onSaved = () => {},
+	onError = () => {},
+}) {
 	const reported = new Set()
 	let pending = new Set()
 	let pageCount = null
@@ -70,7 +76,10 @@ export function createPagesSeenReporter({ caseId, documentRef, delay = 400, onSa
 			body.pageCount = pageCount
 		}
 		try {
-			const { data } = await axios.post(pagesSeenUrl(caseId, documentRef), body)
+			const { data } = await axios.post(
+				pagesSeenUrl(caseId, documentRef),
+				body,
+			)
 			onSaved(data)
 			return data
 		} catch (error) {

@@ -39,21 +39,45 @@
 			</template>
 		</NcEmptyContent>
 
-		<p v-else-if="!enabled" class="document-review__off" data-testid="document-review-off">
-			{{ t('dossiq', 'The case type of this case does not review its documents for relevance.') }}
+		<p
+			v-else-if="!enabled"
+			class="document-review__off"
+			data-testid="document-review-off">
+			{{
+				t(
+					'dossiq',
+					'The case type of this case does not review its documents for relevance.',
+				)
+			}}
 		</p>
 
 		<template v-else>
-			<section class="document-review__section" data-testid="document-review-status">
+			<section
+				class="document-review__section"
+				data-testid="document-review-status">
 				<h3>{{ t('dossiq', 'Where the review stands') }}</h3>
 				<p class="document-review__lead">
-					{{ t('dossiq', 'First relevant or not, then a verdict. Only relevant documents get a verdict.') }}
+					{{
+						t(
+							'dossiq',
+							'First relevant or not, then a verdict. Only relevant documents get a verdict.',
+						)
+					}}
 				</p>
 				<ul class="document-review__tiles">
-					<li v-for="tile in tiles" :key="tile.key" :data-testid="'document-review-tile-' + tile.key">
-						<span class="document-review__tile-label">{{ tile.label }}</span>
-						<strong class="document-review__tile-value">{{ tile.value }}</strong>
-						<span class="document-review__tile-note">{{ tile.note }}</span>
+					<li
+						v-for="tile in tiles"
+						:key="tile.key"
+						:data-testid="'document-review-tile-' + tile.key">
+						<span class="document-review__tile-label">{{
+							tile.label
+						}}</span>
+						<strong class="document-review__tile-value">{{
+							tile.value
+						}}</strong>
+						<span class="document-review__tile-note">{{
+							tile.note
+						}}</span>
 					</li>
 				</ul>
 				<p
@@ -61,58 +85,97 @@
 					class="document-review__unseen"
 					role="status"
 					data-testid="document-review-unseen">
-					{{ t('dossiq', 'The decision and the publication wait until every required page is seen: {pages} pages in {documents} documents to go.', { pages: unseenPageCount, documents: unseenDocumentCount }) }}
+					{{
+						t(
+							'dossiq',
+							'The decision and the publication wait until every required page is seen: {pages} pages in {documents} documents to go.',
+							{
+								pages: unseenPageCount,
+								documents: unseenDocumentCount,
+							},
+						)
+					}}
 				</p>
 			</section>
 
-			<section class="document-review__section" data-testid="document-review-recall">
+			<section
+				class="document-review__section"
+				data-testid="document-review-recall">
 				<div class="document-review__head">
-					<h3>{{ t('dossiq', 'Stopping rule and how much was found') }}</h3>
-					<NcButton :disabled="!canDraw" data-testid="document-review-draw" @click="showSampleDialog = true">
+					<h3>
+						{{ t('dossiq', 'Stopping rule and how much was found') }}
+					</h3>
+					<NcButton
+						:disabled="!canDraw"
+						data-testid="document-review-draw"
+						@click="showSampleDialog = true">
 						{{ t('dossiq', 'Draw a sample') }}
 					</NcButton>
 				</div>
 
-				<p v-if="rule" class="document-review__lead" data-testid="document-review-rule">
-					{{ t('dossiq', 'Target: {target}% found with {confidence}% confidence. Declared by {user} on {date}, before the first document was marked. Nobody can change it after that.', ruleWords) }}
+				<p
+					v-if="rule"
+					class="document-review__lead"
+					data-testid="document-review-rule">
+					{{
+						t(
+							'dossiq',
+							'Target: {target}% found with {confidence}% confidence. Declared by {user} on {date}, before the first document was marked. Nobody can change it after that.',
+							ruleWords,
+						)
+					}}
 				</p>
 				<template v-else>
-					<p class="document-review__lead" data-testid="document-review-no-rule">
-						{{ reviewStarted
-							? t('dossiq', 'No stopping rule was declared before review started, so none will be recorded as met.')
-							: t('dossiq', 'No stopping rule is declared yet. It can only be declared before the first document is marked.') }}
+					<p
+						class="document-review__lead"
+						data-testid="document-review-no-rule">
+						{{
+							reviewStarted
+								? t(
+										'dossiq',
+										'No stopping rule was declared before review started, so none will be recorded as met.',
+									)
+								: t(
+										'dossiq',
+										'No stopping rule is declared yet. It can only be declared before the first document is marked.',
+									)
+						}}
 					</p>
 					<form
 						v-if="!reviewStarted"
 						class="document-review__rule-form"
 						data-testid="document-review-rule-form"
 						@submit.prevent="declareRule">
-						<label for="document-review-target">{{ t('dossiq', 'Target recall (%)') }}</label>
+						<label for="document-review-target">{{
+							t('dossiq', 'Target recall (%)')
+						}}</label>
 						<input
 							id="document-review-target"
 							v-model.number="ruleForm.target"
 							type="number"
 							min="50"
 							max="99"
-							required>
-						<label for="document-review-confidence">{{ t('dossiq', 'Confidence') }}</label>
-						<select id="document-review-confidence" v-model.number="ruleForm.confidence">
-							<option :value="0.9">
-								90%
-							</option>
-							<option :value="0.95">
-								95%
-							</option>
-							<option :value="0.99">
-								99%
-							</option>
+							required />
+						<label for="document-review-confidence">{{
+							t('dossiq', 'Confidence')
+						}}</label>
+						<select
+							id="document-review-confidence"
+							v-model.number="ruleForm.confidence">
+							<option :value="0.9">90%</option>
+							<option :value="0.95">95%</option>
+							<option :value="0.99">99%</option>
 						</select>
 						<NcButton type="submit" variant="primary" :disabled="saving">
 							{{ t('dossiq', 'Declare the stopping rule') }}
 						</NcButton>
 					</form>
 				</template>
-				<p v-if="actionError" class="document-review__refusal" role="alert" data-testid="document-review-refusal">
+				<p
+					v-if="actionError"
+					class="document-review__refusal"
+					role="alert"
+					data-testid="document-review-refusal">
 					{{ actionError }}
 				</p>
 
@@ -120,13 +183,28 @@
 					<li
 						v-for="sample in samples"
 						:key="sample.id"
-						:class="{ 'document-review__sample--met': !!sample.stoppingRuleMetAt }"
+						:class="{
+							'document-review__sample--met':
+								!!sample.stoppingRuleMetAt,
+						}"
 						data-testid="document-review-sample">
-						<strong>{{ t('dossiq', 'Sample drawn {date}', { date: day(sample.drawnAt) }) }}</strong>
-						<span class="document-review__pill" data-testid="document-review-sample-state">{{ sampleState(sample) }}</span>
+						<strong>{{
+							t('dossiq', 'Sample drawn {date}', {
+								date: day(sample.drawnAt),
+							})
+						}}</strong>
+						<span
+							class="document-review__pill"
+							data-testid="document-review-sample-state"
+							>{{ sampleState(sample) }}</span
+						>
 						<span>{{ sampleLine(sample) }}</span>
-						<span class="document-review__meta">{{ sampleMeta(sample) }}</span>
-						<ul v-if="sample.recallLowerBound === undefined" class="document-review__judge">
+						<span class="document-review__meta">{{
+							sampleMeta(sample)
+						}}</span>
+						<ul
+							v-if="sample.recallLowerBound === undefined"
+							class="document-review__judge">
 							<li
 								v-for="ref in unjudged(sample)"
 								:key="ref"
@@ -150,15 +228,24 @@
 				</ul>
 			</section>
 
-			<section class="document-review__section" data-testid="document-review-batches">
+			<section
+				class="document-review__section"
+				data-testid="document-review-batches">
 				<div class="document-review__head">
 					<h3>{{ t('dossiq', 'Batches and reviewers') }}</h3>
-					<NcButton data-testid="document-review-new-batch" @click="showBatchDialog = true">
+					<NcButton
+						data-testid="document-review-new-batch"
+						@click="showBatchDialog = true">
 						{{ t('dossiq', 'Make a batch') }}
 					</NcButton>
 				</div>
 				<p class="document-review__lead">
-					{{ t('dossiq', 'Each batch has one reviewer, who gets a task for it. A document is in at most one open batch.') }}
+					{{
+						t(
+							'dossiq',
+							'Each batch has one reviewer, who gets a task for it. A document is in at most one open batch.',
+						)
+					}}
 				</p>
 				<table v-if="batches.length > 0" class="document-review__table">
 					<thead>
@@ -170,29 +257,56 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="batch in batches" :key="batch.id" data-testid="document-review-batch">
+						<tr
+							v-for="batch in batches"
+							:key="batch.id"
+							data-testid="document-review-batch">
 							<td>{{ batch.name }}</td>
 							<td>{{ batch.assignee }}</td>
 							<td>{{ (batch.documents || []).length }}</td>
-							<td>{{ t('dossiq', '{done} of {total}', { done: batch.progress?.assessed ?? 0, total: batch.progress?.total ?? 0 }) }}</td>
+							<td>
+								{{
+									t('dossiq', '{done} of {total}', {
+										done: batch.progress?.assessed ?? 0,
+										total: batch.progress?.total ?? 0,
+									})
+								}}
+							</td>
 						</tr>
 					</tbody>
 				</table>
-				<p v-else class="document-review__lead" data-testid="document-review-no-batches">
+				<p
+					v-else
+					class="document-review__lead"
+					data-testid="document-review-no-batches">
 					{{ t('dossiq', 'No batch yet.') }}
 				</p>
 			</section>
 
-			<section class="document-review__section" data-testid="document-review-outstanding">
+			<section
+				class="document-review__section"
+				data-testid="document-review-outstanding">
 				<h3>{{ t('dossiq', 'What is still open') }}</h3>
 				<p class="document-review__lead">
-					{{ t('dossiq', 'Unmarked documents and relevant documents without a verdict. What is not relevant is not listed here.') }}
+					{{
+						t(
+							'dossiq',
+							'Unmarked documents and relevant documents without a verdict. What is not relevant is not listed here.',
+						)
+					}}
 				</p>
 				<ul class="document-review__outstanding">
-					<li v-for="ref in outstanding" :key="ref" data-testid="document-review-open-document">
+					<li
+						v-for="ref in outstanding"
+						:key="ref"
+						data-testid="document-review-open-document">
 						<span>{{ ref }}</span>
 						<span v-if="unseen[ref]" class="document-review__meta">
-							{{ t('dossiq', 'Pages still to see: {pages}', { pages: unseen[ref].join(', ') }) }}
+							{{
+								t('dossiq', 'Pages still to see: {pages}', {
+									pages: unseen[ref].join(', '),
+								})
+							}}
 						</span>
 					</li>
 				</ul>
@@ -298,10 +412,30 @@ export default {
 			const verdicts = this.summary?.verdicts?.total ?? 0
 			const open = this.summary?.outstanding?.count ?? 0
 			return [
-				{ key: 'in-scope', label: t('dossiq', 'Relevant'), value: relevance.inScope ?? 0, note: t('dossiq', '{count} with a verdict', { count: verdicts }) },
-				{ key: 'out-of-scope', label: t('dossiq', 'Not relevant'), value: relevance.outOfScope ?? 0, note: t('dossiq', 'no verdict needed') },
-				{ key: 'unmarked', label: t('dossiq', 'Not marked yet'), value: relevance.unmarked ?? 0, note: t('dossiq', 'waiting for a rule or a reviewer') },
-				{ key: 'outstanding', label: t('dossiq', 'Still to assess'), value: open, note: t('dossiq', 'relevant without a verdict, and unmarked') },
+				{
+					key: 'in-scope',
+					label: t('dossiq', 'Relevant'),
+					value: relevance.inScope ?? 0,
+					note: t('dossiq', '{count} with a verdict', { count: verdicts }),
+				},
+				{
+					key: 'out-of-scope',
+					label: t('dossiq', 'Not relevant'),
+					value: relevance.outOfScope ?? 0,
+					note: t('dossiq', 'no verdict needed'),
+				},
+				{
+					key: 'unmarked',
+					label: t('dossiq', 'Not marked yet'),
+					value: relevance.unmarked ?? 0,
+					note: t('dossiq', 'waiting for a rule or a reviewer'),
+				},
+				{
+					key: 'outstanding',
+					label: t('dossiq', 'Still to assess'),
+					value: open,
+					note: t('dossiq', 'relevant without a verdict, and unmarked'),
+				},
 			]
 		},
 
@@ -312,7 +446,9 @@ export default {
 		 */
 		outstanding() {
 			const documents = this.summary?.outstanding?.documents
-			return Array.isArray(documents) ? documents.map((ref) => String(ref?.documentRef ?? ref)) : []
+			return Array.isArray(documents)
+				? documents.map((ref) => String(ref?.documentRef ?? ref))
+				: []
 		},
 
 		/**
@@ -322,7 +458,9 @@ export default {
 		 */
 		unseen() {
 			const unseen = this.summary?.unseen
-			return unseen && typeof unseen === 'object' && !Array.isArray(unseen) ? unseen : {}
+			return unseen && typeof unseen === 'object' && !Array.isArray(unseen)
+				? unseen
+				: {}
 		},
 
 		/**
@@ -331,7 +469,10 @@ export default {
 		 * @return {number} The pages.
 		 */
 		unseenPageCount() {
-			return Object.values(this.unseen).reduce((sum, pages) => sum + (Array.isArray(pages) ? pages.length : 0), 0)
+			return Object.values(this.unseen).reduce(
+				(sum, pages) => sum + (Array.isArray(pages) ? pages.length : 0),
+				0,
+			)
 		},
 
 		/**
@@ -395,7 +536,9 @@ export default {
 		 * @return {string} The url.
 		 */
 		url(path) {
-			return generateUrl(`/apps/dossiq/api/cases/${encodeURIComponent(this.objectId)}/review${path}`)
+			return generateUrl(
+				`/apps/dossiq/api/cases/${encodeURIComponent(this.objectId)}/review${path}`,
+			)
 		},
 
 		/**
@@ -420,14 +563,20 @@ export default {
 						axios.get(this.url('/batches')),
 						axios.get(this.url('/recall')),
 					])
-					this.batches = Array.isArray(batches.data?.results) ? batches.data.results : []
+					this.batches = Array.isArray(batches.data?.results)
+						? batches.data.results
+						: []
 					this.rule = recall.data?.rule ?? null
 					this.reviewStarted = recall.data?.reviewStarted === true
-					this.samples = Array.isArray(recall.data?.samples) ? recall.data.samples : []
+					this.samples = Array.isArray(recall.data?.samples)
+						? recall.data.samples
+						: []
 				}
 			} catch (e) {
 				// Fails closed: an unreadable review and an empty one look the same, and only one is safe to decide on.
-				this.error = e?.response?.data?.message || t('dossiq', 'The document review could not be read.')
+				this.error =
+					e?.response?.data?.message
+					|| t('dossiq', 'The document review could not be read.')
 			} finally {
 				this.loading = false
 			}
@@ -450,7 +599,12 @@ export default {
 				})
 				this.rule = data
 			} catch (e) {
-				this.actionError = e?.response?.data?.message || t('dossiq', 'The stopping rule cannot be stored, so nothing was declared.')
+				this.actionError =
+					e?.response?.data?.message
+					|| t(
+						'dossiq',
+						'The stopping rule cannot be stored, so nothing was declared.',
+					)
 			} finally {
 				this.saving = false
 			}
@@ -463,8 +617,13 @@ export default {
 		 * @return {Array<string>} The document refs.
 		 */
 		unjudged(sample) {
-			const judged = sample.judgements && typeof sample.judgements === 'object' ? sample.judgements : {}
-			return (sample.documents || []).map(String).filter((ref) => !(ref in judged))
+			const judged =
+				sample.judgements && typeof sample.judgements === 'object'
+					? sample.judgements
+					: {}
+			return (sample.documents || [])
+				.map(String)
+				.filter((ref) => !(ref in judged))
 		},
 
 		/**
@@ -481,10 +640,22 @@ export default {
 			this.saving = true
 			this.actionError = ''
 			try {
-				const { data } = await axios.post(this.url(`/recall/samples/${encodeURIComponent(sample.id)}/judgements`), { documentRef: ref, inScope })
-				this.samples = this.samples.map((row) => (row.id === sample.id ? data : row))
+				const { data } = await axios.post(
+					this.url(
+						`/recall/samples/${encodeURIComponent(sample.id)}/judgements`,
+					),
+					{ documentRef: ref, inScope },
+				)
+				this.samples = this.samples.map((row) =>
+					row.id === sample.id ? data : row,
+				)
 			} catch (e) {
-				this.actionError = e?.response?.data?.message || t('dossiq', 'The Recall sample cannot be stored, so nothing was drawn or judged.')
+				this.actionError =
+					e?.response?.data?.message
+					|| t(
+						'dossiq',
+						'The Recall sample cannot be stored, so nothing was drawn or judged.',
+					)
 			} finally {
 				this.saving = false
 			}
@@ -512,7 +683,9 @@ export default {
 				return ''
 			}
 			const date = new Date(value)
-			return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
+			return Number.isNaN(date.getTime())
+				? String(value)
+				: date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })
 		},
 
 		/**
@@ -525,12 +698,17 @@ export default {
 		 */
 		sampleState(sample) {
 			if (sample.recallLowerBound === undefined) {
-				return t('dossiq', '{judged} of {total} judged', { judged: sample.progress?.judged ?? 0, total: sample.progress?.total ?? 0 })
+				return t('dossiq', '{judged} of {total} judged', {
+					judged: sample.progress?.judged ?? 0,
+					total: sample.progress?.total ?? 0,
+				})
 			}
 			if (sample.stoppingRuleMetAt) {
 				return t('dossiq', 'Stopping rule met')
 			}
-			return this.rule ? t('dossiq', 'Below the target') : t('dossiq', 'Estimated')
+			return this.rule
+				? t('dossiq', 'Below the target')
+				: t('dossiq', 'Estimated')
 		},
 
 		/**
@@ -551,9 +729,17 @@ export default {
 				confidence: percent(sample.confidence),
 			}
 			if (this.rule && !sample.stoppingRuleMetAt) {
-				return t('dossiq', 'An estimated {estimate}% found. Lower bound {lower}% at {confidence}% confidence, against a target of {target}%.', { ...words, target: percent(this.rule.targetRecall) })
+				return t(
+					'dossiq',
+					'An estimated {estimate}% found. Lower bound {lower}% at {confidence}% confidence, against a target of {target}%.',
+					{ ...words, target: percent(this.rule.targetRecall) },
+				)
 			}
-			return t('dossiq', 'An estimated {estimate}% found. Lower bound {lower}% at {confidence}% confidence.', words)
+			return t(
+				'dossiq',
+				'An estimated {estimate}% found. Lower bound {lower}% at {confidence}% confidence.',
+				words,
+			)
 		},
 
 		/**
@@ -565,12 +751,16 @@ export default {
 		 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
 		 */
 		sampleMeta(sample) {
-			return t('dossiq', '{n} of {N} not relevant or unmarked documents · {k} relevant after all · {found} found', {
-				n: (sample.documents || []).length,
-				N: sample.nullSetSize ?? 0,
-				k: sample.k ?? '–',
-				found: sample.found ?? 0,
-			})
+			return t(
+				'dossiq',
+				'{n} of {N} not relevant or unmarked documents · {k} relevant after all · {found} found',
+				{
+					n: (sample.documents || []).length,
+					N: sample.nullSetSize ?? 0,
+					k: sample.k ?? '–',
+					found: sample.found ?? 0,
+				},
+			)
 		},
 	},
 }
@@ -621,7 +811,8 @@ export default {
 
 .document-review__unseen,
 .document-review__refusal {
-	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+	padding: calc(var(--default-grid-baseline) * 2)
+		calc(var(--default-grid-baseline) * 3);
 	border-radius: var(--border-radius);
 	background: var(--color-warning-hover, var(--color-background-dark));
 }

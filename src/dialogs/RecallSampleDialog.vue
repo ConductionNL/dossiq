@@ -19,7 +19,13 @@
 		@closing="$emit('close')">
 		<div class="recall-sample">
 			<p>
-				{{ t('dossiq', 'The sample is drawn from the {count} documents that are not relevant or not marked yet. Judging a sampled document does not change its marking.', { count: nullSetSize }) }}
+				{{
+					t(
+						'dossiq',
+						'The sample is drawn from the {count} documents that are not relevant or not marked yet. Judging a sampled document does not change its marking.',
+						{ count: nullSetSize },
+					)
+				}}
 			</p>
 			<NcTextField
 				v-model="size"
@@ -30,7 +36,11 @@
 				v-model="assignee"
 				data-testid="recall-sample-assignee"
 				:label="t('dossiq', 'User id of the reviewer')" />
-			<p v-if="error" class="recall-sample__error" role="alert" data-testid="recall-sample-error">
+			<p
+				v-if="error"
+				class="recall-sample__error"
+				role="alert"
+				data-testid="recall-sample-error">
 				{{ error }}
 			</p>
 		</div>
@@ -38,7 +48,11 @@
 			<NcButton data-testid="recall-sample-cancel" @click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="saving" data-testid="recall-sample-draw" @click="draw">
+			<NcButton
+				variant="primary"
+				:disabled="saving"
+				data-testid="recall-sample-draw"
+				@click="draw">
 				{{ t('dossiq', 'Draw the sample') }}
 			</NcButton>
 		</template>
@@ -92,12 +106,19 @@ export default {
 			this.error = ''
 			try {
 				const { data } = await axios.post(
-					generateUrl(`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/recall/samples`),
+					generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/recall/samples`,
+					),
 					{ size: Number(this.size), assignee: this.assignee.trim() },
 				)
 				this.$emit('drawn', data)
 			} catch (e) {
-				this.error = e?.response?.data?.message || t('dossiq', 'The Recall sample cannot be stored, so nothing was drawn or judged.')
+				this.error =
+					e?.response?.data?.message
+					|| t(
+						'dossiq',
+						'The Recall sample cannot be stored, so nothing was drawn or judged.',
+					)
 			} finally {
 				this.saving = false
 			}
