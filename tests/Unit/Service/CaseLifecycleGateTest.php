@@ -273,8 +273,11 @@ class CaseLifecycleGateTest extends TestCase {
 	 */
 	public function testTheRefusalIsTranslated(): void {
 		$rules = $this->createMock(originalClassName: LifecycleCaseTypeRules::class);
-		$rules->method('roleFor')->willReturnCallback(
-			static fn (string $caseTypeId, string $act): string => $act === 'finish' ? 'archivaris' : ''
+		$rules->method('roleFor')->willReturnMap(
+			[
+				['ct-1', 'finish', 'archivaris'],
+				['ct-1', 'archive', ''],
+			]
 		);
 		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('bea');

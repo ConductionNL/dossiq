@@ -29,8 +29,9 @@ import {
 } from '../../src/utils/translateLensLabels.js'
 
 const ROOT = path.resolve(__dirname, '../..')
-const readJson = (...parts) =>
-	JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
+function readJson (...parts) {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
+}
 const nl = readJson('l10n', 'nl.json').translations
 const dutch = (text) => nl[text] ?? text
 
@@ -85,8 +86,9 @@ function requesterLabels(manifest) {
 	return found
 }
 
-const caseDetail = (manifest) =>
-	manifest.pages.find((page) => page.id === 'CaseDetail')
+function caseDetail (manifest) {
+  return manifest.pages.find((page) => page.id === 'CaseDetail')
+}
 
 describe('N-3: field labels and the term tile read Dutch', () => {
 	for (const layout of ['menu-layout.simple.json', 'menu-layout.json']) {

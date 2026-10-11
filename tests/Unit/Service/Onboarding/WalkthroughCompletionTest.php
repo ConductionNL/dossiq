@@ -54,10 +54,8 @@ final class WalkthroughCompletionTest extends TestCase {
 		$user->method('getUID')->willReturn('nieuw');
 		$session->method('getUser')->willReturn($user);
 		$config->method('getUserValue')
-			->willReturnCallback(
-				static fn (string $userId, string $appName, string $key, mixed $default = ''): string =>
-					($userId === 'nieuw' && $appName === 'dossiq' && $key === 'pref_walkthrough_completed_version') ? $stored : (string)$default
-			);
+			->with('nieuw', 'dossiq', 'pref_walkthrough_completed_version', '')
+			->willReturn($stored);
 		return new WalkthroughCompletion(config: $config, userSession: $session);
 	}//end completion()
 

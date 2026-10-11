@@ -42,6 +42,8 @@ use OCP\IUserSession;
 
 /**
  * Reads whether the caller has seen the welcome tour.
+ *
+ * @spec openspec/specs/first-load-onboarding/spec.md#requirement-the-welcome-tour-comes-before-the-support-note-req-flo-001
  */
 class WalkthroughCompletion {
 

@@ -145,6 +145,7 @@ export default {
 			supportDialog: supportDialogForThisLoad(
 				loadState('dossiq', 'walkthrough_seen', null),
 			),
+
 			objectSidebarState: reactive({
 				active: false,
 				open: true,
