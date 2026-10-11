@@ -72,6 +72,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
  * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 
