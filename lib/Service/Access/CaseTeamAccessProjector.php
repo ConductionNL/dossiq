@@ -131,7 +131,7 @@ class CaseTeamAccessProjector {
 	 */
 	public function caseTypeTeams(): array {
 		$caseTypes = [];
-		foreach ($this->store->everyCaseType(everyRow: true) as $row) {
+		foreach ($this->store->everyCaseType(scope: ['_rbac' => false, '_multitenancy' => false]) as $row) {
 			$caseTypes[] = [
 				'id' => $this->store->rowId(row: $row),
 				'teams' => $this->handling->teams(caseType: $row),

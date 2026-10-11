@@ -105,7 +105,7 @@ class CaseTeamAccessProjectorTest extends TestCase {
 	 */
 	private function projector(array $rows, bool $hasMapper = true): CaseTeamAccessProjector {
 		$store = $this->createMock(CaseTypeStore::class);
-		$store->method('everyCaseType')->with(true)->willReturn($rows);
+		$store->method('everyCaseType')->with(['_rbac' => false, '_multitenancy' => false])->willReturn($rows);
 		$store->method('rowId')->willReturnCallback(static fn (array $row): string => (string)($row['id'] ?? ''));
 
 		$slugs = $this->createMock(SchemaSlugResolver::class);
