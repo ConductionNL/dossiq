@@ -612,6 +612,9 @@ class NotifierTest extends TestCase {
 			}
 
 			$source = (string)file_get_contents($file->getPathname());
+			// An #[McpTool(subject: ...)] names what an MCP tool acts on for the
+			// agent grant matrix, not a notification subject.
+			$source = (string)preg_replace('/#\[McpTool\(.*?\)\]/s', '', $source);
 			$scan = $patterns;
 			if (str_contains($source, 'createNotification(') === true) {
 				$scan[] = '/\$subject\s*=\s*[\'"]([a-z][a-z0-9_]*)[\'"]/';
