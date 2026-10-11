@@ -10,7 +10,8 @@
 		appId="dossiq"
 		:translate="translateForApp"
 		:notificationLabels="notificationLabels"
-		:permissions="permissions">
+		:permissions="permissions"
+		:supportDialog="supportDialog">
 		<!--
 			Host-mounted object sidebar (decidesk pattern). CnAppRoot
 			suppresses its own auto-mounted CnObjectSidebar because this
@@ -61,10 +62,12 @@
 
 <script>
 import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
+import { loadState } from '@nextcloud/initial-state'
 import { translate as ncT } from '@nextcloud/l10n'
 import { reactive } from 'vue'
 import { initializeStores } from './store/store.js'
 import { notificationLabels } from './utils/notificationLabels.js'
+import { supportDialogForThisLoad } from './utils/onboardingOrder.js'
 import { currentPermissions } from './utils/permissions.js'
 
 export default {
@@ -137,6 +140,11 @@ export default {
 
 	data() {
 		return {
+			// Off on a load where the welcome tour is not yet behind the user,
+			// so the tour comes first (src/utils/onboardingOrder.js).
+			supportDialog: supportDialogForThisLoad(
+				loadState('dossiq', 'walkthrough_seen', null),
+			),
 			objectSidebarState: reactive({
 				active: false,
 				open: true,

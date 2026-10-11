@@ -1005,6 +1005,18 @@
 					}
 				},
 				"widgets": {
+					"case-tile-deadline": {
+						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole.",
+						"content": {
+							"field": "deadline",
+							"icon": "ClockAlertOutline",
+							"showDate": true,
+							"thresholds": {
+								"warn": 14,
+								"danger": 5
+							}
+						}
+					},
 					"case-stages": {
 						"content": {
 							"currentField": "status",

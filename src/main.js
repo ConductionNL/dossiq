@@ -51,6 +51,7 @@ import {
 } from './utils/structureProfile.js'
 import {
 	translateBannerCopy,
+	translateFieldOverrideLabels,
 	translateLensLabels,
 } from './utils/translateLensLabels.js'
 
@@ -240,8 +241,11 @@ const profiledManifest = {
 	},
 }
 const builtManifest = markRaw(
-	translateBannerCopy(
-		translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+	translateFieldOverrideLabels(
+		translateBannerCopy(
+			translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+			(label) => t('dossiq', label),
+		),
 		(label) => t('dossiq', label),
 	),
 )

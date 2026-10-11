@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DashboardController;
+use OCA\Dossiq\Service\Onboarding\WalkthroughCompletion;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -65,6 +66,7 @@ class DashboardControllerServiceWorkerTest extends TestCase {
 			initialState: $this->createMock(originalClassName: IInitialState::class),
 			appConfig: $this->createMock(originalClassName: IAppConfig::class),
 			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+			walkthroughCompletion: $this->createMock(originalClassName: WalkthroughCompletion::class),
 		);
 	}//end setUp()
 

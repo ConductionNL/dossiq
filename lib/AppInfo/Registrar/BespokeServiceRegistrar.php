@@ -34,6 +34,7 @@ use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Repair\InitializeSettings;
 use OCA\Dossiq\Sections\SettingsSection;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\Onboarding\WalkthroughCompletion;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -69,7 +70,8 @@ class BespokeServiceRegistrar {
 					request: $c->get('OCP\\IRequest'),
 					initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState'),
 					appConfig: $c->get('OCP\\IAppConfig'),
-					eventDispatcher: $c->get('OCP\\EventDispatcher\\IEventDispatcher')
+					eventDispatcher: $c->get('OCP\\EventDispatcher\\IEventDispatcher'),
+					walkthroughCompletion: $c->get(WalkthroughCompletion::class)
 				);
 			}
 		);
