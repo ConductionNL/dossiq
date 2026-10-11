@@ -34,6 +34,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
@@ -42,8 +43,11 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Session\SessionService
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
+ * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class SessionServiceTest extends TestCase {
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The chair, as a role uuid.
@@ -148,7 +152,7 @@ class SessionServiceTest extends TestCase {
 		$clock     = $this->createMock(ITimeFactory::class);
 		$clock->method('now')->willReturnCallback(fn (): DateTimeImmutable => $this->now);
 
-		$this->service = new SessionService(settingsService: $settings, timeFactory: $clock);
+		$this->service = new SessionService(settingsService: $settings, timeFactory: $clock, caseDates: $this->caseDates(zone: 'UTC', clock: $clock));
 	}//end setUp()
 
 	/**

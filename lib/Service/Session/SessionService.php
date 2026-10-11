@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Session;
 use DateTimeImmutable;
 use DateTimeInterface;
 use InvalidArgumentException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -56,13 +57,15 @@ class SessionService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Register, schema keys and the object service.
-	 * @param ITimeFactory    $timeFactory     The clock.
+	 * @param ITimeFactory       $timeFactory     The clock.
+	 * @param CaseDateNormaliser $caseDates       The one reader of a date.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ITimeFactory $timeFactory,
+		private readonly CaseDateNormaliser $caseDates,
 	) {
 	}//end __construct()
 
@@ -129,7 +132,7 @@ class SessionService {
 			sessionKey: $sessionKey
 		);
 
-		$scheduled = $this->parseMoment(value: $scheduledDate);
+		$scheduled = $this->caseDates->parse(value: $scheduledDate, field: 'scheduledDate');
 		$now       = $this->timeFactory->now();
 		$definition->rules()->assertInspectionFloor(scheduled: $scheduled, now: $now);
 		$definition->rules()->assertInvitees(invitees: $invitees);
@@ -250,7 +253,7 @@ class SessionService {
 		$scheduled = $this->timeFactory->now();
 		$stored    = ($current['scheduledDate'] ?? '');
 		if (is_string($stored) === true && $stored !== '') {
-			$scheduled = $this->parseMoment(value: $stored);
+			$scheduled = $this->caseDates->parse(value: $stored, field: 'scheduledDate');
 		}
 
 		$freezeAt = $definition->rules()->attendanceFreezesAt(scheduled: $scheduled);
@@ -498,23 +501,6 @@ class SessionService {
 
 		return $value;
 	}//end nullIfEmpty()
-
-	/**
-	 * A date-time from its ISO-8601 form.
-	 *
-	 * @param string $value The value.
-	 *
-	 * @return DateTimeImmutable The moment.
-	 *
-	 * @throws InvalidArgumentException When it does not parse.
-	 */
-	private function parseMoment(string $value): DateTimeImmutable {
-		try {
-			return new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			throw new InvalidArgumentException("'$value' is not a date and time.", 0, $e);
-		}
-	}//end parseMoment()
 
 	/**
 	 * A trimmed string field from the payload, else from the stored record.
