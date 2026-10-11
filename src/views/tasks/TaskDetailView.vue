@@ -64,11 +64,18 @@
 				<h2 class="task-detail-page__title" data-testid="task-detail-title">
 					{{ title }}
 				</h2>
-				<CnStatusBadge
-					v-if="stateLabel"
-					:label="stateLabel"
-					size="small"
-					data-testid="task-detail-state" />
+				<p class="task-detail-page__crumbs">
+					<CnStatusBadge
+						v-if="stateLabel"
+						:label="stateLabel"
+						size="small"
+						data-testid="task-detail-state" />
+					<router-link :to="{ name: 'Tasks' }">
+						{{ t('dossiq', 'Tasks') }}
+					</router-link>
+					<span aria-hidden="true">/</span>
+					<span>{{ title }}</span>
+				</p>
 			</div>
 
 			<div
@@ -76,14 +83,27 @@
 				class="task-detail-page__actions"
 				data-testid="task-detail-actions">
 				<NcButton
-					v-for="verb in verbs"
+					v-for="verb in primaryVerbs"
 					:key="verb.name"
 					:disabled="busy"
-					:variant="verb.primary ? 'primary' : 'secondary'"
+					variant="secondary"
 					:data-testid="`task-detail-verb-${verb.name}`"
 					@click="invoke(verb)">
 					{{ verb.label }}
 				</NcButton>
+				<NcActions
+					v-if="moreVerbs.length > 0"
+					:name="t('dossiq', 'More')"
+					:menuName="t('dossiq', 'More')">
+					<NcActionButton
+						v-for="verb in moreVerbs"
+						:key="verb.name"
+						:disabled="busy"
+						:data-testid="`task-detail-verb-${verb.name}`"
+						@click="invoke(verb)">
+						{{ verb.label }}
+					</NcActionButton>
+				</NcActions>
 			</div>
 		</header>
 
@@ -95,80 +115,123 @@
 			"
 			data-testid="task-detail-missing" />
 
-		<template v-else-if="task">
-			<TaskCaseCard :objectId="taskId" :objectData="task" />
+		<div
+			v-else-if="task"
+			class="task-detail-page__columns"
+			data-testid="task-detail-body">
+			<div class="task-detail-page__main">
+				<div class="task-detail-page__tabs" role="tablist">
+					<button
+						v-for="tab in tabs"
+						:key="tab.id"
+						type="button"
+						role="tab"
+						class="task-detail-page__tab"
+						:class="{
+							'task-detail-page__tab--active': activeTab === tab.id,
+						}"
+						:aria-selected="String(activeTab === tab.id)"
+						:data-testid="`task-detail-tab-${tab.id}`"
+						@click="activeTab = tab.id">
+						{{ tab.label }}
+					</button>
+				</div>
 
-			<section class="task-detail-page__body" data-testid="task-detail-body">
-				<p
-					v-if="description"
-					class="task-detail-page__description"
-					data-testid="task-detail-description">
-					{{ description }}
-				</p>
+				<div
+					v-if="activeTab === 'overview'"
+					class="task-detail-page__panel"
+					role="tabpanel">
+					<p
+						v-if="description"
+						class="task-detail-page__card task-detail-page__description"
+						data-testid="task-detail-description">
+						{{ description }}
+					</p>
 
-				<dl v-if="facts.length > 0" class="task-detail-page__facts">
-					<div
-						v-for="fact in facts"
-						:key="fact.key"
-						class="task-detail-page__fact">
-						<dt class="task-detail-page__label">
-							{{ fact.label }}
-						</dt>
-						<dd
-							class="task-detail-page__value"
-							:data-testid="`task-detail-${fact.key}`">
-							{{ fact.value }}
-						</dd>
-					</div>
-				</dl>
-			</section>
+					<section
+						v-if="checklist.length > 0"
+						class="task-detail-page__card task-detail-page__checklist"
+						data-testid="task-detail-checklist">
+						<h3 class="task-detail-page__section-title">
+							{{ t('dossiq', 'Checklist') }}
+						</h3>
+						<p class="task-detail-page__section-sub">
+							{{
+								t('dossiq', '{done} of {total} done', {
+									done: checklistDone,
+									total: checklist.length,
+								})
+							}}
+						</p>
+						<ul class="task-detail-page__checklist-items">
+							<li v-for="item in checklist" :key="item.id">
+								<NcCheckboxRadioSwitch
+									:modelValue="item.checked === true"
+									:disabled="busy || finished"
+									:data-testid="`task-detail-check-${item.id}`"
+									@update:modelValue="check(item, $event)">
+									{{ item.label || item.id }}
+								</NcCheckboxRadioSwitch>
+							</li>
+						</ul>
+					</section>
 
-			<section
-				v-if="checklist.length > 0"
-				class="task-detail-page__checklist"
-				data-testid="task-detail-checklist">
-				<h3 class="task-detail-page__section-title">
-					{{ t('dossiq', 'Checklist') }}
-				</h3>
-				<ul class="task-detail-page__checklist-items">
-					<li v-for="item in checklist" :key="item.id">
-						<NcCheckboxRadioSwitch
-							:modelValue="item.checked === true"
-							:disabled="busy || finished"
-							:data-testid="`task-detail-check-${item.id}`"
-							@update:modelValue="check(item, $event)">
-							{{ item.label || item.id }}
-						</NcCheckboxRadioSwitch>
-					</li>
-				</ul>
-			</section>
+					<section class="task-detail-page__card task-detail-page__leaf">
+						<h3 class="task-detail-page__section-title">
+							{{ t('dossiq', 'Appointments') }}
+						</h3>
+						<TaskEventsLeaf :taskId="taskId" />
+					</section>
 
-			<TaskWaitingCaseSection />
+					<section class="task-detail-page__card task-detail-page__leaf">
+						<h3 class="task-detail-page__section-title">
+							{{ t('dossiq', 'Notes') }}
+						</h3>
+						<TaskNotesLeaf :taskId="taskId" />
+					</section>
+				</div>
 
-			<div class="task-detail-page__leaves">
-				<section class="task-detail-page__leaf">
-					<h3 class="task-detail-page__section-title">
-						{{ t('dossiq', 'Notes') }}
-					</h3>
-					<TaskNotesLeaf :taskId="taskId" />
-				</section>
-
-				<section class="task-detail-page__leaf">
-					<h3 class="task-detail-page__section-title">
-						{{ t('dossiq', 'Appointments') }}
-					</h3>
-					<TaskEventsLeaf :taskId="taskId" />
-				</section>
+				<div v-else class="task-detail-page__panel" role="tabpanel">
+					<TaskAuditLeaf :taskId="taskId" />
+				</div>
 			</div>
 
-			<TaskAuditLeaf :taskId="taskId" />
-		</template>
+			<aside class="task-detail-page__side">
+				<section
+					v-if="facts.length > 0"
+					class="task-detail-page__card task-detail-page__facts-card">
+					<h3 class="task-detail-page__section-title">
+						{{ t('dossiq', 'Task') }}
+					</h3>
+					<dl class="task-detail-page__facts">
+						<div
+							v-for="fact in facts"
+							:key="fact.key"
+							class="task-detail-page__fact">
+							<dt class="task-detail-page__label">
+								{{ fact.label }}
+							</dt>
+							<dd
+								class="task-detail-page__value"
+								:data-testid="`task-detail-${fact.key}`">
+								{{ fact.value }}
+							</dd>
+						</div>
+					</dl>
+				</section>
+
+				<TaskCaseCard :objectId="taskId" :objectData="task" />
+				<TaskWaitingCaseSection />
+			</aside>
+		</div>
 	</div>
 </template>
 
 <script>
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -185,6 +248,8 @@ export default {
 
 	components: {
 		CnStatusBadge,
+		NcActionButton,
+		NcActions,
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcEmptyContent,
@@ -225,6 +290,8 @@ export default {
 			missing: false,
 			/** Whether a verb is in flight, so a double click cannot fire twice. */
 			busy: false,
+			/** The tab in view: the overview, or the history. */
+			activeTab: 'overview',
 		}
 	},
 
@@ -394,6 +461,45 @@ export default {
 		},
 
 		/**
+		 * How many checklist items are ticked, for the card's "2 of 4 done".
+		 *
+		 * @return {number} The ticked items.
+		 */
+		checklistDone() {
+			return this.checklist.filter((item) => item.checked === true).length
+		},
+
+		/**
+		 * The page's tabs, as the board draws them.
+		 *
+		 * @return {Array<{id: string, label: string}>} The tabs.
+		 */
+		tabs() {
+			return [
+				{ id: 'overview', label: t('dossiq', 'Overview') },
+				{ id: 'history', label: t('dossiq', 'Task history') },
+			]
+		},
+
+		/**
+		 * The verbs that stand in the header: finishing, and handing on.
+		 *
+		 * @return {Array<object>} The verbs.
+		 */
+		primaryVerbs() {
+			return this.verbs.filter((verb) => verb.name !== 'cancel')
+		},
+
+		/**
+		 * The verbs behind More: cancelling a task is rare.
+		 *
+		 * @return {Array<object>} The verbs.
+		 */
+		moreVerbs() {
+			return this.verbs.filter((verb) => verb.name === 'cancel')
+		},
+
+		/**
 		 * The lifecycle verbs offered on this task.
 		 *
 		 * Read off the ROW, not guessed: a task nobody holds can be claimed,
@@ -418,6 +524,12 @@ export default {
 			const held = String(this.task?.assignee ?? '').trim() !== ''
 			const verbs = []
 
+			verbs.push({
+				name: 'complete',
+				label: t('dossiq', 'Complete'),
+				primary: true,
+			})
+
 			if (held === false) {
 				verbs.push({
 					name: 'claim',
@@ -432,11 +544,6 @@ export default {
 				})
 			}
 
-			verbs.push({
-				name: 'complete',
-				label: t('dossiq', 'Complete'),
-				primary: true,
-			})
 			verbs.push({
 				name: 'cancel',
 				label: t('dossiq', 'Cancel'),
@@ -624,13 +731,13 @@ export default {
 .task-detail-page {
 	display: flex;
 	flex-direction: column;
-	gap: calc(var(--default-grid-baseline) * 3);
+	gap: calc(var(--default-grid-baseline) * 4);
 	padding: calc(var(--default-grid-baseline) * 4);
 	max-width: 1200px;
 
 	&__header {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: space-between;
 		gap: calc(var(--default-grid-baseline) * 2);
 		flex-wrap: wrap;
@@ -638,59 +745,112 @@ export default {
 
 	&__identity {
 		display: flex;
-		align-items: center;
-		gap: calc(var(--default-grid-baseline) * 2);
+		flex-direction: column;
+		gap: var(--default-grid-baseline);
 		min-width: 0;
 	}
 
 	&__title {
 		margin: 0;
+		font-size: 28px;
+		font-weight: 700;
 		overflow-wrap: anywhere;
+	}
+
+	&__crumbs {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: calc(var(--default-grid-baseline) * 2);
+		margin: 0;
+		color: var(--color-text-maxcontrast);
 	}
 
 	&__actions {
 		display: flex;
+		align-items: center;
 		gap: var(--default-grid-baseline);
 		flex-wrap: wrap;
 	}
 
+	&__columns {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 300px;
+		gap: calc(var(--default-grid-baseline) * 4);
+		align-items: start;
+	}
+
+	&__main,
+	&__side,
+	&__panel {
+		display: flex;
+		flex-direction: column;
+		gap: calc(var(--default-grid-baseline) * 4);
+		min-width: 0;
+	}
+
+	&__tabs {
+		display: flex;
+		gap: var(--default-grid-baseline);
+	}
+
+	&__tab {
+		padding: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 3);
+		border: 1px solid var(--color-border);
+		border-bottom: none;
+		border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+		background: var(--color-background-dark);
+		color: var(--color-main-text);
+		font-weight: 600;
+		cursor: pointer;
+
+		&--active {
+			background: var(--color-main-background);
+		}
+	}
+
+	&__card {
+		margin: 0;
+		padding: calc(var(--default-grid-baseline) * 5);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large);
+		background: var(--color-main-background);
+	}
+
 	&__section-title {
 		margin: 0 0 var(--default-grid-baseline);
-		font-size: var(--default-font-size);
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	&__section-sub {
+		margin: 0 0 calc(var(--default-grid-baseline) * 3);
+		color: var(--color-text-maxcontrast);
 	}
 
 	&__description {
-		margin: 0;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
 
-	&__body {
-		display: flex;
-		flex-direction: column;
-		gap: calc(var(--default-grid-baseline) * 2);
-	}
-
 	&__facts {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-		gap: calc(var(--default-grid-baseline) * 2);
+		grid-template-columns: auto 1fr;
+		gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 4);
 		margin: 0;
 	}
 
 	&__fact {
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
+		display: contents;
 	}
 
 	&__label {
 		color: var(--color-text-maxcontrast);
-		font-size: var(--default-font-size);
 	}
 
 	&__value {
 		margin: 0;
+		font-weight: 600;
 		overflow-wrap: anywhere;
 	}
 
@@ -699,11 +859,11 @@ export default {
 		padding: 0;
 		list-style: none;
 	}
+}
 
-	&__leaves {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-		gap: calc(var(--default-grid-baseline) * 3);
+@media (max-width: 900px) {
+	.task-detail-page__columns {
+		grid-template-columns: minmax(0, 1fr);
 	}
 }
 </style>
