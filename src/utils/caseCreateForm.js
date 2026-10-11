@@ -52,7 +52,10 @@ export function caseCreateFormProps() {
 			// binding waiting for it (see registry.js InitiatorPicker).
 			// Translated here: the library copies an override's label over the
 			// schema title as written, so an English label stays English.
-			requester: { widget: 'InitiatorPicker', label: t('dossiq', 'Requester') },
+			requester: {
+				widget: 'InitiatorPicker',
+				label: t('dossiq', 'Requester'),
+			},
 			confidentiality: {
 				enumLabels: {
 					openbaar: 'Public',

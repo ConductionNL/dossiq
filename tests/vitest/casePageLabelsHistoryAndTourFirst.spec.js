@@ -29,8 +29,8 @@ import {
 } from '../../src/utils/translateLensLabels.js'
 
 const ROOT = path.resolve(__dirname, '../..')
-function readJson (...parts) {
-  return JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
+function readJson(...parts) {
+	return JSON.parse(fs.readFileSync(path.join(ROOT, ...parts), 'utf8'))
 }
 const nl = readJson('l10n', 'nl.json').translations
 const dutch = (text) => nl[text] ?? text
@@ -74,8 +74,8 @@ function requesterLabels(manifest) {
 		}
 		for (const [key, value] of Object.entries(node)) {
 			if (
-				(key === 'fieldOverrides' || key === 'overrides') &&
-				typeof value?.requester?.label === 'string'
+				(key === 'fieldOverrides' || key === 'overrides')
+				&& typeof value?.requester?.label === 'string'
 			) {
 				found.push(value.requester.label)
 			}
@@ -86,8 +86,8 @@ function requesterLabels(manifest) {
 	return found
 }
 
-function caseDetail (manifest) {
-  return manifest.pages.find((page) => page.id === 'CaseDetail')
+function caseDetail(manifest) {
+	return manifest.pages.find((page) => page.id === 'CaseDetail')
 }
 
 describe('N-3: field labels and the term tile read Dutch', () => {
@@ -109,16 +109,16 @@ describe('N-3: field labels and the term tile read Dutch', () => {
 	})
 
 	it('the simple side column heads the term card once, with the card title', () => {
-		const tile = caseDetail(translated('menu-layout.simple.json')).config.widgets.find(
-			(widget) => widget.id === 'case-tile-deadline',
-		)
+		const tile = caseDetail(
+			translated('menu-layout.simple.json'),
+		).config.widgets.find((widget) => widget.id === 'case-tile-deadline')
 		expect(dutch(tile.title)).toBe('Termijn')
 		expect(tile.content.label).toBeUndefined()
 		// The rest of the content is the manifest's, so the patch did not
 		// quietly drop a threshold or the date.
-		const base = caseDetail(readJson('src', 'manifest.json')).config.widgets.find(
-			(widget) => widget.id === 'case-tile-deadline',
-		)
+		const base = caseDetail(
+			readJson('src', 'manifest.json'),
+		).config.widgets.find((widget) => widget.id === 'case-tile-deadline')
 		const { label, ...rest } = base.content
 		expect(label).toBe('Deadline')
 		expect(tile.content).toEqual(rest)
@@ -129,8 +129,9 @@ describe('N-6: the case page names every tab once', () => {
 	for (const layout of ['menu-layout.simple.json', 'menu-layout.json']) {
 		it(`tab strip and sidebar carry unique ids and unique Dutch labels (${layout})`, () => {
 			const config = caseDetail(translated(layout)).config
-			const strip = config.widgets.find((widget) => widget.id === 'case-panels')
-				.content.tabs
+			const strip = config.widgets.find(
+				(widget) => widget.id === 'case-panels',
+			).content.tabs
 			const sidebar = config.sidebar.tabs
 			const ids = [
 				...strip.map((tab) => `strip:${tab.widgetId}`),
@@ -147,9 +148,9 @@ describe('N-6: the case page names every tab once', () => {
 	}
 
 	it('the sidebar keeps the audit trail, as DqZaakHistorie draws it', () => {
-		const audit = caseDetail(readJson('src', 'manifest.json')).config.sidebar.tabs.find(
-			(tab) => tab.id === 'audit',
-		)
+		const audit = caseDetail(
+			readJson('src', 'manifest.json'),
+		).config.sidebar.tabs.find((tab) => tab.id === 'audit')
 		expect(audit.label).toBe('Audit trail')
 		expect(dutch(audit.label)).toBe('Audittrail')
 	})

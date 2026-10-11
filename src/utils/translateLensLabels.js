@@ -180,14 +180,17 @@ export function translateFieldOverrideLabels(manifest, translate) {
 		}
 		for (const [key, value] of Object.entries(node)) {
 			if (
-				FIELD_OVERRIDE_KEYS.includes(key) &&
-				value &&
-				typeof value === 'object' &&
-				!Array.isArray(value)
+				FIELD_OVERRIDE_KEYS.includes(key)
+				&& value
+				&& typeof value === 'object'
+				&& !Array.isArray(value)
 			) {
 				for (const [field, override] of Object.entries(value)) {
 					if (override && typeof override.label === 'string') {
-						value[field] = { ...override, label: translate(override.label) }
+						value[field] = {
+							...override,
+							label: translate(override.label),
+						}
 					}
 				}
 			}
