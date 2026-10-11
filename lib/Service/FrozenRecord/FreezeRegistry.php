@@ -118,7 +118,6 @@ class FreezeRegistry {
 	 *
 	 * @return array<int, FreezeDefinition> The entries.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FreezeDefinition::fromArray() is the value object's named constructor.
 	 *
 	 * @spec openspec/specs/frozen-record/spec.md
 	 */

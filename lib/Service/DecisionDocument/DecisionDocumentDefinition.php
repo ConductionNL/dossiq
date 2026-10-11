@@ -89,10 +89,6 @@ final class DecisionDocumentDefinition {
 	 * @param array<int, string> $frozenStatuses The statuses from which it is frozen.
 	 *
 	 * @throws InvalidArgumentException When the block is incomplete.
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) A value object for one configuration block: each
-	 *                                                 parameter is one key of that block, named.
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    The two booleans are configuration values, not behaviour switches.
 	 */
 	public function __construct(
 		public readonly string $kind,

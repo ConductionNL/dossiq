@@ -71,9 +71,6 @@ final class SessionDefinition {
 	 * @param array<string, string> $statuses                 Status written per step.
 	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Each flag is a declared field of the entry.
 	 */
 	private function __construct(
 		public readonly string $key,
@@ -298,8 +295,6 @@ final class SessionDefinition {
 	 * @param bool                    $default The value when absent.
 	 *
 	 * @return bool The value.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The default of a boolean field is a boolean.
 	 */
 	private static function flag(array $config, string $field, bool $default): bool {
 		$value = ($config[$field] ?? null);

@@ -64,12 +64,6 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The listener joins the decision
- * app's outcome to everything a concluded decision touches in dossiq: the besluit,
- * the advisory committee record, the waiting flow run and the declared product.
- * Each collaborator is one of those effects; splitting them would duplicate the
- * case resolution every effect depends on.
- *
  * @spec openspec/changes/dossiq-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
  */
 class DecisionConcludedListener implements IEventListener {

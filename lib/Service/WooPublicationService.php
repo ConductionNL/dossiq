@@ -54,10 +54,6 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The thirteenth type is
- * PagesSeen: publishing must refuse while a required page is unseen
- * (woo-review-triage REQ-WRT-005), and that answer lives in one place.
- *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 class WooPublicationService {

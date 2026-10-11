@@ -145,8 +145,6 @@ final class SessionRules {
 	 * @throws InvalidArgumentException When a late entry has no correction reason.
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-attendance-and-minutes-follow-the-session-definition-req-css-3
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Whether the window passed is the caller's clock reading.
 	 */
 	public function assertAttendance(array $entries, bool $closed): void {
 		if ($closed === false) {

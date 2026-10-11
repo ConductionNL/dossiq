@@ -56,12 +56,6 @@ use Throwable;
  * Controller for beschikking lifecycle endpoints.
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T05
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) 60 against 50, crossed by
- * successor() (REQ-BES-012). Decision 182 forbids a new procedure-named
- * controller, so the endpoint joins the one this beschikking lifecycle already
- * has rather than a second beschikking class; the refactor programme of
- * decision 184 moves this controller onto generic capabilities as a whole.
  */
 class BeschikkingController extends Controller {
 	use TranslatesRefusals;
