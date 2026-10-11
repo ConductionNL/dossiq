@@ -29,7 +29,7 @@ two case types twice:
 - `case.caseType`'s `x-relation-filter` adds `supersededBy: "IS NULL"`, which
   OpenRegister reads as a null test. The picker offers the version nothing
   has replaced, for every versioned case type, by its data and not by name.
-  The `case` schema moves to 1.41.0 so the import picks it up.
+  The `case` schema moves to 1.42.0 so the import picks it up.
 - The case-flow seed finds a case type an earlier run stored by the seed's
   slug, in the object metadata, and falls back to the title only for a seed
   row without a slug.
