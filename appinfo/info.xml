@@ -797,12 +797,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exist.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
-            <!--
-                Points DSO intake at integriq's dso_verzoek schema when the key
-                was never set (absent). An admin's value, an empty one included,
-                is kept. In BOTH blocks: integriq may come before dossiq or after.
-            -->
-            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -1043,12 +1037,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exist.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
-            <!--
-                Points DSO intake at integriq's dso_verzoek schema when the key
-                was never set (absent). An admin's value, an empty one included,
-                is kept. In BOTH blocks: integriq may come before dossiq or after.
-            -->
-            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
         </install>
     </repair-steps>
 
