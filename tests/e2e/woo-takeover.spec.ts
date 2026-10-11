@@ -37,7 +37,9 @@ const STATUS_RECEIVED = '3c0f5a00-0000-4000-a000-00000000b001'
 const SOURCE = '/index.php/apps/openregister/api/objects/publication/wooRequest'
 
 /** An old number nothing else on the instance carries. */
-const REFERENCE = `WOO-2026-${RUN_PREFIX.replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase()}`
+const REFERENCE = `WOO-2026-${RUN_PREFIX.replace(/[^a-z0-9]/gi, '')
+	.slice(-6)
+	.toUpperCase()}`
 
 test.describe('A Woo request moves from opencatalogi to a dossiq case', () => {
 	test.describe.configure({ mode: 'serial' })
@@ -91,7 +93,10 @@ test.describe('A Woo request moves from opencatalogi to a dossiq case', () => {
 			seeded.status() === 404,
 			'opencatalogi (register publication, schema wooRequest) is not installed on this instance.',
 		)
-		expect(seeded.ok(), `seed wooRequest -> ${seeded.status()} ${await seeded.text()}`).toBeTruthy()
+		expect(
+			seeded.ok(),
+			`seed wooRequest -> ${seeded.status()} ${await seeded.text()}`,
+		).toBeTruthy()
 		sourceId = objectId(await seeded.json())
 
 		const first = await occRun(['dossiq:case:import-records', 'woo-verzoek'])
@@ -99,11 +104,16 @@ test.describe('A Woo request moves from opencatalogi to a dossiq case', () => {
 		expect(first.output).toContain(`moved ${REFERENCE} to case `)
 
 		// The case carries the request, its old number and its remaining time.
-		const caseId = (first.output.match(new RegExp(`moved ${REFERENCE} to case ([0-9a-f-]{36})`)) ?? [])[1] ?? ''
+		const caseId =
+			(first.output.match(
+				new RegExp(`moved ${REFERENCE} to case ([0-9a-f-]{36})`),
+			) ?? [])[1] ?? ''
 		expect(caseId).not.toBe('')
 		// The import wrote it, not createObject, so teardown is told here.
 		trackCreatedObject('case', caseId)
-		const cases = await listObjects(request, 'case', { 'wooRequest.originReference': sourceId })
+		const cases = await listObjects(request, 'case', {
+			'wooRequest.originReference': sourceId,
+		})
 		expect(cases).toHaveLength(1)
 		const imported = cases[0]
 		expect(objectId(imported)).toBe(caseId)
@@ -119,7 +129,9 @@ test.describe('A Woo request moves from opencatalogi to a dossiq case', () => {
 		])
 
 		// The source is stamped with the case it moved to.
-		const source = await (await request.get(`${SOURCE}/${sourceId}`, { headers })).json()
+		const source = await (
+			await request.get(`${SOURCE}/${sourceId}`, { headers })
+		).json()
 		expect(source.migratedTo ?? source.object?.migratedTo).toBe(caseId)
 
 		// A handler searching for the citizen's old number finds the case.
@@ -129,9 +141,13 @@ test.describe('A Woo request moves from opencatalogi to a dossiq case', () => {
 		// A second run moves nothing and writes no second case.
 		const second = await occRun(['dossiq:case:import-records', 'woo-verzoek'])
 		expect(second.code, second.output).toBe(0)
-		expect(second.output).toMatch(/opencatalogi-woo-requests: 0 imported, \d+ already imported, 0 failed, 0 not moved\./)
+		expect(second.output).toMatch(
+			/opencatalogi-woo-requests: 0 imported, \d+ already imported, 0 failed, 0 not moved\./,
+		)
 		expect(
-			await listObjects(request, 'case', { 'wooRequest.originReference': sourceId }),
+			await listObjects(request, 'case', {
+				'wooRequest.originReference': sourceId,
+			}),
 		).toHaveLength(1)
 	})
 })
