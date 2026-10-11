@@ -17,6 +17,8 @@
  *
  * Every added document records where it was found (`provenance`): the source,
  * its location, the search terms, when and by whom. It is written once, here.
+ * A copied e-mail also keeps its header fields (`provenance.mail`), read by
+ * the generic MailHeaderReader.
  * A copied file carries it on its own record; a linked document carries it on
  * this case's join, because the record also belongs to the other case.
  *
@@ -44,6 +46,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\MailHeaderReader;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -69,6 +72,7 @@ class WooGatherAdd {
 	 * @param IL10N                     $l10n        The refusal sentences.
 	 * @param LoggerInterface           $logger      Logs a pick that failed for a reason the caller cannot fix.
 	 * @param WooCollection             $collection  Records a duplicate or unreadable pick as an exclusion.
+	 * @param MailHeaderReader          $mailHeaders Reads a collected mail's header fields into `provenance.mail`.
 	 */
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
@@ -79,6 +83,7 @@ class WooGatherAdd {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly WooCollection $collection,
+		private readonly MailHeaderReader $mailHeaders,
 	) {
 	}//end __construct()
 
@@ -208,7 +213,7 @@ class WooGatherAdd {
 			throw new WooPickRefused('not-fetched');
 		}
 
-		return $this->store(caseId: $caseId, fileName: $fetched['fileName'], content: $fetched['content'], provenance: $provenance);
+		return $this->store(caseId: $caseId, fileName: $fetched['fileName'], content: $fetched['content'], provenance: $provenance, mimeType: $fetched['mimeType']);
 	}//end addFetched()
 
 	/**
@@ -260,13 +265,14 @@ class WooGatherAdd {
 	 * @param string               $fileName   The file name.
 	 * @param string               $content    The bytes.
 	 * @param array<string, mixed> $provenance Where it was found.
+	 * @param string               $mimeType   The MIME type the source gave, '' when none.
 	 *
 	 * @return string The document record uuid.
 	 *
 	 * @throws WooPickRefused   `write-failed` when the file cannot be read back or no record results.
 	 * @throws WooPickRefused   `duplicate` when the case holds the same bytes; recorded as an exclusion.
 	 */
-	private function store(string $caseId, string $fileName, string $content, array $provenance): string {
+	private function store(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string {
 		$sha256 = hash('sha256', $content);
 		$duplicateOf = $this->collection->duplicateOf(caseId: $caseId, sha256: $sha256);
 		if ($duplicateOf !== '') {
@@ -300,6 +306,10 @@ class WooGatherAdd {
 			throw new WooPickRefused('write-failed');
 		}
 
+		if ($this->mailHeaders->isMail(fileName: $fileName, mimeType: $mimeType) === true) {
+			$provenance['mail'] = $this->mailOf(caseId: $caseId, fileId: $fileId);
+		}
+
 		$record['provenance'] = $provenance;
 		$recordId = $this->store->saveRecord(record: $record);
 		$this->store->ensureJoin(caseId: $caseId, recordId: $recordId);
@@ -316,6 +326,40 @@ class WooGatherAdd {
 	 * @return array<string, mixed>|null The record, null when the file is not found there.
 	 */
 	private function projectStoredFile(string $caseId, int $fileId): ?array {
+		$file = $this->storedFile(caseId: $caseId, fileId: $fileId);
+		if ($file === null) {
+			return null;
+		}
+
+		return $this->projection->projectNode(node: $file);
+	}//end projectStoredFile()
+
+	/**
+	 * The header fields of a mail just stored in the case folder.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param int    $fileId The file id.
+	 *
+	 * @return array<string, mixed> `provenance.mail`; `{unreadable: true}` when the file cannot be found.
+	 */
+	private function mailOf(string $caseId, int $fileId): array {
+		$file = $this->storedFile(caseId: $caseId, fileId: $fileId);
+		if ($file === null) {
+			return ['unreadable' => true];
+		}
+
+		return $this->mailHeaders->read(file: $file);
+	}//end mailOf()
+
+	/**
+	 * The file just stored in the case folder.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param int    $fileId The file id.
+	 *
+	 * @return File|null The file, null when the folder or the file is not found.
+	 */
+	private function storedFile(string $caseId, int $fileId): ?File {
 		$folder = $this->projection->folderOf(objectId: $caseId);
 		if ($folder === null) {
 			return null;
@@ -323,12 +367,12 @@ class WooGatherAdd {
 
 		foreach ($folder->getById($fileId) as $node) {
 			if ($node instanceof File) {
-				return $this->projection->projectNode(node: $node);
+				return $node;
 			}
 		}
 
 		return null;
-	}//end projectStoredFile()
+	}//end storedFile()
 
 	/**
 	 * Record a pick that could not be read as an exclusion, so what arrived reconciles.
