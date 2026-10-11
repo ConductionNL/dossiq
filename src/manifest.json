@@ -2649,7 +2649,8 @@
 											"columns": 2,
 											"include": [
 												"wooPublicationStatus",
-												"wooPublicationUrl"
+												"wooPublicationUrl",
+												"wooWithheldNote"
 											],
 											"hideEmpty": true,
 											"overrides": {
@@ -2657,6 +2658,9 @@
 													"editable": false
 												},
 												"wooPublicationUrl": {
+													"editable": false
+												},
+												"wooWithheldNote": {
 													"editable": false
 												}
 											}

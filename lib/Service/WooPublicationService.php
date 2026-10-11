@@ -361,9 +361,14 @@ class WooPublicationService {
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 
+		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $delivery['assessments']);
 		$this->caseLedger->writeCaseState(
 			caseId: $caseId,
-			changes: ['wooPublicationStatus' => self::STATUS_PUBLISHED, 'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl)],
+			changes: [
+				'wooPublicationStatus' => self::STATUS_PUBLISHED,
+				'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl),
+				'wooWithheldNote' => $withheld['note'],
+			],
 		);
 
 		$this->dossierReturn?->append(case: $case, publicationId: $publicationId, title: (string)$payload['title']);
@@ -380,6 +385,7 @@ class WooPublicationService {
 			'publicationId' => $publicationId,
 			'publicationUrl' => $publicationUrl,
 			'deliveredSet' => $delivered['setId'],
+			'withheldRecord' => $withheld['record'],
 		];
 	}//end publish()
 
@@ -422,7 +428,7 @@ class WooPublicationService {
 	 * @param string $register The dossiq register slug.
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
+	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>, assessments: array<int, array<string, mixed>>}
 	 */
 	private function loadDelivery(object $objectService, string $register, string $caseId): array {
 		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
@@ -451,7 +457,7 @@ class WooPublicationService {
 			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $documentSchema, id: $documentRef);
 		};
 
-		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader);
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader) + ['assessments' => $assessments];
 	}//end loadDelivery()
 
 	/**
@@ -564,9 +570,11 @@ class WooPublicationService {
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 
+		// A withdrawn publication withholds nothing any more: its list is cleared.
+		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: []);
 		$this->caseLedger->writeCaseState(
 			caseId: (string)($decision['case'] ?? $caseId),
-			changes: ['wooPublicationStatus' => self::STATUS_WITHDRAWN],
+			changes: ['wooPublicationStatus' => self::STATUS_WITHDRAWN, 'wooWithheldNote' => $withheld['note']],
 		);
 
 		$this->logger->info(
@@ -574,7 +582,7 @@ class WooPublicationService {
 			['app' => Application::APP_ID],
 		);
 
-		return ['available' => true];
+		return ['available' => true, 'withheldRecord' => $withheld['record']];
 	}//end withdraw()
 
 	/**
