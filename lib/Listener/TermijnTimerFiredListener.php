@@ -42,7 +42,6 @@ use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -76,7 +75,6 @@ class TermijnTimerFiredListener implements IEventListener {
 	 *
 	 * @param TermijnService $termService Instance lookup, updates and events.
 	 * @param DeadlineEscalationService $escalationService Threshold bookkeeping and dispatch.
-	 * @param SettingsService $settingsService Settings + ObjectService access.
 	 * @param LoggerInterface $logger Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Who writes when the fire comes
 	 *        from cron with nobody signed in. OpenRegister's FlowTimerWorker is a
@@ -93,7 +91,6 @@ class TermijnTimerFiredListener implements IEventListener {
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly DeadlineEscalationService $escalationService,
-		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,

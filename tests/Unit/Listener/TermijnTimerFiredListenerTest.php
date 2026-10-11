@@ -102,7 +102,6 @@ class TermijnTimerFiredListenerTest extends TestCase {
 				),
 				logger: $logger
 			),
-			$settings,
 			$logger,
 			$account
 		);

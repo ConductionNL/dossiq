@@ -116,7 +116,6 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 				),
 				logger: $logger
 			),
-			$settings,
 			$logger,
 			$account
 		);
