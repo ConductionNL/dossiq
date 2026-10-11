@@ -49,10 +49,12 @@ export const WorkflowBoard = '/workflow-board'
 
 /**
  * `src/views/settings/SubstitutionSettings.vue` — self-service vervanging.
- * Retired as an app page by page-topology-cleanup (B4); it is now a PERSONAL
- * SETTING, so this is an absolute Nextcloud settings path, not an app route.
+ * Retired as an app page by page-topology-cleanup (B4); it is a PERSONAL
+ * SETTING, a section of the in-app user settings dialog. App.vue opens the
+ * dialog on this hash (dossiq has no Nextcloud personal settings page since
+ * 11 Oct 2026).
  */
-export const SubstitutionPersonalSettings = '/settings/user/dossiq'
+export const SubstitutionPersonalSettings = '/apps/dossiq/#user-settings'
 
 /** `src/views/admin/SubstitutionAdmin.vue` — the coordinator substitution console (manifest page `SubstitutionAdmin`). */
 export const SubstitutionAdmin = '/substitution-admin'
