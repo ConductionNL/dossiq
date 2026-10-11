@@ -58,5 +58,16 @@ export const tdWidgetMixin = {
 				currency: 'EUR',
 			})
 		},
+		/**
+		 * Format an amount in cents as euros. The term report sends money
+		 * in cents (`dwangsomTotalCents`) so no float rounding reaches it.
+		 *
+		 * @param {number|string} cents Amount in cents.
+		 * @return {string} e.g. `€ 1.234,50` for 123450.
+		 * @spec openspec/specs/termijn-reporting/spec.md
+		 */
+		euroFromCents(cents) {
+			return this.euro((Number(cents) || 0) / 100)
+		},
 	},
 }

@@ -48,7 +48,7 @@
 				countLabel=""
 				variant="error">
 				<template #value>
-					{{ euro(kpi.dwangsomTotal) }}
+					{{ euroFromCents(kpi.dwangsomTotalCents) }}
 				</template>
 			</CnStatsBlock>
 			<CnStatsBlock
