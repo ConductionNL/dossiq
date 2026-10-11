@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
+use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -57,6 +58,7 @@ class ReceiptDatesRegistrationTest extends TestCase {
 		);
 
 		(new WorkflowListenerRegistrar())->register(context: $context);
+		(new IntakeListenerRegistrar())->register(context: $context);
 
 		$this->assertArrayHasKey('OCA\OpenRegister\Event\ObjectCreatingEvent', $registered, 'Set before the case is stored.');
 		$this->assertGreaterThan(

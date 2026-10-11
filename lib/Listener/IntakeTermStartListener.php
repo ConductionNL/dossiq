@@ -95,7 +95,7 @@ class IntakeTermStartListener implements IEventListener {
 	 *    the process zone (UTC). A case made at 01:52 in Amsterdam was stored
 	 *    with the day before, and a later write keeps what the case carries.
 	 *    Registered above that calculation
-	 *    ({@see \OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar::RECEIPT_DATES_PRIORITY}),
+	 *    ({@see \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY}),
 	 *    this listener sets the day in the administered zone first, and the
 	 *    calculation keeps it.
 	 * 2. The second write sent the whole case back, including materialised

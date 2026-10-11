@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
+use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -46,6 +47,20 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class IntakeListenerRegistrar {
+
+	/**
+	 * The priority the receipt and start dates are set at, before the case is stored.
+	 *
+	 * Above OpenRegister's CalculationOnSaveListener (default priority 0), so
+	 * the materialised `startDate` calculation finds the day dossiq set and
+	 * does not fall back to its own `now`, which it formats in UTC.
+	 *
+	 * @var int
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+	 */
+	public const RECEIPT_DATES_PRIORITY = 100;
+
 	/**
 	 * Register the DSO intake and BAG location-validation listeners.
 	 *
@@ -91,6 +106,18 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: IntakeRequirementsListener::class
+		);
+
+		// The receipt and start dates are SET BEFORE THE CASE IS STORED, above
+		// OpenRegister's materialised calculations, which run on the creating
+		// event at the default priority. The `startDate` calculation falls back
+		// to `now` in UTC; set first, the day is the one in the administered
+		// zone and the calculation keeps it. The created-event registration in
+		// WorkflowListenerRegistrar stays as the fallback for the bulk save.
+		$context->registerEventListener(
+			event: ObjectCreatingEvent::class,
+			listener: IntakeTermStartListener::class,
+			priority: self::RECEIPT_DATES_PRIORITY
 		);
 	}//end register()
 }//end class

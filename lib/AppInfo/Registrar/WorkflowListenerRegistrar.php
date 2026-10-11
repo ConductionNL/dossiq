@@ -37,7 +37,6 @@ use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -49,20 +48,6 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
  */
 class WorkflowListenerRegistrar {
-
-	/**
-	 * The priority the receipt and start dates are set at, before the case is stored.
-	 *
-	 * Above OpenRegister's CalculationOnSaveListener (default priority 0), so
-	 * the materialised `startDate` calculation finds the day dossiq set and
-	 * does not fall back to its own `now`, which it formats in UTC.
-	 *
-	 * @var int
-	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
-	 */
-	public const RECEIPT_DATES_PRIORITY = 100;
-
 	/**
 	 * Every spelling of the decision-concluded event, newest first.
 	 *
@@ -155,17 +140,8 @@ class WorkflowListenerRegistrar {
 		// When the request arrived, and when its clock starts. Written once at
 		// creation and never recomputed: the stamp is a record of what the
 		// citizen was told, not a derivation of what today's calendar says.
-		// The same fields are SET BEFORE THE CASE IS STORED, above
-		// OpenRegister's materialised calculations, which run on the creating
-		// event at the default priority. The `startDate` calculation falls back
-		// to `now` in UTC; set first, the day is the one in the administered
-		// zone and the calculation keeps it. The created event stays as the
-		// fallback for the bulk save, which only dispatches that one.
-		$context->registerEventListener(
-			event: ObjectCreatingEvent::class,
-			listener: IntakeTermStartListener::class,
-			priority: self::RECEIPT_DATES_PRIORITY
-		);
+		// It also runs before the case is stored, registered with the intake
+		// listeners (IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY).
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: IntakeTermStartListener::class

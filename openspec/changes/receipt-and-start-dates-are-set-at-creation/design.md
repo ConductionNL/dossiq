@@ -57,7 +57,7 @@ after the create:
   or its stamp, from the UI or the API.
 
 `IntakeTermStartListener` now also listens to `ObjectCreatingEvent`, at
-priority 100 (`WorkflowListenerRegistrar::RECEIPT_DATES_PRIORITY`), above
+priority 100 (`IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY`), above
 OpenRegister's `CalculationOnSaveListener` at the default 0. It sets the
 stamp, `startDate` and the `receiptDate` answer on the entity before the
 store, so the calculation finds the day and keeps it, and the `deadline`
