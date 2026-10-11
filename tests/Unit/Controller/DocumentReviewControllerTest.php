@@ -53,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  */
 class DocumentReviewControllerTest extends TestCase {
 

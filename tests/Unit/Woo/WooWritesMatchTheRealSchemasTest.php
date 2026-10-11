@@ -67,6 +67,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 
