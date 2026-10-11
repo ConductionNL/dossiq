@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseDefinition;
 
+use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -81,7 +82,7 @@ class PackageSchemaReferences {
 			['app' => $app, 'registers' => $registers, 'slug' => $slug] = $reference;
 
 			$id = null;
-			if ($this->appManager->isInstalled($app) === true) {
+			if ($this->isInstalled(app: $app) === true) {
 				$id = $this->findSchemaId(registers: $registers, slug: $slug);
 			}
 
@@ -107,12 +108,26 @@ class PackageSchemaReferences {
 	 * @return string The sentence.
 	 */
 	private function reason(string $app, string $slug, array $registers): string {
-		if ($this->appManager->isInstalled($app) === false) {
+		if ($this->isInstalled(app: $app) === false) {
 			return "{$app}'s schema '{$slug}', and {$app} is not installed";
 		}
 
 		return "{$app}'s schema '{$slug}', which register " . implode(' or ', $registers) . ' does not hold here';
 	}//end reason()
+
+	/**
+	 * Whether the app is installed, under its id or a former one: a renamed
+	 * fleet app keeps answering to its old id until the rename lands there.
+	 *
+	 * @param string $app The app id the package names.
+	 *
+	 * @return boolean True when installed.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is the fleet's one rename-aware lookup.
+	 */
+	private function isInstalled(string $app): bool {
+		return FleetAppId::isInstalled(appManager: $this->appManager, canonical: $app);
+	}//end isInstalled()
 
 	/**
 	 * The id of the schema with this slug in the first register that has it.

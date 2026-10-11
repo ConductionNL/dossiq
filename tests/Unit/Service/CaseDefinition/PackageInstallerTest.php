@@ -271,6 +271,7 @@ final class PackageTestSchemaEntity {
  * @covers \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSettingRules
+ * @uses \OCA\Dossiq\Support\FleetAppId
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
@@ -872,6 +873,28 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
 		$this->assertSame('77', $this->appConfigValues['fixture_source_schema']);
 	}//end testAReferenceFindsTheSchemaUnderAnOlderRegisterSlug()
+
+	/**
+	 * An app installed under its former id still answers for its schema, as
+	 * every other fleet lookup does (FleetAppId: integriq was openconnector).
+	 *
+	 * @return void
+	 */
+	public function testAReferenceFindsAnAppInstalledUnderItsFormerId(): void {
+		$root = sys_get_temp_dir() . '/dossiq-packages-' . bin2hex(random_bytes(6));
+		$this->temporary[] = $root;
+		mkdir($root);
+		exec('cp -r ' . escapeshellarg(self::FIXTURES . '/fixture-settings') . ' ' . escapeshellarg($root . '/fixture-settings'));
+		file_put_contents(
+			$root . '/fixture-settings/settings.json',
+			json_encode(['fixture_source_schema' => ['schema' => ['app' => 'integriq', 'register' => 'fixture-register', 'slug' => 'fixture_source']]])
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['openconnector'])->install(id: 'fixture-settings');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame('60', $this->appConfigValues['fixture_source_schema']);
+	}//end testAReferenceFindsAnAppInstalledUnderItsFormerId()
 
 	/**
 	 * When the named schema is missing the package is refused, the app is
