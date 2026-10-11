@@ -183,11 +183,22 @@ class CaseTypeStore {
 	 * may put a running case on" are different questions and this one is the
 	 * store's.
 	 *
+	 * `$everyRow` answers every row whatever the caller may read, and is for the
+	 * one reader that must not depend on the caller: the handling team rules on
+	 * the case schema ({@see \OCA\Dossiq\Service\Access\CaseTeamAccessProjector}).
+	 * Projected from the rows one administrator happens to see, a save by a
+	 * narrower account would quietly drop the teams of every case type it could
+	 * not read. The limit is wider for the same reason: a case type missing from
+	 * the page is a case type whose team loses its cases.
+	 *
+	 * @param bool $everyRow True to read past OpenRegister's access rules and tenancy.
+	 *
 	 * @return array<int, array<string, mixed>> The case types, unordered.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
 	 */
-	public function everyCaseType(): array {
+	public function everyCaseType(bool $everyRow=false): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
@@ -196,13 +207,16 @@ class CaseTypeStore {
 			return [];
 		}
 
+		$query = [
+			'@self' => ['register' => $register, 'schema' => $schema],
+			'_limit' => 200,
+		];
+		if ($everyRow === true) {
+			$query['_limit'] = 5000;
+		}
+
 		try {
-			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $schema],
-					'_limit' => 200,
-				]
-			);
+			$found = $objectService->searchObjects($query, ($everyRow === false), ($everyRow === false));
 		} catch (Throwable $e) {
 			return [];
 		}

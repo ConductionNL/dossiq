@@ -32,10 +32,13 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
+use OCA\Dossiq\Listener\CaseTeamAccessListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
 use OCA\Dossiq\Listener\CaseTypePortalWithdrawalListener;
 use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -76,6 +79,7 @@ class CaseTypeListenerRegistrar {
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
@@ -102,6 +106,16 @@ class CaseTypeListenerRegistrar {
 				priority: self::INHERITED_DEADLINE_PRIORITY
 			);
 		}//end foreach
+
+		// A saved case type writes its handling teams onto the case schema's
+		// access rules (case-access-by-handling-team). After the save, so the
+		// projector reads the row as it now is.
+		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $event) {
+			$context->registerEventListener(
+				event: $event,
+				listener: CaseTeamAccessListener::class
+			);
+		}
 
 		// UPDATE ONLY. No term exists before the case does; the bind that
 		// follows the create writes the date back through the mirror.
