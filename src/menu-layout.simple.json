@@ -232,8 +232,44 @@
 								"id": "simple-first-today",
 								"type": "custom",
 								"title": "First today",
-								"_note": "DqMijnWerk names ONE case, the one of yours furthest past its deadline, with its acts. The library banner counts cases and cannot name one, so FirstTodayWidget draws the library's attention card around the case it finds, and draws nothing when none of yours is due. See its registry entry.",
-								"content": {}
+								"_note": "DqMijnWerk names ONE case, the one of yours furthest past its deadline, with its acts. The library banner counts cases and cannot name one, so FirstTodayWidget draws the library's attention card around the case it finds, and draws nothing when none of yours is due. `content` is the DECLARATION of what is past term (the same filter and link appinfo/attention.json carries for LaunchPad): the widget reads the filter from `visibleWhen.source` and its first action from `actions[0]`, so the dashboard and the feed cannot count differently. See its registry entry.",
+								"content": {
+									"layout": "attention",
+									"variant": "error",
+									"kicker": "First today",
+									"title": "Cases past their deadline",
+									"reason": "{value} of your cases are past their deadline or end today.",
+									"visibleWhen": {
+										"source": {
+											"register": "dossiq",
+											"schema": "case",
+											"filter": {
+												"assignee": "@me",
+												"isFinalStatus": false,
+												"statusHiddenInLists": false,
+												"isDraft": false,
+												"deadline[lt]": "@today+1d"
+											}
+										},
+										"op": "gt",
+										"value": 0
+									},
+									"actions": [
+										{
+											"label": "Open these cases",
+											"route": {
+												"name": "Cases",
+												"query": {
+													"assignee": "@me",
+													"isFinalStatus": "false",
+													"statusHiddenInLists": "false",
+													"isDraft": "false",
+													"deadline[lt]": "@today+1d"
+												}
+											}
+										}
+									]
+								}
 							},
 							{
 								"id": "simple-my-open",
@@ -1473,6 +1509,58 @@
 						"label": "New case",
 						"variant": "primary",
 						"icon": "Plus"
+					}
+				]
+			}
+		},
+		{
+			"id": "CaseTypes",
+			"_note": "The case type list as DqZaaktypen draws it (relay 8): the title with its identifier under it, Domain, Processing time and Version, no folder sidebar (the Domain column carries it), and the lenses All, Published and Draft. The board also has a Meegeleverd lens and a Status pill that read origin and isDraft; those are not drawn: `origin` has no values the board names yet, so inventing a lens over it would count the wrong cases.",
+			"config": {
+				"folderSidebar": null,
+				"showTitle": true,
+				"countSubtitle": "{total} case types",
+				"columns": [
+					{
+						"key": "title",
+						"label": "Case type",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier}"
+					},
+					{
+						"key": "category",
+						"label": "Domain"
+					},
+					{
+						"key": "processingDeadline",
+						"label": "Processing time"
+					},
+					{
+						"key": "version",
+						"label": "Version"
+					}
+				],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {
+							"supersededBy": "IS NULL"
+						},
+						"default": true
+					},
+					{
+						"label": "Published",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Draft",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": true
+						}
 					}
 				]
 			}

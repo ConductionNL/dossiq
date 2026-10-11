@@ -553,8 +553,11 @@ describe('the landing page', () => {
 		expect(simple.slots['widget-simple-first-today']).toBe('FirstTodayWidget')
 		expect(registrySource).toContain('FirstTodayWidget')
 		const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
-		expect(source).toMatch(/primary: true,\s+to: \{ name: 'CaseDetail'/)
-		expect(source).toContain("'deadline[lt]': tomorrow")
+		expect(source).toMatch(/primary: true,\s+route: \{ name: 'CaseDetail'/)
+		expect(source).toContain('pastTermFilter')
+		expect(
+			widget('simple-first-today').content.visibleWhen.source.filter,
+		).toHaveProperty(['deadline[lt]'], '@today+1d')
 	})
 
 	it('places every widget of every grid, and no two cards of one grid overlap', () => {
@@ -644,7 +647,7 @@ describe('the landing page', () => {
 		// First today lists everything past its deadline, today included, and
 		// its link opens exactly those cases (the widget's own query).
 		const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
-		expect(source).toContain("'deadline[lt]': '@today+1d'")
+		expect(source).toContain('this.content?.actions?.[0]?.route')
 	})
 
 	it('keeps the tile labels short enough to read', () => {
