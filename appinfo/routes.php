@@ -74,6 +74,7 @@ $extra = [
     // declaration is read locally first, so an undeclared case type reaches
     // no network at all (REQ-AIC-01).
     ['name' => 'assistant#aiFeatures',   'url' => '/api/assistant/ai-features',  'verb' => 'GET'],
+    ['name' => 'reportGroup#show',     'url' => '/api/report-group',           'verb' => 'GET'],
 
         // KCC Klantcontact (kcc-klantcontact-integratie).
         // Static/verb routes precede the {id} wildcard routes.
