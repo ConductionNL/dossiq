@@ -17,7 +17,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-case-documents/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
  * in the case's folder (DocumentRecordStore::storeFileOnObject). Portaliq
  * never sends it to the browser; it streams only an entry this answered.
  *
- * @spec openspec/changes/portal-case-documents/tasks.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalCaseDocuments {
 	use SearchesObjects;
@@ -94,7 +94,7 @@ class PortalCaseDocuments {
 	 *
 	 * @return array<int, array<string, mixed>> `{id, title, kind, date, file, mimeType?, size?}` per document.
 	 *
-	 * @spec openspec/changes/portal-case-documents/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function forCase(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -122,7 +122,7 @@ class PortalCaseDocuments {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-case-documents/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function isPublished(array $document, bool $isDecision): bool {
 		if (in_array(($document['status'] ?? ''), self::PUBLISHED_STATUSES, true) === false) {

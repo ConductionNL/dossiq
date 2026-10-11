@@ -930,6 +930,136 @@ to visible.
 - **WHEN** an administrator reads the configuration report
 - **THEN** it SHALL name the widget and the missing role
 
+### Requirement: The simple dashboard opens with the handler's own day (REQ-DASH-025)
+In the simple structure the dashboard MUST first show a greeting, a card for
+deadlines that end today, four counts of the handler's own cases, the deadlines
+of this week, the handler's cases per step and the handler's tasks. Every
+widget the dashboard held before MUST still be on the page. The full structure
+MUST keep the dashboard unchanged.
+
+#### Scenario: A handler with a deadline today
+@e2e exclude Needs seeded cases with today's deadline on a live instance; the widgets, their filters and the layout are asserted in simpleListAndDashboard.spec.js, and the coordinator checks the page live.
+- **GIVEN** the simple structure and a handler with an open case whose deadline is today
+- **WHEN** they open the dashboard
+- **THEN** the card "First today" MUST be shown and MUST link to those cases
+- **AND** the week strip MUST mark that case as late
+
+#### Scenario: A handler without a deadline today
+@e2e exclude Same reason; the card's condition is asserted in simpleListAndDashboard.spec.js.
+- **GIVEN** the simple structure and a handler with no case past its deadline or ending today
+- **WHEN** they open the dashboard
+- **THEN** the card "First today" MUST NOT be shown
+
+#### Scenario: Nothing the dashboard held is lost
+@e2e exclude A comparison of the built page with the manifest, asserted in simpleListAndDashboard.spec.js.
+- **GIVEN** the simple structure
+- **WHEN** the dashboard is built
+- **THEN** every widget and every layout entry it had MUST still be there
+
+### Requirement: The simple cases list leads with five counted views and six columns (REQ-DASH-026)
+In the simple structure the cases list MUST lead with the views All, Mine, Due
+this week, Waiting on the applicant and Woo requests, each with a count, and
+MUST keep every other lens reachable. It MUST show the columns number, title,
+type, status, handler and deadline.
+
+#### Scenario: Five views and the rest behind the chip
+@e2e exclude The counts need library 2.60.0 on a live instance; the lenses, their order and their filters are asserted in simpleListAndDashboard.spec.js.
+- **GIVEN** the simple structure
+- **WHEN** a handler opens the cases list
+- **THEN** the strip MUST show the five views with a count each
+- **AND** the other fifteen lenses MUST be offered behind the overflow chip
+
+### Requirement: A deadline that ends today is late in the simple structure (REQ-DASH-027)
+In the simple structure a case whose deadline is today MUST be marked late on
+the board, in the list and in the week strip. In the full structure the board
+MUST keep its own rule.
+
+#### Scenario: A card due today
+@e2e exclude The rule and the card's reading of it are asserted in simpleListAndDashboard.spec.js.
+- **GIVEN** the simple structure and a case whose deadline is today
+- **WHEN** a handler opens the board
+- **THEN** the card MUST be marked overdue
+
+#### Scenario: The full structure keeps its rule
+@e2e exclude Asserted in simpleListAndDashboard.spec.js.
+- **GIVEN** the full structure and a case whose deadline is today
+- **WHEN** a handler opens the board
+- **THEN** the card MUST show a warning, not overdue
+
+### Requirement: The simple pages draw the Zuiddrecht boards' header, cards and footer (REQ-DASH-028)
+In the simple structure the dashboard MUST draw the greeting on the page ground
+with a "My work | My team" switch, MUST draw First today without a second card
+around it, MUST draw the four counts stacked and MUST show no widget Actions
+menus. The case page MUST draw its header as a card holding the stages, and
+MUST place the banner stack in the side column. The cases list MUST show its
+title, the count of rows and the case number under the title. The board MUST
+NOT offer a Dashboard button. The navigation footer MUST hold Settings and Help
+only. The full structure MUST keep every one of these pages as it was.
+
+#### Scenario: The dashboard header and First today
+@e2e exclude Library opt-ins asserted on the built manifest in simpleListAndDashboard.spec.js; the coordinator compares the page with DqDashboard live.
+- **GIVEN** the simple structure
+- **WHEN** a handler opens the dashboard
+- **THEN** the greeting MUST sit on the page ground with My work and My team at its right
+- **AND** My team MUST open the team queue
+- **AND** First today MUST be drawn without a card around its own card
+
+#### Scenario: The case page header
+@e2e exclude Asserted on the built manifest in simpleCasePage.spec.js; compared with DqZaak live.
+- **GIVEN** the simple structure
+- **WHEN** a handler opens a case
+- **THEN** the stages MUST sit inside the header card
+- **AND** favourite, follow and attention MUST be in the side column, not above the tabs
+
+#### Scenario: The full structure is unchanged
+@e2e exclude A comparison of the built pages with the manifest, asserted in simpleListAndDashboard.spec.js and simpleCasePage.spec.js.
+- **GIVEN** the full structure
+- **WHEN** the pages are built
+- **THEN** the dashboard, the case page, the list and the board MUST equal what the manifest declares
+
+### Requirement: My open work is a start page widget that any dashboard can render (REQ-DASH-023)
+dossiq MUST offer a dashboard widget "My open work" that lists the signed-in
+person's open cases and work items from the one personal queue, soonest due
+first, each linking to its case or task. The widget MUST answer through
+Nextcloud's widget item API, so a host that renders items shows it without
+dossiq's JavaScript. It MUST offer a button "Open my work" that leads to the My
+work page.
+
+#### Scenario: The start page shows my cases and leads to my work
+@e2e tests/e2e/my-open-work-widget.spec.ts
+
+- **GIVEN** a handler with two open cases assigned to them and one open task
+- **WHEN** they open a start page that holds the widget "My open work"
+- **THEN** the widget MUST list the two cases and the task, soonest due first
+- **AND** "Open my work" MUST open the My work page
+
+#### Scenario: Items reach a host without dossiq's bundle
+@e2e tests/e2e/my-open-work-widget.spec.ts
+
+- **GIVEN** the same handler
+- **WHEN** a client calls `/ocs/v2.php/apps/dashboard/api/v2/widget-items` for
+  the widget
+- **THEN** the response MUST carry the three items with their titles and links
+
+#### Scenario: More work than fits
+@e2e exclude Twelve items on the admin's shared queue cannot be seeded stably; covered by tests/Unit/Dashboard/QueueWidgetItemsTest.php and tests/Unit/Dashboard/MyOpenWorkWidgetTest.php.
+
+- **GIVEN** a handler with twelve open items and a host that asks for seven
+- **WHEN** the widget answers
+- **THEN** it MUST list six items and a seventh reading "6 more in My work"
+  that links to the My work page
+
+### Requirement: My tasks renders through the item API as well (REQ-DASH-024)
+The widget "My tasks" MUST keep its id and its dashboard rendering and MUST also
+answer its open tasks through Nextcloud's widget item API.
+
+#### Scenario: A start page that reads items shows my tasks
+@e2e tests/e2e/my-open-work-widget.spec.ts
+
+- **GIVEN** a handler with two open tasks
+- **WHEN** a client asks the widget item API for "My tasks"
+- **THEN** it MUST answer both tasks with a link to each
+
 ## Non-Functional Requirements
 
 - **Performance**: Dashboard MUST load within 2 seconds for up to 1000 cases. Individual API calls SHOULD complete within 500ms. Data is fetched using `Promise.allSettled` with a limit of 1000 cases, 100 case types, 500 status types, and 100 tasks.

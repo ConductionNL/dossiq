@@ -569,7 +569,7 @@
 								"columns": [
 									{ "key": "identifier", "label": "Number" },
 									{ "key": "title", "label": "Title" },
-									{ "key": "deadline", "label": "Deadline" }
+									{ "key": "deadline", "label": "Deadline", "format": "date" }
 								],
 								"rowRoute": "CaseDetail",
 								"emptyText": "Follow a case to keep an eye on it here"
@@ -599,7 +599,7 @@
 								"columns": [
 									{ "key": "identifier", "label": "Number" },
 									{ "key": "title", "label": "Title" },
-									{ "key": "deadline", "label": "Deadline" }
+									{ "key": "deadline", "label": "Deadline", "format": "date" }
 								],
 								"rowRoute": "CaseDetail",
 								"emptyText": "Nothing is waiting for your teams",
@@ -615,6 +615,7 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
+						"formTitle": "New case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
@@ -623,7 +624,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
@@ -637,6 +637,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"icon": "Plus",
@@ -699,6 +711,7 @@
 								"name": "Cases"
 							},
 							"icon": "FolderOutline",
+							"iconPlacement": "end",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -726,6 +739,7 @@
 								}
 							},
 							"icon": "AlertCircleOutline",
+							"iconPlacement": "end",
 							"variant": "error",
 							"format": {
 								"style": "decimal",
@@ -751,6 +765,7 @@
 								}
 							},
 							"icon": "CheckCircleOutline",
+							"iconPlacement": "end",
 							"variant": "success",
 							"format": {
 								"style": "decimal",
@@ -776,6 +791,7 @@
 								}
 							},
 							"icon": "ClipboardCheckOutline",
+							"iconPlacement": "end",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -803,6 +819,7 @@
 							"label": "SLA Compliance",
 							"caption": "met their deadline",
 							"icon": "ChartLine",
+							"iconPlacement": "end",
 							"route": {
 								"name": "Doorlooptijd"
 							},
@@ -926,14 +943,12 @@
 								},
 								"limit": 5
 							},
+							"_columnsNote": "my-work-cards-and-team-tiles-read-right, finding F7. The tile is four grid columns (about 340px), and three columns (number, title, date) asked for about 490px, so the date, the one column that says when, was cut off on the right. The board DqDashboard draws this tile as two columns: the title with the case number as a muted line under it, and the date on the right. So the number is the title's `secondary` line, the title wraps (`cn-cell--wrap`) instead of pushing the table wider, and the date keeps one line at the end. No widths are declared: the tile hides its header, and a width only reaches a table through its header cells.",
 							"columns": [
 								{
-									"key": "identifier",
-									"cellClass": "cn-cell--muted"
-								},
-								{
 									"key": "title",
-									"cellClass": "cn-cell--strong"
+									"secondary": "identifier",
+									"cellClass": "cn-cell--strong cn-cell--wrap"
 								},
 								{
 									"key": "@self.viewedAt",
@@ -1113,7 +1128,7 @@
 			"id": "MyWorkHome",
 			"route": "/",
 			"type": "dashboard",
-			"title": "My Work",
+			"title": "My work",
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
 			"config": {
 				"userLayout": true,
@@ -1126,6 +1141,7 @@
 						"id": "new-case",
 						"type": "open-form",
 						"label": "New case",
+						"formTitle": "New case",
 						"size": "normal",
 						"columns": 1,
 						"includeFields": [
@@ -1134,7 +1150,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
@@ -1148,6 +1163,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"icon": "Plus",
@@ -1422,7 +1449,8 @@
 										},
 										{
 											"key": "deadline",
-											"label": "Deadline"
+											"label": "Deadline",
+											"format": "date"
 										}
 									],
 									"rowRoute": "CaseDetail",
@@ -1441,6 +1469,7 @@
 										"name": "Cases"
 									},
 									"icon": "FolderOutline",
+									"iconPlacement": "end",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
@@ -1468,6 +1497,7 @@
 										}
 									},
 									"icon": "AlertCircleOutline",
+									"iconPlacement": "end",
 									"variant": "error",
 									"format": {
 										"style": "decimal",
@@ -1493,6 +1523,7 @@
 										}
 									},
 									"icon": "CheckCircleOutline",
+									"iconPlacement": "end",
 									"variant": "success",
 									"format": {
 										"style": "decimal",
@@ -1721,10 +1752,11 @@
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
+					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
 				"createSuccessRoute": "CaseDetail",
@@ -1822,7 +1854,7 @@
 			"id": "MyWork",
 			"route": "/my-work",
 			"type": "custom",
-			"title": "My Work",
+			"title": "My work",
 			"component": "MyWorkView",
 			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
 			"config": {
@@ -1887,10 +1919,11 @@
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
-				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "startDate", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
+				"includeFields": ["caseType", "title", "requester", "intakeChannel", "description", "plannedEndDate", "assignee", "confidentiality", "impact", "urgency"],
 				"fieldOverrides": {
 					"description": { "widget": "textarea" },
-					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" },
+					"confidentiality": { "enumLabels": { "openbaar": "Public", "beperkt_openbaar": "Restricted public", "intern": "Internal", "zaakvertrouwelijk": "Case confidential", "vertrouwelijk": "Confidential", "confidentieel": "Classified confidential", "geheim": "Secret", "zeer_geheim": "Top secret" } }
 				},
 				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
 				"createSuccessRoute": "CaseDetail",
@@ -2282,6 +2315,18 @@
 					"requester": {
 						"widget": "InitiatorPicker",
 						"label": "Requester"
+					},
+					"confidentiality": {
+						"enumLabels": {
+							"openbaar": "Public",
+								"beperkt_openbaar": "Restricted public",
+								"intern": "Internal",
+								"zaakvertrouwelijk": "Case confidential",
+								"vertrouwelijk": "Confidential",
+								"confidentieel": "Classified confidential",
+								"geheim": "Secret",
+								"zeer_geheim": "Top secret"
+						}
 					}
 				},
 				"_transitionsNote": "THE TRANSITION BUTTONS ARE GONE, AND MOVING THE CASE IS NOW A CLICK ON A STAGE. Ruben ruled on 2026-09-12: drop the transition strip and make clicking a status in the timeline widget set that status. So `actionsComponent` no longer names CaseTransitionsWidget, that component is deleted, and the `case-stages` widget carries the gesture. It is the same guarded move it always was, asked for in the same place it is shown: the widget reads OpenRegister /available-actions, dossiq answers that through CaseActionProvider off its own transition engine, and a stage no action reaches is disabled by construction rather than by a check somebody has to remember to write. The strip has been in three places now, and this is the reasoning that survived all three: the status belongs with the status, and the move belongs with the status too. Two things the strip carried have no home on this page any more, and they are named in the page `_note` rather than dropped in silence.",
@@ -2341,6 +2386,14 @@
 						"title": "Contract",
 						"icon": "FileSign",
 						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
+					},
+					{
+						"id": "case-change-proposals",
+						"type": "integration",
+						"integrationId": "portaliq-change-proposal-queue",
+						"title": "Proposed changes",
+						"icon": "FileEditOutline",
+						"_note": "portal-change-proposals-on-the-case D2, placed as the Proposals tab of the case panels as board PtVoorstelBeoordelen draws it (Voorstellen). A resident proposes a corrected title or description in the portal (the proposeCaseChange action); portaliq queues it and renders the queue here, where the handler accepts or rejects it. Accepting writes the case as the reviewer with RBAC on, so it is refused wherever the reviewer could not edit the case by hand. dossiq keeps no copy of a proposal. A leaf whose app is absent is never registered, so without portaliq the panel is missing rather than empty, and no requiredApp is declared."
 					},
 					{
 						"id": "case-projects",
@@ -2497,6 +2550,10 @@
 									"label": "Work"
 								},
 								{
+									"widgetId": "case-change-proposals",
+									"label": "Proposals"
+								},
+								{
 									"widgetId": "case-decisions-panel",
 									"label": "Decisions"
 								},
@@ -2569,6 +2626,18 @@
 												"requester": {
 													"widget": "InitiatorPicker",
 													"label": "Requester"
+												},
+												"confidentiality": {
+													"enumLabels": {
+														"openbaar": "Public",
+															"beperkt_openbaar": "Restricted public",
+															"intern": "Internal",
+															"zaakvertrouwelijk": "Case confidential",
+															"vertrouwelijk": "Confidential",
+															"confidentieel": "Classified confidential",
+															"geheim": "Secret",
+															"zeer_geheim": "Top secret"
+													}
 												}
 											}
 										}
@@ -5090,7 +5159,7 @@
 			"id": "WorkflowBoard",
 			"route": "/workflow-board",
 			"type": "custom",
-			"title": "Workflow Board",
+			"title": "Workflow board",
 			"component": "WorkflowBoardView",
 			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
 			"config": {
@@ -5770,7 +5839,7 @@
 			"id": "LhsRecommendations",
 			"route": "/settings/lhs-recommendations",
 			"type": "index",
-			"title": "LHS Recommendations",
+			"title": "LHS recommendations",
 			"config": {
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
@@ -5806,7 +5875,7 @@
 			"id": "LhsRecommendationDetail",
 			"route": "/settings/lhs-recommendations/:id",
 			"type": "detail",
-			"title": "LHS Recommendation",
+			"title": "LHS recommendation",
 			"config": {
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
@@ -7480,7 +7549,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
@@ -7494,6 +7562,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"createOverride": "caseCreateWithDuplicateCheck",
@@ -7772,7 +7852,6 @@
 							"requester",
 							"intakeChannel",
 							"description",
-							"startDate",
 							"plannedEndDate",
 							"assignee",
 							"confidentiality",
@@ -7786,6 +7865,18 @@
 							"requester": {
 								"widget": "InitiatorPicker",
 								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+										"beperkt_openbaar": "Restricted public",
+										"intern": "Internal",
+										"zaakvertrouwelijk": "Case confidential",
+										"vertrouwelijk": "Confidential",
+										"confidentieel": "Classified confidential",
+										"geheim": "Secret",
+										"zeer_geheim": "Top secret"
+								}
 							}
 						},
 						"createOverride": "caseCreateWithDuplicateCheck",

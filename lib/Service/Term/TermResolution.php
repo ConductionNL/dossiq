@@ -130,6 +130,26 @@ class TermResolution {
 	}//end resolve()
 
 	/**
+	 * The service norm a case gets, resolved by the same order as its term.
+	 *
+	 * A case type with no statutory term (a melding, a demo type) still has a
+	 * clock the team works to. It is bound beside the statutory term, never as
+	 * it, which is why it is asked for by its own kind.
+	 *
+	 * @param string               $caseType The zaaktype slug.
+	 * @param array<string, mixed> $context  The case's organisation, service and priority.
+	 *
+	 * @return array<string, mixed>|null The `planned` definition, or null when none resolves.
+	 *
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 */
+	public function plannedDefinitionFor(string $caseType, array $context): ?array {
+		$resolved = $this->resolve(caseType: $caseType, context: $context, kind: TermKind::PLANNED);
+
+		return ($resolved['definition'] ?? null);
+	}//end plannedDefinitionFor()
+
+	/**
 	 * The definitions of one kind. An absent kind reads as statutory, because
 	 * every definition written before the kinds existed sets that clock.
 	 *

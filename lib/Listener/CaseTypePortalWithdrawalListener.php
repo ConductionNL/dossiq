@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -59,7 +59,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class CaseTypePortalWithdrawalListener implements IEventListener {
 
@@ -97,7 +97,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatingEvent === true) {

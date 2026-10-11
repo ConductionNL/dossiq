@@ -1,8 +1,9 @@
 {
-  "ceiling": 259,
+  "ceiling": 261,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-10-10, openspec/changes/tenancy-onto-openregister-organisation tasks 6.9 and 6.15: TenantSaasService retired with the tenant admin store, taking its three sites (getById, getObjectService, listActive). TenantService::getObjectService arrived with the audit anchor. The ceiling went 259 to 257.",
     "Every catch (\\Throwable) under lib/Service that answers null or [] within its first three statements. ServiceCatchReturnsNullTest fails on a site that is not here, on an entry whose site is gone, and when the count passes the ceiling. The ceiling only goes down.",
     "This is a debt list with a ceiling, not an endorsement. The class and the reason on each entry were written by the triage that seeded this file on 2026-09-13 from the site's own evidence: what it returns, and whether and how it logs. They say what the site does, not that the site is right.",
     "The refusal class is deliberately absent: a site where a rule said no is converted to a RefusedException and leaves this file (REQ-QG-CRN-2). Four left it on 2026-09-13, all four in the guard-resolver class hydra gate 8 exists for. Any entry below may turn out to be a refusal when someone reads it; that is what the next batch is for.",
@@ -1415,25 +1416,11 @@
       "reason": "`getQuota()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/TenantSaasService.php",
-      "method": "getById",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getById()` answers `return null` when the read fails; the catch logs at info (\"Dossiq: TenantSaasService::getById miss\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/TenantSaasService.php",
+      "file": "lib/Service/TenantService.php",
       "method": "getObjectService",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`getObjectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not resolve ObjectService\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/TenantSaasService.php",
-      "method": "listActive",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`listActive()` answers `return []` when the read fails; the catch logs at error (\"Dossiq: TenantSaasService::listActive failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`getObjectService()` answers `return null` when OpenRegister's ObjectService cannot be resolved; the catch logs at error (\"Dossiq: could not resolve ObjectService for the tenant audit anchor\") and `ensureAuditAnchor()` answers false, so onboarding writes no step."
     },
     {
       "file": "lib/Service/TenantSessionService.php",
@@ -1807,20 +1794,6 @@
       "reason": "`getConsumerAuthorisaties()` answers `return []` when the read fails; the catch logs at warning (\"Could not get consumer autorisaties\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwService.php",
-      "method": "resolveParentZaaktypeDraft",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`resolveParentZaaktypeDraft()` answers `return null` when the read fails; the catch logs at warning (\"Could not resolve parent zaaktype draft status\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/ZgwService.php",
-      "method": "resolveParentZaaktypeDraftFromBody",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`resolveParentZaaktypeDraftFromBody()` answers `return null` when the read fails; the catch logs at warning (\"Could not resolve parent zaaktype draft from body\"), so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/ZgwZrcRulesService.php",
       "method": "caseTypeDefaultAssignee",
       "occurrence": 1,
@@ -1847,6 +1820,48 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`registry()` answers `return null` when OpenRegister's node catalogue cannot be resolved; the catch logs at warning (\"OpenRegister node catalogue unavailable for a retired action\") and the caller records the action as failed with `retired_action_needs_openregister`, never as run."
+    },
+    {
+      "file": "lib/Service/Zgw/ZgwParentStateResolver.php",
+      "method": "draftState",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`draftState()` answers `return null` when the parent zaaktype cannot be read; the catch logs at warning (\"Could not resolve parent zaaktype draft status\" / \"... from body\"). It is the one site the two former ZgwService::resolveParentZaaktypeDraft* entries collapsed into (method-decomposition), so a failed read and an absent record are the same answer: not applicable."
+    },
+    {
+      "file": "lib/Service/Zgw/ZtcRelatedTypeLookup.php",
+      "method": "searchRowsOrNone",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`searchRowsOrNone()` answers `return []` when a ZTC enrichment search fails; the catch logs at warning naming the schema. It moved out of ZtcController (method-decomposition), where the same catches lived outside lib/Service and were not counted; a failed search leaves one cross-reference list unenriched on a read instead of failing the read."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "sources",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`sources()` answers `return null` when the source register of a declared record import cannot be read; the catch logs at error naming the import key. CaseRecordImport reads null as a failure (\"The source records could not be read.\") and imports nothing, so a failed read is never reported as zero records."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "casesBySource",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`casesBySource()` answers `return null` when the existing cases of the case type cannot be read; the catch logs at warning. CaseRecordImport stops the run and lists the failure, because importing over an unread list would write a half-finished case a second time."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "caseType",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`caseType()` answers `return null` when the case type named to the import cannot be read; the catch logs at warning naming it, and the import answers no case type and runs nothing."
+    },
+    {
+      "file": "lib/Service/Term/TermCarryOver.php",
+      "method": "statutoryInstance",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`statutoryInstance()` answers `return null` when the case's term instances cannot be read; `carry()` then answers the outcome `missing` and changes no term, so the case keeps the term its create bound. It does not log; the import reports the outcome."
     }
   ]
 }

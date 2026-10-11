@@ -40,6 +40,7 @@ import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
 import { useObjectStore } from './store/modules/object.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
+import { installPageTitles } from './utils/pageTitle.js'
 import { currentPermissions } from './utils/permissions.js'
 import { routerBase } from './utils/routerBase.js'
 import {
@@ -216,7 +217,7 @@ const menuLayout =
  * @return {object} Nextcloud's theming block plus `emblem` from thematiq's
  *   `nldesign.logos.emblem`, or '' when the set ships none.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 function navTheming(capabilities) {
 	const theming = capabilities?.theming ?? {}
@@ -228,7 +229,15 @@ const profiledManifest = {
 	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {
 		theming: navTheming(getCapabilities()),
 	}),
-	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
+	runtime: {
+		user: { isAdmin: currentPermissions().includes('admin') },
+		// Which Woo review reports the page controller offers this user
+		// (woo-review-reports): the menu entry's `visibleIf` reads it.
+		woo: {
+			throughputReader:
+				loadState('dossiq', 'woo_reports', {}).throughput === true,
+		},
+	},
 }
 const builtManifest = markRaw(
 	translateBannerCopy(
@@ -288,6 +297,11 @@ const router = createRouter({
 // `utils/manifestRoutes.js#permissionGuard` for what it enforces, why it
 // redirects rather than errors, and what it deliberately does NOT close.
 router.beforeEach(permissionGuard)
+
+// The browser tab names the page ("Cases - Dossiq - Nextcloud"), the way
+// Nextcloud's own apps do, instead of the same server-rendered title on every
+// route. See `utils/pageTitle.js`.
+installPageTitles(router, builtManifest, (label) => t('dossiq', label))
 
 // The case page subscribes to the case it is showing (gap register row 2.20).
 // It is wired here rather than in a component because `#CaseDetail` is rendered

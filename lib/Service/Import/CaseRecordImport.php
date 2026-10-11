@@ -184,19 +184,27 @@ class CaseRecordImport {
 		$cases = null;
 		foreach ($sources as $source) {
 			$sourceId = $this->store->idOf(row: $source);
-			if ($stampField !== '' && trim((string)($source[$stampField] ?? '')) !== '') {
+			$skipped = $this->skippedAs(source: $source, sourceId: $sourceId, stampField: $stampField, dryRun: $dryRun);
+			if ($skipped === 'alreadyImported') {
 				$answer['alreadyImported']++;
 				continue;
 			}
 
-			if ($dryRun === true || $sourceId === '') {
+			if ($skipped === 'unmigrated') {
 				$answer['unmigrated']++;
 				continue;
 			}
 
 			// Read once, and only when there is something to import: a second
-			// run over a fully migrated source reads no case at all.
+			// run over a fully migrated source reads no case at all. An unread
+			// list stops the run: importing over it would write a half-finished
+			// case a second time.
 			$cases = ($cases ?? $this->store->casesBySource(objectService: $objectService, caseType: $caseType, import: $import));
+			if ($cases === null) {
+				$answer['failed'][] = ['requestId' => '', 'reference' => '', 'reason' => 'The existing cases could not be read, so nothing more was imported.'];
+				return $answer;
+			}
+
 			$outcome = $this->importOne(
 				objectService: $objectService,
 				caseType: $caseType,
@@ -216,6 +224,28 @@ class CaseRecordImport {
 
 		return $answer;
 	}//end runOne()
+
+	/**
+	 * Which counter a source record lands in without being imported, or '' to import it.
+	 *
+	 * @param array<string, mixed> $source     The source record.
+	 * @param string               $sourceId   Its uuid.
+	 * @param string               $stampField The field an earlier run stamped, or ''.
+	 * @param bool                 $dryRun     Count only.
+	 *
+	 * @return string `alreadyImported`, `unmigrated` or ''.
+	 */
+	private function skippedAs(array $source, string $sourceId, string $stampField, bool $dryRun): string {
+		if ($stampField !== '' && trim((string)($source[$stampField] ?? '')) !== '') {
+			return 'alreadyImported';
+		}
+
+		if ($dryRun === true || $sourceId === '') {
+			return 'unmigrated';
+		}
+
+		return '';
+	}//end skippedAs()
 
 	/**
 	 * Move one record: find or write its case, carry its term, then stamp it.

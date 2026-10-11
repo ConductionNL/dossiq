@@ -180,9 +180,10 @@ test.describe('Following a case', () => {
 
 	// @e2e openspec/specs/case-management/spec.md#follow-a-colleagues-case
 	//
-	// BREAKS IF: the strip stops reading `@self.watching`, or the PUT stops
+	// BREAKS IF: the header toggle stops reading `@self.watching`, or the PUT stops
 	// landing. The reload is the point: an optimistic flip that never reached
 	// OpenRegister looks identical to one that did until the page is read back.
+	// @e2e openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md#the-case-page-shows-one-follow-control
 	// @e2e case-access-control::follow-survives-a-reload
 	test('the Follow button on the case page takes the subscription, and it survives a reload', async ({
 		page,
@@ -192,16 +193,20 @@ test.describe('Following a case', () => {
 		await page.goto(`${APP_URL}cases/${cases.fromThePage}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const toggle = page.getByTestId('case-follow-toggle')
+		const toggle = page.getByTestId('cn-follow-toggle-button')
 		await expect(toggle).toBeVisible({ timeout: 30_000 })
 		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+		// One Follow control on the page (one-follow-control-in-the-header):
+		// the header toggle, and no second strip in the banner row.
+		await expect(toggle).toHaveCount(1)
+		await expect(page.getByTestId('case-follow')).toHaveCount(0)
 
 		await toggle.click()
 		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
 
 		await page.reload(PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-follow-toggle')).toHaveAttribute(
+		await expect(page.getByTestId('cn-follow-toggle-button')).toHaveAttribute(
 			'aria-pressed',
 			'true',
 		)
@@ -275,7 +280,7 @@ test.describe('Following a case', () => {
 		await page.goto(`${APP_URL}cases/${cases.dropped}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const toggle = page.getByTestId('case-follow-toggle')
+		const toggle = page.getByTestId('cn-follow-toggle-button')
 		await expect(toggle).toBeVisible({ timeout: 30_000 })
 		await expect(toggle).toHaveAttribute('aria-pressed', 'true')
 

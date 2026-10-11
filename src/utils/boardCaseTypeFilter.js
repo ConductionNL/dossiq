@@ -20,7 +20,7 @@
  * @return {{columns: Array<object>, casesByStatus: {[key: string]: Array<object>}}}
  *   The columns and cases to draw. With an empty case type, the input as given.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+ * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
  */
 export function narrowBoard({ columns, casesByStatus, statusTypes, caseType }) {
 	if (!caseType) {
@@ -57,7 +57,7 @@ export function narrowBoard({ columns, casesByStatus, statusTypes, caseType }) {
  * @param {string} caseType The case type the board is narrowed to, or empty.
  * @return {Array<object>} The column's new full list.
  *
- * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+ * @spec openspec/specs/dashboard/spec.md#REQ-DASH-027
  */
 export function mergeColumnBack(merged, visible, caseType) {
 	if (!caseType) {

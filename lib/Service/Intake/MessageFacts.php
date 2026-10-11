@@ -130,4 +130,28 @@ class MessageFacts {
 
 		return ($received ?? $this->dates->today()->format('Y-m-d'));
 	}//end receivedDate()
+
+	/**
+	 * The `receivedAt` field a message gives its case, or none.
+	 *
+	 * Written onto the case so the term starts at the moment the message
+	 * arrived rather than at the moment the case row was written
+	 * (REQ-TERM-043). Empty rather than now when the message does not say: a
+	 * case without it falls back to its own creation moment, which is the same
+	 * claim made honestly.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 *
+	 * @return array<string, string> `['receivedAt' => moment]`, or [].
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-an-intake-channel-passes-on-when-the-request-arrived-req-term-043
+	 */
+	public function receivedAtField(array $message): array {
+		$received = $this->dates->tryParse(value: ($message['receivedAt'] ?? null));
+		if ($received === null) {
+			return [];
+		}
+
+		return ['receivedAt' => $this->dates->formatMoment(moment: $received)];
+	}//end receivedAtField()
 }//end class
