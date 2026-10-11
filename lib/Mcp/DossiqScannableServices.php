@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\Mcp\AppointmentTools;
 use OCA\Dossiq\Service\Mcp\BeschikkingTools;
 use OCA\Dossiq\Service\Mcp\CaseTools;
+use OCA\Dossiq\Service\Mcp\IntakeTools;
 use OCA\Dossiq\Service\Mcp\ReportingTools;
 use OCA\Dossiq\Service\Mcp\TermTools;
 use OCA\OpenRegister\Mcp\IMcpScannableServices;
@@ -66,6 +67,7 @@ class DossiqScannableServices implements IMcpScannableServices {
 			TermTools::class,
 			AppointmentTools::class,
 			BeschikkingTools::class,
+			IntakeTools::class,
 		];
 	}//end getScannableServiceClasses()
 }//end class

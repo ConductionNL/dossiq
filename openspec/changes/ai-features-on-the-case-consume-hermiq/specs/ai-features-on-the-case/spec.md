@@ -132,10 +132,13 @@ What a group means SHALL remain dossiq's: hermiq answers, and creates nothing.
 
 ### Requirement: The conversational intake files through dossiq's own create-only path (REQ-AIC-05)
 
-dossiq SHALL declare a create-only intake tool, annotated as hermiq's intake
-grant requires, whose handler calls the same case-creation path the create form
-calls. dossiq SHALL NOT add a second creation path for the intake, and SHALL NOT
-relax validation for it.
+dossiq SHALL declare a create-only intake tool, `dossiq.fileCase`, carrying the
+`citizenIntake` mark with `scope: create` and `action: create` as hermiq's intake
+grant requires (decision 177), whose handler writes through the same
+case-creation path the create form uses: one save on the case schema, as the
+caller, never elevated. dossiq SHALL NOT add a second creation path for the
+intake, SHALL NOT relax validation for it, and SHALL NOT create an intermediate
+intake object: the conversation creates the case directly (decision 179).
 
 dossiq SHALL declare its request catalogue, so hermiq's classification proposes
 from the municipality's own list.
@@ -160,6 +163,7 @@ from the municipality's own list.
 - **WHEN** the tool catalogue is read
 - **THEN** exactly the create-only tool SHALL carry the intake annotation, and no
   tool that reads or changes an existing case SHALL carry it
+- **AND** that tool SHALL declare `scope: create` and `action: create`
 
 ### Requirement: dossiq ships an initial prompt library and stops owning it (REQ-AIC-06)
 

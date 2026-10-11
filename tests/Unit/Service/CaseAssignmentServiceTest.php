@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-206-human-approval-gates-on-high-impact-writes
+ * @spec openspec/changes/hermiq-ai-tooling/specs/mcp-integration/spec.md#requirement-req-mcp-206-human-approval-of-ai-writes-is-hermiqs-policy
  */
 
 declare(strict_types=1);

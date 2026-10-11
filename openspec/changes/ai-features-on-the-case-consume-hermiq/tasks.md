@@ -6,16 +6,23 @@ Tier: V1. Kind: code. Size M. dossiq's half of hermiq#896, #898, #899, #900 and
 The file paths below say where each task landed. This repo's PHP suite lives
 under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
 
-- [ ] 1.1 A case type declares, per AI feature, the surface it appears on:
+- [x] 1.1 A case type declares, per AI feature, the surface it appears on:
   `case`, `intake` or `none` (D-1). Features are named by the slug hermiq
   registers them under, so one feature is one thing across the two apps.
   - `@spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-a-case-type-declares-which-ai-features-are-on-and-where-they-appear-req-aic-01`
-  - `lib/Settings/register.d/*.json` (zaaktype fragment), schema version moved
-- [ ] 1.2 An undeclared feature renders nothing and makes no call.
-  - `lib/Service/Ai/CaseTypeAiFeatures.php`
-- [ ] 2.1 Read which provider each declared feature uses and where it runs, from
+  - `lib/Settings/register.d/43-case-type-ai-features.json` (`caseType.aiFeatures`,
+    an object whose values are `case`, `intake` or `none`; no provider, model
+    or residency), register 0.20.25, info.xml bumped; en/nl l10n.
+    Test: `tests/Unit/Service/Ai/CaseTypeAiFeaturesDeclarationTest.php`.
+- [x] 1.2 An undeclared feature renders nothing and makes no call.
+  - `lib/Service/Ai/CaseTypeAiFeatures.php`; tests
+    `tests/Unit/Service/Ai/CaseTypeAiFeaturesTest.php` and
+    `AssistantControllerTest::testAiFeaturesAsksNobodyWhenTheCaseTypeDeclaresNothing`.
+- [x] 2.1 Read which provider each declared feature uses and where it runs, from
   hermiq's register (D-2). No provider, model or residency is stored here.
-  - `lib/Service/Assistant/HermiqAiFeatureClient.php::featureResidency()`
+  - `lib/Service/Assistant/HermiqAiFeatureClient.php::featureResidency()`,
+    joined in `AssistantController::aiFeatures()`; test
+    `AssistantControllerTest::testAFeatureHermiqDoesNotKnowIsUnavailableAndNotLocal`.
 - [ ] 2.2 An absent hermiq reports every declared feature as unavailable, never
   as local.
 - [ ] 3.1 A feature that reads a document carries the reference, and a request
@@ -29,20 +36,40 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
   - `lib/Service/Ai/ReportGroupingConsumer.php`
 - [ ] 4.2 A group changes no confirmation of receipt: the count owed is read
   from the reports, never from the group.
-- [ ] 5.1 Declare a create-only intake tool annotated as hermiq's grant
+- [x] 5.1 Declare a create-only intake tool annotated as hermiq's grant
   requires, and the read tools for the outbound surface (D-5).
-  - `lib/Mcp/DossiqToolProvider.php`
-- [ ] 5.2 The intake tool files through the creation path the create form
+  - `lib/Service/Mcp/IntakeTools.php` (`dossiq.fileCase`: `citizenIntake` mark,
+    `scope: create`, `action: create`, `reach: instance`), listed in
+    `lib/Mcp/DossiqScannableServices.php`; the six curated reads carry
+    `outsideAgent`. The hand-written `DossiqToolProvider` is gone
+    (dossiq-mcp-adoption), so the path in the original text no longer exists.
+  - Tests: `IntakeToolsTest::testTheToolCarriesTheMarkAndTheCreateTaxonomyHermiqReads`,
+    `DossiqScannableServicesTest::testOnlyTheCreateToolCarriesTheIntakeMark`,
+    `DossiqScannableServicesTest::testOnlyTheReadsAreOfferedToTheOutsideSurface`.
+  - Needs openregister#4546 (reach) and the annotations PR (decision 177) on
+    the instance, and hermiq's intake recognition PR, before hermiq sees it.
+- [x] 5.2 The intake tool files through the creation path the create form
   already uses, with its own validation, and refuses what that path refuses.
+  - `lib/Service/Intake/CaseIntakeFiling.php`: one `saveObject()` on the case
+    schema as the caller (the create form's `createOverride` saves the same
+    way), allowlisted payload, published case type by id or identifier, no
+    intermediate intake object (decision 179).
+  - Tests: `CaseIntakeFilingTest` (the write, the identifier lookup, the payload
+    against the real case schema, a missing subject, a draft-only case type,
+    a refusal from the create path and from RBAC, no storage),
+    `IntakeToolsTest::testARefusalIsThrownWithDossiqsSentence`.
 - [ ] 5.3 Declare the request catalogue hermiq classifies from.
 - [ ] 6.1 Ship the initial prompt library into hermiq and stop owning it
   (REQ-AIC-06).
-- [ ] 7.1 Fix the `AuditTrailMapper` stub's return type, which is `object`
+- [x] 7.1 Fix the `AuditTrailMapper` stub's return type, which is `object`
   where OpenRegister returns `AuditTrail` (D-6).
-  - `tests/Stubs/Db/AuditTrailMapper.php`
-- [ ] 7.2 Stop `AiSettingsControllerShapeTest` restating the feature list
+  - `tests/Stubs/Db/AuditTrailMapper.php`: `createAuditTrailEntry(): AuditTrail`
+    (landed in #2896 and #2981); `tests/Unit/Support/StubApiDriftTest.php`
+    compares return types when both sides declare one.
+- [x] 7.2 Stop `AiSettingsControllerShapeTest` restating the feature list
   `ConfigKeys` already holds (D-6).
-  - `tests/Unit/Controller/AiSettingsControllerShapeTest.php`
+  - `tests/Unit/Controller/AiSettingsControllerShapeTest.php::switchKeys()`
+    derives the feature flags from `ConfigKeys::ALL` (5 tests green, 10 Oct).
 - [ ] 8.1 Unit tests: the declaration, the unavailable-not-local read, the
   missing-reference refusal, the grouping render, the acknowledgement count and
   the intake tool's delegation.
