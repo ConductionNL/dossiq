@@ -220,7 +220,8 @@ class PackagePartRules {
 	}//end checkSeed()
 
 	/**
-	 * Check `settings.json`: flat keys an app config can hold, scalar values.
+	 * Check `settings.json`: flat keys an app config can hold, scalar values,
+	 * or a value that names another app's schema by app, register and slug.
 	 *
 	 * @param array<string, string> $files The package files.
 	 *
@@ -232,17 +233,7 @@ class PackagePartRules {
 			return;
 		}
 
-		foreach ($settings as $key => $value) {
-			// 64 is the app config key limit: a longer key is refused by the
-			// store at write time, after the rows went in.
-			if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', (string)$key) !== 1) {
-				$this->errors[] = "settings.json: '{$key}' is not a valid settings key (a-z, 0-9, _, at most 64).";
-			}
-
-			if (is_scalar($value) === false) {
-				$this->errors[] = "settings.json: '{$key}' must hold a string, number or boolean.";
-			}
-		}
+		array_push($this->errors, ...(new PackageSettingRules())->errors(settings: $settings));
 	}//end checkSettings()
 
 	/**
