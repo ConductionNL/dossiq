@@ -295,6 +295,125 @@ final class CasePlanProjectionServiceTest extends TestCase {
 	}//end testAnAbsentCaseLayerIsReported()
 
 	/**
+	 * The plan is created through the system verb, acting as dossiq.
+	 *
+	 * The first bridge passed `uid: null` to `createPlan()`, which
+	 * OpenRegister refuses, so every case start created nothing and logged an
+	 * error. This pins the call that replaced it.
+	 *
+	 * @return void
+	 */
+	public function testThePlanIsCreatedAsTheDossiqSystemActor(): void {
+		$layer = new class {
+			/**
+			 * What the projection handed over.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public array $calls = [];
+
+			/**
+			 * Record the call, the way OpenRegister's system verb is shaped.
+			 *
+			 * @param string               $objectUuid The anchoring object.
+			 * @param int|null             $registerId Its register.
+			 * @param int|null             $schemaId   Its schema.
+			 * @param array<string, mixed> $definition The definition.
+			 * @param string               $app        The acting app id.
+			 *
+			 * @return array<string, mixed> An empty plan.
+			 */
+			public function createPlanAsSystem(string $objectUuid, ?int $registerId, ?int $schemaId, array $definition, string $app): array {
+				$this->calls[] = compact('objectUuid', 'registerId', 'schemaId', 'definition', 'app');
+
+				return [];
+			}
+		};
+
+		$projection = new CasePlanProjectionService($this->settingsWith(layer: $layer), $this->createMock(LoggerInterface::class));
+		$result = $projection->projectAtCaseStart(caseId: 'case-1', caseType: ['id' => 'ct-1', 'handlingModel' => 'cmmn']);
+
+		$this->assertSame(['projected' => true, 'reason' => 'projected'], $result);
+		$this->assertCount(1, $layer->calls);
+		$this->assertSame('dossiq', $layer->calls[0]['app']);
+		$this->assertSame('case-1', $layer->calls[0]['objectUuid']);
+		$this->assertSame(7, $layer->calls[0]['registerId']);
+		$this->assertSame(11, $layer->calls[0]['schemaId']);
+		$this->assertSame('intake', $layer->calls[0]['definition']['items'][0]['key']);
+	}//end testThePlanIsCreatedAsTheDossiqSystemActor()
+
+	/**
+	 * An OpenRegister without the system verb is named, not called with no identity.
+	 *
+	 * @return void
+	 */
+	public function testACaseLayerWithoutTheSystemVerbIsReportedByName(): void {
+		$layer = new class {
+			/**
+			 * The old, identity-bound verb: calling it would be refused.
+			 *
+			 * @return array<string, mixed> Never.
+			 */
+			public function createPlan(): array {
+				throw new \LogicException('the projection must not call createPlan without an identity');
+			}
+		};
+
+		$projection = new CasePlanProjectionService($this->settingsWith(layer: $layer), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(
+			['projected' => false, 'reason' => 'case_layer_lacks_system_verbs'],
+			$projection->projectAtCaseStart(caseId: 'case-1', caseType: ['id' => 'ct-1', 'handlingModel' => 'cmmn']),
+		);
+	}//end testACaseLayerWithoutTheSystemVerbIsReportedByName()
+
+	/**
+	 * Settings that resolve the given case layer and answer the fixture model.
+	 *
+	 * @param object $layer The stand-in case layer.
+	 *
+	 * @return SettingsService The settings stub.
+	 */
+	private function settingsWith(object $layer): SettingsService {
+		$model = self::model();
+		$objects = new class($model) {
+			/**
+			 * Hold the model to answer with.
+			 *
+			 * @param array<string, mixed> $model The published caseModel.
+			 */
+			public function __construct(private readonly array $model) {
+			}//end __construct()
+
+			/**
+			 * Answer the published model for any query.
+			 *
+			 * @param array<string, mixed> $query The search query.
+			 *
+			 * @return array<int, array<string, mixed>> The model, as one hit.
+			 */
+			public function searchObjects(array $query): array {
+				unset($query);
+
+				return [$this->model];
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn($layer);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', '7'],
+				['case_schema', '', '11'],
+				['case_model_schema', '', '13'],
+			]
+		);
+
+		return $settings;
+	}//end settingsWith()
+
+	/**
 	 * The case layer is resolved by the name OpenRegister actually publishes.
 	 *
 	 * @return void

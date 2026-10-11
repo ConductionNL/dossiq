@@ -725,6 +725,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- site-business-and-authorisation D2: a portal case filed before
                  portalParty existed gets subject:<portalSubject>, once. -->
             <step>OCA\Dossiq\Repair\BackfillPortalParty</step>
+            <!-- retire-cmmn-caseplanstate group 2: every CMMN case's casePlanState
+                 blob moves into OpenRegister plan-item rows (ensureItems), is
+                 verified, and only then cleared. Convergent; an unmappable case
+                 keeps its blob and is logged. Post-migration only: a fresh
+                 install has no blobs. -->
+            <step>OCA\Dossiq\Repair\MigrateCmmnCasePlans</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
@@ -1077,6 +1083,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
         <command>OCA\Dossiq\Command\RollbackCasePlansCommand</command>
+        <command>OCA\Dossiq\Command\MigrateCasePlansCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
     </commands>
