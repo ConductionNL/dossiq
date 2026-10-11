@@ -95,7 +95,10 @@ export default {
 			return [
 				{
 					id: 'all',
-					label: t('dossiq', this.content?.actions?.[0]?.label ?? 'Open these cases'),
+					label: t(
+						'dossiq',
+						this.content?.actions?.[0]?.label ?? 'Open these cases',
+					),
 					route: this.content?.actions?.[0]?.route ?? { name: 'Cases' },
 				},
 				{
@@ -137,8 +140,12 @@ export default {
 				const row = (rows || [])[0] || null
 				this.found = row
 				if (row?.caseType) {
-					const types = await store.fetchCollection('caseType', { _limit: 100 })
-					const type = (types || []).find((item) => item.id === row.caseType)
+					const types = await store.fetchCollection('caseType', {
+						_limit: 100,
+					})
+					const type = (types || []).find(
+						(item) => item.id === row.caseType,
+					)
 					this.caseTypeName = type?.title || ''
 				}
 			} catch {
