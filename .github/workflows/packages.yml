@@ -114,6 +114,15 @@ jobs:
           # A second run must find everything current and write nothing.
           php occ dossiq:package:install --root apps/dossiq/tests/fixtures/packages fixture-case-type | tee /tmp/second-run.txt
           grep -q ': current\.' /tmp/second-run.txt
+          # A setting naming the schema of an app this instance lacks refuses
+          # the package, and the refusal names the app.
+          if php occ dossiq:package:install --root apps/dossiq/tests/fixtures/packages fixture-settings > /tmp/settings-run.txt; then
+            cat /tmp/settings-run.txt
+            echo "::error::fixture-settings installed although fixture-app is not installed."
+            exit 1
+          fi
+          cat /tmp/settings-run.txt
+          grep -q 'refused\..*fixture-app' /tmp/settings-run.txt
 
       - name: Start PHP built-in server
         run: |

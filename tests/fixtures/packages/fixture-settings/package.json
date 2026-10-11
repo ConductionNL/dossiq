@@ -1,0 +1,9 @@
+{
+  "id": "fixture-settings",
+  "title": "Fixture settings",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": ["settings"],
+  "install": "on-request",
+  "description": "A neutral settings-only package. One setting names another app's schema by register and slug, so the installer must resolve it at install time; the other is a plain value. It belongs to no procedure: the installer's tests and the CI install job use it to prove settings references and the version record of a package that writes no rows."
+}

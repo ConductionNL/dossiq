@@ -85,3 +85,34 @@ A seeder wrote its case types under random ids; the package that replaces it shi
 - **GIVEN** a case type with the same title but another identifier
 - **WHEN** the installer installs the fixture package
 - **THEN** the package's case type SHALL be written beside it
+
+### Requirement: A package setting may name another app's schema (REQ-CT-53)
+
+A schema id differs per instance, so a package SHALL NOT ship one. A value in `settings.json` MAY instead name a schema as `{"schema": {"app": "<app id>", "register": "<slug>" or ["<slug>", "<older slug>"], "slug": "<schema slug>"}}`. The installer SHALL resolve it at install time to the id of that schema in the first named register that holds it, and store the id. When the app is not installed or no named register holds the schema, the installer SHALL refuse the package, name the app and the schema, write no row and no setting, and record nothing, so the next install tries again. A reference without an app, a register and a slug SHALL make the package invalid (decision 198).
+
+#### Scenario: A reference is stored as the schema's id here
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingNamingAnotherAppsSchemaIsStoredAsItsIdHere
+
+- **GIVEN** the neutral settings package, whose setting names `fixture-app`'s schema `fixture_source`
+- **AND** `fixture-app` is installed and its register holds that schema with id 60
+- **WHEN** the installer installs the package
+- **THEN** the setting SHALL hold `60`
+
+#### Scenario: A missing schema refuses the package and names the app
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingReferencedSchemaRefusesThePackageAndNamesTheApp
+
+- **GIVEN** `fixture-app`'s register does not hold `fixture_source`
+- **WHEN** the installer installs the package
+- **THEN** the outcome SHALL be refused, naming `fixture-app` and `fixture_source`
+- **AND** no setting SHALL be written and nothing recorded
+
+### Requirement: A package that writes no rows is recorded at its version (REQ-CT-54)
+
+The installer SHALL record every installed package once in the shipped-set ledger, as a row whose target schema is `package` and whose target object is the package id, updated in place on a newer version. A package that writes no rows, such as a settings-only package, SHALL therefore report `current` on a second install of the same version and show its installed version in the catalogue.
+
+#### Scenario: A settings-only package is current on the second install
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingsOnlyPackageIsCurrentOnTheSecondInstall
+
+- **GIVEN** the neutral settings package was installed
+- **WHEN** the installer installs it again
+- **THEN** the outcome SHALL be current and no setting SHALL be applied again
