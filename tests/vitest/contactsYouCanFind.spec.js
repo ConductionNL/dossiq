@@ -69,6 +69,10 @@ describe('the organisations index', () => {
 		// empty cell, which is indistinguishable from an empty value.
 		const props = brpRegister.components.schemas.kvkCompany.properties
 		for (const column of organisations.config.columns) {
+			// A derived count column (`aggregate`) reads another schema, not this row.
+			if (column.aggregate) {
+				continue
+			}
 			const root = column.key.split('.')[0]
 			expect(Object.keys(props)).toContain(root)
 		}
