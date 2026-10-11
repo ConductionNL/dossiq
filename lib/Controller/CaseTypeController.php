@@ -110,7 +110,18 @@ class CaseTypeController extends Controller {
 		// parameter the answer is the type's, unchanged.
 		$caseId = (string)$this->request->getParam('case', '');
 		if ($caseId !== '') {
-			$reached = $this->stageDates->reachedDatesFor(caseId: $caseId);
+			// A read that fails leaves the bar without dates, and says so in
+			// the log: the steps themselves are still the type's.
+			try {
+				$reached = $this->stageDates->reachedDatesFor(caseId: $caseId);
+			} catch (Throwable $e) {
+				$this->logger->warning(
+					'[CaseTypeController] The status moves of a case could not be read for its stage bar',
+					['caseId' => $caseId, 'exception' => $e->getMessage()]
+				);
+				$reached = [];
+			}
+
 			foreach ($blueprint['statusTypes'] as $index => $statusType) {
 				$blueprint['statusTypes'][$index]['reachedAt'] = ($reached[(string)($statusType['id'] ?? '')] ?? '');
 			}

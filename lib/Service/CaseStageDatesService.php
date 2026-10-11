@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 
 /**
  * Reads when one case reached each status.
@@ -51,23 +50,24 @@ class CaseStageDatesService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The OpenRegister bridge and config.
-	 * @param LoggerInterface $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
 	/**
 	 * The first day each status was reached on one case.
 	 *
-	 * Empty when the case has no moves yet or the store cannot be read: a
-	 * stage bar without dates is the honest answer to both.
+	 * Empty when the case has no moves yet or no store is configured. A read
+	 * that FAILS throws, and the caller decides what a stage bar does without
+	 * dates: this service does not turn a failure into an empty answer.
 	 *
 	 * @param string $caseId The case id.
 	 *
 	 * @return array<string, string> Y-m-d, keyed by statusType id.
+	 *
+	 * @throws \Throwable When the status moves cannot be read.
 	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
@@ -79,20 +79,12 @@ class CaseStageDatesService {
 			return [];
 		}
 
-		try {
-			$records = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['case' => $caseId, '_limit' => self::RECORD_CAP],
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'[CaseStageDatesService] The status moves of a case could not be read',
-				['caseId' => $caseId, 'exception' => $e->getMessage()]
-			);
-			return [];
-		}
+		$records = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['case' => $caseId, '_limit' => self::RECORD_CAP],
+		);
 
 		return $this->foldRecords(records: $records);
 	}//end reachedDatesFor()
@@ -106,13 +98,15 @@ class CaseStageDatesService {
 	 * @param array<int, array<string, mixed>> $records The statusRecord rows.
 	 *
 	 * @return array<string, string> Y-m-d, keyed by statusType id.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function foldRecords(array $records): array {
 		$first = [];
 		foreach ($records as $record) {
 			$status = (string)($record['statusType'] ?? '');
-			$at = (string)($record['createdAt'] ?? ($record['@self']['createdAt'] ?? ($record['@self']['created'] ?? '')));
-			$day = substr($at, 0, 10);
+			$stamp = (string)($record['createdAt'] ?? ($record['@self']['createdAt'] ?? ($record['@self']['created'] ?? '')));
+			$day = substr($stamp, 0, 10);
 			if ($status === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) !== 1) {
 				continue;
 			}

@@ -25,7 +25,6 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseStageDatesService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
 
 /**
  * The first day a case reached each status.
@@ -40,7 +39,7 @@ final class CaseStageDatesServiceTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
 
-		return new CaseStageDatesService($settings, new NullLogger());
+		return new CaseStageDatesService($settings);
 	}//end service()
 
 	/**
