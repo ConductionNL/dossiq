@@ -818,6 +818,12 @@ $extra = [
     ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
     ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
     ['name' => 'documentReview#pagesSeen',   'url' => '/api/cases/{id}/review/documents/{documentRef}/pages-seen', 'verb' => 'POST'],
+    // Triage rules (woo-review-triage REQ-WRT-002): visible rules that mark unmarked documents without opening them.
+    ['name' => 'triageRule#index',   'url' => '/api/cases/{id}/review/triage/rules', 'verb' => 'GET'],
+    ['name' => 'triageRule#create',  'url' => '/api/cases/{id}/review/triage/rules', 'verb' => 'POST'],
+    ['name' => 'triageRule#update',  'url' => '/api/cases/{id}/review/triage/rules/{ruleId}', 'verb' => 'PUT'],
+    ['name' => 'triageRule#destroy', 'url' => '/api/cases/{id}/review/triage/rules/{ruleId}', 'verb' => 'DELETE'],
+    ['name' => 'triageRule#apply',   'url' => '/api/cases/{id}/review/triage/apply', 'verb' => 'POST'],
     // Document review recall (woo-review-recall-and-stopping, generic per decision 182): the stopping rule and recall samples.
     ['name' => 'recall#recall',              'url' => '/api/cases/{id}/review/recall', 'verb' => 'GET'],
     ['name' => 'recall#declareStoppingRule', 'url' => '/api/cases/{id}/review/stopping-rule', 'verb' => 'POST'],

@@ -71,12 +71,16 @@ describe('DocumentReviewPanel', () => {
 	 *
 	 * @param {object} summary The summary.
 	 * @param {object} recall  The recall answer.
+	 * @param {Array}  rules   The triage rules.
 	 * @return {void}
 	 */
-	function answer(summary, recall = { rule: null, reviewStarted: false, samples: [] }) {
+	function answer(summary, recall = { rule: null, reviewStarted: false, samples: [] }, rules = []) {
 		axios.get.mockImplementation((url) => {
 			if (url.endsWith('/review/summary')) {
 				return Promise.resolve({ data: summary })
+			}
+			if (url.endsWith('/review/triage/rules')) {
+				return Promise.resolve({ data: { results: rules } })
 			}
 			if (url.endsWith('/review/batches')) {
 				return Promise.resolve({ data: { results: [{ id: 'b-1', name: 'Mail 2025', assignee: 'anouk', documents: ['d1', 'd2'], progress: { assessed: 1, total: 2 } }] } })
@@ -101,6 +105,9 @@ describe('DocumentReviewPanel', () => {
 					AlertCircleOutline: true,
 					RecallSampleDialog: true,
 					ReviewBatchDialog: true,
+					TriageRuleDialog: true,
+					NcActions: { template: '<div><slot /></div>' },
+					NcActionButton: { template: '<button v-bind="$attrs"><slot /></button>' },
 				},
 			},
 		})
@@ -182,5 +189,36 @@ describe('DocumentReviewPanel', () => {
 			{ documentRef: 'd1', inScope: true },
 		)
 		expect(wrapper.findAll('[data-testid="document-review-sample-document"]')).toHaveLength(0)
+	})
+
+	it('lists the rules with their conditions and counts, and applies them to the unmarked documents', async () => {
+		const rules = [
+			{ id: 'r-1', name: 'Nieuwsbrieven', conditions: { senderDomain: 'nieuwsbrief.example.nl' }, effect: 'out-of-scope', order: 1, active: true, decided: 312, overturned: 2 },
+			{ id: 'r-2', name: 'Mail van de projectleider', conditions: { custodian: 'A. de Wit', textContains: 'fietspad' }, effect: 'in-scope', order: 2, active: false, decided: 0, overturned: 0 },
+		]
+		answer(enabledSummary, undefined, rules)
+		axios.post.mockResolvedValue({ data: { counts: { Nieuwsbrieven: 1 }, marked: 1, considered: 1 } })
+		const wrapper = mountPanel()
+		await flushPromises()
+
+		const rows = wrapper.findAll('[data-testid="document-review-rule-row"]')
+		expect(rows).toHaveLength(2)
+		expect(rows[0].find('[data-testid="document-review-rule-conditions"]').text()).toBe('Sender domain is nieuwsbrief.example.nl')
+		expect(rows[0].find('[data-testid="document-review-rule-decided"]').text()).toBe('312 documents')
+		expect(rows[0].text()).toContain('2 overturned by a reviewer')
+		expect(rows[1].find('[data-testid="document-review-rule-conditions"]').text()).toBe('Custodian is A. de Wit and the text contains fietspad')
+		expect(rows[1].text()).toContain('Switched off')
+
+		const apply = wrapper.find('[data-testid="document-review-apply-rules"]')
+		expect(apply.text()).toBe('Apply the rules to 1 document')
+		await apply.trigger('click')
+		await flushPromises()
+		expect(axios.post).toHaveBeenCalledWith('/index.php/apps/dossiq/api/cases/case-x/review/triage/apply')
+		expect(wrapper.find('[data-testid="document-review-applied"]').text()).toBe('The rules marked 1 document.')
+
+		axios.put.mockResolvedValue({ data: {} })
+		await rows[1].find('[data-testid="document-review-rule-toggle"]').trigger('click')
+		await flushPromises()
+		expect(axios.put).toHaveBeenCalledWith('/index.php/apps/dossiq/api/cases/case-x/review/triage/rules/r-2', { active: true })
 	})
 })

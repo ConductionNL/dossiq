@@ -1496,7 +1496,7 @@
         "digest": "5b08ec0dc30da171f2ed7616ce2a3f2991d076f5494cf41f4bde4f77661455b1"
     },
     "lib/Settings/register.d/87-document-review.json::triageRule": {
-        "version": "1.0.1",
+        "version": "1.0.2",
         "digest": "d2e9e760a21dcaf489056077b144424530450fdaeab46e8706e24fbe26791233"
     },
     "lib/Settings/register.d/88-review-recall.json::recallSample": {

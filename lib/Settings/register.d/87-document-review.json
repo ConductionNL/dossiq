@@ -115,7 +115,7 @@
       "triageRule": {
         "slug": "triageRule",
         "icon": "Tune",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "title": "Triage rule",
         "description": "A visible rule on a case that marks collected documents in or out of scope without a reviewer opening each one.",
         "type": "object",
@@ -140,7 +140,52 @@
           "conditions": {
             "type": "object",
             "title": "Conditions",
-            "description": "All of these must hold: custodian, source system, mime type, date range, sender domain, text that is or is not in the document."
+            "description": "All of these must hold. Custodian and source system read the document's provenance on the case, sender domain and the mail date its mail headers (provenance.mail), file type and creation date its record, and the text conditions the text OpenRegister extracted. A document that lacks the fact never matches.",
+            "additionalProperties": false,
+            "properties": {
+              "custodian": {
+                "type": "string",
+                "title": "Custodian",
+                "description": "Whose files or mailbox the document came from, as its provenance names them."
+              },
+              "sourceSystem": {
+                "type": "string",
+                "title": "Source system",
+                "description": "The system the document was collected from, as its provenance names it."
+              },
+              "mimeType": {
+                "type": "string",
+                "title": "File type",
+                "description": "The document's mime type, or a kind such as message/* for every mail."
+              },
+              "dateFrom": {
+                "type": "string",
+                "format": "date",
+                "title": "From",
+                "description": "The document's date (the mail date, else its creation date) is on or after this day."
+              },
+              "dateTo": {
+                "type": "string",
+                "format": "date",
+                "title": "Up to",
+                "description": "The document's date is on or before this day."
+              },
+              "senderDomain": {
+                "type": "string",
+                "title": "Sender domain",
+                "description": "The domain of the mail's sender, or one of its subdomains."
+              },
+              "textContains": {
+                "type": "string",
+                "title": "Text contains",
+                "description": "The extracted text contains this, regardless of case."
+              },
+              "textNotContains": {
+                "type": "string",
+                "title": "Text does not contain",
+                "description": "The extracted text does not contain this; a document without text never matches."
+              }
+            }
           },
           "effect": {
             "type": "string",

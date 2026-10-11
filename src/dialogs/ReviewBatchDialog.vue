@@ -5,10 +5,11 @@
   Make a review batch: a name, a reviewer, and the documents it holds.
 
   The documents offered are the open ones of the case, all ticked; untick what
-  belongs elsewhere. The server refuses a document that is already in another
-  open batch and names that batch, and gives the reviewer a task for the batch.
-  Taking documents by custodian or source system waits on document provenance,
-  so it is not offered.
+  belongs elsewhere. Or take them by custodian, source system or the rule that
+  marked them: the server then selects every document of the case whose
+  provenance or review matches all the filled-in fields. The server refuses a
+  document that is already in another open batch and names that batch, and
+  gives the reviewer a task for the batch.
 
   @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 -->
@@ -26,7 +27,16 @@
 				v-model="assignee"
 				data-testid="review-batch-assignee"
 				:label="t('dossiq', 'User id of the reviewer')" />
-			<fieldset class="review-batch__documents">
+			<fieldset class="review-batch__filter">
+				<legend>{{ t('dossiq', 'Take the documents by') }}</legend>
+				<NcTextField
+					v-for="field in filterFields"
+					:key="field.key"
+					v-model="filter[field.key]"
+					:data-testid="'review-batch-filter-' + field.key"
+					:label="field.label" />
+			</fieldset>
+			<fieldset v-if="!byFilter" class="review-batch__documents">
 				<legend>{{ t('dossiq', 'Documents') }}</legend>
 				<NcCheckboxRadioSwitch
 					v-for="ref in documents"
@@ -45,7 +55,7 @@
 			<NcButton data-testid="review-batch-cancel" @click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="saving || chosen.length === 0" data-testid="review-batch-create" @click="create">
+			<NcButton variant="primary" :disabled="saving || (!byFilter && chosen.length === 0)" data-testid="review-batch-create" @click="create">
 				{{ t('dossiq', 'Make the batch') }}
 			</NcButton>
 		</template>
@@ -80,9 +90,47 @@ export default {
 			name: '',
 			assignee: '',
 			chosen: [...this.documents],
+			filter: { custodian: '', sourceSystem: '', rule: '' },
 			saving: false,
 			error: '',
 		}
+	},
+
+	computed: {
+		/**
+		 * The fields a batch can be taken by.
+		 *
+		 * @return {Array<object>} Key and label per field.
+		 */
+		filterFields() {
+			return [
+				{ key: 'custodian', label: t('dossiq', 'Custodian') },
+				{ key: 'sourceSystem', label: t('dossiq', 'Source system') },
+				{ key: 'rule', label: t('dossiq', 'The rule that marked them') },
+			]
+		},
+
+		/**
+		 * The filled-in filter fields.
+		 *
+		 * @return {object} The filter to send.
+		 */
+		filled() {
+			return Object.fromEntries(
+				Object.entries(this.filter)
+					.map(([key, value]) => [key, String(value ?? '').trim()])
+					.filter(([, value]) => value !== ''),
+			)
+		},
+
+		/**
+		 * Whether the batch is taken by a filter instead of the ticked documents.
+		 *
+		 * @return {boolean} True when a filter field is filled in.
+		 */
+		byFilter() {
+			return Object.keys(this.filled).length > 0
+		},
 	},
 
 	methods: {
@@ -101,7 +149,9 @@ export default {
 			try {
 				const { data } = await axios.post(
 					generateUrl(`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/batches`),
-					{ name: this.name.trim(), assignee: this.assignee.trim(), documents: this.chosen },
+					this.byFilter
+						? { name: this.name.trim(), assignee: this.assignee.trim(), filter: this.filled }
+						: { name: this.name.trim(), assignee: this.assignee.trim(), documents: this.chosen },
 				)
 				this.$emit('created', data)
 			} catch (e) {
@@ -123,6 +173,12 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: calc(var(--default-grid-baseline) * 3);
+}
+
+.review-batch__filter {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 2);
 }
 
 .review-batch__documents {

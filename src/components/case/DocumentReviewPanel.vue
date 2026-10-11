@@ -15,8 +15,9 @@
   stopping rule was met all come from the server, so this panel and the
   routes that refuse a decision cannot disagree.
 
-  Triage rules (REQ-WRT-002) are not drawn yet: their backend is not built,
-  and the custodian and source-system conditions wait on document provenance.
+  Triage rules (REQ-WRT-002) are listed in order with their conditions, what
+  they mark documents as, and how many documents each decided; the server
+  applies them and never touches a document a reviewer marked.
 
   @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
 -->
@@ -150,6 +151,63 @@
 				</ul>
 			</section>
 
+			<section class="document-review__section" data-testid="document-review-rules">
+				<div class="document-review__head">
+					<h3>{{ t('dossiq', 'Rules for relevant or not') }}</h3>
+					<span class="document-review__buttons">
+						<NcButton data-testid="document-review-new-rule" @click="editRule(null)">
+							{{ t('dossiq', 'Add a rule') }}
+						</NcButton>
+						<NcButton
+							variant="primary"
+							:disabled="saving || activeRuleCount === 0 || unmarkedCount === 0"
+							data-testid="document-review-apply-rules"
+							@click="applyRules">
+							{{ n('dossiq', 'Apply the rules to {count} document', 'Apply the rules to {count} documents', unmarkedCount, { count: unmarkedCount }) }}
+						</NcButton>
+					</span>
+				</div>
+				<p class="document-review__lead">
+					{{ t('dossiq', 'A rule only marks unmarked documents, without opening them. What a reviewer marked, a rule leaves alone.') }}
+				</p>
+				<p v-if="applied" class="document-review__applied" role="status" data-testid="document-review-applied">
+					{{ n('dossiq', 'The rules marked {count} document.', 'The rules marked {count} documents.', applied.marked, { count: applied.marked }) }}
+				</p>
+				<ol v-if="rules.length > 0" class="document-review__rules">
+					<li
+						v-for="(rule, index) in rules"
+						:key="rule.id"
+						:class="{ 'document-review__rule--off': rule.active === false }"
+						data-testid="document-review-rule-row">
+						<span class="document-review__rule-number">{{ index + 1 }}</span>
+						<span class="document-review__rule-name">
+							<strong>{{ rule.name }}</strong>
+							<span class="document-review__meta" data-testid="document-review-rule-conditions">{{ conditionLine(rule.conditions) }}</span>
+						</span>
+						<span class="document-review__pill">{{ rule.effect === 'in-scope' ? t('dossiq', 'Relevant') : t('dossiq', 'Not relevant') }}</span>
+						<span class="document-review__rule-count">
+							<span data-testid="document-review-rule-decided">{{ n('dossiq', '{count} document', '{count} documents', rule.decided ?? 0, { count: rule.decided ?? 0 }) }}</span>
+							<span v-if="rule.overturned" class="document-review__meta">{{ n('dossiq', '{count} overturned by a reviewer', '{count} overturned by a reviewer', rule.overturned, { count: rule.overturned }) }}</span>
+							<span v-if="rule.active === false" class="document-review__meta">{{ t('dossiq', 'Switched off') }}</span>
+						</span>
+						<NcActions :aria-label="t('dossiq', 'Actions for rule {name}', { name: rule.name })">
+							<NcActionButton data-testid="document-review-rule-edit" @click="editRule(rule)">
+								{{ t('dossiq', 'Change') }}
+							</NcActionButton>
+							<NcActionButton data-testid="document-review-rule-toggle" @click="toggleRule(rule)">
+								{{ rule.active === false ? t('dossiq', 'Switch on') : t('dossiq', 'Switch off') }}
+							</NcActionButton>
+							<NcActionButton data-testid="document-review-rule-delete" @click="deleteRule(rule)">
+								{{ t('dossiq', 'Delete') }}
+							</NcActionButton>
+						</NcActions>
+					</li>
+				</ol>
+				<p v-else class="document-review__lead" data-testid="document-review-no-rules">
+					{{ t('dossiq', 'No rule yet.') }}
+				</p>
+			</section>
+
 			<section class="document-review__section" data-testid="document-review-batches">
 				<div class="document-review__head">
 					<h3>{{ t('dossiq', 'Batches and reviewers') }}</h3>
@@ -205,6 +263,12 @@
 			:nullSetSize="nullSetSize"
 			@close="showSampleDialog = false"
 			@drawn="onChanged" />
+		<TriageRuleDialog
+			v-if="showRuleDialog"
+			:caseId="objectId"
+			:rule="editingRule"
+			@close="showRuleDialog = false"
+			@saved="onChanged" />
 		<ReviewBatchDialog
 			v-if="showBatchDialog"
 			:caseId="objectId"
@@ -216,14 +280,17 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { translate as t } from '@nextcloud/l10n'
+import { translate as t, translatePlural as n } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import RecallSampleDialog from '../../dialogs/RecallSampleDialog.vue'
 import ReviewBatchDialog from '../../dialogs/ReviewBatchDialog.vue'
+import TriageRuleDialog from '../../dialogs/TriageRuleDialog.vue'
 
 /**
  * A share as a percentage with one decimal, Dutch style.
@@ -240,11 +307,14 @@ export default {
 
 	components: {
 		AlertCircleOutline,
+		NcActionButton,
+		NcActions,
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
 		RecallSampleDialog,
 		ReviewBatchDialog,
+		TriageRuleDialog,
 	},
 
 	props: {
@@ -271,6 +341,10 @@ export default {
 			ruleForm: { target: 80, confidence: 0.95 },
 			showSampleDialog: false,
 			showBatchDialog: false,
+			rules: [],
+			applied: null,
+			showRuleDialog: false,
+			editingRule: null,
 		}
 	},
 
@@ -344,6 +418,24 @@ export default {
 		},
 
 		/**
+		 * How many documents nobody has marked yet: what applying the rules looks at.
+		 *
+		 * @return {number} The documents.
+		 */
+		unmarkedCount() {
+			return this.summary?.relevance?.unmarked ?? 0
+		},
+
+		/**
+		 * How many rules run when the rules are applied.
+		 *
+		 * @return {number} The active rules.
+		 */
+		activeRuleCount() {
+			return this.rules.filter((rule) => rule.active !== false).length
+		},
+
+		/**
 		 * The null set: not relevant plus unmarked.
 		 *
 		 * @return {number} N.
@@ -387,6 +479,7 @@ export default {
 
 	methods: {
 		t,
+		n,
 
 		/**
 		 * The base url of the case's review routes.
@@ -416,11 +509,13 @@ export default {
 				const { data } = await axios.get(this.url('/summary'))
 				this.summary = data ?? null
 				if (this.enabled) {
-					const [batches, recall] = await Promise.all([
+					const [batches, recall, rules] = await Promise.all([
 						axios.get(this.url('/batches')),
 						axios.get(this.url('/recall')),
+						axios.get(this.url('/triage/rules')),
 					])
 					this.batches = Array.isArray(batches.data?.results) ? batches.data.results : []
+					this.rules = Array.isArray(rules.data?.results) ? rules.data.results : []
 					this.rule = recall.data?.rule ?? null
 					this.reviewStarted = recall.data?.reviewStarted === true
 					this.samples = Array.isArray(recall.data?.samples) ? recall.data.samples : []
@@ -491,14 +586,130 @@ export default {
 		},
 
 		/**
-		 * A dialog drew a sample or made a batch: read the review again.
+		 * A dialog drew a sample, made a batch or saved a rule: read the review again.
 		 *
 		 * @return {Promise<void>}
 		 */
 		async onChanged() {
 			this.showSampleDialog = false
 			this.showBatchDialog = false
+			this.showRuleDialog = false
 			await this.load()
+		},
+
+		/**
+		 * Open the rule dialog, for a new rule or to change one.
+		 *
+		 * @param {object|null} rule The rule, or null for a new one.
+		 * @return {void}
+		 */
+		editRule(rule) {
+			this.editingRule = rule
+			this.showRuleDialog = true
+		},
+
+		/**
+		 * The conditions of a rule as one sentence, every part joined by "and".
+		 *
+		 * @param {object} conditions The conditions.
+		 * @return {string} The sentence.
+		 *
+		 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+		 */
+		conditionLine(conditions) {
+			const words = {
+				custodian: (value) => t('dossiq', 'custodian is {value}', { value }),
+				sourceSystem: (value) => t('dossiq', 'source system is {value}', { value }),
+				senderDomain: (value) => t('dossiq', 'sender domain is {value}', { value }),
+				mimeType: (value) => t('dossiq', 'file type is {value}', { value }),
+				dateFrom: (value) => t('dossiq', 'dated from {value}', { value: this.longDay(value) }),
+				dateTo: (value) => t('dossiq', 'dated up to {value}', { value: this.longDay(value) }),
+				textContains: (value) => t('dossiq', 'the text contains {value}', { value }),
+				textNotContains: (value) => t('dossiq', 'the text does not contain {value}', { value }),
+			}
+			const parts = Object.entries(conditions && typeof conditions === 'object' ? conditions : {})
+				.filter(([key, value]) => words[key] && String(value ?? '') !== '')
+				.map(([key, value]) => words[key](String(value)))
+			if (parts.length === 0) {
+				return ''
+			}
+			const line = parts.join(' ' + t('dossiq', 'and') + ' ')
+			return line.charAt(0).toUpperCase() + line.slice(1)
+		},
+
+		/**
+		 * A day with its year, as the board writes a rule's dates.
+		 *
+		 * @param {string} value A YYYY-MM-DD day.
+		 * @return {string} The day.
+		 */
+		longDay(value) {
+			const date = new Date(value)
+			return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
+		},
+
+		/**
+		 * Apply the active rules to every unmarked document, then read the review again.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+		 */
+		async applyRules() {
+			this.saving = true
+			this.actionError = ''
+			try {
+				const { data } = await axios.post(this.url('/triage/apply'))
+				await this.load()
+				this.applied = data
+			} catch (e) {
+				this.actionError = e?.response?.data?.message || t('dossiq', 'The triage rules cannot be stored or applied, so nothing was marked.')
+			} finally {
+				this.saving = false
+			}
+		},
+
+		/**
+		 * Switch a rule off, or back on.
+		 *
+		 * @param {object} rule The rule.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+		 */
+		async toggleRule(rule) {
+			await this.changeRule(() => axios.put(this.url(`/triage/rules/${encodeURIComponent(rule.id)}`), { active: rule.active === false }))
+		},
+
+		/**
+		 * Delete a rule; what it marked stays marked.
+		 *
+		 * @param {object} rule The rule.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+		 */
+		async deleteRule(rule) {
+			await this.changeRule(() => axios.delete(this.url(`/triage/rules/${encodeURIComponent(rule.id)}`)))
+		},
+
+		/**
+		 * Send a change to a rule and read the review again; a refusal is shown.
+		 *
+		 * @param {Function} request The request to send.
+		 * @return {Promise<void>}
+		 */
+		async changeRule(request) {
+			this.saving = true
+			this.actionError = ''
+			try {
+				await request()
+				await this.load()
+			} catch (e) {
+				this.actionError = e?.response?.data?.message || t('dossiq', 'The triage rules cannot be stored or applied, so nothing was marked.')
+			} finally {
+				this.saving = false
+			}
 		},
 
 		/**
@@ -658,6 +869,71 @@ export default {
 	border-radius: var(--border-radius-pill);
 	background: var(--color-background-dark);
 	font-weight: 600;
+}
+
+.document-review__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: calc(var(--default-grid-baseline) * 2);
+}
+
+.document-review__rules {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+}
+
+.document-review__rules li {
+	display: grid;
+	grid-template-columns: 32px minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 1fr) 44px;
+	gap: calc(var(--default-grid-baseline) * 2);
+	align-items: center;
+	padding: calc(var(--default-grid-baseline) * 3);
+}
+
+.document-review__rules li + li {
+	border-top: 1px solid var(--color-border);
+}
+
+.document-review__rule--off {
+	opacity: 0.7;
+}
+
+.document-review__rule-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: var(--color-background-dark);
+	font-weight: 700;
+}
+
+.document-review__rule-name,
+.document-review__rule-count {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.document-review__applied {
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+	border-radius: var(--border-radius);
+	background: var(--color-background-dark);
+}
+
+@media (max-width: 720px) {
+	.document-review__rules li {
+		grid-template-columns: 32px minmax(0, 1fr) 44px;
+	}
+
+	.document-review__rules li > .document-review__pill,
+	.document-review__rules li > .document-review__rule-count {
+		grid-column: 2;
+	}
 }
 
 .document-review__table {
