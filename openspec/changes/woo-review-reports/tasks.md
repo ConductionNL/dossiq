@@ -7,16 +7,20 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
 
 ## 1. The switches
 
-- [ ] 1.1 Add the three settings to dossiq's admin settings (`SettingsService` and the admin settings
+- [x] 1.1 Add the three settings to dossiq's admin settings (`SettingsService` and the admin settings
   page), defaults false and empty. Refuse switching `wooReviewerThroughputReport` on without an
   existing reader group (REQ-WRR-001).
   - **fails today**: `tests/Unit/Service/SettingsServiceTest.php`
     `testBothWooReportsAreOffOnAFreshInstall`, `testThroughputNeedsAReaderGroup`.
   - The admin settings component is not added to the vue-router (gate admin-router).
+  - Built: `lib/Woo/WooReportSwitches.php` (keys in `ConfigKeys`, check in `SettingsService::updateSettings()`,
+    422 sentence in `SettingsController::update()`), admin section `src/views/settings/tabs/WooReportsSettingsTab.vue`
+    in `AdminRoot.vue`. Tests: `SettingsServiceTest` (both named tests, red first), `WooReportSwitchesTest`,
+    `SettingsControllerWriteTest::testARefusedThroughputSwitchAnswers422WithTheSentence`, `tests/vitest/wooReports.spec.js`.
 
 ## 2. Throughput per reviewer per day
 
-- [ ] 2.1 Add `lib/Woo/WooThroughputReport.php`. Read openregister on `development`: if
+- [x] 2.1 Add `lib/Woo/WooThroughputReport.php`. Read openregister on `development`: if
   `adhoc-aggregation-suite`'s multi-field `groupBy` is merged, call the `grouped` aggregation with
   `groupBy: [assessedBy, assessedAt:day, classification]`. If not, group a paged
   `searchObjects` of the scoped assessments in PHP, and say which in the PR body (REQ-WRR-002).
@@ -24,7 +28,10 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
     `testAssessmentsAreCountedPerReviewerPerDay` (the scenario fixture),
     `testTheDayIsTheInstanceTimeZoneDay` (an assessment at 23:30 UTC on a CET instance lands on
     the next day).
-- [ ] 2.2 Add `WooReportController::throughput()` on GET `/api/woo/reports/throughput` with
+  - Built with the PHP fallback: `adhoc-aggregation-suite` is still an open change on openregister
+    `development` (10 Oct), so a paged, scoped `searchObjects` of the assessments is grouped in PHP.
+    Both named tests are in `tests/Unit/Woo/WooThroughputReportTest.php`.
+- [x] 2.2 Add `WooReportController::throughput()` on GET `/api/woo/reports/throughput` with
   `#[NoAdminRequired]` and, in the body, the switch check and the group membership check. Write an
   audit entry per read through OpenRegister's audit trail or Nextcloud's `IEventLogger`, whichever
   dossiq already uses for reads of personal data (REQ-WRR-001, REQ-WRR-002).
@@ -32,10 +39,16 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
     `testOffAnswers403`, `testAReviewerOutsideTheGroupIsRefused`,
     `testAnAdministratorOutsideTheGroupIsRefused`, `testAReadIsAudited`.
   - Gates no-admin-idor and semantic-auth must pass on this controller.
-- [ ] 2.3 A `Woo reports` screen (manifest page, visible only when a switch is on) with the throughput
+  - Built: `lib/Controller/WooReportController.php`; reads are written to OpenRegister's audit trail
+    (the trail dossiq uses for its other case acts) on each case counted, by `lib/Woo/WooReportReadLog.php`,
+    which refuses the read (503) when it cannot record it. Tests: `WooReportControllerTest`, `WooReportReadLogTest`.
+- [x] 2.3 A `Woo reports` screen (manifest page, visible only when a switch is on) with the throughput
   table and a CSV download (REQ-WRR-002).
   - `npm run check:manifest` exits 0.
   - unit `WooReportControllerTest::testTheCsvHasTheSameRows`.
+  - Built: `src/manifest.d/86-woo-reports.json` (menu entry gated by `visibleIf` on `woo.throughputReader`,
+    fed by the `woo_reports` initial state from `WooReportsInitialStateListener`), `src/views/woo/WooReportsView.vue`.
+    Board `DqWooRapportages` drawn in design-system#184. The parties half waits on section 4.
 
 ## 3. Mail header fields
 

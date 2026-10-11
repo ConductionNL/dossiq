@@ -253,6 +253,9 @@ class CaseLifecycleControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertStringNotContainsString('connection', json_encode($response->getData()));
+		// The page translates the code; an English sentence alone reached a
+		// Dutch screen as "Could not change the case".
+		$this->assertSame('change_failed', $response->getData()['code']);
 	}//end testAnUnexpectedFailureWithholdsItsDetail()
 
 	/**

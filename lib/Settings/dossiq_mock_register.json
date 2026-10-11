@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.4",
+    "version": "1.3.5",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -737,7 +737,7 @@
           "tenantId": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
+            "$ref": "nc-organisation",
             "description": "Owning tenant: cross-tenant resolution is rejected by the registry",
             "title": "Tenant ID"
           },
@@ -3898,13 +3898,12 @@
       "caseShare": {
         "slug": "caseShare",
         "icon": "ShareVariant",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:CreativeWork",
         "title": "Case share",
         "description": "Token- or partner-based share over a case for external collaboration",
         "type": "object",
         "required": [
-          "token",
           "caseId",
           "shareType",
           "permissionLevel"
@@ -13681,18 +13680,16 @@
       "tenant": {
         "slug": "tenant",
         "icon": "OfficeBuildingOutline",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "deprecated": true,
-        "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantContext and MandateValidationMiddleware consume them directly. Run `occ dossiq:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
+        "deprecationNote": "Retired as the tenant admin store (ADR-022, consume-or-tenant-fleet-wide): identity, lifecycle status and quotas live on OpenRegister's Organisation, and `occ dossiq:migrate-tenants` plus the MigrateTenantsToOrganisations repair step project the legacy rows onto Organisations. The schema stays as the read-only anchor of the tenant audit trail. The only write left is creating an anchor; nothing updates or deletes a tenant object.",
         "x-schema-org": "schema:Organization",
         "title": "Tenant",
-        "description": "DEPRECATED (migrate-tenant-to-or-tenant): legacy SaaS tenant record. Tenant identity now lives on OpenRegister's Organisation entity; this schema is retained only so pre-migration rows remain readable until sunset. Originally: a single municipality / customer of the dossiq platform, carrying lifecycle status, tier, and isolation mode.",
+        "description": "The read-only anchor of the tenant audit trail. Tenant identity, status and quotas live on OpenRegister's Organisation, and every tenant uuid is the uuid of its Organisation. A tenant object stays only so that every tenant audit entry has an object to hang on (decision Q4): dossiq creates one, once, when onboarding starts for an Organisation, and never updates or deletes one (decision Q6).",
         "type": "object",
         "required": [
           "slug",
-          "displayName",
-          "status",
-          "tier"
+          "displayName"
         ],
         "properties": {
           "slug": {
@@ -13977,8 +13974,8 @@
           "tenantRef": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
-            "description": "Reference to the parent Tenant",
+            "$ref": "nc-organisation",
+            "description": "The OpenRegister Organisation this step belongs to. Its uuid is the tenant uuid.",
             "title": "Tenant Reference"
           },
           "step": {
@@ -25507,6 +25504,60 @@
         "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
         "successorOffsetWorkingDays": 0,
         "ownerRole": "juridisch-medewerker"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "kind": "parkeren-bewoner",
+        "portalSubject": "Voorbeeld Portalsubject 1",
+        "theme": "Voorbeeld Theme 1",
+        "case": "00000000-0000-4000-8000-000000000000",
+        "decision": "00000000-0000-4000-8000-000000000000",
+        "validFrom": "2026-03-01",
+        "validUntil": "2026-03-01",
+        "status": "active",
+        "kenteken": "ABCDEF",
+        "adres": "Voorbeeld Adres 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "kind": "parkeren-bezoeker",
+        "portalSubject": "Voorbeeld Portalsubject 2",
+        "theme": "Voorbeeld Theme 2",
+        "case": "00000000-0000-4000-8000-000000000001",
+        "decision": "00000000-0000-4000-8000-000000000001",
+        "validFrom": "2026-03-02",
+        "validUntil": "2026-03-02",
+        "status": "suspended",
+        "kenteken": "BCDEFG",
+        "adres": "Voorbeeld Adres 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "kind": "parkeren-bedrijf",
+        "portalSubject": "Voorbeeld Portalsubject 3",
+        "theme": "Voorbeeld Theme 3",
+        "case": "00000000-0000-4000-8000-000000000002",
+        "decision": "00000000-0000-4000-8000-000000000002",
+        "validFrom": "2026-03-03",
+        "validUntil": "2026-03-03",
+        "status": "revoked",
+        "kenteken": "CDEFGH",
+        "adres": "Voorbeeld Adres 3"
       },
       {
         "@self": {

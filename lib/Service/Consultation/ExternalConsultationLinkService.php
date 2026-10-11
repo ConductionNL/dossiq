@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+ * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
  */
 class ExternalConsultationLinkService {
 	/**
@@ -100,7 +100,7 @@ class ExternalConsultationLinkService {
 	 *
 	 * @throws RuntimeException When the consultation cannot carry a link.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function invite(string $consultationId, string $userId, ?string $password = null): array {
 		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
@@ -163,7 +163,7 @@ class ExternalConsultationLinkService {
 	 *
 	 * @throws RuntimeException When the consultation or its share is not there.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	public function collect(string $consultationId, string $advice): array {
 		$consultation = $this->consultations->getConsultation(consultationId: $consultationId);
@@ -219,7 +219,7 @@ class ExternalConsultationLinkService {
 	 *
 	 * @return array<string, mixed>|null The share, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function shareFor(string $consultationId, string $caseId): ?array {
 		if ($caseId === '') {
@@ -247,7 +247,7 @@ class ExternalConsultationLinkService {
 	 *
 	 * @throws RuntimeException When the comments cannot be read at all.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function newestComment(string $caseId, string $actorId, int $after): ?array {
 		// A read that could not be made must not answer "nothing new". The
@@ -292,7 +292,7 @@ class ExternalConsultationLinkService {
 	 *
 	 * @return bool True when it counts as advice nobody has recorded yet.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function isUncollectedLinkComment(mixed $row, string $actorId, int $after): bool {
 		if (is_array($row) === false) {
@@ -320,7 +320,7 @@ class ExternalConsultationLinkService {
 	 *
 	 * @return string|null The deadline, or null.
 	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function deadlineOf(array $consultation): ?string {
 		$deadline = trim((string)($consultation['latestResponseDate'] ?? ''));

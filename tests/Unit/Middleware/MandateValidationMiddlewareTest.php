@@ -27,15 +27,16 @@ namespace OCA\Dossiq\Tests\Unit\Middleware;
 
 use OCA\Dossiq\Middleware\MandateDeniedException;
 use OCA\Dossiq\Middleware\MandateValidationMiddleware;
+use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Tests\Support\MakesActiveOrganisationContext;
+use OCA\Dossiq\Tests\Support\MakesTenantAnchors;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Middleware\MandateValidationMiddleware
@@ -44,9 +45,12 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TenantContext
  * @uses \OCA\Dossiq\Service\TenantSessionService
  * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
+ * @uses \OCA\Dossiq\Service\TenantAuditTrailService
+ * @uses \OCA\Dossiq\Service\TenantService
  */
 class MandateValidationMiddlewareTest extends TestCase {
 	use MakesActiveOrganisationContext;
+	use MakesTenantAnchors;
 
 	/**
 	 * A middleware for the verb map, with no organisation behind it.
@@ -60,7 +64,7 @@ class MandateValidationMiddlewareTest extends TestCase {
 			context: $this->activeOrganisationContext(active: null, stored: [], memberships: []),
 			authService: $this->createMock(TenantAuthenticationService::class),
 			tenantService: $this->createMock(TenantService::class),
-			logger: $this->createMock(LoggerInterface::class),
+			auditTrail: $this->createMock(TenantAuditTrailService::class),
 		);
 	}
 
@@ -100,10 +104,11 @@ class MandateValidationMiddlewareTest extends TestCase {
 	 * @param TenantContext $context     The real context.
 	 * @param string        $verb        The HTTP verb.
 	 * @param bool          $platformAdmin Whether the user is a platform admin.
+	 * @param TenantAuditTrailService|null $auditTrail The audit writer, a double when null.
 	 *
 	 * @return array{0: MandateValidationMiddleware, 1: TenantAuthenticationService} Middleware and the auth mock.
 	 */
-	private function newGatedMiddleware(TenantContext $context, string $verb = 'POST', bool $platformAdmin = false): array {
+	private function newGatedMiddleware(TenantContext $context, string $verb = 'POST', bool $platformAdmin = false, ?TenantAuditTrailService $auditTrail = null): array {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getMethod')->willReturn($verb);
 		$request->method('getRequestUri')->willReturn('/api/cases');
@@ -126,7 +131,7 @@ class MandateValidationMiddlewareTest extends TestCase {
 			context: $context,
 			authService: $auth,
 			tenantService: $tenantService,
-			logger: $this->createMock(LoggerInterface::class),
+			auditTrail: ($auditTrail ?? $this->createMock(TenantAuditTrailService::class)),
 		);
 
 		return [$middleware, $auth];
@@ -159,6 +164,59 @@ class MandateValidationMiddlewareTest extends TestCase {
 
 		$this->expectException(MandateDeniedException::class);
 		$middleware->beforeController(new \stdClass(), 'create');
+	}
+
+	/**
+	 * A new tenant's mandate decision lands on the anchor its onboarding made (REQ-TOO-006).
+	 *
+	 * Built on the real TenantService and the real TenantAuditTrailService:
+	 * the anchor is the one `ensureAuditAnchor()` wrote, and the row is the one
+	 * the middleware's decision wrote through OpenRegister's audit trail.
+	 *
+	 * @return void
+	 */
+	public function testAMandateDecisionForANewTenantAnchorsOnItsOnboardingAnchor(): void {
+		$org = '3a4b5c6d-7e8f-4a1b-9c2d-3e4f5a6b7c8d';
+		$this->startAnchorStore();
+		$this->givenOrganisation(uuid: $org, slug: 'oostmeer', name: 'Gemeente Oostmeer');
+		$this->assertTrue($this->realTenantService()->ensureAuditAnchor($org));
+
+		[$middleware, $auth] = $this->newGatedMiddleware(context: $this->memberOf(uuid: $org), auditTrail: $this->realTenantAuditTrail());
+		$auth->method('validateMandateMatrix')->willReturn(['allowed' => true, 'reason' => 'Authorised by mandate matrix']);
+
+		$middleware->beforeController(new \stdClass(), 'create');
+
+		$this->assertSame([$org], array_column($this->anchorTrail->rows, 'object'));
+		$this->assertSame('procest.tenant.mandate.create.allowed', $this->anchorTrail->rows[0]['action']);
+		$this->assertSame('alice', $this->anchorTrail->rows[0]['context']['actor']);
+	}
+
+	/**
+	 * A migrated tenant's decision still lands on its stored tenant object (REQ-TOO-002).
+	 *
+	 * The tenant object was written before the migration and kept read-only;
+	 * the Organisation carries the same uuid. Nothing of the retired admin
+	 * store takes part.
+	 *
+	 * @return void
+	 */
+	public function testAMandateDecisionForAMigratedTenantStillAnchorsToItsTenantObject(): void {
+		$org = '9d8c7b6a-5f4e-4d3c-8b2a-1f0e9d8c7b6a';
+		$this->startAnchorStore();
+		$this->anchorStore->seed(schema: 'tenant', uuid: $org, row: ['slug' => 'noordwijde', 'displayName' => 'Gemeente Noordwijde', 'status' => 'active', 'tier' => 'standard']);
+
+		[$middleware, $auth] = $this->newGatedMiddleware(context: $this->memberOf(uuid: $org), auditTrail: $this->realTenantAuditTrail());
+		$auth->method('validateMandateMatrix')->willReturn(['allowed' => false, 'reason' => 'Role viewer is not authorised']);
+
+		try {
+			$middleware->beforeController(new \stdClass(), 'create');
+			$this->fail('A denied decision must refuse the request.');
+		} catch (MandateDeniedException $e) {
+			// The refusal is the expected path; the row is what is asserted.
+		}
+
+		$this->assertSame([$org], array_column($this->anchorTrail->rows, 'object'));
+		$this->assertSame('procest.tenant.mandate.create.denied', $this->anchorTrail->rows[0]['action']);
 	}
 
 	/**

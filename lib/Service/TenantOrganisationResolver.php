@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+ * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
  */
 
 declare(strict_types=1);
@@ -37,16 +37,14 @@ use Throwable;
  * `MandateValidationMiddleware` reads it out of `TenantContext`. The chain
  * has exactly one resolution point, `resolveActive()`, which `TenantContext`
  * reaches through `TenantSessionService`. It reads OpenRegister's active
- * organisation (Q3, Ruben 2026-10-08). `resolve()` is the lookup by id that
- * used to read dossiq's own `tenant` schema through `TenantSaasService::getById()`.
+ * organisation (Q3, Ruben 2026-10-08). `resolve()` is the lookup by id.
  *
- * The Organisation is preferred and the legacy `tenant` row is the fallback,
- * in that order, for the length of the reversible half. An instance that has
- * not run the migration yet keeps working exactly as before; one that has runs
- * on the Organisation. The fallback is what step 5 removes, together with the
- * `tenant` schema it reads.
+ * It reads only OpenRegister's `OrganisationMapper`. The fallback onto
+ * dossiq's own `tenant` admin store is gone (task 6.6): the migration repair
+ * step moved every tenant onto an Organisation of the same uuid, so a tenant
+ * id with no Organisation resolves to nothing.
  *
- * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+ * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
  */
 class TenantOrganisationResolver {
 	/**
@@ -54,13 +52,11 @@ class TenantOrganisationResolver {
 	 *
 	 * @param IAppManager        $appManager App manager, for the OpenRegister availability check.
 	 * @param ContainerInterface $container  DI container, resolves OpenRegister's OrganisationMapper.
-	 * @param TenantSaasService  $tenantSaas The legacy `tenant` schema reader, used only as a fallback.
 	 * @param LoggerInterface    $logger     Logger.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
-		private readonly TenantSaasService $tenantSaas,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -72,7 +68,7 @@ class TenantOrganisationResolver {
 	 *
 	 * @return array<string, mixed>|null The tenant, or null when nothing resolves.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function resolve(string $tenantId): ?array {
 		if ($tenantId === '') {
@@ -80,12 +76,11 @@ class TenantOrganisationResolver {
 		}
 
 		$organisation = $this->findOrganisation(uuid: $tenantId);
-		if ($organisation !== null) {
-			return $this->project(organisation: $organisation);
+		if ($organisation === null) {
+			return null;
 		}
 
-		// Legacy fallback. Removed in step 5, with the schema it reads.
-		return $this->tenantSaas->getById(tenantId: $tenantId);
+		return $this->project(organisation: $organisation);
 	}//end resolve()
 
 	/**
@@ -188,7 +183,7 @@ class TenantOrganisationResolver {
 	 *
 	 * @return object|null The Organisation entity, or null.
 	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation/tasks.md
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	public function findOrganisation(string $uuid): ?object {
 		$mapper = $this->getOrganisationMapper();

@@ -3,13 +3,13 @@
 // Copyright (C) 2026 Conduction B.V.
 
 /**
- * Following a case you do not own: the two verbs, the strip, the list, the
- * lens and the rule that makes a follower hear anything at all.
+ * Following a case you do not own: the two verbs, the list, the lens, the one
+ * control on the case page and the rule that makes a follower hear anything.
  *
  * THE VERB IS THE FIRST THING ASSERTED, for the reason the star's own file
  * records. Following is a PUT and stopping is a DELETE on the same path, and
  * every declarative action in the library writes POST or PUT: `executeApiCall`
- * maps anything that is not `PUT` to `post`. A strip that PUT in both
+ * maps anything that is not `PUT` to `post`. A row action that PUT in both
  * directions would look right, would report success, and would leave a
  * subscription nobody could take off. So the method is asserted per direction
  * rather than the call count.
@@ -27,6 +27,7 @@
  * so `"yes"` is how a rule quietly addresses nobody.
  *
  * @spec openspec/changes/case-followers/specs/case-management/spec.md
+ * @spec openspec/changes/one-follow-control-in-the-header/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -35,12 +36,10 @@ import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CaseFollowersPanel from '../../src/components/case/CaseFollowersPanel.vue'
-import CaseFollowStrip from '../../src/components/case/CaseFollowStrip.vue'
 import {
-	followerCountOf,
 	isFollowing,
-	notifiesOf,
 	objectIdOf,
+	setFollowing,
 } from '../../src/services/watcherApi.js'
 import { pageGrids, pageWidgets } from './helpers/pageViews.js'
 
@@ -68,39 +67,6 @@ const page = (id) => manifest.pages.find((p) => p.id === id)
 const caseDetail = page('CaseDetail')
 const caseNotifications =
 	register.components.schemas.case['x-openregister-notifications']
-
-/**
- * Mount the Follow strip over a case payload.
- *
- * @param {object} objectData The case as the page holds it.
- * @return {Promise<object>} The mounted wrapper.
- */
-async function mountStrip(objectData) {
-	const wrapper = mount(CaseFollowStrip, {
-		// `objectData`, spelled the way `CnDetailWidgetHost.rendererProps()`
-		// spells it. A test that mounted with `object` would pass while the
-		// real page handed the widget nothing and drew Follow on every case.
-		props: { objectId: 'case-7', objectData },
-		global: {
-			stubs: {
-				NcButton: {
-					props: { pressed: { type: Boolean, default: null } },
-					template:
-						'<button v-bind="$attrs" :aria-pressed="pressed === null ? null : String(pressed)">'
-						+ '<slot name="icon" /><slot /></button>',
-				},
-				BellRing: { template: '<i class="bell-ring" />' },
-				BellOffOutline: { template: '<i class="bell-off" />' },
-				Eye: { template: '<i class="eye" />' },
-				EyeOutline: { template: '<i class="eye-outline" />' },
-			},
-		},
-	})
-
-	await wrapper.vm.$nextTick()
-
-	return wrapper
-}
 
 /**
  * Mount the Followers panel and let its read settle.
@@ -136,56 +102,7 @@ beforeEach(() => {
 	axios.get.mockResolvedValue({ data: { results: [], total: 0 } })
 })
 
-describe('the strip reads off the object it was given', () => {
-	it('declares the prop name the detail widget host actually binds', () => {
-		const host = fs.readFileSync(
-			path.join(
-				ROOT,
-				'node_modules/@conduction/nextcloud-vue/src/components/CnDetailWidgetHost/CnDetailWidgetHost.vue',
-			),
-			'utf8',
-		)
-		expect(host).toContain('objectData: this.object,')
-
-		const strip = fs.readFileSync(
-			path.join(ROOT, 'src/components/case/CaseFollowStrip.vue'),
-			'utf8',
-		)
-		expect(Object.keys(CaseFollowStrip.props)).toContain('objectData')
-		expect(strip).not.toContain('\n\t\tobject: {')
-	})
-
-	it('makes no call on mount', async () => {
-		await mountStrip({ id: 'case-7', '@self': { watching: true } })
-
-		expect(axios.get).not.toHaveBeenCalled()
-		expect(axios.put).not.toHaveBeenCalled()
-		expect(axios.delete).not.toHaveBeenCalled()
-	})
-
-	it('offers stopping when you already follow', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: true },
-		})
-
-		expect(wrapper.find('.eye').exists()).toBe(true)
-		expect(wrapper.text()).toContain('Stop following')
-		// The state reaches a screen reader, not only the glyph.
-		expect(wrapper.find('button').attributes('aria-pressed')).toBe('true')
-	})
-
-	it('offers following when you do not', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false },
-		})
-
-		expect(wrapper.find('.eye-outline').exists()).toBe(true)
-		expect(wrapper.text()).toContain('Follow this case')
-		expect(wrapper.find('button').attributes('aria-pressed')).toBe('false')
-	})
-
+describe('the state is read off the object', () => {
 	it('treats an absent marker as not following', () => {
 		// `@self.watching` is omitted entirely for an anonymous read, where
 		// there is no "you" to answer for.
@@ -195,54 +112,17 @@ describe('the strip reads off the object it was given', () => {
 		// A control, so the three above cannot pass because the reader is broken.
 		expect(isFollowing({ '@self': { watching: true } })).toBe(true)
 	})
-})
 
-describe('the count beside the button', () => {
-	it('says nothing at all when OpenRegister told this reader no count', async () => {
-		// `@self.watcherCount` rides only for a reader who may update the case.
-		// Absent means "not your business", and drawing it as 0 followers would
-		// be a claim about the audience this reader was never told.
-		expect(followerCountOf({ '@self': { watching: true } })).toBe(null)
-
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: true },
-		})
-
-		expect(wrapper.find('[data-testid="case-follow-count"]').exists()).toBe(
-			false,
-		)
-	})
-
-	it('counts for a reader who was told one, and moves with the press', async () => {
-		expect(followerCountOf({ '@self': { watcherCount: 0 } })).toBe(0)
-
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false, watcherCount: 2 },
-		})
-
-		expect(wrapper.find('[data-testid="case-follow-count"]').text()).toBe(
-			'2 followers',
-		)
-
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
-
-		expect(wrapper.find('[data-testid="case-follow-count"]').text()).toBe(
-			'3 followers',
-		)
+	it('reads the id from either shape a list row comes in', () => {
+		expect(objectIdOf({ id: 'a' })).toBe('a')
+		expect(objectIdOf({ '@self': { id: 'b' } })).toBe('b')
+		expect(objectIdOf({})).toBe('')
 	})
 })
 
 describe('the two verbs', () => {
 	it('follows with a PUT on the watch path', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false },
-		})
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
+		await setFollowing('case-7', true)
 
 		expect(axios.delete).not.toHaveBeenCalled()
 		expect(axios.put).toHaveBeenCalledTimes(1)
@@ -252,108 +132,12 @@ describe('the two verbs', () => {
 	})
 
 	it('stops with a DELETE on the same path', async () => {
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: true },
-		})
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
+		await setFollowing('case-7', false)
 
 		expect(axios.put).not.toHaveBeenCalled()
 		expect(axios.delete).toHaveBeenCalledTimes(1)
 		expect(axios.delete.mock.calls[0][0]).toContain(
 			'/apps/openregister/api/objects/dossiq/case/case-7/watch',
-		)
-	})
-
-	it('puts the button back when the write is refused, and says what the server said', async () => {
-		axios.put.mockRejectedValue({
-			response: { data: { message: 'Not yours to follow.' } },
-		})
-
-		const wrapper = await mountStrip({
-			id: 'case-7',
-			'@self': { watching: false, watcherCount: 2 },
-		})
-		await wrapper.find('button').trigger('click')
-		await wrapper.vm.$nextTick()
-		await wrapper.vm.$nextTick()
-
-		expect(mockShowError).toHaveBeenCalledWith('Not yours to follow.')
-		expect(wrapper.find('.eye-outline').exists()).toBe(true)
-		expect(wrapper.text()).toContain('Follow this case')
-		expect(wrapper.find('[data-testid="case-follow-count"]').text()).toBe(
-			'2 followers',
-		)
-	})
-
-	it('reads the id from either shape a list row comes in', () => {
-		expect(objectIdOf({ id: 'a' })).toBe('a')
-		expect(objectIdOf({ '@self': { id: 'b' } })).toBe('b')
-		expect(objectIdOf({})).toBe('')
-	})
-})
-
-describe('the notifications switch of your follow', () => {
-	// one-follow-control: a favourite is a follow with notifications off, so
-	// the switch is how a reader keeps a case close without hearing about it.
-	it('is offered only while you follow', async () => {
-		const not = await mountStrip({ '@self': { watching: false } })
-		expect(not.find('[data-testid="case-follow-notify"]').exists()).toBe(false)
-
-		const on = await mountStrip({
-			'@self': { watching: true, watchNotify: true },
-		})
-		const bell = on.find('[data-testid="case-follow-notify"]')
-		expect(bell.exists()).toBe(true)
-		expect(bell.attributes('aria-pressed')).toBe('true')
-		expect(bell.attributes('aria-label')).toBe('Turn notifications off')
-	})
-
-	it('turns notifications off with a PUT carrying notify false, and keeps the follow', async () => {
-		const wrapper = await mountStrip({
-			'@self': { watching: true, watchNotify: true },
-		})
-		await wrapper.find('[data-testid="case-follow-notify"]').trigger('click')
-		await wrapper.vm.$nextTick()
-
-		expect(axios.put).toHaveBeenCalledWith(
-			expect.stringContaining('/objects/dossiq/case/case-7/watch'),
-			{ notify: false },
-		)
-		expect(axios.delete).not.toHaveBeenCalled()
-		expect(
-			wrapper
-				.find('[data-testid="case-follow-toggle"]')
-				.attributes('aria-pressed'),
-		).toBe('true')
-		expect(
-			wrapper
-				.find('[data-testid="case-follow-notify"]')
-				.attributes('aria-pressed'),
-		).toBe('false')
-	})
-
-	it('puts the bell back and says what the server said when the write is refused', async () => {
-		axios.put.mockRejectedValueOnce({ response: { data: { message: 'Nope' } } })
-		const wrapper = await mountStrip({
-			'@self': { watching: true, watchNotify: false },
-		})
-		await wrapper.find('[data-testid="case-follow-notify"]').trigger('click')
-		await new Promise((r) => setTimeout(r, 0))
-
-		expect(
-			wrapper
-				.find('[data-testid="case-follow-notify"]')
-				.attributes('aria-pressed'),
-		).toBe('false')
-		expect(mockShowError).toHaveBeenCalledWith('Nope')
-	})
-
-	it('reads an absent switch as on, the way every follow notified before', () => {
-		expect(notifiesOf({ '@self': { watching: true } })).toBe(true)
-		expect(notifiesOf({ '@self': { watching: true, watchNotify: false } })).toBe(
-			false,
 		)
 	})
 })
@@ -441,39 +225,41 @@ describe('following is declared on the case page', () => {
 		expect(banners.sizeToContent).toBe(true)
 	})
 
-	it('is the one per-reader control in the banner stack, with no star beside it', () => {
-		// Directly after the archived strip: following is per-reader state,
-		// where every strip under it is about the case rather than about you.
-		// The star is gone (one-follow-control): a favourite is a quiet follow.
+	it('leaves the one Follow control to the header, with no strip in the banner row', () => {
+		// one-follow-control-in-the-header: the case page shows ONE Follow
+		// control, nextcloud-vue's CnFollowToggle beside the title. A dossiq
+		// strip in the banner row drew a second one that did not sync with it.
 		const stack = fs.readFileSync(
 			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
 			'utf8',
 		)
-		const archived = stack.indexOf('<CaseArchivedStrip')
-		const follow = stack.indexOf('<CaseFollowStrip')
-		const unread = stack.indexOf('<CaseUnreadPanel')
+		const template = stack.slice(
+			stack.indexOf('<template>'),
+			stack.indexOf('<script>'),
+		)
 
-		expect(follow, 'the follow strip is missing from the stack').toBeGreaterThan(
-			-1,
-		)
+		expect(template).not.toContain('Follow')
 		expect(stack).not.toContain('CaseFavouriteStrip')
-		expect(follow).toBeGreaterThan(archived)
-		expect(follow).toBeLessThan(unread)
-		// `objectData` and NOT `object`: the strip reads `@self.watching` off
-		// the case the host already loaded, and an unbound prop would leave
-		// the first paint reading "Follow" on a case this reader follows.
-		expect(stack).toContain(
-			'<CaseFollowStrip :objectId="objectId" :objectData="objectData" />',
-		)
+		expect(
+			fs.existsSync(
+				path.join(ROOT, 'src', 'components', 'case', 'CaseFollowStrip.vue'),
+			),
+		).toBe(false)
+		// CnDetailPage draws the toggle unless the page turns it off with
+		// `follow: false`. A control, so the absence above is not explained by
+		// the header toggle being switched off as well.
+		expect(caseDetail.config.follow).not.toBe(false)
+		// The banner row still carries the strips that are about the case.
+		expect(template).toContain('<CaseArchivedStrip')
+		expect(template).toContain('<CaseUnreadPanel')
 	})
 
 	it('declares widgets whose types the registry answers', () => {
 		// A tab child renders through CnTabsWidget, which resolves from
 		// `cnRegistry[widget.type]` and renders NOTHING, silently, when no key
-		// answers. The strip's own type stays registered even though this page
-		// mounts it through the banner stack: still a valid placement.
-		expect(registrySource).toContain("'case-follow': {")
-		expect(registrySource).toContain('component: CaseFollowStrip,')
+		// answers. There is no `case-follow` type: the header toggle is the
+		// library's own.
+		expect(registrySource).not.toContain("'case-follow': {")
 
 		const people = caseDetail.config.widgets.find(
 			(w) => w.id === 'case-people-panel',
@@ -488,24 +274,12 @@ describe('following is declared on the case page', () => {
 	})
 
 	it('carries the reason gate 29 asks a custom widget for', () => {
-		const strip = registrySource.slice(
-			registrySource.indexOf("'case-follow': {"),
-			registrySource.indexOf("'case-followers': {"),
-		)
 		const panel = registrySource.slice(
 			registrySource.indexOf("'case-followers': {"),
 			registrySource.indexOf("'case-party-roles': {"),
 		)
 
-		expect(strip).toContain('@custom-widget-ratchet exclude')
 		expect(panel).toContain('@custom-widget-ratchet exclude')
-	})
-
-	it('registers the bell icons the strip names', () => {
-		// An icon named in a manifest and missing from the registry renders
-		// NOTHING rather than a fallback glyph (hydra gate-60).
-		expect(iconsSource).toContain('\n\tBellRing,\n')
-		expect(iconsSource).toContain('\n\tBellOutline,\n')
 	})
 })
 
