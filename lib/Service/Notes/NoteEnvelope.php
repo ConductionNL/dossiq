@@ -25,7 +25,7 @@
  * register is for.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\External\Zgw
+ * @package  OCA\Dossiq\Service\Notes
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -43,7 +43,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\External\Zgw;
+namespace OCA\Dossiq\Service\Notes;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
