@@ -1491,6 +1491,43 @@
 			"id": "Queue",
 			"title": "Team queue",
 			"config": {
+				"folderSidebar": null,
+				"searchPlaceholder": "Search by case, number or requester",
+				"columns": [
+					{
+						"key": "title",
+						"width": "328px",
+						"label": "Case",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier} · {initiatorDisplayName}"
+					},
+					{
+						"key": "caseType",
+						"width": "179px",
+						"label": "Type",
+						"formatter": "caseTypeName"
+					},
+					{
+						"key": "deadline",
+						"width": "141px",
+						"label": "Deadline",
+						"widget": "date",
+						"widgetProps": {
+							"variantWhen": [
+								{
+									"op": "lt",
+									"value": 0,
+									"variant": "error"
+								},
+								{
+									"op": "lte",
+									"value": 5,
+									"variant": "warning"
+								}
+							]
+						}
+					}
+				],
 				"showTitle": true,
 				"countText": "{shown} of {total} open cases without a handler, oldest first",
 				"footerNote": "a case leaves the queue as soon as someone picks it up",
