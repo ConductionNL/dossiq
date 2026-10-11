@@ -137,27 +137,11 @@
               "caseField": "caseRef"
             },
             {
-              "schemaKey": "document_review_schema",
-              "caseField": "case"
-            },
-            {
               "schemaKey": "review_batch_schema",
               "caseField": "case"
             },
             {
               "schemaKey": "triage_rule_schema",
-              "caseField": "case"
-            },
-            {
-              "schemaKey": "woo_exclusion_schema",
-              "caseField": "case"
-            },
-            {
-              "schemaKey": "woo_search_plan_schema",
-              "caseField": "case"
-            },
-            {
-              "schemaKey": "woo_collection_query_schema",
               "caseField": "case"
             }
           ],

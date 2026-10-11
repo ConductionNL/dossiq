@@ -15,7 +15,7 @@
       "wooSearchPlan": {
         "slug": "wooSearchPlan",
         "icon": "ClipboardSearchOutline",
-        "version": "1.0.1",
+        "version": "1.0.0",
         "searchable": false,
         "title": "Woo search plan",
         "description": "Whose files and which systems are searched for a Woo request, over which period and with which terms. Recorded before collection starts. A plan without a recorded date is a draft and counts as no plan.",
@@ -101,21 +101,6 @@
             "description": "When the plan was recorded. Empty for a draft.",
             "format": "date-time"
           }
-        },
-        "authorization": {
-          "scope": "private",
-          "read": [
-            "authenticated"
-          ],
-          "create": [
-            "authenticated"
-          ],
-          "update": [
-            "authenticated"
-          ],
-          "delete": [
-            "dossiq-coordinators"
-          ]
         }
       },
       "wooRequestConfiguration": {
@@ -195,7 +180,7 @@
       "wooExclusion": {
         "slug": "wooExclusion",
         "icon": "FileAlertOutline",
-        "version": "1.0.1",
+        "version": "1.0.0",
         "searchable": false,
         "title": "Woo exclusion",
         "description": "A candidate document set aside before review, with the reason, so what the reviewer saw reconciles with what arrived.",
@@ -286,27 +271,12 @@
             "description": "When it was set aside.",
             "format": "date-time"
           }
-        },
-        "authorization": {
-          "scope": "private",
-          "read": [
-            "authenticated"
-          ],
-          "create": [
-            "authenticated"
-          ],
-          "update": [
-            "authenticated"
-          ],
-          "delete": [
-            "dossiq-coordinators"
-          ]
         }
       },
       "wooCollectionQuery": {
         "slug": "wooCollectionQuery",
         "icon": "ClipboardSearchOutline",
-        "version": "1.0.1",
+        "version": "1.0.0",
         "searchable": false,
         "title": "Woo collection query",
         "description": "A search run from a Woo case, stored so anyone who may read the case can run it again and see what is new.",
@@ -374,21 +344,6 @@
               "maxLength": 255
             }
           }
-        },
-        "authorization": {
-          "scope": "private",
-          "read": [
-            "authenticated"
-          ],
-          "create": [
-            "authenticated"
-          ],
-          "update": [
-            "authenticated"
-          ],
-          "delete": [
-            "dossiq-coordinators"
-          ]
         }
       },
       "case": {

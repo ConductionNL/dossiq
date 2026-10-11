@@ -173,14 +173,16 @@ record. OpenRegister refuses a parent that references another schema
     reading the merged register the importer reads.
   - Newman `tests/newman/woo-review-triage.postman_collection.json`, folder `schemas`: read each of
     the seven schemas back and assert `authorization.scope` is `private` and no hierarchy key is set.
-  - Built (configuration, round 5): `documentReview`, `reviewBatch`, `triageRule` (87-document-review.json) and
-    `wooExclusion`, `wooSearchPlan`, `wooCollectionQuery` (86-woo-corpus.json) carry the private block, no hierarchy,
-    each schema version raised, register 0.20.33. `wooDeliveredSet` is not on this branch (woo-delivered-set-is-a-record,
-    lane L10): it takes the same block and the same `reviewerAccess.records` row when it lands. The named tests are
-    generic (decision 182/185): `tests/Unit/Settings/CaseTypePrivateRecordsTest.php`
-    `testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy` and `testNoListedRecordIsReadableByAllUsers`, over
-    every seeded case type's `reviewerAccess.records`, read from the merged register. Open: the Newman folder
-    (needs an instance, decision 139).
+  - Partly built (configuration, round 5): `reviewBatch` and `triageRule` (87-document-review.json) carry the
+    private block, no hierarchy, versions raised, register 0.20.33; their creators already reconcile the case in
+    the same request. Held back on purpose: `documentReview`, `wooExclusion`, `wooSearchPlan`, `wooCollectionQuery`
+    stay public until their writers (`DocumentRelevance::mark`, triage apply, `WooCollection::record`,
+    `WooSearchPlans::record`, `WooCollectionQueries` save) call `CaseReviewerAccess::reconcile()`: RBAC-scoped reads
+    would otherwise hide a record from everyone but its author (a plan recorded by a coordinator would read as no
+    plan to the gatherer). `wooDeliveredSet` is not on this branch (lane L10). Named tests, generic (decision
+    182/185): `tests/Unit/Settings/CaseTypePrivateRecordsTest.php` `testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy`
+    and `testNoListedRecordIsReadableByAllUsers`, over every seeded case type's `reviewerAccess.records`, read from
+    the merged register. Open: the four above, and the Newman folder (needs an instance, decision 139).
 - [ ] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
   after the create, in the same request, from every route that creates one of the seven: the gather
   add, the search plan save, the query record, the exclusion route, the rule create, the batch
@@ -201,15 +203,15 @@ record. OpenRegister refuses a parent that references another schema
     after the store, in the same request; a failed reconcile is logged and the record stands
     (`ReviewBatchesTest::testACreatedBatchReconcilesTheCase`, `testASampleBatchReconcilesAndAFailedReconcileKeepsTheBatch`,
     `TriageRulesTest::testACreatedRuleReconcilesTheCase`).
-  - Round 5: the woo-verzoek case type (1.3.2) lists the six records of 6.1 under `reviewerAccess.records`, so
-    `CaseReviewerAccess::reconcile()` grants the assignee and the batch reviewers read on them, owning group
-    `dossiq-coordinators`. Open: (a) the per-record table of REQ-WRT-006 (reviewers read nothing on rules, plans,
-    queries and exclusions; on reviews and batches only their own batch) needs a generic per-record `readers`
-    option on `CaseReviewerAccess` (`all` | `assignee` | `own` via a field naming the reviewer row); not built
-    because lane L9 is restructuring that class on build/dq-l9-7..11, so until then reviewers read all six, which
-    is narrower than before (all authenticated users) but wider than the table; (b) update grants (the generic
-    reconcile grants read only); (c) reconcile from the gather add, the search plan save, the query record and the
-    exclusion route.
+  - Round 5: the woo-verzoek case type (1.3.2) lists `reviewBatch` and `triageRule` beside `wooDocumentAssessment`
+    under `reviewerAccess.records`, so `CaseReviewerAccess::reconcile()` grants the assignee and the batch reviewers
+    read on them, owning group `dossiq-coordinators`. Open: (a) the per-record table of REQ-WRT-006 (reviewers read
+    no rules; only their own batch) needs a generic per-record `readers` option on `CaseReviewerAccess`
+    (`all` | `assignee` | `own` via a field naming the reviewer row); not built because lane L9 is restructuring
+    that class on build/dq-l9-7..11; until then batch reviewers read every batch and rule of the case, narrower than
+    before (every authenticated user) but wider than the table; (b) update grants (reconcile grants read only);
+    (c) reconcile from the gather add, the search plan save, the query record, the exclusion route and
+    `DocumentRelevance::mark`, then list those four records too (see 6.1).
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.

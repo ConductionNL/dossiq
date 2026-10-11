@@ -99,13 +99,13 @@ class CaseTypePrivateRecordsTest extends TestCase {
 	}//end testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy()
 
 	/**
-	 * The Woo request type lists the records of REQ-WRT-006 the register ships, and none reads for all users.
+	 * The Woo request type lists the records of REQ-WRT-006 whose creators reconcile, and none reads for all users.
 	 *
 	 * @return void
 	 */
 	public function testNoListedRecordIsReadableByAllUsers(): void {
 		$listed = ($this->privateRecordSchemas()['woo-verzoek'] ?? []);
-		foreach (['wooDocumentAssessment', 'documentReview', 'reviewBatch', 'triageRule', 'wooExclusion', 'wooSearchPlan', 'wooCollectionQuery'] as $slug) {
+		foreach (['wooDocumentAssessment', 'reviewBatch', 'triageRule'] as $slug) {
 			self::assertContains($slug, $listed);
 		}
 
