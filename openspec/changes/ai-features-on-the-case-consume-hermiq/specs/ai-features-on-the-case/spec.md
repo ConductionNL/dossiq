@@ -108,6 +108,14 @@ What a group means SHALL remain dossiq's: hermiq answers, and creates nothing.
 - **WHEN** the handler opens the queue
 - **THEN** one item SHALL be shown, carrying the count
 
+#### Scenario: A report shows the count of its group
+@e2e tests/e2e/ai-features-on-the-case.spec.ts
+
+- **GIVEN** a report hermiq placed in a group of two hundred
+- **WHEN** the handler opens that report's case
+- **THEN** the case SHALL show the group's count, read from the group as it now
+  stands, without placing the report again
+
 #### Scenario: The near-duplicates are visible beside the group
 @e2e tests/e2e/ai-features-on-the-case.spec.ts
 

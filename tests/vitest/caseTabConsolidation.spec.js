@@ -288,9 +288,15 @@ describe('the surfaces that read in exactly one chrome', () => {
 		// empty state when the case is not a data subject request, so it has
 		// no strip counterpart and duplicates nothing. Saying so here is the
 		// price of the tab, and it is the price on purpose.
+		//
+		// `assistant` arrived with ai-features-on-the-case-consume-hermiq
+		// (board DqZaakAssistent): the AI features the case type switched on,
+		// a run on a case document with a refusal in words, and the report
+		// group. No strip widget reads any of that, so it duplicates nothing.
 		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
 			'audit',
 			'terms',
+			'assistant',
 			'access',
 			'sharing',
 			'avg',
