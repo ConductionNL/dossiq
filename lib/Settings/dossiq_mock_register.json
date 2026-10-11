@@ -11103,7 +11103,7 @@
       "penaltyPaymentCalculation": {
         "slug": "penaltyPaymentCalculation",
         "icon": "Calculator",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:MonetaryAmount",
         "title": "Dwangsom Berekening",
         "description": "Daily-accruing dwangsom calculation per AWB 4:17. Tracks current day, tariff tier, cumulative amount in EUR cents, plafond enforcement.",
@@ -11186,6 +11186,256 @@
             "default": "awb-default",
             "title": "Tariff Regime",
             "description": "Active tariff regime"
+          },
+          "rateBands": {
+            "type": "array",
+            "title": "Rate bands",
+            "description": "Daily rate per band of days in EUR cents, as {upTo, rate}; empty means the Awb 4:17 bands (23, 35, 45 euro).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "upTo": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "rate": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "rate"
+              ]
+            }
+          },
+          "stoppedOn": {
+            "type": "string",
+            "format": "date",
+            "title": "Stopped on",
+            "description": "The day accrual stopped (decision filed, objection lodged); empty while it runs."
+          }
+        },
+        "configuration": {
+          "x-openregister-calculations": {
+            "currentDag": {
+              "type": "integer",
+              "materialise": true,
+              "description": "Whole days accrued from startDate to stoppedOn, or to today while running.",
+              "expression": {
+                "max": [
+                  0,
+                  {
+                    "diffDays": [
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "stoppedOn"
+                          },
+                          {
+                            "now": []
+                          }
+                        ]
+                      },
+                      {
+                        "prop": "startDate"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "cumulativeAmount": {
+              "type": "integer",
+              "materialise": true,
+              "description": "The amount accrued over rateBands (Awb 4:17 bands when empty), capped at plafondCalculated.",
+              "expression": {
+                "graduated": [
+                  {
+                    "max": [
+                      0,
+                      {
+                        "diffDays": [
+                          {
+                            "coalesce": [
+                              {
+                                "prop": "stoppedOn"
+                              },
+                              {
+                                "now": []
+                              }
+                            ]
+                          },
+                          {
+                            "prop": "startDate"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "rateBands"
+                      },
+                      {
+                        "lit": [
+                          {
+                            "upTo": 14,
+                            "rate": 2300
+                          },
+                          {
+                            "upTo": 28,
+                            "rate": 3500
+                          },
+                          {
+                            "rate": 4500
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "plafondCalculated"
+                      },
+                      144200
+                    ]
+                  }
+                ]
+              }
+            },
+            "dailyRate": {
+              "type": "integer",
+              "materialise": true,
+              "description": "The rate of the band the last accrued day falls in; 0 before the first day.",
+              "expression": {
+                "coalesce": [
+                  {
+                    "bandRate": [
+                      {
+                        "max": [
+                          0,
+                          {
+                            "diffDays": [
+                              {
+                                "coalesce": [
+                                  {
+                                    "prop": "stoppedOn"
+                                  },
+                                  {
+                                    "now": []
+                                  }
+                                ]
+                              },
+                              {
+                                "prop": "startDate"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "rateBands"
+                          },
+                          {
+                            "lit": [
+                              {
+                                "upTo": 14,
+                                "rate": 2300
+                              },
+                              {
+                                "upTo": 28,
+                                "rate": 3500
+                              },
+                              {
+                                "rate": 4500
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  0
+                ]
+              }
+            },
+            "plafondBereikt": {
+              "type": "boolean",
+              "materialise": true,
+              "description": "True once the accrued amount reaches the ceiling.",
+              "expression": {
+                "gte": [
+                  {
+                    "graduated": [
+                      {
+                        "max": [
+                          0,
+                          {
+                            "diffDays": [
+                              {
+                                "coalesce": [
+                                  {
+                                    "prop": "stoppedOn"
+                                  },
+                                  {
+                                    "now": []
+                                  }
+                                ]
+                              },
+                              {
+                                "prop": "startDate"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "rateBands"
+                          },
+                          {
+                            "lit": [
+                              {
+                                "upTo": 14,
+                                "rate": 2300
+                              },
+                              {
+                                "upTo": 28,
+                                "rate": 3500
+                              },
+                              {
+                                "rate": 4500
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "plafondCalculated"
+                          },
+                          144200
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "plafondCalculated"
+                      },
+                      144200
+                    ]
+                  }
+                ]
+              }
+            }
           }
         }
       },
