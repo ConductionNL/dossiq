@@ -131,6 +131,11 @@ are where local stubs lie).
 - [ ] 4.4 Search: a case is found by a former reference (REQ-WTO-004).
   - e2e `tests/e2e/woo-takeover.spec.ts`: seed one imported case and search "WOO-2026-A1B2C3" on
     the cases list. Cite REQ-WTO-004.
+  - written (11 Oct): `tests/e2e/woo-takeover.spec.ts` seeds an opencatalogi `wooRequest`, runs
+    `occ dossiq:case:import-records woo-verzoek`, reads the case (status, startDate, deadline,
+    formerReferences, the source's `migratedTo`), finds it with `_search` on the old number, and runs
+    the import again expecting 0 imported. It skips on a shared instance (the import reads every
+    wooRequest) and when opencatalogi is absent. The run is owed to the live pass (decision 139).
 
 ## 5. Drafting through filinq
 
@@ -158,6 +163,11 @@ are where local stubs lie).
 - [ ] 6.1 `tests/e2e/woo-takeover.spec.ts` also: call the portal form path through portaliq's
   delivery job on the dev instance (or the provider method through a test route if portaliq is not
   installed in CI) and read the case back with its `deadline`. Cite REQ-WTO-001 and REQ-WTO-002.
+  - blocked (11 Oct): portaliq's `PortalWooRequestDelivery` (development) delivers a Woo form only to
+    opencatalogi (`APP = 'opencatalogi'`), so no portal form reaches dossiq's `receiveWooRequest()`
+    yet, and dossiq ships no test route by design. Switching the delivery target is the decision-179
+    form-to-destination change the architect owns. Until then the provider method is covered by
+    `tests/Unit/Portal/PortalContributionProviderTest.php` and `tests/Unit/Woo/WooRequestIntakeReceiveTest.php`.
 - [ ] 6.2 Live check after merge on the dev instance: create two opencatalogi `wooRequest` objects
   (one running, one suspended), run `occ dossiq:case:import-records woo-verzoek`, and record the output,
   the two cases' `deadline`, the two FlowTimers' fire moments and the sources' `migratedTo`. Run it
