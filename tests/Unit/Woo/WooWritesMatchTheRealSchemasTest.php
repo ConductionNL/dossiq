@@ -64,6 +64,9 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
+ * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 
