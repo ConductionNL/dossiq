@@ -1,0 +1,1 @@
+- No screen: the supplier portal itself is drawn and rendered by portaliq; this change declares the manifest dossiq contributes and the mail notices that point suppliers to it.
