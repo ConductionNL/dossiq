@@ -112,8 +112,15 @@ class MailHeaderReader {
 			return $unreadable;
 		}
 
-		$headers = $this->parsedHeaders(file: $file);
-		if ($headers === null) {
+		try {
+			$headers = $this->parsedHeaders(file: $file);
+		} catch (Throwable $e) {
+			// A mail the parser refuses is still collected, marked unreadable (REQ-WRR-003).
+			// The parser's message can carry header fragments; log only its class.
+			$this->logger->info(
+				'Dossiq: the headers of a collected mail could not be read, so it is marked unreadable',
+				['app' => Application::APP_ID, 'fileId' => $file->getId(), 'error' => get_class($e)]
+			);
 			return $unreadable;
 		}
 
@@ -138,36 +145,27 @@ class MailHeaderReader {
 	}//end read()
 
 	/**
-	 * The headers OpenRegister parsed from the file, or null when it could not.
+	 * The headers OpenRegister parsed from the file; empty when OpenRegister offers no parser.
 	 *
 	 * @param File $file The mail file.
 	 *
-	 * @return array<string, mixed>|null
+	 * @return array<string, mixed>
+	 *
+	 * @throws Throwable When the parser cannot read the file.
 	 */
-	private function parsedHeaders(File $file): ?array {
-		try {
-			if ($this->container->has(self::EXTRACTION) === false) {
-				return null;
-			}
-
-			$extraction = $this->container->get(self::EXTRACTION);
-			if (is_object($extraction) === false || method_exists($extraction, 'parseEmlStructured') === false) {
-				return null;
-			}
-
-			$structure = $extraction->parseEmlStructured($file);
-		} catch (Throwable $e) {
-			// The parser's message can carry header fragments; log only its class.
-			$this->logger->info(
-				'Dossiq: the headers of a collected mail could not be read, so it is marked unreadable',
-				['app' => Application::APP_ID, 'fileId' => $file->getId(), 'error' => get_class($e)]
-			);
-			return null;
+	private function parsedHeaders(File $file): array {
+		if ($this->container->has(self::EXTRACTION) === false) {
+			return [];
 		}
 
-		$headers = ($structure->headers ?? null);
+		$extraction = $this->container->get(self::EXTRACTION);
+		if (is_object($extraction) === false || method_exists($extraction, 'parseEmlStructured') === false) {
+			return [];
+		}
+
+		$headers = ($extraction->parseEmlStructured($file)->headers ?? null);
 		if (is_array($headers) === false) {
-			return null;
+			return [];
 		}
 
 		return $headers;
