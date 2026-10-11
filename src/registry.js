@@ -252,6 +252,7 @@ import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
+import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WooReportsView from './views/woo/WooReportsView.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
@@ -969,6 +970,16 @@ const registry = {
 		component: MyWorkWidget,
 		...DASHBOARD_TILE_META,
 		_note: 'Dashboard My work tile: your open tasks from OpenRegister\'s task engine, soonest due first, with a days-left column and a red row once a deadline has passed. INTERIM. It is a component rather than a built-in `object-table` only because nextcloud-vue has no task source for widgets: 2.46.0 gives an INDEX page `entitySource: "tasks"` and gives a widget nothing, so the manifest cannot name this list. TARGET: back to a generic widget the day the library grows that source, at which point the `content` block the manifest still carries is what it goes back to reading and this entry is deleted. The e2e asserts on the tile and its rows rather than on this component, so it survives the swap back.',
+	},
+
+	// --- My work, First today: ONE case, with its acts (DqMijnWerk). ---
+	// @spec openspec/specs/dashboard/spec.md
+	FirstTodayWidget: {
+		// @custom-widget-ratchet exclude the library banner counts cases ("{value} of your cases") and cannot name one, and the board names the single case furthest past its deadline with its acts; there is no widget that reads one object into a banner, so this wraps the library's own attention-card classes around the case it finds
+		kind: 'widget',
+		component: FirstTodayWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'My work, First today: the one open case of the reader that is furthest past its deadline (or ends today), named in the library attention card with three acts (all cases past their deadline, the board, open the case). INTERIM: it is a component only because the library banner has no per-object source and takes two actions at most; the board shows four, and Suspend term waits on a way to open the lifecycle dialog from outside the case page.',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---

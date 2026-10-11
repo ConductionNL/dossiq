@@ -2478,12 +2478,14 @@
 							"currentField": "status",
 							"orientation": "vertical",
 							"size": "small",
+							"variant": "bars",
 							"ariaLabel": "Case progress",
 							"stagesEndpoint": {
-								"url": "/apps/dossiq/api/case-types/@object.caseType/blueprint",
+								"url": "/apps/dossiq/api/case-types/@object.caseType/blueprint?case=@objectId",
 								"path": "statusTypes",
 								"labelField": "name",
 								"descriptionField": "description",
+								"dateField": "reachedAt",
 								"orderField": "order",
 								"finalField": "isFinal"
 							},
@@ -7661,40 +7663,99 @@
 							"emptyText": "No letters or documents on file for this contact yet",
 							"errorText": "These documents could not be loaded. Try again."
 						}
+					},
+					{
+						"id": "contact-panels",
+						"type": "tabs",
+						"title": "Panels",
+						"icon": "ViewDashboard",
+						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn. The counts use `countFrom` (nextcloud-vue #1468, the release after 2.79.0): the shape is the library's `source` form of a tab predicate and must be checked against the release when it lands; older libraries ignore the key.",
+						"content": {
+							"ariaLabel": "Details",
+							"tabs": [
+								{
+									"widgetId": "contact-card",
+									"label": "Overview"
+								},
+								{
+									"widgetId": "contact-cases",
+									"label": "Cases",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"requester": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "contact-moments",
+									"label": "Contact moments",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "contactmoment",
+										"filter": {
+											"contact": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "contact-documents",
+									"label": "Files"
+								}
+							]
+						}
+					}
+				],
+				"follow": false,
+				"breadcrumb": {
+					"label": "Contacts",
+					"route": "Contacts"
+				},
+				"quickActions": [
+					"log-contact",
+					"new-case-for-contact"
+				],
+				"sideColumn": [
+					{
+						"id": "side-identity",
+						"type": "data",
+						"title": "Identity",
+						"content": {
+							"title": "Identity",
+							"columns": 1,
+							"include": [
+								"citizenServiceNumber",
+								"birth"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
+					},
+					{
+						"id": "side-address",
+						"type": "data",
+						"title": "Address",
+						"content": {
+							"title": "Address",
+							"columns": 1,
+							"include": [
+								"residence"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
 					}
 				],
 				"layout": [
 					{
 						"id": "1",
-						"widgetId": "contact-card",
+						"widgetId": "contact-panels",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 4
-					},
-					{
-						"id": "2",
-						"widgetId": "contact-cases",
-						"gridX": 0,
-						"gridY": 4,
-						"gridWidth": 12,
-						"gridHeight": 4
-					},
-					{
-						"id": "3",
-						"widgetId": "contact-moments",
-						"gridX": 0,
-						"gridY": 8,
-						"gridWidth": 12,
-						"gridHeight": 4
-					},
-					{
-						"id": "4",
-						"widgetId": "contact-documents",
-						"gridX": 0,
-						"gridY": 12,
-						"gridWidth": 12,
-						"gridHeight": 4
+						"gridHeight": 12,
+						"showTitle": false
 					}
 				],
 				"sidebar": {
@@ -7963,40 +8024,99 @@
 							"emptyText": "No letters or documents on file for this contact yet",
 							"errorText": "These documents could not be loaded. Try again."
 						}
+					},
+					{
+						"id": "contact-panels",
+						"type": "tabs",
+						"title": "Panels",
+						"icon": "ViewDashboard",
+						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn. The counts use `countFrom` (nextcloud-vue #1468, the release after 2.79.0): the shape is the library's `source` form of a tab predicate and must be checked against the release when it lands; older libraries ignore the key.",
+						"content": {
+							"ariaLabel": "Details",
+							"tabs": [
+								{
+									"widgetId": "contact-card",
+									"label": "Overview"
+								},
+								{
+									"widgetId": "contact-cases",
+									"label": "Cases",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"requester": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "contact-moments",
+									"label": "Contact moments",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "contactmoment",
+										"filter": {
+											"contact": "@objectId"
+										}
+									}
+								},
+								{
+									"widgetId": "contact-documents",
+									"label": "Files"
+								}
+							]
+						}
+					}
+				],
+				"follow": false,
+				"breadcrumb": {
+					"label": "Organisations",
+					"route": "Organisations"
+				},
+				"quickActions": [
+					"log-contact",
+					"new-case-for-contact"
+				],
+				"sideColumn": [
+					{
+						"id": "side-identity",
+						"type": "data",
+						"title": "Identity",
+						"content": {
+							"title": "Identity",
+							"columns": 1,
+							"include": [
+								"kvkNumber",
+								"legalForm"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
+					},
+					{
+						"id": "side-address",
+						"type": "data",
+						"title": "Address",
+						"content": {
+							"title": "Address",
+							"columns": 1,
+							"include": [
+								"address"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
 					}
 				],
 				"layout": [
 					{
 						"id": "1",
-						"widgetId": "contact-card",
+						"widgetId": "contact-panels",
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 4
-					},
-					{
-						"id": "2",
-						"widgetId": "contact-cases",
-						"gridX": 0,
-						"gridY": 4,
-						"gridWidth": 12,
-						"gridHeight": 4
-					},
-					{
-						"id": "3",
-						"widgetId": "contact-moments",
-						"gridX": 0,
-						"gridY": 8,
-						"gridWidth": 12,
-						"gridHeight": 4
-					},
-					{
-						"id": "4",
-						"widgetId": "contact-documents",
-						"gridX": 0,
-						"gridY": 12,
-						"gridWidth": 12,
-						"gridHeight": 4
+						"gridHeight": 12,
+						"showTitle": false
 					}
 				],
 				"sidebar": {
