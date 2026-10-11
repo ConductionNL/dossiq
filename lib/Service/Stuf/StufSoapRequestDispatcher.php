@@ -35,7 +35,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Stuf;
 
 use DOMDocument;
-use OCA\Dossiq\Service\StufMessageBuilder;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use Psr\Log\LoggerInterface;
@@ -246,7 +245,7 @@ class StufSoapRequestDispatcher {
 	private function extractStufMessageElement(DOMDocument $dom): \DOMElement|DataDisplayResponse {
 		// Extract the SOAP Body content.
 		$bodyElements = $dom->getElementsByTagNameNS(
-			StufMessageBuilder::NS_SOAP,
+			StufNamespaces::NS_SOAP,
 			'Body'
 		);
 

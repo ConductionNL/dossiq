@@ -147,6 +147,13 @@ class CrossAppListenerRegistrar {
 			'OCA\Integriq\Event\DeliveryConcludedEvent',
 			\OCA\Dossiq\Listener\DeliveryConcludedListener::class
 		);
+		// Decision 193: integriq sends dossiq's StUF and concludes each message
+		// with StufZdsCaseConcludedEvent; a failure reaches the administrators
+		// as the Notifier's stuf_* notification. By name, for the same reason.
+		$context->registerEventListener(
+			\OCA\Dossiq\Listener\StufZdsCaseConcludedListener::EVENT_CLASS,
+			\OCA\Dossiq\Listener\StufZdsCaseConcludedListener::class
+		);
 		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
 		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
 		// tracked message, `failed` and `read` included, so this is how a case

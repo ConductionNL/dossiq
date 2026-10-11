@@ -90,9 +90,8 @@ class StufVaultService {
 	 *
 	 * It wrote a plaintext secret into app config behind a `vault://`
 	 * reference, described as "admin tooling / install seed". It had no
-	 * caller: all three consumers of this vault (`StufEnvelopeInspector`,
-	 * `StufHttpClient`, `StufMessageBuilder`) only ever call
-	 * `resolveSecret()`. This app therefore READS StUF credentials and never
+	 * caller: the consumers of this vault (now only `StufEnvelopeInspector`;
+	 * the outbound ones moved to integriq) only ever call `resolveSecret()`. This app therefore READS StUF credentials and never
 	 * writes them — they are placed by an administrator through Nextcloud's
 	 * own config surface. Wiring a writer would have added the first
 	 * credential-writing path in the app, which is the widest kind of

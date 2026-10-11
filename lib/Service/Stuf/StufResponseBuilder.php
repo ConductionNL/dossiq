@@ -8,14 +8,9 @@
  * bevestiging, the Fo01 foutbericht and the plain SOAP Fault. All
  * DOMDocument-based and XXE-safe (`LIBXML_NONET`, no entity expansion).
  *
- * Split out of {@see \OCA\Dossiq\Service\StufMessageBuilder}, which owned both
- * directions and so exposed fourteen public methods. That class now owns the
- * OUTBOUND `zkn:`-namespaced request builders only; the two directions share no
- * caller — the controller only ever answers, the adapter only ever asks — and
- * they do not even share an XML style.
- *
- * The namespace constants stay on StufMessageBuilder: StufMessageParser
- * re-exports them from there, so they have one canonical home.
+ * It was split out of the old StufMessageBuilder, which owned both directions.
+ * The outbound half moved to integriq's ZDS case client (decision 193); the
+ * namespace constants now live on {@see StufNamespaces}.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Stuf
@@ -40,7 +35,6 @@ namespace OCA\Dossiq\Service\Stuf;
 
 use DateTimeImmutable;
 use DOMDocument;
-use OCA\Dossiq\Service\StufMessageBuilder;
 
 /**
  * Builds the StUF SOAP responses dossiq returns as a receiver.
@@ -63,33 +57,33 @@ class StufResponseBuilder {
 		$dom = new DOMDocument('1.0', 'UTF-8');
 		$dom->formatOutput = true;
 
-		$envelope = $dom->createElementNS(StufMessageBuilder::NS_SOAP, 'soap:Envelope');
+		$envelope = $dom->createElementNS(StufNamespaces::NS_SOAP, 'soap:Envelope');
 		$envelope->setAttributeNS(
 			'http://www.w3.org/2000/xmlns/',
 			'xmlns:stuf',
-			StufMessageBuilder::NS_STUF
+			StufNamespaces::NS_STUF
 		);
 		$envelope->setAttributeNS(
 			'http://www.w3.org/2000/xmlns/',
 			'xmlns:zkn',
-			StufMessageBuilder::NS_ZKN
+			StufNamespaces::NS_ZKN
 		);
 		$envelope->setAttributeNS(
 			'http://www.w3.org/2000/xmlns/',
 			'xmlns:bg',
-			StufMessageBuilder::NS_BG
+			StufNamespaces::NS_BG
 		);
 		$envelope->setAttributeNS(
 			'http://www.w3.org/2000/xmlns/',
 			'xmlns:xsi',
-			StufMessageBuilder::NS_XSI
+			StufNamespaces::NS_XSI
 		);
 		$dom->appendChild($envelope);
 
-		$header = $dom->createElementNS(StufMessageBuilder::NS_SOAP, 'soap:Header');
+		$header = $dom->createElementNS(StufNamespaces::NS_SOAP, 'soap:Header');
 		$envelope->appendChild($header);
 
-		$body = $dom->createElementNS(StufMessageBuilder::NS_SOAP, 'soap:Body');
+		$body = $dom->createElementNS(StufNamespaces::NS_SOAP, 'soap:Body');
 		$envelope->appendChild($body);
 
 		// M1: Load the caller-supplied body XML with LIBXML_NONET to prevent
@@ -156,7 +150,7 @@ class StufResponseBuilder {
 		array $ontvanger,
 		string $crossRef,
 	): string {
-		$body = '<stuf:Bv01Bericht xmlns:stuf="' . StufMessageBuilder::NS_STUF . '">';
+		$body = '<stuf:Bv01Bericht xmlns:stuf="' . StufNamespaces::NS_STUF . '">';
 		$body .= '<stuf:stuurgegevens>';
 		$body .= '<stuf:berichtcode>Bv01</stuf:berichtcode>';
 		$body .= $this->renderParties(zender: $zender, ontvanger: $ontvanger);
@@ -189,7 +183,7 @@ class StufResponseBuilder {
 		array $zender,
 		array $ontvanger,
 	): string {
-		$body = '<stuf:Fo01Bericht xmlns:stuf="' . StufMessageBuilder::NS_STUF . '">';
+		$body = '<stuf:Fo01Bericht xmlns:stuf="' . StufNamespaces::NS_STUF . '">';
 		$body .= '<stuf:stuurgegevens>';
 		$body .= '<stuf:berichtcode>Fo01</stuf:berichtcode>';
 		$body .= $this->renderParties(zender: $zender, ontvanger: $ontvanger);
@@ -219,13 +213,13 @@ class StufResponseBuilder {
 		$dom = new DOMDocument('1.0', 'UTF-8');
 		$dom->formatOutput = true;
 
-		$envelope = $dom->createElementNS(StufMessageBuilder::NS_SOAP, 'soap:Envelope');
+		$envelope = $dom->createElementNS(StufNamespaces::NS_SOAP, 'soap:Envelope');
 		$dom->appendChild($envelope);
 
-		$body = $dom->createElementNS(StufMessageBuilder::NS_SOAP, 'soap:Body');
+		$body = $dom->createElementNS(StufNamespaces::NS_SOAP, 'soap:Body');
 		$envelope->appendChild($body);
 
-		$fault = $dom->createElementNS(StufMessageBuilder::NS_SOAP, 'soap:Fault');
+		$fault = $dom->createElementNS(StufNamespaces::NS_SOAP, 'soap:Fault');
 		$body->appendChild($fault);
 
 		$faultcode = $dom->createElement('faultcode', 'Client');

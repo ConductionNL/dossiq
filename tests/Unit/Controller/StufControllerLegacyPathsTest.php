@@ -35,8 +35,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Controller\StufController;
-use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
-use OCA\Dossiq\Service\Stuf\StufServices;
+use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
+use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\IL10N;
@@ -44,7 +44,6 @@ use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use ReflectionClass;
 
 /**
  * The Dutch path aliases delegate to their English methods.
@@ -74,9 +73,7 @@ class StufControllerLegacyPathsTest extends TestCase {
 	 * @return StufController
 	 */
 	private function controller(): StufController {
-		$services = (new ReflectionClass(StufServices::class))->newInstanceWithoutConstructor();
-
-		return new class('dossiq', $this->createMock(IRequest::class), $services, $this->dispatcher, $this->createMock(StufEnvelopeInspector::class), $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), ) extends StufController {
+		return new class('dossiq', $this->createMock(IRequest::class), $this->createMock(StufRegisterAccess::class), $this->createMock(StufIntegriqBridge::class), $this->dispatcher, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), ) extends StufController {
 			/**
 			 * Serve a fixed body instead of php://input.
 			 *

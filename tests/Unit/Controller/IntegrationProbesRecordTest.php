@@ -39,17 +39,9 @@ use OCA\Dossiq\Service\Email\SenderBlocklist;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Stuf\CircuitBreakerService;
-use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
-use OCA\Dossiq\Service\Stuf\StufMessageHandler;
-use OCA\Dossiq\Service\Stuf\StufMessageParser;
-use OCA\Dossiq\Service\Stuf\StufAdapterService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufServices;
 use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
-use OCA\Dossiq\Service\Stuf\StufVaultService;
-use OCA\Dossiq\Service\StufFieldMappingService;
-use OCA\Dossiq\Service\StufMessageBuilder;
+use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -64,22 +56,10 @@ use OCP\App\IAppManager;
 /**
  * The probe and save side of pluggable-integration-registry.
  *
- * StufServices is an immutable BUNDLE of eight collaborators with public
- * readonly promoted properties, so it cannot be a mock here the way it is in
- * StufControllerContractTest: `endpoints()` reads `$this->stuf->register` and
- * `->circuitBreaker`, and a mock leaves a readonly promoted property
- * uninitialised, which throws before the assertion. It is therefore built for
- * real, and declared below so PHPUnit does not count it as untested code a
- * test executed. Without that line six PHPUnit cells go red while the summary
- * still prints OK: the exit code is 1 under failOnRisky, and the word OK is
- * on the line above it.
- *
  * @covers \OCA\Dossiq\Controller\EmailTemplateController
  * @covers \OCA\Dossiq\Controller\SettingsController
  * @covers \OCA\Dossiq\Controller\StufController
- *
- * @uses \OCA\Dossiq\Service\Stuf\StufServices
- */
+ * */
 class IntegrationProbesRecordTest extends TestCase {
 
 	/**
@@ -174,11 +154,11 @@ class IntegrationProbesRecordTest extends TestCase {
 	}//end testSignedOutCallerRecordsNothing()
 
 	/**
-	 * An endpoint list with an open circuit records Error and names it.
+	 * An endpoint without an integriq source records Error and names it: it cannot send.
 	 *
 	 * @return void
 	 */
-	public function testAnOpenCircuitRecordsErrorNamingTheEndpoint(): void {
+	public function testAnUnlinkedEndpointRecordsErrorNamingIt(): void {
 		$this->recorder->expects($this->once())
 			->method('record')
 			->with(
@@ -188,11 +168,10 @@ class IntegrationProbesRecordTest extends TestCase {
 			);
 
 		$controller = $this->stufController(
-			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid']],
-			breakerState: 'open'
+			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid']]
 		);
 		$controller->endpoints();
-	}//end testAnOpenCircuitRecordsErrorNamingTheEndpoint()
+	}//end testAnUnlinkedEndpointRecordsErrorNamingIt()
 
 	/**
 	 * A healthy endpoint list records Configured.
@@ -205,8 +184,7 @@ class IntegrationProbesRecordTest extends TestCase {
 			->with('stuf', 'configured', $this->stringContains('Gemeente Zuid'));
 
 		$controller = $this->stufController(
-			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid']],
-			breakerState: 'closed'
+			endpoints: [['id' => 'e1', 'name' => 'Gemeente Zuid', 'integriqSource' => 'src-1']]
 		);
 		$controller->endpoints();
 	}//end testHealthyEndpointsRecordConfigured()
@@ -224,7 +202,7 @@ class IntegrationProbesRecordTest extends TestCase {
 			->method('record')
 			->with('stuf', 'unconfigured', $this->anything());
 
-		$controller = $this->stufController(endpoints: [], breakerState: 'closed');
+		$controller = $this->stufController(endpoints: []);
 		$controller->endpoints();
 	}//end testNoEndpointsRecordsUnconfigured()
 
@@ -355,14 +333,13 @@ class IntegrationProbesRecordTest extends TestCase {
 	}//end emailController()
 
 	/**
-	 * Build a StufController over a stubbed register and circuit breaker.
+	 * Build a StufController over a stubbed register.
 	 *
 	 * @param array<int, array<string, mixed>> $endpoints The endpoint rows.
-	 * @param string $breakerState The circuit-breaker state for each endpoint.
 	 *
 	 * @return StufController
 	 */
-	private function stufController(array $endpoints, string $breakerState): StufController {
+	private function stufController(array $endpoints): StufController {
 		$register = $this->createMock(StufRegisterAccess::class);
 		$register->method('findAll')->willReturnCallback(
 			static function (string $schema, array $filters = [], int $limit = 0) use ($endpoints): array {
@@ -370,28 +347,12 @@ class IntegrationProbesRecordTest extends TestCase {
 			}
 		);
 
-		$breaker = $this->createMock(CircuitBreakerService::class);
-		$breaker->method('snapshot')->willReturn(
-			['state' => $breakerState, 'failureCount' => 0, 'openedAt' => null]
-		);
-
-		$services = new StufServices(
-			mappingService: $this->createMock(StufFieldMappingService::class),
-			messageBuilder: $this->createMock(StufMessageBuilder::class),
-			adapter: $this->createMock(StufAdapterService::class),
-			register: $register,
-			messageHandler: $this->createMock(StufMessageHandler::class),
-			parser: $this->createMock(StufMessageParser::class),
-			vault: $this->createMock(StufVaultService::class),
-			circuitBreaker: $breaker,
-		);
-
 		return new StufController(
 			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
-			stuf: $services,
+			register: $register,
+			bridge: $this->createMock(StufIntegriqBridge::class),
 			dispatcher: $this->createMock(StufSoapRequestDispatcher::class),
-			inspector: $this->createMock(StufEnvelopeInspector::class),
 			l10n: $this->createMock(IL10N::class),
 			logger: $this->createMock(LoggerInterface::class),
 			integrationStatus: $this->recorder,

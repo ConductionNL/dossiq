@@ -34,7 +34,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Stuf;
 
 use OCA\Dossiq\Service\StufFieldMappingService;
-use OCA\Dossiq\Service\StufMessageBuilder;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use Psr\Log\LoggerInterface;
@@ -208,8 +207,8 @@ class StufZknMessageResponder {
 
 		// In a full implementation, query OpenRegister and build zakLa01 response.
 		// For now, return an empty zakLa01 response.
-		$body = '<zkn:zakLa01 xmlns:zkn="' . StufMessageBuilder::NS_ZKN . '" '
-			. 'xmlns:stuf="' . StufMessageBuilder::NS_STUF . '">';
+		$body = '<zkn:zakLa01 xmlns:zkn="' . StufNamespaces::NS_ZKN . '" '
+			. 'xmlns:stuf="' . StufNamespaces::NS_STUF . '">';
 		$body .= $this->responses->buildStuurgegevens(self::DEFAULT_ZENDER, []);
 		$body .= '<zkn:antwoord/>';
 		$body .= '</zkn:zakLa01>';
@@ -234,8 +233,8 @@ class StufZknMessageResponder {
 
 		// In a full implementation, query OpenRegister for person data.
 		// For now, return an empty npsLa01 response.
-		$body = '<bg:npsLa01 xmlns:bg="' . StufMessageBuilder::NS_BG . '" '
-			. 'xmlns:stuf="' . StufMessageBuilder::NS_STUF . '">';
+		$body = '<bg:npsLa01 xmlns:bg="' . StufNamespaces::NS_BG . '" '
+			. 'xmlns:stuf="' . StufNamespaces::NS_STUF . '">';
 		$body .= $this->responses->buildStuurgegevens(self::DEFAULT_ZENDER, []);
 		$body .= '<bg:antwoord/>';
 		$body .= '</bg:npsLa01>';

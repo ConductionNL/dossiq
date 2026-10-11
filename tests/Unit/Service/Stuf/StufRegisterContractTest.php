@@ -24,9 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 
-use OCA\Dossiq\Service\Stuf\StufCaseMappingStore;
 use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
-use OCA\Dossiq\Service\Stuf\StufMessageHandler;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCA\Dossiq\Service\Stuf\StufVaultService;
 use OCA\Dossiq\Tests\Unit\Fixtures\SchemaAwareStufRegister;
@@ -43,8 +41,6 @@ use Psr\Log\LoggerInterface;
  * what the schema does not declare, and a filter on an undeclared property
  * matches zero rows rather than being ignored.
  *
- * @covers \OCA\Dossiq\Service\Stuf\StufCaseMappingStore
- * @covers \OCA\Dossiq\Service\Stuf\StufMessageHandler
  * @covers \OCA\Dossiq\Service\Stuf\StufEnvelopeInspector
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
@@ -62,115 +58,6 @@ class StufRegisterContractTest extends TestCase {
 		$this->register = new SchemaAwareStufRegister();
 	}//end setUp()
 
-	/**
-	 * The case mapping is written once and found again.
-	 *
-	 * This is the idempotency the class docblock promises ("an existing mapping
-	 * is updated in place rather than duplicated"), and it is exactly what the
-	 * undeclared identity key broke: the filter clamped the lookup to zero rows,
-	 * so `persist()` minted a fresh `map-…` id on every call and the store grew
-	 * a duplicate per outbound message.
-	 *
-	 * @return void
-	 */
-	public function testTheCaseMappingIsIdempotent(): void {
-		$store = new StufCaseMappingStore(register: $this->register, dates: $this->caseDates());
-		$case = ['id' => 'case-1'];
-		$endpoint = ['id' => 'ep-1'];
-
-		$first = $store->persist(case: $case, externId: 'ZAAK-0001', endpoint: $endpoint);
-		$second = $store->persist(case: $case, externId: 'ZAAK-0001', endpoint: $endpoint);
-
-		$this->assertSame(
-			$first['id'],
-			$second['id'],
-			'A second persist for the same case+endpoint must update the mapping, not mint a new one.'
-		);
-		$this->assertCount(
-			1,
-			($this->register->store[StufRegisterAccess::SCHEMA_MAPPING] ?? []),
-			'The mapping store must hold exactly one row for one case on one endpoint.'
-		);
-		$this->assertNotNull(
-			$store->find(case: $case, endpoint: $endpoint),
-			'A persisted mapping must be findable again; find() returning null is what makes '
-			. 'actualiseerZaak answer NO_MAPPING for a case it has just created.'
-		);
-	}//end testTheCaseMappingIsIdempotent()
-
-
-	/**
-	 * An outbound audit row keeps the fields the admin log renders.
-	 *
-	 * `StufAuditLog.vue` renders `messageKind`, `referenceNumber` and
-	 * `durationMs`, and `confirmOutbound()` finds its row by reference number.
-	 * A dropped key shows as an empty cell and an unconfirmable message, never
-	 * as an error.
-	 *
-	 * @return void
-	 */
-	public function testTheOutboundAuditRowKeepsItsFields(): void {
-		$handler = new StufMessageHandler(register: $this->register, dates: $this->caseDates());
-
-		$row = $handler->logOutbound(
-			endpoint: ['id' => 'ep-1'],
-			envelopeXml: '<soap/>',
-			referentienummer: 'REF-0001',
-			messageKind: 'Lk01',
-			role: 'creeerZaak',
-			caseId: 'ZAAK-0001',
-			sourceEntity: 'case',
-			sourceId: 'case-1'
-		);
-
-		foreach (['messageKind' => 'Lk01', 'referenceNumber' => 'REF-0001', 'relatedCaseId' => 'ZAAK-0001', 'sourceEntity' => 'case'] as $field => $expected) {
-			$this->assertSame(
-				$expected,
-				($row[$field] ?? null),
-				sprintf('The audit row must persist %s; the store drops what the schema does not declare.', $field)
-			);
-		}
-
-		$this->assertNotNull(
-			$handler->findOutboundByReferentienummer(referentienummer: 'REF-0001'),
-			'A Bv01 confirmation resolves its outbound row by reference number. A lookup that '
-			. 'cannot match means every asynchronous confirmation is silently dropped.'
-		);
-	}//end testTheOutboundAuditRowKeepsItsFields()
-
-	/**
-	 * A retry entry uses the sub-property names the schema and the dialog use.
-	 *
-	 * `StufEnvelopeDialog.vue` renders `retry.attempt` and `retry.durationMs`.
-	 *
-	 * @return void
-	 */
-	public function testARetryEntryUsesTheDeclaredSubProperties(): void {
-		$handler = new StufMessageHandler(register: $this->register, dates: $this->caseDates());
-		$row = $handler->recordRetry(
-			msg: ['id' => 'stuf-msg-1', 'retries' => []],
-			attempt: 1,
-			httpStatus: 503,
-			fout: ['code' => 'HTTP_503'],
-			durationMs: 1200
-		);
-
-		$fragment = json_decode((string)file_get_contents(SchemaAwareStufRegister::FRAGMENT), true);
-		$declared = array_keys(
-			(array)($fragment['components']['schemas']['stufMessage']['properties']['retries']['items']['properties'] ?? [])
-		);
-		$this->assertNotSame([], $declared, 'The retries schema must declare item properties.');
-
-		$entry = ($row['retries'][0] ?? []);
-		$this->assertNotSame([], $entry, 'recordRetry must append a retry entry.');
-		foreach (array_keys($entry) as $key) {
-			$this->assertContains(
-				(string)$key,
-				$declared,
-				sprintf('A retry entry writes "%s", which the retries schema does not declare.', $key)
-			);
-		}
-	}//end testARetryEntryUsesTheDeclaredSubProperties()
 
 	/**
 	 * An inbound envelope resolves its endpoint from the zender.
@@ -216,7 +103,8 @@ class StufRegisterContractTest extends TestCase {
 	public function testEveryFieldTheStufServicesTouchIsDeclared(): void {
 		$this->driveEveryRegisterPath();
 
-		$this->assertNotSame([], $this->register->writtenKeys, 'The sweep must observe at least one save.');
+		// No StUF service in dossiq saves any more (the outbound audit moved to
+		// integriq, decision 193); the lookups the provider side makes remain.
 		$this->assertNotSame([], $this->register->filterKeys, 'The sweep must observe at least one lookup.');
 
 		// Collected rather than asserted one at a time, so a run reports EVERY
@@ -252,36 +140,6 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	private function driveEveryRegisterPath(): void {
-		$endpoint = ['id' => 'ep-1'];
-		$case = ['id' => 'case-1'];
-
-		$mappings = new StufCaseMappingStore(register: $this->register, dates: $this->caseDates());
-		$mappings->find(case: $case, endpoint: $endpoint);
-		$mappings->persist(case: $case, externId: 'ZAAK-0001', endpoint: $endpoint);
-
-		$handler = new StufMessageHandler(register: $this->register, dates: $this->caseDates());
-		$outbound = $handler->logOutbound(
-			endpoint: $endpoint,
-			envelopeXml: '<soap/>',
-			referentienummer: 'REF-0001',
-			messageKind: 'Lk01',
-			role: 'creeerZaak',
-			caseId: 'ZAAK-0001',
-			sourceEntity: 'case',
-			sourceId: 'case-1'
-		);
-		$handler->logInbound(
-			endpoint: $endpoint,
-			responseXml: '<soap/>',
-			messageKind: 'Bv01',
-			crossRefnummer: 'REF-0001',
-			caseId: 'ZAAK-0001',
-			role: 'creeerZaak'
-		);
-		$handler->recordRetry(msg: $outbound, attempt: 1, httpStatus: 503, fout: [], durationMs: 900);
-		$handler->transitionStatus(msg: $outbound, newStatus: 'bevestigd', extras: []);
-		$handler->findOutboundByReferentienummer(referentienummer: 'REF-0001');
-
 		$inspector = new StufEnvelopeInspector($this->register, $this->createMock(StufVaultService::class));
 		$inspector->resolveEndpoint(
 			envelopeXml: '<stuf:zender><stuf:applicatie>Key2Zaken</stuf:applicatie></stuf:zender>'
@@ -344,7 +202,6 @@ class StufRegisterContractTest extends TestCase {
 
 		$found = array_values(array_unique($found));
 		$this->assertNotSame([], $found, 'The scan must find at least one literal field name.');
-		$this->assertContains('httpStatus', $found, 'The scan must reach the transition extras.');
 		$this->assertContains('status', $found, 'The scan must reach the audit-log filter list.');
 
 		$undeclared = array_values(array_diff($found, $declared));

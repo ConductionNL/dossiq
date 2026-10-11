@@ -38,8 +38,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Controller\StufController;
-use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
-use OCA\Dossiq\Service\Stuf\StufServices;
+use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
+use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
@@ -91,9 +91,9 @@ class StufControllerContractTest extends TestCase {
 		$this->controller = new StufController(
 			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
-			stuf: $this->createMock(StufServices::class),
+			register: $this->createMock(StufRegisterAccess::class),
+			bridge: $this->createMock(StufIntegriqBridge::class),
 			dispatcher: $this->dispatcher,
-			inspector: $this->createMock(StufEnvelopeInspector::class),
 			l10n: $this->createMock(IL10N::class),
 			logger: $this->createMock(LoggerInterface::class),
 			integrationStatus: $this->createMock(IntegrationStatusService::class),
