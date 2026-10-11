@@ -18,6 +18,7 @@ import {
 	caseSurfaceSlugs,
 	fetchCaseDocuments,
 	fetchCaseFeatures,
+	fetchCasePrompts,
 	fetchReportGroup,
 	groupView,
 	referenceId,
@@ -221,5 +222,17 @@ describe('caseAiFeaturesApi', () => {
 		expect(view.state).toBe('grouped')
 		expect(view.count).toBe(200)
 		expect(view.nearDuplicates).toEqual([{ reportId: 'case-9', score: 0.61 }])
+	})
+	it("reads the prompts from dossiq's endpoint, and null when it fails", async () => {
+		axios.get.mockResolvedValueOnce({
+			data: { prompts: [{ id: 'p-1', label: 'L', prompt: 'P' }] },
+		})
+		await expect(fetchCasePrompts()).resolves.toEqual([
+			{ id: 'p-1', label: 'L', prompt: 'P' },
+		])
+		expect(axios.get).toHaveBeenCalledWith('/apps/dossiq/api/assistant/prompts')
+
+		axios.get.mockRejectedValueOnce(new Error('500'))
+		await expect(fetchCasePrompts()).resolves.toBeNull()
 	})
 })

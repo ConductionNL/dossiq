@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Mcp;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Intake\CaseIntakeFiling;
+use OCA\Dossiq\Service\Intake\RequestCatalogue;
 use OCA\Dossiq\Service\Mcp\IntakeTools;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -39,11 +40,14 @@ class IntakeToolsTest extends TestCase {
 
 	private CaseIntakeFiling&MockObject $filing;
 
+	private RequestCatalogue&MockObject $catalogue;
+
 	private IntakeTools $tools;
 
 	protected function setUp(): void {
 		$this->filing = $this->createMock(CaseIntakeFiling::class);
-		$this->tools = new IntakeTools(filing: $this->filing);
+		$this->catalogue = $this->createMock(RequestCatalogue::class);
+		$this->tools = new IntakeTools(filing: $this->filing, catalogue: $this->catalogue);
 	}//end setUp()
 
 	public function testFileCaseHandsHermiqsArgumentsToTheFiling(): void {
@@ -84,4 +88,10 @@ class IntakeToolsTest extends TestCase {
 		$params = array_map(static fn ($p) => $p->getName(), (new ReflectionMethod(IntakeTools::class, 'fileCase'))->getParameters());
 		$this->assertSame(['type', 'subject', 'person', 'messages'], $params);
 	}//end testTheToolCarriesTheMarkAndTheCreateTaxonomyHermiqReads()
+	public function testTheRequestCatalogueIsTheCataloguesEntries(): void {
+		$entries = [['type' => 'melding-openbare-ruimte', 'title' => 'Melding openbare ruimte', 'description' => '']];
+		$this->catalogue->expects($this->once())->method('entries')->willReturn($entries);
+
+		$this->assertSame(['requestTypes' => $entries], $this->tools->requestCatalogue());
+	}//end testTheRequestCatalogueIsTheCataloguesEntries()
 }//end class
