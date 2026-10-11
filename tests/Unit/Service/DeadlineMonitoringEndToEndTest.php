@@ -37,9 +37,9 @@ use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\DwangsomBezwaarService;
-use OCA\Dossiq\Service\DwangsomUitbetalingService;
+use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Money\AccruingAmountSettler;
-use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\Money\AccrualNoticeService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
@@ -61,9 +61,9 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	private TermijnService $termService;
 	private DeadlinePauseService $pauseService;
 	private DeadlineExtensionService $extService;
-	private NoticeOfDefaultService $ingService;
+	private AccrualNoticeService $ingService;
 	private AccruingAmountSettler $settler;
-	private DwangsomUitbetalingService $outService;
+	private PayoutService $outService;
 	private DwangsomBezwaarService $bezService;
 	private TermijnNotificationService $notifService;
 	private TermijnTimerFiredListener $firedListener;
@@ -92,9 +92,9 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->termService = new TermijnService($settings, $logger);
 		$this->pauseService = new DeadlinePauseService($this->termService);
 		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates());
-		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
+		$this->ingService = new AccrualNoticeService($settings, $this->termService, $logger);
 		$this->settler = new AccruingAmountSettler(settingsService: $settings, dates: $this->caseDates());
-		$this->outService = new DwangsomUitbetalingService(settingsService: $settings, dates: $this->caseDates());
+		$this->outService = new PayoutService(settingsService: $settings, dates: $this->caseDates());
 		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
 			$this->termService,
@@ -249,7 +249,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertSame('exceeded', $flipped['status']);
 
 		// Register ingebrekestelling (after deadline).
-		$row = $this->ingService->registerNoticeOfDefault(
+		$row = $this->ingService->registerNotice(
 			$instanceId,
 			new DateTimeImmutable('2026-03-15'),
 			'email',
@@ -280,7 +280,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertSame(11500, $stopped['definitiveAmount']);
 
 		// Prepare payment.
-		$uitb = $this->outService->prepareBetaling(
+		$uitb = $this->outService->preparePayout(
 			$calculationId,
 			'J. Burger',
 			'NL91ABNA0417164300',

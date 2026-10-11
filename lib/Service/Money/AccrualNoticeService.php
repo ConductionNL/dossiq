@@ -1,9 +1,10 @@
 <?php
 
 /**
- * Dossiq NoticeOfDefaultService.
+ * Dossiq AccrualNoticeService.
  *
- * Handles AWB 4:17 ingebrekestelling registration: validates the notice
+ * Registers a notice that a term lapsed and, when it is valid, opens the
+ * accruing amount over it. For Awb 4:17 that is the ingebrekestelling: validates the notice
  * against the lapsed TermijnInstance, sets gevalideerd + geldigheidStatus,
  * and (on first valid notice) auto-creates a DwangsomBerekening with
  * startDatum = ontvangstDatum + 14 days grace.
@@ -13,7 +14,7 @@
  * berekening (REQ-TERM-005).
  *
  * @category Service
- * @package  OCA\Dossiq\Service
+ * @package  OCA\Dossiq\Service\Money
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,10 +32,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service;
+namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -43,7 +47,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
  */
-class NoticeOfDefaultService {
+class AccrualNoticeService {
 	use SearchesObjects;
 
 	public const TARIFF_AWB_PLAFOND = 144200;
@@ -85,7 +89,7 @@ class NoticeOfDefaultService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
 	 */
-	public function registerNoticeOfDefault(
+	public function registerNotice(
 		string $termInstanceId,
 		DateTimeImmutable $receiptDate,
 		string $channel,
@@ -148,7 +152,7 @@ class NoticeOfDefaultService {
 		);
 
 		return $row;
-	}//end registerNoticeOfDefault()
+	}//end registerNotice()
 
 	/**
 	 * Link the first valid notice to its instance and open the DwangsomBerekening.
@@ -316,7 +320,7 @@ class NoticeOfDefaultService {
 			return ($saved ?? $object);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'NoticeOfDefaultService persist failed',
+				'AccrualNoticeService persist failed',
 				['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
 			);
 			return $object;

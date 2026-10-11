@@ -1024,8 +1024,9 @@ $extra = [
     ['name' => 'leaverHandover#execute',   'url' => '/api/leaver-handover/execute',                       'verb' => 'POST'],
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
-        // Public webhook for openconnector/ERP payment confirmation callbacks.
-    ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+        // Public webhook for payout callbacks: the finance app (X-Shillinq-Signature)
+        // or the external payment provider (frozen X-Procest-Signature). URL frozen.
+    ['name' => 'payoutCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
         // TermijnInstance lifecycle (caseworker / handler).
     ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
     ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
@@ -1082,11 +1083,12 @@ $extra = [
         // deliberately do NOT move: /api/termijn/ingebrekestellingen is the
         // published contract and changing it is a breaking change for every
         // consumer, which is a separate decision from this rename.
-    ['name' => 'noticeOfDefault#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
-    ['name' => 'noticeOfDefault#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
+    ['name' => 'accrualNotice#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
+    ['name' => 'accrualNotice#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
         // Dwangsom state + bezwaar.
     ['name' => 'dwangsom#show',         'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
     ['name' => 'dwangsom#beschikking',  'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
+    ['name' => 'payout#prepare',        'url' => '/api/termijn/dwangsom/{id}/uitbetaling', 'verb' => 'POST'],
     ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
     ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
         // Reporting (manager / accountant).

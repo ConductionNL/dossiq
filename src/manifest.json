@@ -39,7 +39,7 @@
 						"dwangsom_callback_secret": {
 							"type": "string",
 							"title": "Callback signing secret",
-							"description": "Shared secret the payment provider signs its dwangsom payout callbacks with. Until it is set, DwangsomPaymentCallbackController cannot verify that a callback really came from the provider. Only shown while the dwangsom payout integration is configured."
+							"description": "Shared secret that payout callbacks are signed with, by the finance app and by the external payment provider. Until it is set, no callback can be verified and each one is refused. Only shown while the payout integration is configured."
 						}
 					}
 				}

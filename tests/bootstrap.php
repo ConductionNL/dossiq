@@ -657,6 +657,16 @@ foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stub
 	}
 }
 
+// Shillinq's payout commands (inbound-payable-from-another-app, REQ-IPY-001 and
+// REQ-IPY-005): Money\PayoutRequester raises and withdraws a payout through them.
+// Verbatim copies, loaded only when the real classes are absent, shared with
+// psalm and phpstan.
+foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Shillinq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Shillinq/Event/' . $stubEvent . '.php';
+	}
+}
+
 // Filinq's detector refusal (dossiq#3191): FilinqRedactionClient recognises it
 // by name, so only the tests need the class.
 if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === false) {

@@ -139,7 +139,7 @@
 			]
 		},
 		{
-			"name": "NoticeOfDefaultController — POST register missing fields returns 400",
+			"name": "AccrualNoticeController — POST register missing fields returns 400",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -161,7 +161,7 @@
 			]
 		},
 		{
-			"name": "NoticeOfDefaultController — GET unknown id returns 404",
+			"name": "AccrualNoticeController — GET unknown id returns 404",
 			"request": {
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],
