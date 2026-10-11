@@ -14,10 +14,13 @@ It is a conversion tool, kept out of lib/ on purpose: nothing at runtime
 reads it. Run it again only to regenerate a package from the payload it was
 converted from; edit the package by hand after that.
 
-Input: a JSON file (or `git show <ref>:<path>`) holding a list of case types
-in the seeder shape, each with nested `statusTypes`, `roleTypes` and an
-optional `workflowTemplate` whose steps and transitions name statuses by
-`statusName`, `fromStatusName` and `toStatusName`.
+Input: one or more JSON files (or `git show <ref>:<path>`) holding a list of
+case types, or one case type, under --key, in the seeder shape: each with
+nested `statusTypes`, `roleTypes`, `propertyDefinitions`, `documentTypes`,
+`resultTypes` and an optional `workflowTemplate` whose steps and transitions
+name statuses by `statusName`, `fromStatusName` and `toStatusName`. An
+`initialStatusName` becomes `initialStatus`, the id of that status. A case
+type without an id gets a UUIDv5 of its identifier.
 
 Resolution follows the runtime resolver it replaces
 (Besluitvorming/WorkflowReferenceResolver) exactly: step and transition
@@ -43,7 +46,14 @@ import sys
 import uuid
 
 NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "https://conduction.nl/dossiq/case-definition-packages")
-CHILD_KEYS = ("statusTypes", "roleTypes", "workflowTemplate")
+CHILD_KINDS = {
+    "statusTypes": "statusType",
+    "roleTypes": "roleType",
+    "propertyDefinitions": "propertyDefinition",
+    "documentTypes": "documentType",
+    "resultTypes": "resultType",
+}
+CHILD_KEYS = (*CHILD_KINDS, "workflowTemplate", "initialStatusName")
 
 
 def fixed_id(*parts: str) -> str:
@@ -135,7 +145,7 @@ def write(path: str, data: object) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", required=True)
+    parser.add_argument("--source", required=True, action="append", help="Repeat for several files.")
     parser.add_argument("--key", required=True, help="Top-level key holding the case type list.")
     parser.add_argument("--git-ref", help="Read --source from this git ref instead of the working tree.")
     parser.add_argument("--only", help="Comma-separated case type identifiers to keep, in order.")
@@ -148,37 +158,51 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
 
-    payload = load(args.source, args.git_ref)
-    case_types = payload.get(args.key) if isinstance(payload, dict) else None
-    if not isinstance(case_types, list) or case_types == []:
-        sys.exit(f"{args.source}: '{args.key}' holds no list of case types.")
+    case_types = []
+    for source in args.source:
+        payload = load(source, args.git_ref)
+        found = payload.get(args.key) if isinstance(payload, dict) else None
+        if isinstance(found, dict):
+            found = [found]
+        if not isinstance(found, list) or found == []:
+            sys.exit(f"{source}: '{args.key}' holds no case type.")
+        case_types += found
     if args.only:
         wanted = args.only.split(",")
         by_identifier = {str(c.get("identifier")): c for c in case_types}
         missing = [w for w in wanted if w not in by_identifier]
         if missing:
-            sys.exit(f"{args.source}: no case type with identifier {', '.join(missing)}.")
+            sys.exit(f"{', '.join(args.source)}: no case type with identifier {', '.join(missing)}.")
         case_types = [by_identifier[w] for w in wanted]
 
-    collections = {"caseType": [], "statusTypes": [], "roleTypes": []}
+    collections = {"caseType": [], **{key: [] for key in CHILD_KINDS}}
     flows = {}
     for case_type in case_types:
+        identifier = str(case_type.get("identifier") or "")
         case_type_id = str(case_type.get("id") or "")
         if case_type_id == "":
-            sys.exit(f"case type '{case_type.get('identifier')}' has no fixed id; give it one in the source first.")
-        statuses, status_ids = children(case_type.get("statusTypes", []), case_type_id, "statusType")
-        roles, role_ids = children(case_type.get("roleTypes", []), case_type_id, "roleType")
+            if identifier == "":
+                sys.exit("a case type has neither an id nor an identifier, so it cannot get a fixed id.")
+            case_type_id = fixed_id("caseType", identifier)
+        ids = {}
+        for key, kind in CHILD_KINDS.items():
+            rows, ids[key] = children(case_type.get(key, []), case_type_id, kind)
+            collections[key] += rows
         # `uuid` repeats `id`; the caseType schema has no such property.
-        row = {k: v for k, v in case_type.items() if k not in CHILD_KEYS and not (k == "uuid" and v == case_type_id)}
-        # `initialStatus` may name a status rather than hold its id.
-        if row.get("initialStatus") in status_ids:
-            row["initialStatus"] = status_ids[row["initialStatus"]]
+        row = {"id": case_type_id, **{k: v for k, v in case_type.items()
+               if k not in CHILD_KEYS and k != "id" and not (k == "uuid" and v == case_type_id)}}
+        # `initialStatus` may name a status rather than hold its id; the
+        # bundle form says `initialStatusName`.
+        initial = case_type.get("initialStatusName", row.get("initialStatus"))
+        if initial in ids["statusTypes"]:
+            row["initialStatus"] = ids["statusTypes"][initial]
+        elif "initialStatusName" in case_type:
+            sys.exit(f"{case_type_id}: initialStatusName '{initial}' names no status.")
         collections["caseType"].append(row)
-        collections["statusTypes"] += statuses
-        collections["roleTypes"] += roles
         template = case_type.get("workflowTemplate")
         if isinstance(template, dict):
-            flows[str(case_type.get("identifier") or case_type_id)] = flow(template, case_type_id, status_ids, role_ids, args.published,
+            statuses = case_type.get("statusTypes", [])
+            flows[identifier or case_type_id] = flow(template, case_type_id, ids["statusTypes"], ids["roleTypes"], args.published,
                 [str(s.get("name")) for s in statuses if not s.get("isFinal")])
 
     if len(collections["caseType"]) == 1:
@@ -192,8 +216,8 @@ def main() -> None:
     write(os.path.join(args.out, "case-type.json"), {k: v for k, v in collections.items() if v})
     for name, row in flows.items():
         write(os.path.join(args.out, "flows", f"{name}.json"), row)
-    print(f"{args.out}: {len(case_types)} case type(s), {len(collections['statusTypes'])} status(es), "
-          f"{len(collections['roleTypes'])} role(s), {len(flows)} flow(s)")
+    counts = ", ".join(f"{len(collections[key])} {key}" for key in CHILD_KINDS)
+    print(f"{args.out}: {len(case_types)} case type(s), {counts}, {len(flows)} flow(s)")
 
 
 if __name__ == "__main__":

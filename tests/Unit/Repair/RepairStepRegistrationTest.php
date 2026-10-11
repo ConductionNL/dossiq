@@ -216,7 +216,6 @@ class RepairStepRegistrationTest extends TestCase {
 			// consumer => providers.
 			'SeedVthWorkflowTemplates' => ['VthSeedDataRepairStep'],
 			'MigrateWorkflowDefinitions' => [
-				'SeedBesluitvormingTemplates',
 				'VthSeedDataRepairStep',
 				'SeedVthWorkflowTemplates',
 				'CaseFlowSeedDataRepairStep',

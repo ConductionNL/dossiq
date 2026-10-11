@@ -1,0 +1,1051 @@
+{
+  "info": {
+    "name": "dossiq package: besluitvorming",
+    "description": "Reads every kind of row the besluitvorming package writes back through the OpenRegister objects API, after the packages workflow installed it on a clean instance (hydra ADR-118). Ids are the fixed ids in lib/Settings/packages/besluitvorming/. Written by scripts/packages/package-to-newman.py.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{adminUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{adminPass}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUser",
+      "value": "admin"
+    },
+    {
+      "key": "adminPass",
+      "value": "admin"
+    }
+  ],
+  "item": [
+    {
+      "name": "case type bvw-college-besluit",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"College-besluit\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"bvw-college-besluit\"));",
+              "pm.test('processingDeadline as shipped', () => pm.expect(row.processingDeadline).to.eql(\"P30D\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"openbaar\"));",
+              "pm.test('publicationRequired as shipped', () => pm.expect(row.publicationRequired).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/ec39b5a0-6c03-5015-bebb-7dd55e10317b"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Voorstel opstellen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/0960a903-030a-5187-a033-7c5645497b7d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gearchiveerd\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: role Steller",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/ea1d9a50-22a4-5b22-9cb4-1d4537cdc897"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Steller\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: role Portefeuillehouder",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/b6bbd50a-ffd8-5cd5-8fb7-b4ec5b859cef"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Portefeuillehouder\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: role Beleidsadviseur",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/deee280b-6272-59aa-bde3-627a353e630b"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Beleidsadviseur\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: role Afdelingshoofd",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/b5a20325-0675-5ca5-acb3-c46a368af63b"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afdelingshoofd\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: role Aanwezig lid",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/bdeb505b-2622-5c4c-8f57-9d7c2cb6e74c"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Aanwezig lid\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: property stemuitslag",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/ec10e00e-806b-5ef8-bf17-8aa3a78ed6c7"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"stemuitslag\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: document type Collegeadvies",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/documentType/12f6dfcd-7ee4-52a0-8c60-815a3f4d9c1e"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Collegeadvies\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: result type Besluit genomen",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/resultType/fe64485c-3c74-597f-93cc-9ba22493c929"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Besluit genomen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-college-besluit: flow",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/5c4ac1c8-9fa0-5525-afa8-312b09c85b20"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"College-besluit workflow v1\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"b77b9918-c244-5f7e-9de2-6ea34e931fcd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "case type bvw-raadsbesluit",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/3aae59f4-4264-520f-966a-1b1e28796b83"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Raadsbesluit\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"bvw-raadsbesluit\"));",
+              "pm.test('processingDeadline as shipped', () => pm.expect(row.processingDeadline).to.eql(\"P60D\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"openbaar\"));",
+              "pm.test('publicationRequired as shipped', () => pm.expect(row.publicationRequired).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/5903b223-f0fe-580f-8c48-f9986b7583f8"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Voorstel opstellen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/75ad89ae-75b8-56ea-8830-7f1f7985b6db"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gearchiveerd\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: role Steller",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/98550018-a9ed-592a-8061-9d255d4e84d4"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Steller\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: role Portefeuillehouder",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/71514cbc-28aa-5984-a6e9-57015b45d5f8"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Portefeuillehouder\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: role Beleidsadviseur",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/c7710966-001e-5f39-bcb7-c2e37f3084a0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Beleidsadviseur\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: role Afdelingshoofd",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/d4f19bce-fcc6-548d-8f91-804b515784ee"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afdelingshoofd\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: role Griffier",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/3d839d64-0a89-5f80-b159-b56007e1b462"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Griffier\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: role Aanwezig lid",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/12546d93-35fa-5c24-8e24-6fa1806dad5c"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Aanwezig lid\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: property stemuitslag",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/d3f3029c-ee55-524f-80ac-ae27c361c05c"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"stemuitslag\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: document type Raadsvoorstel",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/documentType/5f9e74b6-c2e2-5064-a0f7-e2f198932e92"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Raadsvoorstel\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: result type Besluit genomen",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/resultType/e25f6e19-fb2c-52e0-a0f4-053a16c18ba6"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Besluit genomen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-raadsbesluit: flow",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/b004ea3c-c5d4-5757-a89e-914b796a1ae5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Raadsbesluit workflow v1\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"3aae59f4-4264-520f-966a-1b1e28796b83\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "case type bvw-mandaatbesluit",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/73f00a88-b0eb-5717-8312-c128166b4a7f"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Mandaatbesluit\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"bvw-mandaatbesluit\"));",
+              "pm.test('processingDeadline as shipped', () => pm.expect(row.processingDeadline).to.eql(\"P14D\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"intern\"));",
+              "pm.test('publicationRequired as shipped', () => pm.expect(row.publicationRequired).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/44ed85f7-efc6-5b89-81ec-84ffaa0924f2"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Voorstel opstellen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/0b852d48-726b-53a9-ba1c-23cf85d06825"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gearchiveerd\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: role Steller",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/9d35a395-b33f-5505-a741-3a48e4f251f2"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Steller\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: role Beleidsadviseur",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/b63cd901-d0e2-5913-9118-62695b3f4910"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Beleidsadviseur\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: role Directeur",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/193d1710-cab1-5a8e-ba16-65607ca8c1ee"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Directeur\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: role Aanwezig lid",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/6383c6ec-d4bd-5a5f-a2c3-e1a34e560851"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Aanwezig lid\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: property stemuitslag",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/57e3a27d-61c8-5989-b937-d199c180f6c1"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"stemuitslag\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: document type DT-advies",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/documentType/4c458102-e0b4-57bf-a609-174162821d71"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"DT-advies\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: result type Besluit genomen",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/resultType/33f105f9-6552-5b05-85b6-81452aba73ea"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Besluit genomen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bvw-mandaatbesluit: flow",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/0ddc6bbf-b7c8-53b8-97d4-657678484b37"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Mandaatbesluit workflow v1\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"73f00a88-b0eb-5717-8312-c128166b4a7f\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ledger records the package",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/shippedOrigin?targetObject=b77b9918-c244-5f7e-9de2-6ea34e931fcd&_limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('ledger reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const row = rows.find(r => r.targetObject === 'b77b9918-c244-5f7e-9de2-6ea34e931fcd');",
+              "pm.test('a ledger row names the package and its version', () => {",
+              "    pm.expect(row, 'ledger row for the case type').to.be.an('object');",
+              "    pm.expect(row.set).to.eql('besluitvorming');",
+              "    pm.expect(row.setVersion).to.eql('1.0.0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

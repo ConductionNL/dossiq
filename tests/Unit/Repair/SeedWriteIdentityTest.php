@@ -122,7 +122,6 @@ class SeedWriteIdentityTest extends TestCase {
 		'RenameDutchSchemaSlugs' => 'renames schema slugs on existing rows',
 		'InitializeSettings' => 'triggers the configuration import; writes no objects',
 		'ProvisionAssignedGroups' => 'creates Nextcloud groups through IGroupManager',
-		'SeedBesluitvormingTemplates' => 'delegates to BesluitvormingTemplateService, which elevates',
 		'SeedVthWorkflowTemplates' => 'writes through VthSeedLookup::runElevated()',
 		'RetireOriRegister' => 'deletes a register row through the register mapper',
 		'RenameDutchColumns' => 'renames magic-table columns in SQL',

@@ -39,8 +39,8 @@ namespace OCA\Dossiq\Service\CaseType;
  *    else, and `Transitions\OfferedTransitions::leadsFrom()` never offers it.
  *    So a `fromStatus` that is empty, `*`, or a status this type does not
  *    declare is a move that is authored, stored, exported and never offered.
- *    Two writers put `*` there on purpose as a wildcard
- *    (`Besluitvorming\WorkflowReferenceResolver`, `Vth\VthWorkflowGraphResolver`)
+ *    A writer puts `*` there on purpose as a wildcard
+ *    (`Vth\VthWorkflowGraphResolver`)
  *    and no reader honours it, which is
  *    a capability with no caller: it reads as configured and behaves as absent.
  *

@@ -199,8 +199,7 @@ class WorkflowGuardConformanceTest extends TestCase {
 		return array_values(
 			array_filter(
 				$this->allShippedGuards(),
-				static fn (array $entry): bool => str_starts_with($entry['path'], 'bvw-') === true
-					|| str_starts_with($entry['path'], 'package:') === true,
+				static fn (array $entry): bool => str_starts_with($entry['path'], 'package:') === true,
 			)
 		);
 	}
