@@ -2478,7 +2478,6 @@
 							"currentField": "status",
 							"orientation": "vertical",
 							"size": "small",
-							"variant": "bars",
 							"ariaLabel": "Case progress",
 							"stagesEndpoint": {
 								"url": "/apps/dossiq/api/case-types/@object.caseType/blueprint?case=@objectId",
