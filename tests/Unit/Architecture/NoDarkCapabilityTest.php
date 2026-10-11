@@ -127,6 +127,7 @@ class NoDarkCapabilityTest extends TestCase {
 		// surface's decisions inside a service nobody designed.
 		'PartyKindConsumer' => 'REQ-PLQ-04: answers which party kinds a CASE TYPE accepts, preferring pipelinq over dossiq\'s three. dossiq decides kinds once, schema-wide, in `CaseRoleVocabulary::sync()`, which has no case type to ask about. BLOCKED on a per-case-type party picker; until one exists there is no call site whose question this is.',
 		'CorrespondenceLanguageConsumer' => 'REQ-PLQ-06: the language to write to a party in, with the reason it was chosen. Nothing in dossiq chooses a correspondence language today — the letter paths take the instance language. BLOCKED on the correspondence surface that would show the tag and its reason beside the recipient.',
+		'SessionService' => 'C12 (case-session-with-parties-and-minutes, ADR-118, decision 191): plans, waives, records attendance at and closes the sessions `caseType.sessions[]` declares. BLOCKED on the bezwaar package (dossiq#3669) and R1\'s installer (dossiq#3654): the hearing moves then make `BezwaarHearingController` and the session flow event call it and delete `Bezwaar\\HearingService`, the planner and the minutes recorder. A caller before then would be a second hearing path beside the one it replaces.',
 	];
 
 	/**
