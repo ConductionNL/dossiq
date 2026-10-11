@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Review;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
@@ -39,7 +40,10 @@ use Throwable;
  * A batch names its documents, writes itself on each document's review, and
  * hands its reviewer a task through the engine task seam, so the reviewer
  * finds the work in their own task list before any verdict is made. A
- * document is in at most one open batch.
+ * document is in at most one open batch. Which documents a filter takes is
+ * BatchSelection's answer. Once a batch is stored, the case's reviewer
+ * access is reconciled in the same request, so the reviewer can read the
+ * batch and its reviews when the case type keeps them private.
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
@@ -58,18 +62,16 @@ class ReviewBatches {
 	public const TASK_KIND = 'review-batch';
 
 	/**
-	 * The filter fields a batch can take its documents by, as the review carries them.
-	 *
-	 * Custodian and source system join once the collected documents carry
-	 * them (woo-request-corpus-collection); a filter on a field no review
-	 * holds would answer an empty batch, so it is refused instead.
-	 */
-	public const FILTER_FIELDS = ['rule'];
-
-	/**
 	 * The sentence of a batch that cannot be stored.
 	 */
 	private const UNSTORED = 'The Review batch cannot be stored, so nothing was assigned.';
+
+	/**
+	 * The review depth per document type; stateless, so built here.
+	 *
+	 * @var ReviewDepth
+	 */
+	private readonly ReviewDepth $depth;
 
 	/**
 	 * Constructor.
@@ -77,11 +79,11 @@ class ReviewBatches {
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The reviews the batch is written on.
 	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
-	 * @param ReviewDepth $depth The review depth per document type.
 	 * @param ReviewConfiguration $configuration The case type's review configuration.
 	 * @param EngineTaskGateway $tasks The task seam that hands the reviewer the batch.
 	 * @param IUserManager $userManager Whether the reviewer exists.
 	 * @param IL10N $l10n The translations, for the task's title.
+	 * @param CaseReviewerAccess $reviewerAccess Who may read the case's private review records.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
@@ -90,51 +92,15 @@ class ReviewBatches {
 		private readonly SettingsService $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly ReviewDepth $depth,
 		private readonly ReviewConfiguration $configuration,
 		private readonly EngineTaskGateway $tasks,
 		private readonly IUserManager $userManager,
 		private readonly IL10N $l10n,
+		private readonly CaseReviewerAccess $reviewerAccess,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->depth = new ReviewDepth();
 	}//end __construct()
-
-	/**
-	 * The documents a batch takes: the listed ones, or those whose review matches the filter.
-	 *
-	 * @param string $caseId The case UUID.
-	 * @param list<string> $documents The listed documents; used when no filter is given.
-	 * @param array<string, string> $filter The filter, by field of the review.
-	 *
-	 * @return list<string> The documents.
-	 *
-	 * @throws RefusedException When the filter names a field the reviews do not carry.
-	 *
-	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
-	 */
-	public function select(string $caseId, array $documents, array $filter): array {
-		if ($filter === []) {
-			return array_values(array_unique(array_map('strval', $documents)));
-		}
-
-		$unknown = array_diff(array_keys($filter), self::FILTER_FIELDS);
-		if ($unknown !== []) {
-			throw new RefusedException(
-				rule: 'review-batch-filter-unknown',
-				sentence: 'A batch can be taken by the rule that marked its documents, or by a list of documents.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$selected = [];
-		foreach ($this->reviews->forCase(caseId: $caseId) as $ref => $review) {
-			if ($this->matches(review: $review, filter: $filter) === true) {
-				$selected[] = (string)$ref;
-			}
-		}
-
-		return $selected;
-	}//end select()
 
 	/**
 	 * The documents among these that are already in an open batch of the case, with that batch's name.
@@ -172,11 +138,11 @@ class ReviewBatches {
 	 * @param string $caseId The case UUID.
 	 * @param string $name The batch's name.
 	 * @param string $assignee The reviewer, a Nextcloud user.
-	 * @param list<string> $documents The documents, as `select()` answered them.
+	 * @param list<string> $documents The documents, as `BatchSelection::select()` answered them.
 	 * @param string $userId Who creates the batch.
 	 * @param array<string, string> $filter The filter the documents were taken by, recorded on the batch.
 	 *
-	 * @return array{batch: array<string, mixed>, taskCreated: bool, progress: array{assessed: int, total: int}} The batch.
+	 * @return array{batch: array<string, mixed>, taskCreated: bool, progress: array{assessed: int, total: int}, access: array{status: string, granted: int, revoked: int, refused: int}} The batch, and how the case's reviewer access was reconciled.
 	 *
 	 * @throws RefusedException When the batch is incomplete, a document is not on the case or in another open batch, or nothing can be stored.
 	 *
@@ -226,6 +192,7 @@ class ReviewBatches {
 			'batch' => $batch,
 			'taskCreated' => $taskId !== '',
 			'progress' => ['assessed' => 0, 'total' => count($documents)],
+			'access' => $this->reconcile(caseId: $caseId, batchId: $batchId),
 		];
 	}//end create()
 
@@ -267,6 +234,8 @@ class ReviewBatches {
 			$batch = $this->save(batch: $batch);
 		}
 
+		$this->reconcile(caseId: $caseId, batchId: $batchId);
+
 		return $batch;
 	}//end createSampleBatch()
 
@@ -291,6 +260,31 @@ class ReviewBatches {
 
 		return $listed;
 	}//end forCase()
+
+	/**
+	 * Reconcile the case's reviewer access after a batch was stored.
+	 *
+	 * The batch is already stored and assigned, so a reconcile that fails is
+	 * logged and answered as `failed` rather than undoing the batch; the
+	 * administrator's reconcile route repairs it (case-reviewer-access REQ-CRA-004).
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $batchId The stored batch.
+	 *
+	 * @return array{status: string, granted: int, revoked: int, refused: int}
+	 */
+	private function reconcile(string $caseId, string $batchId): array {
+		try {
+			return $this->reviewerAccess->reconcile(caseId: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: a Review batch was stored but the reviewer access of its case could not be reconciled',
+				['app' => Application::APP_ID, 'case' => $caseId, 'batch' => $batchId, 'exception' => $e->getMessage()]
+			);
+		}
+
+		return ['status' => 'failed', 'granted' => 0, 'revoked' => 0, 'refused' => 0];
+	}//end reconcile()
 
 	/**
 	 * Hand the reviewer a task for the batch through the engine; '' when the engine did not take it.
@@ -369,24 +363,6 @@ class ReviewBatches {
 			);
 		}
 	}//end validate()
-
-	/**
-	 * Whether a review matches every field of the filter.
-	 *
-	 * @param array<string, mixed> $review The review.
-	 * @param array<string, string> $filter The filter.
-	 *
-	 * @return bool True on a match.
-	 */
-	private function matches(array $review, array $filter): bool {
-		foreach ($filter as $field => $value) {
-			if ((string)($review[$field] ?? '') !== (string)$value) {
-				return false;
-			}
-		}
-
-		return true;
-	}//end matches()
 
 	/**
 	 * Whether the batch schema can be written.

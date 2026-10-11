@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Review\BatchSelection;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewBatches;
@@ -55,6 +56,7 @@ class DocumentReviewController extends Controller {
 	 * @param DocumentRelevance $reviews The relevance store.
 	 * @param ReviewSummary $summary The case summary.
 	 * @param ReviewBatches $batches The review batches.
+	 * @param BatchSelection $selection Which documents a batch takes.
 	 * @param PagesSeen $pagesSeen The pages seen per document.
 	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
@@ -67,6 +69,7 @@ class DocumentReviewController extends Controller {
 		private readonly DocumentRelevance $reviews,
 		private readonly ReviewSummary $summary,
 		private readonly ReviewBatches $batches,
+		private readonly BatchSelection $selection,
 		private readonly PagesSeen $pagesSeen,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
@@ -179,7 +182,7 @@ class DocumentReviewController extends Controller {
 		$filter = array_map('strval', array_filter((array)$this->request->getParam('filter', []), 'is_scalar'));
 		$listed = array_values(array_map('strval', array_filter((array)$this->request->getParam('documents', []), 'is_scalar')));
 		try {
-			$documents = $this->batches->select(caseId: $id, documents: $listed, filter: $filter);
+			$documents = $this->selection->select(caseId: $id, documents: $listed, filter: $filter);
 			$taken = $this->batches->taken(caseId: $id, documents: $documents);
 			if ($taken !== []) {
 				return new JSONResponse(
@@ -264,7 +267,7 @@ class DocumentReviewController extends Controller {
 	private function sentence(string $rule): string {
 		return match ($rule) {
 			'review-relevance-unknown' => $this->l10n->t('Mark the document in scope, out of scope or unmarked.'),
-			'review-batch-filter-unknown' => $this->l10n->t('A batch can be taken by the rule that marked its documents, or by a list of documents.'),
+			'review-batch-filter-unknown' => $this->l10n->t('A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.'),
 			'review-batch-name-required' => $this->l10n->t('Give the batch a name.'),
 			'review-batch-assignee-unknown' => $this->l10n->t('Choose the reviewer of the batch.'),
 			'review-batch-empty' => $this->l10n->t('Put at least one document in the batch.'),

@@ -21,6 +21,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Review;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Review\BatchSelection;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -43,6 +47,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\ReviewDepth
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
  * @covers \OCA\Dossiq\Woo\WooCaseDocuments
+ * @covers \OCA\Dossiq\Review\BatchSelection
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
  */
@@ -70,6 +77,20 @@ class ReviewBatchesTest extends TestCase {
 	private array $handed = [];
 
 	/**
+	 * The reviewer access double; every batch must reconcile it.
+	 *
+	 * @var CaseReviewerAccess&MockObject
+	 */
+	private CaseReviewerAccess $access;
+
+	/**
+	 * The settings over the store, set by batches().
+	 *
+	 * @var SettingsService&MockObject
+	 */
+	private SettingsService $settings;
+
+	/**
 	 * Seed 40 in-scope documents on case X, ten of them marked by the rule "Nieuwsbrieven".
 	 *
 	 * @return void
@@ -88,6 +109,9 @@ class ReviewBatchesTest extends TestCase {
 
 		$this->store->seed(schema: 'document', uuid: 'doc-y', row: ['case' => 'case-y']);
 
+		$this->access = $this->createMock(CaseReviewerAccess::class);
+		$this->access->method('reconcile')->willReturn(['status' => 'reconciled', 'granted' => 1, 'revoked' => 0, 'refused' => 0]);
+
 		$this->tasks = $this->createMock(EngineTaskGateway::class);
 		$this->tasks->method('mirrorImport')->willReturnCallback(
 			function (array $task, string $caseId, ?string $actor): string {
@@ -105,8 +129,9 @@ class ReviewBatchesTest extends TestCase {
 	 * @return ReviewBatches The service.
 	 */
 	private function batches(array $users = ['reviewer-a', 'reviewer-b']): ReviewBatches {
-		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch', 'case_schema' => 'case', 'case_type_schema' => 'caseType'];
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'document_review_schema' => 'documentReview', 'review_batch_schema' => 'reviewBatch', 'case_schema' => 'case', 'case_type_schema' => 'caseType', 'dossier_informatieobject_schema' => 'informatieobject', 'dossier_zaakinformatieobject_schema' => 'zaakinformatieobject'];
 		$settings = $this->createMock(SettingsService::class);
+		$this->settings = $settings;
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
@@ -119,14 +144,31 @@ class ReviewBatchesTest extends TestCase {
 			settingsService: $settings,
 			reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
 			caseDocuments: new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger),
-			depth: new ReviewDepth(),
 			configuration: new ReviewConfiguration(settingsService: $settings),
 			tasks: $this->tasks,
 			userManager: $userManager,
 			l10n: $l10n,
+			reviewerAccess: $this->access,
 			logger: $logger,
 		);
 	}//end batches()
+
+	/**
+	 * The batch selection over the same store; call after batches().
+	 *
+	 * @return BatchSelection The selection.
+	 */
+	private function selection(): BatchSelection {
+		$logger = $this->createMock(LoggerInterface::class);
+
+		return new BatchSelection(
+			reviews: new DocumentRelevance(settingsService: $this->settings, logger: $logger),
+			provenance: new CaseDocumentProvenance(
+				store: new DocumentRecordStore(settingsService: $this->settings),
+				caseDocuments: new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger),
+			),
+		);
+	}//end selection()
 
 	/**
 	 * The documents doc-$from up to doc-$to, exclusive.
@@ -219,7 +261,7 @@ class ReviewBatchesTest extends TestCase {
 	public function testABatchByFilterTakesTheMatchingDocuments(): void {
 		$batches = $this->batches();
 
-		$selected = $batches->select(caseId: 'case-x', documents: [], filter: ['rule' => 'Nieuwsbrieven']);
+		$selected = $this->selection()->select(caseId: 'case-x', documents: [], filter: ['rule' => 'Nieuwsbrieven']);
 		$this->assertEqualsCanonicalizing(self::refs(30, 40), $selected);
 
 		$made = $batches->create(caseId: 'case-x', name: 'Nieuwsbrieven nakijken', assignee: 'reviewer-a', documents: $selected, userId: 'handler-h', filter: ['rule' => 'Nieuwsbrieven']);
@@ -228,19 +270,60 @@ class ReviewBatchesTest extends TestCase {
 	}//end testABatchByFilterTakesTheMatchingDocuments()
 
 	/**
-	 * A filter on a field the documents do not carry yet is refused rather than answering an empty batch.
+	 * A batch by custodian takes the documents that custodian held, as the provenance on the case says.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
-	public function testAFilterOnAnUnknownFieldIsRefused(): void {
-		try {
-			$this->batches()->select(caseId: 'case-x', documents: [], filter: ['custodian' => 'j.devries']);
-			$this->fail('A filter on a field no document carries answered a batch.');
-		} catch (RefusedException $e) {
-			$this->assertSame('review-batch-filter-unknown', $e->getRule());
-			$this->assertSame(422, $e->getStatus());
+	public function testABatchByCustodianTakesThatCustodiansDocuments(): void {
+		$batches = $this->batches();
+		foreach (['io-1' => 'A. de Wit', 'io-2' => 'A. de Wit', 'io-3' => 'B. Smit'] as $id => $custodian) {
+			$this->store->seed(schema: 'informatieobject', uuid: $id, row: ['title' => $id, 'provenance' => ['source' => 'files', 'sourceSystem' => 'sharepoint', 'custodian' => $custodian]]);
+			$this->store->seed(schema: 'zaakinformatieobject', uuid: 'join-'.$id, row: ['case' => 'case-x', 'informatieobject' => $id]);
 		}
-	}//end testAFilterOnAnUnknownFieldIsRefused()
+
+		$selected = $this->selection()->select(caseId: 'case-x', documents: [], filter: ['custodian' => 'A. de Wit', 'sourceSystem' => 'sharepoint']);
+		$this->assertSame(['io-1', 'io-2'], $selected);
+
+		$made = $batches->create(caseId: 'case-x', name: 'Mail A. de Wit', assignee: 'reviewer-a', documents: $selected, userId: 'handler-h', filter: ['custodian' => 'A. de Wit']);
+		$this->assertSame(['custodian' => 'A. de Wit'], $made['batch']['filter']);
+	}//end testABatchByCustodianTakesThatCustodiansDocuments()
+
+	/**
+	 * A created batch reconciles the reviewer access of its case in the same request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	public function testACreatedBatchReconcilesTheCase(): void {
+		$this->access->expects($this->once())->method('reconcile')->with('case-x');
+
+		$made = $this->batches()->create(caseId: 'case-x', name: 'Mail', assignee: 'reviewer-a', documents: ['doc-1'], userId: 'handler-h');
+
+		$this->assertSame('reconciled', $made['access']['status']);
+	}//end testACreatedBatchReconcilesTheCase()
+
+	/**
+	 * A sample batch reconciles too, and a failing reconcile leaves the batch standing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	public function testASampleBatchReconcilesAndAFailedReconcileKeepsTheBatch(): void {
+		$this->access = $this->createMock(CaseReviewerAccess::class);
+		$this->access->expects($this->exactly(2))->method('reconcile')->with('case-x')->willThrowException(new \RuntimeException('sharing down'));
+		$batches = $this->batches();
+
+		$sample = $batches->createSampleBatch(caseId: 'case-x', sampleId: 'sample-1', assignee: 'reviewer-a', documents: ['doc-1', 'doc-2'], userId: 'handler-h');
+		$made = $batches->create(caseId: 'case-x', name: 'Mail', assignee: 'reviewer-b', documents: ['doc-3'], userId: 'handler-h');
+
+		$this->assertSame(['recallSample' => 'sample-1'], $sample['filter']);
+		$this->assertSame('failed', $made['access']['status']);
+		$this->assertCount(2, $this->store->all('reviewBatch'));
+	}//end testASampleBatchReconcilesAndAFailedReconcileKeepsTheBatch()
 
 	/**
 	 * A document of another case, an empty batch, a missing name and an unknown reviewer are refused before anything is written.

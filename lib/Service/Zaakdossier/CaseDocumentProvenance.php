@@ -181,6 +181,80 @@ class CaseDocumentProvenance {
 	}//end valuesOf()
 
 	/**
+	 * The mail header fields of one document on one case, as `provenance.mail` stores them.
+	 *
+	 * Addresses come back lower-cased and `senderDomain` is the part of
+	 * `from` after the @. A document that is no mail, or was collected
+	 * before its headers were read, answers `known` false and empty fields.
+	 *
+	 * @param string                    $caseId     The case uuid.
+	 * @param string                    $documentId The document uuid.
+	 * @param array<string, mixed>|null $record     The record when the caller already read it.
+	 *
+	 * @return array{known: bool, unreadable: bool, from: string, senderDomain: string, to: list<string>, cc: list<string>, date: string, messageId: string}
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 */
+	public function mailOf(string $caseId, string $documentId, ?array $record = null): array {
+		$stored = $this->stored(caseId: $caseId, documentId: $documentId, record: $record);
+		$mail = $stored['mail'] ?? null;
+		if (is_array($mail) === false) {
+			$mail = [];
+		}
+
+		$from = strtolower(trim($this->scalar(value: ($mail['from'] ?? ''))));
+		$domain = '';
+		if (str_contains($from, '@') === true) {
+			$domain = substr($from, (strrpos($from, '@') + 1));
+		}
+
+		return [
+			'known' => $mail !== [],
+			'unreadable' => (($mail['unreadable'] ?? false) === true),
+			'from' => $from,
+			'senderDomain' => $domain,
+			'to' => $this->addresses(value: ($mail['to'] ?? [])),
+			'cc' => $this->addresses(value: ($mail['cc'] ?? [])),
+			'date' => trim($this->scalar(value: ($mail['date'] ?? ''))),
+			'messageId' => trim($this->scalar(value: ($mail['messageId'] ?? ''))),
+		];
+	}//end mailOf()
+
+	/**
+	 * A list of addresses, lower-cased, from a list or a single address.
+	 *
+	 * @param mixed $value The stored value.
+	 *
+	 * @return list<string>
+	 */
+	private function addresses(mixed $value): array {
+		$list = [];
+		foreach ((array)$value as $address) {
+			$address = strtolower(trim($this->scalar(value: $address)));
+			if ($address !== '') {
+				$list[] = $address;
+			}
+		}
+
+		return $list;
+	}//end addresses()
+
+	/**
+	 * A scalar as a string; anything else as ''.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return string
+	 */
+	private function scalar(mixed $value): string {
+		if (is_scalar($value) === true) {
+			return (string)$value;
+		}
+
+		return '';
+	}//end scalar()
+
+	/**
 	 * The provenance as stored: on the record, else on this case's join, else [].
 	 *
 	 * @param string                    $caseId     The case uuid.
