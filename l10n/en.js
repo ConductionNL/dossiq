@@ -1232,6 +1232,7 @@ OC.L10N.register(
         "Cases could not be reached. The next check tries again.": "Cases could not be reached. The next check tries again.",
         "Cases from %1$s: %2$s. Open your case list to see them.": "Cases from %1$s: %2$s. Open your case list to see them.",
         "cases near or past deadline": "cases near or past deadline",
+        "Cases of one case type": "Cases of one case type",
         "Cases of this type mark each document in or out of scope, in batches for named reviewers, before a verdict.": "Cases of this type mark each document in or out of scope, in batches for named reviewers, before a verdict.",
         "Cases on map": "Cases on map",
         "Cases past their deadline": "Cases past their deadline",

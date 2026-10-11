@@ -1249,6 +1249,7 @@
         "Cases could not be reached. The next check tries again.": "Zaken waren niet bereikbaar. De volgende controle probeert het opnieuw.",
         "Cases from %1$s: %2$s. Open your case list to see them.": "Zaken van %1$s: %2$s. Open je zakenlijst om ze te zien.",
         "cases near or past deadline": "zaken bij of voorbij deadline",
+        "Cases of one case type": "Zaken van één zaaktype",
         "Cases of this type mark each document in or out of scope, in batches for named reviewers, before a verdict.": "Zaken van dit type markeren elk document als binnen of buiten de reikwijdte, in partijen voor benoemde beoordelaars, voordat er een oordeel komt.",
         "Cases on map": "Zaken op kaart",
         "Cases past their deadline": "Zaken over de termijn",
