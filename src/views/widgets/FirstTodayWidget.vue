@@ -46,6 +46,15 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/**
+		 * The declaration of what is past term: `visibleWhen.source.filter` is
+		 * what the widget counts on, `actions[0]` the list it links to.
+		 */
+		content: {
+			type: Object,
+			default: () => ({}),
+		},
 	},
 
 	data() {
@@ -86,17 +95,8 @@ export default {
 			return [
 				{
 					id: 'all',
-					label: t('dossiq', 'All cases past their deadline'),
-					route: {
-						name: 'Cases',
-						query: {
-							assignee: '@me',
-							isFinalStatus: 'false',
-							statusHiddenInLists: 'false',
-							isDraft: 'false',
-							'deadline[lt]': '@today+1d',
-						},
-					},
+					label: t('dossiq', this.content?.actions?.[0]?.label ?? 'Open these cases'),
+					route: this.content?.actions?.[0]?.route ?? { name: 'Cases' },
 				},
 				{
 					id: 'open',
@@ -130,11 +130,7 @@ export default {
 			const tomorrow = new Date(Date.now() + DAY).toISOString().slice(0, 10)
 			try {
 				const rows = await store.fetchCollection('case', {
-					assignee: userId,
-					isFinalStatus: false,
-					statusHiddenInLists: false,
-					isDraft: false,
-					'deadline[lt]': tomorrow,
+					...this.pastTermFilter(userId, tomorrow),
 					_order: JSON.stringify({ deadline: 'asc' }),
 					_limit: 1,
 				})
@@ -148,6 +144,28 @@ export default {
 			} catch {
 				this.found = null
 			}
+		},
+
+		/**
+		 * The declared filter of what is past term, tokens resolved.
+		 *
+		 * @param {string} userId The reader.
+		 * @param {string} tomorrow The day the term must lie before, Y-m-d.
+		 * @return {object} The query parameters.
+		 */
+		pastTermFilter(userId, tomorrow) {
+			const declared = this.content?.visibleWhen?.source?.filter ?? {}
+			const out = {}
+			for (const [key, value] of Object.entries(declared)) {
+				if (value === '@me') {
+					out[key] = userId
+				} else if (value === '@today+1d') {
+					out[key] = tomorrow
+				} else {
+					out[key] = value
+				}
+			}
+			return out
 		},
 
 		/**

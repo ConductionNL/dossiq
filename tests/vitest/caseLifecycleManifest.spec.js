@@ -83,8 +83,11 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// merges the chain server-side.
 		const source = widget('case-stages').content.stagesEndpoint
 		expect(source.url).toBe(
-			'/apps/dossiq/api/case-types/@object.caseType/blueprint',
+			'/apps/dossiq/api/case-types/@object.caseType/blueprint?case=@objectId',
 		)
+		// Each step carries the day THIS case reached it (the bars variant
+		// draws it under the step).
+		expect(source.dateField).toBe('reachedAt')
 		expect(source.path).toBe('statusTypes')
 		expect(source.orderField).toBe('order')
 		expect(source.finalField).toBe('isFinal')
