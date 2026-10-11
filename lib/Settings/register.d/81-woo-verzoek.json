@@ -453,7 +453,10 @@
         },
         "decisionTypes": [
           "3c0f5a00-0000-4000-a000-00000000d001"
-        ]
+        ],
+        "documentReview": {
+          "enabled": true
+        }
       },
       {
         "@self": {

@@ -78,6 +78,7 @@ import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // Collectives page, on the case itself.
 // @spec openspec/specs/case-knowledge-base/spec.md
 import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel.vue'
+import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
@@ -1118,6 +1119,15 @@ const registry = {
 		component: CasePlanSociaalDomeinPanel,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail, Jeugdwet: the family plan, its goals and the interventions under them. NOT the adaptive case plan beside it: CasePlanPanel renders OpenRegister's case layer, the stages and milestones of any case, and this is what this household agreed to work on, who is doing what about it and by when. Two things called a plan. Every line carries something a review can decide about: a goal says what would count as met, an intervention says who carries it out and by when, so it can be late. The register held both as plain strings until the-social-domain-plan-and-its-grounds, which is why this panel exists at all. It derives no verdict: overdue and dueForReview come from the server, so the panel and the plan endpoint cannot disagree about which household is being worked to a stale plan. Interventions that name no goal are shown separately rather than hidden, because activity nobody can connect to a goal is what a reviewer should be looking at.",
+	},
+
+	// @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
+	'document-review': {
+		// @custom-widget-ratchet exclude document review reads five schemas together (documentReview, reviewBatch, stoppingRule, recallSample and the case type's documentReview block) through dossiq's review routes, which compute the outstanding list, the unseen required pages and the recall estimate on the server. No declarative widget joins them or computes those. Deleted the day a widget type can render a server-computed summary with child collections and actions
+		kind: 'widget',
+		component: DocumentReviewPanel,
+		...PANEL_WIDGET_META,
+		_note: 'CaseDetail, Review tab (board DqWooReview): relevance apart from the verdict, the stopping rule and the recall samples, the batches and their reviewers, and what is still open. Generic per decision 182: any case type that sets documentReview.enabled gets it; on any other case it says in one sentence that this case type does not review its documents. It derives no verdict: counts, unseen pages and estimates come from the server.',
 	},
 
 	'case-unread': {
