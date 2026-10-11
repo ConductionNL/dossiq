@@ -364,6 +364,7 @@ describe('The Related cases tab', () => {
 		// test is about; the list is exact so a silent reorder reddens.
 		expect(sections).toEqual([
 			'case-related',
+			'case-programme',
 			'case-sub-cases',
 			'case-objects',
 			'case-object-types-link',

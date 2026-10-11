@@ -55,7 +55,7 @@ class TenantBillingServiceTest extends TestCase {
 		];
 
 		$shillinq = $this->createMock(\OCA\Dossiq\Service\ShillinqIntegrationService::class);
-		$shillinq->method('buildInvoicePayload')->willReturn(['tenant_id' => 't-1', 'period' => '2026-07', 'currency' => 'EUR', 'line_items' => []]);
+		$shillinq->method('buildInvoicePayload')->willReturn(['tenantId' => 't-1', 'period' => '2026-07', 'lines' => []]);
 		$shillinq->expects($this->once())
 			->method('exportInvoice')
 			->willReturn(['success' => true, 'invoiceRef' => 'INV-2026-07-t1', 'attempts' => 1]);
@@ -182,7 +182,8 @@ class TenantBillingServiceTest extends TestCase {
 
 	public function testAnInvoiceLineIsNeverPricedByDefault(): void {
 		$svc = new \OCA\Dossiq\Service\ShillinqIntegrationService(
-			$this->createMock(\OCP\Http\Client\IClientService::class),
+			$this->createMock(\OCP\EventDispatcher\IEventDispatcher::class),
+			$this->createMock(\OCA\Dossiq\Service\TenantAuditTrailService::class),
 			$this->createMock(LoggerInterface::class),
 		);
 

@@ -317,7 +317,11 @@ class WOODocumentAssessmentService {
 			caseId: $caseId,
 		);
 
-		$outstanding = array_keys(array_diff_key($allDocs, $assessedDocIds));
+		// A document set aside before review is not waiting for assessment
+		// (woo-request-corpus-collection, REQ-WRC-003).
+		$excludedDocIds = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+
+		$outstanding = array_keys(array_diff_key($allDocs, $assessedDocIds, $excludedDocIds));
 
 		return [
 			'count' => count($outstanding),
@@ -398,6 +402,38 @@ class WOODocumentAssessmentService {
 
 		return $assessedDocIds;
 	}//end collectAssessedDocumentIds()
+
+	/**
+	 * Collect the identifiers of every document of a case that was set aside before review.
+	 *
+	 * @param object $objectService OpenRegister object service
+	 * @param mixed  $register      Configured register identifier
+	 * @param string $caseId        The case UUID
+	 *
+	 * @return array<string, bool> Excluded document identifiers as keys, empty when the schema is not configured
+	 */
+	private function collectExcludedDocumentIds(object $objectService, mixed $register, string $caseId): array {
+		$exclusionSchema = $this->settingsService->getConfigValue('woo_exclusion_schema');
+		if (empty($exclusionSchema) === true) {
+			return [];
+		}
+
+		$excluded = [];
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $exclusionSchema,
+			filters: ['case' => $caseId, '_limit' => 1000],
+		);
+		foreach ($rows as $row) {
+			$docRef = (string)($row['documentRef'] ?? '');
+			if ($docRef !== '' && (string)($row['case'] ?? '') === $caseId) {
+				$excluded[$docRef] = true;
+			}
+		}
+
+		return $excluded;
+	}//end collectExcludedDocumentIds()
 
 	/**
 	 * Check whether all documents in a case have been assessed.
