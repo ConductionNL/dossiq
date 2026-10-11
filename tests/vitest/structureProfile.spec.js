@@ -267,11 +267,13 @@ describe('the simple profile', () => {
 		expect(mainSource).toContain('capabilities?.nldesign?.logos?.emblem')
 	})
 
-	it('draws the sidebar of the design: New case, two counts, the day close card and help', () => {
+	it('draws the sidebar of the design: New case, two counts and help, no day close card', () => {
 		// DqZijbalk: a solid "Nieuwe zaak" button under the brand, a count
-		// beside My work and the team queue, a "Dag afsluiten" card above the
-		// footer and "Hulp en uitleg" in the footer. All are nextcloud-vue
-		// 2.64.0 opt-ins; the full profile declares none of them.
+		// beside My work and the team queue and "Hulp en uitleg" in the
+		// footer. All are nextcloud-vue 2.64.0 opt-ins; the full profile
+		// declares none of them. The "Dag afsluiten" card the board draws
+		// above the footer is gone from the menu (Ruben, 11 Oct 2026): the
+		// day close page stays, reached from the Mijn werk header link.
 		const manifestNewCase = manifest()
 			.pages.find((page) => page.id === 'MyWorkHome')
 			.config.headerActions.find((action) => action.id === 'new-case')
@@ -281,8 +283,12 @@ describe('the simple profile', () => {
 			icon: 'Plus',
 			action: { ...manifestNewCase, id: 'nav-new-case' },
 		})
-		expect(built.nav.card.link.route).toBe('EndOfDay')
+		expect(built.nav.card).toBeUndefined()
 		expect(built.pages.some((page) => page.id === 'EndOfDay')).toBe(true)
+		const myWorkHome = built.pages.find((page) => page.id === 'MyWorkHome')
+		expect(
+			myWorkHome.config.viewLinks.some((link) => link.route === 'EndOfDay'),
+		).toBe(true)
 
 		// The counts use the filters of the pages they open, so the number
 		// beside an entry is the number of rows behind it.

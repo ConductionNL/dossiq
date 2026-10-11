@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -70,12 +71,14 @@ class CaseTypeParentCycleListener implements IEventListener {
 	 * @param CaseTypeResolver $resolver        Owns the cycle rule and reads the chain.
 	 * @param IL10N            $l10n            Translation service.
 	 * @param LoggerInterface  $logger          Structured logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $resolver,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -131,7 +134,7 @@ class CaseTypeParentCycleListener implements IEventListener {
 		$names = $this->resolver->cycleFor(
 			caseTypeId: $self,
 			parentCaseTypeId: $parent,
-			selfTitle: (string)($payload['title'] ?? '')
+			selfTitle: $this->text->textOf(value: ($payload['title'] ?? null))
 		);
 		if ($names === []) {
 			return;

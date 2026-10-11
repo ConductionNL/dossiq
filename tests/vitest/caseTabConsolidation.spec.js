@@ -437,16 +437,17 @@ describe('the container type this change depends on', () => {
 		expect(host).toMatch(/if \(this\.isContainer\) \{[\s\S]*cnRegistry,/)
 	})
 
-	it('cannot name its sections by id, because the tabs widget forwards no sibling list', () => {
-		// The day this fails, `content.sections[].widget` can become
-		// `content.sections[].widgetId` and the inline definitions go back to
-		// the page's `widgets[]`. That is a simplification waiting on the
-		// library, and this is the alarm for it.
+	it('can now name its sections by id, because the tabs widget forwards the sibling list', () => {
+		// This was the alarm for a library change: since nextcloud-vue 2.80.0
+		// CnTabsWidget forwards `availableWidgets` to its CnDetailWidgetHost, so
+		// `content.sections[].widget` could become `content.sections[].widgetId`
+		// with the inline definitions back in the page's `widgets[]`. That
+		// simplification is a separate change; this pins that the library
+		// supports it.
 		const strip = read(
 			path.join(LIB, 'components/CnTabsWidget/CnTabsWidget.vue'),
 		)
 		expect(strip).toContain('<CnDetailWidgetHost')
-		expect(strip).not.toContain(':available-widgets')
-		expect(strip).not.toContain(':availableWidgets')
+		expect(strip).toMatch(/:available-widgets|:availableWidgets/)
 	})
 })

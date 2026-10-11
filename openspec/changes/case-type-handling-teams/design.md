@@ -32,6 +32,17 @@ was to reuse one in effect rather than invent a parallel one.
    `assignedGroup` is declared `$ref: organisatieRol` while the handling code
    uses group ids, so the join is not reliable today.
 
+## Amended 2026-10-11: the handling teams also grant access
+
+Ruben decided on 2026-10-11 that the handling teams of a case type read and
+update the cases of that type (change `case-access-by-handling-team`, REQ-ACC-10
+as amended). That reverses the line above that keeps "who may" out of the
+handling block. The rights matrix is still the place for a finer rule
+(department by role by confidentiality) and stays declared for that later
+refinement; until it is wired, the handling teams are the grant.
+`CaseTypeHandling::teams()` stays the one reader, and OpenRegister evaluates
+the rule that `CaseTeamAccessProjector` writes from it.
+
 ## The user's teams
 
 `IGroupManager::getUserGroupIds($user)`. No dossiq membership table:

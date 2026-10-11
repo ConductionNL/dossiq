@@ -52,6 +52,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
@@ -90,6 +91,7 @@ class CaseEndingActs {
 	 * @param LoggerInterface $logger Records what was ended and by whom.
 	 * @param CaseArchiveState $archiveState The platform's archive marker, which
 	 *                                       is the state the lists read.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
@@ -100,6 +102,7 @@ class CaseEndingActs {
 		private readonly CaseJournal $journal,
 		private readonly LoggerInterface $logger,
 		private readonly CaseArchiveState $archiveState,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -523,7 +526,7 @@ class CaseEndingActs {
 			}
 
 			if ($seen === true && $this->isFinalRow(row: $row) === false) {
-				$skipped[] = (string)($row['name'] ?? ($row['title'] ?? $id));
+				$skipped[] = $this->text->textOr(value: ($row['name'] ?? ($row['title'] ?? null)), fallback: $id);
 			}
 		}
 

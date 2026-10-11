@@ -39,7 +39,9 @@ Two engine gaps make that decision real rather than a seed row that does nothing
 | `citizen-complaint` | planned | service norm (demo) | 42 calendar days | none | none |
 | `foi-request` | planned | service norm (demo) | 30 calendar days | none | none |
 
-Left open, no definition shipped:
+Left open on 10 Oct, decided by Ruben on 11 Oct (see design.md): both now take the Awb
+4:13 lid 2 fallback of eight weeks, with Awb 4:14 lid 3 as the notice of a later term.
+The reasoning that kept them open:
 
 - `subsidieaanvraag` (P42D, extension P28D). Awb title 4.2 sets no general
   beslistermijn for a subsidy application. The generic fallback, Awb art. 4:13 lid 2,

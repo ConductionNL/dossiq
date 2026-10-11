@@ -369,6 +369,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
+            <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <!-- Nextcloud never removes a job info.xml stops naming: parked EmailPdfRetryJob, removed AppointmentReminderJob and BerichtenboxReadStatusJob. -->
             <step>OCA\Dossiq\Repair\RetireUnscheduledBackgroundJobs</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
@@ -980,6 +981,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
+            <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
@@ -1122,8 +1124,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <admin>OCA\Dossiq\Settings\AdminSettings</admin>
         <admin>OCA\Dossiq\Settings\EmailSettings</admin>
         <admin-section>OCA\Dossiq\Sections\SettingsSection</admin-section>
-        <personal>OCA\Dossiq\Settings\PersonalSettings</personal>
-        <personal-section>OCA\Dossiq\Sections\PersonalSection</personal-section>
     </settings>
 
     <navigations>

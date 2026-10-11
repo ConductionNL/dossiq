@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.41.0",
+        "version": "1.43.0",
         "digest": "b578ccbd77b6c4ff6987dedc29b48fdd1bf6ca6cfd9b329b80bf72ff9e04a5ab"
     },
     "lib/Settings/dossiq_register.json::case-location": {
@@ -1480,7 +1480,7 @@
         "digest": "75ebb2f39470202b1281c5d603b9c8fbb65b19583e54bdfb901bb3458120d98d"
     },
     "lib/Settings/register.d/85-woo-dossier-shared.json::aanvullingsverzoek": {
-        "version": "1.3.0",
+        "version": "1.3.1",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-dossier-shared.json::case": {
