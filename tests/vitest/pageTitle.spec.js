@@ -98,9 +98,9 @@ describe('pageTitleFor on a list narrowed to one case type', () => {
 
 	it('finds the entry inside a menu group', () => {
 		const grouped = [{ id: 'G', label: 'Cases', children: DELTA_MENU }]
-		expect(
-			pageTitleFor(manifest, filteredRoute, BASE, (s) => s, grouped),
-		).toBe('Woo-verzoek - Dossiq - Conduction Nextcloud')
+		expect(pageTitleFor(manifest, filteredRoute, BASE, (s) => s, grouped)).toBe(
+			'Woo-verzoek - Dossiq - Conduction Nextcloud',
+		)
 	})
 
 	it('says the list is narrowed when no menu entry names the case type', () => {
