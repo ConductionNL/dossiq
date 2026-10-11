@@ -50,7 +50,7 @@ nothing.
 - [x] 7.1 `TemplateLibraryService`: a `kind` covering document, mail,
   task, note, approval and result, scoped to case types (D-6).
   - `tests/unit/Service/TemplateLibraryKindTest.php`
-- [ ] 7.2 Offer the template where each kind is created, in the task
+- [ ] 7.2 (the three surfaces live in nextcloud-vue and openregister; lane L1 builds them per decision 156) Offer the template where each kind is created, in the task
   dialog, the note editor, the approval and the close form (D-6).
   - PARTIAL, and left unticked on purpose. `src/components/TemplatePicker.vue`
     is the offer and it is mounted on the close form

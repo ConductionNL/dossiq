@@ -124,3 +124,19 @@ describe('the case-page lifecycle menu', () => {
 		expect(wrapper.emitted('close')).toHaveLength(1)
 	})
 })
+
+// lifecycle-dialog-title-clears-the-close-button: the small dialog left the
+// title running under the close button.
+describe('the lifecycle menu dialog size', () => {
+	it('opens as a normal-size dialog, so its title clears the close button', async () => {
+		axios.get.mockResolvedValue({ data: {} })
+		const wrapper = shallowMount(CaseLifecycleMenuDialog, {
+			props: { caseId: 'case-1' },
+		})
+		await flushPromises()
+
+		const dialog = wrapper.find('[data-testid="case-acts-dialog"]')
+		expect(dialog.exists()).toBe(true)
+		expect(dialog.attributes('size')).toBe('normal')
+	})
+})

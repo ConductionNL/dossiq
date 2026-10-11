@@ -23,7 +23,7 @@
 	text, so a reader who cannot separate two hues loses nothing
 	(WCAG 2.2 SC 1.4.1).
 
-	@spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+	@spec openspec/specs/case-priority/spec.md
 -->
 <template>
 	<span
@@ -67,7 +67,7 @@ export default {
 		 *
 		 * @return {string} One of the declared values, or the empty string.
 		 *
-		 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+		 * @spec openspec/specs/case-priority/spec.md
 		 */
 		priority() {
 			return String(this.row?.priority ?? '')
@@ -78,7 +78,7 @@ export default {
 		 *
 		 * @return {boolean} True when an override stands on the row.
 		 *
-		 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+		 * @spec openspec/specs/case-priority/spec.md
 		 */
 		overridden() {
 			return Boolean(this.row?.priorityOverride)
@@ -89,7 +89,7 @@ export default {
 		 *
 		 * @return {string} A name from the NL Design System palette.
 		 *
-		 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+		 * @spec openspec/specs/case-priority/spec.md
 		 */
 		colour() {
 			return priorityColour(this.priority)
@@ -100,7 +100,7 @@ export default {
 		 *
 		 * @return {object} A style object.
 		 *
-		 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+		 * @spec openspec/specs/case-priority/spec.md
 		 */
 		style() {
 			return statusColourStyle(this.colour)
@@ -112,7 +112,7 @@ export default {
 		 * @return {string} The priority in the reader's language, or the empty
 		 *   string for a row that carries none.
 		 *
-		 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+		 * @spec openspec/specs/case-priority/spec.md
 		 */
 		label() {
 			if (!this.priority) return ''
@@ -129,7 +129,7 @@ export default {
 		 *
 		 * @return {string} The hint, or the empty string.
 		 *
-		 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
+		 * @spec openspec/specs/case-priority/spec.md
 		 */
 		hint() {
 			if (!this.priority) return ''

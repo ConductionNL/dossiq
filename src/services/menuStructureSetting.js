@@ -22,7 +22,7 @@ import {
  *   Where to post, the CSRF token, and the fetch to use (a test passes its own).
  * @return {Promise<string>} The structure the server stored.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
  */
 export async function saveMenuStructure(
 	structure,

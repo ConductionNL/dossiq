@@ -319,6 +319,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 			'case-communication-panel',
 			'case-email-panel',
 			'case-work-panel',
+			'case-change-proposals',
 			'case-decisions-panel',
 			'case-related-panel',
 			'case-custody-panel',

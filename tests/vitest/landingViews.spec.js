@@ -125,6 +125,12 @@ describe('the landing page in the full structure', () => {
 			...page(manifest.pages, 'Queue').config.filter,
 			assignedGroup: '@myGroups',
 		})
+		// The deadline reads as a date, not as the stored ISO string
+		// (my-work-cards-and-team-tiles-read-right, finding F3).
+		const deadline = team[0].content.columns.find(
+			(column) => column.key === 'deadline',
+		)
+		expect(deadline.format).toBe('date')
 	})
 
 	it('gives My team a sentence for when it has nothing to draw', () => {

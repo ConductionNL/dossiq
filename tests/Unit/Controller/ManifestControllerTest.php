@@ -72,6 +72,8 @@ class FakeCaseTypeObjectService {
  * @uses \OCA\Dossiq\Service\MenuCaseTypesService
  * @uses \OCA\Dossiq\Service\Archival\ReadsConfiguredRows
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
  */
 class ManifestControllerTest extends TestCase {
 
@@ -144,6 +146,7 @@ class ManifestControllerTest extends TestCase {
 				config: $this->config,
 				groupManager: $groupManager,
 				userManager: $userManager,
+				text: new \OCA\Dossiq\Service\Support\TranslatedText(l10n: $l10n),
 			),
 			userSession: $userSession,
 			urlGenerator: $urlGenerator,
