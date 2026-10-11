@@ -21,13 +21,13 @@
 ## 4. Specs, quality, changelog
 
 Built 2026-10-10 (lane L6 part 2, branch build/dq-l6-3):
-- 3.1: the writes sit on thin tool classes, like the reads: `CaseTools` (transitionCase, reassignCase, completeTask), `TermTools` (extendDeadline, pauseDeadline, resumeDeadline), `AppointmentTools` (scheduleAppointment, cancelAppointment), `BeschikkingTools` (draftBeschikking). Each declares scope, reach (D2 table, pinned by `DossiqScannableServicesTest::REACH`), `readOnlyHint: false`. Owning services as found on development, spec amended: reassignCase -> new `CaseAssignmentService::reassign()` (there was no single-case reassign; coordinators only, as for the caseload release; the receiver gets the `cases_reassigned` notification), completeTask -> `CaseTaskActions::complete()` (the engine task verb; no form data: a task with required fields is refused with the field named), draftBeschikking -> `BeschikkingService::compose()`. The term tools add a case-mutation check the term controller does not run (it only checks the session). Approval posture: no declaration channel (Q-dossiq-L6-2); hermiq gates every ungranted write, which covers all eight gated tools.
+- 3.1: the writes sit on thin tool classes, like the reads: `CaseTools` (transitionCase, reassignCase, completeTask), `TermTools` (extendDeadline, pauseDeadline, resumeDeadline), `AppointmentTools` (scheduleAppointment, cancelAppointment), `BeschikkingTools` (draftBeschikking). Each declares scope, reach (D2 table, pinned by `DossiqScannableServicesTest::REACH`), `readOnlyHint: false`. Owning services as found on development, spec amended: reassignCase -> new `CaseAssignmentService::reassign()` (there was no single-case reassign; coordinators only, as for the caseload release; the receiver gets the `cases_reassigned` notification), completeTask -> `CaseTaskActions::complete()` (the engine task verb; no form data: a task with required fields is refused with the field named), draftBeschikking -> `BeschikkingService::compose()`. The term tools add a case-mutation check the term controller does not run (it only checks the session). Approval posture: none declared, by decision 176 (approval stays hermiq policy; REQ-MCP-206 rewritten); hermiq gates every ungranted write.
 - 3.2: `DossiqScannableServicesTest::testNoToolClassReachesPastItsOwningService` (no ObjectService in the five tool classes); `DossiqMcpDialectTest::testEveryDeclaredBlockIsValidAndReadOnly` (no derived write verb).
 - 3.3: (a) a refusal-before-the-service test per tool in `CaseToolsTest`, `TermToolsTest`, `AppointmentToolsTest`, `BeschikkingToolsTest`; (b) transitionCase calls `StatusTransitionService::execute()` as the caller (the engine's own tests cover the status record and term recalculation); (c) completeTask calls the engine verb; (d) `BeschikkingToolsTest::testTheToolClassOffersNoApproveSignOrSend`. New service method: `CaseAssignmentServiceTest` (payload checked against the real case schema).
 
 - [ ] 4.1 Sync the delta into `openspec/specs/mcp-integration/spec.md` at archive time (REQ-MCP-101…105 unmodified, 201…208 appended); ensure no `@spec` tag points at a change path (gate-46). `openspec validate` clean.
 - [ ] 4.2 `php -l` on every touched file; `composer check:strict` (PHPCS/PHPMD/Psalm/PHPStan) clean; PHPUnit zero new failures against a self-measured baseline; run the hydra-gates suite and resolve any finding.
-- [ ] 4.3 CHANGELOG entry: curated Hermiq AI tooling — 6 reads + 9 writes, scope×reach annotated, default-deny, approval-gated; derived surface unchanged.
+- [x] 4.3 CHANGELOG entry: curated Hermiq AI tooling — 6 reads + 9 writes, scope×reach annotated, default-deny, approval-gated; derived surface unchanged. (CHANGELOG.md, Unreleased)
 
 ## 5. Verify on a live instance
 
@@ -35,6 +35,11 @@ Built 2026-10-10 (lane L6 part 2, branch build/dq-l6-3):
 - [ ] 5.2 Default-deny proven: a fresh agent with no write grants is denied `dossiq.reassignCase` before the service runs; the same agent can still call `dossiq.getDeadlineDashboard`.
 - [ ] 5.3 End-to-end gated write: grant `reassignCase` to a test agent, run the "reassign Henk's open cases to Fatima" scenario — each call pends in Hermiq approvals, nothing moves pre-approval, approval executes through `CaseReassignmentService` with notifications, and the approval + invocation + object change are each retrievable from their audit surfaces (REQ-MCP-208).
 - [ ] 5.4 Chat scenarios from design D4 answered live via the Hermiq chat facade: deadline-breach question (read-only), reassignment (gated), beschikking draft (gated, draft-only) — confirming signing/sending remain unavailable to the agent (REQ-MCP-207).
+
+## Decision 176 (10 Oct, lane L6 round 3)
+
+- REQ-MCP-206 rewritten: approval is hermiq policy, dossiq declares no approval floor and ships no grant or waiver. Its second scenario (every write declares `readOnlyHint: false` and a scope) is held by `DossiqScannableServicesTest::testEveryToolDeclaresWhatTheScannerAndTheGrantMatrixRead`. Design D2's approval column now reads as hermiq's default.
+- Archive once openregister#4546 (reach) lands; then only 4.1 (sync at archive), 4.2 (checks) and the live 5.x remain.
 
 ## Built 2026-10-10 (lane L6, PR stacked on #3558 which applies dossiq-mcp-adoption, so gate T0 holds on this branch)
 

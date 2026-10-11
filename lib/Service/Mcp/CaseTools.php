@@ -86,7 +86,8 @@ class CaseTools {
 		scope: 'read',
 		reach: 'user',
 		subject: 'case',
-		action: 'listTransitions'
+		action: 'listTransitions',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function listAvailableTransitions(string $caseId): array {
 		$user = $this->userSession->getUser();
