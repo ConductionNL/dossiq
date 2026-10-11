@@ -410,6 +410,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 case form could not offer them. Sets isDraft false on exactly
                 those, once per instance; see the class for why once.
             -->
+            <!--
+                Installs the shipped case definition packages under
+                lib/Settings/packages/ (ADR-118, capability C19). Before
+                PublishSeededCaseTypes and MigrateWorkflowDefinitions, like the
+                seed steps it replaces one package at a time. In BOTH blocks:
+                a fresh install runs only <install>.
+            -->
+            <step>OCA\Dossiq\Repair\InstallShippedPackages</step>
             <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!--
                 AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
@@ -943,6 +951,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <!--
+                Installs the shipped case definition packages under
+                lib/Settings/packages/ (ADR-118, capability C19). Before
+                PublishSeededCaseTypes and MigrateWorkflowDefinitions, like the
+                seed steps it replaces one package at a time. In BOTH blocks:
+                a fresh install runs only <install>.
+            -->
+            <step>OCA\Dossiq\Repair\InstallShippedPackages</step>
             <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!-- LAST OF THE SEEDS, because it projects a basis workflow onto
                  every case type the steps above just created. See the
@@ -1039,6 +1055,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
     <commands>
         <command>OCA\Dossiq\Command\AdoptShippedFlowsCommand</command>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
+        <command>OCA\Dossiq\Command\InstallPackageCommand</command>
         <command>OCA\Dossiq\Command\MigrateCaseTeamsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
