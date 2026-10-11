@@ -1532,24 +1532,24 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/87-document-review.json::documentReview": {
-        "version": "1.0.1",
-        "digest": "02e838a23349735733f844a3773b73bfde75a0e41e844341d55cb6056c16bd1b"
+        "version": "1.0.2",
+        "digest": "216a897adb86c945301ae1dfed15e20a843fa15aa3c18b777b4b0b23ba5bd6e1"
     },
     "lib/Settings/register.d/87-document-review.json::reviewBatch": {
-        "version": "1.0.0",
-        "digest": "5b08ec0dc30da171f2ed7616ce2a3f2991d076f5494cf41f4bde4f77661455b1"
+        "version": "1.0.1",
+        "digest": "198618f15e6efb3d9e1d58f688addf6174aa73585dd3538aaa29b9c1c1f64da3"
     },
     "lib/Settings/register.d/87-document-review.json::triageRule": {
-        "version": "1.0.1",
-        "digest": "d2e9e760a21dcaf489056077b144424530450fdaeab46e8706e24fbe26791233"
+        "version": "1.0.2",
+        "digest": "93aa28abbf825bf70614e2f818609321708ba0958b40832afb46bc743d34dad3"
     },
     "lib/Settings/register.d/88-review-recall.json::recallSample": {
-        "version": "1.0.0",
-        "digest": "609d32af904913e7d04f2fdaa4e41bc990f70a96064d22add943f208fff76080"
+        "version": "1.0.1",
+        "digest": "7a4e5f81f4b008d8940851c2e3aa6258f0a7871361ed690d46206126d9289148"
     },
     "lib/Settings/register.d/88-review-recall.json::stoppingRule": {
-        "version": "1.0.0",
-        "digest": "dab8d756b45b98b4d63a27daa2ca3c9b61bac7790e8facb74eec6ab77dceaf97"
+        "version": "1.0.1",
+        "digest": "c125afbf43c582848d7e4d4f1866ad2025851b6825a8825a44da54bd6976e7d8"
     },
     "lib/Settings/register.d/89-case-document-drafts.json::caseType": {
         "version": "",
