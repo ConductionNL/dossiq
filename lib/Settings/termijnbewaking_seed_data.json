@@ -65,6 +65,7 @@
       "extensionCapacity": 14,
       "countExtensions": 1,
       "pauseExtensionDuration": [14],
+      "tellHandlerAt": [7, 0],
       "deviatingPenaltyPaymentRegime": {
         "dailyTariff": 1500,
         "plafond": 50000,

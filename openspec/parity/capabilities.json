@@ -20383,9 +20383,9 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/AssistantController.php; lib/Controller/AiController.php; lib/Mcp/DossiqToolProvider.php",
+				"evidence": "lib/Controller/AssistantController.php; lib/Controller/AiController.php; lib/Settings/dossiq_register.json (x-openregister-mcp)",
 				"owner": "ConductionNL/hermiq",
-				"note": "OpenSpec pass 2026-09-27: matrix corrected (hermiq lane): lib/Controller/AssistantController.php forwards to hermiq's tool-free case assistant and lib/Mcp/DossiqToolProvider.php declares two read-only tools, no executable actions, so partial and built, owned by hermiq (corrected 2026-09-28).",
+				"note": "OpenSpec pass 2026-09-27: matrix corrected (hermiq lane): lib/Controller/AssistantController.php forwards to hermiq's tool-free case assistant and lib/Mcp/DossiqToolProvider.php declares two read-only tools, no executable actions, so partial and built, owned by hermiq (corrected 2026-09-28). 2026-10-10 dossiq-mcp-adoption: the hand-written provider is gone; 12 schemas declare a read-only x-openregister-mcp block and OpenRegister derives 20 read tools.",
 				"spec": [
 					"openspec/specs/ai-assistance",
 					"openspec/specs/mcp-integration",

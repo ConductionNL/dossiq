@@ -358,4 +358,44 @@ class DeadlineExtensionLimitTest extends TestCase {
 		self::assertSame('2026-09-13', $moved['endDateBeforeRoll'], 'The day as asked is kept beside it.');
 	}//end testASundayEndDateIsRolledToMonday()
 
+	/**
+	 * An extension moves the end, so a rung already sent before the old end
+	 * that lies ahead of the new one is sent again when it comes; a rung
+	 * still behind the new end stays recorded (termijnbewaking 2.1: the Woo
+	 * handler is warned again a week before an extended end).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	public function testAnExtensionForgetsTheRungsThatLieAheadAgain(): void {
+		$this->declarations->method('forCase')->willReturn(
+			$this->declared(['extensionPeriodDays' => 42])
+		);
+		$termService = $this->createMock(TermijnService::class);
+		$termService->method('getTermijnInstance')->willReturn(
+			[
+				'id' => 't1',
+				'case' => 'c1',
+				'endDateCurrent' => '2026-09-01',
+				'countExtensions' => 0,
+				'deadlineDefinition' => '',
+				'notificatiesVerstuurd' => [14, 7, 2],
+			]
+		);
+		$termService->method('updateTermijnInstance')->willReturnCallback(
+			static fn (string $id, array $patch): array => array_merge(['id' => $id], $patch)
+		);
+		$service = new DeadlineExtensionService(
+			termService: $termService,
+			dates: $this->caseDatesFrozenAt(instant: '2026-08-30T12:00:00+02:00'),
+			declarations: $this->declarations,
+		);
+
+		// Nine days left on the new end: fourteen stays behind, seven and two lie ahead.
+		$moved = $service->requestExtension('t1', 'Zienswijzen van derden', '2026-09-08');
+
+		self::assertSame([14], $moved['notificatiesVerstuurd']);
+	}//end testAnExtensionForgetsTheRungsThatLieAheadAgain()
+
 }//end class

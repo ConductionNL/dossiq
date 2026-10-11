@@ -650,7 +650,7 @@ Found 2026-09-11 by the spec 5.2 added. The first filing of this blamed
 `RegistryStepDispatcher::scopeSignal()`; that was wrong, and the real cause is
 both simpler and worse.
 
-- [ ] 7.2 Stop OpenRegister's empty signal payload from overwriting dossiq's.
+- [ ] 7.2 (built in openregister, decision 156: ConductionNL/openregister#4541 signals the outcome bag instead of `[]`; tick when it has landed) Stop OpenRegister's empty signal payload from overwriting dossiq's.
 
       **Two listeners are registered on `TaskTerminalEvent` and both signal
       the run:**
@@ -692,7 +692,7 @@ both simpler and worse.
 Re-filed from `tenancy-onto-openregister-organisation` (decision 2c,
 2026-09-11). It is a follow-up to this change, not part of it.
 
-- [ ] 7.1 Move `tenantOnboardingTask` onto the engine `Task`. The fields
+- [x] 7.1 (built 2026-10-10 on decision 144: `lib/Service/Task/OnboardingSteps.php` and `TenantOnboardingService`; a skipped step is `terminated` with outcome `skipped`; legacy rows are carried onto the engine once per tenant with completedBy, completedAt and blockedReason in the task metadata; pinned by `tests/Unit/Service/Task/OnboardingStepsTest.php` and `tests/Unit/Controller/TenantOnboardingControllerTest.php`) Move `tenantOnboardingTask` onto the engine `Task`. The fields
       have homes: `step` becomes the `taskKey`, `completedBy` and
       `completedAt` map by name, `blockedReason` maps by name, and
       `tenantRef` becomes the task's `organisation`. The status does not
