@@ -3,10 +3,11 @@
 /**
  * Dossiq term outcome.
  *
- * What a term came to (met, missed, running, suspended) and the share of
- * decided terms that were met. One rule for every report that counts terms,
- * for any case type: the quarterly report per case type and the dashboard
- * snapshot read it here, so they cannot count a late decision differently.
+ * The quarterly term report counts, per case type, how many terms were met,
+ * missed, are running or are suspended (REQ-WTR-005). This is the one place
+ * that decides which of the four a term instance is, and the share of decided
+ * terms that were met, so the quarterly report and the dashboard snapshot
+ * cannot count a late decision differently.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Termijn
@@ -22,6 +23,7 @@
  *
  * @link https://conduction.nl
  *
+ * @spec openspec/specs/termijn-reporting/spec.md
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
  */
 
@@ -30,11 +32,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 /**
- * Classifies a term instance row and computes the met share.
+ * Classify a term instance as met, missed, running or suspended, and compute the met share.
  *
+ * @spec openspec/specs/termijn-reporting/spec.md
  * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
  */
 class TermOutcome {
+
 	/**
 	 * A term decided on or before its end.
 	 */
@@ -56,40 +60,33 @@ class TermOutcome {
 	public const SUSPENDED = 'suspended';
 
 	/**
-	 * What a term came to.
+	 * Whether a term was met, missed, is running or is suspended (REQ-WTR-005).
 	 *
-	 * A completed term is met when it was decided on or before its end, and
-	 * missed when the decision came later: a decision closes the term, it does
-	 * not undo the overrun. A term that ran out (`exceeded`) is missed. A
-	 * paused term is suspended. Everything else is still running.
+	 * Met: completed on or before `endDateCurrent` (a completion without a
+	 * recorded date counts as met, as `withinTerm` always did). Missed: status
+	 * `exceeded`, or completed after `endDateCurrent`: a decision closes the
+	 * term, it does not undo the overrun. A withdrawn term is none of the four.
 	 *
-	 * @param array<string, mixed> $row Term instance row.
+	 * @param array<string, mixed> $row Instance row.
 	 *
-	 * @return string One of MET, MISSED, RUNNING, SUSPENDED.
+	 * @return string One of MET, MISSED, RUNNING, SUSPENDED, or the empty string.
 	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
 	 */
 	public function classify(array $row): string {
 		$status = (string)($row['status'] ?? '');
-		if ($status === 'exceeded') {
-			return self::MISSED;
-		}
-
-		if ($status === 'paused') {
-			return self::SUSPENDED;
-		}
-
-		if ($status !== 'completed') {
-			return self::RUNNING;
-		}
-
-		$decided = substr((string)($row['voltooiDatum'] ?? ''), 0, 10);
+		$completedOn = substr((string)($row['voltooiDatum'] ?? ''), 0, 10);
 		$end = substr((string)($row['endDateCurrent'] ?? ''), 0, 10);
-		if ($decided !== '' && $end !== '' && $decided > $end) {
-			return self::MISSED;
-		}
 
-		return self::MET;
+		return match (true) {
+			$status === 'completed' && $completedOn !== '' && $end !== '' && $completedOn > $end => self::MISSED,
+			$status === 'completed' => self::MET,
+			$status === 'exceeded' => self::MISSED,
+			$status === 'lopend', $status === 'verlengd' => self::RUNNING,
+			$status === 'paused' => self::SUSPENDED,
+			default => '',
+		};
 	}//end classify()
 
 	/**
@@ -114,4 +111,5 @@ class TermOutcome {
 
 		return round(($met / $decided) * 100, 1);
 	}//end shareMet()
+
 }//end class

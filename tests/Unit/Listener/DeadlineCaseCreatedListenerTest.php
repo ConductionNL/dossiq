@@ -170,6 +170,27 @@ class DeadlineCaseCreatedListenerTest extends TestCase {
 	}//end testWithoutACalendarTheReceiptItselfStartsTheTerm()
 
 	/**
+	 * An imported receipt date starts the term, not the moment of the import.
+	 *
+	 * Without a calendar, so the start is the receipt itself and the
+	 * assertion reads the day the import named.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 */
+	public function testAnImportedReceiptDateStartsTheTerm(): void {
+		$this->listener(answer: null)->handle(
+			self::created([
+				'properties' => [['propertyDefinition' => 'def-receipt', 'name' => 'receiptDate', 'value' => '2026-09-01']],
+				'registrationDate' => '2026-10-06T10:00:00+02:00',
+			])
+		);
+
+		self::assertSame('2026-09-01', $this->starts[0]?->format('Y-m-d'));
+	}//end testAnImportedReceiptDateStartsTheTerm()
+
+	/**
 	 * A case type without a definition still creates the case and warns (REQ-TERM-001).
 	 *
 	 * @return void

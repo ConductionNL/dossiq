@@ -456,5 +456,30 @@ class Organisation {
 		$this->retainedAt = $retainedAt;
 	}
 
+	/**
+	 * When the Organisation was created. Verified present on
+	 * OCA\OpenRegister\Db\Organisation (`protected ?DateTime $created`), read
+	 * by `TenantService::ensureAuditAnchor()` for the anchor's createdAt.
+	 *
+	 * @var \DateTime|null
+	 */
+	private ?\DateTime $created = null;
+
+	/**
+	 * @return \DateTime|null When the Organisation was created.
+	 */
+	public function getCreated(): ?\DateTime {
+		return $this->created;
+	}
+
+	/**
+	 * @param \DateTime|null $created When the Organisation was created.
+	 *
+	 * @return void
+	 */
+	public function setCreated(?\DateTime $created): void {
+		$this->created = $created;
+	}
+
 	// phpcs:enable
 }//end class

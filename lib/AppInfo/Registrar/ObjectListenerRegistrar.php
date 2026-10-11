@@ -85,6 +85,7 @@ class ObjectListenerRegistrar {
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);
 		(new CaseAccessListenerRegistrar())->register(context: $context);
+		(new WooListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**

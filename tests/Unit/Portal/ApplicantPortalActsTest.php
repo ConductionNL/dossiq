@@ -255,6 +255,64 @@ class ApplicantPortalActsTest extends TestCase {
 	}//end testAWriteReachesTheTimelineAndTheAssignee()
 
 	/**
+	 * A write made for someone else under a mandate is told to that person on
+	 * the public history, by the mandate's label (site-business-and-authorisation D4).
+	 *
+	 * @return void
+	 */
+	public function testAWriteForSomeoneElseIsToldToThemByTheMandatesLabel(): void {
+		$entries = [];
+		$this->timeline->method('record')->willReturnCallback(
+			static function (string $caseId, string $kind, string $message, array $fields = [], string $visibility = '') use (&$entries): string {
+				$entries[] = [$message, $visibility, ($fields['actingFor'] ?? null)];
+				return 'entry';
+			}
+		);
+
+		$this->acts()->recordWrite('case-1', 'document', ['bijlage'], '2026-10-10T10:00:00+02:00', ['actingFor' => 'subject:subj-henk', 'actingForLabel' => 'H. Bakker', 'mandate' => 'm-1']);
+		$this->acts()->recordWrite('case-1', 'amendment', ['phone'], '2026-10-10T10:01:00+02:00', ['actingFor' => 'kvk:12345678']);
+		$this->acts()->recordWrite('case-1', 'amendment', ['phone'], '2026-10-10T10:02:00+02:00');
+
+		$public = array_values(array_filter($entries, static fn (array $e): bool => $e[1] === CaseTimeline::PUBLIC_ENTRY));
+		$this->assertSame(
+			[
+				['Namens H. Bakker: document toegevoegd in het portaal', CaseTimeline::PUBLIC_ENTRY, 'subject:subj-henk'],
+				['Namens kvk:12345678: gegevens aangepast in het portaal', CaseTimeline::PUBLIC_ENTRY, 'kvk:12345678'],
+			],
+			$public,
+			'a write for oneself adds no public entry'
+		);
+		$this->assertCount(3, array_filter($entries, static fn (array $e): bool => $e[1] === CaseTimeline::INTERNAL), 'the handler still gets every write');
+	}//end testAWriteForSomeoneElseIsToldToThemByTheMandatesLabel()
+
+	/**
+	 * An answer to the organisation's question reaches the timeline and the assignee
+	 * (woo-dossier-shared-with-the-requester REQ-WDS-001).
+	 *
+	 * @return void
+	 */
+	public function testAnAnswerToAQuestionReachesTheTimelineAndTheAssignee(): void {
+		$this->timeline->expects($this->once())
+			->method('record')
+			->with(
+				'case-1',
+				TimelineKinds::APPLICANT_RESPONSE,
+				'The applicant answered your question in the portal: applicantAnswer',
+				[
+					'act' => 'answer',
+					'fields' => 'applicantAnswer',
+					'occurredAt' => '2026-10-07T10:00:00+02:00',
+				],
+				CaseTimeline::INTERNAL,
+			)
+			->willReturn('entry-1');
+
+		$this->assertTrue($this->acts()->recordWrite('case-1', 'answer', ['applicantAnswer'], '2026-10-07T10:00:00+02:00'));
+		$this->assertCount(1, $this->sent);
+		$this->assertSame('answer', $this->sent[0]['parameters']['act']);
+	}//end testAnAnswerToAQuestionReachesTheTimelineAndTheAssignee()
+
+	/**
 	 * A withdrawal writes its entry with the status and reason and tells the assignee.
 	 *
 	 * @return void
@@ -341,7 +399,7 @@ class ApplicantPortalActsTest extends TestCase {
 		$kind = $declared[TimelineKinds::APPLICANT_RESPONSE];
 		$this->assertTrue($kind['followUp']);
 		$this->assertSame(
-			['amendment', 'document', 'task-answer', ApplicantPortalActs::ACT_WITHDRAWAL],
+			['amendment', 'document', 'task-answer', 'answer', ApplicantPortalActs::ACT_WITHDRAWAL],
 			$kind['properties']['act']['enum']
 		);
 		foreach (['fields', 'status', 'reason', 'occurredAt'] as $property) {

@@ -74,6 +74,7 @@ use Psr\Log\NullLogger;
  * REQ-WTO-003: the term behaves as opencatalogi's did.
  *
  * @covers \OCA\Dossiq\Service\DeadlineReportingService
+ * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
  * @uses \OCA\Dossiq\Controller\DeadlineReportingController
  * @uses \OCA\Dossiq\Controller\WOOAssessmentController
@@ -427,12 +428,17 @@ class StatutoryTermParityTest extends TestCase {
 	 * @return DeadlineReportingController The controller, read by someone in the audience.
 	 */
 	private function reportController(FakeTermijnStore $store): DeadlineReportingController {
+		// The report resolves each term's case type through its definition
+		// when no case is stored (REQ-WTR-004), so every report row points at
+		// the Woo definition.
+		$store->seed('deadlineDefinition', ['id' => 'td-woo', 'caseType' => 'woo-verzoek']);
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => match ($key) {
 				'register' => 'dossiq',
 				'termijn_instance_schema' => 'deadlineInstance',
+				'termijn_definitie_schema' => 'deadlineDefinition',
 				default => '',
 			}
 		);
@@ -466,6 +472,7 @@ class StatutoryTermParityTest extends TestCase {
 			'caseType' => 'woo-verzoek',
 			'case' => 'case-' . $id,
 			'kind' => TermKind::STATUTORY,
+			'deadlineDefinition' => 'td-woo',
 			'startDate' => '2026-10-05T09:00:00+02:00',
 			'endDateCurrent' => $end,
 			'status' => $status,

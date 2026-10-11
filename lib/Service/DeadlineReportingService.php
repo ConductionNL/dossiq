@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
 use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
 
@@ -47,19 +48,40 @@ use RuntimeException;
 class DeadlineReportingService {
 	use SearchesObjects;
 
+	/**
+	 * The bucket for a term whose case type resolves neither through its case
+	 * nor through its definition (REQ-WTR-004).
+	 *
+	 * @var string
+	 */
+	public const UNRESOLVED = TermCaseTypeResolver::UNRESOLVED;
+
+	/**
+	 * Resolves each term's case type for the quarterly report.
+	 *
+	 * @var TermCaseTypeResolver
+	 */
+	private readonly TermCaseTypeResolver $caseTypes;
+
+	/**
+	 * Classifies each term as met, missed, running or suspended.
+	 *
+	 * @var TermOutcome
+	 */
+	private readonly TermOutcome $outcomes;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Settings.
-	 * @param TermOutcome $outcomes What a term came to, and the share of decided
-	 *        terms that were met. Defaulted so a caller that builds this service
-	 *        by hand keeps working.
+	 * @param SettingsService           $settingsService Settings.
+	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly TermOutcome $outcomes = new TermOutcome(),
+		?TermCaseTypeResolver $caseTypes = null,
 	) {
+		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
+		$this->outcomes = new TermOutcome();
 	}//end __construct()
 
 	/**
@@ -76,7 +98,8 @@ class DeadlineReportingService {
 		$bounds = $this->resolveQuarter(period: $period);
 		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
 
-		$byType = $this->aggregateByType(rows: $rows, department: $department);
+		$types = $this->caseTypes->resolve(rows: $rows);
+		$byType = $this->aggregateByType(rows: $rows, department: $department, types: $types['byRow']);
 
 		// Reduce per-type aggregates.
 		$perType = $this->reducePerType(byType: $byType);
@@ -94,43 +117,50 @@ class DeadlineReportingService {
 			'metadata' => [
 				'generatedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 				'rowsScanned' => count($rows),
+				// A term whose case type could not be resolved is counted under
+				// `unresolved` and named here, never hidden under `unknown`.
+				'unresolvedInstances' => $types['unresolved'],
 			],
 		];
 	}//end generateQuarterlyReport()
 
 	/**
-	 * Bucket instance rows per zaaktype, skipping rows outside the department filter.
+	 * Bucket instance rows per case type, skipping rows outside the department filter.
 	 *
 	 * @param array<int, array<string, mixed>> $rows Instance rows.
 	 * @param string|null $department Optional department filter.
+	 * @param array<int, array{key: string, title: string}> $types The case type of each row, by row index.
 	 *
-	 * @return array<string, array<string, mixed>> Raw per-zaaktype tallies.
+	 * @return array<string, array<string, mixed>> Raw per-case-type tallies.
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
-	private function aggregateByType(array $rows, ?string $department): array {
+	private function aggregateByType(array $rows, ?string $department, array $types): array {
 		$byType = [];
-		foreach ($rows as $row) {
-			$type = (string)($row['caseType'] ?? 'unknown');
+		foreach ($rows as $index => $row) {
+			$type = ($types[$index] ?? ['key' => self::UNRESOLVED, 'title' => '']);
 			// $row['department'] is a SCHEMA PROPERTY — OpenRegister materialises
 			// it as a real column. It moves with a data migration, not here.
 			if ($department !== null && (string)($row['department'] ?? '') !== $department) {
 				continue;
 			}
 
-			$byType[$type] ??= [
+			$byType[$type['key']] ??= [
+				'title' => $type['title'],
 				'totaal' => 0,
 				'withinTerm' => 0,
-				'met' => 0,
-				'missed' => 0,
-				'running' => 0,
-				'suspended' => 0,
 				'doorlooptijdenDagen' => [],
 				'verlengingen' => 0,
 				'overschrijdingen' => 0,
 				'ingebrekestellingen' => 0,
 				'dwangsomTotalCents' => 0,
+				'met' => 0,
+				'missed' => 0,
+				'running' => 0,
+				'suspended' => 0,
 			];
 
-			$this->accumulateRow(row: $row, bucket: $byType[$type]);
+			$this->accumulateRow(row: $row, bucket: $byType[$type['key']]);
 		}
 
 		return $byType;
@@ -147,7 +177,6 @@ class DeadlineReportingService {
 	private function accumulateRow(array $row, array &$bucket): void {
 		$bucket['totaal']++;
 		$outcome = $this->outcomes->classify(row: $row);
-		$bucket[$outcome]++;
 		if ($outcome === TermOutcome::MET) {
 			$bucket['withinTerm']++;
 		}
@@ -159,6 +188,10 @@ class DeadlineReportingService {
 
 		if ((int)($row['countExtensions'] ?? 0) > 0) {
 			$bucket['verlengingen']++;
+		}
+
+		if ($outcome !== '') {
+			$bucket[$outcome]++;
 		}
 
 		$start = (string)($row['startDate'] ?? '');
@@ -183,6 +216,8 @@ class DeadlineReportingService {
 			// $byType entries are only created when a row is counted, so
 			// 'totaal' is always >= 1 here.
 			$total = $b['totaal'];
+			// The share of DECIDED terms that were met: a running term is not
+			// in the denominator, and a share of nothing is null, no figure.
 			$binnenPct = $this->outcomes->shareMet(met: $b['met'], missed: $b['missed']);
 
 			$avgDur = 0.0;
@@ -193,18 +228,22 @@ class DeadlineReportingService {
 			}
 
 			$perType[$type] = [
+				'title' => $b['title'],
 				'totaal' => $total,
-				'met' => $b['met'],
-				'missed' => $b['missed'],
-				'running' => $b['running'],
-				'suspended' => $b['suspended'],
-				'metShare' => $binnenPct,
 				'binnenTermijnPct' => $binnenPct,
 				'gemiddeldeDoorlooptijdDagen' => $avgDur,
 				'verlengingen' => $b['verlengingen'],
 				'overschrijdingen' => $b['overschrijdingen'],
 				'ingebrekestellingen' => $b['ingebrekestellingen'],
 				'dwangsomTotalCents' => $b['dwangsomTotalCents'],
+				// The listing selects terms by start date in the quarter, so every
+				// counted term arrived in it.
+				'received' => $total,
+				'met' => $b['met'],
+				'missed' => $b['missed'],
+				'running' => $b['running'],
+				'suspended' => $b['suspended'],
+				'metShare' => $binnenPct,
 			];
 		}//end foreach
 

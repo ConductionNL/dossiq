@@ -123,6 +123,7 @@ import FileDocumentMultiple from 'vue-material-design-icons/FileDocumentMultiple
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
 import FileDocumentPlusOutline from 'vue-material-design-icons/FileDocumentPlusOutline.vue'
+import FileEditOutline from 'vue-material-design-icons/FileEditOutline.vue'
 import FileEyeOutline from 'vue-material-design-icons/FileEyeOutline.vue'
 import FileQuestionOutline from 'vue-material-design-icons/FileQuestionOutline.vue'
 import FileSign from 'vue-material-design-icons/FileSign.vue'
@@ -338,6 +339,7 @@ export default {
 	FileDocumentMultipleOutline,
 	FileDocumentOutline,
 	FileDocumentPlusOutline,
+	FileEditOutline,
 	FileEyeOutline,
 	FileQuestionOutline,
 	FileSign,

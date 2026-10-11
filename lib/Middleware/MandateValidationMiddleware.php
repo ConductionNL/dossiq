@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Middleware;
 
+use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantService;
@@ -33,7 +34,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
 
 /**
  * Mandate-matrix middleware. Audit-logs every decision (allow + deny).
@@ -91,7 +91,7 @@ class MandateValidationMiddleware extends Middleware {
 	 * @param TenantContext $context Tenant context.
 	 * @param TenantAuthenticationService $authService Auth service.
 	 * @param TenantService $tenantService Platform admin check.
-	 * @param LoggerInterface $logger Logger.
+	 * @param TenantAuditTrailService $auditTrail Writes each decision to the tenant's audit trail.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
@@ -99,7 +99,7 @@ class MandateValidationMiddleware extends Middleware {
 		private readonly TenantContext $context,
 		private readonly TenantAuthenticationService $authService,
 		private readonly TenantService $tenantService,
-		private readonly LoggerInterface $logger,
+		private readonly TenantAuditTrailService $auditTrail,
 	) {
 	}//end __construct()
 
@@ -226,9 +226,15 @@ class MandateValidationMiddleware extends Middleware {
 			return;
 		}
 
-		$this->logger->info(
-			'Dossiq: request refused because the organisation is not active',
-			['userId' => $userId, 'tenantId' => $this->context->getTenantId(), 'status' => $status]
+		// On the tenant's audit trail, not only in the log: a refused request
+		// is a decision, the same as a mandate decision.
+		$this->auditTrail->emit(
+			[
+				'action' => 'organisation.refused.'.$status,
+				'actor' => $userId,
+				'resource' => $this->request->getRequestUri(),
+				'tenantId' => $this->context->getTenantId(),
+			]
 		);
 
 		throw (new MandateDeniedException(message: 'Organisation is '.$status, code: 403))->withLifecycleStatus(status: $status);
@@ -257,22 +263,32 @@ class MandateValidationMiddleware extends Middleware {
 	/**
 	 * Audit-log a mandate decision (allow + deny).
 	 *
+	 * The decision becomes a row on OpenRegister's audit trail of the tenant's
+	 * anchor (REQ-TOO-006), written by `TenantAuditTrailService`, which writes
+	 * no row and logs an error when the tenant has no anchor, and mirrors
+	 * every entry to the log as a `Dossiq AUDIT` line for the SIEM stream.
+	 *
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $userId NC user ID.
 	 * @param string $action Action.
 	 * @param array{allowed:bool,reason:string} $decision Decision.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
 	 */
 	private function logDecision(string $tenantId, string $userId, string $action, array $decision): void {
-		$this->logger->info(
-			'Dossiq mandate decision',
+		$outcome = 'denied';
+		if ($decision['allowed'] === true) {
+			$outcome = 'allowed';
+		}
+
+		$this->auditTrail->emit(
 			[
+				'action' => 'mandate.'.$action.'.'.$outcome,
+				'actor' => $userId,
+				'resource' => $this->request->getRequestUri().' ('.(string)$decision['reason'].')',
 				'tenantId' => $tenantId,
-				'userId' => $userId,
-				'action' => $action,
-				'allowed' => (bool)$decision['allowed'],
-				'reason' => (string)$decision['reason'],
 			]
 		);
 	}//end logDecision()

@@ -22,7 +22,7 @@
  * The gates read `src/menu-layout.json` only (gate-53), so the no-loss rule
  * for the simple file is held here and nowhere else.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md
  * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 
@@ -90,13 +90,13 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 35 entries: 13 main, 4 footer, 15 settings, 3 integrations', () => {
+	it('still counts 36 entries: 13 main, 5 footer, 15 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(35)
+		expect(flat(menu)).toHaveLength(36)
 		expect(count('main')).toBe(13)
-		expect(count('footer')).toBe(4)
+		expect(count('footer')).toBe(5)
 		expect(count('settings')).toBe(15)
 		expect(count('integrations')).toBe(3)
 	})
@@ -340,6 +340,7 @@ describe('the simple profile', () => {
 				'CasesDeletedMenu',
 				'CaseObjectsMenu',
 				'MailIntakeLogMenu',
+				'WooReportsMenu',
 			]),
 		)
 		// Everything the full profile has in settings is still there.
@@ -354,7 +355,9 @@ describe('the simple profile', () => {
 		const ids = (menu, name) => section(menu, name).map((entry) => entry.id)
 		expect(ids(built.menu, 'integrations')).toEqual(ids(full, 'integrations'))
 		expect(ids(built.menu, 'footer')).toEqual(
-			ids(full, 'footer').filter((id) => id !== 'MailIntakeLogMenu'),
+			ids(full, 'footer').filter(
+				(id) => id !== 'MailIntakeLogMenu' && id !== 'WooReportsMenu',
+			),
 		)
 	})
 
@@ -431,10 +434,10 @@ describe('the simple profile', () => {
 		}
 	})
 
-	it('builds the same 68 pages as the full profile, so every route stays', () => {
+	it('builds the same 69 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(68)
+		expect(built.pages).toHaveLength(69)
 	})
 })
 
