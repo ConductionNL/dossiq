@@ -390,6 +390,11 @@ describe('the simple profile', () => {
 					linked.add(action.target)
 				}
 			}
+			// The My work page draws its links as pills on the view-switch
+			// row (`viewLinks`, nextcloud-vue 2.79.0), as DqMijnWerk does.
+			for (const link of page.config?.viewLinks ?? []) {
+				linked.add(link.route)
+			}
 		}
 		const lost = flat(build(fullFile).menu)
 			.filter((entry) => !shown.has(entry.id))
@@ -411,12 +416,14 @@ describe('the simple profile', () => {
 				.find((page) => page.id === pageId)
 				.config.headerActions.map((action) => action.id)
 
-		expect(actionIds(built, 'MyWorkHome')).toEqual([
-			'new-case',
-			'open-your-queue',
-			'open-assigned-to-me',
-			'open-end-of-day',
-		])
+		// DqMijnWerk: the three links are pills on the switch row, not
+		// buttons in the header.
+		expect(actionIds(built, 'MyWorkHome')).toEqual(['new-case'])
+		expect(
+			built.pages
+				.find((page) => page.id === 'MyWorkHome')
+				.config.viewLinks.map((link) => link.route),
+		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
 		expect(actionIds(built, 'Dashboard')).toEqual([
 			'new-case',
 			'open-end-of-day',

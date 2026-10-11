@@ -279,6 +279,7 @@ describe('the cases list', () => {
 			headerButtons,
 			showViewToggle,
 			headerFilters,
+			searchPlaceholder,
 			...others
 		}) => others
 		expect(rest(simple)).toEqual(rest(before))
@@ -356,13 +357,13 @@ describe('the landing page', () => {
 	const widget = (id) => pageWidgets(simple).find((item) => item.id === id)
 	const entry = (id) => mine.layout.find((item) => item.widgetId === id)
 
-	it('puts the greeting on the page grid and the design in the My work view', () => {
-		expect(simple.config.layout.map((item) => item.widgetId)).toEqual([
-			'simple-greeting',
-		])
-		expect(simple.config.widgets.map((item) => item.id)).toEqual([
-			'simple-greeting',
-		])
+	it('puts the greeting in the page header and the design in the My work view', () => {
+		// nextcloud-vue 2.79.0 draws the greeting subtitle and the view
+		// switch itself (`greeting`), so the page grid is empty.
+		expect(simple.config.layout).toEqual([])
+		expect(simple.config.widgets).toEqual([])
+		expect(simple.config.greeting).toBe('first')
+		expect(simple.config.showActionsMenu).toBe(false)
 		const order = [...mine.layout]
 			.sort((a, b) => a.gridY - b.gridY || a.gridX - b.gridX)
 			.map((item) => item.widgetId)
@@ -398,27 +399,13 @@ describe('the landing page', () => {
 
 	it('switches views of this page, not pages', () => {
 		// Ruben, 7 October 2026: the switch opened the dashboard and the team
-		// queue, and the greeting stood over an empty area. Each option now
-		// names a view the page declares, and none names a route.
-		expect(widget('simple-greeting').content).toEqual({
-			greeting: true,
-			showDate: true,
-			ground: true,
-			views: {
-				ariaLabel: 'Whose work',
-				options: [
-					{ label: 'My work', view: 'mine' },
-					{ label: 'My team', view: 'team' },
-				],
-			},
-		})
+		// queue, and the greeting stood over an empty area. The page's own
+		// view switch now names the two views the page declares.
 		const views = simple.config.views
-		for (const option of widget('simple-greeting').content.views.options) {
-			const view = views.find((item) => item.id === option.view)
-			expect(view, option.view).toBeDefined()
-			expect(view.label).toBe(option.label)
-			expect(option).not.toHaveProperty('route')
-		}
+		expect(views.map((item) => [item.id, item.label])).toEqual([
+			['mine', 'My work'],
+			['team', 'My team'],
+		])
 		expect(simple.config.defaultView).toBe('mine')
 	})
 
@@ -462,14 +449,12 @@ describe('the landing page', () => {
 		// hide Your queue, Assigned to me and Close out your day, which this
 		// profile takes out of the menu.
 		expect(simple.config.showHeader).toBeUndefined()
-		const ids = simple.config.headerActions.map((action) => action.id)
-		for (const id of [
-			'open-your-queue',
-			'open-assigned-to-me',
-			'open-end-of-day',
-		]) {
-			expect(ids, id).toContain(id)
-		}
+		// They are pills on the switch row now (`viewLinks`).
+		expect(simple.config.viewLinks.map((link) => link.route)).toEqual([
+			'PersonalQueue',
+			'MyWork',
+			'EndOfDay',
+		])
 	})
 
 	it('gives the dashboard back its full-structure widgets', () => {

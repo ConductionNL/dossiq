@@ -6067,6 +6067,7 @@ OC.L10N.register(
         "Search": "Search",
         "Search a case type": "Search a case type",
         "Search address...": "Search address...",
+        "Search by case, number or requester": "Search by case, number or requester",
         "Search by sender": "Search by sender",
         "Search by subject, department...": "Search by subject, department...",
         "Search complaints": "Search complaints",

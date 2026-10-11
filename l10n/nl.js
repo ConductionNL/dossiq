@@ -6067,6 +6067,7 @@ OC.L10N.register(
         "Search": "Zoeken",
         "Search a case type": "Zoek een zaaktype",
         "Search address...": "Adres zoeken...",
+        "Search by case, number or requester": "Zoek op zaak, nummer of verzoeker",
         "Search by sender": "Zoek op afzender",
         "Search by subject, department...": "Zoek op onderwerp, afdeling...",
         "Search complaints": "Klachten zoeken",
