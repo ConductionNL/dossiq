@@ -3,7 +3,7 @@
   "components": {
     "schemas": {
       "aanvullingsverzoek": {
-        "version": "1.3.0",
+        "version": "1.3.1",
         "properties": {
           "kind": {
             "type": "string",
@@ -21,8 +21,7 @@
             "type": "string",
             "maxLength": 4000,
             "title": "Answer from the applicant",
-            "description": "What the applicant wrote back from the portal, as they wrote it. Only the handler closes the request.",
-            "inputControl": "textarea"
+            "description": "What the applicant wrote back from the portal, as they wrote it. Only the handler closes the request."
           },
           "applicantAnsweredAt": {
             "type": "string",
