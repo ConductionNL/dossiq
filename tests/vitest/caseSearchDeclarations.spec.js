@@ -105,6 +105,9 @@ const SILENT = [
 	// `visible: false` and are written by the register's own expressions, so
 	// there is no input to control.
 	'portalTurn',
+	// The channel as it arrived when it was not a slug: a ZGW URL kept so a ZGW
+	// client reads back what it wrote (decision 171), never a filter.
+	'communicationChannelSource',
 	'assignedGroupPublicName',
 	// The earlier Woo request this one started from: a reference the draft search
 	// plan is copied from, `visible: false`, never a filter (woo-request-corpus-collection).
