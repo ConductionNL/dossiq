@@ -82,6 +82,17 @@ class ApplicantPortalActs {
 		'amendment' => 'The applicant changed an answer in the portal',
 		'document' => 'The applicant added a document in the portal',
 		'task-answer' => 'The applicant answered a task in the portal',
+		'answer' => 'The applicant answered your question in the portal',
+	];
+
+	/**
+	 * What the represented person reads on their case for each act done for
+	 * them, after "Namens {party}: " (site-business-and-authorisation D4).
+	 */
+	private const ACTING_FOR_ACTS = [
+		'amendment' => 'gegevens aangepast in het portaal',
+		'document' => 'document toegevoegd in het portaal',
+		'task-answer' => 'vraag beantwoord in het portaal',
 	];
 
 	/**
@@ -104,15 +115,17 @@ class ApplicantPortalActs {
 	 * Record a write the applicant made on their case and tell the assignee.
 	 *
 	 * @param string             $caseId     The case the write landed on.
-	 * @param string             $act        `amendment`, `document` or `task-answer`.
+	 * @param string             $act        `amendment`, `document`, `task-answer` or `answer`.
 	 * @param array<int, string> $fields     The field names the act touched.
 	 * @param string             $occurredAt The moment of the write, ISO 8601.
+	 * @param array<string, mixed> $mandate  The mandate the write ran under: `actingFor`, `actingForLabel`, or none.
 	 *
 	 * @return boolean True when the case is dossiq's and the act was recorded.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
+	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
-	public function recordWrite(string $caseId, string $act, array $fields, string $occurredAt): bool {
+	public function recordWrite(string $caseId, string $act, array $fields, string $occurredAt, array $mandate=[]): bool {
 		if (isset(self::WRITE_ACTS[$act]) === false) {
 			$this->logger->warning(
 				'Dossiq: a portal write on case {case} names an act this app does not know, {act}',
@@ -145,6 +158,8 @@ class ApplicantPortalActs {
 			visibility: CaseTimeline::INTERNAL,
 		);
 
+		$this->tellTheRepresented(caseId: $caseId, act: $act, mandate: $mandate, occurredAt: $occurredAt);
+
 		$this->notifyAssignee(
 			case: $case,
 			caseId: $caseId,
@@ -154,6 +169,39 @@ class ApplicantPortalActs {
 
 		return true;
 	}//end recordWrite()
+
+	/**
+	 * A write made for someone else under a mandate is told to that person on
+	 * the case's public history: "Namens {party}: ...". The mandate's label
+	 * names the party; without one the party reference does. Portaliq does not
+	 * hand over the acting person's name, so the entry names the party only.
+	 *
+	 * @param string               $caseId     The case.
+	 * @param string               $act        The act.
+	 * @param array<string, mixed> $mandate    The mandate the write ran under.
+	 * @param string               $occurredAt The moment of the write.
+	 *
+	 * @return void
+	 */
+	private function tellTheRepresented(string $caseId, string $act, array $mandate, string $occurredAt): void {
+		$party = trim((string)($mandate['actingFor'] ?? ''));
+		if ($party === '') {
+			return;
+		}
+
+		$label = trim((string)($mandate['actingForLabel'] ?? ''));
+		if ($label === '') {
+			$label = $party;
+		}
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::APPLICANT_RESPONSE,
+			message: 'Namens ' . $label . ': ' . self::ACTING_FOR_ACTS[$act],
+			fields: ['act' => $act, 'actingFor' => $party, 'occurredAt' => $occurredAt],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
+		);
+	}//end tellTheRepresented()
 
 	/**
 	 * Record a withdrawal the applicant made from the portal and tell the assignee.

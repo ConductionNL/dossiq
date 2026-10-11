@@ -253,7 +253,7 @@ class BeschikkingController extends Controller {
 	}//end onderteken()
 
 	/**
-	 * Deliver the beschikking via Berichtenbox. [T09]
+	 * Send the beschikking to the requester; refused when no transport took it. [T09]
 	 *
 	 * @param string $id The beschikking UUID.
 	 *
@@ -272,6 +272,11 @@ class BeschikkingController extends Controller {
 		try {
 			$result = $this->decisionService->verzend($id, $uid);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			// No transport took the beschikking: the refusal carries why, and
+			// the decision is still signed. Caught before RuntimeException,
+			// which RefusedException extends.
+			return $this->refused(op: 'verzend', e: $e);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'verzend', e: $e);
 		} catch (\Throwable $e) {

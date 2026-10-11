@@ -128,6 +128,7 @@ import {
 import {
 	decidePlanSource,
 	hasLocalPlanBlob,
+	mayHoldOpenRegisterPlan,
 	normaliseLocalPlanItems,
 	prefersOpenRegister,
 	SOURCE_LOCAL,
@@ -212,15 +213,21 @@ export default {
 			this.loading = true
 			this.error = ''
 			try {
-				const plan = await this.readOpenRegisterPlan()
+				// The case is read FIRST, and always. Its caseType says whether
+				// OpenRegister can hold a plan at all: a BPMN case never gets one,
+				// and asking anyway answered 404 on every case page. Reading it
+				// even when OpenRegister then answers rows keeps
+				// `decidePlanSource`'s first rule in one place.
+				const caseObject = await this.readCase()
+				const blob = hasLocalPlanBlob(caseObject)
+				const plan = mayHoldOpenRegisterPlan({
+					hasLocalBlob: blob,
+					caseType: await this.readCaseType(caseObject),
+				})
+					? await this.readOpenRegisterPlan()
+					: null
 				const rows = hasPlanRows(plan)
 				const prefer = prefersOpenRegister()
-				// The case is read even when OpenRegister answered rows. Short
-				// circuiting here would restate `decidePlanSource`'s first rule
-				// in a second place, and the two would drift the first time the
-				// rule changed: the panel would keep the old answer and no test
-				// over the decision could see it.
-				const blob = hasLocalPlanBlob(await this.readCase())
 
 				this.source = decidePlanSource({
 					hasOpenRegisterRows: rows,
@@ -283,6 +290,34 @@ export default {
 				)
 			} catch {
 				return {}
+			}
+		},
+
+		/**
+		 * Read the case's caseType, for its `handlingModel` and nothing else.
+		 *
+		 * Null when the case names none or it cannot be read, which
+		 * `mayHoldOpenRegisterPlan` takes as "ask OpenRegister anyway".
+		 *
+		 * @param {object} caseObject The case record.
+		 * @return {Promise<object|null>} The caseType, or null.
+		 * @spec openspec/changes/r6-dossiq-titles-related-cases-requests/specs/case-plan-read/spec.md
+		 */
+		async readCaseType(caseObject) {
+			const ref = caseObject?.caseType
+			if (ref !== null && typeof ref === 'object' && 'handlingModel' in ref) {
+				return ref
+			}
+			const raw = ref !== null && typeof ref === 'object' ? ref.id : ref
+			const id = typeof raw === 'string' ? raw.trim() : ''
+			if (id === '') {
+				return null
+			}
+			try {
+				const caseType = await useObjectStore().fetchObject('caseType', id)
+				return caseType && typeof caseType === 'object' ? caseType : null
+			} catch {
+				return null
 			}
 		},
 

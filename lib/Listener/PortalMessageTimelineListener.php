@@ -41,7 +41,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class PortalMessageTimelineListener implements IEventListener {
 
@@ -119,7 +119,7 @@ class PortalMessageTimelineListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof ObjectCreatedEvent) === false) {

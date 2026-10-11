@@ -22,12 +22,20 @@
   standard refusal is not retyped. A template never writes over what the
   handler already typed.
 
+  `size="normal"`: the default small dialog is about 390px wide, and NcDialog
+  reserves no room beside its title for the close button, so "Wat je met deze
+  zaak kunt doen" ran under the X. The wider dialog keeps the title clear of it,
+  and the acts and their reasons wrap less (lifecycle-dialog-title-clears-the-
+  close-button).
+
   @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
   @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
+  @spec openspec/changes/lifecycle-dialog-title-clears-the-close-button/specs/case-management/spec.md
 -->
 <template>
 	<NcDialog
 		:name="t('dossiq', 'What you can do with this case')"
+		size="normal"
 		data-testid="case-acts-dialog"
 		@closing="$emit('close')">
 		<div v-if="chosen === null" class="case-acts">

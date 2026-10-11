@@ -31,7 +31,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Listener\OrganisationStatusChangeListener;
 use OCA\Dossiq\Service\ShillinqIntegrationService;
+use OCA\OpenRegister\Event\OrganisationUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IConfig;
 use Psr\Container\ContainerInterface;
@@ -72,6 +74,15 @@ class SaasServiceRegistrar {
 					shillinqApiKey: $apiKey,
 				);
 			}
+		);
+
+		// A tenant's status is OpenRegister's (tenancy-onto-openregister-organisation
+		// 6.9). Its changes reach the tenant audit trail through the update event
+		// OrganisationMapper dispatches, including the unsettled billing count
+		// when a tenant ends.
+		$context->registerEventListener(
+			event: OrganisationUpdatedEvent::class,
+			listener: OrganisationStatusChangeListener::class
 		);
 	}//end register()
 }//end class

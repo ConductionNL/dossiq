@@ -34,6 +34,9 @@ binomial CDF, and the tests pin its values.
   - **fails today** (class absent): `tests/Unit/Woo/RecallEstimatorTest.php`
     `testTheFixtureWithTwoInScope` (0.9615 and 0.8892), `testTheFixtureWithTenInScope` (0.8333 and
     0.7500), `testZeroInScopeHasAPositiveUpperBound`, `testTheBoundRisesWithConfidence`.
+  - Class and tests built ahead (`lib/Woo/RecallEstimator.php`, `tests/Unit/Woo/RecallEstimatorTest.php`,
+    all four named tests, red first: class absent). Left unticked: its caller is the samples route of 2.2,
+    which waits on `woo-review-triage` batches.
 - [ ] 2.2 Add schema `wooRecallSample` and POST `/api/cases/{id}/woo/recall/samples` with `{size}`,
   case mutation guard. Draw with a stored seed, create a sample batch through the
   `woo-review-triage` batch service, and record sample judgements apart from the review marking
