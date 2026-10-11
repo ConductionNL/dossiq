@@ -76,13 +76,21 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
 
 ## 4. The parties report
 
-- [ ] 4.1 Add `lib/Woo/WooPartiesReport.php` and `WooReportController::parties(string $id)` on GET
+- [x] 4.1 Add `lib/Woo/WooPartiesReport.php` and `WooReportController::parties(string $id)` on GET
   `/api/cases/{id}/woo/reports/parties`, case read guard and switch check in the body, CSV beside it
   (REQ-WRR-004).
   - **fails today**: `tests/Unit/Woo/WooPartiesReportTest.php`
     `testCountsPerSenderRecipientAndDomain` (the scenario fixture), `testUnreadableIsCounted`.
   - Through the caller: `WooReportControllerTest::testPartiesRefusesWithoutCaseAccess`,
     `testPartiesOffAnswers403`.
+  - Built generic (decision 182), spec amended: `lib/Service/Zaakdossier/MailPartiesReport.php` over
+    `CaseDocumentProvenance::mailForCase()` (new, lists `mailOf()` per collected mail), CSV by `toCsv()`;
+    `lib/Controller/MailPartiesReportController.php::show()` on GET `/api/cases/{id}/reports/mail-parties`
+    (`#[NoAdminRequired]`; the switch `wooCollectionPartiesReport` and `CaseAccessGuard::hasCaseReadAccess` in the
+    body). Its own controller rather than `WooReportController`, which would pass phpmd's coupling limit.
+    Tests: `tests/Unit/Service/Zaakdossier/MailPartiesReportTest.php` (both named tests plus the CSV, over the real
+    provenance reader), `tests/Unit/Controller/MailPartiesReportControllerTest.php` (both named tests plus the
+    answer and CSV). The parties half of the `Woo reports` screen (board DqWooRapportages) is not built here.
 
 ## 5. End to end and live
 

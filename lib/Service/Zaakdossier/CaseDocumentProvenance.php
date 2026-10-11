@@ -230,6 +230,30 @@ class CaseDocumentProvenance {
 	}//end mailOf()
 
 	/**
+	 * The mail header fields of every collected mail on the case.
+	 *
+	 * Only documents with mail fields (`known`) are listed; an unreadable
+	 * mail is listed with `unreadable` true so a report can count it.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, array<string, mixed>> mailOf() per document uuid.
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+	 */
+	public function mailForCase(string $caseId): array {
+		$mails = [];
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$mail = $this->mailOf(caseId: $caseId, documentId: $documentId);
+			if ($mail['known'] === true) {
+				$mails[$documentId] = $mail;
+			}
+		}
+
+		return $mails;
+	}//end mailForCase()
+
+	/**
 	 * A list of addresses, lower-cased, from a list or a single address.
 	 *
 	 * @param mixed $value The stored value.
