@@ -125,4 +125,24 @@ class TriageConditionsTest extends TestCase {
 		$this->assertTrue($conditions->needsText(conditions: ['custodian' => 'A', 'textNotContains' => 'x']));
 		$this->assertFalse($conditions->needsText(conditions: ['custodian' => 'A', 'senderDomain' => 'x.nl']));
 	}//end testOnlyTextConditionsNeedTheText()
+
+	/**
+	 * Only active rules with an effect and conditions run, by order and then by name.
+	 *
+	 * @return void
+	 */
+	public function testRunnableRulesAreActiveAndInOrder(): void {
+		$rules = [
+			['name' => 'B', 'order' => 2, 'effect' => 'in-scope', 'conditions' => ['custodian' => 'A']],
+			['name' => 'A', 'order' => 2, 'effect' => 'in-scope', 'conditions' => ['custodian' => 'A']],
+			['name' => 'First', 'order' => 1, 'effect' => 'out-of-scope', 'conditions' => ['custodian' => 'A']],
+			['name' => 'Off', 'order' => 0, 'effect' => 'in-scope', 'conditions' => ['custodian' => 'A'], 'active' => false],
+			['name' => 'No effect', 'order' => 0, 'effect' => 'maybe', 'conditions' => ['custodian' => 'A']],
+			['name' => 'No conditions', 'order' => 0, 'effect' => 'in-scope', 'conditions' => []],
+		];
+
+		$names = array_column((new TriageConditions())->runnable(rules: $rules, effects: ['in-scope', 'out-of-scope']), 'name');
+
+		$this->assertSame(['First', 'A', 'B'], $names);
+	}//end testRunnableRulesAreActiveAndInOrder()
 }//end class

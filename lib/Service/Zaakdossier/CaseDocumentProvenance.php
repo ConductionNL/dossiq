@@ -191,7 +191,16 @@ class CaseDocumentProvenance {
 	 * @param string                    $documentId The document uuid.
 	 * @param array<string, mixed>|null $record     The record when the caller already read it.
 	 *
-	 * @return array{known: bool, unreadable: bool, from: string, senderDomain: string, to: list<string>, cc: list<string>, date: string, messageId: string}
+	 * @return array{
+	 *     known: bool,
+	 *     unreadable: bool,
+	 *     from: string,
+	 *     senderDomain: string,
+	 *     to: list<string>,
+	 *     cc: list<string>,
+	 *     date: string,
+	 *     messageId: string
+	 * }
 	 *
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */

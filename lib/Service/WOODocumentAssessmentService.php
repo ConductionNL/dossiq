@@ -45,6 +45,11 @@ use RuntimeException;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Relevance (woo-review-triage) and reviewer
+ *   access (case-reviewer-access) both joined this existing procedure-named service; splitting
+ *   it belongs to the refactor programme (decision 182).
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Same reason: the two additions met in one merge.
  */
 class WOODocumentAssessmentService {
 

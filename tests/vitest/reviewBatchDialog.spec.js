@@ -11,7 +11,8 @@ import axios from '@nextcloud/axios'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { default: ReviewBatchDialog } = await import('../../src/dialogs/ReviewBatchDialog.vue')
+const { default: ReviewBatchDialog } =
+	await import('../../src/dialogs/ReviewBatchDialog.vue')
 
 /**
  * Mount the dialog on case X with two open documents.
@@ -29,7 +30,8 @@ function mountDialog() {
 				NcTextField: {
 					props: ['modelValue', 'label'],
 					emits: ['update:modelValue'],
-					template: '<input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
+					template:
+						'<input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
 				},
 			},
 		},
@@ -57,16 +59,26 @@ describe('ReviewBatchDialog', () => {
 
 	it('takes the documents by custodian and source system instead of the list', async () => {
 		const wrapper = mountDialog()
-		await wrapper.find('[data-testid="review-batch-name"]').setValue('Mail A. de Wit')
+		await wrapper
+			.find('[data-testid="review-batch-name"]')
+			.setValue('Mail A. de Wit')
 		await wrapper.find('[data-testid="review-batch-assignee"]').setValue('anouk')
-		await wrapper.find('[data-testid="review-batch-filter-custodian"]').setValue('A. de Wit')
-		await wrapper.find('[data-testid="review-batch-filter-sourceSystem"]').setValue(' exchange ')
+		await wrapper
+			.find('[data-testid="review-batch-filter-custodian"]')
+			.setValue('A. de Wit')
+		await wrapper
+			.find('[data-testid="review-batch-filter-sourceSystem"]')
+			.setValue(' exchange ')
 		await wrapper.find('[data-testid="review-batch-create"]').trigger('click')
 		await flushPromises()
 
 		expect(axios.post).toHaveBeenCalledWith(
 			'/index.php/apps/dossiq/api/cases/case-x/review/batches',
-			{ name: 'Mail A. de Wit', assignee: 'anouk', filter: { custodian: 'A. de Wit', sourceSystem: 'exchange' } },
+			{
+				name: 'Mail A. de Wit',
+				assignee: 'anouk',
+				filter: { custodian: 'A. de Wit', sourceSystem: 'exchange' },
+			},
 		)
 		expect(wrapper.emitted('created')).toHaveLength(1)
 	})

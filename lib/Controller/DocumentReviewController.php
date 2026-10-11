@@ -27,7 +27,6 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Review\BatchSelection;
 use OCA\Dossiq\Review\DocumentRelevance;
-use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewSummary;
 use OCP\AppFramework\Controller;
@@ -57,7 +56,6 @@ class DocumentReviewController extends Controller {
 	 * @param ReviewSummary $summary The case summary.
 	 * @param ReviewBatches $batches The review batches.
 	 * @param BatchSelection $selection Which documents a batch takes.
-	 * @param PagesSeen $pagesSeen The pages seen per document.
 	 * @param CaseAccessGuard $caseAccessGuard The per-case access check.
 	 * @param IUserSession $userSession The session.
 	 * @param IL10N $l10n The translations.
@@ -70,7 +68,6 @@ class DocumentReviewController extends Controller {
 		private readonly ReviewSummary $summary,
 		private readonly ReviewBatches $batches,
 		private readonly BatchSelection $selection,
-		private readonly PagesSeen $pagesSeen,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
@@ -237,12 +234,12 @@ class DocumentReviewController extends Controller {
 		}
 
 		try {
-			$review = $this->pagesSeen->record(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
+			$review = $this->reviews->pages()->record(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
 		} catch (RefusedException $e) {
 			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
 		}
 
-		return new JSONResponse($review + ['unseen' => $this->pagesSeen->unseenPages(review: $review)]);
+		return new JSONResponse($review + ['unseen' => $this->reviews->pages()->unseenPages(review: $review)]);
 	}//end pagesSeen()
 
 	/**
@@ -267,7 +264,9 @@ class DocumentReviewController extends Controller {
 	private function sentence(string $rule): string {
 		return match ($rule) {
 			'review-relevance-unknown' => $this->l10n->t('Mark the document in scope, out of scope or unmarked.'),
-			'review-batch-filter-unknown' => $this->l10n->t('A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.'),
+			'review-batch-filter-unknown' => $this->l10n->t(
+				'A batch can be taken by custodian, source system, the rule that marked its documents, or a list of documents.'
+			),
 			'review-batch-name-required' => $this->l10n->t('Give the batch a name.'),
 			'review-batch-assignee-unknown' => $this->l10n->t('Choose the reviewer of the batch.'),
 			'review-batch-empty' => $this->l10n->t('Put at least one document in the batch.'),

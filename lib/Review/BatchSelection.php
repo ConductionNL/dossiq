@@ -66,7 +66,7 @@ class BatchSelection {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
 	 */
 	public static function fields(): array {
-		return array_values(array_merge(self::REVIEW_FIELDS, CaseDocumentProvenance::FILTER_FIELDS));
+		return array_merge(self::REVIEW_FIELDS, CaseDocumentProvenance::FILTER_FIELDS);
 	}//end fields()
 
 	/**

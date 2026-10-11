@@ -24,6 +24,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\DocumentText;
 use OCA\Dossiq\Review\TriageConditions;
+use OCA\Dossiq\Review\TriageFacts;
 use OCA\Dossiq\Review\TriageRules;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
@@ -39,6 +40,7 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Review\TriageRules
  * @uses   \OCA\Dossiq\Review\TriageConditions
+ * @uses   \OCA\Dossiq\Review\TriageFacts
  * @uses   \OCA\Dossiq\Review\DocumentRelevance
  * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
@@ -85,7 +87,7 @@ class TriageRulesTest extends TestCase {
 		$this->store = new InMemoryRegister();
 		$this->access = $this->createMock(CaseReviewerAccess::class);
 		$this->text = $this->createMock(DocumentText::class);
-		$this->text->method('of')->willReturnCallback(fn (array $document): ?string => ($this->texts[(int)($document['fileId'] ?? 0)] ?? null));
+		$this->text->method('extracted')->willReturnCallback(fn (array $document): ?string => ($this->texts[(int)($document['fileId'] ?? 0)] ?? null));
 	}//end setUp()
 
 	/**
@@ -135,8 +137,12 @@ class TriageRulesTest extends TestCase {
 			settingsService: $settings,
 			reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
 			caseDocuments: $caseDocuments,
-			provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
-			text: $this->text,
+			facts: new TriageFacts(
+				caseDocuments: $caseDocuments,
+				provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
+				text: $this->text,
+				logger: $logger,
+			),
 			conditions: new TriageConditions(),
 			reviewerAccess: $this->access,
 			logger: $logger,
@@ -173,7 +179,7 @@ class TriageRulesTest extends TestCase {
 		$this->mail(id: 'mail-other', from: 'a.dewit@gemeente.nl');
 		$rules = $this->rules();
 		$rules->save(caseId: 'case-x', input: ['name' => 'Nieuwsbrieven', 'conditions' => ['senderDomain' => 'nieuwsbrief.example.nl'], 'effect' => 'out-of-scope']);
-		$this->text->expects($this->never())->method('of');
+		$this->text->expects($this->never())->method('extracted');
 
 		$applied = $rules->apply(caseId: 'case-x');
 

@@ -67,19 +67,12 @@ class ReviewBatches {
 	private const UNSTORED = 'The Review batch cannot be stored, so nothing was assigned.';
 
 	/**
-	 * The review depth per document type; stateless, so built here.
-	 *
-	 * @var ReviewDepth
-	 */
-	private readonly ReviewDepth $depth;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance $reviews The reviews the batch is written on.
 	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
-	 * @param ReviewConfiguration $configuration The case type's review configuration.
+	 * @param ReviewConfiguration $configuration The case type's review configuration and each document's depth.
 	 * @param EngineTaskGateway $tasks The task seam that hands the reviewer the batch.
 	 * @param IUserManager $userManager Whether the reviewer exists.
 	 * @param IL10N $l10n The translations, for the task's title.
@@ -99,7 +92,6 @@ class ReviewBatches {
 		private readonly CaseReviewerAccess $reviewerAccess,
 		private readonly LoggerInterface $logger,
 	) {
-		$this->depth = new ReviewDepth();
 	}//end __construct()
 
 	/**
@@ -142,7 +134,12 @@ class ReviewBatches {
 	 * @param string $userId Who creates the batch.
 	 * @param array<string, string> $filter The filter the documents were taken by, recorded on the batch.
 	 *
-	 * @return array{batch: array<string, mixed>, taskCreated: bool, progress: array{assessed: int, total: int}, access: array{status: string, granted: int, revoked: int, refused: int}} The batch, and how the case's reviewer access was reconciled.
+	 * @return array{
+	 *     batch: array<string, mixed>,
+	 *     taskCreated: bool,
+	 *     progress: array{assessed: int, total: int},
+	 *     access: array{status: string, granted: int, revoked: int, refused: int}
+	 * } The batch, and how the case's reviewer access was reconciled.
 	 *
 	 * @throws RefusedException When the batch is incomplete, a document is not on the case or in another open batch, or nothing can be stored.
 	 *
@@ -169,16 +166,19 @@ class ReviewBatches {
 		foreach ($documents as $ref) {
 			$review = ($reviews[$ref] ?? ['case' => $caseId, 'documentRef' => $ref, 'relevance' => DocumentRelevance::UNMARKED]);
 			$review['batch'] = $batchId;
-			$review['depth'] = $this->depth->depthFor(
-				reviewDepth: $reviewDepth,
-				type: $this->depth->typeOf(document: ($this->caseDocuments->meta(documentId: $ref) ?? [])),
-			);
 			$pageCount = null;
 			if (isset($review['pageCount']) === true && is_numeric($review['pageCount']) === true) {
 				$pageCount = (int)$review['pageCount'];
 			}
 
-			$review['pagesRequired'] = $this->depth->pagesRequired(depth: $review['depth'], pageCount: $pageCount);
+			$review = array_merge(
+				$review,
+				$this->configuration->depthOfDocument(
+					reviewDepth: $reviewDepth,
+					document: ($this->caseDocuments->meta(documentId: $ref) ?? []),
+					pageCount: $pageCount,
+				)
+			);
 			$this->reviews->save(review: $review);
 		}
 

@@ -45,7 +45,9 @@
 			</fieldset>
 
 			<fieldset class="triage-rule__conditions">
-				<legend>{{ t('dossiq', 'Conditions, all of which must hold') }}</legend>
+				<legend>
+					{{ t('dossiq', 'Conditions, all of which must hold') }}
+				</legend>
 				<NcTextField
 					v-for="field in textFields"
 					:key="field.key"
@@ -53,28 +55,44 @@
 					:data-testid="'triage-rule-' + field.key"
 					:label="field.label" />
 				<div class="triage-rule__dates">
-					<label for="triage-rule-date-from">{{ t('dossiq', 'Dated from') }}</label>
+					<label for="triage-rule-date-from">{{
+						t('dossiq', 'Dated from')
+					}}</label>
 					<input
 						id="triage-rule-date-from"
 						v-model="conditions.dateFrom"
 						type="date"
-						data-testid="triage-rule-dateFrom">
-					<label for="triage-rule-date-to">{{ t('dossiq', 'Dated up to') }}</label>
+						data-testid="triage-rule-dateFrom" />
+					<label for="triage-rule-date-to">{{
+						t('dossiq', 'Dated up to')
+					}}</label>
 					<input
 						id="triage-rule-date-to"
 						v-model="conditions.dateTo"
 						type="date"
-						data-testid="triage-rule-dateTo">
+						data-testid="triage-rule-dateTo" />
 				</div>
 				<p class="triage-rule__hint">
-					{{ t('dossiq', 'A document without extracted text never matches a text condition, and a mail whose headers were not read never matches a sender domain.') }}
+					{{
+						t(
+							'dossiq',
+							'A document without extracted text never matches a text condition, and a mail whose headers were not read never matches a sender domain.',
+						)
+					}}
 				</p>
 			</fieldset>
 
-			<p v-if="missing" class="triage-rule__missing" data-testid="triage-rule-missing">
+			<p
+				v-if="missing"
+				class="triage-rule__missing"
+				data-testid="triage-rule-missing">
 				{{ missing }}
 			</p>
-			<p v-if="error" class="triage-rule__error" role="alert" data-testid="triage-rule-error">
+			<p
+				v-if="error"
+				class="triage-rule__error"
+				role="alert"
+				data-testid="triage-rule-error">
 				{{ error }}
 			</p>
 		</form>
@@ -155,9 +173,18 @@ export default {
 				{ key: 'custodian', label: t('dossiq', 'Custodian') },
 				{ key: 'sourceSystem', label: t('dossiq', 'Source system') },
 				{ key: 'senderDomain', label: t('dossiq', 'Sender domain') },
-				{ key: 'mimeType', label: t('dossiq', 'File type, such as message/* or text/calendar') },
+				{
+					key: 'mimeType',
+					label: t(
+						'dossiq',
+						'File type, such as message/* or text/calendar',
+					),
+				},
 				{ key: 'textContains', label: t('dossiq', 'The text contains') },
-				{ key: 'textNotContains', label: t('dossiq', 'The text does not contain') },
+				{
+					key: 'textNotContains',
+					label: t('dossiq', 'The text does not contain'),
+				},
 			]
 		},
 
@@ -186,10 +213,16 @@ export default {
 				return t('dossiq', 'Give the rule a name.')
 			}
 			if (this.effect === '') {
-				return t('dossiq', 'Choose whether the rule marks documents in scope or out of scope.')
+				return t(
+					'dossiq',
+					'Choose whether the rule marks documents in scope or out of scope.',
+				)
 			}
 			if (Object.keys(this.filled).length === 0) {
-				return t('dossiq', 'Give the rule at least one condition, or it would mark every document.')
+				return t(
+					'dossiq',
+					'Give the rule at least one condition, or it would mark every document.',
+				)
 			}
 			return ''
 		},
@@ -212,14 +245,28 @@ export default {
 			this.saving = true
 			this.error = ''
 			const base = `/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/review/triage/rules`
-			const body = { name: this.name.trim(), effect: this.effect, conditions: this.filled }
+			const body = {
+				name: this.name.trim(),
+				effect: this.effect,
+				conditions: this.filled,
+			}
 			try {
 				const { data } = this.rule?.id
-					? await axios.put(generateUrl(`${base}/${encodeURIComponent(this.rule.id)}`), body)
+					? await axios.put(
+							generateUrl(
+								`${base}/${encodeURIComponent(this.rule.id)}`,
+							),
+							body,
+						)
 					: await axios.post(generateUrl(base), body)
 				this.$emit('saved', data)
 			} catch (e) {
-				this.error = e?.response?.data?.message || t('dossiq', 'The triage rules cannot be stored or applied, so nothing was marked.')
+				this.error =
+					e?.response?.data?.message
+					|| t(
+						'dossiq',
+						'The triage rules cannot be stored or applied, so nothing was marked.',
+					)
 			} finally {
 				this.saving = false
 			}

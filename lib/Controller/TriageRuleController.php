@@ -260,7 +260,9 @@ class TriageRuleController extends Controller {
 			'triage-rule-name-taken' => $this->l10n->t('Another rule of this case has that name.'),
 			'triage-rule-effect-required' => $this->l10n->t('Choose whether the rule marks documents in scope or out of scope.'),
 			'triage-rule-condition-required' => $this->l10n->t('Give the rule at least one condition, or it would mark every document.'),
-			'triage-rule-condition-unknown' => $this->l10n->t('A rule can ask for custodian, source system, file type, a date range, sender domain, or text in the document.'),
+			'triage-rule-condition-unknown' => $this->l10n->t(
+				'A rule can ask for custodian, source system, file type, a date range, sender domain, or text in the document.'
+			),
 			'triage-rule-date-invalid' => $this->l10n->t('Give the dates of a rule as a day, month and year.'),
 			'triage-rule-unknown' => $this->l10n->t('This case has no such rule.'),
 			default => $this->l10n->t('The triage rules cannot be stored or applied, so nothing was marked.'),

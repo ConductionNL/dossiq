@@ -71,8 +71,8 @@ class DocumentTextTest extends TestCase {
 			}
 		};
 
-		$this->assertSame('Overleg over het fietspad', $this->text(extraction: $extraction)->of(document: ['fileId' => '7']));
-		$this->assertNull($this->text(extraction: $extraction)->of(document: ['fileId' => 8]), 'no extracted text is no text');
+		$this->assertSame('Overleg over het fietspad', $this->text(extraction: $extraction)->extracted(document: ['fileId' => '7']));
+		$this->assertNull($this->text(extraction: $extraction)->extracted(document: ['fileId' => 8]), 'no extracted text is no text');
 		$this->assertSame([7, 8], $extraction->asked);
 	}//end testTheExtractedTextIsReadByFileId()
 
@@ -93,9 +93,9 @@ class DocumentTextTest extends TestCase {
 			}
 		};
 
-		$this->assertNull($this->text(extraction: $failing)->of(document: []));
-		$this->assertNull($this->text(extraction: null)->of(document: ['fileId' => 7]));
-		$this->assertNull($this->text(extraction: new \stdClass())->of(document: ['fileId' => 7]));
-		$this->assertNull($this->text(extraction: $failing)->of(document: ['fileId' => 7]));
+		$this->assertNull($this->text(extraction: $failing)->extracted(document: []));
+		$this->assertNull($this->text(extraction: null)->extracted(document: ['fileId' => 7]));
+		$this->assertNull($this->text(extraction: new \stdClass())->extracted(document: ['fileId' => 7]));
+		$this->assertNull($this->text(extraction: $failing)->extracted(document: ['fileId' => 7]));
 	}//end testWithoutAFileOrAnExtractionThereIsNoText()
 }//end class

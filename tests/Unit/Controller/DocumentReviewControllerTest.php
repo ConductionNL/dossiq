@@ -28,10 +28,8 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Review\DocumentRelevance;
-use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewConfiguration;
-use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Review\ReviewSummary;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -143,7 +141,6 @@ class DocumentReviewControllerTest extends TestCase {
 					caseDocuments: $caseDocuments,
 				),
 			),
-			pagesSeen: new PagesSeen(reviews: $reviews, depth: new ReviewDepth()),
 			caseAccessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,

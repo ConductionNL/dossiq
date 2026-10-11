@@ -12,7 +12,8 @@ import axios from '@nextcloud/axios'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { default: TriageRuleDialog } = await import('../../src/dialogs/TriageRuleDialog.vue')
+const { default: TriageRuleDialog } =
+	await import('../../src/dialogs/TriageRuleDialog.vue')
 
 /**
  * Mount the dialog on case X.
@@ -30,12 +31,14 @@ function mountDialog(rule = null) {
 				NcTextField: {
 					props: ['modelValue', 'label'],
 					emits: ['update:modelValue'],
-					template: '<input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
+					template:
+						'<input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
 				},
 				NcCheckboxRadioSwitch: {
 					props: ['modelValue', 'value'],
 					emits: ['update:modelValue'],
-					template: '<input type="radio" v-bind="$attrs" :checked="modelValue === value" @change="$emit(\'update:modelValue\', value)">',
+					template:
+						'<input type="radio" v-bind="$attrs" :checked="modelValue === value" @change="$emit(\'update:modelValue\', value)">',
 				},
 			},
 		},
@@ -50,41 +53,76 @@ describe('TriageRuleDialog', () => {
 
 	it('testAnEffectIsRequired', async () => {
 		const wrapper = mountDialog()
-		await wrapper.find('[data-testid="triage-rule-name"]').setValue('Nieuwsbrieven')
-		await wrapper.find('[data-testid="triage-rule-senderDomain"]').setValue('nieuwsbrief.example.nl')
+		await wrapper
+			.find('[data-testid="triage-rule-name"]')
+			.setValue('Nieuwsbrieven')
+		await wrapper
+			.find('[data-testid="triage-rule-senderDomain"]')
+			.setValue('nieuwsbrief.example.nl')
 
-		expect(wrapper.find('[data-testid="triage-rule-missing"]').text()).toBe('Choose whether the rule marks documents in scope or out of scope.')
-		expect(wrapper.find('[data-testid="triage-rule-save"]').attributes('disabled')).toBeDefined()
+		expect(wrapper.find('[data-testid="triage-rule-missing"]').text()).toBe(
+			'Choose whether the rule marks documents in scope or out of scope.',
+		)
+		expect(
+			wrapper.find('[data-testid="triage-rule-save"]').attributes('disabled'),
+		).toBeDefined()
 		await wrapper.find('[data-testid="triage-rule-save"]').trigger('click')
 		expect(axios.post).not.toHaveBeenCalled()
 
-		await wrapper.find('[data-testid="triage-rule-effect-out"]').trigger('change')
-		expect(wrapper.find('[data-testid="triage-rule-missing"]').exists()).toBe(false)
+		await wrapper
+			.find('[data-testid="triage-rule-effect-out"]')
+			.trigger('change')
+		expect(wrapper.find('[data-testid="triage-rule-missing"]').exists()).toBe(
+			false,
+		)
 		axios.post.mockResolvedValue({ data: { id: 'r-1' } })
 		await wrapper.find('[data-testid="triage-rule-save"]').trigger('click')
 		await flushPromises()
 
 		expect(axios.post).toHaveBeenCalledWith(
 			'/index.php/apps/dossiq/api/cases/case-x/review/triage/rules',
-			{ name: 'Nieuwsbrieven', effect: 'out-of-scope', conditions: { senderDomain: 'nieuwsbrief.example.nl' } },
+			{
+				name: 'Nieuwsbrieven',
+				effect: 'out-of-scope',
+				conditions: { senderDomain: 'nieuwsbrief.example.nl' },
+			},
 		)
 		expect(wrapper.emitted('saved')).toEqual([[{ id: 'r-1' }]])
 	})
 
 	it('asks for a condition, and sends the change of a rule to that rule', async () => {
-		const wrapper = mountDialog({ id: 'r-9', name: 'Buiten de periode', effect: 'out-of-scope', conditions: { dateTo: '2024-12-31' } })
+		const wrapper = mountDialog({
+			id: 'r-9',
+			name: 'Buiten de periode',
+			effect: 'out-of-scope',
+			conditions: { dateTo: '2024-12-31' },
+		})
 		await wrapper.find('[data-testid="triage-rule-dateTo"]').setValue('')
-		expect(wrapper.find('[data-testid="triage-rule-missing"]').text()).toBe('Give the rule at least one condition, or it would mark every document.')
+		expect(wrapper.find('[data-testid="triage-rule-missing"]').text()).toBe(
+			'Give the rule at least one condition, or it would mark every document.',
+		)
 
-		await wrapper.find('[data-testid="triage-rule-dateFrom"]').setValue('2026-10-01')
-		axios.put.mockRejectedValue({ response: { data: { message: 'Another rule of this case has that name.' } } })
+		await wrapper
+			.find('[data-testid="triage-rule-dateFrom"]')
+			.setValue('2026-10-01')
+		axios.put.mockRejectedValue({
+			response: {
+				data: { message: 'Another rule of this case has that name.' },
+			},
+		})
 		await wrapper.find('[data-testid="triage-rule-save"]').trigger('click')
 		await flushPromises()
 
 		expect(axios.put).toHaveBeenCalledWith(
 			'/index.php/apps/dossiq/api/cases/case-x/review/triage/rules/r-9',
-			{ name: 'Buiten de periode', effect: 'out-of-scope', conditions: { dateFrom: '2026-10-01' } },
+			{
+				name: 'Buiten de periode',
+				effect: 'out-of-scope',
+				conditions: { dateFrom: '2026-10-01' },
+			},
 		)
-		expect(wrapper.find('[data-testid="triage-rule-error"]').text()).toBe('Another rule of this case has that name.')
+		expect(wrapper.find('[data-testid="triage-rule-error"]').text()).toBe(
+			'Another rule of this case has that name.',
+		)
 	})
 })

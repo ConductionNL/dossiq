@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 
 /**
@@ -34,6 +33,9 @@ use OCA\Dossiq\Exception\RefusedException;
  * creation date from its record, and its extracted text. A fact that is not
  * known never matches: a document without text matches no text condition,
  * and a mail whose headers were not read matches no sender domain.
+ *
+ * @phpstan-type MatchedFacts array{custodian: string, sourceSystem: string, mimeType: string, date: string, senderDomain: string, text: ?string}
+ * @psalm-type   MatchedFacts = array{custodian: string, sourceSystem: string, mimeType: string, date: string, senderDomain: string, text: ?string}
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
  */
@@ -103,6 +105,35 @@ class TriageConditions {
 	}//end normalise()
 
 	/**
+	 * The rules that run, in order: active, with a known effect and conditions; by `order`, then name.
+	 *
+	 * @param list<array<string, mixed>> $rules   The rules as stored.
+	 * @param list<string>               $effects The effects a rule can have.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	public function runnable(array $rules, array $effects): array {
+		$runnable = array_values(
+			array_filter(
+				$rules,
+				static fn (array $rule): bool => ($rule['active'] ?? true) !== false
+					&& in_array($rule['effect'] ?? '', $effects, true) === true
+					&& is_array($rule['conditions'] ?? null) === true
+					&& $rule['conditions'] !== []
+			)
+		);
+		usort(
+			$runnable,
+			static fn (array $one, array $two): int => [(int)($one['order'] ?? 0), (string)($one['name'] ?? '')]
+				<=> [(int)($two['order'] ?? 0), (string)($two['name'] ?? '')]
+		);
+
+		return $runnable;
+	}//end runnable()
+
+	/**
 	 * Whether any condition reads the document's text.
 	 *
 	 * @param array<string, string> $conditions The conditions.
@@ -119,7 +150,7 @@ class TriageConditions {
 	 * Whether a document's facts meet every condition.
 	 *
 	 * @param array<string, string> $conditions The conditions, as normalise() answers them.
-	 * @param array{custodian: string, sourceSystem: string, mimeType: string, date: string, senderDomain: string, text: ?string} $facts The document's facts.
+	 * @param MatchedFacts $facts The document's facts.
 	 *
 	 * @return bool
 	 *
@@ -140,7 +171,7 @@ class TriageConditions {
 	 *
 	 * @param string $field  The condition.
 	 * @param string $wanted Its value.
-	 * @param array{custodian: string, sourceSystem: string, mimeType: string, date: string, senderDomain: string, text: ?string} $facts The facts.
+	 * @param MatchedFacts $facts The facts.
 	 *
 	 * @return bool
 	 */
@@ -204,8 +235,10 @@ class TriageConditions {
 	 * @return bool
 	 */
 	private static function isDate(string $value): bool {
-		$date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $parts) !== 1) {
+			return false;
+		}
 
-		return $date !== false && $date->format('Y-m-d') === $value;
+		return checkdate((int)$parts[2], (int)$parts[3], (int)$parts[1]);
 	}//end isDate()
 }//end class

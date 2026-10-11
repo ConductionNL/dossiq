@@ -67,7 +67,7 @@ class DocumentText {
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
 	 */
-	public function of(array $document): ?string {
+	public function extracted(array $document): ?string {
 		$fileId = $document['fileId'] ?? null;
 		if (is_numeric($fileId) === false || (int)$fileId <= 0) {
 			return null;
@@ -93,7 +93,7 @@ class DocumentText {
 		}
 
 		return $text;
-	}//end of()
+	}//end extracted()
 
 	/**
 	 * OpenRegister's extraction service when it reads extracted text, else null.

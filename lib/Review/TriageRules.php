@@ -29,7 +29,6 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -77,9 +76,8 @@ class TriageRules {
 	 *
 	 * @param SettingsService        $settingsService The settings and OpenRegister access.
 	 * @param DocumentRelevance      $reviews         The reviews a rule marks.
-	 * @param WooCaseDocuments       $caseDocuments   The case's documents and their records.
-	 * @param CaseDocumentProvenance $provenance      Custodian, source system and mail headers per document.
-	 * @param DocumentText           $text            The extracted text per document.
+	 * @param WooCaseDocuments       $caseDocuments   The case's documents.
+	 * @param TriageFacts            $facts           What a rule reads about each document.
 	 * @param TriageConditions       $conditions      Checks and matches a rule's conditions.
 	 * @param CaseReviewerAccess     $reviewerAccess  Who may read the case's private review records.
 	 * @param LoggerInterface        $logger          The logger.
@@ -90,8 +88,7 @@ class TriageRules {
 		private readonly SettingsService $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly CaseDocumentProvenance $provenance,
-		private readonly DocumentText $text,
+		private readonly TriageFacts $facts,
 		private readonly TriageConditions $conditions,
 		private readonly CaseReviewerAccess $reviewerAccess,
 		private readonly LoggerInterface $logger,
@@ -202,7 +199,8 @@ class TriageRules {
 	 *
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array{counts: array<string, int>, marked: int, considered: int} The documents each rule marked, the total, and how many unmarked documents were looked at.
+	 * @return array{counts: array<string, int>, marked: int, considered: int} The documents each rule marked,
+	 *         the total, and how many unmarked documents were looked at.
 	 *
 	 * @throws RefusedException When the rules, the reviews or a document's facts cannot be read or written.
 	 *
@@ -264,12 +262,12 @@ class TriageRules {
 	 * @throws RefusedException When the document's facts cannot be read.
 	 */
 	private function firstMatch(string $caseId, string $documentId, array $rules): ?array {
-		$facts = $this->factsOf(caseId: $caseId, documentId: $documentId);
+		$facts = $this->facts->forDocument(caseId: $caseId, documentId: $documentId);
 		$textRead = false;
 		foreach ($rules as $rule) {
 			$conditions = (array)$rule['conditions'];
 			if ($textRead === false && $this->conditions->needsText(conditions: $conditions) === true) {
-				$facts['text'] = $this->text->of(document: $facts['record']);
+				$facts = $this->facts->withText(facts: $facts);
 				$textRead = true;
 			}
 
@@ -282,81 +280,14 @@ class TriageRules {
 	}//end firstMatch()
 
 	/**
-	 * The facts a rule reads about one document; the text is read only when a rule asks for it.
-	 *
-	 * @param string $caseId     The case UUID.
-	 * @param string $documentId The document.
-	 *
-	 * @return array{custodian: string, sourceSystem: string, mimeType: string, date: string, senderDomain: string, text: ?string, record: array<string, mixed>}
-	 *
-	 * @throws RefusedException When the provenance cannot be read.
-	 */
-	private function factsOf(string $caseId, string $documentId): array {
-		$record = ($this->caseDocuments->meta(documentId: $documentId) ?? []);
-		try {
-			$provenance = $this->provenance->forDocument(caseId: $caseId, documentId: $documentId, record: $record);
-			$mail = $this->provenance->mailOf(caseId: $caseId, documentId: $documentId, record: $record);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: the provenance of a document could not be read, so the triage rules were not applied',
-				['app' => Application::APP_ID, 'case' => $caseId, 'document' => $documentId, 'exception' => $e->getMessage()]
-			);
-			throw $this->unavailable(previous: $e);
-		}
-
-		return [
-			'custodian' => $provenance['custodian'],
-			'sourceSystem' => $provenance['sourceSystem'],
-			'mimeType' => trim((string)($record['mimeType'] ?? ($record['format'] ?? ''))),
-			'date' => self::day(value: ($mail['date'] !== '' ? $mail['date'] : (string)($record['creatiedatum'] ?? ''))),
-			'senderDomain' => $mail['senderDomain'],
-			'text' => null,
-			'record' => $record,
-		];
-	}//end factsOf()
-
-	/**
-	 * A date or date-time as YYYY-MM-DD, '' when it is no date.
-	 *
-	 * @param string $value The value.
-	 *
-	 * @return string
-	 */
-	private static function day(string $value): string {
-		if (trim($value) === '') {
-			return '';
-		}
-
-		try {
-			return (new DateTimeImmutable($value))->format('Y-m-d');
-		} catch (Throwable) {
-			return '';
-		}
-	}//end day()
-
-	/**
-	 * The active rules of the case in order: by `order`, then by name.
+	 * The active rules of the case in order.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
 	private function activeRules(string $caseId): array {
-		$rules = array_values(
-			array_filter(
-				$this->rows(caseId: $caseId),
-				static fn (array $rule): bool => ($rule['active'] ?? true) !== false
-					&& in_array($rule['effect'] ?? '', self::EFFECTS, true) === true
-					&& is_array($rule['conditions'] ?? null) === true
-					&& $rule['conditions'] !== []
-			)
-		);
-		usort(
-			$rules,
-			static fn (array $one, array $two): int => [(int)($one['order'] ?? 0), (string)($one['name'] ?? '')] <=> [(int)($two['order'] ?? 0), (string)($two['name'] ?? '')]
-		);
-
-		return $rules;
+		return $this->conditions->runnable(rules: $this->rows(caseId: $caseId), effects: self::EFFECTS);
 	}//end activeRules()
 
 	/**
@@ -383,7 +314,11 @@ class TriageRules {
 
 		foreach ($rows as $row) {
 			if ((string)($row['name'] ?? '') === $name && $this->idOf(row: $row) !== $ruleId) {
-				throw $this->refusal(rule: 'triage-rule-name-taken', sentence: 'Another rule of this case has that name.', status: RefusedException::STATUS_REFUSED);
+				throw $this->refusal(
+					rule: 'triage-rule-name-taken',
+					sentence: 'Another rule of this case has that name.',
+					status: RefusedException::STATUS_REFUSED,
+				);
 			}
 		}
 
@@ -487,10 +422,11 @@ class TriageRules {
 
 		unset($rule['id']);
 		try {
-			$saved = $this->settingsService->getObjectService()->saveObject(
-				object: $rule,
+			$saved = $this->saveObjectAsArray(
+				objectService: $this->settingsService->getObjectService(),
 				register: $this->settingsService->getConfigValue('register'),
 				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				object: $rule,
 				uuid: $uuid,
 			);
 		} catch (Throwable $e) {
@@ -501,11 +437,7 @@ class TriageRules {
 			throw $this->unavailable(previous: $e);
 		}
 
-		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-			return (array)$saved->jsonSerialize();
-		}
-
-		return (array)$saved;
+		return ($saved ?? $rule);
 	}//end write()
 
 	/**
@@ -516,7 +448,12 @@ class TriageRules {
 	 * @return RefusedException
 	 */
 	private function unavailable(?Throwable $previous): RefusedException {
-		return $this->refusal(rule: 'triage-rule-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE, previous: $previous);
+		return $this->refusal(
+			rule: 'triage-rule-unavailable',
+			sentence: self::UNSTORED,
+			status: RefusedException::STATUS_INDETERMINATE,
+			previous: $previous,
+		);
 	}//end unavailable()
 
 	/**

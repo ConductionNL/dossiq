@@ -24,6 +24,7 @@ use OCA\Dossiq\Controller\TriageRuleController;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\DocumentText;
 use OCA\Dossiq\Review\TriageConditions;
+use OCA\Dossiq\Review\TriageFacts;
 use OCA\Dossiq\Review\TriageRules;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\CaseAccessGuard;
@@ -44,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\TriageRuleController
  * @uses   \OCA\Dossiq\Review\TriageRules
  * @uses   \OCA\Dossiq\Review\TriageConditions
+ * @uses   \OCA\Dossiq\Review\TriageFacts
  * @uses   \OCA\Dossiq\Review\DocumentRelevance
  * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
@@ -105,8 +107,12 @@ class TriageRuleControllerTest extends TestCase {
 				settingsService: $settings,
 				reviews: new DocumentRelevance(settingsService: $settings, logger: $logger),
 				caseDocuments: $caseDocuments,
-				provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
-				text: $this->createMock(DocumentText::class),
+				facts: new TriageFacts(
+					caseDocuments: $caseDocuments,
+					provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
+					text: $this->createMock(DocumentText::class),
+					logger: $logger,
+				),
 				conditions: new TriageConditions(),
 				reviewerAccess: $this->createMock(CaseReviewerAccess::class),
 				logger: $logger,
