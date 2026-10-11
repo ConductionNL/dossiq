@@ -44,10 +44,21 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
     request; the reference travels; a refusal carries hermiq's gate; a
     transport failure is not dressed up as a refusal; the sentence names the
     feature and the reason).
-- [ ] 3.2 A refusal is rendered with the feature and the reason named, carrying
+- [x] 3.2 A refusal is rendered with the feature and the reason named, carrying
   hermiq's own gate name rather than a generic failure.
-  - `src/components/case/CaseAiFeaturesPanel.vue`
-- [ ] 4.1 Ask hermiq which group an incoming report belongs to, and render the
+  - `src/components/case/CaseAiFeaturesPanel.vue` (board DqZaakAssistent), the
+    `assistant` sidebar tab on CaseDetail (`src/manifest.json`,
+    `src/registry.js`). Each feature the case type places on the case shows
+    where it runs (`whereItRuns`, unavailable never local); a run picks a case
+    document and goes through `caseAiFeatureGateway`; a refusal is a warning
+    card with `refusalSentence` and `Gate: <gate>`, a transport failure a
+    separate line. Reads: `src/services/caseAiFeaturesApi.js` (the case type's
+    declaration first, so an undeclared case type asks nobody).
+  - Tests: `tests/vitest/caseAiFeaturesPanel.spec.js` (redaction refusal with
+    the gate, no-document refusal before any request, transport failure apart,
+    output, no run for an unavailable feature, unreadable panel),
+    `tests/vitest/caseAiFeaturesApi.spec.js`.
+- [x] 4.1 Ask hermiq which group an incoming report belongs to, and render the
   count with the near-duplicates beside it (D-4).
   - Backend built: `lib/Service/Ai/ReportGroupingConsumer.php`. A case type
     declares grouping as `aiFeatures["report-similarity"]` (hermiq's own name:
@@ -62,8 +73,17 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
   - Tests: `ReportGroupingConsumerTest`, `ReportGroupingOnCreateListenerTest`,
     `ReportGroupingJobTest`, `ReportGroupControllerTest`,
     `ObjectListenerRegistrarTest::testTheReportGroupingIsRegisteredOnCreation`.
-  - Open: rendering the count and near-duplicates on the case (Vue, board
-    DqZaakAssistent).
+  - Rendered on the case: `CaseAiFeaturesPanel.vue` "Reports like this one",
+    the count and the near-duplicates (hermiq's uncertain members) linked to
+    their cases; an unavailable group names hermiq's reason and gate; a case
+    type that does not group shows nothing (`groupView`). Tests:
+    `caseAiFeaturesPanel.spec.js::shows the group count with the near-duplicates beside it`,
+    `caseAiFeaturesApi.spec.js` (groupView). New scenario "A report shows the
+    count of its group" added to the spec for what the case shows.
+- [ ] 4.3 Collapse a group into one item in the queue (scenario "Two hundred
+  reports read as one item with a count"). Not built: the case list has no
+  grouped-row rendering, and board DqZaakAssistent covers the case only. Needs
+  a queue board, or a nextcloud-vue index grouping by `reportGroupId`.
 - [x] 4.2 A group changes no confirmation of receipt: the count owed is read
   from the reports, never from the group.
   - `ReportGroupingConsumer::confirmationsOwed()` counts distinct reports and
@@ -105,11 +125,16 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
   `ConfigKeys` already holds (D-6).
   - `tests/Unit/Controller/AiSettingsControllerShapeTest.php::switchKeys()`
     derives the feature flags from `ConfigKeys::ALL` (5 tests green, 10 Oct).
-- [ ] 8.1 Unit tests: the declaration, the unavailable-not-local read, the
+- [x] 8.1 Unit tests: the declaration, the unavailable-not-local read, the
   missing-reference refusal, the grouping render, the acknowledgement count and
   the intake tool's delegation.
+  - All present: `CaseTypeAiFeaturesDeclarationTest`, `HermiqAiFeatureClientTest`,
+    `AssistantControllerTest`, `caseAiFeatureGateway.spec.js`,
+    `caseAiFeaturesPanel.spec.js`, `caseAiFeaturesApi.spec.js`,
+    `ReportGroupingConsumerTest`, `IntakeToolsTest`, `CaseIntakeFilingTest`.
 - [ ] 8.2 e2e coverage or a reason-bearing exclusion per scenario, per gate 19.
-  - `tests/e2e/ai-features-on-the-case.spec.ts`
+  - `tests/e2e/ai-features-on-the-case.spec.ts` written (hermiq's answers
+    routed in the browser, dossiq's page real). Run it: (live pass, decision 139).
 
 ## Rescue, 2026-09-18: the client has its caller
 

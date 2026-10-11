@@ -25,6 +25,9 @@
 //   this app's Vue 2.7 build) was removed by workflow-editor-integration.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The AI features a case type switched on, and the report group the case is in
+// (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
+import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
@@ -1285,6 +1288,16 @@ const registry = {
 		kind: 'page',
 		component: CaseTermsTab,
 		_note: "The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server's: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.",
+	},
+	// --- AI features on the case (ai-features-on-the-case-consume-hermiq). ---
+	// A `component:` tab for the same reason CaseTermsTab is: no CnObjectSidebar
+	// built-in can read the case type's declaration, ask hermiq where a feature
+	// runs, run one on a document, or read the report group.
+	// @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md
+	CaseAiFeaturesPanel: {
+		kind: 'page',
+		component: CaseAiFeaturesPanel,
+		_note: "Board DqZaakAssistent, the assistant panel. The AI features the case type places on the case surface, each with the provider and residency hermiq answers (unavailable, never local, when hermiq does not offer it); a run on a chosen case document in the handler's own session through caseAiFeatureGateway, a refusal shown naming the feature, the reason and hermiq's gate; and the report group the case was placed in on creation, read and never placed again, with the count and the near-duplicates hermiq was unsure about.",
 	},
 	CaseSharingTab: {
 		kind: 'page',
