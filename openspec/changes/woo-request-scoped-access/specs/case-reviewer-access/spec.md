@@ -80,3 +80,27 @@ hands as before.
 - **GIVEN** a case with private records and assignee `j.devries`, who is no supervisor
 - **WHEN** `j.devries` sets the assignee to `a.smit`
 - **THEN** the update SHALL be refused with `reassign-needs-supervisor` and the case and the grants SHALL be unchanged
+
+### Requirement: A decision on a case's file is changed by its decider or a supervisor of that case (REQ-CRA-006)
+
+When OpenRegister asks, through its vetoable `DecisionChangeRequestedEvent`, whether a user other
+than the decider may change a decision (decision 197: a decision is its own object), dossiq SHALL
+map the decision's subject object to the case it belongs to: the case itself when the object is a
+case, or every case that links the object as a case document. When at least one of those cases has
+a case type that declares reviewer access, dossiq SHALL allow the change only for a member of that
+case type's supervising group or an administrator, and refuse it otherwise with
+`case-supervisor-required`; one refusing case refuses. When no such case exists dossiq SHALL leave
+OpenRegister's answer as it was. A read that throws SHALL refuse.
+
+#### Scenario: A second reviewer cannot change the first reviewer's redaction
+- **GIVEN** a document linked to a Woo case, whose case type declares reviewer access with supervising group `dossiq-coordinators`, and a redaction decided by `j.devries`
+- **WHEN** `p.bakker`, who is no coordinator, asks to change it
+- **THEN** dossiq SHALL refuse with `case-supervisor-required`
+
+#### Scenario: A coordinator may
+- **WHEN** a member of `dossiq-coordinators` asks to change the same decision
+- **THEN** dossiq SHALL allow it
+
+#### Scenario: A document on no guarded case
+- **GIVEN** a document linked to no case, or only to cases whose case type declares no reviewer access
+- **THEN** dossiq SHALL leave OpenRegister's answer unchanged

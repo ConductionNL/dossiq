@@ -331,6 +331,14 @@ class SchemaSlugMap {
 		// answer about duplicates, and a dropped hierarchy block gives a wrong
 		// answer about who may open a dossier.
 		'x-openregister-hierarchy',
+		// Who may change a reviewer's decision on a file of the schema's
+		// objects (a redaction on a document). OpenRegister's
+		// ReviewPolicyResolver reads this block off
+		// `Schema::getConfiguration()` and answers the instance default when
+		// it is absent, which is "anyone who may write the object". So a
+		// dropped block does not fail loudly: a second reviewer silently
+		// overwrites the first reviewer's redaction (REQ-WSA-007).
+		'x-openregister-review',
 	];
 
 	/**

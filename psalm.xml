@@ -37,6 +37,7 @@
              registers the follower against by `::class`. -->
         <file name="tests/Stubs/OpenRegister/Event/ObjectsMergedEvent.php" />
         <file name="tests/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php" />
         <!-- flow-nodes-to-their-owners: the sent-mail and generated-document
              events dossiq files on the case. Verbatim copies of the real classes. -->
         <file name="tests/Stubs/OpenRegister/Event/FlowEmailSentEvent.php" />
