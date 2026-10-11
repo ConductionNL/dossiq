@@ -4,18 +4,18 @@
 
 @e2e exclude Backend MCP tool surface; invoked by the AI orchestrator (Hermiq) over JSON-RPC and the chat facade, not via the browser UI.
 
-Replace Dossiq's hand-written `IMcpToolProvider` with the ADR-063 declarative surface: a curated `x-openregister-mcp` dialect on 13 of Dossiq's 155 schemas, from which OpenRegister derives 22 read-only `dossiq.{schema}.{verb}` tools. No Dossiq MCP tool code survives.
+Replace Dossiq's hand-written `IMcpToolProvider` with the ADR-063 declarative surface: a curated `x-openregister-mcp` dialect on 12 of Dossiq's schemas, from which OpenRegister derives 20 read-only `dossiq.{schema}.{verb}` tools. No Dossiq MCP tool code survives.
 
 ## ADDED Requirements
 
-### Requirement: REQ-MCP-101 — Curated x-openregister-mcp dialect on exactly 13 schemas
+### Requirement: REQ-MCP-101 — Curated x-openregister-mcp dialect on exactly 12 schemas
 
-Dossiq MUST declare `x-openregister-mcp` with `enabled: true` on exactly these 13 schemas and on no others: `case`, `task`, `caseType`, `statusType`, `statusRecord`, `decision`, `result`, `resultType`, `document`, `caseDocument`, `bezwaar`, `termijnInstance`, `complaint`. Every other schema owned by Dossiq (142 of 155, including all of `ori_register.json`) MUST remain at the dialect default (absent / OFF). The block MUST live inside the schema's `configuration` object, which is where `SchemaDerivedToolProvider::mcpAnnotation()` reads it.
+Dossiq MUST declare `x-openregister-mcp` with `enabled: true` on exactly these 12 schemas and on no others: `case`, `caseType`, `statusType`, `statusRecord`, `decision`, `result`, `resultType`, `document`, `caseDocument`, `objectionProceeding`, `deadlineInstance`, `complaint`. (Amended 10 Oct 2026 at build: the draft named `task`, `bezwaar` and `termijnInstance`; `bezwaar` and `termijnInstance` were renamed to `objectionProceeding` and `deadlineInstance` by #849, and the case task moved onto OpenRegister's engine `Task`, which is not a register object and so cannot carry the dialect.) Every other schema owned by Dossiq MUST remain at the dialect default (absent / OFF). The block MUST live inside the schema's `configuration` object, which is where `SchemaDerivedToolProvider::mcpAnnotation()` reads it.
 
 #### Scenario: Only the curated schemas are enabled
 
 - **WHEN** the Dossiq registers are imported into OpenRegister
-- **THEN** exactly 13 Dossiq schemas SHALL carry `configuration["x-openregister-mcp"]["enabled"] === true`
+- **THEN** exactly 12 Dossiq schemas SHALL carry `configuration["x-openregister-mcp"]["enabled"] === true`
 - **AND** no other Dossiq schema SHALL carry an `x-openregister-mcp` block
 
 #### Scenario: Personal-data and control-plane schemas stay off
@@ -45,7 +45,7 @@ Every verb Dossiq declares MUST be `search` or `get`, with `scope: "read"` and `
 
 ### Requirement: REQ-MCP-103 — Every declared search filter is a real schema property
 
-Each `search.filters` entry MUST name a property that exists on that schema, because `McpAnnotationValidator::validateFilters()` rejects the schema at import otherwise. The declared filters SHALL be exactly: `case` → `status`, `caseType`, `assignee`, `priority`, `identifier`, `isFinalStatus`; `task` → `status`, `isTerminalStatus`, `case`, `assignee`, `dueDate`, `priority`; `caseType` → `identifier`, `catalogus`, `isDraft`; `statusType` → `caseType`, `isFinal`; `statusRecord` → `case`, `statusType`; `decision` → `case`, `decisionType`, `decisionDate`; `resultType` → `caseType`, `archivalAction`; `document` → `documentType`, `status`, `confidentiality`; `caseDocument` → `case`, `document`; `bezwaar` → `case`, `status`, `objection`; `termijnInstance` → `zaak`, `status`, `termijnDefinitie`. `result` and `complaint` declare `get` only and therefore no filters.
+Each `search.filters` entry MUST name a property that exists on that schema, because `McpAnnotationValidator::validateFilters()` rejects the schema at import otherwise. The declared filters SHALL be exactly: `case` → `status`, `caseType`, `assignee`, `priority`, `identifier`, `isFinalStatus`; `caseType` → `identifier`, `catalogus`, `isDraft`; `statusType` → `caseType`, `isFinal`; `statusRecord` → `case`, `statusType`; `decision` → `case`, `decisionType`, `decisionDate`; `resultType` → `caseType`, `archivalAction`; `document` → `documentType`, `status`, `confidentiality`; `caseDocument` → `case`, `document`; `objectionProceeding` → `case`, `status`, `objection`; `deadlineInstance` → `case`, `status`, `deadlineDefinition`. `result` and `complaint` declare `get` only and therefore no filters.
 
 #### Scenario: Import accepts every declared filter
 
@@ -61,7 +61,7 @@ Each `search.filters` entry MUST name a property that exists on that schema, bec
 
 ### Requirement: REQ-MCP-104 — Personal-data posture of the enabled set (AVG)
 
-Because the dialect offers no server-side field projection, an enabled schema returns everything it stores; Dossiq MUST therefore constrain exposure by schema and verb. `complaint` MUST declare `get` only — never `search` — because `complaint.klager` is an embedded citizen record (naam + contactgegevens) and a search would let an agent sweep complainants. `case` MAY declare `search` and `get` despite `initiatorSourceId` potentially carrying a BSN, on the condition of REQ-MCP-103's filter restriction, OpenRegister RBAC in the caller's own session, and the immutable audit trail; this residual risk is recorded, not hidden.
+Because the dialect offers no server-side field projection, an enabled schema returns everything it stores; Dossiq MUST therefore constrain exposure by schema and verb. `complaint` MUST declare `get` only — never `search` — because `complaint.complainant` is an embedded citizen record (naam + contactgegevens) and a search would let an agent sweep complainants. `case` MAY declare `search` and `get` despite `initiatorSourceId` potentially carrying a BSN, on the condition of REQ-MCP-103's filter restriction, OpenRegister RBAC in the caller's own session, and the immutable audit trail; this residual risk is recorded, not hidden.
 
 #### Scenario: Complaint cannot be swept
 
@@ -96,7 +96,7 @@ The Dossiq MCP surface MUST delegate all authorisation to OpenRegister RBAC, inv
 
 ### Requirement: REQ-001 — Implement IMcpToolProvider with stable app id and hardcoded tool catalogue
 
-**Reason:** `lib/Mcp/DossiqToolProvider.php` is deleted, together with its `'mcpProvider' => DossiqToolProvider::class` registration in `lib/AppInfo/Application.php`, its unit test, and the `IMcpToolProvider` test stub. The tool catalogue is now derived by OpenRegister from the schema dialect.
+**Reason:** `lib/Mcp/DossiqToolProvider.php` is deleted, together with its `'mcpProvider' => DossiqToolProvider::class` registration in `lib/AppInfo/Registrar/AppHostRegistrar.php`, its unit test, and the `IMcpToolProvider` test stub. The tool catalogue is now derived by OpenRegister from the schema dialect.
 
 **Migration:** tool ids move from the `dossiq.<verb>` shape to the ADR-063 `dossiq.{schema}.{verb}` shape.
 
