@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use Throwable;
 
@@ -68,6 +69,7 @@ class PublicationChecks {
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
 	 * @param SenderIdentity          $senders          Whether the mail account this type names exists.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypeResolver,
@@ -79,6 +81,7 @@ class PublicationChecks {
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseTypeReachability $reachability,
 		private readonly SenderIdentity $senders,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -153,7 +156,7 @@ class PublicationChecks {
 			$findings[] = 'Pick the status a new case of this type starts in.';
 		}
 
-		if (trim((string)($caseType['title'] ?? '')) === '') {
+		if ($this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
 			$findings[] = 'Give the case type a title.';
 		}
 
@@ -205,7 +208,7 @@ class PublicationChecks {
 				continue;
 			}
 
-			$title = trim((string)($status['name'] ?? ($status['title'] ?? '')));
+			$title = $this->text->textOf(value: ($status['name'] ?? ($status['title'] ?? null)));
 			if ($title === '') {
 				$title = $id;
 			}
