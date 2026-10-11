@@ -24,6 +24,7 @@ use OCA\Dossiq\Service\CaseDefinition\PackageCapabilities;
 use OCA\Dossiq\Service\CaseDefinition\PackageDirectory;
 use OCA\Dossiq\Service\CaseDefinition\PackageIds;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
+use OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences;
 use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\SettingsService;
@@ -35,6 +36,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 
@@ -100,6 +102,165 @@ final class PackageTestRegister extends InMemoryRegister {
 }//end class
 
 /**
+ * A container answering OpenRegister's register and schema mappers over a
+ * fixed map, as OpenRegister's own mappers would: find() throws for an
+ * unknown register, findBySlugInIds() answers null for an unknown slug.
+ */
+final class PackageTestSchemas implements ContainerInterface {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param array<string, array<int, int>> $registers Register slug to the schema ids it holds.
+	 * @param array<int, string>             $schemas   Schema id to slug.
+	 */
+	public function __construct(
+		public array $registers = [],
+		public array $schemas = [],
+	) {
+	}//end __construct()
+
+	/**
+	 * Whether the container answers an id.
+	 *
+	 * @param string $id The service id.
+	 *
+	 * @return boolean True for the two mappers.
+	 */
+	public function has(string $id): bool {
+		return in_array($id, ['OCA\OpenRegister\Db\RegisterMapper', 'OCA\OpenRegister\Db\SchemaMapper'], true);
+	}//end has()
+
+	/**
+	 * The mapper for an id.
+	 *
+	 * @param string $id The service id.
+	 *
+	 * @return object The mapper.
+	 */
+	public function get(string $id): object {
+		if ($id === 'OCA\OpenRegister\Db\RegisterMapper') {
+			return new PackageTestRegisterMapper($this->registers);
+		}
+
+		if ($id === 'OCA\OpenRegister\Db\SchemaMapper') {
+			return new PackageTestSchemaMapper($this->schemas);
+		}
+
+		throw new RuntimeException("No service {$id}");
+	}//end get()
+}//end class
+
+/**
+ * OpenRegister's RegisterMapper over a fixed map.
+ */
+final class PackageTestRegisterMapper {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param array<string, array<int, int>> $registers Register slug to schema ids.
+	 */
+	public function __construct(private readonly array $registers) {
+	}//end __construct()
+
+	/**
+	 * The register with this slug.
+	 *
+	 * @param string|integer $id            The slug.
+	 * @param boolean        $_rbac         Unused.
+	 * @param boolean        $_multitenancy Unused.
+	 *
+	 * @return PackageTestRegisterEntity The register.
+	 */
+	public function find(string|int $id, bool $_rbac = true, bool $_multitenancy = true): PackageTestRegisterEntity {
+		if (isset($this->registers[(string)$id]) === false) {
+			throw new RuntimeException('Register not found');
+		}
+
+		return new PackageTestRegisterEntity($this->registers[(string)$id]);
+	}//end find()
+}//end class
+
+/**
+ * A register entity: only the schema ids are read.
+ */
+final class PackageTestRegisterEntity {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param array<int, int> $schemaIds The schema ids.
+	 */
+	public function __construct(private readonly array $schemaIds) {
+	}//end __construct()
+
+	/**
+	 * The schema ids.
+	 *
+	 * @return array<int, int> The ids.
+	 */
+	public function getSchemas(): array {
+		return $this->schemaIds;
+	}//end getSchemas()
+}//end class
+
+/**
+ * OpenRegister's SchemaMapper over a fixed map.
+ */
+final class PackageTestSchemaMapper {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param array<int, string> $schemas Schema id to slug.
+	 */
+	public function __construct(private readonly array $schemas) {
+	}//end __construct()
+
+	/**
+	 * The schema with this slug among these ids.
+	 *
+	 * @param string          $slug      The slug.
+	 * @param array<int, int> $schemaIds The ids to look in.
+	 *
+	 * @return PackageTestSchemaEntity|null The schema.
+	 */
+	public function findBySlugInIds(string $slug, array $schemaIds): ?PackageTestSchemaEntity {
+		foreach ($schemaIds as $id) {
+			if (($this->schemas[(int)$id] ?? null) === $slug) {
+				return new PackageTestSchemaEntity((int)$id);
+			}
+		}
+
+		return null;
+	}//end findBySlugInIds()
+}//end class
+
+/**
+ * A schema entity: only the id is read.
+ */
+final class PackageTestSchemaEntity {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param integer $id The id.
+	 */
+	public function __construct(private readonly int $id) {
+	}//end __construct()
+
+	/**
+	 * The id.
+	 *
+	 * @return integer The id.
+	 */
+	public function getId(): int {
+		return $this->id;
+	}//end getId()
+}//end class
+
+/**
  * Unit tests for the package installer, validator rules and writer.
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageInstaller
@@ -108,6 +269,8 @@ final class PackageTestRegister extends InMemoryRegister {
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageCapabilities
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackagePartRules
  * @covers \OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher
+ * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSchemaReferences
+ * @covers \OCA\Dossiq\Service\CaseDefinition\PackageSettingRules
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageValidator
  * @uses \OCA\Dossiq\Service\CaseDefinition\PackageWriter
  * @uses \OCA\Dossiq\Service\CaseDefinition\WritesPackageRows
@@ -147,6 +310,13 @@ class PackageInstallerTest extends TestCase {
 	private array $appConfigValues = [];
 
 	/**
+	 * The registers and schemas OpenRegister answers for.
+	 *
+	 * @var PackageTestSchemas
+	 */
+	private PackageTestSchemas $schemas;
+
+	/**
 	 * A fresh register.
 	 *
 	 * @return void
@@ -155,6 +325,10 @@ class PackageInstallerTest extends TestCase {
 		parent::setUp();
 		$this->register = new PackageTestRegister();
 		$this->appConfigValues = [];
+		$this->schemas = new PackageTestSchemas(
+			registers: ['fixture-register' => [12, 60]],
+			schemas: [12 => 'unrelated', 60 => 'fixture_source'],
+		);
 	}//end setUp()
 
 	/**
@@ -229,6 +403,7 @@ class PackageInstallerTest extends TestCase {
 			$ledger,
 			$appConfig,
 			new NullLogger(),
+			new PackageSchemaReferences($apps, $this->schemas, new NullLogger()),
 		);
 	}//end installer()
 
@@ -263,6 +438,21 @@ class PackageInstallerTest extends TestCase {
 	}//end editJson()
 
 	/**
+	 * The ledger rows that record a written or adopted row, without the
+	 * package version records.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowLedger(): array {
+		return array_values(
+			array_filter(
+				$this->register->all('shippedOrigin'),
+				static fn (array $row): bool => $row['targetSchema'] !== ShippedConfigurationService::PACKAGE_RECORD
+			)
+		);
+	}//end rowLedger()
+
+	/**
 	 * Every row of the fixture lands in its schema, and the ledger records each
 	 * one under the package id and version.
 	 *
@@ -279,7 +469,7 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(self::CASE_TYPE, $this->register->all('workflowTemplate')[0]['caseType']);
 		$this->assertSame('reference', $this->register->all('propertyDefinition')[0]['name']);
 
-		$ledger = $this->register->all('shippedOrigin');
+		$ledger = $this->rowLedger();
 		$this->assertCount(6, $ledger, 'every written row has a ledger row');
 		foreach ($ledger as $row) {
 			$this->assertSame('fixture-case-type', $row['set']);
@@ -325,7 +515,7 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
 		$this->assertSame(0, $outcome['written']);
 		$this->assertSame(6, $outcome['adopted']);
-		$ledger = $this->register->all('shippedOrigin');
+		$ledger = $this->rowLedger();
 		unset($this->register->rows['shippedOrigin']);
 		$this->assertSame($before, $this->register->rows, 'no row was written, changed or removed');
 
@@ -379,7 +569,7 @@ class PackageInstallerTest extends TestCase {
 		$this->assertStringContainsString('"fromStatus":"seeded-received"', $flow['transitions']);
 		$this->assertStringContainsString('"toStatus":"seeded-done"', $flow['transitions']);
 		$this->assertStringContainsString('"status":"seeded-received"', $flow['steps']);
-		$this->assertCount(6, $this->register->all('shippedOrigin'));
+		$this->assertCount(6, $this->rowLedger());
 	}//end testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds()
 
 	/**
@@ -653,6 +843,133 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame('true', $this->appConfigValues['fixture_enabled']);
 		$this->assertSame('', $this->appConfigValues['fixture_label']);
 	}//end testSettingsNeverOverruleAnAdministratorsValue()
+
+	/**
+	 * A setting that names another app's schema by register and slug is
+	 * stored as that schema's id on this instance, resolved at install.
+	 *
+	 * @return void
+	 */
+	public function testASettingNamingAnotherAppsSchemaIsStoredAsItsIdHere(): void {
+		$outcome = $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-settings');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame('60', $this->appConfigValues['fixture_source_schema']);
+		$this->assertSame('shipped', $this->appConfigValues['fixture_label']);
+	}//end testASettingNamingAnotherAppsSchemaIsStoredAsItsIdHere()
+
+	/**
+	 * A register the app used to call by another slug is still found.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceFindsTheSchemaUnderAnOlderRegisterSlug(): void {
+		$this->schemas->registers = ['fixture-register-old' => [77]];
+		$this->schemas->schemas = [77 => 'fixture_source'];
+
+		$outcome = $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-settings');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame('77', $this->appConfigValues['fixture_source_schema']);
+	}//end testAReferenceFindsTheSchemaUnderAnOlderRegisterSlug()
+
+	/**
+	 * When the named schema is missing the package is refused, the app is
+	 * named, and no setting is written.
+	 *
+	 * @return void
+	 */
+	public function testAMissingReferencedSchemaRefusesThePackageAndNamesTheApp(): void {
+		$this->schemas->schemas = [12 => 'unrelated'];
+
+		$outcome = $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-settings');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString('fixture-app', $outcome['message']);
+		$this->assertStringContainsString('fixture_source', $outcome['message']);
+		$this->assertSame(['fixture-app:fixture_source'], $outcome['missing']);
+		$this->assertSame([], $this->appConfigValues, 'no setting is written for a refused package');
+		$this->assertSame([], $this->register->all('shippedOrigin'), 'a refused package is not recorded');
+	}//end testAMissingReferencedSchemaRefusesThePackageAndNamesTheApp()
+
+	/**
+	 * When the app that owns the schema is not installed the package is
+	 * refused and the message names the app.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceToAnAppThatIsNotInstalledRefusesThePackage(): void {
+		$outcome = $this->installer()->install(id: 'fixture-settings');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString('fixture-app', $outcome['message']);
+		$this->assertSame([], $this->appConfigValues);
+	}//end testAReferenceToAnAppThatIsNotInstalledRefusesThePackage()
+
+	/**
+	 * A reference rejected as malformed makes the package invalid.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedReferenceMakesThePackageInvalid(): void {
+		$root = sys_get_temp_dir() . '/dossiq-packages-' . bin2hex(random_bytes(6));
+		$this->temporary[] = $root;
+		mkdir($root);
+		exec('cp -r ' . escapeshellarg(self::FIXTURES . '/fixture-settings') . ' ' . escapeshellarg($root . '/fixture-settings'));
+		file_put_contents($root . '/fixture-settings/settings.json', json_encode(['fixture_source_schema' => ['schema' => ['app' => 'fixture-app']]]));
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-settings');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString("settings.json: 'fixture_source_schema' names a schema without", implode("\n", $outcome['errors']));
+	}//end testAMalformedReferenceMakesThePackageInvalid()
+
+	/**
+	 * A package that writes no rows is still recorded at its version, so a
+	 * second install reports it current and the catalogue shows it installed.
+	 *
+	 * @return void
+	 */
+	public function testASettingsOnlyPackageIsCurrentOnTheSecondInstall(): void {
+		$installer = $this->installer(installedApps: ['fixture-app']);
+
+		$first = $installer->install(id: 'fixture-settings');
+		$this->appConfigValues = [];
+		$second = $installer->install(id: 'fixture-settings');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $first['status'], $first['message']);
+		$this->assertSame(0, $first['written']);
+		$this->assertSame(PackageInstaller::CURRENT, $second['status'], $second['message']);
+		$this->assertSame([], $this->appConfigValues, 'a current package applies nothing again');
+		$catalogue = array_column($installer->catalogue(), 'installed', 'id');
+		$this->assertSame('1.0.0', $catalogue['fixture-settings']);
+	}//end testASettingsOnlyPackageIsCurrentOnTheSecondInstall()
+
+	/**
+	 * The version record is one ledger row per package, kept apart from the
+	 * rows the package wrote, and updated in place on a newer version.
+	 *
+	 * @return void
+	 */
+	public function testThePackageVersionRecordIsOneRowUpdatedInPlace(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$root = $this->variant(
+			static function (string $dir): void {
+				self::editJson($dir . '/package.json', static fn (array $m): array => ['version' => '1.1.0'] + $m);
+			}
+		);
+		$this->installer(root: $root)->install(id: 'fixture-case-type');
+
+		$records = array_values(
+			array_filter(
+				$this->register->all('shippedOrigin'),
+				static fn (array $row): bool => $row['targetSchema'] === ShippedConfigurationService::PACKAGE_RECORD
+			)
+		);
+		$this->assertCount(1, $records);
+		$this->assertSame('fixture-case-type', $records[0]['targetObject']);
+		$this->assertSame('1.1.0', $records[0]['setVersion']);
+	}//end testThePackageVersionRecordIsOneRowUpdatedInPlace()
 
 	/**
 	 * The ledger knows a package's version from its own manifest.

@@ -66,6 +66,14 @@ class ShippedConfigurationService {
 	public const STATE_LOCAL = 'local';
 
 	/**
+	 * The target schema of a package's version record: one ledger row per
+	 * package, whose target object is the package id. A package that writes
+	 * no rows (settings only) still has a version installed here, and no
+	 * overview reads it, because overviews filter by a real schema slug.
+	 */
+	public const PACKAGE_RECORD = 'package';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param StarterStore       $store       The OpenRegister seam.
@@ -140,6 +148,27 @@ class ShippedConfigurationService {
 
 		return ($saved !== null);
 	}//end stamp()
+
+	/**
+	 * Record that a package is installed here at a version, whether or not it
+	 * wrote rows. Updated in place: one record per package.
+	 *
+	 * @param string $set     The package id.
+	 * @param string $version The package version.
+	 *
+	 * @return boolean True when the record was written.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function recordPackage(string $set, string $version): bool {
+		return $this->stamp(
+			set: $set,
+			targetSchema: self::PACKAGE_RECORD,
+			targetObject: $set,
+			object: ['package' => $set, 'version' => $version],
+			version: $version,
+		);
+	}//end recordPackage()
 
 	/**
 	 * Whether the ledger can be written at all.
