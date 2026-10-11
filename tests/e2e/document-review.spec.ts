@@ -28,8 +28,9 @@ import {
 import { PAGE_LOAD } from './helpers/nav.ts'
 
 /** The review routes of a case. */
-const review = (caseId: string, path: string): string =>
-	`/index.php/apps/dossiq/api/cases/${caseId}/review${path}`
+function review(caseId: string, path: string): string {
+	return `/index.php/apps/dossiq/api/cases/${caseId}/review${path}`
+}
 
 /** A case type that reviews its documents, with exports sampled at five pages. */
 async function reviewingCaseType(
@@ -85,10 +86,12 @@ async function caseWithDocuments(
 }
 
 /** Headers for a dossiq write. */
-const headers = (token: string): Record<string, string> => ({
-	requesttoken: token,
-	'OCS-APIRequest': 'true',
-})
+function headers(token: string): Record<string, string> {
+	return {
+		requesttoken: token,
+		'OCS-APIRequest': 'true',
+	}
+}
 
 test.describe('Document review', () => {
 	test.afterAll(async ({ request }) => {
