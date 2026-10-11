@@ -5132,7 +5132,7 @@ OC.L10N.register(
         "Plafond in EUR cents": "Plafond in eurocenten",
         "Plain text": "Gewone tekst",
         "Plan a follow-up case": "Vervolgzaak plannen",
-        "Plan an item": "Plan iets in",
+        "Plan an item": "Iets inplannen",
         "Plan appointment": "Afspraak inplannen",
         "Plan follow-up": "Vervolgzaak plannen",
         "Plan it": "Plan het in",
