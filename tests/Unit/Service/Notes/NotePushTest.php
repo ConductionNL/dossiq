@@ -4,14 +4,14 @@
  * Unit tests for the guard on a case note leaving the municipality.
  *
  * Three things are decided here and each of them is a way a note that did NOT
- * go out could read as one that did: an internal note stays, a dormant adapter
- * writes no marker at all, and anything the adapter does not answer `PUSHED`
- * to is a failure carrying its reason.
+ * go out could read as one that did: an internal note stays, an instance with
+ * nothing bound writes no marker at all, and anything integriq does not take
+ * for at least one subscription is a failure carrying its reason.
  *
  * The doubles use `onlyMethods`, never `addMethods`.
  *
  * @category Test
- * @package  OCA\Dossiq\Tests\Unit\Service\External\Zgw
+ * @package  OCA\Dossiq\Tests\Unit\Service\Notes
  *
  * @author    Conduction <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,14 +26,15 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\External\Zgw;
+namespace OCA\Dossiq\Tests\Unit\Service\Notes;
 
-use OCA\Dossiq\Service\External\Zgw\NoteEnvelope;
-use OCA\Dossiq\Service\External\Zgw\NotePush;
-use OCA\Dossiq\Service\External\Zgw\ZgwExternalAdapterInterface;
-use OCA\Dossiq\Service\External\Zgw\ZgwPushResult;
+use OCA\Dossiq\Service\Notes\NoteEnvelope;
+use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Integriq\Event\DeliveryRequestedEvent;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
+use RuntimeException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -41,17 +42,24 @@ use Psr\Log\LoggerInterface;
 /**
  * Tests what travels, what stays, and what the case says about it.
  *
- * @covers \OCA\Dossiq\Service\External\Zgw\NotePush
- * @uses \OCA\Dossiq\Service\External\Zgw\NoteEnvelope
- * @uses \OCA\Dossiq\Service\External\Zgw\ZgwExternalAdapterInterface
- * @uses \OCA\Dossiq\Service\External\Zgw\ZgwPushResult
+ * @covers \OCA\Dossiq\Service\Notes\NotePush
+ * @uses \OCA\Dossiq\Service\Notes\NoteEnvelope
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  */
 class NotePushTest extends TestCase {
 	/**
-	 * @var ZgwExternalAdapterInterface|MockObject
+	 * How integriq answers the delivery request: `handled`, `matched`, `refusal`, `throws`.
+	 *
+	 * @var array<string, mixed>
 	 */
-	private $adapter;
+	private array $integriq = ['handled' => true, 'matched' => 1, 'refusal' => null, 'throws' => false];
+
+	/**
+	 * The delivery requests dispatched, for assertions.
+	 *
+	 * @var array<int, DeliveryRequestedEvent>
+	 */
+	private array $dispatched = [];
 
 	/**
 	 * @var CaseTimeline|MockObject
@@ -103,7 +111,6 @@ class NotePushTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->adapter = $this->createMock(ZgwExternalAdapterInterface::class);
 		$this->timeline = $this->getMockBuilder(CaseTimeline::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['record'])
@@ -148,8 +155,32 @@ class NotePushTest extends TestCase {
 			)
 		);
 
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			function (object $event): void {
+				if ($this->integriq['throws'] === true) {
+					throw new RuntimeException('dispatcher broke');
+				}
+
+				$this->dispatched[] = $event;
+				if (($event instanceof DeliveryRequestedEvent) === false || $this->integriq['handled'] !== true) {
+					return;
+				}
+
+				$event->setMatchedSubscriptions(matchedSubscriptions: (int)$this->integriq['matched']);
+				if (is_array($this->integriq['refusal']) === true) {
+					$event->setRefusal(
+						reason: (string)$this->integriq['refusal']['reason'],
+						code: (string)$this->integriq['refusal']['code']
+					);
+				}
+
+				$event->setHandled(handled: true);
+			}
+		);
+
 		return new NotePush(
-			$this->adapter,
+			$dispatcher,
 			new NoteEnvelope(),
 			$this->timeline,
 			$config,
@@ -158,173 +189,177 @@ class NotePushTest extends TestCase {
 	}//end push()
 
 	/**
-	 * A dormant adapter writes NO outcome at all.
+	 * Nothing bound to receive case notes writes NO outcome at all.
 	 *
-	 * A marker that reads as a success on an adapter that contacted nobody is
-	 * the failure this rule exists for, and a marker on every note of every
-	 * unbound instance is a marker nobody reads.
+	 * integriq took the request and no subscription matched: a marker that
+	 * reads as a success while nobody was contacted is the failure this rule
+	 * exists for, and a marker on every note of every unbound instance is a
+	 * marker nobody reads.
 	 *
 	 * @return void
 	 */
-	public function testADormantAdapterWritesNoMarker(): void {
-		$this->adapter->method('isDormant')->willReturn(true);
-		$this->adapter->expects($this->never())->method('submitDocument');
+	public function testNothingBoundWritesNoMarker(): void {
+		$this->integriq['matched'] = 0;
 
 		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
 
 		$this->assertSame(NotePush::OUTCOME_NO_REGISTER, $outcome['outcome']);
+		$this->assertSame(NotePush::RECORD_NONE, $outcome['caseRecord']);
 		$this->assertSame([], $this->recorded);
-	}//end testADormantAdapterWritesNoMarker()
+	}//end testNothingBoundWritesNoMarker()
 
 	/**
-	 * An internal note is not pushed; the same note made external is.
+	 * The request names the note as a case-note on the zgw-documenten channel,
+	 * carrying the document envelope.
+	 *
+	 * @return void
+	 */
+	public function testTheRequestCarriesTheNoteAsADocument(): void {
+		$this->push()->push('case-1', self::EXTERNAL_NOTE);
+
+		$this->assertCount(1, $this->dispatched);
+		$event = $this->dispatched[0];
+		$this->assertSame('dossiq', $event->getSourceApp());
+		$this->assertSame(NotePush::DELIVERY_KIND, $event->getDeliveryKind());
+		$this->assertSame(NotePush::DELIVERY_CHANNEL, $event->getChannel());
+		$this->assertSame('case-1', $event->getSubjectId());
+		$this->assertSame('dossiq-note-42', $event->getExternalReference());
+		$payload = $event->getPayload();
+		$this->assertSame($this->reservedType, $payload['informatieobjecttype']);
+		$this->assertSame('case-1', $payload['zaak']);
+		$this->assertSame(base64_encode('Gebeld met de aanvrager'), $payload['inhoud']);
+	}//end testTheRequestCarriesTheNoteAsADocument()
+
+	/**
+	 * An internal note is not handed over; the same note made external is.
 	 *
 	 * @return void
 	 */
 	public function testAnInternalNoteStaysHereAndAnExternalOneGoes(): void {
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->method('submitDocument')->willReturn(
-			new ZgwPushResult('PUSHED', 'https://drc.example/eio/9', 'corr-1', false)
-		);
-
 		$internal = array_merge(self::EXTERNAL_NOTE, ['visibility' => 'internal']);
 		$this->assertSame(NotePush::OUTCOME_NOT_SENT, $this->push()->push('case-1', $internal)['outcome']);
+		$this->assertSame([], $this->dispatched);
 
 		$this->assertSame(NotePush::OUTCOME_SENT, $this->push()->push('case-1', self::EXTERNAL_NOTE)['outcome']);
+		$this->assertCount(1, $this->dispatched);
 	}//end testAnInternalNoteStaysHereAndAnExternalOneGoes()
 
 	/**
 	 * A note with no visibility at all is treated as internal.
 	 *
 	 * The default stays internal, so nothing leaves the municipality by
-	 * accident. Failing towards keeping a note here is the only safe
-	 * direction: the other way sends a colleague's working note to another
-	 * organisation.
+	 * accident.
 	 *
 	 * @return void
 	 */
 	public function testANoteWithNoVisibilityNeverLeaves(): void {
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->expects($this->never())->method('submitDocument');
-
 		$note = self::EXTERNAL_NOTE;
 		unset($note['visibility']);
 
 		$this->assertSame(NotePush::OUTCOME_NOT_SENT, $this->push()->push('case-1', $note)['outcome']);
+		$this->assertSame([], $this->dispatched);
 	}//end testANoteWithNoVisibilityNeverLeaves()
 
 	/**
-	 * A refusing adapter leaves the note marked failed, with the reason.
+	 * A refusal from integriq leaves the note marked failed, with the reason.
 	 *
 	 * @return void
 	 */
-	public function testARefusingAdapterLeavesTheNoteMarkedFailedWithTheReason(): void {
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->method('submitDocument')->willReturn(
-			new ZgwPushResult(
-				'REJECTED',
-				'',
-				'corr-1',
-				false,
-				['rejectionReason' => 'informatieobjecttype is not in this catalogue']
-			)
-		);
+	public function testARefusalLeavesTheNoteMarkedFailedWithTheReason(): void {
+		$this->integriq['matched'] = 0;
+		$this->integriq['refusal'] = ['code' => 'opted-out', 'reason' => 'the receiver opted out of case notes'];
 
 		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
 
 		$this->assertSame(NotePush::OUTCOME_FAILED, $outcome['outcome']);
-		$this->assertSame('informatieobjecttype is not in this catalogue', $outcome['reason']);
+		$this->assertSame('the receiver opted out of case notes', $outcome['reason']);
 		// The CASE says so: an outcome only the caller sees is an outcome
 		// nobody finds again.
 		$this->assertCount(1, $this->recorded);
 		$this->assertSame(NotePush::OUTCOME_FAILED, $this->recorded[0]['fields']['status']);
-		$this->assertStringContainsString('not in this catalogue', $this->recorded[0]['message']);
+		$this->assertStringContainsString('opted out', $this->recorded[0]['message']);
 		$this->assertSame(CaseTimeline::INTERNAL, $this->recorded[0]['visibility']);
-	}//end testARefusingAdapterLeavesTheNoteMarkedFailedWithTheReason()
+	}//end testARefusalLeavesTheNoteMarkedFailedWithTheReason()
 
 	/**
-	 * A deferred push on a live adapter is a failure, not a send.
+	 * A request integriq did not take is a failure, not a send and not unbound.
 	 *
-	 * The dormant case is answered before the adapter is ever called, so a
-	 * `PUSH_DEFERRED` here means a live adapter did not deliver. Treating it
-	 * as a success would put a sent marker on a note that stayed home, which
-	 * is the single thing this change exists to prevent.
+	 * integriq is installed and its listener did not handle the request (it
+	 * logged why). The note stayed home, so a sent marker or a silent "no
+	 * register" would both be wrong.
 	 *
 	 * @return void
 	 */
-	public function testADeferredPushOnALiveAdapterIsAFailure(): void {
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->method('submitDocument')->willReturn(
-			new ZgwPushResult('PUSH_DEFERRED', '', 'corr-1', false, ['reason' => 'queue is full'])
-		);
+	public function testARequestIntegriqDidNotTakeIsAFailure(): void {
+		$this->integriq['handled'] = false;
 
 		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
 
 		$this->assertSame(NotePush::OUTCOME_FAILED, $outcome['outcome']);
-		$this->assertSame('queue is full', $outcome['reason']);
-	}//end testADeferredPushOnALiveAdapterIsAFailure()
+		$this->assertStringContainsString('integriq could not take the note', $outcome['reason']);
+		$this->assertSame(NotePush::OUTCOME_FAILED, $this->recorded[0]['fields']['status']);
+	}//end testARequestIntegriqDidNotTakeIsAFailure()
 
 	/**
-	 * With no reserved type nothing is pushed, and the note is marked failed
-	 * naming the key to set.
+	 * A dispatcher that throws leaves the note marked failed.
+	 *
+	 * @return void
+	 */
+	public function testADispatchThatThrowsIsAFailure(): void {
+		$this->integriq['throws'] = true;
+
+		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
+
+		$this->assertSame(NotePush::OUTCOME_FAILED, $outcome['outcome']);
+		$this->assertSame(NotePush::RECORD_WRITTEN, $outcome['caseRecord']);
+	}//end testADispatchThatThrowsIsAFailure()
+
+	/**
+	 * With no reserved type nothing is handed over, and the note is marked
+	 * failed naming the key to set.
 	 *
 	 * @return void
 	 */
 	public function testWithNoReservedTypeNothingIsPushed(): void {
 		$this->reservedType = '';
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->expects($this->never())->method('submitDocument');
 
 		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
 
 		$this->assertSame(NotePush::OUTCOME_FAILED, $outcome['outcome']);
 		$this->assertStringContainsString('note_informatieobjecttype', $outcome['reason']);
+		$this->assertSame([], $this->dispatched);
 	}//end testWithNoReservedTypeNothingIsPushed()
 
 	/**
-	 * A send records the outcome on the case and answers the receiver's url.
+	 * A hand-over records the outcome on the case.
 	 *
 	 * @return void
 	 */
-	public function testASendRecordsItselfAndAnswersTheReceiverUrl(): void {
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->method('submitDocument')->willReturn(
-			new ZgwPushResult('PUSHED', 'https://drc.example/eio/9', 'corr-1', false)
-		);
-
+	public function testASendRecordsItself(): void {
 		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
 
 		$this->assertSame(NotePush::OUTCOME_SENT, $outcome['outcome']);
-		$this->assertSame('https://drc.example/eio/9', $outcome['receiverUrl']);
+		$this->assertSame('', $outcome['receiverUrl']);
 		$this->assertSame(NotePush::OUTCOME_SENT, $this->recorded[0]['fields']['status']);
 		$this->assertSame('42', $this->recorded[0]['fields']['noteId']);
 		$this->assertSame(NotePush::RECORD_WRITTEN, $outcome['caseRecord']);
-	}//end testASendRecordsItselfAndAnswersTheReceiverUrl()
+	}//end testASendRecordsItself()
 
 	/**
 	 * A failure the case could not be told about says so, rather than
 	 * answering as though the case now carries it.
 	 *
-	 * `CaseTimeline::record()` catches its own failures, logs a warning and
-	 * answers an empty string, so a push that ignored the answer would tell
-	 * the caller "failed" and write nothing. Tomorrow the case history reads
-	 * as though nobody ever pushed this note, which is the same evidence loss
-	 * as a note that did not travel looking like one that did.
-	 *
 	 * @return void
 	 */
 	public function testAFailureTheCaseCouldNotRecordSaysSo(): void {
 		$this->timelineWrites = false;
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->method('submitDocument')->willReturn(
-			new ZgwPushResult('REJECTED', '', 'corr-1', false, ['rejectionReason' => 'the catalogue refused the type'])
-		);
+		$this->integriq['refusal'] = ['code' => 'refused', 'reason' => 'the catalogue refused the type'];
 
 		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
 
 		$this->assertSame(NotePush::OUTCOME_FAILED, $outcome['outcome']);
 		$this->assertSame(NotePush::RECORD_LOST, $outcome['caseRecord']);
-		// The adapter's own reason still travels, and the lost record is told
+		// The refusal's own reason still travels, and the lost record is told
 		// beside it rather than instead of it.
 		$this->assertStringContainsString('the catalogue refused the type', $outcome['reason']);
 		$this->assertStringContainsString('The case could not record this', $outcome['reason']);
@@ -332,26 +367,17 @@ class NotePushTest extends TestCase {
 	}//end testAFailureTheCaseCouldNotRecordSaysSo()
 
 	/**
-	 * A note that DID reach the register, on a case that could not be told,
-	 * answers sent and says the history is missing it.
-	 *
-	 * The send is real and is not downgraded: the note is at the neighbouring
-	 * register whatever this instance managed to write down. What the caller
-	 * must not be left with is a sent answer plus a silent hole in the case.
+	 * A note handed over, on a case that could not be told, answers sent and
+	 * says the history is missing it.
 	 *
 	 * @return void
 	 */
 	public function testASendTheCaseCouldNotRecordStillSaysSo(): void {
 		$this->timelineWrites = false;
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->method('submitDocument')->willReturn(
-			new ZgwPushResult('PUSHED', 'https://drc.example/eio/9', 'corr-1', false)
-		);
 
 		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
 
 		$this->assertSame(NotePush::OUTCOME_SENT, $outcome['outcome']);
-		$this->assertSame('https://drc.example/eio/9', $outcome['receiverUrl']);
 		$this->assertSame(NotePush::RECORD_LOST, $outcome['caseRecord']);
 		$this->assertStringContainsString('The case could not record this', $outcome['reason']);
 	}//end testASendTheCaseCouldNotRecordStillSaysSo()
@@ -359,16 +385,9 @@ class NotePushTest extends TestCase {
 	/**
 	 * An internal note that somebody tried to send leaves a line on the case.
 	 *
-	 * Somebody asked for this note to go out and it stayed. The answer in the
-	 * response is gone the moment the tab closes; the case is where the next
-	 * handler looks for what became of a note.
-	 *
 	 * @return void
 	 */
 	public function testAnInternalNoteSomebodyTriedToSendIsRecorded(): void {
-		$this->adapter->method('isDormant')->willReturn(false);
-		$this->adapter->expects($this->never())->method('submitDocument');
-
 		$internal = array_merge(self::EXTERNAL_NOTE, ['visibility' => 'internal']);
 		$outcome = $this->push()->push('case-1', $internal);
 
@@ -378,22 +397,4 @@ class NotePushTest extends TestCase {
 		$this->assertSame(NotePush::OUTCOME_NOT_SENT, $this->recorded[0]['fields']['status']);
 		$this->assertSame(CaseTimeline::INTERNAL, $this->recorded[0]['visibility']);
 	}//end testAnInternalNoteSomebodyTriedToSendIsRecorded()
-
-	/**
-	 * A dormant adapter answers that nothing was due, not that a write was
-	 * lost.
-	 *
-	 * The two are opposite states and one shared flag would hide the second
-	 * behind the first on every unbound instance, which is every instance
-	 * until a connector is configured.
-	 *
-	 * @return void
-	 */
-	public function testADormantAdapterAnswersThatNothingWasDue(): void {
-		$this->adapter->method('isDormant')->willReturn(true);
-
-		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
-
-		$this->assertSame(NotePush::RECORD_NONE, $outcome['caseRecord']);
-	}//end testADormantAdapterAnswersThatNothingWasDue()
 }//end class

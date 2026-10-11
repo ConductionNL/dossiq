@@ -21,13 +21,19 @@
  * it, says `caseRecord: lost` and tells the caller in the same sentence the
  * reason travels in. See the note on `RECORD_LOST`.
  *
- * A DORMANT ADAPTER WRITES NO OUTCOME AT ALL. `LogZgwExternalAdapter` answers
- * `PUSH_DEFERRED` with `dormant: true` and contacts nothing, and it is what an
- * instance with no bound connector has. Recording "sent" for it would be a
- * marker that reads as a success on an adapter that contacted nobody, and
- * recording "failed" would be a marker on every note of every unbound
- * instance, which nobody would read. The honest answer on an unbound case is
- * no marker.
+ * THE NOTE TRAVELS THROUGH INTEGRIQ (ADR-118 section 5, ADR-041). dossiq has
+ * no ZGW client of its own: it asks integriq to deliver a `case-note` on the
+ * `zgw-documenten` channel with `DeliveryRequestedEvent`, and integriq routes
+ * it to whatever subscription an administrator bound there (a Documenten API
+ * source, a webhook). The event class is named by string because integriq is
+ * optional.
+ *
+ * AN UNBOUND INSTANCE WRITES NO OUTCOME AT ALL. Without integriq, or with
+ * integriq but no subscription for case notes, nothing is contacted. Recording
+ * "sent" there would be a marker that reads as a success while nobody was
+ * contacted, and recording "failed" would be a marker on every note of every
+ * unbound instance, which nobody would read. The honest answer on an unbound
+ * case is no marker.
  *
  * WHAT IS STILL BLOCKED, said here rather than discovered later. The
  * informatieobjecttype a note is filed under needs a selectielijst position,
@@ -40,7 +46,7 @@
  * years.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\External\Zgw
+ * @package  OCA\Dossiq\Service\Notes
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -58,11 +64,13 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\External\Zgw;
+namespace OCA\Dossiq\Service\Notes;
 
 use InvalidArgumentException;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -85,8 +93,24 @@ class NotePush {
 	public const RSIN_CONFIG_KEY = 'bronorganisatie_rsin';
 
 	/**
-	 * The note is on a case no external register knows about, or the adapter
-	 * contacts nothing. NO marker is written for this outcome.
+	 * The integriq delivery request this push dispatches (ADR-041). Named by
+	 * string because integriq is optional.
+	 */
+	public const DELIVERY_EVENT = 'OCA\Integriq\Event\DeliveryRequestedEvent';
+
+	/**
+	 * What this push delivers, as named on the integriq seam.
+	 */
+	public const DELIVERY_KIND = 'case-note';
+
+	/**
+	 * The integriq channel a case note travels on.
+	 */
+	public const DELIVERY_CHANNEL = 'zgw-documenten';
+
+	/**
+	 * Nothing is bound to receive the note: integriq is absent, or no
+	 * subscription takes case notes. NO marker is written for this outcome.
 	 */
 	public const OUTCOME_NO_REGISTER = 'no-register';
 
@@ -96,7 +120,7 @@ class NotePush {
 	public const OUTCOME_NOT_SENT = 'not-sent';
 
 	/**
-	 * The note reached the neighbouring register.
+	 * integriq took the note for delivery to at least one bound subscription.
 	 */
 	public const OUTCOME_SENT = 'sent';
 
@@ -137,14 +161,14 @@ class NotePush {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZgwExternalAdapterInterface $adapter  The outbound ZGW seam.
-	 * @param NoteEnvelope                $envelope Shapes a note as a document.
-	 * @param CaseTimeline                $timeline Records the outcome on the case.
-	 * @param IAppConfig                  $config   Holds the reserved type and the RSIN.
-	 * @param LoggerInterface             $logger   Logger.
+	 * @param IEventDispatcher $dispatcher Dispatches the integriq delivery request.
+	 * @param NoteEnvelope     $envelope   Shapes a note as a document.
+	 * @param CaseTimeline     $timeline   Records the outcome on the case.
+	 * @param IAppConfig       $config     Holds the reserved type and the RSIN.
+	 * @param LoggerInterface  $logger     Logger.
 	 */
 	public function __construct(
-		private readonly ZgwExternalAdapterInterface $adapter,
+		private readonly IEventDispatcher $dispatcher,
 		private readonly NoteEnvelope $envelope,
 		private readonly CaseTimeline $timeline,
 		private readonly IAppConfig $config,
@@ -163,15 +187,10 @@ class NotePush {
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function push(string $caseId, array $note): array {
-		if ($this->adapter->isDormant() === true) {
+		if (class_exists('\\' . self::DELIVERY_EVENT) === false) {
 			// No marker: see the class docblock. This is the outcome a case
 			// bound to nothing has, and it is not a failure.
-			return $this->outcome(
-				outcome: self::OUTCOME_NO_REGISTER,
-				reason: 'This case is not bound to an external register, so nothing was sent '
-					. 'and nothing is recorded.',
-				caseRecord: self::RECORD_NONE,
-			);
+			return $this->unbound();
 		}
 
 		if ($this->isExternal(note: $note) === false) {
@@ -199,45 +218,66 @@ class NotePush {
 			return $this->recordFailure(caseId: $caseId, note: $note, reason: $e->getMessage());
 		}
 
+		$eventClass = '\\' . self::DELIVERY_EVENT;
+		$event = new $eventClass(
+			sourceApp: Application::APP_ID,
+			subjectRegister: '',
+			subjectSchema: '',
+			subjectId: $caseId,
+			subjectLabel: (string)($envelope['titel'] ?? $caseId),
+			deliveryKind: self::DELIVERY_KIND,
+			channel: self::DELIVERY_CHANNEL,
+			payload: $envelope,
+			correlationId: bin2hex(random_bytes(16)),
+			externalReference: (string)($envelope['identificatie'] ?? ''),
+		);
+
 		try {
-			$result = $this->adapter->submitDocument(
-				documentEnvelope: $envelope,
-				context: ['caseId' => $caseId, 'noteId' => (string)($note['id'] ?? '')]
-			);
+			$this->dispatcher->dispatchTyped($event);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Dossiq: a case note could not be pushed to the neighbouring register',
+				'Dossiq: a case note could not be handed to integriq',
 				['caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 
 			return $this->recordFailure(
 				caseId: $caseId,
 				note: $note,
-				reason: 'The neighbouring register could not be reached.'
+				reason: 'integriq could not take the note.'
 			);
 		}
 
-		if ($result->pushStatus !== 'PUSHED') {
-			// 🔴 ANYTHING THAT IS NOT `PUSHED` IS A FAILURE, INCLUDING
-			// `PUSH_DEFERRED`. A deferred push on a non-dormant adapter is a
-			// note that did not arrive, and the dormant case was already
-			// answered above; treating deferred as a success here would put a
-			// sent marker on a note that stayed home, which is the single
-			// thing this whole change exists to prevent.
+		if ($event->isHandled() === false) {
+			// The integriq listener is installed and did not take the request:
+			// it logged why. The note did not leave, so this is a failure.
 			return $this->recordFailure(
 				caseId: $caseId,
 				note: $note,
-				reason: $this->reasonOf(result: $result)
+				reason: 'integriq could not take the note. Check the integriq log.'
 			);
+		}
+
+		$refusal = $event->getRefusal();
+		if (is_array($refusal) === true) {
+			return $this->recordFailure(
+				caseId: $caseId,
+				note: $note,
+				reason: $this->reasonOf(refusal: $refusal)
+			);
+		}
+
+		if ((int)$event->getMatchedSubscriptions() === 0) {
+			// Integriq took the request and nothing is bound to receive case
+			// notes: the same answer as an instance without integriq.
+			return $this->unbound();
 		}
 
 		return $this->answer(
 			caseId: $caseId,
 			note: $note,
-			message: 'Note sent to the neighbouring register',
+			message: 'Note handed to integriq for the neighbouring register',
 			outcome: self::OUTCOME_SENT,
-			reason: '',
-			receiverUrl: $result->receiverUrl
+			reason: ''
 		);
 	}//end push()
 
@@ -258,24 +298,34 @@ class NotePush {
 	}//end isExternal()
 
 	/**
-	 * The sentence a refused push leaves behind.
+	 * The sentence a refusal from integriq carries.
 	 *
-	 * The adapter's own `rejectionReason` whenever it gave one, because a
-	 * handler who is told which field the receiver rejected can fix it, and a
-	 * handler told "the push failed" cannot.
-	 *
-	 * @param ZgwPushResult $result The push result.
+	 * @param array<string, mixed> $refusal `{reason, code}` from the delivery request.
 	 *
 	 * @return string The reason.
 	 */
-	private function reasonOf(ZgwPushResult $result): string {
-		$given = trim((string)($result->extras['rejectionReason'] ?? $result->extras['reason'] ?? ''));
+	private function reasonOf(array $refusal): string {
+		$given = trim((string)($refusal['reason'] ?? ''));
 		if ($given !== '') {
 			return $given;
 		}
 
-		return 'The neighbouring register answered ' . $result->pushStatus . ' and gave no reason.';
+		return 'integriq refused the note (' . trim((string)($refusal['code'] ?? 'no code')) . ') and gave no reason.';
 	}//end reasonOf()
+
+	/**
+	 * The answer for a note nothing is bound to receive. No marker is written.
+	 *
+	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} What happened.
+	 */
+	private function unbound(): array {
+		return $this->outcome(
+			outcome: self::OUTCOME_NO_REGISTER,
+			reason: 'This case is not bound to an external register, so nothing was sent '
+				. 'and nothing is recorded.',
+			caseRecord: self::RECORD_NONE,
+		);
+	}//end unbound()
 
 	/**
 	 * Record a failure on the case and answer it.
