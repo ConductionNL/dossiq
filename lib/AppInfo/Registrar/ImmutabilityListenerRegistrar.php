@@ -62,6 +62,19 @@ class ImmutabilityListenerRegistrar {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		// Frozen record (capability C04, decision 182): the generic freeze a
+		// package switches on per record kind through `frozen_records`. With
+		// nothing configured it guards nothing. Written fully qualified and
+		// first, so it does not collide with the build lanes' open additions.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: \OCA\Dossiq\Listener\FrozenRecordListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: \OCA\Dossiq\Listener\FrozenRecordListener::class
+		);
+
 		// REQ-SUB-007: a bewijsstuk linked to a vaststelling is immutable.
 		// This is the production call site for
 		// BewijsstukService::assertMutable(), which previously had none.
