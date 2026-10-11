@@ -83,7 +83,7 @@ class DeadlineReportingServiceTest extends TestCase {
 
 		$row = $report['perType']['omgevingsvergunning-regulier'];
 		self::assertSame(5, $row['totaal']);
-		self::assertSame(60.0, $row['binnenTermijnPct']);
+		self::assertSame(75.0, $row['binnenTermijnPct'], 'Three met of four decided: the running term is not in the share.');
 		self::assertSame(1, $row['overschrijdingen']);
 		self::assertSame(1, $row['verlengingen']);
 	}
@@ -182,7 +182,7 @@ class DeadlineReportingServiceTest extends TestCase {
 		$csv = $this->service->quarterlyReportAsCsv($report);
 		$lines = explode("\n", $csv);
 		self::assertStringStartsWith('caseType,totaal,binnenTermijnPct', $lines[0]);
-		self::assertStringStartsWith('omgevingsvergunning-regulier,5,60', $lines[1]);
+		self::assertStringStartsWith('omgevingsvergunning-regulier,5,75', $lines[1]);
 	}
 
 	/**
@@ -191,8 +191,25 @@ class DeadlineReportingServiceTest extends TestCase {
 	public function testKpiSummary(): void {
 		$k = $this->service->getTermijnKpi();
 		self::assertSame(5, $k['totalZaken']);
-		self::assertSame(60.0, $k['withinTermijnPercent']);
+		self::assertSame(75.0, $k['withinTermijnPercent']);
 		self::assertSame(1, $k['overrunCount']);
+	}
+
+	/**
+	 * With nothing decided the dashboard has no share to show, and the CSV
+	 * leaves the cell empty rather than writing 0.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
+	 */
+	public function testAShareOfNothingIsNoFigure(): void {
+		$k = $this->service->getTermijnKpi(['caseType' => 'nothing-decided']);
+		self::assertSame(0, $k['totalZaken']);
+		self::assertNull($k['withinTermijnPercent']);
+
+		$csv = $this->service->quarterlyReportAsCsv(['perType' => ['t' => ['totaal' => 2, 'binnenTermijnPct' => null]]]);
+		self::assertStringStartsWith('t,2,,', explode("\n", $csv)[1]);
 	}
 
 	/**

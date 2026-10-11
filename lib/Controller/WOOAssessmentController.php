@@ -362,6 +362,9 @@ class WOOAssessmentController extends Controller {
 				userId: $user->getUID(),
 			);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
+			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {
@@ -412,6 +415,9 @@ class WOOAssessmentController extends Controller {
 				editedSpans: $editedSpans,
 			);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			// Another reviewer's assessment (REQ-CRA-003): the rule and its status, not a 400.
+			return new JSONResponse(['error' => $e->getRule(), 'message' => $e->getSentence()], $e->getStatus());
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {

@@ -12,7 +12,7 @@
       "wooDocumentAssessment": {
         "slug": "wooDocumentAssessment",
         "icon": "FileEyeOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Woo document assessment",
         "description": "Per document of a Woo request case: may it be disclosed, and on which grounds is it withheld.",
         "type": "object",
@@ -21,6 +21,21 @@
           "documentRef",
           "classification"
         ],
+        "authorization": {
+          "scope": "private",
+          "read": [
+            "authenticated"
+          ],
+          "create": [
+            "authenticated"
+          ],
+          "update": [
+            "authenticated"
+          ],
+          "delete": [
+            "dossiq-coordinators"
+          ]
+        },
         "properties": {
           "caseRef": {
             "type": "string",

@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
@@ -59,6 +60,16 @@ class WOODecisionService {
 	 */
 	public const DECISION_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000d001';
 
+	/**
+	 * The `documentDrafts` purpose the decision document is drafted under.
+	 */
+	public const DRAFT_PURPOSE = 'decision';
+
+	/**
+	 * The `documentDrafts` purpose the inventory is drafted under.
+	 */
+	public const INVENTORY_PURPOSE = 'inventory';
+
 
 	/**
 	 * Constructor.
@@ -67,12 +78,15 @@ class WOODecisionService {
 	 * @param WOODocumentAssessmentService $assessmentService Document assessment service
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
+	 * @param CaseDocumentDrafts|null $drafts Drafts the decision document from the case type's
+	 *        `documentDrafts.decision` template through filinq (case-document-drafts).
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WOODocumentAssessmentService $assessmentService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseDocumentDrafts $drafts = null,
 	) {
 	}//end __construct()
 
@@ -91,6 +105,7 @@ class WOODecisionService {
 	 * @throws \InvalidArgumentException If any document has not been assessed
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
 	 */
 	public function assembleDecision(string $caseId, array $decisionData = []): array {
 		// Guard: all documents must be assessed before a besluit can be created.
@@ -156,6 +171,8 @@ class WOODecisionService {
 			'summary' => $summary,
 			'weigeringsgronden' => $weigeringsgronden,
 			'assessmentCount' => count($assessments),
+			'draft' => $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE),
+			'inventoryDraft' => $this->drafts?->draft(caseId: $caseId, purpose: self::INVENTORY_PURPOSE),
 		];
 	}//end assembleDecision()
 
