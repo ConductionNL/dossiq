@@ -1,0 +1,26 @@
+{
+  "_note": "Numbered document series (decision 167, made generic by decision 182). A case type configures, per series, the prefix printed in front of the running number: documentSeries.<series>.prefix, e.g. {\"beschikking\": {\"prefix\": \"B\"}}. The number itself is one running count per series, per organisation, per year, issued by DocumentSeriesNumberer; a series the case type does not configure prints the issuing code's default. Declared on caseType because OpenRegister's magic mapper stores no undeclared key.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "documentSeries": {
+            "type": "object",
+            "title": "Document numbering",
+            "description": "Per kind of document, the letters printed before its number, for example B for a beschikking. The number itself counts up per organisation and starts again each year.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "prefix": {
+                  "type": "string",
+                  "maxLength": 10,
+                  "pattern": "^[A-Za-z0-9]+$"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

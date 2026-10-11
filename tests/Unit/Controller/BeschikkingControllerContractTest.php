@@ -102,6 +102,7 @@ class BeschikkingControllerContractTest extends TestCase {
 			decisionService: $this->decisionService,
 			userSession: $this->userSession,
 			logger: $this->logger,
+			accessGuard: $this->createMock(\OCA\Dossiq\Service\CaseAccessGuard::class),
 		);
 	}//end setUp()
 

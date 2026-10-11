@@ -33,7 +33,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyQueryTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -110,7 +110,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testWhoHeldTheCaseInMarchIsOneAnswer(): void {
 		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2026-03-15T12:00:00+01:00');
@@ -125,7 +125,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheTransferDateBelongsToTheUnitThatTookTheCase(): void {
 		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2026-03-10T10:00:00+01:00');
@@ -143,7 +143,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testADateBeforeTheCaseHasNoHolder(): void {
 		self::assertNull($this->query()->holderOn(caseId: 'case-1', asOf: '2025-12-31T23:59:59+01:00'));
@@ -154,7 +154,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheOpenHoldingAnswersTheFuture(): void {
 		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2027-01-01T00:00:00+01:00');
@@ -169,7 +169,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testWhatAUnitHeldLastQuarterIsAQuery(): void {
 		$query = $this->query();
