@@ -99,6 +99,7 @@ export default {
 						'dossiq',
 						this.content?.actions?.[0]?.label ?? 'Open these cases',
 					),
+
 					route: this.content?.actions?.[0]?.route ?? { name: 'Cases' },
 				},
 				{
