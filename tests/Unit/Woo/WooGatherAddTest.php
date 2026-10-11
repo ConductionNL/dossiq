@@ -33,7 +33,10 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentDefaults;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
+use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\MailHeaderReader;
+use OCA\Dossiq\Tests\Support\HeaderParsingTextExtraction;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -49,6 +52,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -65,6 +69,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Woo\WooCollection
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\MailHeaderReader
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseFileCollector
  */
 class WooGatherAddTest extends TestCase {
 
@@ -126,7 +132,13 @@ class WooGatherAddTest extends TestCase {
 
 	private IUser&MockObject $user;
 
+	/**
+	 * Parses the headers of the mail files the add hands it, from their real bytes.
+	 */
+	private HeaderParsingTextExtraction $extraction;
+
 	protected function setUp(): void {
+		$this->extraction = new HeaderParsingTextExtraction();
 		$this->register = new InMemoryRegister();
 		$this->register->seed('case', self::CASE_ID, ['title' => 'Woo-verzoek Stationsweg', 'caseType' => '']);
 		$this->register->seed('case', self::OTHER_CASE_ID, ['title' => 'Omgevingsvergunning Stationsweg', 'caseType' => '']);
@@ -273,7 +285,7 @@ class WooGatherAddTest extends TestCase {
 		return new WooGatherAdd(
 			rootFolder: $rootFolder,
 			store: $store,
-			projection: $projection,
+			collector: new CaseFileCollector(store: $store, projection: $projection, mailHeaders: $this->mailHeaders()),
 			sources: $sources,
 			accessGuard: $guard,
 			l10n: $l10n,
@@ -281,6 +293,98 @@ class WooGatherAddTest extends TestCase {
 			collection: $collection,
 		);
 	}//end service()
+
+	/**
+	 * The real mail header reader over the header-parsing extraction fake.
+	 *
+	 * @return MailHeaderReader The reader.
+	 */
+	private function mailHeaders(): MailHeaderReader {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('has')->willReturn(true);
+		$container->method('get')->willReturn($this->extraction);
+
+		return new MailHeaderReader(container: $container, logger: $this->createMock(LoggerInterface::class));
+	}//end mailHeaders()
+
+	/**
+	 * REQ-WRR-003 "An eml keeps its sender and recipients": a real `.eml` added to a case
+	 * keeps its sender, recipients, cc, date and message id, addresses lower-cased, in a
+	 * shape the real document schema declares.
+	 *
+	 * @return void
+	 */
+	public function testAnEmlKeepsItsSenderAndRecipients(): void {
+		$bytes = (string)file_get_contents(dirname(__DIR__, 2) . '/Fixtures/mail/planning-stationsweg.eml');
+		$this->userFiles[21] = $this->fileDouble(path: '/pjansen/files/Postvak/planning-stationsweg.eml', fileId: 21, content: $bytes);
+
+		$results = $this->service()->addPicks(
+			caseId: self::CASE_ID,
+			picks: [['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '21', 'location' => 'Postvak']],
+			terms: 'Stationsweg',
+			user: $this->user, custodians: self::CUSTODIANS);
+
+		self::assertSame('added', $results[0]['status']);
+		$record = $this->register->row('informatieobject', $results[0]['documentId']);
+		self::assertSame(
+			[
+				'from' => 'a.jansen@gemeente.nl',
+				'to' => ['b@aannemer.nl'],
+				'cc' => ['c@gemeente.nl'],
+				'messageId' => '20240312091500.4711@mail.gemeente.nl',
+				'date' => '2024-03-12T09:15:00+01:00',
+			],
+			$record['provenance']['mail']
+		);
+		self::assertSame(['planning-stationsweg.eml'], $this->extraction->parsed);
+
+		// The reader reads it back the way a report does.
+		$caseDocuments = new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class));
+		$mail = (new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $this->settings), caseDocuments: $caseDocuments))
+			->mailOf(caseId: self::CASE_ID, documentId: $results[0]['documentId'], record: $record);
+		self::assertTrue($mail['known']);
+		self::assertSame('gemeente.nl', $mail['senderDomain']);
+
+		// OpenRegister drops an undeclared property in silence, and the validator allows one.
+		$real = new RealSchemaValidator();
+		self::assertArrayHasKey('mail', $real->schemas['informatieobject']['properties']['provenance']['properties']);
+		self::assertSame([], $real->errors(slug: 'informatieobject', payload: ['provenance' => $record['provenance']], creating: false));
+	}//end testAnEmlKeepsItsSenderAndRecipients()
+
+	/**
+	 * REQ-WRR-003: a mail whose headers cannot be read is still added, marked unreadable,
+	 * and a document that is no mail carries no mail fields at all.
+	 *
+	 * @return void
+	 */
+	public function testUnreadableHeadersAreMarked(): void {
+		$bytes = (string)file_get_contents(dirname(__DIR__, 2) . '/Fixtures/mail/headerless.eml');
+		$this->userFiles[22] = $this->fileDouble(path: '/pjansen/files/Postvak/headerless.eml', fileId: 22, content: $bytes);
+		$this->userFiles[23] = $this->fileDouble(path: '/pjansen/files/Postvak/export.msg', fileId: 23, content: 'binary outlook');
+		$this->userFiles[24] = $this->fileDouble(path: '/pjansen/files/Team Ruimte/notulen.pdf', fileId: 24, content: 'notulen');
+
+		$results = $this->service()->addPicks(
+			caseId: self::CASE_ID,
+			picks: [
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '22', 'location' => 'Postvak'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '23', 'location' => 'Postvak'],
+				['source' => 'files', 'custodian' => 'Wethouder Ruimte', 'key' => '24', 'location' => 'Team Ruimte'],
+			],
+			terms: 'Stationsweg',
+			user: $this->user, custodians: self::CUSTODIANS);
+
+		self::assertSame(['added', 'added', 'added'], array_column($results, 'status'));
+		$real = new RealSchemaValidator();
+		foreach ([0, 1] as $index) {
+			$record = $this->register->row('informatieobject', $results[$index]['documentId']);
+			self::assertSame(['unreadable' => true], $record['provenance']['mail']);
+			self::assertSame([], $real->errors(slug: 'informatieobject', payload: ['provenance' => $record['provenance']], creating: false));
+		}
+
+		self::assertArrayNotHasKey('mail', $this->register->row('informatieobject', $results[2]['documentId'])['provenance']);
+		// The .msg never reaches the parser; the headerless .eml does and yields no sender.
+		self::assertSame(['headerless.eml'], $this->extraction->parsed);
+	}//end testUnreadableHeadersAreMarked()
 
 	/**
 	 * The outstanding count the assessment reads, over the same register.

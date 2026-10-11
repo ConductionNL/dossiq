@@ -52,13 +52,27 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
 
 ## 3. Mail header fields
 
-- [ ] 3.1 In the gather add, parse mail headers for `.eml` (Nextcloud's or a PHP mime parser already
+- [x] 3.1 In the gather add, parse mail headers for `.eml` (Nextcloud's or a PHP mime parser already
   in `composer.lock`; do not add a new dependency without saying so) and read integriq mail items'
   header fields from its row. Store `provenance.mail`; mark unreadable headers (REQ-WRR-003).
   - **fails today**: `tests/Unit/Controller/WooSourcesControllerTest.php`
     `testAnEmlKeepsItsSenderAndRecipients`, `testUnreadableHeadersAreMarked`, using a real `.eml`
     fixture in `tests/Fixtures/mail/`.
   - Validate the provenance against the real document schema with `RealSchemaValidator`.
+  - Built generic (decision 182): `lib/Service/Zaakdossier/MailHeaderReader.php` reads the headers through
+    OpenRegister's parser (`TextExtractionService::parseEmlStructured`, mail-mime-parser in OpenRegister, no new
+    dependency in dossiq) into bare lower-cased addresses; `.msg`, a parse failure, an absent parser or a mail
+    without sender answer `{unreadable: true}`. `lib/Service/Zaakdossier/CaseFileCollector.php` writes collected
+    bytes as a document with provenance for any case type and adds `provenance.mail` for a mail (by extension or
+    the source's MIME type, so an integriq mail item handed over as `message/rfc822` is read too; integriq's fetch
+    answer carries no separate header row today). The gather add calls it. `provenance.mail` declared on
+    `informatieobject` in `register.d/85-woo-gather-provenance.json` (1.4.2).
+  - Tests: the two named tests are in `tests/Unit/Woo/WooGatherAddTest.php` (through the real store, projection
+    and collector; `WooSourcesControllerTest` mocks the add, so a test there could not fail), over real fixtures
+    `tests/Fixtures/mail/planning-stationsweg.eml` and `headerless.eml`, parsed by
+    `tests/Support/HeaderParsingTextExtraction.php` (PHP's own RFC 822 header parser in OpenRegister's answer shape);
+    both validated with `RealSchemaValidator` and seen red with the mail step removed. Own tests:
+    `MailHeaderReaderTest`, `CaseFileCollectorTest`.
 
 ## 4. The parties report
 
