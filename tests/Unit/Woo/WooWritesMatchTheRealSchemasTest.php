@@ -69,6 +69,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
+ * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 

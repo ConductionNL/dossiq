@@ -47,6 +47,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooRequestIntakeTest extends TestCase {
 
