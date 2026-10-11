@@ -1075,8 +1075,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <admin>OCA\Dossiq\Settings\AdminSettings</admin>
         <admin>OCA\Dossiq\Settings\EmailSettings</admin>
         <admin-section>OCA\Dossiq\Sections\SettingsSection</admin-section>
-        <personal>OCA\Dossiq\Settings\PersonalSettings</personal>
-        <personal-section>OCA\Dossiq\Sections\PersonalSection</personal-section>
     </settings>
 
     <navigations>
