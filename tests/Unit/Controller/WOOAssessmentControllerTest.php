@@ -34,8 +34,6 @@ use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
 use OCA\Dossiq\Review\DocumentRelevance;
-use OCA\Dossiq\Review\PagesSeen;
-use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -298,7 +296,7 @@ class WOOAssessmentControllerTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($config[$key] ?? ''));
 		$reviews = new DocumentRelevance(settingsService: $settings, logger: $this->logger);
-		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, $reviews, new PagesSeen(reviews: $reviews, depth: new ReviewDepth()));
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, $reviews);
 		$controller = new WOOAssessmentController(
 			'dossiq',
 			$this->request,
