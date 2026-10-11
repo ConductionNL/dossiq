@@ -10,87 +10,100 @@ first and seen red. Build every OpenRegister double from the real class signatur
 
 ## 1. The search plan
 
-- [ ] 1.1 Add schemas `wooSearchPlan` and `wooRequestConfiguration` in
+- [x] 1.1 Add schemas `wooSearchPlan` and `wooRequestConfiguration` in
   `lib/Settings/register.d/86-woo-corpus.json` (one plan per case, `case` uuid facetable), with the
   REQ-WRC-001 and REQ-WRC-005 properties, and bump the register version. A plan without
   `recordedAt` is a draft and counts as no plan (REQ-WRC-001).
   - unit `tests/Unit/Settings/WooCorpusSchemasTest.php` `testThePlanDeclaresEveryKey`.
-- [ ] 1.2 Refuse search and add without a recorded plan, in the gather controller, before any
+  - done: `lib/Settings/register.d/86-woo-corpus.json` (also `wooExclusion`, `wooCollectionQuery`, `case.wooStartFrom`), register 0.20.23; `tests/Unit/Settings/WooCorpusSchemasTest.php`.
+- [x] 1.2 Refuse search and add without a recorded plan, in the gather controller, before any
   source is called (REQ-WRC-001).
   - **fails today**: `tests/Unit/Controller/WooSourcesControllerTest.php`
     `testSearchWithoutAPlanAnswers409`, `testAddWithoutAPlanAnswers409`,
     `testADraftPlanCountsAsNone`.
-- [ ] 1.3 A `Search plan` section on the Woo case page and `src/dialogs/WooSearchPlanDialog.vue` to
+  - done: `WooSourcesController::search/add` via `WooSearchPlans::recorded()`; `WooSourcesControllerTest::testSearchWithoutAPlanAnswers409`, `testAddWithoutAPlanAnswers409`, `testADraftPlanCountsAsNone`; `WooSearchPlansTest`.
+- [x] 1.3 A `Search plan` section on the Woo case page and `src/dialogs/WooSearchPlanDialog.vue` to
   record or change it; a history tab that reads the plan's OpenRegister audit trail (REQ-WRC-001).
   - vitest `src/dialogs/__tests__/WooSearchPlanDialog.spec.js` `testCustodiansSystemsPeriodAndTermsAreRequired`.
   - Live check after merge: change the plan once, read `/audit-trails` for it, record the entry.
+  - done: header action `woo-search-plan` opens `src/dialogs/WooSearchPlanDialog.vue` with the plan and its audit-trail history (the plan's place on the case page is the dialog, as board DqZaakDialogen draws it); `tests/vitest/wooSearchPlanDialog.spec.js`. Live audit-trail check owed (live pass, decision 139).
 
 ## 2. Custodian and system on each document
 
-- [ ] 2.1 The add requires `custodian` per pick (one of the plan's custodians, else 422 for that
+- [x] 2.1 The add requires `custodian` per pick (one of the plan's custodians, else 422 for that
   pick only) and writes `provenance.custodian` and `provenance.sourceSystem` (REQ-WRC-002).
   - **fails today**: `tests/Unit/Controller/WooSourcesControllerTest.php`
     `testAPickWithoutAPlanCustodianIsRefusedAlone`, `testProvenanceCarriesCustodianAndSystem`.
   - Validate the written projection with `tests/Support/RealSchemaValidator`:
     `testTheProvenanceValidatesAgainstTheDocumentSchema`.
-- [ ] 2.2 Add `WooCollectionController::report(string $id)` on GET `/api/cases/{id}/woo/collection`
+  - done: `WooGatherAdd`; `WooGatherAddTest::testAPickWithoutAPlanCustodianIsRefusedAlone`, `testProvenanceCarriesCustodianAndSystem` (validates against the real schema).
+- [x] 2.2 Add `WooCollectionController::report(string $id)` on GET `/api/cases/{id}/woo/collection`
   with a case read guard; answers per custodian and per system, zeros included (REQ-WRC-002,
   REQ-WRC-003).
   - unit `tests/Unit/Woo/WooCollectionReportTest.php` `testAPlannedCustodianWithNothingShowsZero`,
     `testVolumesAreSummedPerCustodian`.
   - Through the caller: `tests/Unit/Controller/WooCollectionControllerTest.php`
     `testTheReportRefusesAUserWithoutCaseAccess`.
+  - done: `lib/Woo/WooCollection.php`, `lib/Controller/WooCollectionController.php`; `tests/Unit/Woo/WooCollectionReportTest.php`, `tests/Unit/Controller/WooCollectionControllerTest.php`.
 
 ## 3. Exclusions and reconciliation
 
-- [ ] 3.1 Add schema `wooExclusion` (REQ-WRC-003). The add hashes each pick before writing and
+- [x] 3.1 Add schema `wooExclusion` (REQ-WRC-003). The add hashes each pick before writing and
   records a matching hash as a `duplicate` exclusion instead of adding it. An unreadable pick is
   recorded as `unreadable` (REQ-WRC-003).
   - **fails today**: `testADuplicateIsListedNotAdded`, `testAnUnreadablePickIsRecorded` in
     `WooSourcesControllerTest`.
-- [ ] 3.2 POST `/api/cases/{id}/woo/documents/{documentRef}/exclude` with `{reason, note}`, refused
+  - done: `WooGatherAdd::duplicateOf()`/`recordUnreadable()`; `WooGatherAddTest::testADuplicateIsListedNotAdded`, `testAnUnreadablePickIsRecorded` (the tests sit on the service the controller calls).
+- [x] 3.2 POST `/api/cases/{id}/woo/documents/{documentRef}/exclude` with `{reason, note}`, refused
   with 409 when the document already has an assessment. The excluded document leaves
   `WOODocumentAssessmentService::getOutstanding()` (REQ-WRC-003).
   - **fails today**: `tests/Unit/Service/WOODocumentAssessmentServiceTest.php`
     `testAnExcludedDocumentIsNotOutstanding`.
   - Through the caller: `tests/Unit/Controller/WooCollectionControllerTest.php`
     `testExcludingAnAssessedDocumentAnswers409`.
-- [ ] 3.3 The report answers `{arrived, assessed, excluded, outstanding}` and lists the exclusions
+  - done: `WooCollection::exclude()`, `WOODocumentAssessmentService::getOutstanding()`; `WOODocumentAssessmentServiceTest::testAnExcludedDocumentIsNotOutstanding` (red before), `WooCollectionControllerTest::testExcludingAnAssessedDocumentAnswers409`.
+- [x] 3.3 The report answers `{arrived, assessed, excluded, outstanding}` and lists the exclusions
   (REQ-WRC-003).
   - unit `WooCollectionReportTest::testArrivedReconcilesWithReviewedAndExcluded` with the twelve
     candidate fixture of the scenario.
+  - done: `WooCollectionReportTest::testArrivedReconcilesWithReviewedAndExcluded`.
 
 ## 4. Saved, re-runnable queries
 
-- [ ] 4.1 Add schema `wooCollectionQuery`. Every search through `/woo/sources/search` stores one. The
+- [x] 4.1 Add schema `wooCollectionQuery`. Every search through `/woo/sources/search` stores one. The
   platform sources the dialog searches directly (unified search, per the gather design D-2) are
   stored by the dialog through a POST `/api/cases/{id}/woo/collection/queries` call with the same
   keys (REQ-WRC-004).
   - unit `tests/Unit/Woo/WooCollectionQueryTest.php` `testASearchIsStoredWithItsResultKeys`.
   - vitest on the gather dialog: `testAPlatformSearchIsRecordedAsAQuery`.
-- [ ] 4.2 POST `/api/cases/{id}/woo/collection/queries/{queryId}/rerun` runs the stored query as the
+  - done: `lib/Woo/WooCollectionQueries.php`; `tests/Unit/Woo/WooCollectionQueryTest.php`; the dialog stores platform searches (`gatherDocumentsDialog.spec.js` `testAPlatformSearchIsRecordedAsAQuery`).
+- [x] 4.2 POST `/api/cases/{id}/woo/collection/queries/{queryId}/rerun` runs the stored query as the
   caller and marks new rows (REQ-WRC-004).
   - **fails today**: `WooCollectionQueryTest::testARerunMarksOnlyNewRows`.
   - Through the caller: `WooCollectionControllerTest::testAColleagueCanRerunAQuery` with a second
     user who has case read access.
+  - done: `WooCollectionQueryTest::testARerunMarksOnlyNewRows`, `WooCollectionControllerTest::testAColleagueCanRerunAQuery`.
 
 ## 5. Starting from an earlier request
 
-- [ ] 5.1 Starting a Woo case with `startFrom` (a Woo case uuid) copies the configuration into the
+- [x] 5.1 Starting a Woo case with `startFrom` (a Woo case uuid) copies the configuration into the
   new case and a draft plan, and sets `copiedFrom`. Wire it in the case creation path the Woo case
   page and `WooRequestIntake` share, not in a second create path (REQ-WRC-005).
   - **fails today**: `tests/Unit/Woo/WooRequestConfigurationTest.php`
     `testANewRequestCopiesTheLastConfigurationWithoutThePeriod`, `testEveryPresentKeyIsCopied`.
+  - done: `case.wooStartFrom` and `lib/Listener/WooStartFromListener.php` on OpenRegister's case creation (the path the case page and `WooRequestIntake` share); `tests/Unit/Woo/WooSearchPlansTest.php` `testANewRequestCopiesTheLastConfigurationWithoutThePeriod`, `testEveryPresentKeyIsCopied`; `tests/Unit/Listener/WooStartFromListenerTest.php`; `WooRequestIntakeTest::testARequestThatStartsFromAnEarlierOneNamesIt`.
 - [ ] 5.2 Named templates: if openregister's `records-saved-templates` is merged on `development`,
   offer the `wooRequestConfiguration` templates in the start dialog and test
   `testANewRequestStartsFromANamedTemplate`. If it is not merged, do not build a dossiq template
   store; leave this box open and say so in the PR body (REQ-WRC-005).
+  - not done: openregister `records-saved-templates` is not built on development. Per decision 156 its build is queued in lane L9's STATE as the dependency to build next; this box stays open until it lands.
 
 ## 6. End to end and live
 
 - [ ] 6.1 e2e `tests/e2e/woo-corpus.spec.ts`: record a plan, gather with a custodian, add a duplicate
   and see it listed, exclude one document, read the reconciliation, re-run the query, then start a
   new request from this one. Cite REQ-WRC-001 to REQ-WRC-005.
+  - spec written; the run is owed (live pass, decision 139).
 - [ ] 6.2 Live check after merge on the dev instance: one Woo case through the same path. Record the
   collection report.
 

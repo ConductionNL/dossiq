@@ -186,6 +186,7 @@ describe('the Objects tab on the case page', () => {
 			.content.sections.map((section) => section.widget.id)
 		expect(sections).toEqual([
 			'case-related',
+			'case-programme',
 			'case-sub-cases',
 			'case-objects',
 			'case-object-types-link',

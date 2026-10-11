@@ -303,6 +303,7 @@ class DeadlineExtensionService {
 				'endDateBeforeRoll' => $requestedEndDate,
 				'status' => 'verlengd',
 				'countExtensions' => ($consumed + 1),
+				'notificatiesVerstuurd' => $this->rungsStillBehind(instance: $instance, newEndDate: $newEndDate),
 			]
 		);
 
@@ -530,6 +531,31 @@ class DeadlineExtensionService {
 			'actor' => 'system',
 		];
 	}//end resolveExtensionContext()
+
+	/**
+	 * The escalation rungs that stay recorded as sent after an extension.
+	 *
+	 * The extension moves the end, so a rung that was already behind the old
+	 * end can lie ahead of the new one: a term warned at seven days and then
+	 * extended by fourteen has its seven-day moment again, and the handler is
+	 * told again then. A rung still behind the new end stays recorded, so the
+	 * re-armed timer does not tell anyone twice.
+	 *
+	 * @param array<string, mixed> $instance   The instance before the extension.
+	 * @param string               $newEndDate The new end, already rolled.
+	 *
+	 * @return array<int, int> The rungs that stay recorded.
+	 *
+	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function rungsStillBehind(array $instance, string $newEndDate): array {
+		$sent = array_map('intval', (array)($instance['notificatiesVerstuurd'] ?? []));
+		// The new end lies ahead of today: the extension refusal rules above
+		// only let an end move later, so the unsigned day count is the days left.
+		$daysLeft = $this->calculateDaysImpact(current: $this->dates->todayAsCalendarDate(), newEndDate: $newEndDate);
+
+		return array_values(array_filter($sent, static fn (int $rung): bool => $rung >= $daysLeft));
+	}//end rungsStillBehind()
 
 	/**
 	 * Resolve the maximum number of extensions allowed for this instance.

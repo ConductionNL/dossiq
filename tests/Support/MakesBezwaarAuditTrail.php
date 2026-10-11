@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder;
 use OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner;
 use OCA\Dossiq\Service\Bezwaar\HearingService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IUser;
@@ -180,10 +181,11 @@ trait MakesBezwaarAuditTrail {
 	 *
 	 * @param BezwaarAuditTrail $trail    The audit writer.
 	 * @param string|null       $conflict The conflicting panel member, or null for an independent panel.
+	 * @param GovernanceBodyReader|null $governanceBodies Reads the committee back from decidiq, when given.
 	 *
 	 * @return AdvisoryCommitteeService The service.
 	 */
-	private function realAdvisoryService(BezwaarAuditTrail $trail, ?string $conflict = null): AdvisoryCommitteeService {
+	private function realAdvisoryService(BezwaarAuditTrail $trail, ?string $conflict = null, ?GovernanceBodyReader $governanceBodies = null): AdvisoryCommitteeService {
 		$delegation = $this->createMock(AdviceDelegationService::class);
 		$delegation->method('raiseAdviceDecision')->willReturn('dec-1');
 
@@ -200,6 +202,7 @@ trait MakesBezwaarAuditTrail {
 			adviceDelegation: $delegation,
 			auditTrail: $trail,
 			independence: $independence,
+			governanceBodies: $governanceBodies,
 		);
 	}//end realAdvisoryService()
 
