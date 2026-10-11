@@ -120,7 +120,7 @@ class OneDateWritePathTest extends TestCase {
 		],
 		'DwangsomController' => [
 			'Controller/DwangsomController.php',
-			'Service/DwangsomCalculationService.php',
+			'Service/Money/AccruingAmountSettler.php',
 		],
 		'DwangsomPaymentCallbackController' => [
 			'Controller/DwangsomPaymentCallbackController.php',

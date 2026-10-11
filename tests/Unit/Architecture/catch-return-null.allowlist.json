@@ -604,13 +604,6 @@
       "reason": "`findUitbetalingen()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/DwangsomCalculationService.php",
-      "method": "fetchCalculationRow",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`fetchCalculationRow()` answers `return null` when the read fails; the catch logs at warning (\"DwangsomCalculation lookup failed\"), so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/Email/CaseNumberRecognizer.php",
       "method": "exactMatches",
       "occurrence": 1,
