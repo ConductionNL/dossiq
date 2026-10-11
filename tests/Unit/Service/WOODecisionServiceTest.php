@@ -155,7 +155,7 @@ class WOODecisionServiceTest extends TestCase {
 			new RefusedException(rule: 'review-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
 		);
 		$this->settingsService->expects($this->never())->method('getObjectService');
-		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, $pagesSeen);
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, pagesSeen: $pagesSeen);
 
 		$this->assertSame(['doc-7' => [7]], $service->unseenPages(caseId: 'case-001'));
 		$this->assertSame([], $this->service->unseenPages(caseId: 'case-001'));

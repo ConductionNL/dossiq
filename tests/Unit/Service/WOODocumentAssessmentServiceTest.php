@@ -664,7 +664,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 			$this->logger,
 			null,
 			null,
-			new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger),
+			reviews: new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger),
 		);
 	}//end relevanceCase()
 
@@ -716,7 +716,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
-		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger));
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, reviews: new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger));
 
 		$this->assertFalse($service->allDocumentsAssessed(caseId: 'case-x'));
 
