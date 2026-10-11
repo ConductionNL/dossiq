@@ -165,6 +165,16 @@ from the municipality's own list.
 - **WHEN** it is invoked
 - **THEN** it SHALL be refused, and no case SHALL be created
 
+#### Scenario: The request catalogue is the case types declared for intake
+@e2e exclude A read over case type configuration, asserted in PHPUnit (RequestCatalogueTest, IntakeToolsTest); the e2e instance runs no hermiq intake to classify from it.
+
+- **GIVEN** published case types, some of which place an AI feature on the
+  `intake` surface
+- **WHEN** hermiq reads dossiq's request catalogue (`dossiq.requestCatalogue`)
+- **THEN** it SHALL list exactly those case types, once per identifier, each with
+  the `type` the intake tool files under, and SHALL name no request type that is
+  not configured on a case type
+
 #### Scenario: Only the create tool is annotated for intake
 @e2e exclude An assertion over the declared tool catalogue, made in PHPUnit.
 

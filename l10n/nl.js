@@ -7250,6 +7250,7 @@ OC.L10N.register(
         "The assessed level. Its own vocabulary, deliberately not the priority vocabulary: it feeds the impact axis the case type's matrix already reads and does not become a fifth priority word.": "Het beoordeelde niveau. Een eigen woordenschat, met opzet niet die van de prioriteit: het voedt de impact-as die de matrix van het zaaktype al leest en wordt geen vijfde prioriteitswoord.",
         "The assigned bezwaaradviescommissie": "De toegewezen bezwaaradviescommissie",
         "The assignment could not be changed.": "De toewijzing kon niet gewijzigd worden.",
+        "The assistant did not answer.": "De assistent gaf geen antwoord.",
         "The assistant does nothing without your confirmation. It sees only what you see on this case.": "De assistent doet niets zonder uw bevestiging. Hij ziet alleen wat u op deze zaak ziet.",
         "The assistant is thinking…": "De assistent denkt na…",
         "The attention flag could not be changed.": "De aandachtsmarkering kon niet worden gewijzigd.",
