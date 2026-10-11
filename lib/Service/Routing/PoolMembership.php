@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ namespace OCA\Dossiq\Service\Routing;
 /**
  * Reads a routing pool out of the role rows bound to a case.
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 class PoolMembership {
 	/**
@@ -80,7 +80,7 @@ class PoolMembership {
 	 * @return array<int, array{participant: string, weight: float, team: string}>
 	 *         The pool, deduplicated by participant, first binding winning.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-rule-may-target-a-position-inside-a-team-req-rtp-02
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-rule-may-target-a-position-inside-a-team-req-rtp-02
 	 */
 	public function membersOf(array $roles, string $roleType, string $team = ''): array {
 		if ($roleType === '') {
@@ -127,7 +127,7 @@ class PoolMembership {
 	 *
 	 * @return float The weight, never negative.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function weightOf(array $role): float {
 		$raw = ($role['weight'] ?? null);
@@ -151,7 +151,7 @@ class PoolMembership {
 	 *
 	 * @return bool True when no weight was declared anywhere.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function isUnweighted(array $members): bool {
 		foreach ($members as $member) {
@@ -180,7 +180,7 @@ class PoolMembership {
 	 *
 	 * @return array<int, string> The rotation, empty when nobody may take work.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function rotation(array $members): array {
 		if ($members === []) {
@@ -217,7 +217,7 @@ class PoolMembership {
 	 *
 	 * @return float|null The smallest weight above zero, or null when every member is at zero.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	private function smallestWeight(array $members): ?float {
 		$smallest = null;
@@ -247,7 +247,7 @@ class PoolMembership {
 	 *
 	 * @psalm-return list<string>
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	private function dealSlots(array $slots): array {
 		$rotation = [];
@@ -280,7 +280,7 @@ class PoolMembership {
 	 *
 	 * @return float The relative load; INF for a member who takes no new work.
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
 	 */
 	public function relativeLoad(float $count, float $weight): float {
 		if ($weight <= 0.0) {

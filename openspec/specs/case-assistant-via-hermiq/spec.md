@@ -102,7 +102,7 @@ one does. A structural test SHALL fail when a declared tool names a
 keyboard affordance or a typed format in its contract.
 
 #### Scenario: a dictated instruction reaches a declared tool
-@e2e exclude dossiq exposes no MCP route of its own: the tool provider is consumed in-process by hermiq through IMcpToolProvider, so there is no endpoint a browser can call and nothing to dictate into on a dossiq instance. What dossiq owes is asserted instead by tests/Unit/Architecture/DeclaredToolAssumesNoTypingTest.php::testNoDeclaredToolAssumesItWasTyped, which reads every declared contract and fails naming a tool that assumes a keyboard.
+@e2e exclude dossiq exposes no MCP route of its own: its tools are declared on its schemas (`x-openregister-mcp`) and derived by OpenRegister's registry, which hermiq consumes in-process, so there is no endpoint a browser can call and nothing to dictate into on a dossiq instance. What dossiq owes is asserted instead by tests/Unit/Architecture/DeclaredToolAssumesNoTypingTest.php::testNoDeclaredToolAssumesItWasTyped, which reads every declared contract and fails naming a tool that assumes a keyboard.
 
 - **GIVEN** an instance with hermiq present
 - **WHEN** a person dictates an instruction that matches a declared dossiq tool

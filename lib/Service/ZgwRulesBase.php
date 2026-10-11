@@ -818,8 +818,6 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array|null Validation error if duplicate found, null if unique
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function checkFieldUniqueness(
@@ -867,26 +865,10 @@ abstract class ZgwRulesBase {
 			// count it as a match (conservative: assume coercion happened).
 			$matchCount = 0;
 			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$storedVal = $data[$field2Search] ?? null;
-				$storedStr = (string)$storedVal;
-				$compareStr = (string)$field2Value;
-
-				// Match when: no field2 filter, or values match directly,
-				// or stored is empty/0 (likely coerced from numeric string).
-				$isMatch = ($field2Value === '')
-					|| ($storedStr === $compareStr)
-					|| ($storedStr === '')
-					|| ($storedStr === '0' && preg_match('/^0+$/', $field2Value) === 1);
-
-				if ($isMatch === true) {
+				if ($this->storedValueMatches(row: $obj, field: $field2Search, value: $field2Value) === true) {
 					$matchCount++;
 				}
-			}//end foreach
+			}
 
 			if ($matchCount > 0) {
 				return $this->error(
@@ -909,4 +891,32 @@ abstract class ZgwRulesBase {
 
 		return null;
 	}//end checkFieldUniqueness()
+
+	/**
+	 * Whether one hit carries the same second-field value (uniqueness check).
+	 *
+	 * OpenRegister may store numeric-looking strings (e.g. "000000000") as
+	 * integer 0, which the magic mapper may serialise to an empty string. So
+	 * an empty or "0" stored value counts as a match (conservative: assume
+	 * coercion happened), and no second value matches every hit.
+	 *
+	 * @param mixed $row The hit, an array or an entity.
+	 * @param string $field The OpenRegister field of the second value.
+	 * @param string $value The second value.
+	 *
+	 * @return bool
+	 */
+	private function storedValueMatches(mixed $row, string $field, string $value): bool {
+		$data = $row;
+		if (is_array($row) === false) {
+			$data = $row->jsonSerialize();
+		}
+
+		$storedStr = (string)($data[$field] ?? null);
+
+		return ($value === '')
+			|| ($storedStr === $value)
+			|| ($storedStr === '')
+			|| ($storedStr === '0' && preg_match('/^0+$/', $value) === 1);
+	}//end storedValueMatches()
 }//end class

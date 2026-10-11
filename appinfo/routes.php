@@ -144,6 +144,20 @@ $extra = [
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
+        // The case surfaces that read and act through pipelinq
+        // (parties-and-contact-moments-consume-pipelinq, boards
+        // DqZaakContactmomenten, DqZaakPartijen, DqZaaktype).
+    ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
+    ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
+    ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
+    ['name' => 'pipelinqContactMoment#unfileContactMoment', 'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}',        'verb' => 'DELETE'],
+    ['name' => 'pipelinqCase#partyKinds',          'url' => '/api/cases/{caseId}/pipelinq/party-kinds',                       'verb' => 'GET'],
+    ['name' => 'pipelinqCase#partyLanguage',       'url' => '/api/cases/{caseId}/pipelinq/parties/{partyId}/language',        'verb' => 'GET'],
+    ['name' => 'pipelinqProgramme#programme',           'url' => '/api/cases/{caseId}/pipelinq/programme',                         'verb' => 'GET'],
+    ['name' => 'pipelinqProgramme#linkProgramme',       'url' => '/api/cases/{caseId}/pipelinq/programme',                         'verb' => 'POST'],
+    ['name' => 'pipelinqProgramme#programmeOptions',    'url' => '/api/pipelinq/programmes',                                       'verb' => 'GET'],
+    ['name' => 'pipelinqCase#caseTypePartyKinds',  'url' => '/api/case-types/{caseTypeId}/pipelinq/party-kinds',              'verb' => 'GET'],
+    ['name' => 'pipelinqCase#declarePartyKinds',   'url' => '/api/case-types/{caseTypeId}/pipelinq/party-kinds',              'verb' => 'PUT'],
         // The version chain (case-type-version-chain). The chain is keyed on a
         // case type; the other two are keyed on a CASE, because moving one
         // running case along the chain is a handler's act on their own work and
@@ -671,6 +685,8 @@ $extra = [
         // Role-based routing engine action — manual recompute of step assignees.
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
     ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
+        // Route a case to one person by a rule; arms the rule's take-back window.
+    ['name' => 'routing#route', 'url' => '/api/cases/{id}/route', 'verb' => 'POST'],
 
         // ── VTH Module: checklist results, advice, LHS lookup ─
         // A DSO verzoek has no route here: integriq receives it and
@@ -812,10 +828,26 @@ $extra = [
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
     ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    // Re-verify what a Woo delivery sent out (woo-delivered-set-is-a-record REQ-WDS-003).
+    ['name' => 'wooDeliveredSet#verify', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/verify', 'verb' => 'GET'],
+    ['name' => 'wooDeliveredSet#item', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}', 'verb' => 'GET', 'requirements' => ['index' => '\d+']],
+    ['name' => 'wooDeliveredSet#file', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}/{side}', 'verb' => 'GET', 'requirements' => ['index' => '\d+', 'side' => 'original|delivered']],
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
     ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
+    // Gather documents on a Woo case (woo-requests-gather-documents-from-sources D-2, D-3).
+    ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
+    ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],
+    ['name' => 'wooSources#add',    'url' => '/api/cases/{id}/woo/sources/add',    'verb' => 'POST'],
+    // The corpus of a Woo request (woo-request-corpus-collection).
+    ['name' => 'wooCollection#plan',       'url' => '/api/cases/{id}/woo/plan',                                    'verb' => 'GET'],
+    ['name' => 'wooCollection#recordPlan', 'url' => '/api/cases/{id}/woo/plan',                                    'verb' => 'PUT'],
+    ['name' => 'wooCollection#report',     'url' => '/api/cases/{id}/woo/collection',                              'verb' => 'GET'],
+    ['name' => 'wooCollection#exclude',    'url' => '/api/cases/{id}/woo/documents/{documentRef}/exclude',         'verb' => 'POST'],
+    ['name' => 'wooCollection#queries',    'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'GET'],
+    ['name' => 'wooCollection#storeQuery', 'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'POST'],
+    ['name' => 'wooCollection#rerun',      'url' => '/api/cases/{id}/woo/collection/queries/{queryId}/rerun',      'verb' => 'POST'],
     // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
     // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],

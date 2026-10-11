@@ -32,7 +32,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\RoleResolverService
  *
- * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
+ * @spec openspec/specs/role-based-step-routing/spec.md
  */
 class AreaRoutingIsConsultedTest extends TestCase {
 
@@ -79,7 +79,7 @@ class AreaRoutingIsConsultedTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function testTheAreaMapDecidesTheTeamTheStrategySees(): void {
 		$this->resolver()->resolve(
@@ -104,7 +104,7 @@ class AreaRoutingIsConsultedTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function testATeamOnTheCaseWinsOverTheRulesOwn(): void {
 		$this->resolver()->resolve(
@@ -127,7 +127,7 @@ class AreaRoutingIsConsultedTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 * @spec openspec/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
 	 */
 	public function testAnOrdinaryRuleIsUnchanged(): void {
 		$rule = ['strategy' => 'single-role', 'roleType' => 'behandelaar', 'team' => 'algemeen'];

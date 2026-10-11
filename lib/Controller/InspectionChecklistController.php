@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Inspection\InspectionRunService;
 use OCA\Dossiq\Service\InspectionChecklistService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
@@ -70,6 +71,7 @@ class InspectionChecklistController extends Controller {
 	 * @param IUserSession $userSession User session
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param InspectionRunService $runs Inspection runs as OpenRegister tasks
 	 *
 	 * `IGroupManager` is deliberately NOT injected any more (#799). The only
 	 * thing it did here was the admin bypass in front of a guard that could
@@ -85,6 +87,7 @@ class InspectionChecklistController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly InspectionRunService $runs,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -286,11 +289,11 @@ class InspectionChecklistController extends Controller {
 		}
 
 		try {
-			$result = $this->checklistService->submitResult(
+			$result = $this->runs->submit(
 				caseId: $id,
-				checklistId: $checklistId,
-				resultData: $params,
-				completedBy: $user->getUID()
+				templateId: $checklistId,
+				payload: $params,
+				actor: $user->getUID()
 			);
 			return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
 		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
@@ -374,7 +377,7 @@ class InspectionChecklistController extends Controller {
 			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
 		}
 
-		$results = $this->checklistService->getResultsForCase(caseId: $id);
+		$results = $this->runs->runsForCase(caseId: $id, actor: $user->getUID());
 		return new JSONResponse(data: $results, statusCode: Http::STATUS_OK);
 	}//end getResults()
 }//end class
