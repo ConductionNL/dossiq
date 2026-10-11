@@ -77,7 +77,7 @@ class GuardRegistry {
 	 * @param RequiredFieldGuard $requiredField Built-in required-field evaluator
 	 * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator
 	 * @param RoleGuard $roleGuard Built-in role evaluator
-	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
+	 * @param DelegatedAuthorityGuard $authority Asks decidiq whether the acting person holds the authority
 	 * @param StatusChecklistGuard $statusChecklist Required-items-of-the-current-status evaluator
 	 * @param CapacityGuard $capacity Capacity-of-the-status-being-entered evaluator
 	 * @param LoggerInterface $logger Logger for unknown guard types
@@ -89,7 +89,7 @@ class GuardRegistry {
 		RequiredFieldGuard $requiredField,
 		RequiredDocumentGuard $requiredDocument,
 		RoleGuard $roleGuard,
-		MandaatGuard $mandateGuard,
+		DelegatedAuthorityGuard $authority,
 		StatusChecklistGuard $statusChecklist,
 		CapacityGuard $capacity,
 		private readonly LoggerInterface $logger,
@@ -100,7 +100,11 @@ class GuardRegistry {
 			'requiredField' => $requiredField,
 			'requiredDocument' => $requiredDocument,
 			'roleGuard' => $roleGuard,
-			'mandaatGuard' => $mandateGuard,
+			'delegatedAuthorityGuard' => $authority,
+			// The legacy key stays answered: workflow definitions stored on live
+			// instances still name it with no config, and an unknown guard type
+			// refuses every transition. Its act key was the case property below.
+			'mandaatGuard' => $authority->withDefaults(defaults: ['actField' => 'mandaatCategorie']),
 			// Registered like any other type, but declared by no template: the
 			// engine appends it to every transition's guard list itself.
 			self::STATUS_CHECKLIST => $statusChecklist,

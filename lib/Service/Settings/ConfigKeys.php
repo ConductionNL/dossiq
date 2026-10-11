@@ -324,9 +324,6 @@ class ConfigKeys {
 		// Official publication (DROP / LVBB) — empty disables dispatch.
 		'drop_lvbb_endpoint',
 		'drop_lvbb_token',
-		// Mandaatregister authority validation — empty falls back to manual confirmation.
-		'mandaatregister_endpoint',
-		'mandaatregister_token',
 		// ZGW DRC case dossier (document-zaakdossier spec).
 		'dossier_informatieobject_schema',
 		'dossier_zaakinformatieobject_schema',
