@@ -21,4 +21,9 @@
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testOnlyAutomaticPackagesInstallAutomatically`
 - [x] 1.7 Repair step `InstallShippedPackages` in post-migration and install; `occ dossiq:package:install`.
 - [x] 1.8 CI workflow `packages.yml`: install every package and the fixture package on a clean instance, read the rows back with Newman.
+- [x] 1.9 Adopt a case type a seeder already wrote, by identifier, with its rows, into the package ledger; never remove an adopted row (decision 190, `ExistingRowMatcher`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithAnotherIdentifierIsNotAdopted`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallNeverRemovesAnAdoptedRow`
 - [ ] 2.1 Convert each seeder into a package, one pull request per package, deleting the seeder classes (bezwaar and beroep, VTH, besluitvorming, subsidie, DSO, LHS). Tracked by refactor lane R1 in hydra `procedures-are-configuration` T10.
