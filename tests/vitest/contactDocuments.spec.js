@@ -126,14 +126,18 @@ describe('the contact 360 shows documents', () => {
 		expect(documentsWidget(id).content.limit).toBe(25)
 	})
 
-	it.each(PAGES)('%s leaves no gap in the layout under it', (id) => {
-		const layout = page(id).config.layout
-		const row = layout.find((l) => l.widgetId === 'contact-documents')
-		expect(row).toBeDefined()
-
-		const moments = layout.find((l) => l.widgetId === 'contact-moments')
-		expect(row.gridY).toBe(moments.gridY + moments.gridHeight)
-		expect(row.gridWidth).toBe(12)
+	it.each(PAGES)('%s reaches the documents through its Files tab', (id) => {
+		// DqContact / DqOrganisatie: the panels are tabs, and the layout holds
+		// the strip alone. The documents list is a tab, never a grid row of
+		// its own, so there is no gap to leave.
+		const config = page(id).config
+		expect(config.layout.map((l) => l.widgetId)).toEqual(['contact-panels'])
+		expect(config.layout[0].gridWidth).toBe(12)
+		const strip = config.widgets.find((w) => w.id === 'contact-panels')
+		const tab = strip.content.tabs.find(
+			(t) => t.widgetId === 'contact-documents',
+		)
+		expect(tab).toBeDefined()
 	})
 
 	it('places the widget on both pages and nowhere else', () => {
