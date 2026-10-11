@@ -113,7 +113,7 @@ class CaseTypeController extends Controller {
 			// A read that fails leaves the bar without dates, and says so in
 			// the log: the steps themselves are still the type's.
 			try {
-				$reached = $this->stageDates->reachedDatesFor(caseId: $caseId);
+				$reached = $this->stageDates->reachedDatesFor(caseId: $caseId, statusTypes: $blueprint['statusTypes']);
 			} catch (Throwable $e) {
 				$this->logger->warning(
 					'[CaseTypeController] The status moves of a case could not be read for its stage bar',

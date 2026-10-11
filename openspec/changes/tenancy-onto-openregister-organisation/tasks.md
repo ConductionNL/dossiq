@@ -70,7 +70,7 @@ Build rules: `openspec/woo-build-rules.md`.
   every app's routes fleet-wide. If the unguarded routes later matter, that is
   the change to make, and it belongs upstream in OpenRegister rather than in a
   second dossiq middleware.
-- [ ] 5 (next PR: the pages, the menu entry, the deep link, the menu-layout waivers and the vitest pins that name `TenantsMenu` go together; the DqTenant board shows an organisation page over the Organisation and its satellites, which is a new page, not these schema-bound ones) **Remove the surface.** The `Tenants` and `TenantDetail` pages are
+- [x] 5 (the `Tenants` and `TenantDetail` pages, the `TenantsMenu` entry, the tenant deep link and both menu layouts' waivers are gone; `NoRetiredTenantStoreTest::testNoManifestPageOrMenuNamesTheTenantsRoute`. The DqTenant board draws an organisation page over the Organisation and its satellites: that is a new page, owed as a follow-up, not these schema-bound ones) **Remove the surface.** The `Tenants` and `TenantDetail` pages are
   both still in `src/manifest.json`. They go once the store they administer is
   gone, not before.
   Runs after task 6.9. Remove `Tenants`, `TenantDetail` and the `TenantsMenu`

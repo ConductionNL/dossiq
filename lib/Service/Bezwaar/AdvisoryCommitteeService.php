@@ -41,9 +41,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Bezwaar;
 
 use DateTimeImmutable;
-use DateTimeInterface;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\Governance\GovernanceBodyReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -102,6 +102,7 @@ class AdvisoryCommitteeService {
 	 * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
 	 * @param BezwaarAuditTrail $auditTrail Writes each entry onto OpenRegister's audit trail
 	 * @param PanelIndependenceChecker $independence Awb Art. 7:13 lid 3 panel check
+	 * @param GovernanceBodyReader|null $governanceBodies Reads the committee back from decidiq, falling back locally
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -109,6 +110,7 @@ class AdvisoryCommitteeService {
 		private readonly AdviceDelegationService $adviceDelegation,
 		private readonly BezwaarAuditTrail $auditTrail,
 		private readonly PanelIndependenceChecker $independence,
+		private readonly ?GovernanceBodyReader $governanceBodies = null,
 	) {
 	}//end __construct()
 
@@ -154,26 +156,14 @@ class AdvisoryCommitteeService {
 			);
 		}
 
-		// Validate committee exists and is active. find() returns an
-		// ObjectEntity (never an array), so go through the array bridge.
-		$committee = $this->findObjectAsArray(
+		$this->assertCommitteeAcceptsReferrals(
 			objectService: $objectService,
 			register: $register,
 			schema: $committeeSchema,
-			id: $commissieId
+			commissieId: $commissieId
 		);
-		if ($committee === null) {
-			throw new RuntimeException('Committee not found');
-		}
 
-		$active = $committee['active'] ?? true;
-		if ($active === false) {
-			throw new RuntimeException(
-				'Committee is archived and cannot accept new bezwaaren'
-			);
-		}
-
-		$now = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+		$now = (new DateTimeImmutable())->format('c');
 		$deadline = (new DateTimeImmutable())
 			->modify('+' . self::DEFAULT_DEADLINE_DAYS . ' days')
 			->format('Y-m-d');
@@ -225,6 +215,53 @@ class AdvisoryCommitteeService {
 
 		return $saved;
 	}//end assignToCommittee()
+
+	/**
+	 * Refuse a committee that does not exist or no longer accepts referrals.
+	 *
+	 * Decidiq holds the committee as a governance body and answers first;
+	 * without decidiq, or for a committee not yet raised there, the local row
+	 * answers (migrate-committees-to-decidiq task 3).
+	 *
+	 * @param object $objectService The object service.
+	 * @param string $register      The register.
+	 * @param string $schema        The committee schema.
+	 * @param string $commissieId   The committee id.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the committee is missing or archived.
+	 *
+	 * @spec openspec/changes/migrate-committees-to-decidiq/specs/migrate-committees-to-decidiq/spec.md#requirement-req-mcd-003-reads-resolve-from-decidiq-falling-back-locally
+	 */
+	private function assertCommitteeAcceptsReferrals(object $objectService, string $register, string $schema, string $commissieId): void {
+		// Validate committee exists and is active. find() returns an
+		// ObjectEntity (never an array), so go through the array bridge.
+		$committee = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			id: $commissieId
+		);
+		if ($committee === null) {
+			throw new RuntimeException('Committee not found');
+		}
+
+		// Decidiq holds the committee as a governance body and is the authority
+		// for whether it is still active (migrate-committees-to-decidiq task 3).
+		// Without decidiq, or for a committee not yet raised there, the local
+		// row answers as before.
+		if ($this->governanceBodies !== null) {
+			$committee = $this->governanceBodies->resolve(row: $committee);
+		}
+
+		$active = $committee['active'] ?? true;
+		if ($active === false) {
+			throw new RuntimeException(
+				'Committee is archived and cannot accept new bezwaaren'
+			);
+		}
+	}//end assertCommitteeAcceptsReferrals()
 
 	/**
 	 * Advance the advice request to a new status. Enforces the one-way
@@ -644,7 +681,7 @@ class AdvisoryCommitteeService {
 		}
 
 		$update['adviceIssuedAt'] = (new DateTimeImmutable())
-			->format(DateTimeInterface::ATOM);
+			->format('c');
 
 		return $update;
 	}//end buildTransitionUpdate()

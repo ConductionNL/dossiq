@@ -17,7 +17,11 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import manifest from '../../src/manifest.json'
-import { installPageTitles, pageTitleFor } from '../../src/utils/pageTitle.js'
+import {
+	FILTERED_CASES_TITLE,
+	installPageTitles,
+	pageTitleFor,
+} from '../../src/utils/pageTitle.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const BASE = 'Dossiq - Conduction Nextcloud'
@@ -67,6 +71,70 @@ describe('pageTitleFor', () => {
 	})
 })
 
+// The "My case types" entry the backend delta adds (ManifestController).
+const WOO = '3c0f5a00-0000-4000-a000-00000000a001'
+const DELTA_MENU = [
+	{ id: 'MyCaseTypesCaption', type: 'caption', label: 'My case types' },
+	{
+		id: `ct-${WOO}`,
+		label: 'Woo-verzoek',
+		route: 'Cases',
+		query: { caseType: WOO },
+	},
+]
+const filteredRoute = {
+	name: 'Cases',
+	meta: { cnPageId: 'Cases' },
+	query: { caseType: WOO },
+}
+
+describe('pageTitleFor on a list narrowed to one case type', () => {
+	// @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+	it('names the case type the menu entry names, not the whole list', () => {
+		expect(
+			pageTitleFor(manifest, filteredRoute, BASE, (s) => s, DELTA_MENU),
+		).toBe('Woo-verzoek - Dossiq - Conduction Nextcloud')
+	})
+
+	it('finds the entry inside a menu group', () => {
+		const grouped = [{ id: 'G', label: 'Cases', children: DELTA_MENU }]
+		expect(pageTitleFor(manifest, filteredRoute, BASE, (s) => s, grouped)).toBe(
+			'Woo-verzoek - Dossiq - Conduction Nextcloud',
+		)
+	})
+
+	it('says the list is narrowed when no menu entry names the case type', () => {
+		const nl = { [FILTERED_CASES_TITLE]: 'Zaken van één zaaktype' }
+		expect(pageTitleFor(manifest, filteredRoute, BASE, (s) => s, [])).toBe(
+			'Cases of one case type - Dossiq - Conduction Nextcloud',
+		)
+		expect(
+			pageTitleFor(manifest, filteredRoute, BASE, (s) => nl[s] || s, []),
+		).toBe('Zaken van één zaaktype - Dossiq - Conduction Nextcloud')
+	})
+
+	it('keeps the page name on the unfiltered list', () => {
+		expect(
+			pageTitleFor(
+				manifest,
+				{ ...filteredRoute, query: {} },
+				BASE,
+				(s) => s,
+				DELTA_MENU,
+			),
+		).toBe('Cases - Dossiq - Conduction Nextcloud')
+	})
+
+	it('has the fallback name in both catalogues', () => {
+		const read = (lang) =>
+			JSON.parse(
+				readFileSync(resolve(here, `../../l10n/${lang}.json`), 'utf8'),
+			).translations
+		expect(read('en')[FILTERED_CASES_TITLE]).toBe(FILTERED_CASES_TITLE)
+		expect(read('nl')[FILTERED_CASES_TITLE]).toBe('Zaken van één zaaktype')
+	})
+})
+
 describe('installPageTitles', () => {
 	it('retitles the tab on every route change, without stacking names', async () => {
 		const doc = { title: BASE }
@@ -111,5 +179,46 @@ describe('installPageTitles', () => {
 			/import \{ installPageTitles \} from '\.\/utils\/pageTitle\.js'/,
 		)
 		expect(source).toMatch(/installPageTitles\(\s*router,\s*builtManifest,/)
+	})
+
+	// @spec openspec/changes/r7-dossiq-filtered-title-board-config/specs/page-titles/spec.md
+	it('re-titles the open list when the case type menu arrives', async () => {
+		const doc = { title: BASE }
+		const router = createRouter({
+			history: createMemoryHistory(),
+			routes: [
+				{
+					path: '/cases',
+					name: 'Cases',
+					component: {},
+					meta: { cnPageId: 'Cases' },
+				},
+			],
+		})
+		let menu = []
+		const retitle = installPageTitles(
+			router,
+			manifest,
+			(s) => s,
+			doc,
+			() => menu,
+		)
+
+		await router.push(`/cases?caseType=${WOO}`)
+		expect(doc.title).toBe(
+			'Cases of one case type - Dossiq - Conduction Nextcloud',
+		)
+
+		menu = DELTA_MENU
+		retitle()
+		expect(doc.title).toBe('Woo-verzoek - Dossiq - Conduction Nextcloud')
+	})
+
+	it('follows the resolved menu in main.js', () => {
+		const source = readFileSync(resolve(here, '../../src/main.js'), 'utf8')
+		expect(source).toMatch(/\(\) => resolvedManifest\.value\?\.menu,\s*\)/)
+		expect(source).toMatch(
+			/watch\(\(\) => resolvedManifest\.value\?\.menu, retitlePage\)/,
+		)
 	})
 })
