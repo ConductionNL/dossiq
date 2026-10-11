@@ -347,6 +347,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\RenameCollidingSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <!--
+                After the import, so the case schema already declares the
+                channel slug enum and communicationChannelSource (decision 171):
+                every stored ZGW channel URL or intake word becomes a slug, the
+                old value kept beside it.
+            -->
+            <step>OCA\Dossiq\Repair\NormaliseCommunicationChannelValues</step>
+            <!--
                 The shipped register data assigns flow steps to Nextcloud
                 groups (task-behandelaar -> "behandelaars"). Provision them
                 before anything imports or runs that data: the completion
