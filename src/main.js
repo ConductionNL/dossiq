@@ -23,7 +23,7 @@ import {
 	translate as t,
 } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { createApp, h, markRaw } from 'vue'
+import { createApp, h, markRaw, watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import { registerCaseSections } from './components/case/registerCaseSections.js'
@@ -301,7 +301,17 @@ router.beforeEach(permissionGuard)
 // The browser tab names the page ("Cases - Dossiq - Nextcloud"), the way
 // Nextcloud's own apps do, instead of the same server-rendered title on every
 // route. See `utils/pageTitle.js`.
-installPageTitles(router, builtManifest, (label) => t('dossiq', label))
+// A list narrowed to one case type (a "My case types" entry, `?caseType=`) is
+// named after that case type. Those entries come with the backend delta, which
+// lands after the first route, so the title follows the resolved menu.
+const retitlePage = installPageTitles(
+	router,
+	builtManifest,
+	(label) => t('dossiq', label),
+	document,
+	() => resolvedManifest.value?.menu,
+)
+watch(() => resolvedManifest.value?.menu, retitlePage)
 
 // The case page subscribes to the case it is showing (gap register row 2.20).
 // It is wired here rather than in a component because `#CaseDetail` is rendered
