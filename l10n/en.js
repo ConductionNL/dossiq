@@ -1707,6 +1707,7 @@ OC.L10N.register(
         "Creation date": "Creation date",
         "Creation date (ISO 8601)": "Creation date (ISO 8601)",
         "Creation timestamp": "Creation timestamp",
+        "Credentials": "Credentials",
         "Creditfactuur indienen": "Submit credit invoice",
         "Criminal": "Criminal",
         "Criminal (crimineel)": "Criminal (crimineel)",
