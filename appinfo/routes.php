@@ -144,6 +144,20 @@ $extra = [
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
+        // The case surfaces that read and act through pipelinq
+        // (parties-and-contact-moments-consume-pipelinq, boards
+        // DqZaakContactmomenten, DqZaakPartijen, DqZaaktype).
+    ['name' => 'pipelinqCase#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
+    ['name' => 'pipelinqCase#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
+    ['name' => 'pipelinqCase#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
+    ['name' => 'pipelinqCase#unfileContactMoment', 'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}',        'verb' => 'DELETE'],
+    ['name' => 'pipelinqCase#partyKinds',          'url' => '/api/cases/{caseId}/pipelinq/party-kinds',                       'verb' => 'GET'],
+    ['name' => 'pipelinqCase#partyLanguage',       'url' => '/api/cases/{caseId}/pipelinq/parties/{partyId}/language',        'verb' => 'GET'],
+    ['name' => 'pipelinqCase#programme',           'url' => '/api/cases/{caseId}/pipelinq/programme',                         'verb' => 'GET'],
+    ['name' => 'pipelinqCase#linkProgramme',       'url' => '/api/cases/{caseId}/pipelinq/programme',                         'verb' => 'POST'],
+    ['name' => 'pipelinqCase#programmeOptions',    'url' => '/api/pipelinq/programmes',                                       'verb' => 'GET'],
+    ['name' => 'pipelinqCase#caseTypePartyKinds',  'url' => '/api/case-types/{caseTypeId}/pipelinq/party-kinds',              'verb' => 'GET'],
+    ['name' => 'pipelinqCase#declarePartyKinds',   'url' => '/api/case-types/{caseTypeId}/pipelinq/party-kinds',              'verb' => 'PUT'],
         // The version chain (case-type-version-chain). The chain is keyed on a
         // case type; the other two are keyed on a CASE, because moving one
         // running case along the chain is a handler's act on their own work and
