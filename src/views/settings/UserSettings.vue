@@ -24,6 +24,7 @@
   @spec openspec/specs/personal-settings-surface/spec.md
 -->
 <template>
+	<!-- Order, names and descriptions follow board DqPersoonlijkeInstellingen. -->
 	<NcAppSettingsSection
 		id="menu-case-types"
 		:name="t('dossiq', 'Case types in my menu')">
@@ -31,7 +32,7 @@
 			{{
 				t(
 					'dossiq',
-					'These case types are in your dossiq menu, under My case types. One click opens their case list. Drag a handle to change the order.',
+					'These case types are in your menu under My case types, in this order. Drag a row or use the arrow keys.',
 				)
 			}}
 		</p>
@@ -39,47 +40,13 @@
 	</NcAppSettingsSection>
 
 	<NcAppSettingsSection
-		id="substitution"
-		:name="t('dossiq', 'Substitution')">
-		<SubstitutionSettings />
-	</NcAppSettingsSection>
-
-	<NcAppSettingsSection
-		id="email-matching"
-		:name="t('dossiq', 'Link my mail to cases')">
-		<p class="dossiq-user-settings__intro">
-			{{
-				t(
-					'dossiq',
-					'Mail that names a case number, like 2026-0042, is added to that case.',
-				)
-			}}
-		</p>
-		<CaseEmailMatchSettings />
-	</NcAppSettingsSection>
-
-	<NcAppSettingsSection
-		id="work-digest"
-		:name="t('dossiq', 'My daily work digest')">
-		<p class="dossiq-user-settings__intro">
-			{{
-				t(
-					'dossiq',
-					'One message a day naming what is waiting on you. Nothing waiting means no message.',
-				)
-			}}
-		</p>
-		<WorkDigestSettings />
-	</NcAppSettingsSection>
-
-	<NcAppSettingsSection
 		id="notification-routing"
-		:name="t('dossiq', 'Which notices reach me')">
+		:name="t('dossiq', 'Notices')">
 		<p class="dossiq-user-settings__intro">
 			{{
 				t(
 					'dossiq',
-					'Every setting says who decided it. A setting your team made is one you can still change for yourself.',
+					'Choose per kind of notice where you get it. Your organisation decides which ones are required.',
 				)
 			}}
 		</p>
@@ -87,8 +54,48 @@
 	</NcAppSettingsSection>
 
 	<NcAppSettingsSection
+		id="work-digest"
+		:name="t('dossiq', 'Daily overview')">
+		<p class="dossiq-user-settings__intro">
+			{{
+				t(
+					'dossiq',
+					'Every working day, a mail with your open cases and tasks.',
+				)
+			}}
+		</p>
+		<WorkDigestSettings />
+	</NcAppSettingsSection>
+
+	<NcAppSettingsSection
+		id="substitution"
+		:name="t('dossiq', 'Cover while I am away')">
+		<p class="dossiq-user-settings__intro">
+			{{ t('dossiq', 'Who picks up your cases while you are away.') }}
+		</p>
+		<SubstitutionSettings />
+	</NcAppSettingsSection>
+
+	<NcAppSettingsSection
+		id="email-matching"
+		:name="t('dossiq', 'Link mail to cases')">
+		<p class="dossiq-user-settings__intro">
+			{{ t('dossiq', 'Mail about your cases reaches the case by itself.') }}
+		</p>
+		<CaseEmailMatchSettings />
+	</NcAppSettingsSection>
+
+	<NcAppSettingsSection
 		id="credentials"
 		:name="t('dossiq', 'Credentials')">
+		<p class="dossiq-user-settings__intro">
+			{{
+				t(
+					'dossiq',
+					'Your own accounts with other services. They are stored encrypted.',
+				)
+			}}
+		</p>
 		<CnCredentials
 			scope="personal"
 			appId="dossiq"
@@ -99,7 +106,7 @@
 	<NcAppSettingsSection
 		v-if="walkthrough"
 		id="cn-walkthrough"
-		:name="walkthrough.sectionName">
+		:name="t('dossiq', 'Guided tour')">
 		<p class="dossiq-user-settings__intro">
 			{{ walkthrough.hint }}
 		</p>
@@ -109,13 +116,13 @@
 				variant="primary"
 				data-testid="cn-walkthrough-continue"
 				@click="$emit('continueWalkthrough')">
-				{{ walkthrough.continueLabel }}
+				{{ t('dossiq', 'Continue the tour') }}
 			</NcButton>
 			<NcButton
 				variant="secondary"
 				data-testid="cn-walkthrough-restart"
 				@click="$emit('restartWalkthrough')">
-				{{ walkthrough.restartLabel }}
+				{{ t('dossiq', 'Start again') }}
 			</NcButton>
 		</div>
 	</NcAppSettingsSection>
