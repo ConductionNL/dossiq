@@ -50,6 +50,18 @@ Fixture used in the scenarios, computed by hand and to be kept in the tests: fou
 n 200. With k 2 the estimate is 0.9615 and the one-sided 95 percent lower bound 0.8892. With k 10
 the estimate is 0.8333 and the lower bound 0.7500.
 
+## Decision 182: generic capability, Woo as configuration
+
+Amended 10 Oct (decision 182). The stopping rule, the elusion sample and the met record are part of
+the generic document review capability: schemas `stoppingRule` and `recallSample`
+(`lib/Settings/register.d/88-review-recall.json`), classes in `lib/Review/`, routes under
+`/api/cases/{id}/review/`. Their requirements, REQ-WRS-001 to REQ-WRS-003, now live in the one
+`document-review` spec, in `woo-review-triage/specs/document-review/spec.md`, beside REQ-WRT-001 to
+REQ-WRT-005; this change no longer carries a spec delta of its own. Any case type that enables
+document review gets them. Where the text below says a Woo case, read a case whose case type enables
+document review; the `stoppingRuleMet` event is the audit action `dossiq.review.stopping-rule-met`
+with the timeline kind `stopregel-gehaald`.
+
 ## What changes
 
 1. **A stopping rule declared in advance** (19.13): a Woo case declares `targetRecall` (for example

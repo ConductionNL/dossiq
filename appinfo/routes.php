@@ -816,6 +816,17 @@ $extra = [
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
     ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
+    ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
+    ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
+    ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
+    ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
+    ['name' => 'documentReview#pagesSeen',   'url' => '/api/cases/{id}/review/documents/{documentRef}/pages-seen', 'verb' => 'POST'],
+    // Document review recall (woo-review-recall-and-stopping, generic per decision 182): the stopping rule and recall samples.
+    ['name' => 'recall#recall',              'url' => '/api/cases/{id}/review/recall', 'verb' => 'GET'],
+    ['name' => 'recall#declareStoppingRule', 'url' => '/api/cases/{id}/review/stopping-rule', 'verb' => 'POST'],
+    ['name' => 'recall#drawSample',          'url' => '/api/cases/{id}/review/recall/samples', 'verb' => 'POST'],
+    ['name' => 'recall#judge',               'url' => '/api/cases/{id}/review/recall/samples/{sampleId}/judgements', 'verb' => 'POST'],
     // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
     // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
