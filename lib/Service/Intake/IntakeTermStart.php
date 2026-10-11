@@ -76,6 +76,13 @@ class IntakeTermStart {
 	public const OUTSIDE = 'receivedOutsideWorkingHours';
 
 	/**
+	 * The name of a case type question answering when the request was received.
+	 *
+	 * @var string
+	 */
+	public const RECEIPT_DATE = 'receiptDate';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WorkingDayRoll       $calendar The one calendar the term also counts on.
@@ -100,6 +107,7 @@ class IntakeTermStart {
 	 * @return array<string, mixed> The three fields, or [].
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function stampFor(DateTimeImmutable $receivedAt): array {
 		$startsAt = $this->calendar->firstWorkingMomentAtOrAfter(moment: $receivedAt);
@@ -121,6 +129,33 @@ class IntakeTermStart {
 			self::OUTSIDE => ($startsAt->getTimestamp() !== $receivedAt->getTimestamp()),
 		];
 	}//end stampFor()
+
+	/**
+	 * The stamp for a case, read from the receipt the case itself names.
+	 *
+	 * A receipt known only to the day (an imported `receiptDate` answer such
+	 * as `2026-10-06`) reads as midnight, and comparing instants would call
+	 * every such receipt outside working hours: a claim nobody computed. For
+	 * that receipt the flag compares days instead.
+	 *
+	 * @param array<string, mixed> $case The case, as just created.
+	 *
+	 * @return array<string, mixed> The three fields, or [].
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 */
+	public function stampForCase(array $case): array {
+		$receipt = $this->receiptOf(case: $case);
+		$stamp = $this->stampFor(receivedAt: $receipt['moment']);
+		if ($stamp === [] || $receipt['dayOnly'] === false) {
+			return $stamp;
+		}
+
+		$stamp[self::OUTSIDE] = (substr((string)$stamp[self::TERM_STARTS_AT], 0, 10) !== $receipt['moment']->format('Y-m-d'));
+
+		return $stamp;
+	}//end stampForCase()
+
 
 	/**
 	 * The moment a case's term starts: its `termStartsAt`.
@@ -192,11 +227,63 @@ class IntakeTermStart {
 	 *
 	 * @return DateTimeImmutable The arrival moment.
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function arrivalOf(array $case): DateTimeImmutable {
+		return $this->receiptOf(case: $case)['moment'];
+	}//end arrivalOf()
+
+	/**
+	 * The case's own answer to its type's `receiptDate` question, or ''.
+	 *
+	 * An integration that imports a case with a real receipt date answers the
+	 * question; a case filed by hand does not, and dossiq answers it then.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return string The answer, trimmed, or ''.
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 */
+	public function receiptAnswerOf(array $case): string {
+		$entries = ($case['properties'] ?? []);
+		if (is_string($entries) === true) {
+			$entries = json_decode($entries, true);
+		}
+
+		if (is_array($entries) === false) {
+			return '';
+		}
+
+		foreach ($entries as $entry) {
+			if (is_array($entry) === false || ($entry['name'] ?? null) !== self::RECEIPT_DATE) {
+				continue;
+			}
+
+			$value = ($entry['value'] ?? '');
+			if (is_scalar($value) === true && trim((string)$value) !== '') {
+				return trim((string)$value);
+			}
+		}
+
+		return '';
+	}//end receiptAnswerOf()
+
+	/**
+	 * The receipt a case names, and whether it names a day only.
+	 *
+	 * In order: the `receivedAt` the creating path supplied, the case type's
+	 * `receiptDate` answer, `registrationDate`, `requestedDate`, the creation
+	 * moment, now.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array{moment: DateTimeImmutable, dayOnly: bool} The receipt.
+	 */
+	private function receiptOf(array $case): array {
 		$candidates = [
 			(string)($case[self::RECEIVED_AT] ?? ''),
+			$this->receiptAnswerOf(case: $case),
 			(string)($case['registrationDate'] ?? ''),
 			(string)($case['requestedDate'] ?? ''),
 		];
@@ -213,12 +300,15 @@ class IntakeTermStart {
 			}
 
 			try {
-				return new DateTimeImmutable($candidate);
+				return [
+					'moment' => new DateTimeImmutable($candidate),
+					'dayOnly' => (preg_match('/^\d{4}-\d{2}-\d{2}$/', $candidate) === 1),
+				];
 			} catch (Throwable $e) {
 				continue;
 			}
 		}
 
-		return new DateTimeImmutable();
-	}//end arrivalOf()
+		return ['moment' => new DateTimeImmutable(), 'dayOnly' => false];
+	}//end receiptOf()
 }//end class

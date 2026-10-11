@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Termijn;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -79,20 +80,32 @@ class TermDefinitions {
 	 * Resolve the active TermijnDefinitie for a zaaktype.
 	 *
 	 * Version-aware: returns the definition with the latest validFrom that
-	 * is <= today, where validUntil is null or > today.
+	 * is <= today, where validUntil is null or > today. Only a statutory
+	 * definition is answered: a service norm never becomes the statutory term.
 	 *
 	 * @param string $caseType Zaaktype slug.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
 	 */
 	public function activeFor(string $caseType): ?array {
 		if (isset($this->cache[$caseType]) === true) {
 			return $this->cache[$caseType];
 		}
 
-		$active = $this->allActiveFor(caseType: $caseType);
+		// STATUTORY ONLY. Every caller of this method means the term the Awb
+		// sets: the start on case creation, the rearm on a case-type change,
+		// the status clock and the Woo term. A case type whose only definition
+		// is a service norm (`kind: planned`) used to have that norm armed as
+		// its statutory term through the fallback in createTermijnInstance().
+		$active = array_values(
+			array_filter(
+				$this->allActiveFor(caseType: $caseType),
+				static fn (array $row): bool => self::isStatutory(definitie: $row)
+			)
+		);
 		if (count($active) === 0) {
 			return null;
 		}
@@ -197,6 +210,65 @@ class TermDefinitions {
 
 		return WorkingDayRoll::MODE_CALENDAR_DAYS;
 	}//end countingModeOf()
+
+	/**
+	 * Whether a definition sets the statutory term.
+	 *
+	 * An absent kind reads as statutory, because every definition written
+	 * before the kinds existed is one; an unknown kind reads as statutory too,
+	 * the same reading {@see TermKind::ofInstance()} gives an instance.
+	 *
+	 * @param array<string, mixed> $definitie The definition.
+	 *
+	 * @return bool True when it sets the statutory term.
+	 *
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 */
+	public static function isStatutory(array $definitie): bool {
+		$declared = trim((string)($definitie['kind'] ?? ''));
+		if ($declared === '' || in_array($declared, TermKind::ALL, true) === false) {
+			return true;
+		}
+
+		return $declared === TermKind::STATUTORY;
+	}//end isStatutory()
+
+	/**
+	 * The planned clock a case gets: the case type's own lead time, else the
+	 * service norm a `planned` definition declares.
+	 *
+	 * THE CASE TYPE'S OWN LEAD TIME WINS. A planned definition fills in only
+	 * when the case type declares none, so no case type that already carries
+	 * a planned lead time moves. That lead time counts working days, as its
+	 * schema says; a definition counts in the mode it declares, and the
+	 * shipped service norms count calendar days so they end on the
+	 * processing deadline the case type shows.
+	 *
+	 * @param int                       $declaredDays The case type's `plannedLeadTime` in days, 0 when undeclared.
+	 * @param array<string, mixed>|null $definition   The `planned` definition that resolved, if any.
+	 *
+	 * @return array{days: int, mode: string, extra: array<string, string>} The clock, with the
+	 *         fields to write on its instance. Zero days means no planned clock.
+	 *
+	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 */
+	public static function plannedClock(int $declaredDays, ?array $definition): array {
+		if ($declaredDays > 0 || $definition === null) {
+			return ['days' => $declaredDays, 'mode' => WorkingDayRoll::MODE_WORKING_DAYS, 'extra' => []];
+		}
+
+		$extra = [];
+		$definitionId = trim((string)($definition['id'] ?? ''));
+		if ($definitionId !== '') {
+			$extra['deadlineDefinition'] = $definitionId;
+		}
+
+		return [
+			'days' => (int)($definition['standardDurationDays'] ?? 0),
+			'mode' => self::countingModeOf(definitie: $definition),
+			'extra' => $extra,
+		];
+	}//end plannedClock()
 
 	/**
 	 * The end date of a term, counted in the mode its definition declares and

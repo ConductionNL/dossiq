@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -215,7 +216,7 @@ class TenantBillingService {
 		try {
 			return $objectService->saveObject(
 				object: $event,
-				register: TenantSaasService::REGISTER,
+				register: Application::REGISTER_SLUG,
 				schema: 'tenantBillingEvent',
 				uuid: null,
 			);
@@ -329,7 +330,7 @@ class TenantBillingService {
 
 				$objectService->saveObject(
 					object: $event,
-					register: TenantSaasService::REGISTER,
+					register: Application::REGISTER_SLUG,
 					schema: 'tenantBillingEvent',
 					uuid: $uuidArg,
 				);
@@ -372,7 +373,7 @@ class TenantBillingService {
 			$rows = $objectService->findAll(
 				[
 					'filters' => [
-						'register' => TenantSaasService::REGISTER,
+						'register' => Application::REGISTER_SLUG,
 						'schema' => 'tenantBillingEvent',
 						'tenantRef' => $tenantId,
 					],

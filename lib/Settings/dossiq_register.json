@@ -1263,7 +1263,7 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.5.1",
+                "version": "1.6.0",
                 "searchable": false,
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
@@ -1412,6 +1412,12 @@
                         "type": "string",
                         "description": "Default value for this property",
                         "title": "Default value"
+                    },
+                    "hideOnCreate": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "Hide on the create form",
+                        "description": "Leave this question off the form that creates a case, because dossiq answers it itself at creation. The case form still shows it once the case exists."
                     }
                 }
             },
@@ -2787,7 +2793,8 @@
                                 "required": "isRequired",
                                 "default": "defaultValue",
                                 "calculation": "calculation",
-                                "conceptScheme": "conceptScheme"
+                                "conceptScheme": "conceptScheme",
+                                "hideOnCreate": "hideOnCreate"
                             },
                             "values": {
                                 "mode": "array",
@@ -3593,8 +3600,7 @@
                     },
                     "communicationChannel": {
                         "type": "string",
-                        "format": "uri",
-                        "description": "URL reference to the communication channel",
+                        "description": "How letters about this case reach the applicant: a channel slug (email, portal, post, website, zgw-api). A case created through the ZGW Zaken API may hold its channel URL.",
                         "visible": false,
                         "title": "Communication channel"
                     },
@@ -5375,7 +5381,7 @@
                     "tenantId": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
+                        "$ref": "nc-organisation",
                         "description": "Owning tenant: cross-tenant resolution is rejected by the registry",
                         "title": "Tenant ID"
                     },
@@ -8732,18 +8738,16 @@
             "tenant": {
                 "slug": "tenant",
                 "icon": "OfficeBuildingOutline",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "deprecated": true,
-                "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantContext and MandateValidationMiddleware consume them directly. Run `occ dossiq:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
+                "deprecationNote": "Retired as the tenant admin store (ADR-022, consume-or-tenant-fleet-wide): identity, lifecycle status and quotas live on OpenRegister's Organisation, and `occ dossiq:migrate-tenants` plus the MigrateTenantsToOrganisations repair step project the legacy rows onto Organisations. The schema stays as the read-only anchor of the tenant audit trail. The only write left is creating an anchor; nothing updates or deletes a tenant object.",
                 "x-schema-org": "schema:Organization",
                 "title": "Tenant",
-                "description": "DEPRECATED (migrate-tenant-to-or-tenant): legacy SaaS tenant record. Tenant identity now lives on OpenRegister's Organisation entity; this schema is retained only so pre-migration rows remain readable until sunset. Originally: a single municipality / customer of the dossiq platform, carrying lifecycle status, tier, and isolation mode.",
+                "description": "The read-only anchor of the tenant audit trail. Tenant identity, status and quotas live on OpenRegister's Organisation, and every tenant uuid is the uuid of its Organisation. A tenant object stays only so that every tenant audit entry has an object to hang on (decision Q4): dossiq creates one, once, when onboarding starts for an Organisation, and never updates or deletes one (decision Q6).",
                 "type": "object",
                 "required": [
                     "slug",
-                    "displayName",
-                    "status",
-                    "tier"
+                    "displayName"
                 ],
                 "properties": {
                     "slug": {
@@ -11332,8 +11336,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "The OpenRegister Organisation this step belongs to. Its uuid is the tenant uuid.",
                         "title": "Tenant Reference"
                     },
                     "step": {

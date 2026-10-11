@@ -34,6 +34,8 @@ failure line in the PR body.
   - **fails today**: `testTheRouterNeverAnswersAMessageId` in that file. Red: `Failed asserting that an
     array does not have the key 'messageId'.` Reduced to channel selection; BeschikkingService's
     public line takes its date from the announcement date.
+  - Retired with task 2.4: once `verzend()` sends through the sender, nothing called the router
+    (`NoDarkCapabilityTest` named it), so the class and its test are removed.
 - [x] 1.3 `TermijnNotificationService::sendTermijnNotification()` calls the sender and returns its
   result under `dispatch` (REQ-WRN-001).
   - **fails today**: `tests/Unit/Service/TermijnNotificationServiceTest.php`
@@ -71,6 +73,25 @@ failure line in the PR body.
     `Notification/ApplicantMessageTest`. These pass on the old code too: since termijn-notices-send
     all three catch the throw. They pin it. ApplicantMessage and DoorzendingNotifier now hand the
     sender the case row, so a portal requester gets the inbox.
+- [x] 2.4 (defect fix, decision 148) `BeschikkingService::verzend()` sends the decision notice
+  through `RequesterNoticeSender` (new `Service/Beschikking/BeschikkingDelivery`, which reads the
+  case row and lends a burger addressee's BSN to a case without one). It marks the beschikking
+  `sent`, starts the objection term and writes the public "Beschikking verzonden" line only on
+  `sent`, storing the transport's channel and message id under `dispatch`; the sender appends the
+  record to `outboundCommunications`. On `not-sent` it writes an internal "Beschikking niet
+  verzonden" line with the reason code, leaves the beschikking signed and refuses
+  (`beschikking-no-address` 422, `beschikking-not-sent` 503); `BeschikkingController::verzend()`
+  answers that refusal.
+  - **fails today**: `tests/Unit/Service/BeschikkingServiceTest.php`
+    `testABeschikkingNoTransportTookIsNotMarkedSent`. Red: `verzend() must refuse when no transport
+    took the beschikking. Failed asserting that null is not null.` (the status went to `sent`).
+    Controller: `testVerzendNotSentAnswersTheRefusal`, red `Failed asserting that 500 is identical
+    to 422.` New class test: `Beschikking/BeschikkingDeliveryTest` (5 cases).
+  - Decision 158 (Q-dossiq-L12-2): the beschikking's e-mail is statutory mail (Awb 3:41), so it
+    reaches a requester who opted out of case mail and carries no unsubscribe link
+    (`TermNoticeSender::STATUTORY`); digital post still files it as `besluit`. Test:
+    `TermNoticeDeliveryTest::testABeschikkingIsStatutoryAndReachesAnOptedOutRequester`, red without
+    it: `NoticeNotSentException: The recipient asked not to receive these messages.`
 
 ## 3. The extension reaches the requester
 

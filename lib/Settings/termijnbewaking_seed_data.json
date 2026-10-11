@@ -82,6 +82,189 @@
       "countExtensions": 1,
       "pauseExtensionDuration": [14, 28],
       "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-klacht-behandeling",
+      "caseType": "klacht-behandeling",
+      "kind": "statutory",
+      "legalBasis": "Awb 9:11 lid 1 en 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 9:11 lid 1 (zes weken) en lid 2 (verdaging met ten hoogste vier weken)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk9_Titeldeel9.1_Afdeling9.1.2_Artikel9:11"
+        }
+      ],
+      "standardDurationDays": 42,
+      "standardDurationWeeks": 6,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 28,
+      "countExtensions": 1,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-evenementenvergunning-2024",
+      "caseType": "evenementenvergunning-2024",
+      "kind": "statutory",
+      "legalBasis": "APV 1:2 lid 1 (model-APV), Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "APV art. 1:2 lid 1 en 2 (model-APV VNG, gewijzigd model januari 2022); de APV van de gemeente gaat voor",
+          "url": "https://vng.nl/artikelen/apv"
+        },
+        {
+          "article": "Awb art. 4:13 lid 2",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 56,
+      "countExtensions": 1,
+      "validFrom": "2024-01-01"
+    },
+    {
+      "id": "td-evenementenvergunning",
+      "caseType": "evenementenvergunning",
+      "kind": "statutory",
+      "legalBasis": "APV 1:2 lid 1 (model-APV), Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "APV art. 1:2 lid 1 en 2 (model-APV VNG, gewijzigd model januari 2022); de APV van de gemeente gaat voor",
+          "url": "https://vng.nl/artikelen/apv"
+        },
+        {
+          "article": "Awb art. 4:13 lid 2",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 56,
+      "countExtensions": 1,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-cultuur-subsidie-2026",
+      "caseType": "zaaktype-cultuur-subsidie-2026",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-melding-openbare-ruimte",
+      "caseType": "melding-openbare-ruimte",
+      "kind": "planned",
+      "legalBasis": "Servicenorm, geen wettelijke beslistermijn",
+      "legalBasisSources": [],
+      "standardDurationDays": 14,
+      "standardDurationWeeks": 2,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-parkeervergunning-bewoners",
+      "caseType": "parkeervergunning-bewoners",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-kenteken-wijzigen-parkeervergunning",
+      "caseType": "kenteken-wijzigen-parkeervergunning",
+      "kind": "planned",
+      "legalBasis": "Servicenorm, geen wettelijke beslistermijn",
+      "legalBasisSources": [],
+      "standardDurationDays": 14,
+      "standardDurationWeeks": 2,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-building-permit",
+      "caseType": "building-permit",
+      "kind": "planned",
+      "legalBasis": "Service norm, no statutory term (demo)",
+      "legalBasisSources": [],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-grant-application",
+      "caseType": "grant-application",
+      "kind": "planned",
+      "legalBasis": "Service norm, no statutory term (demo)",
+      "legalBasisSources": [],
+      "standardDurationDays": 42,
+      "standardDurationWeeks": 6,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-citizen-complaint",
+      "caseType": "citizen-complaint",
+      "kind": "planned",
+      "legalBasis": "Service norm, no statutory term (demo)",
+      "legalBasisSources": [],
+      "standardDurationDays": 42,
+      "standardDurationWeeks": 6,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-foi-request",
+      "caseType": "foi-request",
+      "kind": "planned",
+      "legalBasis": "Service norm, no statutory term (demo)",
+      "legalBasisSources": [],
+      "standardDurationDays": 30,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
     }
   ]
 }

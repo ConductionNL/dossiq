@@ -8,7 +8,7 @@ The choice is read at page load by the app's boot code, before it builds the
 navigation, so a change shows the next time somebody opens dossiq. The tab says
 so, because a setting that seems to do nothing gets changed back.
 
-@spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+@spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
 -->
 <template>
 	<div class="menu-structure" data-testid="menu-structure">
@@ -79,7 +79,7 @@ import {
 /**
  * The menu structure choice on the admin settings page.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
  */
 export default {
 	name: 'MenuStructureTab',
@@ -102,7 +102,7 @@ export default {
 		/**
 		 * Store the chosen structure, and put the radio back when that fails.
 		 *
-		 * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+		 * @spec openspec/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
 		 */
 		async save() {
 			if (this.structure === this.stored) {

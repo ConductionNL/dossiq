@@ -101,6 +101,8 @@ export const PENDING_PLATFORM_KEYS = {
 export const RENDERER_ROLES = {
 	definition:
 		'The helper text @conduction/nextcloud-vue falls back to when the description is empty.',
+	hideOnCreate:
+		'Keeps a question off the create form when dossiq answers it at creation; @conduction/nextcloud-vue 2.79.0 reads it, the edit form still shows the question.',
 }
 
 /**
