@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\FormsIntakeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -220,6 +221,39 @@ class FormsIntakeServiceTest extends TestCase {
 		$this->assertSame('case', $this->writes[0]['schema']);
 		$this->assertSame('type-verhuizing', $this->writes[0]['object']['caseType']);
 	}//end testABoundFormOpensACaseOfThatType()
+
+	/**
+	 * The case schema dossiq ships accepts the case this service writes.
+	 *
+	 * The service wrote `intakeChannel: forms` while the schema's enum did not
+	 * list it, so every bound submission was refused at the store and every
+	 * test here passed. This validates the written payload itself.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/leaf-integrations/spec.md
+	 */
+	public function testTheRealCaseSchemaAcceptsTheCaseAsWritten(): void {
+		$type = array_merge(
+			$this->boundType('form-abc'),
+			['id' => '6f1d0c7a-52a4-4b61-9d3e-0c2f8a7b1e10', 'initialStatus' => '1c9e4f30-7b2d-4a85-8e6f-3d5a9b0c2e41']
+		);
+		$service = $this->makeService([$type], honourFilter: true);
+
+		$service->caseFor(
+			formHash: 'form-abc',
+			answers: ['Waar gaat het over?' => 'Verhuizing naar Dorpsstraat 12'],
+			submitted: '2026-09-18'
+		);
+
+		$this->assertCount(1, $this->writes);
+		$this->assertSame(FormsIntakeService::CHANNEL, $this->writes[0]['object']['intakeChannel']);
+		$this->assertSame(
+			[],
+			(new RealSchemaValidator())->errors(slug: 'case', payload: $this->writes[0]['object']),
+			'The case schema refuses what a bound form submission writes.'
+		);
+	}//end testTheRealCaseSchemaAcceptsTheCaseAsWritten()
 
 	/**
 	 * The case opens with the clock running from the submission.
