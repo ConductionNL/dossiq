@@ -1789,7 +1789,7 @@
       "reason": "`getConsumerAuthorisaties()` answers `return []` when the read fails; the catch logs at warning (\"Could not get consumer autorisaties\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwZrcRulesService.php",
+      "file": "lib/Service/Zgw/ZrcCaseTypeDefaults.php",
       "method": "caseTypeDefaultAssignee",
       "occurrence": 1,
       "class": "read-miss",

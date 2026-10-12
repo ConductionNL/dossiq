@@ -333,3 +333,27 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         update, get, list and related over a fake ObjectService). Own test for the new class:
         `ContactMomentPayloadTest` (11). It pins one thing worth knowing: an update stores
         `endedAt` as sent, without the normaliser a create uses; behaviour kept, not fixed here.
+- [ ] Slice 8, the class-level suppressions. With the method-level ones gone (AcController's
+      four wait on #3298), what is left on the ZGW surface is ExcessiveClassComplexity,
+      ExcessiveClassLength, TooManyMethods and CouplingBetweenObjects. Those need a class split by
+      concern, not a method split. Same method as before: characterisation through the public
+      callers green on the old class first, then the split, then the same tests again.
+  - [x] 8a `ZgwZrcRulesService` (2: ExcessiveClassComplexity 153 against 50, and
+        ExcessiveClassLength; 1,170 lines to about 310). It keeps the three zaak entry rules and
+        builds three rule groups from its own three collaborators, so its constructor, the
+        dispatcher and the container are unchanged: `Zgw/ZrcCaseFieldRules` (the zrc-002 and
+        zrc-010 to zrc-022 sequence; complexity 38), which builds `Zgw/ZrcCaseRelationRules`
+        (hoofdzaak and products, the two rules that read another object; 28),
+        `Zgw/ZrcCaseTypeDefaults` (default handler and zrc-009 confidentiality; 16) and
+        `Zgw/ZrcSubResourceRules` (zrc-016, 018, 019, 020; 25). `setContext()` is forwarded to
+        every group; removing the forward makes four tests fail (checked).
+        Characterisation: the existing `ZgwZrcCaseFieldRulesTest` (30) and
+        `ZgwZrcRulesServiceTest`, plus the new `ZgwZrcCaseEntryRulesTest` (9: create defaults,
+        the refused zaaktype, default assignee, the three confidentiality spellings, the PUT
+        carry-forward, the PATCH fallback), green on the single class first and unchanged after.
+        Own tests: `tests/Unit/Service/Zgw/ZrcCaseFieldRulesTest`, `ZrcCaseRelationRulesTest`,
+        `ZrcCaseTypeDefaultsTest`, `ZrcSubResourceRulesTest` (20 tests).
+        Removed, not moved: `detectEindstatus()` and `filterZakenForConsumer()` (22 points of
+        complexity) had no caller in `lib/`. The live answers are `Zgw/ZrcEindstatus` (slice 6c)
+        and the read-access filter in `ZrcController`, each with its own suite; the eight tests of
+        the two dead methods went with them.
