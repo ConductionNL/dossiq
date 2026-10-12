@@ -3944,6 +3944,31 @@
 						}
 					},
 					{
+						"id": "remedy-lodge",
+						"type": "open-modal",
+						"label": "Register an objection",
+						"icon": "ScaleBalance",
+						"target": "RemedyLodgeDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Register an objection",
+							"lodgeUrl": "/apps/dossiq/api/cases/{caseId}/remedy",
+							"channels": [
+								{ "value": "brief", "label": "Letter" },
+								{ "value": "email", "label": "Email" },
+								{ "value": "form", "label": "Web form" },
+								{ "value": "balie", "label": "Desk" }
+							],
+							"openRoute": { "name": "CaseDetail", "idField": "caseId" }
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "woo-search-plan",
 						"type": "open-modal",
 						"label": "Search plan",

@@ -67,3 +67,35 @@ as timely.
 - **GIVEN** a decision made known on 2026-11-07 and a term of 42 days, which ends on Saturday 2026-12-19
 - **WHEN** a remedy received on Monday 2026-12-21 is lodged
 - **THEN** `isTimely` SHALL be true
+
+### Requirement: A remedy is lodged from the case page (REQ-RML-003)
+
+A case page header action of type `open-modal` MAY open `RemedyLodgeDialog`. The action's `props`
+SHALL configure it: `title`, `lodgeUrl` (with `{caseId}`), `channels` (each `{value, label}`, the
+values the route accepts) and `openRoute` (`{name, idField}`: the page that opens the new case and
+the answer field holding its id).
+
+The dialog SHALL ask for the day the remedy was received, the channel, the grounds and, optionally,
+what is asked for, and SHALL post them once. The received day SHALL be sent as the local calendar
+day. On success the dialog SHALL say the remedy is registered, SHALL say so when the answer carries
+`isTimely: false`, and SHALL offer to open the new case. A refusal SHALL be shown with the server's
+sentence, and the dialog SHALL stay open.
+
+The dialog decides nothing. Whether the case has a decision, whether its case type offers a remedy
+and whether the lodging is on time are the route's answers (REQ-RML-001, REQ-RML-002).
+
+#### Scenario: A handler registers an objection and opens its case
+- **GIVEN** a decided case whose case type names a remedy case type
+- **WHEN** the handler fills the dialog and saves, then chooses to open the new case
+- **THEN** POST `/api/cases/{id}/remedy` SHALL be called once
+- **AND** the page of the new case SHALL open
+
+#### Scenario: A late objection is registered and the handler is told
+- **GIVEN** the route answers `isTimely: false`
+- **WHEN** the handler saves
+- **THEN** the dialog SHALL say the remedy was received after the term and is registered anyway
+
+#### Scenario: No decision yet
+- **GIVEN** a case without a decision
+- **WHEN** the handler saves
+- **THEN** the dialog SHALL show the server's sentence and SHALL NOT read as registered

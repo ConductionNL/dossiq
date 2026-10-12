@@ -911,6 +911,9 @@
 					"copy-case": {
 						"group": "Case"
 					},
+					"remedy-lodge": {
+						"group": "Case"
+					},
 					"woo-publish": {
 						"group": "Publication"
 					},

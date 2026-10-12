@@ -74,10 +74,14 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
     `testALateObjectionIsRegisteredAndMarked`, `testAUserWithoutMutationAccessIsRefused`.
   - Gates no-admin-idor, route-auth and route-reachability must pass on this controller.
   - Built: generic per decision 182, not as written. `RemedyController::lodge()` on POST `/api/cases/{id}/remedy` over `Service/Remedy/RemedyLodging` (REQ-RML-001, REQ-RML-002). There is no `WooObjectionController`. Tests: `RemedyControllerTest`, `RemedyLodgingTest`.
-- [ ] 4.3 Add `src/dialogs/WooObjectionDialog.vue` and header action `woo-objection`, visible when the
-  case has a Woo decision. On success it navigates to `BezwaarDetail` for the new case. Add a link
-  between the two cases on both pages (REQ-WCS-004).
-  - vitest `testItNavigatesToTheNewBezwaarCase`.
+- [x] 4.3 The lodge dialog, generic per decision 182: `src/dialogs/RemedyLodgeDialog.vue`, opened by
+  the header action `remedy-lodge` and configured through its `props` for the Woo request case type
+  (title Register an objection, the four channels, the page of the new case). On success it says
+  whether the lodging was on time and opens the new case's page (`CaseDetail`: the remedy is a
+  case; the two cases are linked through the case relation RemedyLodging writes). The action shows
+  on every open Woo request case: the case carries no field that says it has a decision, so the
+  route's 409 sentence is shown in the dialog (remedy-lodging REQ-RML-003, REQ-WCS-004).
+  - vitest `tests/vitest/remedyLodgeDialog.spec.js` `testItNavigatesToTheNewBezwaarCase`.
 
 ## 5. The Bezwaar case type and the list
 
@@ -90,15 +94,17 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
   - Check the case type's term: P6W, extension P6W, Awt roll on. Test:
     `testTheBezwaarTermIsSixWeeksRolled`.
   - Built: `register.d/84-woo-bezwaar-case-type.json`, `WooBezwaarCaseTypeSeedTest`. The parked entry stays in `_caseTypes_disabled` under the same uuid, because it carries the workflow template `WorkflowGuardConformanceTest` sweeps.
-- [ ] 5.2 Add a `Bezwaren` index page and menu entry in `src/manifest.json`, filtered on the Bezwaar
-  case type, so it lists real rows (REQ-WCS-006).
-  - `npm run check:manifest` exits 0.
-  - e2e in 6.1 asserts the new objection is listed.
+- [x] 5.2 No `Bezwaren` page is added. The page of that name was deleted on 2026-09-02 because it
+  was an index over `case` narrowed by case type, which the Cases page already is through its case
+  type folders (`src/menu-layout.json` removalsCoverageNote). With the Bezwaar case type seeded
+  (5.1) its cases are real rows there. REQ-WCS-006 is amended to say so.
+  - vitest `tests/vitest/remedyLodgeDialog.spec.js`, "where a lodged objection is listed".
+  - e2e in 6.1 asserts the new objection is listed on Cases under Bezwaar.
 
 ## 6. End to end and live
 
 - [ ] 6.1 e2e `tests/e2e/woo-objection.spec.ts`: on a decided Woo case, register an objection,
-  land on the Bezwaar case, follow the link back, and find the objection on the Bezwaren page. Cite
+  land on the Bezwaar case, follow the link back, and find the objection on the Cases page under Bezwaar. Cite
   REQ-WCS-004 and REQ-WCS-006.
 - [ ] 6.2 Live check after merge on the dev instance: one Woo case taken from intake to publication
   through the page only, and one objection against it. Record the case ids in the PR or issue.

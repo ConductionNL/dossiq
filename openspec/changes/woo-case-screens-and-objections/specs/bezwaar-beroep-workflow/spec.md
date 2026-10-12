@@ -48,11 +48,13 @@ extension of six weeks.
 
 The Bezwaar case type SHALL be seeded with the Woo request case type, from a register fragment of
 its own, on every install that has the Woo request case type. The Beroep and Subsidie demo case
-types SHALL stay parked under `_caseTypes_disabled`. A Bezwaren index page SHALL list the cases of
-the Bezwaar case type and SHALL be reachable from the navigation.
+types SHALL stay parked under `_caseTypes_disabled`. The cases of the Bezwaar case type SHALL be
+listed on the Cases page under their case type, reachable from the navigation. There SHALL be no
+separate Bezwaren page: an index over `case` narrowed by case type is what the Cases page already
+is, which is why the page of that name was deleted on 2026-09-02 (`src/menu-layout.json`).
 
 #### Scenario: A fresh install can handle an objection
 - **GIVEN** a fresh install with the English demo profile
 - **WHEN** the register is imported
 - **THEN** the Bezwaar case type SHALL exist and the Beroep and Subsidie demo case types SHALL NOT
-- **AND** the Bezwaren page SHALL list a newly registered objection
+- **AND** the Cases page SHALL list a newly registered objection under the Bezwaar case type
