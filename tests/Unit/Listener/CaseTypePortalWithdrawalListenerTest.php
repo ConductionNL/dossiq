@@ -13,7 +13,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -216,6 +216,35 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 		$this->assertStringContainsString('Ontvangen', $event->getErrors()['message']);
 		$this->assertSame([CaseTypePortalWithdrawalListener::ERROR_CODE], $event->getErrors()['codes']);
 	}//end testAnUnreachableWithdrawalStatusIsRefusedNamingIt()
+
+	/**
+	 * Status names stored as language maps name the statuses, not "Array".
+	 *
+	 * Found live on 11 October 2026: OpenRegister hands a translatable status
+	 * name back as `{"nl": ...}`, the listener cast it, and the import was
+	 * refused with "Een zaak in Array kan niet naar Array" (N-2).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	public function testStatusNamesStoredAsLanguageMapsAreNamedInTheRefusal(): void {
+		$statuses = array_map(
+			static fn (array $row): array => array_merge($row, ['name' => ['nl' => $row['name'], 'en' => 'EN ' . $row['name']]]),
+			self::STATUSES
+		);
+		$listener = $this->listener(
+			[
+				['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING],
+			],
+			statuses: $statuses
+		);
+
+		$message = $this->save($listener, $this->withdrawal())->getErrors()['message'];
+
+		$this->assertStringNotContainsString('Array', $message);
+		$this->assertStringContainsString('A case in Ontvangen cannot move to Ingetrokken', $message);
+	}//end testStatusNamesStoredAsLanguageMapsAreNamedInTheRefusal()
 
 	/**
 	 * A move straight from Ontvangen to Ingetrokken: the save goes through.

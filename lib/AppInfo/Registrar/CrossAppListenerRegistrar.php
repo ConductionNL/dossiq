@@ -147,6 +147,22 @@ class CrossAppListenerRegistrar {
 			'OCA\Integriq\Event\DeliveryConcludedEvent',
 			\OCA\Dossiq\Listener\DeliveryConcludedListener::class
 		);
+		// Decision 193: integriq sends dossiq's StUF and concludes each message
+		// with StufZdsCaseConcludedEvent; a failure reaches the administrators
+		// as the Notifier's stuf_* notification. By name, for the same reason;
+		// the listener is named by string too, which keeps this registrar under
+		// phpmd's coupling ceiling (StufZdsCaseConcludedListener::EVENT_CLASS).
+		$context->registerEventListener(
+			'OCA\Integriq\Event\StufZdsCaseConcludedEvent',
+			'OCA\Dossiq\Listener\StufZdsCaseConcludedListener'
+		);
+		// Decision 199: integriq answers StUF provider requests (zakLv01, zakLk01,
+		// npsLv01, edcLk01) and asks the owning app through these typed events.
+		// By name, as above; one generic listener answers all four.
+		foreach (['StufCaseQueryEvent', 'StufCaseMutationEvent', 'StufPersonQueryEvent', 'StufDocumentMutationEvent'] as $providerEvent) {
+			$context->registerEventListener('OCA\Integriq\Event\\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderQueryListener');
+		}
+
 		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
 		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
 		// tracked message, `failed` and `read` included, so this is how a case
@@ -235,6 +251,16 @@ class CrossAppListenerRegistrar {
 			\OCA\Dossiq\Listener\PortalClientWriteListener::class
 		);
 
+		// The contact channel a resident picks in the portal reaches their
+		// running cases (portal-contact-channel-follows-the-resident). FQN
+		// strings, no `class_exists` guard, the same as the two above; the
+		// listener is named as a string too, so the registrar's coupling stays
+		// under phpmd's ceiling (PortalContactDetailsChangedListener::EVENT).
+		$context->registerEventListener(
+			'OCA\\Portaliq\\Event\\PortalContactDetailsChangedEvent',
+			'OCA\\Dossiq\\Listener\\PortalContactDetailsChangedListener'
+		);
+
 		$context->registerEventListener(
 			\OCA\Dossiq\Listener\PortalClientWithdrawalListener::EVENT,
 			\OCA\Dossiq\Listener\PortalClientWithdrawalListener::class
@@ -246,6 +272,19 @@ class CrossAppListenerRegistrar {
 		$context->registerEventListener(
 			'OCA\\OpenRegister\\Event\\ObjectUpdatedEvent',
 			'OCA\\Dossiq\\Listener\\CaseCompletedSatisfactionListener'
+		);
+
+		// A case that names a BRP person or KvK company as requester asks
+		// OpenRegister to keep that row current from the source (contacts-domain
+		// 4.3, Tier B B22, openregister registry-subscriptions). After the save;
+		// FQN strings for the reason above.
+		$context->registerEventListener(
+			'OCA\\OpenRegister\\Event\\ObjectCreatedEvent',
+			'OCA\\Dossiq\\Listener\\RequesterRegistrySubscriptionListener'
+		);
+		$context->registerEventListener(
+			'OCA\\OpenRegister\\Event\\ObjectUpdatedEvent',
+			'OCA\\Dossiq\\Listener\\RequesterRegistrySubscriptionListener'
 		);
 	}//end registerPortalListeners()
 }//end class

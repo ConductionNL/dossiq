@@ -45,6 +45,20 @@ What dossiq has, read on `development` at 55bbc761:
 - `wooDocumentAssessment` declares no authorisation and no parent. Anyone with access to dossiq's
   register reads every request's assessments. That is why 19.17 is partial.
 
+## Decision 182: generic capability, Woo as configuration
+
+Amended 10 Oct (decision 182, procedures are configuration). Items 1 to 5 below are built as the
+generic document review capability of dossiq core, named by what it does: schemas `documentReview`,
+`triageRule` and `reviewBatch` (`lib/Settings/register.d/87-document-review.json`), classes in
+`lib/Review/`, routes under `/api/cases/{id}/review/`. Its requirements are REQ-WRT-001 to
+REQ-WRT-005 in `specs/document-review/spec.md`, stated without a procedure. Any case type switches it
+on with `documentReview.enabled`, and the review depth of item 4 is case-type configuration
+(`documentReview.reviewDepth`), no longer `wooRequestConfiguration`. The Woo part is one
+configuration requirement, REQ-WRT-W01: the `woo-verzoek` case type enables document review. Item 6
+(REQ-WRT-006) stays Woo-specific and waits on `woo-request-scoped-access`. Where the text below still
+says `wooDocumentReview`, `wooTriageRule`, `wooReviewBatch` or the request configuration, read the
+generic names.
+
 ## What changes
 
 1. **Relevance apart from the verdict** (19.7): a `wooDocumentReview` per collected document holds

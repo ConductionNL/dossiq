@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Repair;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
@@ -68,11 +69,13 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 	 * @param SettingsService $settingsService The settings service
 	 * @param WorkflowDefinitionService $workflowService The workflow definition service
 	 * @param LoggerInterface $logger Logger
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
 		private WorkflowDefinitionService $workflowService,
 		private LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -314,7 +317,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 				continue;
 			}
 
-			$name = (string)($row['name'] ?? '');
+			$name = $this->text->textOf(value: ($row['name'] ?? null));
 			$id = (string)($row['id'] ?? '');
 			if ($name !== '' && $id !== '') {
 				$statusByName[$name] = $row;

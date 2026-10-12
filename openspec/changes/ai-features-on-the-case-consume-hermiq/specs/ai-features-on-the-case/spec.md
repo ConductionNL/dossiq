@@ -108,6 +108,14 @@ What a group means SHALL remain dossiq's: hermiq answers, and creates nothing.
 - **WHEN** the handler opens the queue
 - **THEN** one item SHALL be shown, carrying the count
 
+#### Scenario: A report shows the count of its group
+@e2e tests/e2e/ai-features-on-the-case.spec.ts
+
+- **GIVEN** a report hermiq placed in a group of two hundred
+- **WHEN** the handler opens that report's case
+- **THEN** the case SHALL show the group's count, read from the group as it now
+  stands, without placing the report again
+
 #### Scenario: The near-duplicates are visible beside the group
 @e2e tests/e2e/ai-features-on-the-case.spec.ts
 
@@ -132,10 +140,13 @@ What a group means SHALL remain dossiq's: hermiq answers, and creates nothing.
 
 ### Requirement: The conversational intake files through dossiq's own create-only path (REQ-AIC-05)
 
-dossiq SHALL declare a create-only intake tool, annotated as hermiq's intake
-grant requires, whose handler calls the same case-creation path the create form
-calls. dossiq SHALL NOT add a second creation path for the intake, and SHALL NOT
-relax validation for it.
+dossiq SHALL declare a create-only intake tool, `dossiq.fileCase`, carrying the
+`citizenIntake` mark with `scope: create` and `action: create` as hermiq's intake
+grant requires (decision 177), whose handler writes through the same
+case-creation path the create form uses: one save on the case schema, as the
+caller, never elevated. dossiq SHALL NOT add a second creation path for the
+intake, SHALL NOT relax validation for it, and SHALL NOT create an intermediate
+intake object: the conversation creates the case directly (decision 179).
 
 dossiq SHALL declare its request catalogue, so hermiq's classification proposes
 from the municipality's own list.
@@ -154,12 +165,23 @@ from the municipality's own list.
 - **WHEN** it is invoked
 - **THEN** it SHALL be refused, and no case SHALL be created
 
+#### Scenario: The request catalogue is the case types declared for intake
+@e2e exclude A read over case type configuration, asserted in PHPUnit (RequestCatalogueTest, IntakeToolsTest); the e2e instance runs no hermiq intake to classify from it.
+
+- **GIVEN** published case types, some of which place an AI feature on the
+  `intake` surface
+- **WHEN** hermiq reads dossiq's request catalogue (`dossiq.requestCatalogue`)
+- **THEN** it SHALL list exactly those case types, once per identifier, each with
+  the `type` the intake tool files under, and SHALL name no request type that is
+  not configured on a case type
+
 #### Scenario: Only the create tool is annotated for intake
 @e2e exclude An assertion over the declared tool catalogue, made in PHPUnit.
 
 - **WHEN** the tool catalogue is read
 - **THEN** exactly the create-only tool SHALL carry the intake annotation, and no
   tool that reads or changes an existing case SHALL carry it
+- **AND** that tool SHALL declare `scope: create` and `action: create`
 
 ### Requirement: dossiq ships an initial prompt library and stops owning it (REQ-AIC-06)
 

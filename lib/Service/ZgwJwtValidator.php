@@ -117,9 +117,6 @@ class ZgwJwtValidator {
 	 * @throws ZgwAuthValidationException If the token is missing, malformed,
 	 *                                    or the signature/payload is invalid.
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sequential JWT validation guards
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      — sequential JWT validation guards
-	 *
 	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function validate(string $authorization): void {
@@ -127,6 +124,38 @@ class ZgwJwtValidator {
 			throw new ZgwAuthValidationException(message: 'Authorization service is unavailable');
 		}
 
+		$token = $this->decodeToken(authorization: $authorization);
+
+		if (isset($token['payload']['iss']) === false || empty($token['payload']['iss']) === true) {
+			throw new ZgwAuthValidationException(message: 'No issuer mentioned');
+		}
+
+		$consumer = $this->findIssuer(issuer: $token['payload']['iss']);
+		if ($consumer === null) {
+			throw new ZgwAuthValidationException(message: 'Unknown issuer');
+		}
+
+		$this->verifySignature(token: $token, authConf: $consumer->getAuthorizationConfiguration());
+
+		// Validate iat/exp via OpenRegister's public payload validator when available,
+		// otherwise fall back to a local check.
+		$this->validatePayloadTiming(payload: $token['payload']);
+
+		// Mirror OpenRegister: bind the request to the Consumer's user.
+		$this->bindConsumerUser(userId: $consumer->getUserId());
+	}//end validate()
+
+	/**
+	 * Split and decode a bearer JWT.
+	 *
+	 * @param string $authorization The full Authorization header value
+	 *
+	 * @return array{header: array, payload: array, headerB64: string, payloadB64: string, signatureB64: string}
+	 *
+	 * @throws ZgwAuthValidationException When the token is missing, not three parts, or its
+	 *                                    header or payload does not decode
+	 */
+	private function decodeToken(string $authorization): array {
 		$token = substr(string: $authorization, offset: strlen(string: 'Bearer '));
 		if ($token === '') {
 			throw new ZgwAuthValidationException(message: 'No token has been provided');
@@ -149,48 +178,62 @@ class ZgwJwtValidator {
 			throw new ZgwAuthValidationException(message: 'Invalid token payload');
 		}
 
-		if (isset($payload['iss']) === false || empty($payload['iss']) === true) {
-			throw new ZgwAuthValidationException(message: 'No issuer mentioned');
-		}
+		return [
+			'header'       => $header,
+			'payload'      => $payload,
+			'headerB64'    => $headerB64,
+			'payloadB64'   => $payloadB64,
+			'signatureB64' => $signatureB64,
+		];
+	}//end decodeToken()
 
-		$consumer = $this->findIssuer(issuer: $payload['iss']);
-		if ($consumer === null) {
-			throw new ZgwAuthValidationException(message: 'Unknown issuer');
-		}
-
-		$authConf = $consumer->getAuthorizationConfiguration();
-		$secret = $authConf['publicKey'] ?? '';
-		$algorithm = $authConf['algorithm'] ?? $header['alg'];
-
+	/**
+	 * Check the token's HMAC signature against the consumer's shared secret.
+	 *
+	 * The consumer's configured algorithm wins over the token header's.
+	 *
+	 * @param array $token The decoded token (see decodeToken())
+	 * @param array|null $authConf The consumer's authorisation configuration
+	 *
+	 * @return void
+	 *
+	 * @throws ZgwAuthValidationException When the algorithm is unsupported or the signature differs
+	 */
+	private function verifySignature(array $token, ?array $authConf): void {
+		$algorithm = $authConf['algorithm'] ?? $token['header']['alg'];
 		if (isset(self::HMAC_MAP[$algorithm]) === false) {
 			throw new ZgwAuthValidationException(message: 'Unsupported token algorithm');
 		}
 
-		$signature = $this->base64urlDecode(data: $signatureB64);
-		if ($this->verifyHmac(
-			headerB64: $headerB64,
-			payloadB64: $payloadB64,
-			signature: $signature,
-			secret: $secret,
+		$verified = $this->verifyHmac(
+			headerB64: $token['headerB64'],
+			payloadB64: $token['payloadB64'],
+			signature: $this->base64urlDecode(data: $token['signatureB64']),
+			secret: $authConf['publicKey'] ?? '',
 			algorithm: $algorithm
-		) === false
-		) {
+		);
+		if ($verified === false) {
 			throw new ZgwAuthValidationException(message: 'The token does not match the shared secret');
 		}
+	}//end verifySignature()
 
-		// Validate iat/exp via OpenRegister's public payload validator when available,
-		// otherwise fall back to a local check.
-		$this->validatePayloadTiming(payload: $payload);
-
-		// Mirror OpenRegister: bind the request to the Consumer's user.
-		$userId = $consumer->getUserId();
-		if ($userId !== null && $userId !== '') {
-			$user = $this->userManager->get($userId);
-			if ($user !== null) {
-				$this->userSession->setUser($user);
-			}
+	/**
+	 * Bind the session to the consumer's Nextcloud user, when it has a known one.
+	 *
+	 * @param string|null $userId The consumer's user id
+	 *
+	 * @return void
+	 */
+	private function bindConsumerUser(?string $userId): void {
+		if ($userId === null || $userId === '') {
+			return;
 		}
-	}//end validate()
+
+		$user = $this->userManager->get($userId);
+		if ($user !== null) {
+			$this->userSession->setUser($user);
+		}
+	}//end bindConsumerUser()
 
 	/**
 	 * Validate the iat/exp timing of the payload.

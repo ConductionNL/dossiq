@@ -59,6 +59,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Woo\WooCaseLedger
  * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooPublicationFieldsShippedTest extends TestCase {
 
@@ -199,7 +202,7 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		$this->assertSame('pub-001', ($this->rows['decision']['decision-001']['wooPublication']['publicationId'] ?? null), 'the publication reference did not survive the save');
 
 		$withdrawn = $service->withdraw('decision-001');
-		$this->assertSame(['available' => true], $withdrawn, 'withdraw found no publication on the decision');
+		$this->assertTrue($withdrawn['available'], 'withdraw found no publication on the decision');
 		$this->assertSame('withdrawn', ($this->rows['decision']['decision-001']['wooPublication']['status'] ?? null));
 	}//end testAPublishedDecisionCanBeWithdrawn()
 

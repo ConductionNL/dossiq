@@ -19,9 +19,18 @@
 <template>
 	<div class="personal-queue">
 		<div class="personal-queue__head">
-			<h2 class="personal-queue__title">
-				{{ t('dossiq', 'Your queue') }}
-			</h2>
+			<div class="personal-queue__heading">
+				<h2 class="personal-queue__title">
+					{{ t('dossiq', 'Your queue') }}
+				</h2>
+				<p class="personal-queue__crumbs">
+					<router-link :to="{ name: 'MyWorkHome' }">
+						{{ t('dossiq', 'My work') }}
+					</router-link>
+					<span aria-hidden="true">/</span>
+					<span>{{ t('dossiq', 'Your queue') }}</span>
+				</p>
+			</div>
 			<NcButton variant="secondary" @click="openPlanner">
 				{{ t('dossiq', 'Plan an item') }}
 			</NcButton>
@@ -59,9 +68,12 @@
 				<div class="personal-queue__group-head">
 					<h3 class="personal-queue__group-title">
 						{{ group.label }}
+						<span class="personal-queue__count">{{
+							group.items.length
+						}}</span>
 					</h3>
 					<NcButton
-						variant="tertiary"
+						variant="secondary"
 						:aria-label="t('dossiq', 'Hide this group until tomorrow')"
 						@click="hideGroup(group.key)">
 						{{ t('dossiq', 'Hide until tomorrow') }}
@@ -80,28 +92,39 @@
 								item.deadlineTier === 'overdue',
 						}"
 						:data-testid="`queue-item-${item.id}`">
-						<a
-							href="#"
-							class="personal-queue__link"
-							@click.prevent="open(item)">
-							{{ item.title }}
-						</a>
-						<span v-if="item.covered" class="personal-queue__covered">
-							{{
-								t('dossiq', 'Covering for {person}', {
-									person: item.coveredFor,
-								})
-							}}
+						<span class="personal-queue__avatar" aria-hidden="true">{{
+							initials(item.title)
+						}}</span>
+						<span class="personal-queue__body">
+							<a
+								href="#"
+								class="personal-queue__link"
+								@click.prevent="open(item)">
+								{{ item.title }}
+							</a>
+							<span
+								v-if="item.covered || waitingOn(item)"
+								class="personal-queue__sub">
+								<span
+									v-if="item.covered"
+									class="personal-queue__covered">
+									{{
+										t('dossiq', 'Covering for {person}', {
+											person: item.coveredFor,
+										})
+									}}
+								</span>
+								<span
+									v-if="waitingOn(item)"
+									class="personal-queue__waiting"
+									:data-testid="`queue-waiting-${item.id}`">
+									{{ waitingOn(item) }}
+								</span>
+							</span>
 						</span>
 						<span v-if="item.dueAt" class="personal-queue__due">{{
 							item.dueAt
 						}}</span>
-						<span
-							v-if="waitingOn(item)"
-							class="personal-queue__waiting"
-							:data-testid="`queue-waiting-${item.id}`">
-							{{ waitingOn(item) }}
-						</span>
 					</li>
 				</ul>
 			</section>
@@ -224,6 +247,24 @@ export default {
 		},
 
 		/**
+		 * Two letters for the avatar of a row, from its title.
+		 *
+		 * @param {string} title The row's title.
+		 * @return {string} The initials, upper case.
+		 */
+		initials(title) {
+			const words = String(title ?? '')
+				.trim()
+				.split(/\s+/)
+				.filter(Boolean)
+			return words
+				.slice(0, 2)
+				.map((word) => word[0])
+				.join('')
+				.toUpperCase()
+		},
+
+		/**
 		 * Hide one group until tomorrow.
 		 *
 		 * @param {string} group The group key.
@@ -271,19 +312,40 @@ export default {
 
 <style scoped>
 .personal-queue {
-	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	padding: 16px 28px;
 }
 
 .personal-queue__head {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
 	gap: 12px;
 	flex-wrap: wrap;
 }
 
-.personal-queue__group {
-	margin-block-start: 24px;
+.personal-queue__title {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 700;
+}
+
+.personal-queue__crumbs {
+	display: flex;
+	gap: 8px;
+	margin: 6px 0 0;
+	color: var(--color-text-maxcontrast);
+}
+
+.personal-queue__group,
+.personal-queue__hidden {
+	margin: 0;
+	padding: 20px 24px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-main-background);
 }
 
 .personal-queue__group-head {
@@ -294,9 +356,26 @@ export default {
 	flex-wrap: wrap;
 }
 
+.personal-queue__group-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.personal-queue__count {
+	padding: 0 8px;
+	border-radius: 10px;
+	background: var(--color-background-dark);
+	font-size: 12px;
+	font-weight: 600;
+}
+
 .personal-queue__closes {
 	color: var(--color-text-maxcontrast);
-	margin: 0 0 8px;
+	margin: 4px 0 8px;
 }
 
 .personal-queue__items {
@@ -307,15 +386,55 @@ export default {
 
 .personal-queue__item {
 	display: flex;
-	align-items: baseline;
-	gap: 12px;
-	flex-wrap: wrap;
-	padding: 6px 0;
+	align-items: center;
+	gap: 16px;
+	padding: 12px 0;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.personal-queue__item:last-child {
+	border-bottom: none;
+}
+
+.personal-queue__avatar {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--color-background-dark);
+	color: var(--color-text-maxcontrast);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.personal-queue__body {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.personal-queue__link {
+	color: var(--color-main-text);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.personal-queue__link:hover {
+	text-decoration: underline;
 }
 
 .personal-queue__item--late .personal-queue__link {
 	color: var(--color-error);
+}
+
+.personal-queue__sub {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
 }
 
 .personal-queue__covered,
@@ -325,6 +444,7 @@ export default {
 }
 
 .personal-queue__due {
+	flex: none;
 	color: var(--color-text-maxcontrast);
 }
 

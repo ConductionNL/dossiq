@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ namespace OCA\Dossiq\Woo;
 /**
  * The id, number and deadline of a case that was just written.
  *
- * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
+ * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
  */
 class WooWrittenCase {
 
@@ -48,7 +48,7 @@ class WooWrittenCase {
 	 * @return array{id: string, answer: array<string, string>} The id, and the
 	 *         number and date as far as the case carries them.
 	 *
-	 * @spec openspec/changes/site-woo-request-in-steps/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
 	 */
 	public function read(mixed $saved): array {
 		$row = $this->row(saved: $saved);

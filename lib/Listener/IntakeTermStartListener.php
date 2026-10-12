@@ -1,33 +1,26 @@
 <?php
 
 /**
- * Stamp a case, inside the save that receives it, with when it arrived and when its clock starts.
+ * Stamp a new case with when it arrived and when its clock starts.
  *
  * A pure observer (ADR-022): the arithmetic is the engine calendar's, the
  * decision is {@see \OCA\Dossiq\Service\Intake\IntakeTermStart}'s, and this
  * class only carries the answer onto the record.
  *
- * 🔴 THE STAMP IS PART OF THE CREATE, NOT A SECOND SAVE (decision 179). It
- * listens to OpenRegister's pre-persist events, so the create answer a form
- * submit returns already holds `receivedAt`, `termStartsAt` and
- * `receivedOutsideWorkingHours`, and the audit trail holds one create instead
- * of a create and an update. It used to listen to `ObjectCreatedEvent` and
- * save again, which a caller reading its own save result never saw.
- *
- * 🔴 A DRAFT IS NOT RECEIVED (decision 180). A case in OpenRegister status
- * `draft` gets no stamp. The save that moves it out of `draft` is the receipt,
- * and it is stamped then, with the moment of that save.
- *
  * 🔴 IT WRITES ONCE AND NEVER AGAIN. A case that already carries
- * `termStartsAt` is left alone, so a replayed save cannot re-stamp it against
- * a calendar that has gained a holiday since.
+ * `termStartsAt` is left alone, so a replayed create event cannot re-stamp it
+ * against a calendar that has gained a holiday since. That is the whole of
+ * "SHALL NOT be recomputed on read": the stamp is a record of what the citizen
+ * was told, not a derivation of what today's calendar would say.
  *
- * 🔴 IT RUNS BEFORE OPENREGISTER'S CALCULATIONS. `startDate` follows the term
- * start (decision 181) and the fallback `deadline` is `startDate` plus the
- * processing term, materialised by OpenRegister's own pre-persist listener.
- * The registrar gives this listener a higher priority so that listener reads
- * the start date written here, and it writes onto the entity itself because
- * that listener reads the entity, not the event's modified data.
+ * The same write carries the case's start date and its type's receipt date
+ * answer, when the case does not already carry them: the create form no
+ * longer asks either (receipt-and-start-dates-are-set-at-creation).
+ *
+ * A DRAFT IS NOT RECEIVED YET (decision 180). A case saved in OpenRegister
+ * status `draft` is a resident's half-filled form: it gets no stamp and no
+ * dates. The save that moves it out of `draft` is the receipt, and that save
+ * carries them, counted from the moment it was sent.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -51,11 +44,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use DateTimeImmutable;
+use DateTimeInterface;
+use OCA\Dossiq\Service\Intake\CaseReceiptDates;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -65,155 +62,241 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * The two moments, written on the case in the save that receives it.
+ * The two moments, written on the case the moment it exists.
  *
- * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+ * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  *
  * @template-implements IEventListener<Event>
  */
 class IntakeTermStartListener implements IEventListener {
 
-	/**
-	 * The listener priority: above OpenRegister's calculation listener (0).
-	 *
-	 * @var int
-	 */
-	public const PRIORITY = 10;
+	use SearchesObjects;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param IntakeTermStart          $intake       The two moments and the flag between them.
-	 * @param ReceiptMoment            $receipt      Tells a receipt from a draft save.
-	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
-	 * @param ITimeFactory             $time         The moment a draft is sent.
-	 * @param LoggerInterface          $logger       Records a payload that could not be read.
+	 * @param IntakeTermStart          $intake          The two moments and the flag between them.
+	 * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
+	 * @param SettingsService          $settingsService Bridge to OpenRegister.
+	 * @param LoggerInterface          $logger          Records a case that went unstamped.
+	 * @param CaseReceiptDates         $receiptDates    The receipt and start dates a case is missing.
+	 * @param ReceiptMoment            $receipt         Tells a receipt from a draft save.
+	 * @param ITimeFactory             $time            The moment a draft is sent.
 	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function __construct(
 		private readonly IntakeTermStart $intake,
-		private readonly ReceiptMoment $receipt,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
-		private readonly ITimeFactory $time,
+		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseReceiptDates $receiptDates,
+		private readonly ReceiptMoment $receipt,
+		private readonly ITimeFactory $time,
 	) {
 	}//end __construct()
 
 	/**
-	 * Stamp a case being created, or a draft case being sent.
+	 * Handle a case-creating or case-created event, or the save that sends a draft.
+	 *
+	 * BEFORE THE CASE IS STORED (ObjectCreatingEvent) is where the fields are
+	 * set. Two defects found live on 11 October 2026 came from writing them
+	 * after it:
+	 *
+	 * 1. OpenRegister's materialised `startDate` calculation runs on the same
+	 *    creating event and falls back to its own `now`, which it formats in
+	 *    the process zone (UTC). A case made at 01:52 in Amsterdam was stored
+	 *    with the day before, and a later write keeps what the case carries.
+	 *    Registered above that calculation
+	 *    ({@see \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY}),
+	 *    this listener sets the day in the administered zone first, and the
+	 *    calculation keeps it.
+	 * 2. The second write sent the whole case back, including materialised
+	 *    readOnly fields another listener had already changed, and
+	 *    OpenRegister refused it ("Cannot modify readOnly properties"). No
+	 *    case got its stamp or its `receiptDate` answer.
+	 *
+	 * The created event stays as the fallback for a path that stores a case
+	 * without the creating event (the bulk save). It writes only the fields
+	 * it adds, through the partial write.
+	 *
+	 * A DRAFT IS SKIPPED on both create events (decision 180), and the update
+	 * that moves a case out of `draft` is handled as the receipt: the fields
+	 * are set on the case in that save, so the submit answer carries them.
+	 * Any other update is left alone, which is what keeps the stamp written
+	 * once.
 	 *
 	 * @param Event $event The event.
 	 *
 	 * @return void
 	 *
-	 * @listener-placement inline correctness: the stamp is what the citizen is
-	 * told their term is, and the submit answer reads it the instant the case
-	 * exists. The work is bounded, pure arithmetic on the payload in hand.
+	 * @listener-placement inline correctness — the stamp is what the citizen is
+	 * told their term is, and it is read the instant the case exists: by the
+	 * acknowledgement, by the term list and by the case page. Deferring it to a
+	 * queue opens a window in which a case has no `termStartsAt`, and a case
+	 * with no clock does not read as "not yet stamped", it reads as a case with
+	 * no term. The work is bounded and it happens at most once per case: the
+	 * payload is already in hand, `isStamped()` returns early on every replay,
+	 * and what is left is one write.
 	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatingEvent) {
-			$entity = $event->getObject();
-			if ($this->receipt->isDraft(object: $entity) === true) {
-				return;
+			if ($this->receipt->isDraft(object: $event->getObject()) === false) {
+				$this->setBeforeStore(entity: $event->getObject(), sentAt: null);
 			}
 
-			$this->stamp(event: $event, entity: $entity, sentAt: null);
 			return;
 		}
 
 		if ($event instanceof ObjectUpdatingEvent) {
-			$entity = $event->getNewObject();
-			if ($this->receipt->leavesDraft(before: $event->getOldObject(), after: $entity) === false) {
-				return;
+			if ($this->receipt->leavesDraft(before: $event->getOldObject(), after: $event->getNewObject()) === true) {
+				// The draft was begun earlier; it arrives now. Its creation
+				// moment is when the resident started typing, not when they
+				// pressed send.
+				$this->setBeforeStore(entity: $event->getNewObject(), sentAt: $this->time->now());
 			}
 
-			// The draft was begun earlier; it arrives now. Its creation moment
-			// is when the resident started typing, not when they pressed send.
-			$sentAt = $this->time->now();
-			$this->stamp(event: $event, entity: $entity, sentAt: $sentAt);
+			return;
 		}
+
+		if (($event instanceof ObjectCreatedEvent) === false) {
+			return;
+		}
+
+		// A draft's own create is not a receipt, on the fallback path either.
+		$payload = $this->receipt->receivedObject(event: $event);
+		if ($payload === null) {
+			return;
+		}
+
+		$caseId = trim((string)($payload['id'] ?? ($payload['uuid'] ?? '')));
+		if ($caseId === '') {
+			return;
+		}
+
+		$changes = $this->changesFor(case: $payload, sent: false);
+		if ($changes === []) {
+			return;
+		}
+
+		$this->write(caseId: $caseId, changes: $changes);
 	}//end handle()
 
 	/**
-	 * Put the three fields, and a start date when none was given, on the case being saved.
+	 * Set the stamp and the dates on a case that is about to be stored.
 	 *
-	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event  The pre-persist event.
-	 * @param ObjectEntity                            $entity The case being saved.
-	 * @param DateTimeImmutable|null                  $sentAt The moment a draft was sent; null on a create.
+	 * A draft that is sent names its own receipt: the moment it was sent, read
+	 * first by {@see IntakeTermStart::arrivalOf()} as the case's `receivedAt`.
+	 * A draft that already carries a `receivedAt` (an integration supplied
+	 * one) keeps it.
+	 *
+	 * @param ObjectEntity           $entity The case being saved.
+	 * @param DateTimeInterface|null $sentAt The moment a draft was sent; null on a create.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	private function setBeforeStore(ObjectEntity $entity, ?DateTimeInterface $sentAt): void {
+		try {
+			$payload = $entity->jsonSerialize();
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'Dossiq intake: a case being created could not be read',
+				['exception' => $e->getMessage()],
+			);
+			return;
+		}
+
+		if ($sentAt !== null && trim((string)($payload[IntakeTermStart::RECEIVED_AT] ?? '')) === '') {
+			$payload[IntakeTermStart::RECEIVED_AT] = $sentAt->format('c');
+		}
+
+		$changes = $this->changesFor(case: $payload, sent: ($sentAt !== null));
+		if ($changes === []) {
+			return;
+		}
+
+		$entity->setObject(array_merge($entity->getObject(), $changes));
+	}//end setBeforeStore()
+
+	/**
+	 * The fields a case is missing for its stamp and its dates, or [].
+	 *
+	 * The stamp is written once. An empty stamp means the calendar did not
+	 * answer, already logged by IntakeTermStart: nothing of it is written,
+	 * because a half stamp is a claim. The receipt and start dates do not wait
+	 * for the calendar: they are the day the request came in, which is known
+	 * either way. Each is written only when the case does not carry it, so an
+	 * import keeps its own and a replay writes nothing.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param bool                 $sent True when this save sends a draft: its start date is the day it
+	 *                                   was begun, and it is counted again from the moment it was sent.
+	 *
+	 * @return array<string, mixed> The fields to set.
+	 */
+	private function changesFor(array $case, bool $sent): array {
+		if ($this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
+			return [];
+		}
+
+		$changes = [];
+		if ($this->intake->isStamped(case: $case) === false) {
+			$changes = $this->intake->stampForCase(case: $case);
+		}
+
+		// The start date follows the term start this case was just given, or
+		// the one it already carries (decision 181, Q11).
+		$termStartsAt = trim((string)($changes[IntakeTermStart::TERM_STARTS_AT] ?? ($case[IntakeTermStart::TERM_STARTS_AT] ?? '')));
+
+		return array_merge(
+			$changes,
+			$this->receiptDates->changesFor(case: $case, termStartsAt: $termStartsAt, replaceStartDate: $sent),
+		);
+	}//end changesFor()
+
+	/**
+	 * Write the missing fields onto the stored case, and nothing else.
+	 *
+	 * Only the fields this listener adds are sent. Sending the case as the
+	 * event carried it also sent the materialised readOnly fields, which
+	 * another listener may have changed since, and the store refused the
+	 * whole write.
+	 *
+	 * @param string               $caseId  The case uuid.
+	 * @param array<string, mixed> $changes The fields to add.
 	 *
 	 * @return void
 	 */
-	private function stamp(ObjectCreatingEvent|ObjectUpdatingEvent $event, ObjectEntity $entity, ?DateTimeImmutable $sentAt): void {
-		$payload = $this->payload(entity: $entity);
-		if ($payload === null || $this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
-			return;
-		}
-
-		$payload = array_merge($payload, $event->getModifiedData());
-		if ($this->intake->isStamped(case: $payload) === true) {
-			return;
-		}
-
-		$receivedAt = ($sentAt ?? $this->intake->arrivalOf(case: $payload));
-		$changes = $this->intake->stampFor(receivedAt: $receivedAt);
-		if ($changes === []) {
-			// Already logged by IntakeTermStart, naming the moment it could
-			// not place. Nothing is written: a half stamp is a claim.
-			return;
-		}
-
-		$changes = array_merge($changes, $this->startDate(payload: $payload, stamp: $changes));
-
-		// Onto the entity, so OpenRegister's calculation listener sees the
-		// start date; and onto the event, which is what the mapper merges last.
-		$entity->setObject(array_merge($entity->getObject(), $changes));
-		$event->setModifiedData(array_merge($event->getModifiedData(), $changes));
-	}//end stamp()
-
-	/**
-	 * The start date this case takes from its term start (decision 181).
-	 *
-	 * Only when the case carries none. A handler who files a case gives the
-	 * start date, and that date stays. A form submit gives none, so its start
-	 * date is the date the term starts and the one deadline rule
-	 * (`startDate` plus the processing term) counts from the same day the
-	 * confirmation names.
-	 *
-	 * @param array<string, mixed> $payload The case being saved.
-	 * @param array<string, mixed> $stamp   The three fields.
-	 *
-	 * @return array<string, string> `startDate`, or nothing.
-	 */
-	private function startDate(array $payload, array $stamp): array {
-		if (trim((string)($payload['startDate'] ?? '')) !== '') {
-			return [];
-		}
-
+	private function write(string $caseId, array $changes): void {
 		try {
-			$startsAt = new DateTimeImmutable((string)$stamp[IntakeTermStart::TERM_STARTS_AT]);
-		} catch (Throwable $e) {
-			return [];
-		}
+			$objectService = $this->settingsService->getObjectService();
+			$register = $this->settingsService->getConfigValue('register');
+			$schema = $this->settingsService->getConfigValue('case_schema');
+			if ($objectService === null || $register === '' || $schema === '') {
+				return;
+			}
 
-		return ['startDate' => $startsAt->format('Y-m-d')];
-	}//end startDate()
-
-	/**
-	 * The case being saved, as an array.
-	 *
-	 * @param ObjectEntity $entity The case.
-	 *
-	 * @return array<string, mixed>|null The payload, or null when it cannot be read.
-	 */
-	private function payload(ObjectEntity $entity): ?array {
-		try {
-			return $entity->jsonSerialize();
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $caseId,
+				changes: $changes,
+			);
 		} catch (Throwable $e) {
-			$this->logger->debug('Dossiq intake: the case payload could not be read: ' . $e->getMessage());
-			return null;
+			$this->logger->warning(
+				'Dossiq intake: the term start could not be written onto the case',
+				['case' => $caseId, 'exception' => $e->getMessage()],
+			);
 		}
-	}//end payload()
+	}//end write()
 }//end class

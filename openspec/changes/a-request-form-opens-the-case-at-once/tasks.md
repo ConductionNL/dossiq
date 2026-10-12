@@ -2,11 +2,12 @@
 
 ## 1. Term fields on create
 
-- [x] 1.1 Move `IntakeTermStartListener` to `ObjectCreatingEvent` and the move out of `draft`; one save; skip draft cases
+- [x] 1.1 `IntakeTermStartListener` sets the fields before the store, on `ObjectCreatingEvent` and on the move out of `draft`; one save; skip draft cases. Built on the listener `receipt-and-start-dates-are-set-at-creation` landed, not beside it
   - Spec ref: specs/case-intake-destination/spec.md, "The case create MUST carry its term fields"
-  - Files: lib/Listener/IntakeTermStartListener.php, lib/AppInfo/Application.php
-  - Test: unit test asserting the fields on the creating object; a control asserting no second save
-- [x] 1.2 `startDate` = date of `termStartsAt` for submit-opened cases (decision 181)
+  - Files: lib/Listener/IntakeTermStartListener.php, lib/AppInfo/Registrar/IntakeListenerRegistrar.php
+  - Test: tests/Unit/Listener/IntakeTermStartListenerTest.php (the payload of the real `createBezwaar` action, validated against the real case schema; no second save); wiring in tests/Unit/AppInfo/ReceiptDatesRegistrationTest.php
+- [x] 1.2 `startDate` = the day of `termStartsAt` when the term starts later than the receipt day (decision 181), in `CaseReceiptDates`; REQ-TERM-042 amended
+  - Open point for openregister: the schema's `startDate` and `deadline` calculations also run on a draft, so a draft shows the day it was begun and a deadline. Sending it corrects both. Hiding them on a draft needs the calculation to know the draft status
 - [x] 1.3 Schema markers `x-openregister.confirmation` and `x-openregister.serverSet` on the case properties
   - Files: lib/Settings/dossiq_register.json
 
@@ -21,7 +22,7 @@
 
 ## 3. Bezwaar and klacht
 
-- [x] 3.1 Point `createBezwaar` and `createKlacht` at `case`, with `caseType` stamped from the settings `portal_objection_case_type` / `portal_complaint_case_type` (default the shipped `bezwaar-behandeling` / `klacht-behandeling`, decision 182), `contestedCase` as cross-reference and `attachments` on the case
+- [x] 3.1 Point `createBezwaar` and `createKlacht` at `case`, with `caseType` stamped from the setting `portal_filing_case_types` (a JSON map of action id to case type; default the shipped `bezwaar` / `klacht-behandeling`, decision 182), `contestedCase` as cross-reference and `attachments` on the case
   - Files: lib/Portal/CitizenManifest.php, lib/Portal/PortalContributionProvider.php, lib/Service/Intake/IntakeCaseTypes.php
   - Open: attachments become `caseDocument` rows (portaliq's submit), and the klacht `category` has no case property yet
 - [x] 3.2 `occ dossiq:intake:drain-portaalverzoek`, report delivered and refused; old id to `externalReference`

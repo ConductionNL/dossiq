@@ -60,8 +60,8 @@ class IntakeObjectDrainTest extends TestCase {
 		$caseTypes = $this->createMock(IntakeCaseTypes::class);
 		$caseTypes->method('caseTypeFor')->willReturnMap(
 			[
-				[IntakeCaseTypes::OBJECTION, self::OBJECTION_TYPE],
-				[IntakeCaseTypes::COMPLAINT, ''],
+				['createBezwaar', self::OBJECTION_TYPE],
+				['createKlacht', ''],
 			]
 		);
 

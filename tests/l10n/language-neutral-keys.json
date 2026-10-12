@@ -14,6 +14,7 @@
         "1 week",
         "AVG",
         "BSN",
+        "Chat",
         "Checklist",
         "Circuit open",
         "Cloud",
@@ -31,10 +32,12 @@
         "Hit policy",
         "Initiator",
         "Intake",
+        "KvK",
         "Label",
         "Links",
         "Mail",
         "Manager",
+        "Moment",
         "Nextcloud",
         "OK",
         "Object",
@@ -44,6 +47,7 @@
         "Procedure",
         "Process mining",
         "Register",
+        "SHA-256",
         "SLA",
         "SPF",
         "Score",
@@ -67,8 +71,11 @@
         "max {n}",
         "wijken",
         "{count} items",
+        "{count} document",
         "{from} – (no end)",
         "{minutes} min",
-        "{percent}%"
+        "{percent}%",
+        "Relevant",
+        "{title}"
     ]
 }

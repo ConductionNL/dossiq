@@ -334,11 +334,13 @@ class NotifierTest extends TestCase {
 		$dispatched = $this->dispatchedSubjectKeys();
 
 		// A scanner that finds nothing would pass this test silently, which is
-		// the failure mode it exists to catch. Fifteen literal keys are in the
-		// tree today; a scan that comes back short has stopped reading the
+		// the failure mode it exists to catch. Twelve literal keys are in the
+		// tree today (the three stuf_* keys left with the outbound adapter,
+		// decision 193; StufZdsCaseConcludedListener names them by Notifier
+		// constant); a scan that comes back short has stopped reading the
 		// senders, and that is a broken test rather than a clean repo.
 		self::assertGreaterThanOrEqual(
-			15,
+			12,
 			count($dispatched),
 			'The sender scan found fewer subject keys than the tree holds, so it is no longer reading them.',
 		);
@@ -612,6 +614,9 @@ class NotifierTest extends TestCase {
 			}
 
 			$source = (string)file_get_contents($file->getPathname());
+			// An #[McpTool(subject: ...)] names what an MCP tool acts on for the
+			// agent grant matrix, not a notification subject.
+			$source = (string)preg_replace('/#\[McpTool\(.*?\)\]/s', '', $source);
 			$scan = $patterns;
 			if (str_contains($source, 'createNotification(') === true) {
 				$scan[] = '/\$subject\s*=\s*[\'"]([a-z][a-z0-9_]*)[\'"]/';

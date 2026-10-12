@@ -19,7 +19,8 @@
 
 import { expect, test } from '@playwright/test'
 
-const PERSONAL_SETTINGS = '/settings/user/dossiq'
+// The in-app user settings dialog; App.vue opens it on this hash.
+const PERSONAL_SETTINGS = '/apps/dossiq/#user-settings'
 const API = '/apps/dossiq/api/menu-case-types'
 
 test.describe('case types in my menu', () => {

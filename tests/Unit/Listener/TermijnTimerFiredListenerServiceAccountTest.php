@@ -10,8 +10,7 @@
  * listener with nobody signed in. The breach rung then flips the instance to
  * exceeded and records the event, and OpenRegister refused both writes as
  * Anonymous: the term stayed "lopend" past its end date. These tests run the
- * real listener, TermijnService, DeadlineEscalationService and
- * DwangsomCalculationService against a register that refuses a write from
+ * real listener, TermijnService and DeadlineEscalationService against a register that refuses a write from
  * nobody, the way OpenRegister does.
  *
  * @category Tests
@@ -31,7 +30,6 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
-use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
@@ -159,11 +157,6 @@ class TermijnTimerFiredListenerServiceAccountTest extends TestCase {
 					termService: $terms,
 					priorityRaiseService: $this->createMock(CasePriorityRaiseService::class),
 					logger: $logger
-				),
-				'penaltyService' => new DwangsomCalculationService(
-					settingsService: $settings,
-					logger: $logger,
-					dates: $this->caseDatesFrozenAt(),
 				),
 				'settingsService' => $settings,
 				'logger' => $logger,

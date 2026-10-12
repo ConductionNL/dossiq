@@ -19,7 +19,7 @@
  * - `fields`: source field => case field, copied when not empty.
  * - `fixed`: case field => value, always written.
  * - `caseTypeField`: the source field whose value picks the case type.
- * - `caseTypes`: that value => the IntakeCaseTypes setting naming the case type.
+ * - `caseTypes`: that value => the IntakeCaseTypes path key naming the case type.
  * - `titleField`, `titles`: the source field for the case title, and a title per
  *   case-type value when that field is empty (a case needs a title).
  * - `deliveredField`: the source field that holds the case id once delivered.
@@ -76,10 +76,10 @@ class IntakeObjectDrain {
 	 */
 	public function caseFor(array $source, array $plan): array {
 		$kind = trim((string)($source[(string)($plan['caseTypeField'] ?? '')] ?? ''));
-		$setting = (string)(($plan['caseTypes'] ?? [])[$kind] ?? '');
+		$path = (string)(($plan['caseTypes'] ?? [])[$kind] ?? '');
 		$caseType = '';
-		if ($setting !== '') {
-			$caseType = $this->caseTypes->caseTypeFor(setting: $setting);
+		if ($path !== '') {
+			$caseType = $this->caseTypes->caseTypeFor(path: $path);
 		}
 
 		if ($caseType === '') {

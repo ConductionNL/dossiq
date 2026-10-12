@@ -12,7 +12,17 @@ message id. A `not-sent` result SHALL carry a reason code and a sentence. No cod
 derive, hash or invent a message id for a notice no transport accepted. A caller of
 `TermijnNotificationService::sendTermijnNotification()` receives a `not-sent` result on the
 `NoticeNotSentException` it throws (`getDelivery()`), so a caller that does not read a status
-cannot record the notice as sent.
+cannot record the notice as sent. The beschikking's e-mail SHALL travel under integriq's
+`statutory` purpose, like the acknowledgement of receipt: announcing a besluit is a legal duty
+(Awb 3:41), so a case-mail opt-out SHALL NOT stop it and it SHALL carry no unsubscribe link.
+
+#### Scenario: A beschikking reaches a requester who opted out of case mail
+- **GIVEN** a requester who opted out of case mail and has only an e-mail address
+- **WHEN** a handler sends a signed beschikking
+- **THEN** integriq SHALL be asked under the `statutory` purpose and the mail SHALL go out
+- **AND** the mail SHALL carry no unsubscribe link
+
+@e2e exclude Needs integriq holding an opt-out and a captured outgoing mail, which the e2e instance does not provide; asserted in PHPUnit by TermNoticeDeliveryTest::testABeschikkingIsStatutoryAndReachesAnOptedOutRequester.
 
 #### Scenario: No transport answers, so nothing reads as sent
 - **GIVEN** a Woo case whose requester has only a BSN, and an instance without integriq
@@ -24,6 +34,13 @@ cannot record the notice as sent.
 - **GIVEN** a requester with a BSN and integriq answering `DigitalPostSendRequestedEvent` with a tracked message id `ip-123`
 - **WHEN** dossiq sends a stage notice
 - **THEN** the delivery result SHALL have `status` `sent`, channel `digital-post` and `messageId` `ip-123`
+
+#### Scenario: A beschikking no transport took stays not sent
+- **GIVEN** a signed beschikking whose requester has no portal subject, no BSN and no e-mail address
+- **WHEN** a handler sends it
+- **THEN** the beschikking SHALL stay `signed`, with no objection term started
+- **AND** the case timeline SHALL get an internal "Beschikking niet verzonden" line with reason code `no-channel`, and no public line
+- **AND** a beschikking a transport took SHALL store that transport's channel and message id under `dispatch`
 
 #### Scenario: The old router cannot fake a send
 - **GIVEN** the codebase after this change

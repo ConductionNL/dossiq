@@ -28,6 +28,8 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
+use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -37,6 +39,11 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
 
@@ -56,6 +63,25 @@ class ObjectListenerRegistrarTest extends TestCase {
 	}//end testTheCaseDeleteGuardIsRegistered()
 
 	/**
+	 * A created contact moment reaches the pipelinq append, on the post-persist
+	 * create event that both the KCC werkplek and the case page's Log contact
+	 * form cross.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
+	 */
+	public function testTheContactMomentAppendIsOnTheCreateEvent(): void {
+		$registered = $this->registrations();
+
+		$this->assertContains(
+			needle: ContactMomentPipelinqListener::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),
+			message: 'without it a moment logged on a case never reaches pipelinq',
+		);
+	}//end testTheContactMomentAppendIsOnTheCreateEvent()
+
+	/**
 	 * It is NOT registered on the post-persist event, which cannot refuse.
 	 *
 	 * `ObjectDeletedEvent` fires after the row is gone, so a guard there stops
@@ -64,6 +90,20 @@ class ObjectListenerRegistrarTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A created case reaches the report grouping, through the intake registrar
+	 * this one calls (ai-features-on-the-case, REQ-AIC-04).
+	 *
+	 * @return void
+	 */
+	public function testTheReportGroupingIsRegisteredOnCreation(): void {
+		$this->assertContains(
+			needle: ReportGroupingOnCreateListener::class,
+			haystack: ($this->registrations()['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),
+			message: 'without the registration no case is ever grouped, and every grouping test stays green',
+		);
+	}//end testTheReportGroupingIsRegisteredOnCreation()
+
 	public function testTheGuardIsNotOnThePostPersistEvent(): void {
 		$registered = $this->registrations();
 

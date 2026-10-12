@@ -48,6 +48,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class ProcessMiningServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

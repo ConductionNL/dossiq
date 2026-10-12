@@ -61,16 +61,71 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules;
+use OCA\Dossiq\Service\Zgw\BrcImmutabilityRules;
+use OCA\Dossiq\Service\Zgw\ReadsLinkedObjects;
+use Psr\Log\LoggerInterface;
+
 /**
  * BRC (Besluiten API) business rule validation and enrichment.
  *
- * @psalm-suppress UnusedClass
+ * Holds the create rules of a besluit and hands the update, patch and document
+ * link rules to their own groups.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwBrcRulesService extends ZgwRulesBase {
+	use ReadsLinkedObjects;
+
+	/**
+	 * What a besluit may not change on update and patch.
+	 *
+	 * @var BrcImmutabilityRules
+	 */
+	private BrcImmutabilityRules $immutability;
+
+	/**
+	 * The create rules of a besluitinformatieobject.
+	 *
+	 * @var BrcDocumentLinkRules
+	 */
+	private BrcDocumentLinkRules $documentLinks;
+
+	/**
+	 * Constructor.
+	 *
+	 * Takes what every rules class takes and builds its two rule groups from
+	 * the same three, so the dispatcher and the container still see one BRC
+	 * rules service.
+	 *
+	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsService $settingsService The settings service.
+	 * @param FieldValidator $fieldValidator The field validator.
+	 */
+	public function __construct(LoggerInterface $logger, SettingsService $settingsService, FieldValidator $fieldValidator) {
+		parent::__construct(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->immutability = new BrcImmutabilityRules(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->documentLinks = new BrcDocumentLinkRules(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+	}//end __construct()
+
+	/**
+	 * Set the request context here and on both rule groups.
+	 *
+	 * @param object|null $objectService The OpenRegister ObjectService.
+	 * @param array|null $mappingConfig The mapping configuration.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function setContext(?object $objectService, ?array $mappingConfig): void {
+		parent::setContext(objectService: $objectService, mappingConfig: $mappingConfig);
+		$this->immutability->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
+		$this->documentLinks->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
+	}//end setContext()
+
 	/**
 	 * Rules for creating a besluit (POST /besluiten/v1/besluiten).
 	 *
@@ -103,6 +158,53 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	}//end rulesBesluitenCreate()
 
 	/**
+	 * Rules for updating a besluit (PUT /besluiten/v1/besluiten/{uuid}).
+	 *
+	 * @param array $body The ZGW request body
+	 * @param array|null $existingObject The existing besluit data
+	 *
+	 * @return array The validation result
+	 *
+	 * @see BrcImmutabilityRules::rulesBesluitenUpdate()
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function rulesBesluitenUpdate(array $body, ?array $existingObject = null): array {
+		return $this->immutability->rulesBesluitenUpdate(body: $body, existingObject: $existingObject);
+	}//end rulesBesluitenUpdate()
+
+	/**
+	 * Rules for patching a besluit (PATCH /besluiten/v1/besluiten/{uuid}).
+	 *
+	 * @param array $body The ZGW request body
+	 * @param array|null $existingObject The existing besluit data
+	 *
+	 * @return array The validation result
+	 *
+	 * @see BrcImmutabilityRules::rulesBesluitenPatch()
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function rulesBesluitenPatch(array $body, ?array $existingObject = null): array {
+		return $this->immutability->rulesBesluitenPatch(body: $body, existingObject: $existingObject);
+	}//end rulesBesluitenPatch()
+
+	/**
+	 * Rules for creating a BesluitInformatieObject.
+	 *
+	 * @param array $body The ZGW request body
+	 *
+	 * @return array The validation result
+	 *
+	 * @see BrcDocumentLinkRules::rulesBesluitinformatieobjectenCreate()
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function rulesBesluitinformatieobjectenCreate(array $body): array {
+		return $this->documentLinks->rulesBesluitinformatieobjectenCreate(body: $body);
+	}//end rulesBesluitinformatieobjectenCreate()
+
+	/**
 	 * Brc-001: the besluittype URL points at a published besluittype.
 	 *
 	 * @param mixed $decisionTypeUrl The besluittype from the body
@@ -120,231 +222,6 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 			schemaKey: 'decision_type_schema'
 		);
 	}//end checkBesluittype()
-
-	/**
-	 * Rules for updating a besluit (PUT /besluiten/v1/besluiten/{uuid}).
-	 *
-	 * Implements brc-001 and brc-002 immutability.
-	 *
-	 * @param array $body The ZGW request body
-	 * @param array|null $existingObject The existing besluit data
-	 *
-	 * @return array The validation result
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function rulesBesluitenUpdate(array $body, ?array $existingObject = null): array {
-		$result = $this->isValid(body: $body);
-
-		$result = $this->checkDecisionTypeImmutability(
-			result: $result,
-			existingObject: $existingObject
-		);
-		if ($result['valid'] === false) {
-			return $result;
-		}
-
-		$result = $this->checkDecisionFieldImmutability(
-			result: $result,
-			existingObject: $existingObject
-		);
-		if ($result['valid'] === false) {
-			return $result;
-		}
-
-		// Preserve immutable fields from existing object when omitted in PUT body.
-		$result = $this->preserveImmutableDecisionFields(
-			result: $result,
-			existingObject: $existingObject
-		);
-
-		return $result;
-	}//end rulesBesluitenUpdate()
-
-	/**
-	 * Rules for patching a besluit (PATCH /besluiten/v1/besluiten/{uuid}).
-	 *
-	 * @param array $body The ZGW request body
-	 * @param array|null $existingObject The existing besluit data
-	 *
-	 * @return array The validation result
-	 *
-	 * @see rulesBesluitenUpdate() Same immutability rules apply.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function rulesBesluitenPatch(array $body, ?array $existingObject = null): array {
-		$result = $this->isValid(body: $body);
-
-		$result = $this->checkDecisionTypeImmutability(
-			result: $result,
-			existingObject: $existingObject
-		);
-		if ($result['valid'] === false) {
-			return $result;
-		}
-
-		return $this->checkDecisionFieldImmutability(
-			result: $result,
-			existingObject: $existingObject
-		);
-	}//end rulesBesluitenPatch()
-
-	/**
-	 * Rules for creating a BesluitInformatieObject.
-	 *
-	 * Implements brc-003, brc-004, brc-008.
-	 *
-	 * @param array $body The ZGW request body
-	 *
-	 * @return array The validation result
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function rulesBesluitinformatieobjectenCreate(array $body): array {
-		// Brc-003: Validate informatieobject URL.
-		$ioUrl = $body['informatieobject'] ?? '';
-		if ($ioUrl !== '' && $this->objectService !== null) {
-			$error = $this->validateInformatieobjectUrl(ioUrl: $ioUrl);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		// Brc-008: Validate informatieobjecttype in besluittype.informatieobjecttypen.
-		$decisionUrl = $body['decision'] ?? '';
-		if ($decisionUrl !== '' && $ioUrl !== '' && $this->objectService !== null) {
-			$iotError = $this->validateBioInformatieobjecttype(
-				decisionUrl: $decisionUrl,
-				ioUrl: $ioUrl
-			);
-			if ($iotError !== null) {
-				return $iotError;
-			}
-		}
-
-		// Brc-004: Set aardRelatieWeergave automatically.
-		$body['natureRelationshipDisplay'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
-
-		return $this->isValid(body: $body);
-	}//end rulesBesluitinformatieobjectenCreate()
-
-	/**
-	 * Check that besluittype is not changed on update/patch (brc-001).
-	 *
-	 * @param array $result The current validation result
-	 * @param array|null $existingObject The existing object data
-	 *
-	 * @return array The updated validation result
-	 */
-	private function checkDecisionTypeImmutability(array $result, ?array $existingObject): array {
-		if ($existingObject === null) {
-			return $result;
-		}
-
-		$body = $result['enrichedBody'];
-		$newBesluittype = $body['besluittype'] ?? null;
-		$existBesluittype = $existingObject['decisionType'] ?? '';
-
-		if ($newBesluittype !== null && $existBesluittype !== '') {
-			$newUuid = $this->extractUuid(url: $newBesluittype);
-			if ($newUuid !== null && $newUuid !== $existBesluittype
-				&& $this->extractUuid(url: $existBesluittype) !== $newUuid
-			) {
-				return $this->fieldImmutableError(fieldName: 'besluittype');
-			}
-		}
-
-		return $result;
-	}//end checkBesluitTypeImmutability()
-
-	/**
-	 * Check besluit field immutability (brc-002).
-	 *
-	 * Identificatie and verantwoordelijkeOrganisatie are immutable after creation.
-	 *
-	 * @param array $result The current validation result
-	 * @param array|null $existingObject The existing object data
-	 *
-	 * @return array The updated validation result
-	 */
-	private function checkDecisionFieldImmutability(array $result, ?array $existingObject): array {
-		if ($existingObject === null) {
-			return $result;
-		}
-
-		$body = $result['enrichedBody'];
-
-		// Brc-002: identificatie is immutable.
-		if (isset($body['identificatie']) === true) {
-			$existingId = $existingObject['title'] ?? $existingObject['identifier'] ?? '';
-			if ($existingId === '') {
-				$existingId = $existingObject['identificatie'] ?? '';
-			}
-
-			if ($existingId !== '' && $body['identificatie'] !== $existingId) {
-				return $this->fieldImmutableError(fieldName: 'identificatie');
-			}
-		}
-
-		// Brc-002: verantwoordelijkeOrganisatie is immutable.
-		if (isset($body['verantwoordelijkeOrganisatie']) === true) {
-			$orgKey = 'responsibleOrganisation';
-			$orgFallback = 'verantwoordelijkeOrganisatie';
-			$existingOrg = $existingObject[$orgKey] ?? $existingObject[$orgFallback] ?? '';
-			if ($existingOrg !== '' && $body['verantwoordelijkeOrganisatie'] !== $existingOrg) {
-				return $this->fieldImmutableError(fieldName: 'verantwoordelijkeOrganisatie');
-			}
-		}
-
-		return $result;
-	}//end checkBesluitFieldImmutability()
-
-	/**
-	 * Preserve immutable besluit fields from existing object when omitted in PUT body.
-	 *
-	 * @param array $result The current validation result
-	 * @param array|null $existingObject The existing object data
-	 *
-	 * @return array The updated validation result with preserved fields
-	 */
-	private function preserveImmutableDecisionFields(array $result, ?array $existingObject): array {
-		if ($existingObject === null) {
-			return $result;
-		}
-
-		$body = $result['enrichedBody'];
-
-		if (isset($body['identificatie']) === false || $body['identificatie'] === '') {
-			$existingId = $existingObject['title'] ?? $existingObject['identifier'] ?? '';
-			if ($existingId === '') {
-				$existingId = $existingObject['identificatie'] ?? '';
-			}
-
-			if ($existingId !== '') {
-				$body['identificatie'] = $existingId;
-			}
-		}
-
-		if (isset($body['verantwoordelijkeOrganisatie']) === false
-			|| $body['verantwoordelijkeOrganisatie'] === ''
-		) {
-			$orgKey = 'responsibleOrganisation';
-			$orgFallback = 'verantwoordelijkeOrganisatie';
-			$existingOrg = $existingObject[$orgKey] ?? $existingObject[$orgFallback] ?? '';
-			if ($existingOrg !== '') {
-				$body['verantwoordelijkeOrganisatie'] = $existingOrg;
-			}
-		}
-
-		$result['enrichedBody'] = $body;
-
-		return $result;
-	}//end preserveImmutableBesluitFields()
 
 	/**
 	 * Check that besluit identificatie + verantwoordelijkeOrganisatie is unique (brc-002).
@@ -402,7 +279,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}//end try
 
 		return null;
-	}//end checkBesluitIdentificatieUnique()
+	}//end checkDecisionIdentificationUnique()
 
 	/**
 	 * Validate zaak-besluittype relation (brc-007).
@@ -506,137 +383,4 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 
 		return false;
 	}//end caseTypeListsDecisionType()
-
-	/**
-	 * Validate informatieobjecttype is in besluittype.informatieobjecttypen (brc-008).
-	 *
-	 * A besluittype that allows no documenttypes refuses every document. An unresolvable besluit,
-	 * document or documenttype skips the check.
-	 *
-	 * @param string $decisionUrl The besluit URL
-	 * @param string $ioUrl The informatieobject URL
-	 *
-	 * @return array|null Validation error, or null if valid
-	 */
-	private function validateBioInformatieobjecttype(string $decisionUrl, string $ioUrl): ?array {
-		if ($this->objectService === null) {
-			return null;
-		}
-
-		// Get the besluit to find its besluittype, then the besluittype.
-		$decisionTypeId = $this->getObjectByUrl(url: $decisionUrl, schemaKey: 'decision_schema')['decisionType'] ?? '';
-		if (empty($decisionTypeId) === true) {
-			return null;
-		}
-
-		$btData = $this->getObjectByUrl(url: $decisionTypeId, schemaKey: 'decision_type_schema');
-		if ($btData === null) {
-			return null;
-		}
-
-		// Get the allowed documentTypes from besluittype.
-		$allowedDocTypes = $this->decodeList(value: $btData['documentTypes'] ?? '[]');
-		if (empty($allowedDocTypes) === true) {
-			return $this->missingInformatieobjecttypeError();
-		}
-
-		$docType = $this->getDocumentTypeOfDocument(ioUrl: $ioUrl);
-		if ($docType === null) {
-			return null;
-		}
-
-		// Check if the documentType is in the allowed list, by name or by uuid.
-		if (in_array($docType['name'], $allowedDocTypes, true) === true
-			|| in_array($docType['uuid'], $allowedDocTypes, true) === true
-		) {
-			return null;
-		}
-
-		return $this->missingInformatieobjecttypeError();
-	}//end validateBioInformatieobjecttype()
-
-	/**
-	 * The documenttype of the document an informatieobject URL points at.
-	 *
-	 * @param string $ioUrl The informatieobject URL
-	 *
-	 * @return array{uuid: string, name: mixed}|null The documenttype's uuid and name, or null when
-	 *                                               the document or its type cannot be resolved
-	 */
-	private function getDocumentTypeOfDocument(string $ioUrl): ?array {
-		$docTypeId = $this->getObjectByUrl(url: $ioUrl, schemaKey: 'document_schema')['documentType'] ?? '';
-		if (empty($docTypeId) === true) {
-			return null;
-		}
-
-		$docTypeUuid = $this->extractUuid(url: $docTypeId);
-		if ($docTypeUuid === null) {
-			return null;
-		}
-
-		$dtData = $this->findBySchemaKey(uuid: $docTypeUuid, schemaKey: 'document_type_schema');
-		if ($dtData === null) {
-			return null;
-		}
-
-		return ['uuid' => $docTypeUuid, 'name' => $dtData['name'] ?? ''];
-	}//end getDocumentTypeOfDocument()
-
-	/**
-	 * Look up the object a URL's uuid names in the given schema.
-	 *
-	 * @param string $url The object URL
-	 * @param string $schemaKey Settings key of the object's schema
-	 *
-	 * @return array|null The object, or null when the URL holds no uuid or nothing is found
-	 */
-	private function getObjectByUrl(string $url, string $schemaKey): ?array {
-		$uuid = $this->extractUuid(url: $url);
-		if ($uuid === null) {
-			return null;
-		}
-
-		return $this->findBySchemaKey(uuid: $uuid, schemaKey: $schemaKey);
-	}//end getObjectByUrl()
-
-	/**
-	 * Read a list field that may arrive as an array or a JSON string.
-	 *
-	 * @param mixed $value The stored value
-	 *
-	 * @return array The list, empty when the value is neither a list nor JSON for one
-	 */
-	private function decodeList(mixed $value): array {
-		if (is_string($value) === true) {
-			$value = json_decode($value, true) ?? [];
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
-	}//end decodeList()
-
-	/**
-	 * The brc-008 refusal: the document's type is not one the besluittype allows.
-	 *
-	 * @return array The validation error
-	 */
-	private function missingInformatieobjecttypeError(): array {
-		$detail = 'Het informatieobjecttype van het informatieobject is niet gespecificeerd in '
-			.'het besluittype.informatieobjecttypen.';
-
-		return $this->error(
-			status: 400,
-			detail: $detail,
-			invalidParams: [
-				$this->fieldError(
-					fieldName: 'nonFieldErrors',
-					code: 'missing-informatieobjecttype',
-					reason: $detail
-				),
-			]
-		);
-	}//end missingInformatieobjecttypeError()
 }//end class

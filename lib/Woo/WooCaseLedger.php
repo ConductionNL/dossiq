@@ -29,6 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Publication\WithheldEntries;
+use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
@@ -45,18 +47,104 @@ class WooCaseLedger {
 	use SearchesObjects;
 
 	/**
+	 * The failure a delivery answers when its set cannot be written first.
+	 */
+	public const SET_NOT_WRITTEN = WooDeliveredSetWriter::SET_NOT_WRITTEN;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
 	 * @param LoggerInterface $logger          Logger.
 	 * @param IURLGenerator|null $urlGenerator Makes the publication link absolute.
+	 * @param WooDeliveredSetWriter|null $deliveredSets Records what each delivery sent out (woo-delivered-set-is-a-record).
+	 * @param WithheldListRecorder|null $withheldRecorder Records what a publication withheld in opencatalogi.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?IURLGenerator $urlGenerator = null,
+		private readonly ?WooDeliveredSetWriter $deliveredSets = null,
+		private readonly ?WithheldListRecorder $withheldRecorder = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Record what the publication withheld, configured for the Woo case type.
+	 *
+	 * The Woo case type configures the generic withheld list (decision 182):
+	 * `niet_openbaar` is withheld in full, `weigeringsgronden` holds its
+	 * grounds. The answer is reported, never thrown: the publication is not
+	 * undone because its list could not be recorded. An empty assessment list
+	 * clears the publication's list (a withdrawal).
+	 *
+	 * @param string                           $publicationId The publication.
+	 * @param array<int, array<string, mixed>> $assessments   The case's assessments, [] to clear.
+	 *
+	 * @return array{record: array<string, mixed>, note: string} The recorder's answer and the case's sentence.
+	 *
+	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-published-woo-decision-records-its-withheld-documents-in-opencatalogi-req-wrw-001
+	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/woo-publication-via-opencatalogi/spec.md#requirement-without-opencatalogis-receiving-side-nothing-is-recorded-req-wrw-002
+	 */
+	public function recordWithheld(string $publicationId, array $assessments): array {
+		if ($this->withheldRecorder === null) {
+			return ['record' => ['status' => 'not-recorded', 'reason' => WithheldListRecorder::REASON_TOO_OLD], 'note' => ''];
+		}
+
+		$record = $this->withheldRecorder->record(
+			publicationId: $publicationId,
+			entries: (new WithheldEntries())->fromAssessments(
+				assessments: $assessments,
+				withheldValue: 'niet_openbaar',
+				groundsField: 'weigeringsgronden',
+			),
+		);
+
+		return ['record' => $record, 'note' => $this->withheldRecorder->describe(answer: $record)];
+	}//end recordWithheld()
+
+	/**
+	 * Deliver through `$send`, recording the set around it when a writer is wired.
+	 *
+	 * @param string                           $caseId     The Woo case.
+	 * @param string                           $decisionId The Woo decision.
+	 * @param array<int, array<string, mixed>> $items      What goes out, one entry per document.
+	 * @param callable(): string               $send       Creates or updates the publication; answers its id.
+	 *
+	 * @return array{publicationId: string, setId: string}
+	 *
+	 * @throws \Throwable The send's failure, after the pending set is gone; SET_NOT_WRITTEN when the set cannot be written.
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function deliver(string $caseId, string $decisionId, array $items, callable $send): array {
+		if ($this->deliveredSets === null) {
+			return ['publicationId' => (string)$send(), 'setId' => ''];
+		}
+
+		return $this->deliveredSets->deliver(caseId: $caseId, decisionId: $decisionId, delivered: $items, send: $send);
+	}//end deliver()
+
+	/**
+	 * Stamp the withdraw on the publication's frozen set; a failure is logged, the withdraw stands.
+	 *
+	 * @param string $caseId        The case.
+	 * @param string $publicationId The withdrawn publication.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-frozen-set-and-its-assessments-refuse-change-req-wds-002
+	 */
+	public function markWithdrawn(string $caseId, string $publicationId): void {
+		try {
+			$this->deliveredSets?->markWithdrawn(caseId: $caseId, publicationId: $publicationId);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'WooPublicationService: the delivered set could not record the withdraw',
+				['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
+			);
+		}
+	}//end markWithdrawn()
 
 	/**
 	 * An absolute link for the resident, or the path when no URL generator is wired.

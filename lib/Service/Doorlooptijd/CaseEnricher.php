@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Doorlooptijd;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
@@ -54,6 +55,7 @@ class CaseEnricher {
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 */
@@ -61,6 +63,7 @@ class CaseEnricher {
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -137,7 +140,7 @@ class CaseEnricher {
 		$caseTypeKey = (string)($caseData['caseType'] ?? '');
 		if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
 			$caseType = $caseTypeByKey[$caseTypeKey];
-			$caseTypeTitle = (string)($caseType['title'] ?? '');
+			$caseTypeTitle = $this->text->textOf(value: ($caseType['title'] ?? null));
 		}
 
 		$deadline = $this->resolveCaseDeadline(

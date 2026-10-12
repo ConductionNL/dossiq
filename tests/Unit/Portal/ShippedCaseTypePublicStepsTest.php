@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
  */
 
 declare(strict_types=1);
@@ -46,7 +46,6 @@ class ShippedCaseTypePublicStepsTest extends TestCase {
 		// Base register, the four resident-facing case types.
 		'@ref:omgevingsvergunning'             => ['Ontvangen', 'In behandeling', 'Besluit', 'Afgehandeld'],
 		'@ref:subsidieaanvraag'                => ['Ontvangen', 'In behandeling', 'Besluit', 'Afgehandeld'],
-		'@ref:bezwaar-behandeling'             => ['Ontvangen', 'In behandeling', 'Beslist'],
 		'@ref:klacht-behandeling'              => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
 		'@ref:melding-openbare-ruimte'         => ['Ontvangen', 'In behandeling', 'Afgehandeld'],
 		// 58-case-type-versions: v2's Veiligheidstoets folds into the status

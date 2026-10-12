@@ -59,21 +59,21 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	/**
 	 * Case types whose term cannot be stated generically, decided by nobody yet.
 	 *
-	 * Each depends on the gemeente's own Algemene subsidieverordening, and
 	 * Ruben's rule (10 Oct) is that such a term is not invented. Listed here so
 	 * the sweep stays mechanical for everything else, and held to the list by
 	 * testTheOpenQuestionsAreStillOpen(): an entry that gets a definition, or
 	 * stops being shipped, fails until it is taken off.
 	 *
+	 * Empty since 11 Oct: Ruben decided the last two, `subsidieaanvraag` and
+	 * `zaaktype-innovatiefonds-2026`, onto the Awb 4:13 lid 2 fallback. They
+	 * are pinned in DECIDED.
+	 *
 	 * @var array<string, string>
 	 */
-	private const OPEN_QUESTIONS = [
-		'subsidieaanvraag' => 'P42D plus P28D: Awb title 4.2 sets no beslistermijn and the Awb 4:13 lid 2 fallback is eight weeks, so six weeks can only come from the ASV.',
-		'zaaktype-innovatiefonds-2026' => 'P13W, ASV art. 3: longer than the Awb 4:13 lid 2 fallback allows, so it can only come from the ASV.',
-	];
+	private const OPEN_QUESTIONS = [];
 
 	/**
-	 * The terms decided for the register's case types (Ruben, 10 Oct).
+	 * The terms decided for the register's case types (Ruben, 10 and 11 Oct).
 	 *
 	 * Keyed by the binding key CaseTypeSlugResolver answers (identifier first).
 	 * Each row: kind, days, extension capacity, number of extensions, and a
@@ -83,10 +83,19 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 */
 	private const DECIDED = [
 		'klacht-behandeling' => ['statutory', 42, 28, 1, 'Awb 9:11'],
+		// Awb 7:10: six weeks, one extension of at most six weeks (the Bezwaar case type of the Woo objections).
+		'bezwaar' => ['statutory', 42, 42, 1, 'Awb 7:10'],
 		'evenementenvergunning-2024' => ['statutory', 56, 56, 1, 'APV 1:2'],
 		'evenementenvergunning' => ['statutory', 56, 56, 1, 'APV 1:2'],
 		'zaaktype-cultuur-subsidie-2026' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		// Ruben, 11 Oct: eight weeks under the Awb 4:13 lid 2 fallback, with
+		// Awb 4:14 lid 3 as the notice of a later term. Before: P42D plus
+		// P28D and P13W (ASV art. 3), numbers no generic rule gives.
+		'subsidieaanvraag' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		'zaaktype-innovatiefonds-2026' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'melding-openbare-ruimte' => ['planned', 14, 0, 0, 'Servicenorm'],
+		'parkeervergunning-bewoners' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		'kenteken-wijzigen-parkeervergunning' => ['planned', 14, 0, 0, 'Servicenorm'],
 		'building-permit' => ['planned', 56, 0, 0, 'Service norm'],
 		'grant-application' => ['planned', 42, 0, 0, 'Service norm'],
 		'citizen-complaint' => ['planned', 42, 0, 0, 'Service norm'],

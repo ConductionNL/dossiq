@@ -42,7 +42,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Intake\IntakeObjectDrain;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -87,8 +86,10 @@ class DrainIntakeObjectsCommand extends Command {
 	public const PLAN = [
 		'caseTypeField' => 'kind',
 		'caseTypes' => [
-			'bezwaarschrift' => IntakeCaseTypes::OBJECTION,
-			'klachtschrift' => IntakeCaseTypes::COMPLAINT,
+			// The stored `kind` to the path key the setting
+			// `portal_filing_case_types` maps to a case type.
+			'bezwaarschrift' => 'createBezwaar',
+			'klachtschrift' => 'createKlacht',
 		],
 		'titleField' => 'subject',
 		'titles' => ['bezwaarschrift' => 'Bezwaar', 'klachtschrift' => 'Klacht'],

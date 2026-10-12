@@ -64,11 +64,18 @@
 				<h2 class="task-detail-page__title" data-testid="task-detail-title">
 					{{ title }}
 				</h2>
-				<CnStatusBadge
-					v-if="stateLabel"
-					:label="stateLabel"
-					size="small"
-					data-testid="task-detail-state" />
+				<p class="task-detail-page__crumbs">
+					<CnStatusBadge
+						v-if="stateLabel"
+						:label="stateLabel"
+						size="small"
+						data-testid="task-detail-state" />
+					<router-link :to="{ name: 'Tasks' }">
+						{{ t('dossiq', 'Tasks') }}
+					</router-link>
+					<span aria-hidden="true">/</span>
+					<span>{{ title }}</span>
+				</p>
 			</div>
 
 			<div
@@ -76,14 +83,27 @@
 				class="task-detail-page__actions"
 				data-testid="task-detail-actions">
 				<NcButton
-					v-for="verb in verbs"
+					v-for="verb in primaryVerbs"
 					:key="verb.name"
 					:disabled="busy"
-					:variant="verb.primary ? 'primary' : 'secondary'"
+					variant="secondary"
 					:data-testid="`task-detail-verb-${verb.name}`"
 					@click="invoke(verb)">
 					{{ verb.label }}
 				</NcButton>
+				<NcActions
+					v-if="moreVerbs.length > 0"
+					:name="t('dossiq', 'More')"
+					:menuName="t('dossiq', 'More')">
+					<NcActionButton
+						v-for="verb in moreVerbs"
+						:key="verb.name"
+						:disabled="busy"
+						:data-testid="`task-detail-verb-${verb.name}`"
+						@click="invoke(verb)">
+						{{ verb.label }}
+					</NcActionButton>
+				</NcActions>
 			</div>
 		</header>
 
@@ -95,80 +115,109 @@
 			"
 			data-testid="task-detail-missing" />
 
-		<template v-else-if="task">
-			<TaskCaseCard :objectId="taskId" :objectData="task" />
+		<div
+			v-else-if="task"
+			class="task-detail-page__columns"
+			data-testid="task-detail-body">
+			<div class="task-detail-page__main">
+				<div class="task-detail-page__tabs" role="tablist">
+					<button
+						v-for="tab in tabs"
+						:key="tab.id"
+						type="button"
+						role="tab"
+						class="task-detail-page__tab"
+						:class="{
+							'task-detail-page__tab--active': activeTab === tab.id,
+						}"
+						:aria-selected="String(activeTab === tab.id)"
+						:data-testid="`task-detail-tab-${tab.id}`"
+						@click="activeTab = tab.id">
+						{{ tab.label }}
+					</button>
+				</div>
 
-			<section class="task-detail-page__body" data-testid="task-detail-body">
-				<p
-					v-if="description"
-					class="task-detail-page__description"
-					data-testid="task-detail-description">
-					{{ description }}
-				</p>
+				<div
+					v-if="activeTab === 'overview'"
+					class="task-detail-page__panel"
+					role="tabpanel">
+					<p
+						v-if="description"
+						class="task-detail-page__card task-detail-page__description"
+						data-testid="task-detail-description">
+						{{ description }}
+					</p>
 
-				<dl v-if="facts.length > 0" class="task-detail-page__facts">
-					<div
-						v-for="fact in facts"
-						:key="fact.key"
-						class="task-detail-page__fact">
-						<dt class="task-detail-page__label">
-							{{ fact.label }}
-						</dt>
-						<dd
-							class="task-detail-page__value"
-							:data-testid="`task-detail-${fact.key}`">
-							{{ fact.value }}
-						</dd>
-					</div>
-				</dl>
-			</section>
+					<section
+						v-if="checklist.length > 0"
+						class="task-detail-page__card task-detail-page__checklist"
+						data-testid="task-detail-checklist">
+						<h3 class="task-detail-page__section-title">
+							{{ t('dossiq', 'Checklist') }}
+						</h3>
+						<p class="task-detail-page__section-sub">
+							{{
+								t('dossiq', '{done} of {total} done', {
+									done: checklistDone,
+									total: checklist.length,
+								})
+							}}
+						</p>
+						<ul class="task-detail-page__checklist-items">
+							<li v-for="item in checklist" :key="item.id">
+								<NcCheckboxRadioSwitch
+									:modelValue="item.checked === true"
+									:disabled="busy || finished"
+									:data-testid="`task-detail-check-${item.id}`"
+									@update:modelValue="check(item, $event)">
+									{{ item.label || item.id }}
+								</NcCheckboxRadioSwitch>
+							</li>
+						</ul>
+					</section>
 
-			<section
-				v-if="checklist.length > 0"
-				class="task-detail-page__checklist"
-				data-testid="task-detail-checklist">
-				<h3 class="task-detail-page__section-title">
-					{{ t('dossiq', 'Checklist') }}
-				</h3>
-				<ul class="task-detail-page__checklist-items">
-					<li v-for="item in checklist" :key="item.id">
-						<NcCheckboxRadioSwitch
-							:modelValue="item.checked === true"
-							:disabled="busy || finished"
-							:data-testid="`task-detail-check-${item.id}`"
-							@update:modelValue="check(item, $event)">
-							{{ item.label || item.id }}
-						</NcCheckboxRadioSwitch>
-					</li>
-				</ul>
-			</section>
+					<section class="task-detail-page__card task-detail-page__leaf">
+						<h3 class="task-detail-page__section-title">
+							{{ t('dossiq', 'Appointments') }}
+						</h3>
+						<TaskEventsLeaf :taskId="taskId" />
+					</section>
 
-			<TaskWaitingCaseSection />
+					<section class="task-detail-page__card task-detail-page__leaf">
+						<h3 class="task-detail-page__section-title">
+							{{ t('dossiq', 'Notes') }}
+						</h3>
+						<TaskNotesLeaf :taskId="taskId" />
+					</section>
+				</div>
 
-			<div class="task-detail-page__leaves">
-				<section class="task-detail-page__leaf">
-					<h3 class="task-detail-page__section-title">
-						{{ t('dossiq', 'Notes') }}
-					</h3>
-					<TaskNotesLeaf :taskId="taskId" />
-				</section>
-
-				<section class="task-detail-page__leaf">
-					<h3 class="task-detail-page__section-title">
-						{{ t('dossiq', 'Appointments') }}
-					</h3>
-					<TaskEventsLeaf :taskId="taskId" />
-				</section>
+				<div v-else class="task-detail-page__panel" role="tabpanel">
+					<TaskAuditLeaf :taskId="taskId" />
+				</div>
 			</div>
 
-			<TaskAuditLeaf :taskId="taskId" />
-		</template>
+			<aside class="task-detail-page__side">
+				<section
+					v-if="hasFacts"
+					class="task-detail-page__card task-detail-page__facts-card">
+					<h3 class="task-detail-page__section-title">
+						{{ t('dossiq', 'Task') }}
+					</h3>
+					<CnFactsWidget :content="taskFacts" :objectData="task" />
+				</section>
+
+				<TaskCaseCard :objectId="taskId" :objectData="task" />
+				<TaskWaitingCaseSection />
+			</aside>
+		</div>
 	</div>
 </template>
 
 <script>
-import { CnStatusBadge } from '@conduction/nextcloud-vue'
+import { CnFactsWidget, CnStatusBadge } from '@conduction/nextcloud-vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -184,7 +233,10 @@ export default {
 	name: 'TaskDetailView',
 
 	components: {
+		CnFactsWidget,
 		CnStatusBadge,
+		NcActionButton,
+		NcActions,
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcEmptyContent,
@@ -225,6 +277,8 @@ export default {
 			missing: false,
 			/** Whether a verb is in flight, so a double click cannot fire twice. */
 			busy: false,
+			/** The tab in view: the overview, or the history. */
+			activeTab: 'overview',
 		}
 	},
 
@@ -288,88 +342,83 @@ export default {
 		},
 
 		/**
-		 * The task's own facts, in reading order.
+		 * The task's own facts for the library's facts card, in the order the
+		 * board draws them (DqTaak). A fact the task does not carry is dropped by
+		 * the widget rather than shown as an em dash. `candidateGroups` is a LIST
+		 * on the engine (a task offered to two teams has two), joined by the
+		 * widget's `list` format.
 		 *
-		 * Only what is present. That is the fix, not a refinement: the
-		 * page's Data widget rendered EVERY declared property, so an engine
-		 * uuid on the object store produced a full grid of em dashes and
-		 * looked like a broken record rather than a task read from the wrong
-		 * place. A fact that is not there is now absent, the same convention
-		 * TaskCaseCard already uses one card above.
-		 *
-		 * The CASE is deliberately not here. It is the card above, resolved
-		 * to a title and a link; repeating it as a raw uuid is what the card
-		 * exists to stop.
-		 *
-		 * @return {Array<{key: string, label: string, value: string}>} The rows.
+		 * @return {object} The `content` for CnFactsWidget.
 		 * @spec openspec/specs/task-management/spec.md
 		 */
-		facts() {
-			const rows = [
-				{
-					key: 'assignee',
-					label: t('dossiq', 'Assignee'),
-					value: String(this.task?.assignee ?? '').trim(),
-				},
-				{
-					key: 'due',
-					label: t('dossiq', 'Due'),
-					value: this.formatDate(this.task?.dueAt ?? this.task?.dueDate),
-				},
-				{
-					key: 'team',
-					label: t('dossiq', 'Team'),
-					value: this.team,
-				},
-				{
-					key: 'priority',
-					label: t('dossiq', 'Priority'),
-					value: String(this.task?.priority ?? '').trim(),
-				},
-				{
-					key: 'requester',
-					label: t('dossiq', 'Requested by'),
-					value: String(this.task?.requester ?? '').trim(),
-				},
-				{
-					key: 'expires',
-					label: t('dossiq', 'Expires'),
-					value: this.formatDate(this.task?.expiresAt),
-				},
-				{
-					key: 'created',
-					label: t('dossiq', 'Created'),
-					value: this.formatDate(this.task?.created),
-				},
-			]
-			return rows.filter((row) => row.value !== '')
+		taskFacts() {
+			return {
+				fields: [
+					{
+						key: 'assignee',
+						label: t('dossiq', 'Assignee'),
+						path: 'assignee',
+					},
+					{
+						key: 'team',
+						label: t('dossiq', 'Team'),
+						path: 'candidateGroups',
+						format: 'list',
+					},
+					{
+						key: 'due',
+						label: t('dossiq', 'Due'),
+						path: 'dueAt',
+						format: 'date',
+					},
+					{
+						key: 'expires',
+						label: t('dossiq', 'Expires'),
+						path: 'expiresAt',
+						format: 'date',
+					},
+					{
+						key: 'priority',
+						label: t('dossiq', 'Priority'),
+						path: 'priority',
+					},
+					{
+						key: 'requester',
+						label: t('dossiq', 'Requested by'),
+						path: 'requester',
+					},
+					{
+						key: 'created',
+						label: t('dossiq', 'Created'),
+						path: 'created',
+						format: 'date',
+					},
+				],
+			}
 		},
 
 		/**
-		 * The team the task is offered to, beside the person holding it.
+		 * Whether the task carries any fact the card would show.
 		 *
-		 * The engine's name for this is `candidateGroups`, and it is a list.
-		 * `caseTask` spelled the same idea `assignedGroup` and it was a
-		 * single value, which is why this is not a rename: a task offered to
-		 * two teams has two rows on the engine and had one on the register.
-		 *
-		 * It is on the page because a handler deciding whether to pick a
-		 * task up needs to know whose queue it is in. The Parties change put
-		 * it on the case page for the same reason, and the task page carried
-		 * it for free while its widget rendered the whole schema.
-		 *
-		 * @return {string} The teams, comma separated, or ''.
+		 * @return {boolean} True when at least one fact has a value.
 		 * @spec openspec/specs/task-management/spec.md
 		 */
-		team() {
-			const groups = this.task?.candidateGroups
-			if (Array.isArray(groups) === true) {
-				return groups
-					.map((group) => String(group ?? '').trim())
-					.filter((group) => group !== '')
-					.join(', ')
-			}
-			return String(groups ?? '').trim()
+		hasFacts() {
+			const task = this.task ?? {}
+			const groups = Array.isArray(task.candidateGroups)
+				? task.candidateGroups
+				: []
+			return (
+				groups.length > 0
+				|| [
+					'assignee',
+					'dueAt',
+					'expiresAt',
+					'priority',
+					'requester',
+					'created',
+				].some((key) => String(task[key] ?? '').trim() !== '')
+			)
 		},
 
 		/**
@@ -391,6 +440,45 @@ export default {
 			return items.filter(
 				(item) => item && String(item.id ?? '').trim() !== '',
 			)
+		},
+
+		/**
+		 * How many checklist items are ticked, for the card's "2 of 4 done".
+		 *
+		 * @return {number} The ticked items.
+		 */
+		checklistDone() {
+			return this.checklist.filter((item) => item.checked === true).length
+		},
+
+		/**
+		 * The page's tabs, as the board draws them.
+		 *
+		 * @return {Array<{id: string, label: string}>} The tabs.
+		 */
+		tabs() {
+			return [
+				{ id: 'overview', label: t('dossiq', 'Overview') },
+				{ id: 'history', label: t('dossiq', 'Task history') },
+			]
+		},
+
+		/**
+		 * The verbs that stand in the header: finishing, and handing on.
+		 *
+		 * @return {Array<object>} The verbs.
+		 */
+		primaryVerbs() {
+			return this.verbs.filter((verb) => verb.name !== 'cancel')
+		},
+
+		/**
+		 * The verbs behind More: cancelling a task is rare.
+		 *
+		 * @return {Array<object>} The verbs.
+		 */
+		moreVerbs() {
+			return this.verbs.filter((verb) => verb.name === 'cancel')
 		},
 
 		/**
@@ -418,6 +506,12 @@ export default {
 			const held = String(this.task?.assignee ?? '').trim() !== ''
 			const verbs = []
 
+			verbs.push({
+				name: 'complete',
+				label: t('dossiq', 'Complete'),
+				primary: true,
+			})
+
 			if (held === false) {
 				verbs.push({
 					name: 'claim',
@@ -432,11 +526,6 @@ export default {
 				})
 			}
 
-			verbs.push({
-				name: 'complete',
-				label: t('dossiq', 'Complete'),
-				primary: true,
-			})
 			verbs.push({
 				name: 'cancel',
 				label: t('dossiq', 'Cancel'),
@@ -581,28 +670,6 @@ export default {
 		},
 
 		/**
-		 * A date in the reader's locale.
-		 *
-		 * An absent date returns '' so the row is dropped, rather than the em
-		 * dash the Data widget rendered for every unreadable field.
-		 *
-		 * @param {string|null|undefined} value The ISO date-time.
-		 * @return {string} The formatted date, or ''.
-		 * @spec openspec/specs/task-management/spec.md
-		 */
-		formatDate(value) {
-			const raw = String(value ?? '').trim()
-			if (raw === '') {
-				return ''
-			}
-			const parsed = new Date(raw)
-			if (Number.isNaN(parsed.getTime())) {
-				return raw
-			}
-			return parsed.toLocaleDateString()
-		},
-
-		/**
 		 * Show a server message to the handler.
 		 *
 		 * @param {string|null|undefined} message The message.
@@ -624,13 +691,13 @@ export default {
 .task-detail-page {
 	display: flex;
 	flex-direction: column;
-	gap: calc(var(--default-grid-baseline) * 3);
+	gap: calc(var(--default-grid-baseline) * 4);
 	padding: calc(var(--default-grid-baseline) * 4);
 	max-width: 1200px;
 
 	&__header {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: space-between;
 		gap: calc(var(--default-grid-baseline) * 2);
 		flex-wrap: wrap;
@@ -638,60 +705,102 @@ export default {
 
 	&__identity {
 		display: flex;
-		align-items: center;
-		gap: calc(var(--default-grid-baseline) * 2);
+		flex-direction: column;
+		gap: var(--default-grid-baseline);
 		min-width: 0;
 	}
 
 	&__title {
 		margin: 0;
+		font-size: 28px;
+		font-weight: 700;
 		overflow-wrap: anywhere;
+	}
+
+	&__crumbs {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: calc(var(--default-grid-baseline) * 2);
+		margin: 0;
+		color: var(--color-text-maxcontrast);
 	}
 
 	&__actions {
 		display: flex;
+		align-items: center;
 		gap: var(--default-grid-baseline);
 		flex-wrap: wrap;
 	}
 
+	&__columns {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 300px;
+		gap: calc(var(--default-grid-baseline) * 4);
+		align-items: start;
+	}
+
+	&__main,
+	&__side,
+	&__panel {
+		display: flex;
+		flex-direction: column;
+		gap: calc(var(--default-grid-baseline) * 4);
+		min-width: 0;
+	}
+
+	&__tabs {
+		display: flex;
+		gap: var(--default-grid-baseline);
+	}
+
+	&__tab {
+		padding: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 3);
+		border: 1px solid var(--color-border);
+		border-bottom: none;
+		border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+		background: var(--color-background-dark);
+		color: var(--color-main-text);
+		font-weight: 600;
+		cursor: pointer;
+
+		&--active {
+			background: var(--color-main-background);
+		}
+	}
+
+	&__card {
+		margin: 0;
+		padding: calc(var(--default-grid-baseline) * 5);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large);
+		background: var(--color-main-background);
+	}
+
 	&__section-title {
 		margin: 0 0 var(--default-grid-baseline);
-		font-size: var(--default-font-size);
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	&__section-sub {
+		margin: 0 0 calc(var(--default-grid-baseline) * 3);
+		color: var(--color-text-maxcontrast);
 	}
 
 	&__description {
-		margin: 0;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
 
-	&__body {
-		display: flex;
-		flex-direction: column;
-		gap: calc(var(--default-grid-baseline) * 2);
-	}
-
-	&__facts {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-		gap: calc(var(--default-grid-baseline) * 2);
-		margin: 0;
-	}
-
-	&__fact {
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
-	}
-
-	&__label {
-		color: var(--color-text-maxcontrast);
-		font-size: var(--default-font-size);
-	}
-
-	&__value {
-		margin: 0;
-		overflow-wrap: anywhere;
+	// Nextcloud core styles every `dt` end-aligned with 12px padding, and the
+	// library's facts card does not reset it, so the label column drew right
+	// aligned with 45px rows. Reset here until the library's
+	// `.cn-facts-widget__label` does it itself (named as a gap in the PR).
+	&__facts-card :deep(.cn-facts-widget__label),
+	&__facts-card :deep(.cn-facts-widget__value) {
+		padding: 0;
+		text-align: start;
 	}
 
 	&__checklist-items {
@@ -699,11 +808,11 @@ export default {
 		padding: 0;
 		list-style: none;
 	}
+}
 
-	&__leaves {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-		gap: calc(var(--default-grid-baseline) * 3);
+@media (max-width: 900px) {
+	.task-detail-page__columns {
+		grid-template-columns: minmax(0, 1fr);
 	}
 }
 </style>

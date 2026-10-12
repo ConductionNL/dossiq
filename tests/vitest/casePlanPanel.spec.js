@@ -71,18 +71,10 @@ vi.mock('vue-material-design-icons/AlertCircleOutline.vue', () => ({
 
 /** What `fetchCasePlan` answers. Replaced per test. */
 let planAnswer = vi.fn()
-/** What the retiring engine answers. Replaced per test. */
-let localPlanAnswer = vi.fn()
 /** What the object store answers for the case record. Replaced per test. */
 let caseAnswer = {}
-/** Whether this instance prefers OpenRegister rows. Replaced per test. */
-let prefer = true
 /** Every transition the panel asked for. */
 let transitions = []
-
-vi.mock('@nextcloud/initial-state', () => ({
-	loadState: (_app, _key, fallback) => (prefer === null ? fallback : prefer),
-}))
 
 vi.mock('../../src/store/store.js', () => ({ initializeStores: async () => ({}) }))
 
@@ -101,23 +93,6 @@ vi.mock('../../src/store/modules/object.js', () => ({
 			return caseAnswer
 		},
 	}),
-}))
-
-vi.mock('../../src/services/cmmnApi.js', () => ({
-	fetchCasePlan: (...args) => localPlanAnswer(...args),
-	completeTask: (...args) => {
-		transitions.push(['local-complete', ...args])
-		return Promise.resolve({})
-	},
-	terminateTask: (...args) => {
-		transitions.push(['local-terminate', ...args])
-		return Promise.resolve({})
-	},
-	enableDiscretionaryItem: (...args) => {
-		transitions.push(['local-enable', ...args])
-		return Promise.resolve({})
-	},
-	signalCaseFileEvent: () => Promise.resolve({}),
 }))
 
 vi.mock('../../src/services/casePlanApi.js', async () => {
@@ -181,39 +156,12 @@ async function mountPanel() {
 	return wrapper
 }
 
-/** The same plan as the retiring engine answers it: string ids, `parentId`. */
-const LOCAL_PLAN = {
-	items: [
-		{
-			id: 'intake',
-			name: 'Intake',
-			type: 'stage',
-			parentId: null,
-			state: 'active',
-			discretionary: false,
-		},
-		{
-			id: 'controle',
-			name: 'Controle',
-			type: 'humanTask',
-			parentId: 'intake',
-			state: 'active',
-			discretionary: false,
-		},
-	],
-	enableableDiscretionary: [],
-	milestones: {},
-	caseFile: {},
-}
-
 beforeEach(() => {
 	transitions = []
 	planAnswer = vi.fn()
-	localPlanAnswer = vi.fn().mockResolvedValue(LOCAL_PLAN)
 	caseAnswer = {}
 	caseTypeAnswer = null
 	caseTypeReads = []
-	prefer = true
 })
 
 describe('CasePlanPanel', () => {
@@ -270,62 +218,28 @@ describe('CasePlanPanel', () => {
 	})
 })
 
-describe('CasePlanPanel read preference', () => {
-	it('reads OpenRegister when it has rows, even though the case still carries a blob', async () => {
-		planAnswer.mockResolvedValue(PLAN)
-		localPlanAnswer = vi.fn()
-		caseAnswer = { casePlanState: '{"planItemStates":{"intake":"active"}}' }
+describe('CasePlanPanel has one runtime', () => {
+	// The local engine is gone (retire-cmmn-caseplanstate group 3). A case
+	// OpenRegister holds nothing for has no plan, whatever else it carries.
 
-		const wrapper = await mountPanel()
-
-		expect(localPlanAnswer).not.toHaveBeenCalled()
-		expect(wrapper.vm.source).toBe('openregister')
-	})
-
-	it('falls back to the local engine while a blob is present and OpenRegister holds nothing', async () => {
+	it('shows no plan when OpenRegister holds none, and asks nothing else', async () => {
 		planAnswer.mockRejectedValue({ response: { status: 404 } })
-		caseAnswer = { casePlanState: '{"planItemStates":{"intake":"active"}}' }
+		caseAnswer = { caseType: 'ct-cmmn' }
+		caseTypeAnswer = { id: 'ct-cmmn', handlingModel: 'cmmn' }
 
 		const wrapper = await mountPanel()
 
-		expect(localPlanAnswer).toHaveBeenCalledWith('case-1')
-		expect(wrapper.vm.source).toBe('local')
-		expect(wrapper.text()).toContain('Controle')
-	})
-
-	it('sends a local completion to the engine, not to OpenRegister', async () => {
-		planAnswer.mockRejectedValue({ response: { status: 404 } })
-		caseAnswer = { casePlanState: '{"planItemStates":{"intake":"active"}}' }
-
-		const wrapper = await mountPanel()
-		await wrapper
-			.find('[data-testid="case-plan-completed-controle"]')
-			.trigger('click')
-		await flushPromises()
-
-		expect(transitions).toEqual([['local-complete', 'case-1', 'controle']])
-	})
-
-	it('reads neither runtime when the case has no rows and no blob', async () => {
-		planAnswer.mockRejectedValue({ response: { status: 404 } })
-		caseAnswer = { casePlanState: '' }
-
-		const wrapper = await mountPanel()
-
-		expect(localPlanAnswer).not.toHaveBeenCalled()
-		expect(wrapper.vm.source).toBe('none')
+		expect(planAnswer).toHaveBeenCalledTimes(1)
 		expect(wrapper.find('[data-testid="case-plan-empty"]').exists()).toBe(true)
 	})
 
-	it('goes back to the engine when the flag is off and the case has both', async () => {
-		planAnswer.mockResolvedValue(PLAN)
-		caseAnswer = { casePlanState: '{"planItemStates":{"intake":"active"}}' }
-		prefer = false
+	it('reads an empty item list as no plan', async () => {
+		planAnswer.mockResolvedValue({ items: [] })
 
 		const wrapper = await mountPanel()
 
-		expect(localPlanAnswer).toHaveBeenCalledWith('case-1')
-		expect(wrapper.vm.source).toBe('local')
+		expect(wrapper.find('[data-testid="case-plan-empty"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-plan-error"]').exists()).toBe(false)
 	})
 })
 
@@ -337,14 +251,13 @@ describe('CasePlanPanel asks OpenRegister only when it can hold a plan', () => {
 
 	it('does not ask OpenRegister for the plan of a BPMN case', async () => {
 		planAnswer.mockRejectedValue({ response: { status: 404 } })
-		caseAnswer = { caseType: 'ct-bpmn', casePlanState: '' }
+		caseAnswer = { caseType: 'ct-bpmn' }
 		caseTypeAnswer = { id: 'ct-bpmn', handlingModel: 'bpmn' }
 
 		const wrapper = await mountPanel()
 
 		expect(caseTypeReads).toEqual(['ct-bpmn'])
 		expect(planAnswer).not.toHaveBeenCalled()
-		expect(wrapper.vm.source).toBe('none')
 		expect(wrapper.find('[data-testid="case-plan-empty"]').exists()).toBe(true)
 	})
 
@@ -377,19 +290,5 @@ describe('CasePlanPanel asks OpenRegister only when it can hold a plan', () => {
 
 		expect(planAnswer).toHaveBeenCalled()
 		expect(wrapper.find('[data-testid="case-plan-error"]').exists()).toBe(true)
-	})
-
-	it('still asks for a BPMN case that carries a blob, which may be mid-drain', async () => {
-		planAnswer.mockResolvedValue(PLAN)
-		caseAnswer = {
-			caseType: 'ct-bpmn',
-			casePlanState: '{"planItemStates":{"intake":"active"}}',
-		}
-		caseTypeAnswer = { id: 'ct-bpmn', handlingModel: 'bpmn' }
-
-		const wrapper = await mountPanel()
-
-		expect(planAnswer).toHaveBeenCalled()
-		expect(wrapper.vm.source).toBe('openregister')
 	})
 })

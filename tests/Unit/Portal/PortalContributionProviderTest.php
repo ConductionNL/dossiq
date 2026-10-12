@@ -57,10 +57,10 @@ class PortalContributionProviderTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$caseTypes = $this->createMock(IntakeCaseTypes::class);
-		$caseTypes->method('caseTypeFor')->willReturnMap(
+		$caseTypes->method('caseTypes')->willReturn(
 			[
-				[IntakeCaseTypes::OBJECTION, 'bbbbbbbb-0000-4000-a000-000000000001'],
-				[IntakeCaseTypes::COMPLAINT, 'kkkkkkkk-0000-4000-a000-000000000002'],
+				'createBezwaar' => 'bbbbbbbb-0000-4000-a000-000000000001',
+				'createKlacht' => 'kkkkkkkk-0000-4000-a000-000000000002',
 			]
 		);
 		$this->provider = new PortalContributionProvider(caseTypes: $caseTypes);
@@ -436,8 +436,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->fail('the citizen contribution must declare the page ' . $id);
 	}//end citizenPage()
 
-	public function testAdvertisesFourAudiences(): void {
-		$this->assertSame(['supplier', 'citizen', 'client', 'inspector'], $this->provider->getAudiences());
+	public function testAdvertisesFiveAudiences(): void {
+		$this->assertSame(['supplier', 'citizen', 'client', 'business', 'inspector'], $this->provider->getAudiences());
 	}
 
 	public function testPrimaryAudienceFallbackIsSupplier(): void {
@@ -459,12 +459,19 @@ class PortalContributionProviderTest extends TestCase {
 		// supplier's payment record and showed it to nobody, least of all the
 		// supplier it was about. The order is asserted because the portal
 		// renders the collections in it.
+		// `mijnZaken` comes last: a company on eHerkenning follows its own
+		// cases beside procurement (portal-case-list-declarations D1).
 		$this->assertSame(
-			['tenders', 'contracts', 'invoices', 'performance', 'messages'],
+			['tenders', 'contracts', 'invoices', 'performance', 'messages', 'mijnZaken'],
 			$ids
 		);
 		foreach ($contribution['collections'] as $collection) {
-			$this->assertSame('supplierRef', $collection['scopeField']);
+			$expected = 'supplierRef';
+			if ($collection['id'] === 'mijnZaken') {
+				$expected = 'portalSubject';
+			}
+
+			$this->assertSame($expected, $collection['scopeField']);
 		}
 	}
 
@@ -475,7 +482,7 @@ class PortalContributionProviderTest extends TestCase {
 		// `vragenAanU` is what the organisation still needs from the resident
 		// (site-resident-portal-design D1), between their cases and their
 		// messages.
-		$this->assertSame(['mijnZaken', 'vragenAanU', 'berichten', 'verzoeken'], $ids);
+		$this->assertSame(['mijnZaken', 'vragenAanU', 'berichten', 'verzoeken', 'mijnVergunningen'], $ids);
 
 		// Three creates and the one update a resident makes on their own
 		// case (dossiq#3152). The two creates that name a case were deferred until Portaliq
@@ -483,7 +490,7 @@ class PortalContributionProviderTest extends TestCase {
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
 		$this->assertSame(
-			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'startWooVerzoek', 'startWooVerzoekAlgemeen', 'beantwoordVraag'],
+			['createKlacht', 'createBezwaar', 'replyToMessage', 'askAboutCase', 'amendCase', 'proposeCaseChange', 'startWooVerzoek', 'startWooVerzoekAlgemeen', 'changePermitPlate', 'beantwoordVraag'],
 			$actionIds
 		);
 	}
@@ -500,7 +507,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	public function testAResidentStartsAWooRequestFromTheirDossier(string $audience): void {
 		$actions = [];
@@ -640,7 +647,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
 	public function testTheResidentPagesDeclareTheBoardKeys(): void {
 		$pages = $this->provider->getContribution(['audience' => 'citizen'])['pages'];
@@ -1217,4 +1224,63 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertNotEmpty($props, "schema '{$slug}' must declare properties");
 		return $props;
 	}
+
+	/**
+	 * dossiq's receiveWooRequest() has opencatalogi's signature, so portaliq
+	 * swaps one app id. The expected signature is copied from opencatalogi's
+	 * class at 35999c29, lib/Portal/PortalContributionProvider.php line 122:
+	 * `public function receiveWooRequest(array $answers, string $receivedAt=''): array`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	public function testReceiveWooRequestHasOpencatalogisSignature(): void {
+		$method = new \ReflectionMethod(PortalContributionProvider::class, 'receiveWooRequest');
+		$parameters = $method->getParameters();
+
+		self::assertTrue($method->isPublic());
+		self::assertSame('array', (string)$method->getReturnType());
+		self::assertCount(2, $parameters);
+		self::assertSame('answers', $parameters[0]->getName());
+		self::assertSame('array', (string)$parameters[0]->getType());
+		self::assertFalse($parameters[0]->isOptional());
+		self::assertSame('receivedAt', $parameters[1]->getName());
+		self::assertSame('string', (string)$parameters[1]->getType());
+		self::assertSame('', $parameters[1]->getDefaultValue());
+	}//end testReceiveWooRequestHasOpencatalogisSignature()
+
+	/**
+	 * Built with `new`, as portaliq may, the provider answers unavailable with
+	 * opencatalogi's five keys, each a string, plus caseUrl.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey(): void {
+		$answer = $this->provider->receiveWooRequest(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00');
+
+		self::assertSame(['outcome', 'requestId', 'reference', 'dueAt', 'message', 'caseUrl'], array_keys($answer));
+		self::assertSame('unavailable', $answer['outcome']);
+		foreach ($answer as $value) {
+			self::assertIsString($value);
+		}
+	}//end testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey()
+
+	/**
+	 * With the intake wired, the request goes to receive() with origin portal-form.
+	 *
+	 * @return void
+	 */
+	public function testTheProviderHandsTheRequestToTheIntakeAsAPortalForm(): void {
+		$intake = $this->createMock(\OCA\Dossiq\Woo\WooRequestIntake::class);
+		$intake->expects(self::once())->method('receive')
+			->with(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00', 'portal-form')
+			->willReturn(['outcome' => 'armed', 'requestId' => 'c1', 'reference' => 'ZAAK-1', 'dueAt' => '2026-12-28', 'message' => '', 'caseUrl' => '']);
+
+		$provider = new PortalContributionProvider(wooRequests: $intake);
+		$answer = $provider->receiveWooRequest(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00');
+
+		self::assertSame('armed', $answer['outcome']);
+		self::assertSame('2026-12-28', $answer['dueAt']);
+	}//end testTheProviderHandsTheRequestToTheIntakeAsAPortalForm()
 }

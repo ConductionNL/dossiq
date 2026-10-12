@@ -5,8 +5,8 @@
  *
  * Append-only audit log of mandate uses. Once logged a row is immutable
  * at the application level (the OpenRegister CRUD itself does not enforce
- * this, but updates/deletes are blocked through the controller surface
- * by returning 403 — see {@see MandaatController}).
+ * this; no dossiq controller exposes an update or delete of these rows,
+ * see {@see MandaatMatrixController}).
  *
  * @category Service
  * @package  OCA\Dossiq\Service

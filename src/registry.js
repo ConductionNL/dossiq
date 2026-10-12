@@ -25,6 +25,9 @@
 //   this app's Vue 2.7 build) was removed by workflow-editor-integration.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The AI features a case type switched on, and the report group the case is in
+// (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
+import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
@@ -41,7 +44,7 @@ import CaseBannerStack from './components/case/CaseBannerStack.vue'
 // @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 // Who has held this case, and who is asking for it
 // (custody-and-handover-of-a-case, rows 2.37 and 2.38).
-// @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+// @spec openspec/specs/case-management/spec.md
 import CaseCustodyPanel from './components/case/CaseCustodyPanel.vue'
 // Follow a case you do not own, and see who else does (case-followers,
 // row 13.18), over OpenRegister's own subscription (`object-watchers`).
@@ -55,6 +58,9 @@ import CaseLocationMap from './components/case/CaseLocationMap.vue'
 // Who is on the case and in which role, over OpenRegister's party model.
 // @spec openspec/specs/roles-decisions/spec.md
 import CasePartiesWidget from './components/case/CasePartiesWidget.vue'
+// pipelinq on the case (parties-and-contact-moments-consume-pipelinq,
+// boards DqZaakContactmomenten and DqZaakPartijen).
+import CasePipelinqContactMoments from './components/case/CasePipelinqContactMoments.vue'
 // The case's own state on the case page is no longer a registry component at
 // all: the identity band is four configured library tiles (stat + countdown)
 // and the stepper is the library `stages` widget, which is also how the case
@@ -67,6 +73,7 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 import CasePlanPanel from './components/case/CasePlanPanel.vue'
 import CasePlanSociaalDomeinPanel from './components/case/CasePlanSociaalDomeinPanel.vue'
+import CaseProgrammeSection from './components/case/CaseProgrammeSection.vue'
 // What is new on this case since the handler last looked, and where.
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationPanel.vue'
@@ -78,6 +85,7 @@ import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // Collectives page, on the case itself.
 // @spec openspec/specs/case-knowledge-base/spec.md
 import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel.vue'
+import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
@@ -85,6 +93,9 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+// The party kinds a case type accepts, declared into pipelinq
+// (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
+import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
 import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
@@ -95,6 +106,9 @@ import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslatio
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
+// The items of a frozen file set with a per-item document compare, configured per case type (decision 182).
+// @spec openspec/specs/document-compare/spec.md
+import FileSetItems from './components/fileSet/FileSetItems.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
@@ -113,6 +127,7 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
+import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
@@ -144,10 +159,15 @@ import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
+import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
+import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+import RemedyLodgeDialog from './dialogs/RemedyLodgeDialog.vue'
 import RemindDialog from './dialogs/RemindDialog.vue'
+import WooSearchPlanDialog from './dialogs/WooSearchPlanDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -239,7 +259,9 @@ import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
+import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
+import WooReportsView from './views/woo/WooReportsView.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 // Ask whether this case already exists, before it does.
@@ -366,7 +388,7 @@ const registry = {
 	},
 
 	// --- The filters a case type's own fields offer. ---
-	// @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+	// @spec openspec/specs/case-search-via-or-unified-search/spec.md
 	CaseTypeFieldFilters: {
 		kind: 'page',
 		component: CaseTypeFieldFilters,
@@ -472,7 +494,7 @@ const registry = {
 		_note: "CaseTypeDetail: one chip per language the register declares, and an editor per language for the labels OpenRegister holds as translatable. It counts a stale label as missing, which OpenRegister's own completeness does not: getCompletenessByObject() counts every non-empty row and never reads its status. It writes the WHOLE language map and sends no X-Translation-Target-Language: normalizeTranslationsForSave() refuses a language keyed body that arrives with that header and keeps one that arrives without it.",
 	},
 	// --- What a case type opens to its applicant (portal-citizen-writes-on-the-case D3). ---
-	// @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	// @spec openspec/specs/portal-contribution/spec.md
 	CaseTypePortalWidget: {
 		// @custom-widget-ratchet exclude every picker offers the case type's own statuses, inherited ones included, which only /api/case-types/{id}/blueprint answers; a declared form would offer a free text field for a status uuid
 		kind: 'widget',
@@ -530,6 +552,39 @@ const registry = {
 		_note: 'CaseDetail Actions menu: move this case to a DIFFERENT case type, which the version move beside it cannot do. It is a modal and not a confirm gate because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for rather than derived, and so is every property the target requires in that status and the case does not carry. The dialog derives no verdict: canRebind, the missing names and every refusal come from the server, and the group check lives in the service rather than in this button.',
 	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	// @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
+	LogContactDialog: {
+		kind: 'modal',
+		component: LogContactDialog,
+		propsSchema: {},
+		_note: "CaseDetail `log-contact` header action, board DqZaakContactmomenten. Replaces the open-form that saved straight to OpenRegister's object API: that path ran no dossiq service, so the moment never reached pipelinq's customer record and a refusal could not be shown. This posts to PipelinqCaseController#logContactMoment, where ContactMomentService writes the dossiq record first and appends it to pipelinq, and the answer carries pipelinq's refusal (with the indicator) back. A refusal keeps the dialog open on a summary that says both: the moment is on the case, and pipelinq did not take it. caseId arrives as the unresolved `@objectId` token, so the route answers.",
+	},
+
+	// @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
+	CaseTypePartyKindsWidget: {
+		// @custom-widget-ratchet exclude the vocabulary is pipelinq's and the write is a declaration into pipelinq's register (`dossiq:case:<type>`, patched, never replaced), which only PipelinqCaseController reaches; a declared form over a dossiq schema has nowhere to write it
+		kind: 'widget',
+		component: CaseTypePartyKindsWidget,
+		...PANEL_WIDGET_META,
+		_note: "CaseTypeDetail: the Partijsoorten section. Lists pipelinq's kinds with the accepted ones first in declared order, moves them up and down, and saves the declaration to pipelinq. Without pipelinq it lists dossiq's own three read only and says nothing can be saved.",
+	},
+
+	'case-pipelinq-contact-moments': {
+		// @custom-widget-ratchet exclude a pipelinq contact moment is not a dossiq OBJECT: the rows come from pipelinq's leaf through PipelinqCaseController, by membership of the case set, with a shared marker that counts cases the reader may not open; and filing onto or off a case is pipelinq's act, not an object write
+		kind: 'widget',
+		component: CasePipelinqContactMoments,
+		...PANEL_WIDGET_META,
+		_note: "CaseDetail Communication tab, the Customer record section (board DqZaakContactmomenten): pipelinq's contact moments by membership, the shared line, and the two filing acts. Says in words when pipelinq is absent, which is not the same as no moments.",
+	},
+
+	'case-programme': {
+		// @custom-widget-ratchet exclude the programme and its work items are pipelinq's objects, found by a `dossiq:case` reference only pipelinq's ProgrammePortfolioService resolves, and the progress figure needs the mode that produced it, which no declared widget renders
+		kind: 'widget',
+		component: CaseProgrammeSection,
+		...PANEL_WIDGET_META,
+		_note: "CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq's refusal naming the holder.",
+	},
+
 	CaseHandoverDialog: {
 		kind: 'modal',
 		component: CaseHandoverDialog,
@@ -552,6 +607,46 @@ const registry = {
 		component: CaseMergeDialog,
 		propsSchema: {},
 		_note: "Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server's and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out. WHY THE ACTION IS HIDDEN ON A CLOSED CASE, moved here from the manifest entry: a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog; hiding them in the header too would leave a handler wondering why an act they were told about is not there. The manifest entry carries no `_note` because `$defs/action` sets `additionalProperties: false`, which is the same reason CasePlanFollowUpDialog above records.",
+	},
+
+	// @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	GatherDocumentsDialog: {
+		kind: 'modal',
+		component: GatherDocumentsDialog,
+		propsSchema: {},
+		_note: "Gather documents on a Woo request case (woo-requests-gather-documents-from-sources). Searches files and other cases through Nextcloud unified search with the handler's own access, and integriq's Microsoft 365 source through dossiq. Which provider and filters each platform source uses is the answer of GET /woo/sources, so the dialog guesses nothing. A source that cannot answer is listed with its reason, never as an empty result. Each pick is added or refused on its own; the refused ones stay on screen with the server's sentence. The header action shows on the seeded Woo request case type only (WooRequestIntake::CASE_TYPE_ID) and not on an archived case; the manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+	DocumentAssessDialog: {
+		kind: 'modal',
+		component: DocumentAssessDialog,
+		propsSchema: {},
+		_note: "Assess documents from the case page (document-assessment REQ-DAS-002), built to the Wat nog openstaat table of board DqWooReview. Generic (decision 182): the header action that opens it carries the configuration in its props, namely where the outstanding list is read, where the assessment is posted, the classifications and which of them need a ground, the schema the grounds are read from, and the names of the posted fields. The Woo request case type configures it as `document-assess`; no code names the procedure. The selection is posted once. A refusal keeps the dialog open with the server's sentence beside the document, and the list is read again, so nothing reads as saved that the server did not store. The manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+	AssessmentDecisionDialog: {
+		kind: 'modal',
+		component: AssessmentDecisionDialog,
+		propsSchema: {},
+		_note: 'Decide a case from the assessments of its documents (document-assessment REQ-DAS-003). Generic (decision 182): the header action carries the title, the outstanding route, the schema the assessments are counted from, the classifications and the decision route in its props. The Woo request case type configures it as `assessment-decide`. It shows the number of documents per classification, names every document that still waits and offers nothing to save while one does, or while the outstanding list cannot be read. On success it asks the page to refresh, because what the page offers next follows from what the server wrote: the Woo decision route sets wooPublicationStatus to ready, which hides this action and shows Publish (Woo). The manifest carries no _note because $defs/action refuses one.',
+	},
+
+	// @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
+	WooSearchPlanDialog: {
+		kind: 'modal',
+		component: WooSearchPlanDialog,
+		propsSchema: {},
+		_note: "The search plan of a Woo request (woo-request-corpus-collection REQ-WRC-001): whose files, which systems, the period and the terms, recorded before collection. Gather documents refuses to search or add until it is recorded. Recording again changes the same plan object, so the history under the form is that object's OpenRegister audit trail. Shown on the seeded Woo request case type only; the manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-from-the-case-page-req-rml-003
+	RemedyLodgeDialog: {
+		kind: 'modal',
+		component: RemedyLodgeDialog,
+		propsSchema: {},
+		_note: "Lodge a remedy against the decision of a case, from the case page (remedy-lodging REQ-RML-003). Generic (decision 182): the case type's remedy declaration says which case type a remedy opens and within how many days, and the server reads it; the header action carries the title, the post route, the channels and the page that opens the new case in its props. The Woo request case type configures it as `remedy-lodge` with the title Register an objection. Whether the case has a decision is the server's answer, shown as its sentence: the case carries no field a local visibleWhen could read for it. A late lodging is registered and the dialog says so before the handler moves on. The manifest carries no _note because $defs/action refuses one.",
 	},
 
 	// @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
@@ -608,12 +703,10 @@ const registry = {
 	},
 
 	// --- The adaptive case plan, over OpenRegister's case layer
-	//     (retire-cmmn-caseplanstate, group 1). ---
+	//     (retire-cmmn-caseplanstate). ---
 	//
-	// Same widget slot as the retiring CMMN panel, new data source: the plan is
-	// rows in `openregister_case_items` read over /api/cases, not a blob this
-	// app decodes. The local engine and its `casePlanState` are untouched here;
-	// they retire in groups 3 to 5, gated on a clean drain report.
+	// The plan is rows in `openregister_case_items` read over /api/cases.
+	// OpenRegister is the only runtime; dossiq holds no case engine.
 	// @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 	CasePlanPanel: {
 		// @custom-widget-ratchet exclude the adaptive plan is a TREE of plan items with a six-state lifecycle and per-item transition actions, living in OpenRegister's case layer rather than in the case object; no declarative widget reads /api/cases, and an object-list over the case would render neither the nesting nor the transitions. Deleted the day the manifest vocabulary has a case-plan widget type
@@ -642,13 +735,21 @@ const registry = {
 	// nothing else. A page `slots` map never reaches a widget inside a tab, and
 	// a widget that shipped as `type: "custom"` would draw an empty panel with
 	// no warning at all.
-	// @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	// @spec openspec/specs/case-management/spec.md
 	'case-custody-pane': {
 		// @custom-widget-ratchet exclude the panel joins TWO surfaces that no declarative widget spans: the chain of holdings, whose rows are only meaningful as a JOIN between one holding's end and the next one's start, and the takeover requests beside it, whose answer is a POST carrying a required reason. A data widget builds its fields from one schema's properties and would draw each holding as a row of values with no way to show the join. Deleted the day the manifest vocabulary has a chain widget over a dated record
 		kind: 'widget',
 		component: CaseCustodyPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Custody tab: every period this case was held, with both ends of each holding, and the takeover requests beside them with accept and refuse. Fails CLOSED on a refusal: a reader who may not open the case is told so, never shown an empty chain, because "this case never changed hands" and "you may not see this" look identical from an empty list. The panel writes no holding: an accept answers a REQUEST and the move opens the holding server-side.',
+	},
+
+	'file-set-items': {
+		// @custom-widget-ratchet exclude the items are an array INSIDE one object (a frozen file set), not OpenRegister objects of their own, so an object-list or object-table has nothing to query; and the per-item Compare opens a dialog that mounts filinq's split view, which no declarative row action does. Deleted the day the library renders an embedded array with row actions
+		kind: 'widget',
+		component: FileSetItems,
+		...PANEL_WIDGET_META,
+		_note: "Generic (decision 182): the items of a frozen file set with file name, classification and SHA-256, and Compare on an item whose file that went out is not its original, opening DocumentCompareDialog over filinq's OCA.Filinq.mountCompare. The case type configures it in the widget content (filesUrl, classificationLabels); the Woo delivered set page is the first user. Without filinq the dialog says so and offers both files as links.",
 	},
 
 	'case-archival-pane': {
@@ -747,7 +848,7 @@ const registry = {
 	},
 
 	// --- Message the applicant, the CaseDetail header action (communication-portal-conversation-on-the-case). ---
-	// @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+	// @spec openspec/specs/portal-contribution/spec.md
 	PortalMessageDialog: {
 		kind: 'modal',
 		component: PortalMessageDialog,
@@ -898,6 +999,16 @@ const registry = {
 		component: MyWorkWidget,
 		...DASHBOARD_TILE_META,
 		_note: 'Dashboard My work tile: your open tasks from OpenRegister\'s task engine, soonest due first, with a days-left column and a red row once a deadline has passed. INTERIM. It is a component rather than a built-in `object-table` only because nextcloud-vue has no task source for widgets: 2.46.0 gives an INDEX page `entitySource: "tasks"` and gives a widget nothing, so the manifest cannot name this list. TARGET: back to a generic widget the day the library grows that source, at which point the `content` block the manifest still carries is what it goes back to reading and this entry is deleted. The e2e asserts on the tile and its rows rather than on this component, so it survives the swap back.',
+	},
+
+	// --- My work, First today: ONE case, with its acts (DqMijnWerk). ---
+	// @spec openspec/specs/dashboard/spec.md
+	FirstTodayWidget: {
+		// @custom-widget-ratchet exclude the library banner counts cases ("{value} of your cases") and cannot name one, and the board names the single case furthest past its deadline with its acts; there is no widget that reads one object into a banner, so this wraps the library's own attention-card classes around the case it finds
+		kind: 'widget',
+		component: FirstTodayWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'My work, First today: the one open case of the reader that is furthest past its deadline (or ends today), named in the library attention card with three acts (all cases past their deadline, the board, open the case). INTERIM: it is a component only because the library banner has no per-object source and takes two actions at most; the board shows four, and Suspend term waits on a way to open the lifecycle dialog from outside the case page.',
 	},
 
 	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---
@@ -1090,6 +1201,15 @@ const registry = {
 		_note: "CaseDetail, Jeugdwet: the family plan, its goals and the interventions under them. NOT the adaptive case plan beside it: CasePlanPanel renders OpenRegister's case layer, the stages and milestones of any case, and this is what this household agreed to work on, who is doing what about it and by when. Two things called a plan. Every line carries something a review can decide about: a goal says what would count as met, an intervention says who carries it out and by when, so it can be late. The register held both as plain strings until the-social-domain-plan-and-its-grounds, which is why this panel exists at all. It derives no verdict: overdue and dueForReview come from the server, so the panel and the plan endpoint cannot disagree about which household is being worked to a stale plan. Interventions that name no goal are shown separately rather than hidden, because activity nobody can connect to a goal is what a reviewer should be looking at.",
 	},
 
+	// @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
+	'document-review': {
+		// @custom-widget-ratchet exclude document review reads five schemas together (documentReview, reviewBatch, stoppingRule, recallSample and the case type's documentReview block) through dossiq's review routes, which compute the outstanding list, the unseen required pages and the recall estimate on the server. No declarative widget joins them or computes those. Deleted the day a widget type can render a server-computed summary with child collections and actions
+		kind: 'widget',
+		component: DocumentReviewPanel,
+		...PANEL_WIDGET_META,
+		_note: 'CaseDetail, Review tab (board DqWooReview): relevance apart from the verdict, the stopping rule and the recall samples, the batches and their reviewers, and what is still open. Generic per decision 182: any case type that sets documentReview.enabled gets it; on any other case it says in one sentence that this case type does not review its documents. It derives no verdict: counts, unseen pages and estimates come from the server.',
+	},
+
 	'case-unread': {
 		// @custom-widget-ratchet exclude the per-user read state is not a field of the case and no declarative widget reads it: `@self.unreadCounts` is attached on the render path, the count per panel comes from OpenRegister's read-state endpoint, and the gesture that clears one is a PUT carrying a sub-resource. Deleted the day CnTabsWidget takes a badge per tab and emits its tab change, which is where this belongs (nextcloud-vue, clusters 58 and 15)
 		kind: 'widget',
@@ -1204,6 +1324,16 @@ const registry = {
 		kind: 'page',
 		component: CaseTermsTab,
 		_note: "The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server's: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.",
+	},
+	// --- AI features on the case (ai-features-on-the-case-consume-hermiq). ---
+	// A `component:` tab for the same reason CaseTermsTab is: no CnObjectSidebar
+	// built-in can read the case type's declaration, ask hermiq where a feature
+	// runs, run one on a document, or read the report group.
+	// @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md
+	CaseAiFeaturesPanel: {
+		kind: 'page',
+		component: CaseAiFeaturesPanel,
+		_note: "Board DqZaakAssistent, the assistant panel. The AI features the case type places on the case surface, each with the provider and residency hermiq answers (unavailable, never local, when hermiq does not offer it); a run on a chosen case document in the handler's own session through caseAiFeatureGateway, a refusal shown naming the feature, the reason and hermiq's gate; and the report group the case was placed in on creation, read and never placed again, with the count and the near-duplicates hermiq was unsure about.",
 	},
 	CaseSharingTab: {
 		kind: 'page',
@@ -1322,6 +1452,11 @@ const registry = {
 		kind: 'page',
 		component: MailIntakeLogView,
 		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
+	},
+	WooReportsView: {
+		kind: 'page',
+		component: WooReportsView,
+		_note: 'Named by src/manifest.d/86-woo-reports.json. A custom page because the reader-group check and the audit record of every read live in WooReportController.',
 	},
 	StoreGallery: {
 		kind: 'page',

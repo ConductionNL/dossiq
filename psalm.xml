@@ -16,6 +16,10 @@
     </projectFiles>
     <stubs>
         <file name="vendor/nextcloud/ocp/OCP/Capabilities/ICapability.php" preloadClasses="true" />
+        <!-- OpenRegister's ADR-063 MCP contracts (hermiq-ai-tooling): the
+             #[McpTool] attribute and IMcpScannableServices, declaration-only. -->
+        <file name="tests/Stubs/Mcp/Attribute/McpTool.php" />
+        <file name="tests/Stubs/Mcp/IMcpScannableServices.php" />
         <!-- Integriq's ADR-041 delivery-seam contract (optional app, resolved
              by FQN string at runtime). Declaration-only stubs mirroring the
              real constructors verbatim, same discipline as the Decidiq event
@@ -26,6 +30,15 @@
         <file name="tests/Stubs/Integriq/Event/DeliveryConcludedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/ConnectionStatusReportedEvent.php" />
         <file name="tests/Stubs/Integriq/Event/ConnectionRefreshRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsCaseRequestedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsCaseConcludedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufZdsConfirmationReceivedEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufProviderQueryEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufCaseQueryEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufPersonQueryEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufCaseMutationEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufDocumentMutationEvent.php" />
+        <file name="tests/Stubs/Integriq/Event/StufProviderRequestReceivedEvent.php" />
         <!-- OpenRegister's people-on-objects event contract. Same
              declaration-only discipline as the Integriq stubs above:
              PersonLinkListener is registered against these classes and
@@ -36,6 +49,9 @@
         <!-- case-merge: OpenRegister's merge event, which CaseMergeRegistrar
              registers the follower against by `::class`. -->
         <file name="tests/Stubs/OpenRegister/Event/ObjectsMergedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php" />
+        <file name="tests/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php" />
         <!-- flow-nodes-to-their-owners: the sent-mail and generated-document
              events dossiq files on the case. Verbatim copies of the real classes. -->
         <file name="tests/Stubs/OpenRegister/Event/FlowEmailSentEvent.php" />
@@ -120,7 +136,7 @@
                 <referencedClass name="OCA\OpenRegister\Db\FlowTimer"/>
                 <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
                 <!-- OpenRegister's two validation exceptions. Caught BY TYPE in
-                     InspectionChecklistController and BelplanController so a payload
+                     TaskChecklistController, ChecklistTemplateController and BelplanController so a payload
                      the schema refuses answers 400 instead of falling through to the
                      500 arm. Same runtime-resolved, optional-app situation as
                      LockedException above: PHP matches a catch type without
@@ -133,7 +149,6 @@
                 <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
                 <referencedClass name="OCA\OpenRegister\Service\FileService"/>
                 <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
-                <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
                 <!-- OpenRegister's Flow node contract (ADR-065: OR is the only
                      flow engine). Same dynamic-load situation as the entries
                      above: dossiq contributes nodes into OR's registry and

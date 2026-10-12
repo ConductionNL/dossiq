@@ -65,6 +65,7 @@
       "extensionCapacity": 14,
       "countExtensions": 1,
       "pauseExtensionDuration": [14],
+      "tellHandlerAt": [7, 0],
       "deviatingPenaltyPaymentRegime": {
         "dailyTariff": 1500,
         "plafond": 50000,
@@ -98,6 +99,24 @@
       "standardDurationWeeks": 6,
       "countingMode": "calendarDays",
       "extensionCapacity": 28,
+      "countExtensions": 1,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-bezwaar",
+      "caseType": "bezwaar",
+      "kind": "statutory",
+      "legalBasis": "Awb 7:10 lid 1 en 3",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 7:10 lid 1 (zes weken) en lid 3 (verdaging met ten hoogste zes weken)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk7_Titeldeel7.2_Afdeling7.3_Artikel7:10"
+        }
+      ],
+      "standardDurationDays": 42,
+      "standardDurationWeeks": 6,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 42,
       "countExtensions": 1,
       "validFrom": "2026-01-01"
     },
@@ -168,8 +187,87 @@
       "validFrom": "2026-01-01"
     },
     {
+      "id": "td-subsidieaanvraag",
+      "caseType": "subsidieaanvraag",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-innovatiefonds-2026",
+      "caseType": "zaaktype-innovatiefonds-2026",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
       "id": "td-melding-openbare-ruimte",
       "caseType": "melding-openbare-ruimte",
+      "kind": "planned",
+      "legalBasis": "Servicenorm, geen wettelijke beslistermijn",
+      "legalBasisSources": [],
+      "standardDurationDays": 14,
+      "standardDurationWeeks": 2,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-parkeervergunning-bewoners",
+      "caseType": "parkeervergunning-bewoners",
+      "kind": "statutory",
+      "legalBasis": "Awb 4:13 lid 2",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 4:13 lid 1 en 2 (redelijke termijn, uiterlijk acht weken, als geen wettelijk voorschrift een termijn stelt)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:13"
+        },
+        {
+          "article": "Awb art. 4:14 lid 3 (mededeling met een redelijke latere termijn)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk4_Titeldeel4.1_Afdeling4.1.3_Paragraaf4.1.3.1_Artikel4:14"
+        }
+      ],
+      "standardDurationDays": 56,
+      "standardDurationWeeks": 8,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 0,
+      "countExtensions": 0,
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-kenteken-wijzigen-parkeervergunning",
+      "caseType": "kenteken-wijzigen-parkeervergunning",
       "kind": "planned",
       "legalBasis": "Servicenorm, geen wettelijke beslistermijn",
       "legalBasisSources": [],

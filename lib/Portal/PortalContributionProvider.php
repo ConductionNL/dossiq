@@ -64,6 +64,8 @@ namespace OCA\Dossiq\Portal;
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+use OCA\Dossiq\Woo\WooReceivedAnswers;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use Throwable;
 
 /**
@@ -322,6 +324,22 @@ class PortalContributionProvider {
 	];
 
 	/**
+	 * The group a company's pages sit in (site-business-and-authorisation D1).
+	 */
+	public const BUSINESS_GROUP = 'Uw bedrijf';
+
+	/**
+	 * The resident's page labels, with the running cases named as the company's.
+	 */
+	private const BUSINESS_PAGE_LABELS = [
+		'overzicht' => 'Overzicht',
+		'mijnZaken' => 'Uw zaak',
+		'berichten' => 'Berichten',
+		'verzoeken' => 'Verzoeken van uw bedrijf',
+		'lopendeZaken' => 'Lopende zaken van uw bedrijf',
+	];
+
+	/**
 	 * Builds the declared pages (no dependencies, so `new` still works).
 	 *
 	 * @var PortalPages
@@ -352,6 +370,7 @@ class PortalContributionProvider {
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
+	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
 	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
 	 *                                                   null, which leaves those actions out.
 	 */
@@ -361,10 +380,38 @@ class PortalContributionProvider {
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
+		private readonly ?WooRequestIntake $wooRequests = null,
 		private readonly ?IntakeCaseTypes $caseTypes = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
+
+	/**
+	 * Receive a Woo request a resident sent through a portal form.
+	 *
+	 * The same name, arguments and first five answer keys as opencatalogi's
+	 * `PortalContributionProvider::receiveWooRequest()`, so portaliq's form
+	 * delivery swaps one app id to reach dossiq (REQ-WTO-001). The form
+	 * creates the Woo case directly; nothing is queued in between
+	 * (decision 179).
+	 *
+	 * @param array<string, mixed> $answers    The resident's answers, in opencatalogi's keys.
+	 * @param string               $receivedAt When the resident sent it (ISO 8601).
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	public function receiveWooRequest(array $answers, string $receivedAt = ''): array {
+		if ($this->wooRequests === null) {
+			return array_merge(
+				WooReceivedAnswers::EMPTY_ANSWER,
+				['outcome' => 'unavailable', 'message' => 'The Woo request intake is not available.']
+			);
+		}
+
+		return $this->wooRequests->receive(answers: $answers, receivedAt: $receivedAt, origin: 'portal-form');
+	}//end receiveWooRequest()
 
 	/**
 	 * The identity an inbox message goes to in the resident's government
@@ -378,7 +425,7 @@ class PortalContributionProvider {
 	 *
 	 * @return string|null The applicant's BSN, or null.
 	 *
-	 * @spec openspec/changes/portal-message-box-recipient/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function messageBoxRecipient(string $messageId): ?string {
 		if ($this->messageBox === null) {
@@ -400,7 +447,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, mixed>> `{id, title, kind, date, file, mimeType?, size?}` per document.
 	 *
-	 * @spec openspec/changes/portal-case-documents/tasks.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseDocuments(string $caseId): array {
 		if ($this->documents === null) {
@@ -422,7 +469,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, mixed>> The messages, or [] without a reader.
 	 *
-	 * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#4-ask-from-the-case
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function caseMessages(string $caseId): array {
 		if ($this->messages === null) {
@@ -442,7 +489,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, string>> The steps, or [] when they cannot be read.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	public function caseSteps(string $caseId): array {
 		if ($this->steps === null) {
@@ -506,7 +553,7 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/portal-case-list-declarations/tasks.md#1.1
 	 */
 	public function getAudiences(): array {
-		return ['supplier', 'citizen', 'client', 'inspector'];
+		return ['supplier', 'citizen', 'client', 'business', 'inspector'];
 	}//end getAudiences()
 
 	/**
@@ -557,6 +604,14 @@ class PortalContributionProvider {
 
 		if ($audience === 'citizen' || $audience === 'client') {
 			return $this->citizenContribution();
+		}
+
+		// A COMPANY ON A MUNICIPAL PORTAL: the resident's manifest, worded for
+		// a company (site-business-and-authorisation D1). A portal that keeps
+		// portaliq's eHerkenning preset gets `supplier` instead, with the
+		// procurement pages and the case collection beside them.
+		if ($audience === 'business') {
+			return $this->citizenContribution(group: self::BUSINESS_GROUP, labels: self::BUSINESS_PAGE_LABELS);
 		}
 
 		if ($audience === 'inspector') {
@@ -645,6 +700,12 @@ class PortalContributionProvider {
 			'actions' => [],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
+		// A COMPANY THAT SIGNS IN WITH eHERKENNING GETS `supplier` from
+		// portaliq's preset, and follows its own permit case there too. The
+		// case collection is the resident's declaration, scoped by the same
+		// `portalSubject`, so a company reads only what it filed itself
+		// (portal-case-list-declarations D1).
+		$contribution['collections'][] = (new CitizenManifest())->caseCollection();
 		$contribution['pages'] = $this->pages->forCollections(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
 
 		return $contribution;
@@ -714,18 +775,22 @@ class PortalContributionProvider {
 	 * today. Until it does, a second complaint is filed and found rather than
 	 * refused, which is the `onCreate: warn` the schema declares.
 	 *
+	 * @param string                $group  The group every page sits in.
+	 * @param array<string, string> $labels The label per page id.
+	 *
 	 * @return array<string, mixed> The citizen manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
-	private function citizenContribution(): array {
+	private function citizenContribution(string $group=self::CITIZEN_GROUP, array $labels=self::CITIZEN_PAGE_LABELS): array {
 		$manifest = new CitizenManifest(caseTypes: $this->filingCaseTypes());
 		$collections = $manifest->collections();
 		$actions = $manifest->actions();
 
 		return [
-			'label' => self::CITIZEN_GROUP,
+			'label' => $group,
 			'collections' => $collections,
 			'actions' => $actions,
 			// THE FOUR PAGES OF THE DESIGN, not one page per collection: an
@@ -737,8 +802,8 @@ class PortalContributionProvider {
 			'pages' => $this->pages->forResident(
 				collections: $collections,
 				actions: $actions,
-				group: self::CITIZEN_GROUP,
-				labels: self::CITIZEN_PAGE_LABELS
+				group: $group,
+				labels: $labels
 			),
 			// A declared rule key, not a change rule: dossiq writes the
 			// message itself (WooDecisionNotice), so portaliq sends its
@@ -871,12 +936,6 @@ class PortalContributionProvider {
 			return [];
 		}
 
-		return array_filter(
-			[
-				'createBezwaar' => $this->caseTypes->caseTypeFor(setting: IntakeCaseTypes::OBJECTION),
-				'createKlacht' => $this->caseTypes->caseTypeFor(setting: IntakeCaseTypes::COMPLAINT),
-			],
-			static fn (string $caseType): bool => $caseType !== ''
-		);
+		return $this->caseTypes->caseTypes();
 	}//end filingCaseTypes()
 }//end class

@@ -252,10 +252,10 @@ class PortalCasePageTest extends TestCase {
 	 */
 	private function provider(): PortalContributionProvider {
 		$caseTypes = $this->createMock(IntakeCaseTypes::class);
-		$caseTypes->method('caseTypeFor')->willReturnMap(
+		$caseTypes->method('caseTypes')->willReturn(
 			[
-				[IntakeCaseTypes::OBJECTION, 'bbbbbbbb-0000-4000-a000-000000000001'],
-				[IntakeCaseTypes::COMPLAINT, 'kkkkkkkk-0000-4000-a000-000000000002'],
+				'createBezwaar' => 'bbbbbbbb-0000-4000-a000-000000000001',
+				'createKlacht' => 'kkkkkkkk-0000-4000-a000-000000000002',
 			]
 		);
 		return new PortalContributionProvider(caseTypes: $caseTypes);

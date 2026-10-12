@@ -13,7 +13,7 @@
  * so a handler's message must carry the case's `portalSubject` there, never a
  * user id.
  *
- * @spec openspec/changes/communication-portal-conversation-on-the-case/tasks.md#5-the-handler-side
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

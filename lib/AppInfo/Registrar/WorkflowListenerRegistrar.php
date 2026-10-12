@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -143,9 +144,17 @@ class WorkflowListenerRegistrar {
 			listener: CustodyCaseCreatedListener::class
 		);
 
-		// When the request arrived, and when its clock starts, is written
-		// INSIDE the save that receives the case: IntakeListenerRegistrar
-		// registers IntakeTermStartListener on the pre-persist events.
+		// When the request arrived, and when its clock starts. Written once at
+		// creation and never recomputed: the stamp is a record of what the
+		// citizen was told, not a derivation of what today's calendar says.
+		// It also runs before the case is stored, and in the save that sends a
+		// draft, registered with the intake listeners
+		// (IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY). This registration
+		// is the fallback for the bulk save, which sends no creating event.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: IntakeTermStartListener::class
+		);
 
 		// A phase carries its own clock, and the clock moves when the case
 		// does. The listener reconciles rather than compares, so it needs no
@@ -177,6 +186,7 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: AcknowledgementOnCreateListener::class
 		);
+		// A draft owes nobody a confirmation; the moment it is sent does.
 		$context->registerEventListener(
 			event: ReceiptMoment::ACTIVATED_EVENT,
 			listener: AcknowledgementOnCreateListener::class

@@ -46,8 +46,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the
- * threshold, and four of the thirteen are the per-domain registrars this
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Fourteen, two over the
+ * threshold, and five of the fourteen are the per-domain registrars this
  * class delegates to rather than dependencies it entangles itself with. The
  * one that crossed the line is `ContactListenerRegistrar`, and it was made a
  * registrar of its own precisely so the binding it carries would not be a
@@ -84,6 +84,10 @@ class ObjectListenerRegistrar {
 		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);
+		(new CaseAccessListenerRegistrar())->register(context: $context);
+		(new WooListenerRegistrar())->register(context: $context);
+		(new CaseLinkListenerRegistrar())->register(context: $context);
+		(new OnboardingListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**

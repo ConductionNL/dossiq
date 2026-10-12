@@ -13,9 +13,11 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
+import { translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
+import { formatDuration } from '../utils/durationHelpers.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
@@ -126,6 +128,38 @@ export default {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	caseTitle: (value) => lookupRelatedName('case', value),
+
+	/**
+	 * An ISO 8601 duration as words ("P56D" reads "8 weeks"), and the value
+	 * itself when it is not one.
+	 *
+	 * @param {string} value The ISO duration.
+	 * @return {string} The words, or the value unchanged.
+	 */
+	isoDuration: (value) => formatDuration(value),
+
+	/**
+	 * A version number as words ("1" reads "Version 1"). A manifest cannot
+	 * carry the phrase itself: the library's conditionalPhrase takes it
+	 * pre-translated, and a manifest string is not translated.
+	 *
+	 * @param {number|string|null|undefined} value The version number.
+	 * @return {string} The phrase, or '' when there is no version.
+	 */
+	versionLabel: (value) =>
+		value === null || value === undefined || value === ''
+			? ''
+			: t('dossiq', 'Version {n}', { n: value }),
+
+	/**
+	 * Whether a record is still a draft, as the word a status pill shows.
+	 * A record with no `isDraft` is not a draft.
+	 *
+	 * @param {boolean|null|undefined} value The `isDraft` flag.
+	 * @return {string} Draft or Published.
+	 */
+	draftState: (value) =>
+		value === true ? t('dossiq', 'Draft') : t('dossiq', 'Published'),
 
 	/**
 	 * Human label for a case's `status` UUID reference (statusType).

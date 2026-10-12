@@ -40,6 +40,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Listener\BeschikkingImmutabilityListener;
 use OCA\Dossiq\Listener\BewijsstukImmutabilityListener;
 use OCA\Dossiq\Listener\ChecklistRunImmutabilityListener;
+use OCA\Dossiq\Listener\WooDeliveredSetGuard;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -62,6 +63,19 @@ class ImmutabilityListenerRegistrar {
 	 * @spec openspec/specs/subsidieverlening-keten/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
+		// Frozen record (capability C04, decision 182): the generic freeze a
+		// package switches on per record kind through `frozen_records`. With
+		// nothing configured it guards nothing. Written fully qualified and
+		// first, so it does not collide with the build lanes' open additions.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: \OCA\Dossiq\Listener\FrozenRecordListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: \OCA\Dossiq\Listener\FrozenRecordListener::class
+		);
+
 		// REQ-SUB-007: a bewijsstuk linked to a vaststelling is immutable.
 		// This is the production call site for
 		// BewijsstukService::assertMutable(), which previously had none.
@@ -93,6 +107,17 @@ class ImmutabilityListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectDeletingEvent::class,
 			listener: BeschikkingImmutabilityListener::class
+		);
+
+		// Woo delivered sets (REQ-WDS-002): a frozen delivered set
+		// and the assessments it names refuse change, through every writer.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: WooDeliveredSetGuard::class
+		);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: WooDeliveredSetGuard::class
 		);
 	}//end register()
 }//end class

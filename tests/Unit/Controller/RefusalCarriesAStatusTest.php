@@ -72,6 +72,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Middleware\MandateValidationMiddleware
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses   \OCA\Dossiq\Middleware\MandateDeniedException
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class RefusalCarriesAStatusTest extends TestCase {
 	/**
@@ -330,6 +331,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 			decisionService: $service,
 			userSession: $this->session(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			accessGuard: $this->createMock(originalClassName: \OCA\Dossiq\Service\CaseAccessGuard::class),
 		);
 	}//end decisionController()
 
@@ -386,7 +388,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 			context: $this->createMock(originalClassName: TenantContext::class),
 			authService: $auth,
 			tenantService: $this->createMock(originalClassName: TenantService::class),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			auditTrail: $this->createMock(originalClassName: \OCA\Dossiq\Service\TenantAuditTrailService::class),
 		);
 	}//end mandateMiddleware()
 

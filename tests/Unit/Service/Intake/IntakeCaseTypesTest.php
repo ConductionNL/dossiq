@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Intake;
 
 use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -87,33 +88,72 @@ class IntakeCaseTypesTest extends TestCase {
 	}//end resolver()
 
 	/**
-	 * Unset, a setting falls back to the shipped case type, found by identifier, once per request.
+	 * Unset, a path opens the shipped case type, found by identifier, once per request.
 	 *
 	 * @return void
 	 */
 	public function testTheShippedCaseTypeIsTheDefault(): void {
-		$resolver = $this->resolver(settings: [], byIdentity: ['bezwaar-behandeling' => 'aaaaaaaa-1111-4111-a111-111111111111']);
+		$resolver = $this->resolver(settings: [], byIdentity: ['bezwaar' => 'aaaaaaaa-1111-4111-a111-111111111111']);
 
-		$this->assertSame('aaaaaaaa-1111-4111-a111-111111111111', $resolver->caseTypeFor(setting: IntakeCaseTypes::OBJECTION));
-		$this->assertSame('aaaaaaaa-1111-4111-a111-111111111111', $resolver->caseTypeFor(setting: IntakeCaseTypes::OBJECTION));
+		$this->assertSame('aaaaaaaa-1111-4111-a111-111111111111', $resolver->caseTypeFor(path: 'createBezwaar'));
+		$this->assertSame('aaaaaaaa-1111-4111-a111-111111111111', $resolver->caseTypeFor(path: 'createBezwaar'));
 		$this->assertCount(1, $this->queries);
 		$this->assertSame(['register' => 3, 'schema' => 7], $this->queries[0]['@self']);
 	}//end testTheShippedCaseTypeIsTheDefault()
 
 	/**
-	 * An instance points the path at its own case type; a uuid is taken as it is.
+	 * The shipped default names case types the shipped register really seeds.
+	 *
+	 * A default pointing at an identifier no seed carries would leave both
+	 * portal actions out on every fresh install, and every double would pass.
+	 *
+	 * @return void
+	 */
+	public function testTheShippedDefaultNamesSeededCaseTypes(): void {
+		$seeded = [];
+		foreach ((new RealSchemaValidator())->objects as $object) {
+			if (($object['@self']['schema'] ?? null) === 'caseType') {
+				$seeded[] = (string)($object['identifier'] ?? '');
+			}
+		}
+
+		$shipped = json_decode(IntakeCaseTypes::SHIPPED, true);
+		$this->assertSame(['createBezwaar', 'createKlacht'], array_keys($shipped));
+		foreach ($shipped as $path => $identifier) {
+			$this->assertContains($identifier, $seeded, 'The case type ' . $path . ' opens is seeded.');
+		}
+	}//end testTheShippedDefaultNamesSeededCaseTypes()
+
+	/**
+	 * An instance points a path at its own case type; a uuid is taken as it is.
 	 *
 	 * @return void
 	 */
 	public function testAConfiguredCaseTypeWins(): void {
 		$resolver = $this->resolver(
-			settings: [IntakeCaseTypes::COMPLAINT => 'cccccccc-2222-4222-a222-222222222222'],
+			settings: [IntakeCaseTypes::SETTING => '{"createKlacht": "cccccccc-2222-4222-a222-222222222222"}'],
 			byIdentity: []
 		);
 
-		$this->assertSame('cccccccc-2222-4222-a222-222222222222', $resolver->caseTypeFor(setting: IntakeCaseTypes::COMPLAINT));
+		$this->assertSame('cccccccc-2222-4222-a222-222222222222', $resolver->caseTypeFor(path: 'createKlacht'));
 		$this->assertSame([], $this->queries);
 	}//end testAConfiguredCaseTypeWins()
+
+	/**
+	 * The setting is the whole list: a path it leaves out or empties opens nothing, a new one is taken.
+	 *
+	 * @return void
+	 */
+	public function testTheSettingIsTheWholeList(): void {
+		$resolver = $this->resolver(
+			settings: [IntakeCaseTypes::SETTING => '{"createKlacht": "", "createAanvraag": "dddddddd-3333-4333-a333-333333333333"}'],
+			byIdentity: ['bezwaar' => 'aaaaaaaa-1111-4111-a111-111111111111']
+		);
+
+		$this->assertSame(['createAanvraag' => 'dddddddd-3333-4333-a333-333333333333'], $resolver->caseTypes());
+		$this->assertSame('', $resolver->caseTypeFor(path: 'createBezwaar'));
+		$this->assertSame([], $this->queries);
+	}//end testTheSettingIsTheWholeList()
 
 	/**
 	 * A reference nothing answers to is the empty string, and it is logged.
@@ -123,8 +163,21 @@ class IntakeCaseTypesTest extends TestCase {
 	public function testAnUnknownCaseTypeIsEmptyAndLogged(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('warning');
-		$resolver = $this->resolver(settings: [IntakeCaseTypes::COMPLAINT => 'gone'], byIdentity: [], logger: $logger);
+		$resolver = $this->resolver(settings: [IntakeCaseTypes::SETTING => '{"createKlacht": "gone"}'], byIdentity: [], logger: $logger);
 
-		$this->assertSame('', $resolver->caseTypeFor(setting: IntakeCaseTypes::COMPLAINT));
+		$this->assertSame('', $resolver->caseTypeFor(path: 'createKlacht'));
 	}//end testAnUnknownCaseTypeIsEmptyAndLogged()
+
+	/**
+	 * A setting that is not a JSON object opens nothing, and says so.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableSettingOpensNothing(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
+		$resolver = $this->resolver(settings: [IntakeCaseTypes::SETTING => 'bezwaar'], byIdentity: ['bezwaar' => 'x'], logger: $logger);
+
+		$this->assertSame([], $resolver->caseTypes());
+	}//end testAnUnreadableSettingOpensNothing()
 }//end class

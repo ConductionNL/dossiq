@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.24"
+        "version": "0.20.38"
     },
     "x-openregister": {
         "type": "application",
@@ -17,12 +17,32 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.16.0",
+                "version": "1.19.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
                 "description": "Case type definition: defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
                 "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "Find case types (zaaktypen): the blueprint with the statutory processing deadline, confidentiality default and initial status.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "identifier",
+                                    "catalogus",
+                                    "isDraft"
+                                ]
+                            },
+                            "get": {
+                                "description": "Read one case type by id, including its processing deadline.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    },
                     "x-openregister-shareable": true
                 },
                 "type": "object",
@@ -287,6 +307,119 @@
                         "type": "string",
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
                         "title": "Extension period"
+                    },
+                    "recordImports": {
+                        "type": "array",
+                        "title": "Record imports",
+                        "description": "How another app's stored records become cases of this type (case-record-import). Each entry names the source app, register and schema, maps source fields onto case fields (dot paths reach nested objects), maps each source status onto a case status and a term state (running, suspended or closed, with an optional result type), names the source fields that carry the term (endDate, extensions, extensionReason, closedOn), the case field that holds the source uuid (matchField), the former reference kept, and the source fields stamped once a record has moved. Run with occ dossiq:case:import-records.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "key",
+                                "sourceApp",
+                                "sourceRegister",
+                                "sourceSchema",
+                                "statuses",
+                                "fields",
+                                "matchField",
+                                "stamp"
+                            ],
+                            "properties": {
+                                "key": {
+                                    "title": "Key",
+                                    "type": "string",
+                                    "maxLength": 64,
+                                    "description": "Names this import, for --import."
+                                },
+                                "sourceApp": {
+                                    "title": "Source app",
+                                    "type": "string",
+                                    "description": "The app id whose records are imported; nothing runs when it is not installed."
+                                },
+                                "sourceRegister": {
+                                    "title": "Source register",
+                                    "type": "string",
+                                    "description": "The source register, by slug."
+                                },
+                                "sourceSchema": {
+                                    "title": "Source schema",
+                                    "type": "string",
+                                    "description": "The source schema, by slug."
+                                },
+                                "statusField": {
+                                    "title": "Status field",
+                                    "type": "string",
+                                    "description": "The source field holding its status. Defaults to status."
+                                },
+                                "statuses": {
+                                    "title": "Statuses",
+                                    "type": "object",
+                                    "description": "Source status onto {status, term, result}: the case status uuid, the term state running, suspended or closed, and an optional result type uuid.",
+                                    "additionalProperties": {
+                                        "type": "object",
+                                        "properties": {
+                                            "status": {
+                                                "type": "string"
+                                            },
+                                            "term": {
+                                                "title": "Term state",
+                                                "type": "string",
+                                                "enum": [
+                                                    "running",
+                                                    "suspended",
+                                                    "closed"
+                                                ]
+                                            },
+                                            "result": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                "fields": {
+                                    "title": "Fields",
+                                    "type": "array",
+                                    "description": "Each {to, from | value, as, maxLength, values, default, required}. from @id reads the record's uuid; as is text, date, dateTime or integer.",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "to"
+                                        ]
+                                    }
+                                },
+                                "matchField": {
+                                    "title": "Match field",
+                                    "type": "string",
+                                    "description": "The case field (dot path) that holds the source uuid, so a second run finds the case it wrote."
+                                },
+                                "formerReference": {
+                                    "title": "Former reference",
+                                    "type": "object",
+                                    "description": "{application, from}: the source number kept in formerReferences."
+                                },
+                                "term": {
+                                    "title": "Term fields",
+                                    "type": "object",
+                                    "description": "Source field names for endDate, extensions, extensionReason and closedOn."
+                                },
+                                "stamp": {
+                                    "title": "Stamp fields",
+                                    "type": "object",
+                                    "description": "{caseId, at}: the source fields written once the case and its timer exist."
+                                },
+                                "sourceTimerField": {
+                                    "title": "Source timer field",
+                                    "type": "string",
+                                    "description": "The source field naming its own timer, answered so the caller can stop it; the import never touches it."
+                                }
+                            }
+                        }
+                    },
+                    "maxExtensions": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How often the term of a case of this type may be extended. An extension past this number is refused and the refusal says so. Leave it empty and the number is bounded only by the term's own rule.",
+                        "title": "Maximum number of extensions"
                     },
                     "maxSuspensionDays": {
                         "type": "integer",
@@ -724,8 +857,29 @@
             },
             "statusType": {
                 "slug": "statusType",
+                "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "List the status types of a case type, which are the phases of that process.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "caseType",
+                                    "isFinal"
+                                ]
+                            },
+                            "get": {
+                                "description": "Read one status type by id, to name the status a case is in.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    }
+                },
                 "icon": "ListStatus",
-                "version": "1.7.1",
+                "version": "1.7.2",
                 "searchable": false,
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
@@ -1025,8 +1179,29 @@
             },
             "resultType": {
                 "slug": "resultType",
+                "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "Find result types with their archival rules: retention period and whether the file is destroyed or transferred.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "caseType",
+                                    "archivalAction"
+                                ]
+                            },
+                            "get": {
+                                "description": "Read one result type by id, including its archival period and action.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    }
+                },
                 "icon": "FlagOutline",
-                "version": "1.1.1",
+                "version": "1.1.2",
                 "searchable": false,
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "ResultaatType",
@@ -1156,7 +1331,7 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.5.1",
+                "version": "1.6.0",
                 "searchable": false,
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
@@ -1305,6 +1480,12 @@
                         "type": "string",
                         "description": "Default value for this property",
                         "title": "Default value"
+                    },
+                    "hideOnCreate": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "Hide on the create form",
+                        "description": "Leave this question off the form that creates a case, because dossiq answers it itself at creation. The case form still shows it once the case exists."
                     }
                 }
             },
@@ -1581,7 +1762,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.41.0",
+                "version": "1.44.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1643,6 +1824,29 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "Find cases (zaken). Filter by status, case type, assignee, priority, identifier or whether the status is final. Use assignee with your own user id for the cases on your desk.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "status",
+                                    "caseType",
+                                    "assignee",
+                                    "priority",
+                                    "identifier",
+                                    "isFinalStatus"
+                                ]
+                            },
+                            "get": {
+                                "description": "Read one case by id: its case type, status, deadlines and result.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    },
                     "x-openregister-merge": {
                         "entityType": "case",
                         "statusField": "mergeState",
@@ -2621,6 +2825,30 @@
                         "title": "Tags",
                         "facetable": true
                     },
+                    "formerReferences": {
+                        "type": "array",
+                        "title": "Former references",
+                        "description": "The numbers this request carried in the application that held it before dossiq, such as the WOO- reference opencatalogi gave a Woo request. Kept so a requester who quotes the old number still finds the case.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "application": {
+                                    "type": "string",
+                                    "title": "Application",
+                                    "description": "The application that gave the reference, for example opencatalogi."
+                                },
+                                "reference": {
+                                    "type": "string",
+                                    "title": "Reference",
+                                    "description": "The reference as that application gave it."
+                                }
+                            },
+                            "required": [
+                                "application",
+                                "reference"
+                            ]
+                        }
+                    },
                     "caseType": {
                         "type": "string",
                         "format": "uuid",
@@ -2629,7 +2857,8 @@
                         "title": "Case type",
                         "facetable": true,
                         "x-relation-filter": {
-                            "isDraft": false
+                            "isDraft": false,
+                            "supersededBy": "IS NULL"
                         },
                         "x-openregister-prefill": {
                             "fields": {
@@ -2661,7 +2890,8 @@
                                 "required": "isRequired",
                                 "default": "defaultValue",
                                 "calculation": "calculation",
-                                "conceptScheme": "conceptScheme"
+                                "conceptScheme": "conceptScheme",
+                                "hideOnCreate": "hideOnCreate"
                             },
                             "values": {
                                 "mode": "array",
@@ -3470,10 +3700,17 @@
                     },
                     "communicationChannel": {
                         "type": "string",
-                        "format": "uri",
-                        "description": "URL reference to the communication channel",
+                        "enum": ["email", "portal", "post", "website", "zgw-api", null],
+                        "description": "How letters about this case reach the applicant, as a channel slug. A ZGW communicatiekanaal URL is mapped to a slug at the ZGW boundary (zgw-api when the URL maps to nothing known) and kept in communicationChannelSource (decision 171). null is in the enum, not in a union type, so a value that names no channel can be cleared: OpenRegister widens an optional enum to null only when the enum lists it.",
                         "visible": false,
                         "title": "Communication channel"
+                    },
+                    "communicationChannelSource": {
+                        "type": "string",
+                        "description": "The value the channel arrived as when it was not a slug: the ZGW communicatiekanaal URL the case was created with, or the words of an older intake. The ZGW API answers with this URL, so a ZGW client reads back what it wrote.",
+                        "visible": false,
+                        "readOnly": true,
+                        "title": "Communication channel as received"
                     },
                     "workflowTemplate": {
                         "type": "string",
@@ -3977,6 +4214,35 @@
                         "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
                         "title": "Area address id",
                         "readOnly": true
+                    },
+                    "routing": {
+                        "type": "object",
+                        "title": "Routing",
+                        "description": "How this case was last routed to a person: the rule (strategy, roleType or roleTypes, team, areaTeams, fallback, and the optional take-back window `takeBackAfter` {value, unit: hours|businessDays|calendarDays}), who it went to and when, and when that person accepted it. Accepting is the assignee's first status move or first edit of the case; there is no accept button (decision 164). While `acceptedAt` is empty and the rule declares a window, an engine timer is armed: when it passes, the case returns to the pool and is routed on by the same rule.",
+                        "readOnly": true,
+                        "properties": {
+                            "rule": {"type": "object", "title": "Routing rule", "description": "The rule the case was routed by, kept so a take-back routes it on the same way."},
+                            "routedTo": {"type": "string", "title": "Routed to", "description": "The Nextcloud user the case was routed to."},
+                            "routedAt": {"type": "string", "format": "date-time", "title": "Routed at", "description": "When the case was routed. The take-back window counts from here."},
+                            "acceptedAt": {"type": "string", "format": "date-time", "title": "Accepted at", "description": "When the person it was routed to first moved its status or edited it. Empty means not yet accepted."}
+                        }
+                    },
+                    "routingTakeBacks": {
+                        "type": "array",
+                        "title": "Routing take-backs",
+                        "description": "Every time this case came back to its pool because nobody accepted it within the rule's window: who had it, why it came back, who has it now. Without this the case looks as though it was never routed to the first person. An entry with outcome `kept` means the pool had nobody else, so the case stayed.",
+                        "readOnly": true,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "from": {"type": "string", "title": "From", "description": "The person the case was taken back from."},
+                                "to": {"type": "string", "title": "To", "description": "The person who holds it now."},
+                                "reason": {"type": "string", "title": "Reason", "description": "Why it came back, e.g. not-accepted-within-window."},
+                                "at": {"type": "string", "format": "date-time", "title": "At", "description": "When it came back."},
+                                "window": {"type": "object", "title": "Window", "description": "The window that passed, {value, unit}. Absent when the rule declared none."},
+                                "outcome": {"type": "string", "enum": ["taken-back", "kept"], "title": "Outcome", "description": "taken-back: another member has it now; kept: nobody else was in the pool."}
+                            }
+                        }
                     }
                 },
                 "searchable": true
@@ -4080,8 +4346,20 @@
             },
             "result": {
                 "slug": "result",
+                "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "get": {
+                                "description": "Read the result (outcome) of a case by id.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    }
+                },
                 "icon": "FlagCheckered",
-                "version": "1.1.0",
+                "version": "1.1.1",
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "Resultaat",
                 "title": "Result",
@@ -4128,8 +4406,24 @@
             },
             "statusRecord": {
                 "slug": "statusRecord",
+                "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "List the status history of a case: every status change with its date.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "case",
+                                    "statusType"
+                                ]
+                            }
+                        }
+                    }
+                },
                 "icon": "ProgressClock",
-                "version": "1.3.0",
+                "version": "1.3.1",
                 "x-schema-org": "schema:Event",
                 "x-zgw-equivalent": "Status",
                 "title": "Status record",
@@ -4239,8 +4533,30 @@
             },
             "decision": {
                 "slug": "decision",
+                "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "Find decisions (besluiten) taken on cases.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "case",
+                                    "decisionType",
+                                    "decisionDate"
+                                ]
+                            },
+                            "get": {
+                                "description": "Read one decision by id.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    }
+                },
                 "icon": "Gavel",
-                "version": "1.2.0",
+                "version": "1.2.1",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "Besluit",
                 "title": "Decision",
@@ -4419,7 +4735,7 @@
             "document": {
                 "slug": "document",
                 "icon": "FileDocumentOutline",
-                "version": "1.1.1",
+                "version": "1.1.2",
                 "searchable": false,
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "EnkelvoudigInformatieObject",
@@ -4552,6 +4868,26 @@
                     }
                 },
                 "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "Find documents (informatieobjecten) by type, status or confidentiality. Ask for metadata fields only; a document can carry its content inline.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "documentType",
+                                    "status",
+                                    "confidentiality"
+                                ]
+                            },
+                            "get": {
+                                "description": "Read one document by id. Ask for metadata fields only unless the content itself is needed.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    },
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": "in_bewerking",
@@ -4853,8 +5189,24 @@
             },
             "caseDocument": {
                 "slug": "caseDocument",
+                "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "List the documents that belong to a case: the link between a case and a document.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "case",
+                                    "document"
+                                ]
+                            }
+                        }
+                    }
+                },
                 "icon": "LinkVariant",
-                "version": "1.0.0",
+                "version": "1.0.1",
                 "x-zgw-equivalent": "ZaakInformatieObject",
                 "title": "Case Document Link",
                 "description": "Links a document to a case",
@@ -5293,7 +5645,7 @@
                     "tenantId": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
+                        "$ref": "nc-organisation",
                         "description": "Owning tenant: cross-tenant resolution is rejected by the registry",
                         "title": "Tenant ID"
                     },
@@ -5336,7 +5688,7 @@
             "objectionProceeding": {
                 "slug": "objectionProceeding",
                 "icon": "Gavel",
-                "version": "1.0.0",
+                "version": "1.0.1",
                 "x-schema-org": "schema:LegalCase",
                 "x-zgw-equivalent": "Bezwaarzaak",
                 "title": "Objection",
@@ -5632,6 +5984,26 @@
                     }
                 },
                 "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "search": {
+                                "description": "Find objection proceedings (bezwaar) with their statutory deadlines, adjournment and suspension.",
+                                "scope": "read",
+                                "readOnlyHint": true,
+                                "filters": [
+                                    "case",
+                                    "status",
+                                    "objection"
+                                ]
+                            },
+                            "get": {
+                                "description": "Read one objection proceeding by id, including its decision deadline.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    },
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": "Received",
@@ -8209,7 +8581,7 @@
             "inspectionChecklistTemplate": {
                 "slug": "inspectionChecklistTemplate",
                 "icon": "ClipboardListOutline",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "x-schema-org": "schema:HowTo",
                 "title": "Inspection Checklist Template",
@@ -8293,6 +8665,11 @@
                                             "responseType"
                                         ],
                                         "properties": {
+                                            "id": {
+                                                "type": "string",
+                                                "description": "Stable key an answer names; kept when the label changes",
+                                                "title": "Id"
+                                            },
                                             "order": {
                                                 "type": "integer",
                                                 "description": "Display order of the item",
@@ -8368,6 +8745,16 @@
                                                 "description": "Allowed values when responseType is meerkeuze",
                                                 "title": "Choices"
                                             },
+                                            "weight": {
+                                                "type": "number",
+                                                "description": "Weight of this item in a scored checklist",
+                                                "title": "Weight"
+                                            },
+                                            "parent": {
+                                                "type": "string",
+                                                "description": "Id of the item this one is nested under",
+                                                "title": "Parent"
+                                            },
                                             "failureAction": {
                                                 "type": "object",
                                                 "description": "Conditional follow-up dispatched on failure",
@@ -8405,6 +8792,11 @@
                             }
                         },
                         "title": "Sections"
+                    },
+                    "legacyRef": {
+                        "type": "string",
+                        "description": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
+                        "title": "Legacy reference"
                     },
                     "seedKey": {
                         "type": "string",
@@ -8650,18 +9042,17 @@
             "tenant": {
                 "slug": "tenant",
                 "icon": "OfficeBuildingOutline",
-                "version": "1.0.1",
+                "version": "1.1.1",
                 "deprecated": true,
-                "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantContext and MandateValidationMiddleware consume them directly. Run `occ dossiq:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
+                "searchable": false,
+                "deprecationNote": "Retired as the tenant admin store (ADR-022, consume-or-tenant-fleet-wide): identity, lifecycle status and quotas live on OpenRegister's Organisation, and `occ dossiq:migrate-tenants` plus the MigrateTenantsToOrganisations repair step project the legacy rows onto Organisations. The schema stays as the read-only anchor of the tenant audit trail. The only write left is creating an anchor; nothing updates or deletes a tenant object.",
                 "x-schema-org": "schema:Organization",
                 "title": "Tenant",
-                "description": "DEPRECATED (migrate-tenant-to-or-tenant): legacy SaaS tenant record. Tenant identity now lives on OpenRegister's Organisation entity; this schema is retained only so pre-migration rows remain readable until sunset. Originally: a single municipality / customer of the dossiq platform, carrying lifecycle status, tier, and isolation mode.",
+                "description": "The read-only anchor of the tenant audit trail. Tenant identity, status and quotas live on OpenRegister's Organisation, and every tenant uuid is the uuid of its Organisation. A tenant object stays only so that every tenant audit entry has an object to hang on (decision Q4): dossiq creates one, once, when onboarding starts for an Organisation, and never updates or deletes one (decision Q6).",
                 "type": "object",
                 "required": [
                     "slug",
-                    "displayName",
-                    "status",
-                    "tier"
+                    "displayName"
                 ],
                 "properties": {
                     "slug": {
@@ -9732,7 +10123,7 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.2.1",
+                "version": "1.2.2",
                 "searchable": false,
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
@@ -9925,6 +10316,16 @@
                     }
                 },
                 "configuration": {
+                    "x-openregister-mcp": {
+                        "enabled": true,
+                        "tools": {
+                            "get": {
+                                "description": "Read one complaint (klacht) by id. There is no search: a complaint carries the complainant's personal data.",
+                                "scope": "read",
+                                "readOnlyHint": true
+                            }
+                        }
+                    },
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": "received",
@@ -11236,10 +11637,10 @@
             "tenantOnboardingTask": {
                 "slug": "tenantOnboardingTask",
                 "icon": "CheckboxMarkedCircleOutline",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "title": "Tenant Onboarding Task",
-                "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
+                "description": "Frozen record of a tenant onboarding step as it was before the steps moved onto OpenRegister's task engine (remove-casetask task 7.1). New steps are engine tasks; a tenant's rows here are carried onto the engine the first time an admin opens its onboarding, and are kept as written.",
                 "type": "object",
                 "required": [
                     "tenantRef",
@@ -11250,8 +11651,8 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "tenant",
-                        "description": "Reference to the parent Tenant",
+                        "$ref": "nc-organisation",
+                        "description": "The OpenRegister Organisation this step belongs to. Its uuid is the tenant uuid.",
                         "title": "Tenant Reference"
                     },
                     "step": {
@@ -11906,7 +12307,7 @@
             "dossiq": {
                 "slug": "dossiq",
                 "title": "Dossiq",
-                "version": "1.3.0",
+                "version": "1.4.0",
                 "description": "Case management (zaakgericht werken) register for Dossiq: manages case types, status types, cases, tasks, roles, results, and decisions.",
                 "languages": [
                     "nl",
@@ -12116,10 +12517,9 @@
                 "purpose": "Beoordeling en toekenning van subsidieaanvragen",
                 "trigger": "Subsidieaanvraag van burger, vereniging, stichting of bedrijf",
                 "subject": "Subsidie",
-                "processingDeadline": "P42D",
+                "processingDeadline": "P56D",
                 "initialStatus": "@ref:subsidieaanvraag-ontvangen",
-                "extensionAllowed": true,
-                "extensionPeriod": "P28D",
+                "extensionAllowed": false,
                 "suspensionAllowed": false,
                 "internalOrExternal": "extern",
                 "publicationRequired": false,
@@ -12145,30 +12545,6 @@
                 "extensionAllowed": true,
                 "extensionPeriod": "P28D",
                 "suspensionAllowed": false,
-                "internalOrExternal": "extern",
-                "publicationRequired": false,
-                "isDraft": false,
-                "confidentiality": "vertrouwelijk"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "caseType",
-                    "version": "1.1.0",
-                    "slug": "bezwaar-behandeling"
-                },
-                "title": "Bezwaar behandeling",
-                "category": "Bezwaar en beroep",
-                "identifier": "bezwaar-behandeling",
-                "description": "Behandeling van een bezwaarschrift tegen een besluit van de gemeente conform Awb hoofdstuk 6 en 7.",
-                "purpose": "Heroverweging van een besluit op bezwaar van een belanghebbende",
-                "trigger": "Bezwaarschrift ingediend door een belanghebbende",
-                "subject": "Bezwaar",
-                "processingDeadline": "P42D",
-                "initialStatus": "@ref:bezwaar-ontvangen",
-                "extensionAllowed": true,
-                "extensionPeriod": "P42D",
-                "suspensionAllowed": true,
                 "internalOrExternal": "extern",
                 "publicationRequired": false,
                 "isDraft": false,
@@ -12545,79 +12921,6 @@
                 "description": "Klacht is ongegrond verklaard",
                 "archivalAction": "vernietigen",
                 "archivalPeriod": "P5Y"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "statusType",
-                    "slug": "bezwaar-ontvangen"
-                },
-                "name": "Ontvangen",
-                "caseType": "@ref:bezwaar-behandeling",
-                "description": "Bezwaarschrift is ontvangen en geregistreerd",
-                "order": 1,
-                "isFinal": false,
-                "role": "intake",
-                "colour": "blue",
-                "publicLabel": "Ontvangen",
-                "publicDescription": "Uw bezwaar is binnen. Wij sturen u een ontvangstbevestiging."
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "statusType",
-                    "slug": "bezwaar-heroverweging"
-                },
-                "name": "Heroverweging",
-                "caseType": "@ref:bezwaar-behandeling",
-                "description": "Het besluit wordt heroverwogen, zo nodig na een hoorzitting",
-                "order": 2,
-                "isFinal": false,
-                "role": "in-progress",
-                "colour": "orange",
-                "publicLabel": "In behandeling",
-                "publicDescription": "Wij bekijken het besluit opnieuw. Misschien nodigen wij u uit om uw bezwaar toe te lichten."
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "statusType",
-                    "slug": "bezwaar-beslist"
-                },
-                "name": "Beslist",
-                "caseType": "@ref:bezwaar-behandeling",
-                "description": "Er is een beslissing op bezwaar genomen",
-                "order": 3,
-                "isFinal": true,
-                "role": "closed",
-                "colour": "green",
-                "hiddenInLists": true,
-                "publicLabel": "Beslist",
-                "publicDescription": "Er is besloten op uw bezwaar. U heeft de beslissing ontvangen."
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "resultType",
-                    "slug": "bezwaar-gegrond"
-                },
-                "name": "Bezwaar gegrond",
-                "caseType": "@ref:bezwaar-behandeling",
-                "description": "Bezwaar is gegrond verklaard en het besluit is herroepen of gewijzigd",
-                "archivalAction": "bewaren",
-                "archivalPeriod": "P10Y"
-            },
-            {
-                "@self": {
-                    "register": "dossiq",
-                    "schema": "resultType",
-                    "slug": "bezwaar-ongegrond"
-                },
-                "name": "Bezwaar ongegrond",
-                "caseType": "@ref:bezwaar-behandeling",
-                "description": "Bezwaar is ongegrond verklaard en het besluit blijft in stand",
-                "archivalAction": "vernietigen",
-                "archivalPeriod": "P10Y"
             },
             {
                 "@self": {

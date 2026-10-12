@@ -38,11 +38,18 @@ export const tdWidgetMixin = {
 		/**
 		 * Format a number as a one-decimal percentage.
 		 *
-		 * @param {number|string} v Raw value.
-		 * @return {string} e.g. `92.4 %`.
+		 * A share of nothing arrives as null (no term decided yet). That is no
+		 * figure, so it shows a dash, not `0.0 %` and not `100.0 %`.
+		 *
+		 * @param {number|string|null} v Raw value, null when there is no figure.
+		 * @return {string} e.g. `92.4 %`, or `—` without a figure.
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
 		 */
 		percent(v) {
+			if (v === null || v === undefined || v === '') {
+				return '—'
+			}
 			return `${(Number(v) || 0).toFixed(1)} %`
 		},
 		/**
@@ -57,6 +64,17 @@ export const tdWidgetMixin = {
 				style: 'currency',
 				currency: 'EUR',
 			})
+		},
+		/**
+		 * Format an amount in cents as euros. The term report sends money
+		 * in cents (`dwangsomTotalCents`) so no float rounding reaches it.
+		 *
+		 * @param {number|string} cents Amount in cents.
+		 * @return {string} e.g. `€ 1.234,50` for 123450.
+		 * @spec openspec/specs/termijn-reporting/spec.md
+		 */
+		euroFromCents(cents) {
+			return this.euro((Number(cents) || 0) / 100)
 		},
 	},
 }

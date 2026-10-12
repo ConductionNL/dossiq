@@ -320,9 +320,8 @@ class WorkflowTemplateLoader {
 	/*
 	 * NO clearCache() HERE.
 	 *
-	 * Same as `Cmmn\CaseModelLoader`: it emptied the per-request memo below,
-	 * had no caller in either consumer (`Cmmn\CaseModelLoader`,
-	 * `StatusTransitionService`), and the memo does not outlive the request.
+	 * It emptied the per-request memo below, had no caller in
+	 * `StatusTransitionService`, and the memo does not outlive the request.
 	 */
 
 	/**
