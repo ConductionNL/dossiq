@@ -143,6 +143,24 @@ answered as `failed`, SHALL NOT undo the write, and SHALL leave the record witho
 - **WHEN** it calls `reconcileAfterCreate()`
 - **THEN** the answer SHALL be `{status: failed, refused: 2}` and no exception SHALL reach the writer
 
+#### Scenario: A count over records the caller cannot read
+@e2e exclude Count over an object service double, covered by tests/Unit/Woo/WooCollectionReportTest.php testExclusionsTheCallerCannotReadStillCountAndAreNotShown.
+- **GIVEN** a case with two exclusions the caller holds no grant on
+- **WHEN** the caller asks for the collection report
+- **THEN** the totals SHALL count both, and the report SHALL list no exclusion and split none per custodian
+
+#### Scenario: A gate that asks whether a record exists
+@e2e exclude Gate over an object service double, covered by tests/Unit/Woo/WooSearchPlansTest.php testAPlanTheCallerCannotReadStillCountsAsRecordedAndIsNotShown and testRecordingOverAPlanTheCallerCannotReadMakesNoSecondPlan.
+- **GIVEN** a recorded search plan the caller holds no grant on
+- **WHEN** the caller gathers documents, or records the plan again
+- **THEN** the gather SHALL NOT be refused for want of a plan, the plan SHALL NOT be shown to the caller, and no second plan SHALL be made
+
+#### Scenario: An act on one record by a person
+@e2e exclude Read over an object service double, covered by tests/Unit/Woo/WooCollectionQueryTest.php testAQueryTheCallerCannotReadIsNotRerun.
+- **GIVEN** a stored query the caller holds no grant on
+- **WHEN** the caller runs it again
+- **THEN** the answer SHALL be `query_not_found`: a re-run answers a search over the query's terms, so it reads under the caller's own access
+
 ### Requirement: A reader is somebody the register admits (REQ-CRA-009)
 
 OpenRegister keeps a record's schema as the ceiling of a grant, and the dossiq register is closed to

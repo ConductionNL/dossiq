@@ -19,6 +19,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 
 declare(strict_types=1);
@@ -30,6 +34,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCollection;
@@ -56,6 +61,8 @@ use Psr\Log\LoggerInterface;
  */
 class WooCollectionReportTest extends TestCase {
 
+	use MakesCaseReviewerAccess;
+
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
 
 	private InMemoryRegister $register;
@@ -80,13 +87,15 @@ class WooCollectionReportTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$caseDocuments = new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger);
 
+		$access = $this->caseReviewerAccessOver($settings);
 		$this->collection = new WooCollection(
 			settingsService: $settings,
 			caseDocuments: $caseDocuments,
 			store: new DocumentRecordStore(settingsService: $settings),
 			assessments: new WOODocumentAssessmentService(settingsService: $settings, userSession: $this->createMock(IUserSession::class), logger: $logger, caseDocuments: $caseDocuments),
-			plans: new WooSearchPlans(settingsService: $settings),
+			plans: new WooSearchPlans(settingsService: $settings, access: $access),
 			provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
+			access: $access,
 		);
 
 		$this->register->seed('wooSearchPlan', 'plan-1', [
@@ -185,6 +194,54 @@ class WooCollectionReportTest extends TestCase {
 			self::assertSame([], $real->errors(slug: 'wooExclusion', payload: $exclusion));
 		}
 	}//end testArrivedReconcilesWithReviewedAndExcluded()
+
+	/**
+	 * REQ-CRA-011: exclusions are private. The totals hold for the case whoever asks; the rows
+	 * and the split per custodian are what the caller may read.
+	 *
+	 * @return void
+	 */
+	public function testExclusionsTheCallerCannotReadStillCountAndAreNotShown(): void {
+		foreach (range(1, 3) as $i) {
+			$this->document(id: 'doc-' . $i, custodian: 'A');
+		}
+
+		$this->collection->exclude(caseId: self::CASE_ID, documentRef: 'doc-3', reason: 'out-of-period', note: 'Van 2019', userId: 'pjansen');
+		$this->collection->record(caseId: self::CASE_ID, fields: ['source' => 'files', 'fileName' => 'copy.pdf', 'reason' => 'duplicate', 'duplicateOf' => 'doc-1', 'custodian' => 'A']);
+		$this->register->hiddenFromCaller = ['wooExclusion'];
+
+		$report = $this->collection->report(caseId: self::CASE_ID);
+
+		self::assertSame([], $report['exclusions'], 'no row the caller may not read is answered');
+		self::assertSame(0, $this->by(rows: $report['custodians'], key: 'custodian')['A']['excluded'], 'nor is it split per custodian');
+		self::assertSame(4, $report['arrived']);
+		self::assertSame(2, $report['excluded'], 'the totals are the case\'s, whoever asks');
+		self::assertSame(2, $report['outstanding']);
+	}//end testExclusionsTheCallerCannotReadStillCountAndAreNotShown()
+
+	public function testADocumentExcludedOutOfTheCallersSightIsNotExcludedTwice(): void {
+		$this->document(id: 'doc-1', custodian: 'A');
+		$this->collection->exclude(caseId: self::CASE_ID, documentRef: 'doc-1', reason: 'out-of-scope', note: '', userId: 'pjansen');
+		$this->register->hiddenFromCaller = ['wooExclusion'];
+
+		try {
+			$this->collection->exclude(caseId: self::CASE_ID, documentRef: 'doc-1', reason: 'out-of-scope', note: '', userId: 'colleague');
+			self::fail('the second exclusion must be refused');
+		} catch (WooCorpusRefused $refused) {
+			self::assertSame('document_excluded', $refused->getMessage());
+		}
+
+		self::assertCount(1, $this->register->all('wooExclusion'));
+	}//end testADocumentExcludedOutOfTheCallersSightIsNotExcludedTwice()
+
+	public function testEveryNewExclusionIsReconciled(): void {
+		$this->document(id: 'doc-1', custodian: 'A');
+
+		$this->collection->exclude(caseId: self::CASE_ID, documentRef: 'doc-1', reason: 'out-of-scope', note: '', userId: 'pjansen');
+		$this->collection->record(caseId: self::CASE_ID, fields: ['source' => 'files', 'fileName' => 'kapot.msg', 'reason' => 'unreadable']);
+
+		self::assertSame([['case' => self::CASE_ID, 'created' => 1], ['case' => self::CASE_ID, 'created' => 1]], $this->reconciledAfterCreate);
+	}//end testEveryNewExclusionIsReconciled()
 
 	public function testExcludingRefusesAnAssessedAnUnknownOrARepeatedDocument(): void {
 		$this->document(id: 'doc-1', custodian: 'A');

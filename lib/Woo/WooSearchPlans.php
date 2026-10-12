@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -68,15 +69,20 @@ class WooSearchPlans {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The register, the schemas and OpenRegister.
+	 * @param SettingsService    $settingsService The register, the schemas and OpenRegister.
+	 * @param CaseReviewerAccess $access          The read a rule makes, and the grants of a new plan.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly CaseReviewerAccess $access,
 	) {
 	}//end __construct()
 
 	/**
-	 * The case's plan, draft or recorded, or null.
+	 * The case's plan, draft or recorded, or null: the plan as the caller may read it.
+	 *
+	 * A plan is private to the people on its case, so this is the read for
+	 * what a person is shown. A rule asks planOfCase() instead.
 	 *
 	 * @param string $caseId The case uuid.
 	 *
@@ -89,6 +95,21 @@ class WooSearchPlans {
 	}//end planOf()
 
 	/**
+	 * The case's plan whoever asks, for a rule: is there a plan, was it recorded, which plan a save changes.
+	 *
+	 * Never answered to a person as it stands: a route shows planOf().
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, mixed>|null The plan row.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
+	 */
+	public function planOfCase(string $caseId): ?array {
+		return ($this->access->recordsOf(schemaKey: self::PLAN_SCHEMA, caseField: 'case', caseId: $caseId)[0] ?? null);
+	}//end planOfCase()
+
+	/**
 	 * The case's recorded plan, or null while it has none or only a draft.
 	 *
 	 * @param string $caseId The case uuid.
@@ -98,7 +119,7 @@ class WooSearchPlans {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
 	public function recorded(string $caseId): ?array {
-		$plan = $this->planOf(caseId: $caseId);
+		$plan = $this->planOfCase(caseId: $caseId);
 		if ($plan === null || trim((string)($plan['recordedAt'] ?? '')) === '') {
 			return null;
 		}
@@ -146,8 +167,13 @@ class WooSearchPlans {
 		$plan['recordedBy'] = $userId;
 		$plan['recordedAt'] = gmdate('Y-m-d\TH:i:s\Z');
 
-		$existing = $this->planOf(caseId: $caseId);
+		// Looked up whoever asks, so a caller who cannot read the case's plan never makes a second one;
+		// the save still runs under the caller's own access.
+		$existing = $this->planOfCase(caseId: $caseId);
 		$saved = $this->save(configKey: self::PLAN_SCHEMA, row: $plan, uuid: $this->idOf(row: (array)$existing));
+		if ($existing === null) {
+			$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+		}
 
 		$configuration = ($this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $caseId) ?? []);
 		$configuration['case'] = $caseId;
@@ -190,6 +216,7 @@ class WooSearchPlans {
 			],
 			uuid: ''
 		);
+		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
 
 		return $saved;
 	}//end startFrom()

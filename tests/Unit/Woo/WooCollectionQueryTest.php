@@ -17,6 +17,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 
 declare(strict_types=1);
@@ -25,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCollectionQueries;
@@ -45,6 +50,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooSources
  */
 class WooCollectionQueryTest extends TestCase {
+
+	use MakesCaseReviewerAccess;
 
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -90,6 +97,7 @@ class WooCollectionQueryTest extends TestCase {
 			rootFolder: $root,
 			sources: $this->sources,
 			caseDocuments: new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $this->createMock(LoggerInterface::class)),
+			access: $this->caseReviewerAccessOver($settings),
 		);
 	}//end queries()
 
@@ -150,6 +158,28 @@ class WooCollectionQueryTest extends TestCase {
 		$again = $this->queries()->rerun(caseId: self::CASE_ID, queryId: $stored['id'], userId: 'abakker');
 		self::assertSame([], array_filter(array_column($again['rows'], 'new')));
 	}//end testARerunMarksOnlyNewRows()
+
+	public function testAStoredQueryIsReconciled(): void {
+		$this->queries()->store(caseId: self::CASE_ID, search: ['source' => 'files', 'terms' => 'Stationsweg'], userId: 'pjansen');
+
+		self::assertSame([['case' => self::CASE_ID, 'created' => 1]], $this->reconciledAfterCreate);
+	}//end testAStoredQueryIsReconciled()
+
+	/**
+	 * A re-run is an act on the query by a person: it answers a search over the query's terms.
+	 * So it reads under the caller's own access, and a query they may not read is not found.
+	 *
+	 * @return void
+	 */
+	public function testAQueryTheCallerCannotReadIsNotRerun(): void {
+		$stored = $this->queries()->store(caseId: self::CASE_ID, search: ['source' => 'files', 'terms' => 'Stationsweg'], userId: 'pjansen');
+		$this->register->hiddenFromCaller = ['wooCollectionQuery'];
+
+		self::assertSame([], $this->queries()->forCase(caseId: self::CASE_ID));
+		$this->expectException(WooCorpusRefused::class);
+		$this->expectExceptionMessage('query_not_found');
+		$this->queries()->rerun(caseId: self::CASE_ID, queryId: $stored['id'], userId: 'colleague');
+	}//end testAQueryTheCallerCannotReadIsNotRerun()
 
 	public function testADocumentAlreadyOnTheCaseIsNotNew(): void {
 		$this->register->seed('informatieobject', 'doc-1', ['title' => 'Advies']);

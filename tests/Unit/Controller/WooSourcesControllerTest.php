@@ -17,6 +17,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 
 declare(strict_types=1);
@@ -28,6 +32,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Woo\WooCollectionQueries;
 use OCA\Dossiq\Woo\WooGatherAdd;
 use OCA\Dossiq\Woo\WooSearchPlans;
@@ -52,6 +57,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooSourcesControllerTest extends TestCase {
+
+	use MakesCaseReviewerAccess;
 
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -141,7 +148,7 @@ class WooSourcesControllerTest extends TestCase {
 			accessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,
-			plans: new WooSearchPlans(settingsService: $planSettings),
+			plans: new WooSearchPlans(settingsService: $planSettings, access: $this->caseReviewerAccessOver($planSettings)),
 			queries: $this->queries,
 		);
 	}//end controller()

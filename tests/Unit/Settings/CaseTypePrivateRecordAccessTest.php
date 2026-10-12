@@ -167,4 +167,56 @@ class CaseTypePrivateRecordAccessTest extends TestCase {
 		self::assertTrue($this->shipped->admits(schema: 'triageRule', uuid: 'rule-1', user: 'j.devries', action: 'update'));
 		self::assertFalse($this->shipped->admits(schema: 'triageRule', uuid: 'rule-1', user: 'p.bakker', action: 'read'));
 	}//end testTheAssigneeUpdatesABatchAndAReviewerOnlyReadsTheirOwn()
+
+	/**
+	 * The three records of the collection: the plan, an exclusion and a stored query.
+	 *
+	 * @return array<string, array{0: string}>
+	 */
+	public static function collectionRecords(): array {
+		return ['the search plan' => ['wooSearchPlan'], 'an exclusion' => ['wooExclusion'], 'a stored query' => ['wooCollectionQuery']];
+	}//end collectionRecords()
+
+	/**
+	 * REQ-WRT-006: a record of the collection is read and changed by the assignee and the
+	 * supervisors of its case, and by nobody else on the staff.
+	 *
+	 * @param string $schema The record's schema in the shipped register.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider collectionRecords
+	 */
+	public function testARecordOfTheCollectionIsForTheAssigneeAndTheSupervisors(string $schema): void {
+		$this->shipped->rows->seed($schema, 'record-1', ['case' => self::CASE_ID, '@self' => ['owner' => 'former-handler']]);
+		$this->shipped->rows->seed($schema, 'record-other', ['case' => 'another-case', '@self' => ['owner' => 'former-handler']]);
+		self::assertFalse($this->shipped->admits(schema: $schema, uuid: 'record-1', user: 'j.devries', action: 'read'), 'before the reconcile it waits');
+
+		self::assertSame('reconciled', $this->shipped->reconcile(caseTypeSlug: 'woo-verzoek', caseId: self::CASE_ID)['status']);
+
+		self::assertSame(['j.devries' => 3], $this->shipped->grants['record-1'], 'the assignee reads and updates; no reviewer is granted');
+		self::assertArrayNotHasKey('record-other', $this->shipped->grants, 'a record of another case is not touched');
+		foreach (['read', 'update'] as $action) {
+			self::assertTrue($this->shipped->admits(schema: $schema, uuid: 'record-1', user: 'j.devries', action: $action), 'the assignee: ' . $action);
+			self::assertTrue($this->shipped->admits(schema: $schema, uuid: 'record-1', user: 'coordinator', action: $action), 'a supervisor: ' . $action);
+			self::assertTrue($this->shipped->admits(schema: $schema, uuid: 'record-1', user: 'administrator', action: $action), 'an administrator: ' . $action);
+			self::assertFalse($this->shipped->admits(schema: $schema, uuid: 'record-1', user: 'colleague', action: $action), 'a colleague off the case: ' . $action);
+			self::assertFalse($this->shipped->admits(schema: $schema, uuid: 'record-1', user: 'p.bakker', action: $action), 'a batch reviewer: ' . $action);
+		}
+
+		$this->shipped->grants['record-1']['outsider'] = 3;
+		self::assertFalse($this->shipped->admits(schema: $schema, uuid: 'record-1', user: 'outsider', action: 'read'), 'the schema is the ceiling of a grant');
+	}//end testARecordOfTheCollectionIsForTheAssigneeAndTheSupervisors()
+
+	/**
+	 * The configuration a next request starts from is not private (REQ-WRC-005).
+	 *
+	 * @return void
+	 */
+	public function testTheConfigurationANextRequestStartsFromIsNotListed(): void {
+		$listed = array_column((array)$this->shipped->caseType(slug: 'woo-verzoek')['reviewerAccess']['records'], 'schemaKey');
+
+		self::assertNotContains('woo_request_configuration_schema', $listed);
+		self::assertContains('woo_search_plan_schema', $listed);
+	}//end testTheConfigurationANextRequestStartsFromIsNotListed()
 }//end class

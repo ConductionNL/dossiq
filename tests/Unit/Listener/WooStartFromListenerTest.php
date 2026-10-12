@@ -17,6 +17,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-new-request-starts-from-the-configuration-of-an-earlier-one-req-wrc-005
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 
 declare(strict_types=1);
@@ -27,6 +31,7 @@ use OCA\Dossiq\Listener\WooStartFromListener;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Woo\WooSearchPlans;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -40,6 +45,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooStartFromListenerTest extends TestCase {
+
+	use MakesCaseReviewerAccess;
 
 	private const EARLIER = '55555555-5555-4555-8555-555555555555';
 	private const NEW_CASE = '66666666-6666-4666-8666-666666666666';
@@ -66,7 +73,7 @@ class WooStartFromListenerTest extends TestCase {
 		$slugs = $this->createMock(ObjectSchemaSlugResolver::class);
 		$slugs->method('resolveFromPayload')->willReturnCallback(fn (): string => $this->slug);
 
-		return new WooStartFromListener(plans: new WooSearchPlans(settingsService: $settings), slugResolver: $slugs, logger: $this->createMock(LoggerInterface::class));
+		return new WooStartFromListener(plans: new WooSearchPlans(settingsService: $settings, access: $this->caseReviewerAccessOver($settings)), slugResolver: $slugs, logger: $this->createMock(LoggerInterface::class));
 	}//end listener()
 
 	/**

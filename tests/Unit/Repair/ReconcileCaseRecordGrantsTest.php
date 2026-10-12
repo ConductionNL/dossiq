@@ -231,6 +231,11 @@ class ReconcileCaseRecordGrantsTest extends TestCase {
 		// A review an earlier upgrade made: no owner, no grant.
 		$shipped->rows->seed('documentReview', 'review-1', ['case' => self::CASE_ID, 'documentRef' => 'doc-1', 'batch' => 'batch-1', '@self' => ['owner' => '']]);
 
+		// The records of the collection, made before their schemas became private.
+		foreach (['wooSearchPlan', 'wooExclusion', 'wooCollectionQuery'] as $schema) {
+			$shipped->rows->seed($schema, 'old-' . $schema, ['case' => self::CASE_ID, '@self' => ['owner' => 'former-handler']]);
+		}
+
 		return $shipped;
 	}//end shippedCase()
 
@@ -239,14 +244,25 @@ class ReconcileCaseRecordGrantsTest extends TestCase {
 		self::assertFalse($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'j.devries', action: 'read'), 'before the upgrade the handler is refused');
 		self::assertFalse($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'p.bakker', action: 'update'), 'and so is the reviewer');
 
+		$before = [];
+		foreach (['wooSearchPlan', 'wooExclusion', 'wooCollectionQuery'] as $schema) {
+			$before[$schema] = $shipped->admits(schema: $schema, uuid: 'old-' . $schema, user: 'j.devries', action: 'read');
+		}
+
 		$this->registeredStepOver(shipped: $shipped)->run($this->repairOutput());
 
 		self::assertSame([], $this->said['warning']);
 		self::assertSame([], $this->errors);
-		self::assertStringContainsString('reconciled as root: 1 cases, 4 grants added', $this->said['info'][0]);
+		self::assertStringContainsString('reconciled as root: 1 cases, 7 grants added', $this->said['info'][0]);
 		self::assertTrue($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'j.devries', action: 'update'), 'the handler marks');
 		self::assertTrue($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'p.bakker', action: 'update'), 'the reviewer reports pages seen');
 		self::assertTrue($shipped->admits(schema: 'reviewBatch', uuid: 'batch-1', user: 'p.bakker', action: 'read'));
+		foreach (['wooSearchPlan', 'wooExclusion', 'wooCollectionQuery'] as $schema) {
+			self::assertFalse($before[$schema], $schema . ': before the upgrade the handler is refused');
+			self::assertTrue($shipped->admits(schema: $schema, uuid: 'old-' . $schema, user: 'j.devries', action: 'update'), $schema . ': after it the handler reads and changes it');
+			self::assertFalse($shipped->admits(schema: $schema, uuid: 'old-' . $schema, user: 'p.bakker', action: 'read'), $schema . ': a batch reviewer still does not');
+		}
+
 		self::assertSame(['root', ''], $shipped->sessions, 'it ran as the administrator and put the empty session back');
 	}//end testTheRegisteredStepGivesAnExistingReviewItsGrantsWithNobodySignedIn()
 

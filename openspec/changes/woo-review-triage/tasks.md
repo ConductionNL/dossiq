@@ -268,6 +268,20 @@ record. OpenRegister refuses a parent that references another schema
     step could not do is a warning in the upgrade output and an error in the log. Tests:
     `ReconcileCaseRecordGrantsTest` (the step is built from the name in `appinfo/info.xml` and run with nobody
     signed in over the shipped register), `CaseRecordGrantsBackfillTest`, `CaseRecordLookupTest`.
+  - Round 8, the three records of the collection (6.1, and the rest of (c)). `wooSearchPlan`, `wooExclusion` and
+    `wooCollectionQuery` (86-woo-corpus.json, each 1.0.1) carry the private block; woo-verzoek 1.4.7 lists them
+    with `readers: assignee`, `assigneeMay: update`; register 0.20.41. Their writers reconcile after a create:
+    `WooSearchPlans::record()` (a new plan only) and `startFrom()`, `WooCollectionQueries::store()`,
+    `WooCollection::record()` (which the exclusion route and the gather add both use). Each read is split:
+    what a person is shown stays under their own access (`planOf()`, `exclusions()`, `forCase()`, and
+    `rerun()`, which answers a search over the query's terms), and a rule reads the whole case
+    (`planOfCase()` behind `recorded()` and the plan lookup of `record()`; the totals of the collection report
+    and the already-excluded check; the excluded documents in `OutstandingDocuments`). Tests: `WooSearchPlansTest`, `WooCollectionReportTest`,
+    `WooCollectionQueryTest`, per schema over the shipped register
+    `CaseTypePrivateRecordAccessTest::testARecordOfTheCollectionIsForTheAssigneeAndTheSupervisors`, and
+    `ReconcileCaseRecordGrantsTest` (the upgrade gives existing plans, exclusions and queries their grants).
+    Red control in `dq-l8-logs/r8/`. Still open of 6.1: `wooDeliveredSet` (lane L10) and the Newman folder.
+    `wooRequestConfiguration` stays as it is (not one of the seven): Q-dossiq-L8-3.
     The private scope rule the access tests decide with is held to OpenRegister's own:
     `tests/Unit/Support/PrivateScopeVerdictDriftTest.php` runs the real `PermissionHandler::privateScopeVerdict()`
     from the sibling checkout over 5,184 cases and fails on the first one `ShippedPrivateRecords::privateVerdict()`

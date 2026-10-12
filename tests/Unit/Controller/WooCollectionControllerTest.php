@@ -18,6 +18,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-collection-is-reported-per-custodian-and-system-req-wrc-002
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 
 declare(strict_types=1);
@@ -31,6 +35,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCollection;
 use OCA\Dossiq\Woo\WooCollectionQueries;
@@ -64,6 +69,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  */
 class WooCollectionControllerTest extends TestCase {
+
+	use MakesCaseReviewerAccess;
 
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -123,7 +130,8 @@ class WooCollectionControllerTest extends TestCase {
 			}
 		);
 		$caseDocuments = new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger);
-		$plans = new WooSearchPlans(settingsService: $settings);
+		$access = $this->caseReviewerAccessOver($settings);
+		$plans = new WooSearchPlans(settingsService: $settings, access: $access);
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(fn (string $key, mixed $default = null): mixed => ($this->params[$key] ?? $default));
@@ -148,8 +156,9 @@ class WooCollectionControllerTest extends TestCase {
 				assessments: new WOODocumentAssessmentService(settingsService: $settings, userSession: $session, logger: $logger, caseDocuments: $caseDocuments),
 				plans: $plans,
 				provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
+				access: $access,
 			),
-			queries: new WooCollectionQueries(settingsService: $settings, rootFolder: $root, sources: $this->createMock(WooSources::class), caseDocuments: $caseDocuments),
+			queries: new WooCollectionQueries(settingsService: $settings, rootFolder: $root, sources: $this->createMock(WooSources::class), caseDocuments: $caseDocuments, access: $access),
 			accessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,
