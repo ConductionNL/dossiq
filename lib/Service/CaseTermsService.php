@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Dossiq\Service\Time\DayCount;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermMoveHistory;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;

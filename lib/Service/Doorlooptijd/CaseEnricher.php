@@ -39,7 +39,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Support\LanguageMapText;
-use OCA\Dossiq\Service\Time\DayCount;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 

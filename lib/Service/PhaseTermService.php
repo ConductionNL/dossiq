@@ -47,7 +47,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\Time\DayCount;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use Psr\Log\LoggerInterface;
 
 /**

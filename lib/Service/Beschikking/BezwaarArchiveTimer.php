@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Time\DayCount;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 

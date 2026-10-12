@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Milestone\MilestoneRepository
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Milestone\MilestoneSchedule
- * @uses \OCA\Dossiq\Service\Time\DayCount
+ * @uses \OCA\Dossiq\Service\Termijn\DayCount
  */
 class MilestoneServiceStalledTest extends TestCase {
 

@@ -30,7 +30,7 @@
  * anybody's constructor contract.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Time
+ * @package  OCA\Dossiq\Service\Termijn
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -46,7 +46,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Time;
+namespace OCA\Dossiq\Service\Termijn;
 
 use DateTimeInterface;
 

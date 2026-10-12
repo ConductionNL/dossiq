@@ -40,7 +40,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Exception\RefusedException
- * @uses \OCA\Dossiq\Service\Time\DayCount
+ * @uses \OCA\Dossiq\Service\Termijn\DayCount
  */
 class DeadlinePauseReasonTest extends TestCase {
 	use MakesCaseDateNormaliser;

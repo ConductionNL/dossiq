@@ -132,7 +132,7 @@ allowlist SHALL shrink to empty as phases 2 to 4 land.
 ### Requirement: REQ-TOT-007 — Days between two dates are counted in one place
 
 dossiq SHALL count the calendar days between two moments in one class,
-`OCA\Dossiq\Service\Time\DayCount`, which names the two questions a caller can ask: `between()`
+`OCA\Dossiq\Service\Termijn\DayCount`, which names the two questions a caller can ask: `between()`
 for a span, never negative, and `signed()` for days left or days overdue, negative when the second
 moment precedes the first. Working days SHALL be asked of `WorkingDayRoll::daysBetween()`, which
 answers from the administered calendar and uses `DayCount` for its calendar mode. No other class
