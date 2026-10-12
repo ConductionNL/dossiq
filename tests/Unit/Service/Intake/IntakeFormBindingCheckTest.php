@@ -32,6 +32,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Intake\IntakeFormBindingCheck
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBinding
+ * @uses   \OCA\Dossiq\Service\Intake\IntakeRequirements
  */
 class IntakeFormBindingCheckTest extends TestCase {
 
@@ -76,7 +77,7 @@ class IntakeFormBindingCheckTest extends TestCase {
 
 		$mapper ??= new class() {
 			public function find(string|int $id, ?array $_extend = [], bool $_rbac = true, bool $_multitenancy = true): object {
-				return (object)['id' => $id, 'rbac' => $_rbac, 'properties' => ['title', 'description', 'caseType']];
+				return (object)['id' => $id, 'rbac' => $_rbac, 'properties' => ['title', 'description', 'caseType', 'communicationChannel']];
 			}//end find()
 		};
 
@@ -166,6 +167,50 @@ class IntakeFormBindingCheckTest extends TestCase {
 			'A finding without a message still names its property and code.'
 		);
 	}//end testAnAnswerIntoAnUnknownPropertyIsAFinding()
+
+	/**
+	 * A published case type whose form leaves out what must be answered before a case exists is a finding.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
+	 */
+	public function testAPublishedCaseTypeNeedsItsIntakeRequirementsFilled(): void {
+		$type = array_merge(
+			self::boundType('title'),
+			['isDraft' => false, 'intakeRequirements' => ['requiredBeforeCreation' => ['communicationChannel', 'confidentiality']]]
+		);
+		$type['intakeFormMapping']['fixed'] = ['confidentiality' => 'intern'];
+
+		$findings = $this->check()->findingsFor(caseType: $type);
+
+		self::assertCount(1, $findings, 'The fixed value fills one of the two.');
+		self::assertSame('communicationChannel', $findings[0]['property']);
+		self::assertSame('required-unmapped', $findings[0]['code']);
+		self::assertStringContainsString('"communicationChannel"', $findings[0]['message']);
+
+		$type['intakeFormMapping']['fields'][] = ['field' => 'Hoe bereiken wij u?', 'property' => 'communicationChannel', 'type' => 'select'];
+		self::assertSame([], $this->check()->findingsFor(caseType: $type), 'An answer fills the other.');
+	}//end testAPublishedCaseTypeNeedsItsIntakeRequirementsFilled()
+
+	/**
+	 * A draft case type is not held to its intake requirements yet; publishing it is.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
+	 */
+	public function testADraftCaseTypeIsHeldToItOnlyWhenItIsPublished(): void {
+		$type = array_merge(
+			self::boundType('title'),
+			['isDraft' => true, 'intakeRequirements' => ['requiredBeforeCreation' => ['communicationChannel']]]
+		);
+
+		self::assertSame([], $this->check()->findingsFor(caseType: $type));
+
+		$type['isDraft'] = false;
+		self::assertSame(['communicationChannel'], array_column($this->check()->findingsFor(caseType: $type), 'property'));
+	}//end testADraftCaseTypeIsHeldToItOnlyWhenItIsPublished()
 
 	/**
 	 * A case type with no form bound is not judged at all.

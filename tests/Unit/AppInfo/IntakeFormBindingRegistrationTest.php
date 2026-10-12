@@ -45,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\IntakeFormBindingListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBindingCheck
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBinding
+ * @uses   \OCA\Dossiq\Service\Intake\IntakeRequirements
  */
 class IntakeFormBindingRegistrationTest extends TestCase {
 
@@ -191,6 +192,32 @@ class IntakeFormBindingRegistrationTest extends TestCase {
 		self::assertFalse($valid->isPropagationStopped());
 		self::assertSame([], $valid->getErrors());
 	}//end testAnEditIsJudgedTheSameWay()
+
+	/**
+	 * Publishing a case type whose form leaves out an intake requirement is refused, naming the property.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
+	 */
+	public function testPublishingReChecksTheFormAgainstTheIntakeRequirements(): void {
+		$draft = array_merge(
+			self::boundType('title'),
+			['isDraft' => true, 'intakeRequirements' => ['requiredBeforeCreation' => ['communicationChannel']]]
+		);
+		$before = self::entity(self::CASE_TYPE_SCHEMA, $draft);
+
+		$stillDraft = new ObjectUpdatingEvent(self::entity(self::CASE_TYPE_SCHEMA, $draft), $before);
+		$this->dispatch($stillDraft);
+		self::assertFalse($stillDraft->isPropagationStopped(), 'A draft case type saves.');
+
+		$publish = new ObjectUpdatingEvent(self::entity(self::CASE_TYPE_SCHEMA, array_merge($draft, ['isDraft' => false])), $before);
+		$this->dispatch($publish);
+
+		self::assertTrue($publish->isPropagationStopped());
+		self::assertSame('required-unmapped', $publish->getErrors()['findings'][0]['code']);
+		self::assertSame('communicationChannel', $publish->getErrors()['findings'][0]['property']);
+	}//end testPublishingReChecksTheFormAgainstTheIntakeRequirements()
 
 	/**
 	 * An object of another schema, and a case type without a form, are left alone.

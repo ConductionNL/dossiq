@@ -40,6 +40,9 @@
   - [x] 4.2a The case schema lists `forms` as an intake channel (case 1.45.0, and the case type's acknowledgement channel list, caseType 1.20.0). The service wrote that value from the start, as `leaf-integrations` asks, and the schema refused it
     - Test: tests/Unit/Service/FormsIntakeServiceTest.php, `testTheRealCaseSchemaAcceptsTheCaseAsWritten` (the written payload against the real case schema)
 - [ ] 4.3 Case-type publish re-checks bound forms (`caseType.intakeFormRef` and portaliq bindings), including `requiredBeforeCreation`
+  - [x] 4.3a The case type's own intake form: `IntakeFormBindingCheck::unmetRequirements` adds a `required-unmapped` finding for every `requiredBeforeCreation` property the mapping does not fill, on a case type that is not a draft; the save is refused by the same listener
+    - Test: tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php `testPublishingReChecksTheFormAgainstTheIntakeRequirements`, tests/Unit/Service/Intake/IntakeFormBindingCheckTest.php
+  - [ ] 4.3b portaliq bindings. portaliq development (7b7ae1fd) checks a binding when the binding is saved (`BindingDestinationGuardListener`) and answers nothing when a destination changes: no class in its `lib/` listens for OpenRegister's `FormDestinationDependentsEvent`. Owed in portaliq: a listener on that event that lists its published bindings into the schema as `FormDependent` (mapping, author, an unpublish closure). Owed here after it: on a case type publish, dispatch the event for the case schema, keep the forms whose fixed `caseType` is this type, add `unmetRequirements`, and hand the result to OpenRegister's `FormDependentsCheck::apply` (`formDestinationBreak`)
 
 ## 5. Verification
 

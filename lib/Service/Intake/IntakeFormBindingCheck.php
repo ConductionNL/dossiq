@@ -65,16 +65,28 @@ class IntakeFormBindingCheck {
 	public const RULE = 'intake-form-binding-invalid';
 
 	/**
+	 * The finding code for a property that must be filled and that the form does not fill.
+	 *
+	 * The same code OpenRegister's validator gives a required schema property
+	 * without a source, so a reader meets one vocabulary.
+	 *
+	 * @var string
+	 */
+	public const REQUIRED_UNMAPPED = 'required-unmapped';
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService Bridge to OpenRegister and the configured schemas.
-	 * @param IntakeFormBinding $binding         Reads the binding as a mapping.
-	 * @param LoggerInterface   $logger          Logger.
+	 * @param SettingsService    $settingsService Bridge to OpenRegister and the configured schemas.
+	 * @param IntakeFormBinding  $binding         Reads the binding as a mapping.
+	 * @param LoggerInterface    $logger          Logger.
+	 * @param IntakeRequirements $requirements    What a case type asks for before a case exists.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IntakeFormBinding $binding,
 		private readonly LoggerInterface $logger,
+		private readonly IntakeRequirements $requirements = new IntakeRequirements(),
 	) {
 	}//end __construct()
 
@@ -112,13 +124,59 @@ class IntakeFormBindingCheck {
 			return [];
 		}
 
-		$found = $validator->validate(mapping: $this->binding->mappingFor(caseType: $caseType), schema: $schema);
+		$mapping = $this->binding->mappingFor(caseType: $caseType);
+		$found = $validator->validate(mapping: $mapping, schema: $schema);
 		if (is_array($found) === false) {
+			$found = [];
+		}
+
+		return array_merge(
+			array_values(array_filter($found, 'is_array')),
+			$this->unmetRequirements(caseType: $caseType, mapping: $mapping)
+		);
+	}//end findingsFor()
+
+	/**
+	 * What a published case type asks for before a case exists and the form does not fill.
+	 *
+	 * The case schema does not know this list: it is the case type's own
+	 * `intakeRequirements.requiredBeforeCreation`, enforced on every case
+	 * create. A form that leaves one of them out opens no case at all, so the
+	 * binding is refused when the case type is published with it, or saved
+	 * while published. A draft case type is still being put together and is
+	 * not held to it.
+	 *
+	 * @param array<string, mixed>                                                         $caseType The case type as it is about to be saved.
+	 * @param array{fields: array<int, array<string, mixed>>, fixed: array<string, mixed>} $mapping  The binding's mapping.
+	 *
+	 * @return array<int, array{property: string, code: string, message: string}> One finding per unfilled property.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
+	 */
+	public function unmetRequirements(array $caseType, array $mapping): array {
+		if (($caseType['isDraft'] ?? false) === true) {
 			return [];
 		}
 
-		return array_values(array_filter($found, 'is_array'));
-	}//end findingsFor()
+		$sourced = $this->binding->sourced(mapping: $mapping);
+		$findings = [];
+		foreach ($this->requirements->declarationFor(caseType: $caseType)['requiredBeforeCreation'] as $property) {
+			if (in_array($property, $sourced, true) === true) {
+				continue;
+			}
+
+			$findings[] = [
+				'property' => $property,
+				'code' => self::REQUIRED_UNMAPPED,
+				'message' => sprintf(
+					'This case type asks for "%s" before a case exists, and no answer or fixed value of the intake form fills it.',
+					$property
+				),
+			];
+		}
+
+		return $findings;
+	}//end unmetRequirements()
 
 	/**
 	 * The sentence a refused save answers with.

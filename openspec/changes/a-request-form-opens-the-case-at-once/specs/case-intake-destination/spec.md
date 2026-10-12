@@ -61,13 +61,22 @@ A case type MAY carry `intakeFormMapping` next to `intakeFormRef`: `fields`, one
 
 ### Requirement: Publishing a case type MUST re-check the forms bound to it
 
-Publishing a case type SHALL validate every form bound to it against the case schema plus that type's `intakeRequirements.requiredBeforeCreation`. A finding SHALL block the publish or unpublish the form, per the `formDestinationBreak` setting.
+Publishing a case type SHALL validate every form bound to it against the case schema plus that type's `intakeRequirements.requiredBeforeCreation`. A finding SHALL block the publish or unpublish the form, per the `formDestinationBreak` setting. The case type's own intake form (`intakeFormRef`) is part of the case type, so a finding on it SHALL refuse the save: every `requiredBeforeCreation` property SHALL be filled by an answer or a fixed value of `intakeFormMapping` on a case type that is not a draft. A draft case type SHALL NOT be held to that list until it is published.
 
 #### Scenario: A new intake requirement catches a form that lacks it
 
 - **GIVEN** a published portal form bound to case type `klacht` that does not ask for `communicationChannel`
 - **WHEN** `communicationChannel` is added to that type's `requiredBeforeCreation` and the type is published
 - **THEN** the publish response names the form with finding `required-unmapped`
+
+#### Scenario: Publishing a case type whose own intake form leaves out an intake requirement is refused
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php::testPublishingReChecksTheFormAgainstTheIntakeRequirements`
+
+- **GIVEN** a draft case type with `intakeFormRef` set, `requiredBeforeCreation` naming `communicationChannel`, and a mapping that does not fill it
+- **WHEN** the case type is saved as a draft
+- **THEN** the save succeeds
+- **WHEN** it is published
+- **THEN** the save is refused with finding `required-unmapped` on `communicationChannel`
 
 ### Requirement: A portal filing MUST NOT be held in an intermediate object
 
