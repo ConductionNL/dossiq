@@ -1,0 +1,351 @@
+{
+  "caseType": [
+    {
+      "id": "b3c1a000-0000-4000-a000-00000000be2a",
+      "identifier": "bezwaar",
+      "title": "Bezwaar",
+      "category": "Bezwaar en beroep",
+      "description": "Bezwaarprocedure conform Awb hoofdstuk 6 en 7",
+      "purpose": "Behandeling van bezwaarschriften tegen besluiten",
+      "trigger": "Bezwaarschrift van belanghebbende",
+      "subject": "Bezwaar tegen besluit",
+      "processingDeadline": "P6W",
+      "extensionAllowed": true,
+      "extensionPeriod": "P6W",
+      "suspensionAllowed": true,
+      "internalOrExternal": "extern",
+      "publicationRequired": false,
+      "isDraft": false,
+      "confidentiality": "zaakvertrouwelijk"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-00000000be30",
+      "identifier": "beroep",
+      "title": "Beroep",
+      "category": "Bezwaar en beroep",
+      "description": "Beroepsprocedure bij de bestuursrechter conform Awb hoofdstuk 8",
+      "purpose": "Verwerken van beroepszaken bij de bestuursrechter",
+      "trigger": "Beroepschrift bij de bestuursrechter",
+      "subject": "Beroep tegen beslissing op bezwaar",
+      "processingDeadline": "P26W",
+      "extensionAllowed": false,
+      "suspensionAllowed": true,
+      "internalOrExternal": "extern",
+      "publicationRequired": false,
+      "isDraft": false,
+      "confidentiality": "zaakvertrouwelijk"
+    }
+  ],
+  "propertyDefinitions": [
+    {
+      "id": "f13bda17-953a-5436-9654-5679baf8e5a9",
+      "name": "isTimely",
+      "definition": "Tijdig ingediend",
+      "description": "Het bezwaarschrift is binnen de termijn van zes weken ingediend (Awb 6:7).",
+      "propertyType": "boolean",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "04a0ee7d-2ca1-5185-84b8-dba98a72d920",
+      "name": "hearingWaived",
+      "definition": "Afgezien van horen",
+      "description": "Er is afgezien van het horen van de bezwaarmaker (Awb 7:3).",
+      "propertyType": "boolean",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "f7acf945-f056-5e63-8811-0af36529baaa",
+      "name": "minutesSummary",
+      "definition": "Verslag hoorzitting",
+      "description": "Een korte samenvatting van het verslag van de hoorzitting.",
+      "propertyType": "string",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "bd142fdc-8f08-51cb-87f5-cc2ec9176dc1",
+      "name": "advisoryReport",
+      "definition": "Advies commissie",
+      "description": "Het advies van de bezwaaradviescommissie.",
+      "propertyType": "string",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "c7ef06eb-941c-5eee-affd-1ef5e1b1e11c",
+      "name": "dispositionType",
+      "definition": "Soort beslissing",
+      "description": "De beslissing op bezwaar: gegrond, ongegrond, deels gegrond of niet-ontvankelijk.",
+      "propertyType": "string",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "enumValues": [
+        "gegrond",
+        "ongegrond",
+        "deels gegrond",
+        "niet-ontvankelijk"
+      ]
+    },
+    {
+      "id": "70deeba3-0e9d-5591-8bb1-ede70d839bbe",
+      "name": "dispositionDetails",
+      "definition": "Motivering beslissing",
+      "description": "De motivering van de beslissing op bezwaar of van de niet-ontvankelijkheid.",
+      "propertyType": "string",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "7c554329-ce00-571d-94ec-9fc511047880",
+      "name": "withdrawalReason",
+      "definition": "Reden intrekking",
+      "description": "Waarom het bezwaar is ingetrokken (Awb 6:21).",
+      "propertyType": "string",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "3b0fc1ee-fe22-5eb2-b8a9-96368d8b39d3",
+      "name": "rulingOutcome",
+      "definition": "Uitspraak",
+      "description": "De uitspraak van de rechtbank.",
+      "propertyType": "string",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "05dcd351-9ad5-5f68-93f2-6b0aca25b7af",
+      "name": "settlementDetails",
+      "definition": "Schikking",
+      "description": "Wat partijen in de schikking hebben afgesproken.",
+      "propertyType": "string",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    }
+  ],
+  "statusTypes": [
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a01",
+      "name": "Ontvangen",
+      "description": "Bezwaarschrift is ontvangen",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "intake"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a02",
+      "name": "Ontvankelijkheidstoets",
+      "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a03",
+      "name": "In behandeling",
+      "description": "Inhoudelijke behandeling gestart",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "in-progress"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a04",
+      "name": "Hoorzitting gepland",
+      "description": "Hoorzitting is ingepland (Awb art. 7:2)",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a05",
+      "name": "Hoorzitting afgerond",
+      "description": "Hoorzitting heeft plaatsgevonden",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a06",
+      "name": "Advies uitgebracht",
+      "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a07",
+      "name": "Beslissing op bezwaar",
+      "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)",
+      "order": 7,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a08",
+      "name": "Afgehandeld",
+      "description": "Bezwaarprocedure is volledig afgerond",
+      "order": 8,
+      "isFinal": true,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "closed"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a09",
+      "name": "Niet-ontvankelijk",
+      "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000b2a10",
+      "name": "Ingetrokken",
+      "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)",
+      "order": 91,
+      "isFinal": true,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "fbe0b51c-3931-5428-9386-5c2a4ce266e2",
+      "name": "Beroep ontvangen",
+      "description": "Beroepschrift ontvangen van rechtbank",
+      "order": 1,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "role": "intake"
+    },
+    {
+      "id": "650ef378-4aa7-53c5-8993-739c79903ca6",
+      "name": "Verweerschrift in voorbereiding",
+      "description": "Gemeente bereidt verweer voor",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "role": "in-progress"
+    },
+    {
+      "id": "faf41ada-73c9-5ae6-b0ad-f264696660ec",
+      "name": "Verweerschrift ingediend",
+      "description": "Verweer ingediend bij de rechtbank",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "dbe7c45e-6e02-57e7-a079-457cf16379f3",
+      "name": "Zitting gepland",
+      "description": "Zitting bij de rechtbank is gepland",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "02af49df-7838-5a57-9684-9a4d3088cf51",
+      "name": "Zitting afgerond",
+      "description": "Zitting bij de rechtbank heeft plaatsgevonden",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "fb11fb9b-d2b4-5828-8725-d23655f9909d",
+      "name": "Uitspraak ontvangen",
+      "description": "Uitspraak van de rechtbank ontvangen",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "9e99fc8d-cc41-5e1c-8d3e-6589e574c5d1",
+      "name": "Afgehandeld",
+      "description": "Beroepsprocedure is afgerond",
+      "order": 7,
+      "isFinal": true,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "role": "closed"
+    },
+    {
+      "id": "ea2d92e4-b86f-5bd7-846a-071267dd0b7d",
+      "name": "Ingetrokken",
+      "description": "Beroep is ingetrokken",
+      "order": 90,
+      "isFinal": true,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "1e48257a-7a3b-5661-9971-c6e70a0b254c",
+      "name": "Schikking",
+      "description": "Zaak geschikt buiten de rechtbank",
+      "order": 91,
+      "isFinal": true,
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "655c19ab-8b1f-518c-ba34-6506d642e024",
+      "name": "Bezwaarmaker",
+      "description": "De persoon die bezwaar maakt",
+      "genericRole": "initiator",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "7f38f4ac-b724-55aa-83fe-96dfac5ac6d0",
+      "name": "Behandelaar bezwaar",
+      "description": "Ambtenaar die het bezwaar behandelt",
+      "genericRole": "handler",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "fe7d2472-8239-5d0c-b8a8-5a9e26780962",
+      "name": "Voorzitter commissie",
+      "description": "Voorzitter bezwaarschriftencommissie",
+      "genericRole": "decision_maker",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "1267d2a1-7c8f-54cb-bec9-d3184ab067ce",
+      "name": "Lid commissie",
+      "description": "Lid van de bezwaarschriftencommissie",
+      "genericRole": "advisor",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "3490ba02-db31-5d72-9c71-f9f94626e090",
+      "name": "Secretaris commissie",
+      "description": "Secretaris van de bezwaarschriftencommissie",
+      "genericRole": "coordinator",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "7a634e7f-ac44-5758-aab2-e9572b976aa0",
+      "name": "Vertegenwoordiger",
+      "description": "Gemachtigde of vertegenwoordiger van bezwaarmaker",
+      "genericRole": "stakeholder",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "042f00e3-6e1f-56b9-a495-0220b74af7ed",
+      "name": "Primair beslisser",
+      "description": "Ambtenaar die het oorspronkelijke besluit nam",
+      "genericRole": "advisor",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+    },
+    {
+      "id": "69ae6a13-6539-51d5-830d-89d04499d32e",
+      "name": "Appellant",
+      "description": "De persoon die beroep instelt",
+      "genericRole": "initiator",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "6bac5278-f67e-5d3a-bbf2-fd97a14a85ba",
+      "name": "Behandelaar beroep",
+      "description": "Ambtenaar die het beroep behandelt namens de gemeente",
+      "genericRole": "handler",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    },
+    {
+      "id": "51573c38-e039-5036-a238-e3f4a5d7dabe",
+      "name": "Jurist",
+      "description": "Juridisch adviseur voor de beroepsprocedure",
+      "genericRole": "advisor",
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+    }
+  ]
+}

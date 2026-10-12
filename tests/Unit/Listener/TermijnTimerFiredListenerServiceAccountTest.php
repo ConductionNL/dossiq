@@ -158,7 +158,6 @@ class TermijnTimerFiredListenerServiceAccountTest extends TestCase {
 					priorityRaiseService: $this->createMock(CasePriorityRaiseService::class),
 					logger: $logger
 				),
-				'settingsService' => $settings,
 				'logger' => $logger,
 				'serviceAccount' => $this->backgroundAccount(),
 			]

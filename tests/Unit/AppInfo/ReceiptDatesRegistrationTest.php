@@ -32,7 +32,11 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
+use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
+use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -68,4 +72,56 @@ class ReceiptDatesRegistrationTest extends TestCase {
 		);
 		$this->assertArrayHasKey('OCA\OpenRegister\Event\ObjectCreatedEvent', $registered, 'The bulk save only dispatches the created event.');
 	}//end testTheDatesAreSetBeforeTheCaseIsStoredAboveTheCalculations()
+
+	/**
+	 * Sending a draft is wired as a receipt: the stamp in the sending save, the receipt effects on the activation.
+	 *
+	 * Asserted from the registrars the app boots with, so a listener that
+	 * handles a sent draft in its own tests and is attached to nothing fails
+	 * here (decision 180).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function testSendingADraftReachesTheReceiptListeners(): void {
+		$registered = [];
+		$context = $this->createMock(originalClassName: IRegistrationContext::class);
+		$context->method('registerEventListener')->willReturnCallback(
+			static function (string $event, string $listener, int $priority = 0) use (&$registered): void {
+				$registered[$listener][$event][] = $priority;
+			}
+		);
+
+		(new WorkflowListenerRegistrar())->register(context: $context);
+		(new IntakeListenerRegistrar())->register(context: $context);
+
+		$updating = 'OCA\OpenRegister\Event\ObjectUpdatingEvent';
+		$activated = 'OCA\OpenRegister\Event\ObjectActivatedEvent';
+		$this->assertTrue(class_exists($activated), 'The event OpenRegister sends when a draft is sent.');
+		$this->assertSame($activated, ReceiptMoment::ACTIVATED_EVENT);
+
+		$this->assertSame(
+			[IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY],
+			($registered[IntakeTermStartListener::class][$updating] ?? []),
+			'The stamp and the dates are set once, in the save that sends the draft, above the calculations.',
+		);
+		$this->assertGreaterThan(0, IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY);
+		$this->assertCount(
+			1,
+			($registered[IntakeTermStartListener::class]['OCA\OpenRegister\Event\ObjectCreatingEvent'] ?? []),
+			'One listener sets the term on a create, registered once.',
+		);
+
+		foreach ([AcknowledgementOnCreateListener::class, DeadlineCaseCreatedListener::class] as $listener) {
+			$this->assertCount(1, ($registered[$listener][$activated] ?? []), $listener . ' hears a sent draft, once.');
+			$this->assertCount(
+				1,
+				($registered[$listener]['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),
+				$listener . ' still hears a case created outright.',
+			);
+		}
+
+		$this->assertArrayHasKey($updating, ($registered[IntakeRequirementsListener::class] ?? []), 'What must be answered is checked on the sending save.');
+	}//end testSendingADraftReachesTheReceiptListeners()
 }//end class

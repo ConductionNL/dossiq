@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use RuntimeException;
@@ -68,10 +69,12 @@ class WooSearchPlans {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService The register, the schemas and OpenRegister.
+	 * @param SettingsService      $settingsService The register, the schemas and OpenRegister.
+	 * @param RecordTemplateReader $templates       Reads a named template of the configuration schema.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly RecordTemplateReader $templates,
 	) {
 	}//end __construct()
 
@@ -130,18 +133,24 @@ class WooSearchPlans {
 	/**
 	 * Record the case's plan, and keep its configuration in step.
 	 *
-	 * @param string               $caseId The case uuid.
-	 * @param array<string, mixed> $input  `{custodians, systems, periodFrom, periodTo, terms}`.
-	 * @param string               $userId Who records it.
+	 * A plan the handler filled from a named template says so in `startedFrom`.
+	 * The configuration then takes every key of that template and names it in
+	 * `copiedFrom`; the plan's own custodians, systems and terms still win.
+	 *
+	 * @param string               $caseId      The case uuid.
+	 * @param array<string, mixed> $input       `{custodians, systems, periodFrom, periodTo, terms}`.
+	 * @param string               $userId      Who records it.
+	 * @param string               $startedFrom The uuid of the template the plan was filled from, or ''.
 	 *
 	 * @return array<string, mixed> The plan as stored.
 	 *
-	 * @throws WooCorpusRefused When the plan is incomplete.
+	 * @throws WooCorpusRefused When the plan is incomplete, or names a template the caller cannot use.
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
-	public function record(string $caseId, array $input, string $userId): array {
+	public function record(string $caseId, array $input, string $userId, string $startedFrom=''): array {
 		$plan = $this->validated(input: $input);
+		$template = $this->templateNamed(uuid: $startedFrom);
 		$plan['case'] = $caseId;
 		$plan['recordedBy'] = $userId;
 		$plan['recordedAt'] = gmdate('Y-m-d\TH:i:s\Z');
@@ -150,6 +159,11 @@ class WooSearchPlans {
 		$saved = $this->save(configKey: self::PLAN_SCHEMA, row: $plan, uuid: $this->idOf(row: (array)$existing));
 
 		$configuration = ($this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $caseId) ?? []);
+		if ($template !== null) {
+			$configuration = array_merge($configuration, array_diff_key($template['values'], array_flip(self::NOT_COPIED)));
+			$configuration['copiedFrom'] = $template['uuid'];
+		}
+
 		$configuration['case'] = $caseId;
 		$configuration['custodians'] = $plan['custodians'];
 		$configuration['systems'] = $plan['systems'];
@@ -160,18 +174,28 @@ class WooSearchPlans {
 	}//end record()
 
 	/**
-	 * Start a case from an earlier Woo case's configuration: copy every key, and a draft plan without the period.
+	 * Start a case from an earlier case's configuration, or from a named template of the
+	 * configuration schema: copy every key, and a draft plan without the period.
 	 *
 	 * @param string $caseId The new case uuid.
-	 * @param string $from   The earlier Woo case uuid.
+	 * @param string $from   The earlier case uuid, or the uuid of a named template.
 	 *
-	 * @return array<string, mixed>|null The new configuration, null when the earlier case has none.
+	 * @return array<string, mixed>|null The new configuration, null when `$from` names neither a case
+	 *                                   with a configuration nor a template the caller may use.
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-new-request-starts-from-the-configuration-of-an-earlier-one-req-wrc-005
 	 */
 	public function startFrom(string $caseId, string $from): ?array {
+		if ($from === $caseId) {
+			return null;
+		}
+
 		$source = $this->rowOfCase(configKey: self::CONFIGURATION_SCHEMA, caseId: $from);
-		if ($source === null || $from === $caseId) {
+		if ($source === null) {
+			$source = $this->templates->find(uuid: $from, schema: $this->templateSchema())['values'] ?? null;
+		}
+
+		if ($source === null) {
 			return null;
 		}
 
@@ -193,6 +217,40 @@ class WooSearchPlans {
 
 		return $saved;
 	}//end startFrom()
+
+	/**
+	 * The schema id named templates of the request configuration are kept under in OpenRegister.
+	 *
+	 * @return string The configured schema id, '' when the schema is not configured.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-new-request-starts-from-the-configuration-of-an-earlier-one-req-wrc-005
+	 */
+	public function templateSchema(): string {
+		return trim((string)$this->settingsService->getConfigValue(self::CONFIGURATION_SCHEMA));
+	}//end templateSchema()
+
+	/**
+	 * The template a plan says it was filled from.
+	 *
+	 * @param string $uuid The template uuid, '' when the plan names none.
+	 *
+	 * @return array{uuid: string, name: string, values: array<string, mixed>}|null The template, null when none was named.
+	 *
+	 * @throws WooCorpusRefused When the named template is absent or not usable by the caller.
+	 */
+	private function templateNamed(string $uuid): ?array {
+		$uuid = trim($uuid);
+		if ($uuid === '') {
+			return null;
+		}
+
+		$template = $this->templates->find(uuid: $uuid, schema: $this->templateSchema());
+		if ($template === null) {
+			throw new WooCorpusRefused(reason: 'template_not_found', status: 400);
+		}
+
+		return $template;
+	}//end templateNamed()
 
 	/**
 	 * The plan the input describes, or a refusal naming what is missing.

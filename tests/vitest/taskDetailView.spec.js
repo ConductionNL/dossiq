@@ -118,7 +118,6 @@ async function mountPage(task) {
 						)
 					},
 				}),
-				TaskCaseCard: true,
 				TaskWaitingCaseSection: true,
 				TaskNotesLeaf: true,
 				TaskEventsLeaf: true,
@@ -155,6 +154,37 @@ describe('TaskDetailView', () => {
 		// `dueAt`, the engine's spelling. The detail page read `dueDate` and
 		// found nothing on every engine row.
 		expect(wrapper.find('[data-testid="cn-fact-due"]').exists()).toBe(true)
+	})
+
+	it('draws the case card for a task on a case, naming case type and status by reference, never by id', async () => {
+		const wrapper = await mountPage(TASK)
+		expect(wrapper.find('[data-testid="task-case-card"]').exists()).toBe(true)
+		const content = wrapper
+			.findAllComponents({ name: 'CnFactsWidget' })
+			.at(1)
+			.props('content')
+		expect(content.source).toEqual({
+			register: 'dossiq',
+			schema: 'case',
+			id: '@object.objectUuid',
+		})
+		const meta = content.fields.find((f) => f.key === 'case-meta')
+		expect(meta.parts[1].resolve).toMatchObject({ schema: 'caseType' })
+		const status = content.fields.find((f) => f.key === 'case-status')
+		expect(status.resolve).toMatchObject({
+			schema: 'statusType',
+			labelField: 'name',
+		})
+	})
+
+	it('draws no case card for a task with no case', async () => {
+		const wrapper = await mountPage({
+			uuid: 'task-1',
+			title: 'Ad hoc',
+			state: 'available',
+			isTerminal: false,
+		})
+		expect(wrapper.find('[data-testid="task-case-card"]').exists()).toBe(false)
 	})
 
 	it('names every team the task is offered to, in one row', async () => {

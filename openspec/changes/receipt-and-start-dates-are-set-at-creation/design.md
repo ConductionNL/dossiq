@@ -24,8 +24,12 @@ term counts from it.
 ## D-4. The dates do not wait for the calendar
 
 An unreachable calendar still stamps nothing (REQ-TERM-040). The start date
-and the receipt answer do not depend on the calendar: they are the day the
+and the receipt answer do not wait for the calendar: they are the day the
 request came in, which is known. They are written either way.
+
+Amended by a-request-form-opens-the-case-at-once (decision 181, Q11): when
+the calendar answers and the term starts on a later day, the start date is
+that later day. The receipt answer stays the day the request came in.
 
 ## D-5. A receipt known to the day is compared by day
 

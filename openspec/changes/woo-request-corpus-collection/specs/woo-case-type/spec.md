@@ -78,8 +78,30 @@ new case and into a new, unrecorded search plan that the handler completes and r
 SHALL name its source in `wooRequestConfiguration.copiedFrom`. Other changes MAY add keys to the
 configuration; every key present SHALL be copied.
 
+A named template is an OpenRegister record template of the `wooRequestConfiguration` schema, read
+through the generic reader (REQ-RTS-001 in `specs/record-template-start`). Until its plan is
+recorded, the search plan dialog SHALL offer the templates the handler may use (REQ-RTS-002).
+Choosing one SHALL fill whose files, the systems and the terms, never the period. Recording a plan
+with `startedFrom` set to that template SHALL copy the template's other keys into the
+configuration and SHALL name the template in `copiedFrom`; a `startedFrom` that names no template
+the caller may use SHALL be refused with 400 `template_not_found`, and nothing SHALL be recorded.
+GET `/api/cases/{id}/woo/plan` SHALL answer `templateSchema`, the schema id the templates are kept
+under.
+
 #### Scenario: Start from the last request
 - **GIVEN** a closed Woo case with custodians A and B, systems files and sharepoint, and terms "Stationsweg"
 - **WHEN** a handler starts a new Woo case from it
 - **THEN** the new case's draft plan SHALL carry A, B, both systems and the terms, with no period
 - **AND** `copiedFrom` SHALL name the closed case
+
+#### Scenario: Start from a named template
+- **GIVEN** a record template "Ruimtelijke verzoeken" with custodian "Wethouder Ruimte", system files and terms "Stationsweg"
+- **WHEN** a handler picks it in the search plan dialog of a new Woo case, gives the period and records the plan
+- **THEN** the plan SHALL carry the custodian, the system and the terms with the handler's period
+- **AND** `copiedFrom` SHALL name the template
+
+#### Scenario: A plan cannot claim a template nobody can read
+- **GIVEN** a plan sent with `startedFrom` naming a template the caller may not use
+- **WHEN** it is recorded
+- **THEN** the answer SHALL be 400 `template_not_found`
+- **AND** no plan and no configuration SHALL be stored

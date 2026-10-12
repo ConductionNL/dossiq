@@ -469,16 +469,24 @@ describe('the tabs', () => {
 				.map((entry) => entry.id)
 				.filter((id) => !gone.includes(id)),
 		)
-		// The body is ONE full-width column in the simple structure: the side
-		// column leaves the grid 824px wide, under the library's 1000px
-		// breakpoint, so the grid is a single stacked column at every desktop
-		// width and the order is the order of `gridY`. The tabs card (`5`) leads,
-		// as DqZaak draws it, and hours booked (`6`) follows the plan, terms and
-		// flows. Sizes are the manifest's, except three that would scroll inside.
+		// The body grid sits beside the side column at the library's 12 columns
+		// (nextcloud-vue 2.81.0 keeps it a grid there; before it collapsed to one
+		// stacked column under 1000px). The tabs card (`5`) leads, as DqZaak draws
+		// it, with the plan, terms, flows and hours full width under it; the
+		// cards the board does not draw pair up two to a row. Sizes are the
+		// manifest's, except three that would scroll inside.
+		const PAIRED = {
+			'money-payments': 0,
+			'money-contract': 6,
+			'family-plan-panel': 0,
+			'work-projects': 6,
+			'documents-merge-to-pdf': 0,
+		}
 		for (const entry of simple.layout) {
 			const was = original.layout.find((item) => item.id === entry.id)
-			expect(entry.gridX, entry.id).toBe(0)
-			expect(entry.gridWidth, entry.id).toBe(12)
+			const half = entry.id in PAIRED
+			expect(entry.gridX, entry.id).toBe(half ? PAIRED[entry.id] : 0)
+			expect(entry.gridWidth, entry.id).toBe(half ? 6 : 12)
 			// Taller where the cell would scroll inside: the tabs card (Overview
 			// measured 784px over its 720), the flow runs and hours booked.
 			const taller = { 5: 19, 7: 7, 6: 3 }

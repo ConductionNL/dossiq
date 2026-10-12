@@ -1,0 +1,141 @@
+{
+  "info": {
+    "name": "dossiq package: dso-intake",
+    "description": "Reads back what the settings-only package dso-intake did on a clean instance with integriq: the package's version record in the shipped-set ledger, the DSO intake setup check reporting a schema, and that schema being integriq's dso_verzoek. Run by .github/workflows/packages.yml.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{adminUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{adminPass}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUser",
+      "value": "admin"
+    },
+    {
+      "key": "adminPass",
+      "value": "admin"
+    }
+  ],
+  "item": [
+    {
+      "name": "ledger records the package version",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/shippedOrigin?targetSchema=package&targetObject=dso-intake&_limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('ledger reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const row = rows.find(r => r.targetSchema === 'package' && r.targetObject === 'dso-intake');",
+              "pm.test('one version record names the package at 1.0.0', () => {",
+              "    pm.expect(row, 'version record for dso-intake').to.be.an('object');",
+              "    pm.expect(row.set).to.eql('dso-intake');",
+              "    pm.expect(row.setVersion).to.eql('1.0.0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setup check says DSO intake reads a schema",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/settings/ajax/checksetup"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('setup checks reachable (200)', () => pm.response.to.have.status(200));",
+              "const categories = pm.response.json();",
+              "let dso = null;",
+              "Object.values(categories).forEach(checks => { if (checks && checks['OCA\\\\Dossiq\\\\SetupCheck\\\\DsoIntakeCheck']) { dso = checks['OCA\\\\Dossiq\\\\SetupCheck\\\\DsoIntakeCheck']; } });",
+              "pm.test('the DSO intake check succeeds and names a schema id', () => {",
+              "    pm.expect(dso, 'DsoIntakeCheck result').to.be.an('object');",
+              "    pm.expect(dso.severity, dso.description).to.eql('success');",
+              "    const match = /reads schema (\\S+?)\\.?$/.exec(dso.description || '');",
+              "    pm.expect(match, dso.description).to.not.eql(null);",
+              "    pm.collectionVariables.set('dsoSchemaId', match[1]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the schema is integriq's dso_verzoek",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/schemas/{{dsoSchemaId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('schema reachable (200)', () => pm.response.to.have.status(200));",
+              "pm.test('its slug is dso_verzoek', () => pm.expect(pm.response.json().slug).to.eql('dso_verzoek'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

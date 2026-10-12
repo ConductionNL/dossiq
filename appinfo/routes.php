@@ -85,12 +85,6 @@ $extra = [
     ['name' => 'kccRouting#update',   'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'PUT'],
     ['name' => 'kccRouting#destroy',  'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'DELETE'],
 
-        // DMN decision tables (dmn-decision-tables spec).
-    ['name' => 'decisionTable#index',    'url' => '/api/decisions',              'verb' => 'GET'],
-    ['name' => 'decisionTable#create',   'url' => '/api/decisions',              'verb' => 'POST'],
-    ['name' => 'decisionTable#evaluate', 'url' => '/api/decisions/{id}/evaluate', 'verb' => 'POST'],
-    ['name' => 'decisionTable#update',   'url' => '/api/decisions/{id}',          'verb' => 'PUT'],
-    ['name' => 'decisionTable#destroy',  'url' => '/api/decisions/{id}',          'verb' => 'DELETE'],
 
     ['name' => 'kccContact#indexCallbacks',  'url' => '/api/kcc/callback-requests', 'verb' => 'GET'],
     ['name' => 'kccContact#scheduleCallback', 'url' => '/api/kcc/callback-requests', 'verb' => 'POST'],
@@ -696,9 +690,6 @@ $extra = [
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
         // ── VTH Module ─────────────────────────────────────────────────────
-        // VTH zaaktype template management (admin only).
-    ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
-    ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
         // Checklist templates (admin). The URLs keep their first names; the
         // controllers behind them know no procedure.
     ['name' => 'checklistTemplate#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
@@ -820,6 +811,7 @@ $extra = [
         // ── WOO (Wet open overheid) operations ──────────────────────────
     // Which documents of a case still wait for an assessment, with titles (document-assessment REQ-DAS-001). Generic: any case type.
     ['name' => 'documentAssessment#outstanding', 'url' => '/api/cases/{id}/document-assessments/outstanding', 'verb' => 'GET'],
+    ['name' => 'documentAssessment#index', 'url' => '/api/cases/{id}/document-assessments', 'verb' => 'GET'],
     ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
     ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
     ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
@@ -907,7 +899,11 @@ $extra = [
     ['name' => 'plannedAction#complete', 'url' => '/api/cases/{caseId}/planned-actions/{actionId}/complete', 'verb' => 'POST'],
 
         // ── Besluitvorming workflow ──────────────────────────────────────
-    ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
+        // The template activate route went with the besluitvorming bundles: they
+        // are the `besluitvorming` package now, installed on request through the
+        // package routes below (hydra ADR-118, decision 190).
+    ['name' => 'package#index',   'url' => '/api/packages',              'verb' => 'GET'],
+    ['name' => 'package#install', 'url' => '/api/packages/{id}/install', 'verb' => 'POST'],
         // The two `agenda#` routes were removed with the agenda compiler: decidiq
         // owns agenda-building and meetings, and it surfaces them here through the
         // `decidesk-decisions` integration leaf. They served only the compiler view
@@ -1076,8 +1072,9 @@ $extra = [
     ['name' => 'leaverHandover#execute',   'url' => '/api/leaver-handover/execute',                       'verb' => 'POST'],
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
-        // Public webhook for openconnector/ERP payment confirmation callbacks.
-    ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+        // Public webhook for payout callbacks: the finance app (X-Shillinq-Signature)
+        // or the external payment provider (frozen X-Procest-Signature). URL frozen.
+    ['name' => 'payoutCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
         // TermijnInstance lifecycle (caseworker / handler).
     ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
     ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
@@ -1134,11 +1131,12 @@ $extra = [
         // deliberately do NOT move: /api/termijn/ingebrekestellingen is the
         // published contract and changing it is a breaking change for every
         // consumer, which is a separate decision from this rename.
-    ['name' => 'noticeOfDefault#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
-    ['name' => 'noticeOfDefault#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
+    ['name' => 'accrualNotice#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
+    ['name' => 'accrualNotice#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
         // Dwangsom state + bezwaar.
     ['name' => 'dwangsom#show',         'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
     ['name' => 'dwangsom#beschikking',  'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
+    ['name' => 'payout#prepare',        'url' => '/api/termijn/dwangsom/{id}/uitbetaling', 'verb' => 'POST'],
     ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
     ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
         // Reporting (manager / accountant).

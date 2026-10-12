@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Termijn\TermCaseTypeResolver
  * @uses \OCA\Dossiq\Service\Termijn\TermOutcome
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class DeadlineReportingServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
@@ -87,6 +88,8 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(75.0, $row['binnenTermijnPct'], 'Three met of four decided: the running term is not in the share.');
 		self::assertSame(1, $row['overschrijdingen']);
 		self::assertSame(1, $row['verlengingen']);
+		// Each seeded term runs from the Nth of May to the Nth of July: 61 days.
+		self::assertSame(61.0, $row['gemiddeldeDoorlooptijdDagen']);
 	}
 
 	/**
@@ -194,6 +197,7 @@ class DeadlineReportingServiceTest extends TestCase {
 		self::assertSame(5, $k['totalZaken']);
 		self::assertSame(75.0, $k['withinTermijnPercent']);
 		self::assertSame(1, $k['overrunCount']);
+		self::assertSame(61.0, $k['avgDurationDays']);
 	}
 
 	/**

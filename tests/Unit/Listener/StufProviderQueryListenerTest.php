@@ -28,6 +28,7 @@ use OCA\Dossiq\Listener\StufProviderQueryListener;
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Integriq\Event\StufCaseMutationEvent;
 use OCA\Integriq\Event\StufCaseQueryEvent;
 use OCA\Integriq\Event\StufDocumentMutationEvent;
@@ -39,8 +40,24 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Listener\StufProviderQueryListener
  * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class StufProviderQueryListenerTest extends TestCase {
+
+	/**
+	 * The case type the mapped case is of, as the caseType schema stores it:
+	 * known to the mapping by its catalogue identifier.
+	 *
+	 * @var array<string, string>
+	 */
+	public const CASE_TYPE = ['identifier' => 'kapvergunning', 'title' => 'Kapvergunning'];
+
+	/**
+	 * The endpoint's case type mapping.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $mappings = ['kapvergunning' => 'Omgevingsvergunning kap'];
 
 	/**
 	 * The stored cases.
@@ -104,6 +121,35 @@ class StufProviderQueryListenerTest extends TestCase {
 		$this->assertSame('2026-0042', $this->asked[0]['identifier']);
 		$this->assertSame('case', $this->asked[0]['schema']);
 	}//end testACaseQueryIsAnsweredWithTheMappedZaaktype()
+
+	/**
+	 * The case type row the double returns is one the shipped schema accepts,
+	 * and every key on it is declared. The first version of this double carried
+	 * a `slug`, which the caseType schema does not declare, so the listener's
+	 * lookup passed here and named no zaaktype on a real instance.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseTypeFixtureIsARowTheShippedSchemaDeclares(): void {
+		$validator = new RealSchemaValidator();
+		$declared  = array_keys((array)$validator->schemas['caseType']['properties']);
+
+		$this->assertSame([], array_values(array_diff(array_keys(self::CASE_TYPE), $declared)), 'Every key on the fixture is a declared caseType property');
+		$this->assertSame([], $validator->errors(slug: 'caseType', payload: self::CASE_TYPE, creating: false));
+	}//end testTheCaseTypeFixtureIsARowTheShippedSchemaDeclares()
+
+	/**
+	 * A mapping keyed on the case type's uuid names the zaaktype too.
+	 *
+	 * @return void
+	 */
+	public function testAMappingByUuidNamesTheZaaktype(): void {
+		$this->mappings = ['ct-uuid-1' => 'Kap op uuid'];
+		$event          = new StufCaseQueryEvent(sourceId: 'src-9', referentienummer: 'REQ-1', criteria: ['identificatie' => '2026-0042']);
+		$this->listener()->handle($event);
+
+		$this->assertSame('Kap op uuid', $event->getAnswer()['cases'][0]['zaaktype']);
+	}//end testAMappingByUuidNamesTheZaaktype()
 
 	/**
 	 * No such case is an answered, empty list: dossiq looked.
@@ -203,10 +249,11 @@ class StufProviderQueryListenerTest extends TestCase {
 	 */
 	private function listener(): StufProviderQueryListener {
 		$register = $this->createMock(StufRegisterAccess::class);
+		$mappings = $this->mappings;
 		$register->method('findOne')->willReturnCallback(
-			static function (string $schema, array $filters): ?array {
+			static function (string $schema, array $filters) use ($mappings): ?array {
 				if ($schema === StufRegisterAccess::SCHEMA_ENDPOINT && $filters === ['integriqSource' => 'src-9']) {
-					return ['id' => 'ep-1', 'integriqSource' => 'src-9', 'zaaktypeMappings' => ['kapvergunning' => 'Omgevingsvergunning kap']];
+					return ['id' => 'ep-1', 'integriqSource' => 'src-9', 'zaaktypeMappings' => $mappings];
 				}
 
 				return null;
@@ -246,7 +293,7 @@ class StufProviderQueryListenerTest extends TestCase {
 			 */
 			public function find(string $id, ?string $register=null, ?string $schema=null): ?array {
 				if ($schema === 'caseType' && $id === 'ct-uuid-1') {
-					return ['id' => 'ct-uuid-1', 'slug' => 'kapvergunning'];
+					return (['id' => 'ct-uuid-1'] + StufProviderQueryListenerTest::CASE_TYPE);
 				}
 
 				return null;
