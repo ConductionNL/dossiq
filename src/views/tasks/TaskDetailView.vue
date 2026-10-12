@@ -198,26 +198,12 @@
 
 			<aside class="task-detail-page__side">
 				<section
-					v-if="facts.length > 0"
+					v-if="hasFacts"
 					class="task-detail-page__card task-detail-page__facts-card">
 					<h3 class="task-detail-page__section-title">
 						{{ t('dossiq', 'Task') }}
 					</h3>
-					<dl class="task-detail-page__facts">
-						<div
-							v-for="fact in facts"
-							:key="fact.key"
-							class="task-detail-page__fact">
-							<dt class="task-detail-page__label">
-								{{ fact.label }}
-							</dt>
-							<dd
-								class="task-detail-page__value"
-								:data-testid="`task-detail-${fact.key}`">
-								{{ fact.value }}
-							</dd>
-						</div>
-					</dl>
+					<CnFactsWidget :content="taskFacts" :objectData="task" />
 				</section>
 
 				<TaskCaseCard :objectId="taskId" :objectData="task" />
@@ -228,7 +214,7 @@
 </template>
 
 <script>
-import { CnStatusBadge } from '@conduction/nextcloud-vue'
+import { CnFactsWidget, CnStatusBadge } from '@conduction/nextcloud-vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
@@ -247,6 +233,7 @@ export default {
 	name: 'TaskDetailView',
 
 	components: {
+		CnFactsWidget,
 		CnStatusBadge,
 		NcActionButton,
 		NcActions,
@@ -355,88 +342,44 @@ export default {
 		},
 
 		/**
-		 * The task's own facts, in reading order.
+		 * The task's own facts for the library's facts card, in the order the
+		 * board draws them (DqTaak). A fact the task does not carry is dropped by
+		 * the widget rather than shown as an em dash. `candidateGroups` is a LIST
+		 * on the engine (a task offered to two teams has two), joined by the
+		 * widget's `list` format.
 		 *
-		 * Only what is present. That is the fix, not a refinement: the
-		 * page's Data widget rendered EVERY declared property, so an engine
-		 * uuid on the object store produced a full grid of em dashes and
-		 * looked like a broken record rather than a task read from the wrong
-		 * place. A fact that is not there is now absent, the same convention
-		 * TaskCaseCard already uses one card above.
-		 *
-		 * The CASE is deliberately not here. It is the card above, resolved
-		 * to a title and a link; repeating it as a raw uuid is what the card
-		 * exists to stop.
-		 *
-		 * @return {Array<{key: string, label: string, value: string}>} The rows.
+		 * @return {object} The `content` for CnFactsWidget.
 		 * @spec openspec/specs/task-management/spec.md
 		 */
-		facts() {
-			const rows = [
-				{
-					key: 'assignee',
-					label: t('dossiq', 'Assignee'),
-					value: String(this.task?.assignee ?? '').trim(),
-				},
-				{
-					key: 'due',
-					label: t('dossiq', 'Due'),
-					value: this.formatDate(this.task?.dueAt ?? this.task?.dueDate),
-				},
-				{
-					key: 'team',
-					label: t('dossiq', 'Team'),
-					value: this.team,
-				},
-				{
-					key: 'priority',
-					label: t('dossiq', 'Priority'),
-					value: String(this.task?.priority ?? '').trim(),
-				},
-				{
-					key: 'requester',
-					label: t('dossiq', 'Requested by'),
-					value: String(this.task?.requester ?? '').trim(),
-				},
-				{
-					key: 'expires',
-					label: t('dossiq', 'Expires'),
-					value: this.formatDate(this.task?.expiresAt),
-				},
-				{
-					key: 'created',
-					label: t('dossiq', 'Created'),
-					value: this.formatDate(this.task?.created),
-				},
-			]
-			return rows.filter((row) => row.value !== '')
+		taskFacts() {
+			return {
+				fields: [
+					{ key: 'assignee', label: t('dossiq', 'Assignee'), path: 'assignee' },
+					{ key: 'team', label: t('dossiq', 'Team'), path: 'candidateGroups', format: 'list' },
+					{ key: 'due', label: t('dossiq', 'Due'), path: 'dueAt', format: 'date' },
+					{ key: 'expires', label: t('dossiq', 'Expires'), path: 'expiresAt', format: 'date' },
+					{ key: 'priority', label: t('dossiq', 'Priority'), path: 'priority' },
+					{ key: 'requester', label: t('dossiq', 'Requested by'), path: 'requester' },
+					{ key: 'created', label: t('dossiq', 'Created'), path: 'created', format: 'date' },
+				],
+			}
 		},
 
 		/**
-		 * The team the task is offered to, beside the person holding it.
+		 * Whether the task carries any fact the card would show.
 		 *
-		 * The engine's name for this is `candidateGroups`, and it is a list.
-		 * `caseTask` spelled the same idea `assignedGroup` and it was a
-		 * single value, which is why this is not a rename: a task offered to
-		 * two teams has two rows on the engine and had one on the register.
-		 *
-		 * It is on the page because a handler deciding whether to pick a
-		 * task up needs to know whose queue it is in. The Parties change put
-		 * it on the case page for the same reason, and the task page carried
-		 * it for free while its widget rendered the whole schema.
-		 *
-		 * @return {string} The teams, comma separated, or ''.
+		 * @return {boolean} True when at least one fact has a value.
 		 * @spec openspec/specs/task-management/spec.md
 		 */
-		team() {
-			const groups = this.task?.candidateGroups
-			if (Array.isArray(groups) === true) {
-				return groups
-					.map((group) => String(group ?? '').trim())
-					.filter((group) => group !== '')
-					.join(', ')
-			}
-			return String(groups ?? '').trim()
+		hasFacts() {
+			const task = this.task ?? {}
+			const groups = Array.isArray(task.candidateGroups) ? task.candidateGroups : []
+			return (
+				groups.length > 0
+				|| ['assignee', 'dueAt', 'expiresAt', 'priority', 'requester', 'created'].some(
+					(key) => String(task[key] ?? '').trim() !== '',
+				)
+			)
 		},
 
 		/**
@@ -688,28 +631,6 @@ export default {
 		},
 
 		/**
-		 * A date in the reader's locale.
-		 *
-		 * An absent date returns '' so the row is dropped, rather than the em
-		 * dash the Data widget rendered for every unreadable field.
-		 *
-		 * @param {string|null|undefined} value The ISO date-time.
-		 * @return {string} The formatted date, or ''.
-		 * @spec openspec/specs/task-management/spec.md
-		 */
-		formatDate(value) {
-			const raw = String(value ?? '').trim()
-			if (raw === '') {
-				return ''
-			}
-			const parsed = new Date(raw)
-			if (Number.isNaN(parsed.getTime())) {
-				return raw
-			}
-			return parsed.toLocaleDateString()
-		},
-
-		/**
 		 * Show a server message to the handler.
 		 *
 		 * @param {string|null|undefined} message The message.
@@ -833,25 +754,14 @@ export default {
 		overflow-wrap: anywhere;
 	}
 
-	&__facts {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 4);
-		margin: 0;
-	}
-
-	&__fact {
-		display: contents;
-	}
-
-	&__label {
-		color: var(--color-text-maxcontrast);
-	}
-
-	&__value {
-		margin: 0;
-		font-weight: 600;
-		overflow-wrap: anywhere;
+	// Nextcloud core styles every `dt` end-aligned with 12px padding, and the
+	// library's facts card does not reset it, so the label column drew right
+	// aligned with 45px rows. Reset here until the library's
+	// `.cn-facts-widget__label` does it itself (named as a gap in the PR).
+	&__facts-card :deep(.cn-facts-widget__label),
+	&__facts-card :deep(.cn-facts-widget__value) {
+		padding: 0;
+		text-align: start;
 	}
 
 	&__checklist-items {
