@@ -235,7 +235,7 @@ record. OpenRegister refuses a parent that references another schema
     naming a reviewer should add them to the staff group instead.
   - Round 7: (b) is built, generic. A `reviewerAccess.records` entry carries `assigneeMay` and `reviewersMay`
     (`read` default | `update`, case-reviewer-access REQ-CRA-010, declared in `89-case-reviewer-access.json`).
-    `CaseRecordReaders::grantsFor()` answers core's permission bits per reader and `ObjectReadGrants::reconcile()`
+    `CaseRecordReaders::toGrant()` answers core's permission bits per reader and `ObjectReadGrants::reconcile()`
     revokes a grant that carries other permissions than due and grants it again. The woo-verzoek case type
     (1.4.5, register 0.20.39) sets `assigneeMay: update` on `reviewBatch` and `triageRule`, the assignee column
     of the table. Tests: `CaseRecordReadersTest::testReviewersWhoReadTheRecordMayUpdateItWhenTheEntrySaysSo`,

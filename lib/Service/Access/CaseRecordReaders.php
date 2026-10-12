@@ -152,6 +152,9 @@ class CaseRecordReaders {
 	 * assignee who is also such a reviewer gets the wider of the two. Delete
 	 * and share are never granted.
 	 *
+	 * This is what dossiq asks OpenRegister to grant, from the case type's
+	 * declaration. Whether somebody may read a record stays OpenRegister's answer.
+	 *
 	 * @param array<string, string>       $rule       The record's rule, as ruleOf() answers it.
 	 * @param array<string, mixed>        $record     The record row.
 	 * @param string                      $assignee   The case assignee, '' when none.
@@ -162,7 +165,7 @@ class CaseRecordReaders {
 	 *
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-may-update-it-req-cra-010
 	 */
-	public function grantsFor(array $rule, array $record, string $assignee, array $reviewers, bool $hideOthers): array {
+	public function toGrant(array $rule, array $record, string $assignee, array $reviewers, bool $hideOthers): array {
 		$grants = [];
 		$reading = $this->cleaned(users: $this->reviewersReading(rule: $rule, record: $record, reviewers: $reviewers, hideOthers: $hideOthers));
 		foreach ($this->cleaned(users: [$assignee]) as $user) {
@@ -174,7 +177,7 @@ class CaseRecordReaders {
 		}
 
 		return $grants;
-	}//end grantsFor()
+	}//end toGrant()
 
 	/**
 	 * The permission bits of `read` or `update`.

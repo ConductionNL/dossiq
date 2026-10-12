@@ -180,7 +180,7 @@ class CaseReviewerAccess {
 				$result = $this->grants->reconcile(
 					schema: $schema,
 					uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					readers: $this->recordReaders->grantsFor(
+					readers: $this->recordReaders->toGrant(
 						rule: $declared,
 						record: $row,
 						assignee: $assignee,

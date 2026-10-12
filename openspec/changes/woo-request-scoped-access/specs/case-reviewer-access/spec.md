@@ -84,7 +84,7 @@ update bits on the record. With `reviewersMay: update` the reviewers who read th
 `readers` rule (REQ-CRA-008) SHALL be granted both bits; a reviewer who does not read the record
 SHALL gain nothing. An assignee who is also such a reviewer SHALL get the wider of the two. Any
 other value SHALL be read as `read`, the narrow side. Delete and share SHALL never be granted.
-`CaseRecordReaders::grantsFor()` computes the bits per reader and `ObjectReadGrants::reconcile()`
+`CaseRecordReaders::toGrant()` computes the bits per reader and `ObjectReadGrants::reconcile()`
 SHALL make the record's user grants equal them: a grant that carries other permissions than its
 reader is due SHALL be revoked and granted again, so widening or narrowing an entry and reconciling
 reaches the records that already exist. A second run SHALL grant and revoke nothing.

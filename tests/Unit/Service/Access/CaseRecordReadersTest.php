@@ -110,7 +110,7 @@ class CaseRecordReadersTest extends TestCase {
 	 * @return array<string, int>
 	 */
 	private function grantsOf(array $declared, array $record = [], bool $hideOthers = false, string $assignee = 'handler'): array {
-		return $this->readers->grantsFor(
+		return $this->readers->toGrant(
 			rule: $this->readers->ruleOf(declared: $declared),
 			record: $record,
 			assignee: $assignee,

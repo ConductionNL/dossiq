@@ -116,7 +116,7 @@ class ObjectReadGrants {
 	 *
 	 * @param string             $schema  The record's schema slug.
 	 * @param string             $uuid    The record's uuid.
-	 * @param array<string, int> $readers Core permission bits by user id, as CaseRecordReaders::grantsFor() answers them.
+	 * @param array<string, int> $readers Core permission bits by user id, as CaseRecordReaders::toGrant() answers them.
 	 * @param string             $group   The owning group.
 	 *
 	 * @return array{granted: int, revoked: int, refused: int}
