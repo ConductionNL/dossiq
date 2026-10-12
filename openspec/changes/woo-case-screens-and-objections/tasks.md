@@ -57,12 +57,13 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
 
 ## 4. Register an objection
 
-- [ ] 4.1 Extract the body of `BezwaarObjectionController::open()` into a service method (for example
+- [x] 4.1 Extract the body of `BezwaarObjectionController::open()` into a service method (for example
   `ObjectionService::open(string $bezwaarCaseId, string $contestedDecision, array $objection): array`)
   and make the controller call it. Behaviour of the existing route stays identical (REQ-WCS-004).
   - unit `tests/Unit/Controller/BezwaarObjectionControllerTest.php`: existing tests stay green;
     add `testTheRouteStillOpensThroughTheService`.
-- [ ] 4.2 Add `WooObjectionController::open(string $id)` on POST `/api/cases/{id}/woo/objection`
+  - Built: no change needed. `BezwaarObjectionController::open()` already delegates to `BezwaarCreationHook::onBezwaarCreated()`, the service the generic lodging also calls (`lib/Controller/BezwaarObjectionController.php` line 122, covered by `tests/Unit/Service/Bezwaar/BezwaarObjectionIsReachableTest.php`). The test file this task names was not added.
+- [x] 4.2 Add `WooObjectionController::open(string $id)` on POST `/api/cases/{id}/woo/objection`
   with `#[NoAdminRequired]` and a `requireCaseMutationAccess()` guard in the body. It checks the
   decision, opens the Bezwaar case with `relatedCases`, calls the service of 4.1, deletes the case
   again when that fails, and answers `{bezwaarCaseId, objectionId, deadline, isTimely}`
@@ -72,6 +73,7 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
     `testAFailedObjectionRecordLeavesNoCase`, `testATimelyObjection`,
     `testALateObjectionIsRegisteredAndMarked`, `testAUserWithoutMutationAccessIsRefused`.
   - Gates no-admin-idor, route-auth and route-reachability must pass on this controller.
+  - Built: generic per decision 182, not as written. `RemedyController::lodge()` on POST `/api/cases/{id}/remedy` over `Service/Remedy/RemedyLodging` (REQ-RML-001, REQ-RML-002). There is no `WooObjectionController`. Tests: `RemedyControllerTest`, `RemedyLodgingTest`.
 - [ ] 4.3 Add `src/dialogs/WooObjectionDialog.vue` and header action `woo-objection`, visible when the
   case has a Woo decision. On success it navigates to `BezwaarDetail` for the new case. Add a link
   between the two cases on both pages (REQ-WCS-004).
@@ -79,7 +81,7 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
 
 ## 5. The Bezwaar case type and the list
 
-- [ ] 5.1 Move the Bezwaar case type out of `bezwaar_seed_data.json` `_caseTypes_disabled` into a new
+- [x] 5.1 Move the Bezwaar case type out of `bezwaar_seed_data.json` `_caseTypes_disabled` into a new
   fragment `lib/Settings/register.d/84-woo-bezwaar-case-type.json`, seeded with the Woo case type.
   Leave Beroep and Subsidie parked. Keep `SetupWizardStepsTest` green (REQ-WCS-006).
   - **fails today**: `tests/Unit/Settings/WooBezwaarCaseTypeSeedTest.php`
@@ -87,6 +89,7 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
     `testBeroepAndSubsidieStayParked`, reading the merged register the importer reads.
   - Check the case type's term: P6W, extension P6W, Awt roll on. Test:
     `testTheBezwaarTermIsSixWeeksRolled`.
+  - Built: `register.d/84-woo-bezwaar-case-type.json`, `WooBezwaarCaseTypeSeedTest`. The parked entry stays in `_caseTypes_disabled` under the same uuid, because it carries the workflow template `WorkflowGuardConformanceTest` sweeps.
 - [ ] 5.2 Add a `Bezwaren` index page and menu entry in `src/manifest.json`, filtered on the Bezwaar
   case type, so it lists real rows (REQ-WCS-006).
   - `npm run check:manifest` exits 0.

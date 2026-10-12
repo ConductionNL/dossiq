@@ -81,7 +81,9 @@ class WooBezwaarCaseTypeSeedTest extends TestCase {
 	}//end testTheBezwaarCaseTypeIsSeededWithTheWooCaseType()
 
 	/**
-	 * Beroep and Subsidie stay parked.
+	 * Beroep and Subsidie stay parked. The parked Bezwaar entry stays too: it
+	 * carries the workflow template of the Dutch profile, under the uuid of the
+	 * seeded case type, so un-parking updates that one and adds no second.
 	 *
 	 * @return void
 	 */
@@ -89,7 +91,8 @@ class WooBezwaarCaseTypeSeedTest extends TestCase {
 		$seed = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/bezwaar_seed_data.json'), true);
 		$parked = array_column((array)$seed['_caseTypes_disabled'], 'identifier');
 
-		self::assertSame(['beroep', 'subsidie'], $parked);
+		self::assertSame(['bezwaar', 'beroep', 'subsidie'], $parked);
+		self::assertSame(self::BEZWAAR, $seed['_caseTypes_disabled'][0]['uuid']);
 		self::assertArrayNotHasKey('caseTypes', $seed);
 		self::assertSame([], $this->caseType('b3c1a000-0000-4000-a000-00000000be30'));
 	}//end testBeroepAndSubsidieStayParked()

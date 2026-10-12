@@ -39,9 +39,11 @@ use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -66,12 +68,16 @@ class RemedyLodging {
 	 * @param CaseRemedy          $caseRemedy      What the decided case's case type declares.
 	 * @param BezwaarCreationHook $objections      The one path an objection is recorded through.
 	 * @param LoggerInterface     $logger          Logger.
+	 * @param CaseDateNormaliser  $dates           The one place a stored date is read.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; without it the term ends on the counted day.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseRemedy $caseRemedy,
 		private readonly BezwaarCreationHook $objections,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -117,7 +123,7 @@ class RemedyLodging {
 			);
 		}
 
-		$received = $this->dateOf(value: ($objection['receivedDate'] ?? '')) ?? new DateTimeImmutable('today');
+		$received = ($this->dates->tryParse(value: ($objection['receivedDate'] ?? null)) ?? $this->dates->today());
 		$isTimely = $this->isTimely(decision: $decision, termDays: $remedy['termDays'], received: $received);
 		$decided = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId) ?? [];
 
@@ -174,7 +180,7 @@ class RemedyLodging {
 	public function isTimely(array $decision, int $termDays, DateTimeImmutable $received): bool {
 		$madeKnown = null;
 		foreach (['publicationDate', 'deliveryDate', 'decisionDate'] as $field) {
-			$madeKnown = $this->dateOf(value: ($decision[$field] ?? ''));
+			$madeKnown = $this->dates->tryParse(value: ($decision[$field] ?? null));
 			if ($madeKnown !== null) {
 				break;
 			}
@@ -184,7 +190,14 @@ class RemedyLodging {
 			return true;
 		}
 
-		return $received <= $madeKnown->modify('+' . $termDays . ' days');
+		// Algemene termijnenwet art. 1: a term that ends on a Saturday, a
+		// Sunday or a public holiday runs to the next working day.
+		$end = $madeKnown->modify('+' . $termDays . ' days');
+		$end = ($this->timerService?->rollTermEndFor(date: $end) ?? $end);
+
+		// Compared as calendar days: a term ends at the end of its last day,
+		// whatever hour either moment carries.
+		return $this->dates->formatCalendarDate(moment: $received) <= $this->dates->formatCalendarDate(moment: $end);
 	}//end isTimely()
 
 	/**
@@ -264,23 +277,4 @@ class RemedyLodging {
 		}
 	}//end withdrawOpened()
 
-	/**
-	 * A Y-m-d (or longer ISO) date, or null.
-	 *
-	 * @param mixed $value The stored value.
-	 *
-	 * @return DateTimeImmutable|null
-	 */
-	private function dateOf(mixed $value): ?DateTimeImmutable {
-		if (is_string($value) === false || preg_match('/^\d{4}-\d{2}-\d{2}/', $value) !== 1) {
-			return null;
-		}
-
-		$date = DateTimeImmutable::createFromFormat('!Y-m-d', substr($value, 0, 10));
-		if ($date === false) {
-			return null;
-		}
-
-		return $date;
-	}//end dateOf()
 }//end class

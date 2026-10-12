@@ -19,6 +19,7 @@ use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook;
 use OCA\Dossiq\Service\Remedy\RemedyLodging;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -27,6 +28,7 @@ use RuntimeException;
  * A remedy opens its own case, linked, with its objection, or nothing at all.
  */
 class RemedyLodgingTest extends TestCase {
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * @var RemedyObjectServiceDouble
@@ -70,6 +72,7 @@ class RemedyLodgingTest extends TestCase {
 			caseRemedy: $remedy,
 			objections: $this->hook,
 			logger: $this->createMock(LoggerInterface::class),
+			dates: $this->caseDates(),
 		);
 	}//end lodging()
 
@@ -162,6 +165,33 @@ class RemedyLodgingTest extends TestCase {
 		$this->assertTrue($lodging->isTimely($decision, 42, new DateTimeImmutable('2026-12-01')));
 		$this->assertTrue($lodging->isTimely($decision, 42, new DateTimeImmutable('2026-12-14')));
 	}//end testATimelyObjection()
+
+	/**
+	 * A term that ends in a weekend runs to the next working day (Algemene
+	 * termijnenwet art. 1): the end goes through the engine calendar.
+	 *
+	 * @return void
+	 */
+	public function testATermEndingInAWeekendRunsToTheNextWorkingDay(): void {
+		// 2026-11-07 plus 42 days is Saturday 2026-12-19.
+		$timer = $this->createMock(\OCA\Dossiq\Service\TermijnTimerService::class);
+		$timer->expects($this->atLeastOnce())
+			->method('rollTermEndFor')
+			->with($this->callback(static fn (DateTimeImmutable $d): bool => $d->format('Y-m-d') === '2026-12-19'))
+			->willReturn(new DateTimeImmutable('2026-12-21'));
+		$lodging = new RemedyLodging(
+			settingsService: $this->createMock(\OCA\Dossiq\Service\SettingsService::class),
+			caseRemedy: $this->createMock(\OCA\Dossiq\Service\Beschikking\CaseRemedy::class),
+			objections: $this->createMock(BezwaarCreationHook::class),
+			logger: $this->createMock(LoggerInterface::class),
+			dates: $this->caseDates(),
+			timerService: $timer,
+		);
+
+		$decision = ['publicationDate' => '2026-11-07'];
+		$this->assertTrue($lodging->isTimely($decision, 42, new DateTimeImmutable('2026-12-21')));
+		$this->assertFalse($lodging->isTimely($decision, 42, new DateTimeImmutable('2026-12-22')));
+	}//end testATermEndingInAWeekendRunsToTheNextWorkingDay()
 
 	/**
 	 * A late objection is still registered, marked untimely.
