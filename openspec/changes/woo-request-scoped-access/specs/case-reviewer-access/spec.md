@@ -10,7 +10,8 @@ assessments are configuration on the Woo case type (see `woo-request-scoped-acce
 ### Requirement: A case type declares the records it keeps private to the case (REQ-CRA-001)
 
 The case type schema SHALL carry `reviewerAccess` with `records` (a list of `{schemaKey,
-caseField}`: the app setting that names the record's schema and the field holding the case),
+caseField}`: the app setting that names the record's schema and the field holding the case, with
+the optional reader rule of REQ-CRA-008),
 `reviewers` (a list of `{schemaKey, caseField, userField}`: where the case's reviewers are named),
 `supervisorGroup` (default `dossiq-coordinators`) and `hideOthers` (default false). A record schema
 named there SHALL carry `scope: private` in its own authorization block, so OpenRegister admits only
@@ -26,7 +27,8 @@ behave as before: nothing reconciled, every record changeable as before.
 
 `CaseReviewerAccess::reconcile(caseId)` SHALL make every declared record of the case owned by the
 supervising group and readable by the case `assignee` and every reviewer the `reviewers` sources
-name, except where `hideOthers` withholds the reviewers. Through `ObjectReadGrants` it SHALL grant
+name, except where `hideOthers` withholds the reviewers or the record's own `readers` rule
+(REQ-CRA-008) narrows it. Through `ObjectReadGrants` it SHALL grant
 only core's read bit, never grant the record's owner, revoke every non-inherited user grant it did
 not compute, leave group and inherited grants alone, and answer `{status: reconciled | not-declared
 | unavailable, granted, revoked, refused}`. A refusal by OpenRegister SHALL be counted, never
@@ -43,6 +45,36 @@ created.
 - **GIVEN** `hideOthers` on
 - **WHEN** the case is reconciled
 - **THEN** only the assignee SHALL be granted; each reviewer reads only their own records
+
+### Requirement: A case type says per record who on the case reads it (REQ-CRA-008)
+
+Each entry of `reviewerAccess.records` MAY carry `readers`: `all` (the default: the case assignee
+and every reviewer the `reviewers` sources name, unless `hideOthers` withholds them), `assignee`
+(the case assignee only) or `own` (the case assignee and the reviewers the record itself names).
+With `own` the entry names where the record holds them: `userField`, a field holding user ids, or
+`reviewerRowField`, a field holding the id of a row of one of the `reviewers` sources, whose
+reviewers then read the record. A row of another case SHALL name nobody. The supervising group owns
+the record under all three. A value other than these three SHALL be read as `assignee`, the narrow
+side. `CaseRecordReaders` computes the readers of one record; `CaseReviewerAccess::reconcile()`
+SHALL ask it per record, so narrowing a rule and reconciling revokes the grants that no longer hold.
+
+#### Scenario: A reviewer reads only the batch that names them
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testAReviewerReadsOnlyTheRecordThatNamesThem; the live read is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with assignee `j.devries`, batch 1 naming reviewer `p.bakker`, batch 2 naming `a.smit`, and the batch record declared `readers: own`, `userField: assignee`
+- **WHEN** the case is reconciled
+- **THEN** batch 1 SHALL be read by `j.devries` and `p.bakker`, batch 2 by `j.devries` and `a.smit`, and neither reviewer SHALL hold a grant on the other's batch
+
+#### Scenario: A record for the assignee only
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testARecordSharedWithTheAssigneeOnlyReachesNoReviewer.
+- **GIVEN** the same case and a record declared `readers: assignee`
+- **WHEN** the case is reconciled
+- **THEN** only `j.devries` SHALL hold a read grant on it, and a grant a reviewer held before SHALL be revoked
+
+#### Scenario: A record that belongs to a batch
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testARecordOfABatchIsReadByThatBatchsReviewer.
+- **GIVEN** a record declared `readers: own`, `reviewerRowField: batch`, one row naming batch 2 and one naming no batch
+- **WHEN** the case is reconciled
+- **THEN** the first SHALL be read by `j.devries` and `a.smit`, the second by `j.devries` alone
 
 ### Requirement: A reviewer changes only the records they made (REQ-CRA-003)
 

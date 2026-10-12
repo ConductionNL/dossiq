@@ -212,6 +212,16 @@ record. OpenRegister refuses a parent that references another schema
     before (every authenticated user) but wider than the table; (b) update grants (reconcile grants read only);
     (c) reconcile from the gather add, the search plan save, the query record, the exclusion route and
     `DocumentRelevance::mark`, then list those four records too (see 6.1).
+  - Round 6: (a) is built, generic. `lib/Service/Access/CaseRecordReaders.php` reads `readers`
+    (`all` | `assignee` | `own`, with `userField` or `reviewerRowField`) per `reviewerAccess.records` entry
+    (case-reviewer-access REQ-CRA-008, declared in `89-case-reviewer-access.json`) and
+    `CaseReviewerAccess::reconcile()` asks it per record. The woo-verzoek case type (1.4.4, register 0.20.38)
+    sets `reviewBatch` to `own` by `assignee` and `triageRule` to `assignee`, the read column of the table.
+    Tests: `CaseRecordReadersTest`; `CaseReviewerAccessTest::testAReviewerReadsOnlyTheRecordThatNamesThem`,
+    `testARecordSharedWithTheAssigneeOnlyReachesNoReviewer`, `testARecordOfABatchIsReadByThatBatchsReviewer`
+    (red against the old class, `dq-l8-logs/r6/red-readers.log`). An administrator runs
+    `POST /api/cases/reviewer-access/reconcile` once after the upgrade: it revokes the wider grants existing
+    batches and rules carry. Still open: (b) and (c).
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
