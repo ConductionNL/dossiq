@@ -43,6 +43,7 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver
  * @uses   \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  * @uses   \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class ConnectedSystemCaseWriterTest extends TestCase {
 

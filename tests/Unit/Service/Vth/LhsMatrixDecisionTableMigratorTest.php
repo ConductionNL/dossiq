@@ -25,6 +25,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator
+ * @uses   \OCA\Dossiq\Service\Dmn\StoredDecisionTables
  */
 class LhsMatrixDecisionTableMigratorTest extends TestCase {
 
