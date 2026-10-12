@@ -22,12 +22,12 @@ Two deviations from design.md section 3, both OpenRegister's shape: (a) the audi
 ## 3. Remove: backend
 
 - [x] 3.1 Delete `lib/Service/Cmmn/` (all nine classes), `lib/Controller/CmmnCaseController.php` and the five `/api/case/{caseId}/cmmn-plan*` entries in `appinfo/routes.php`; drop the R1 rollback command.
-- [ ] 3.2 Remove `casePlanState` from `dossiq_register.json` and `dossiq_mock_register.json` and rewrite the `handlingModel` `cmmn` description to name the openregister case layer. Gated on the group 2 exit report: openregister strips undeclared properties on save, so this lands last.
+- [x] 3.2 Remove `casePlanState` from `dossiq_register.json` and `dossiq_mock_register.json` and rewrite the `handlingModel` `cmmn` description to name the openregister case layer. Gated on the group 2 exit report: openregister strips undeclared properties on save, so this lands last.
 - [x] 3.3 Retire the engine's unit tests (`tests/Unit/Service/Cmmn/`, `CmmnCaseControllerTest`) and `CmmnBpmnCoexistenceRegressionTest`; its BPMN-untouched invariant moves to the structural test and the e2e journey (5.3).
 
 Built 12 Oct 2026 (lane L7), on merge train 2 (which carries the drain of group 2).
 3.1: `lib/Service/Cmmn/` (nine classes), `lib/Controller/CmmnCaseController.php`, the five routes, `lib/Command/RollbackCasePlansCommand.php` with `lib/Service/CasePlanRollbackService.php`, and the `cmmn_prefer_openregister_case_plan` flag on `DashboardController` are gone. 3.3: `tests/Unit/Service/Cmmn/`, `CmmnCaseControllerTest`, `CasePlanRollbackServiceTest`, `DashboardControllerCasePlanFlagTest` and `CmmnBpmnCoexistenceRegressionTest` are gone; the BPMN-untouched invariant is `CmmnRetirementTest::testTheStatusTransitionPathNeverReachesTheCaseLayer` and the case-detail e2e (5.3).
-3.2 is NOT built here and must not be. It is a separate pull request that removes the property and the drain in one commit, and it merges only after the drain report shows zero populated blobs and zero unmappable cases on every instance. `CmmnRetirementTest::testTheSchemaKeepsTheBlobForAsLongAsTheDrainShips` fails if one leaves without the other.
+3.2 built 12 Oct 2026 (lane L7) in its own pull request, which merges only after the drain report shows zero populated blobs and zero unmappable cases on every instance. `casePlanState` is gone from `dossiq_register.json` (case 1.42.0) and `dossiq_mock_register.json`, with its three seeded example values. `handlingModel` names OpenRegister's case layer (caseType 1.18.1), and the two `caseModel` descriptions that named the engine and the blob are reworded (caseModel 1.0.2). Register 0.20.33. The drain left in the same commit: `lib/Service/CasePlanDrain/`, `MigrateCasePlansCommand`, the `MigrateCmmnCasePlans` repair step and `CasePlanProjectionService::definitionForCaseType()`, which only the drain called. `CmmnRetirementTest::testTheBlobAndItsDrainAreGone` keeps them out.
 
 ## 4. Remove: frontend, and the guard
 
@@ -35,7 +35,7 @@ Built 12 Oct 2026 (lane L7), on merge train 2 (which carries the drain of group 
 - [x] 4.2 `tests/Unit/Service/CmmnRetirementTest.php` (class-catching guard): fails on any reference under `lib/` or `src/` to `OCA\Dossiq\Service\Cmmn`, `CmmnCaseController` or `casePlanState` outside a closed, reason-bearing allowlist; the allowlist holds only the migration's blob access until this release and is asserted empty after 3.1 and 3.2 land.
 
 Built 12 Oct 2026 (lane L7). 4.1: `src/services/cmmnApi.js` and `src/utils/cmmnHelpers.js` (no reader left) are gone; `CmmnCasePlanPanel.vue` and `CmmnPlanItemNode.vue` had already gone with 1.2. `CasePlanPanel.vue` reads OpenRegister only; `src/services/casePlanSource.js` keeps one question, whether to ask at all. The bundle was not built for this (decision 139); `CmmnRetirementTest` asserts that no file under `src/` names the retired code, which is what a bundle is built from.
-4.2: `tests/Unit/Service/CmmnRetirementTest.php`. It also scans `appinfo/`. The allowlist is not empty yet: it holds the four drain files and the five files that declare or describe the property, each with its reason, and no entry may name anything but the blob. It empties with 3.2.
+4.2: `tests/Unit/Service/CmmnRetirementTest.php`. It also scans `appinfo/`. The allowlist held the four drain files and the five files that declared or described the property until 3.2. It is empty now, and the test asserts that it stays empty.
 
 ## 5. E2E coverage
 
@@ -43,7 +43,7 @@ Built 12 Oct 2026 (lane L7). 4.1: `src/services/cmmnApi.js` and `src/utils/cmmnH
 - [ ] 5.2 Migration proof in the same spec: seed a case with a populated blob, run the migration, assert the case detail shows the same items in the same states from openregister rows; anchor `#a-drained-case-shows-the-same-plan`.
 - [ ] 5.3 Update `tests/e2e/case-detail-kpis-and-tabs.spec.ts`: remove the `cmmn-plan` 409 allowances from its console and network assertions and anchor `#a-bpmn-case-is-untouched` on the BPMN case-detail assertions.
 
-Written 12 Oct 2026 (lane L7), not run (live pass, decision 139): `tests/e2e/cmmn-retirement.spec.ts` (5.1, 5.2) and the updated `tests/e2e/case-detail-kpis-and-tabs.spec.ts` (5.3). The boxes stay open until the live pass has run them.
+Written 12 Oct 2026 (lane L7), not run (live pass, decision 139): `tests/e2e/cmmn-retirement.spec.ts` (5.1; the 5.2 drain proof ran while the drain shipped and left the spec with it in 3.2) and the updated `tests/e2e/case-detail-kpis-and-tabs.spec.ts` (5.3). The boxes stay open until the live pass has run them.
 
 ## 6. Quality
 
@@ -52,4 +52,4 @@ Written 12 Oct 2026 (lane L7), not run (live pass, decision 139): `tests/e2e/cmm
 
 ## Re-verified 2026-10-12
 
-Groups 1, 2, 3.1, 3.3 and 4 are built. Open: 3.2 (gated on the drain report, its own pull request), the live pass of group 5, and 6.
+Groups 1 to 4 are built. Open: the live pass of group 5, and 6. Archive after the live pass.

@@ -6,7 +6,7 @@
  *
  * It used to be CnAdvancedFormDialog: a Properties/Data table listing all 48
  * of the case schema's properties, unordered, `qualityScore` and
- * `casePlanState` among them. Two things changed. The schema now says which
+ * `statusHistory` among them. Two things changed. The schema now says which
  * properties a person deals with and which are engine plumbing, and the New
  * case action narrows itself to the ten a handler fills. On top of that,
  * `case.caseType` declares `x-openregister-extends-form`, so choosing a case
@@ -56,12 +56,7 @@ const CREATE_FIELDS = [
 ]
 
 /** Properties the schema marks `visible: false`; no surface may render them. */
-const HIDDEN_FIELDS = [
-	'qualityScore',
-	'casePlanState',
-	'statusHistory',
-	'portalSubject',
-]
+const HIDDEN_FIELDS = ['qualityScore', 'statusHistory', 'portalSubject']
 
 const CASE_TYPE_TITLE = `${RUN_PREFIX} Subsidie`
 const START_STATUS = `${RUN_PREFIX} Ontvangen`

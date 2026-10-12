@@ -11,7 +11,7 @@
       "caseModel": {
         "slug": "caseModel",
         "icon": "SitemapOutline",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "searchable": false,
         "x-schema-org": "schema:HowTo",
         "x-cmmn-equivalent": "CasePlanModel",
@@ -22,7 +22,7 @@
         "properties": {
           "title":           {"type": "string", "maxLength": 255, "title": "Title", "description": "Name of this case model."},
           "description":     {"type": "string", "title": "Description", "description": "Purpose and usage notes for this case model."},
-          "caseType":         {"type": "string", "format": "uuid", "$ref": "caseType", "onDelete": "CASCADE", "title": "Case Type", "description": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine."},
+          "caseType":         {"type": "string", "format": "uuid", "$ref": "caseType", "onDelete": "CASCADE", "title": "Case Type", "description": "Reference to the case type this case model belongs to. That caseType's handlingModel must be 'cmmn' for this model to be handed to OpenRegister's case layer when a case starts."},
           "version":         {"type": "integer", "default": 1, "title": "Version", "description": "Auto-incrementing version number, mirroring workflowTemplate."},
           "lifecycleStatus": {"type": "string", "enum": ["draft", "published", "deprecated"], "default": "draft", "title": "Lifecycle status", "description": "draft = editable, cannot back new cases. published = immutable, can back new cases (one active per caseType). deprecated = immutable, existing cases keep using it."},
           "caseFileItems": {
@@ -42,7 +42,7 @@
           "planItems": {
             "type": "array",
             "title": "Plan Items",
-            "description": "The case-plan tree: stages (nestable via parentId), human tasks, and milestones. Each item's lifecycle is tracked at runtime in case.casePlanState: the definition here is immutable data.",
+            "description": "The case-plan tree: stages (nestable via parentId), human tasks, and milestones. OpenRegister's case layer holds each item's lifecycle as a plan-item row: the definition here is immutable data.",
             "items": {
               "type": "object",
               "required": ["id", "type", "name"],

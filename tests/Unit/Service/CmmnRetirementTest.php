@@ -7,17 +7,13 @@
  * `/api/case/{caseId}/cmmn-plan*` routes) is gone. An adaptive case plan is
  * rows in OpenRegister's case layer, created by `CasePlanProjectionService`
  * and served on OpenRegister's `/api/cases`. This test fails on any file
- * under `lib/`, `src/` or `appinfo/` that names the retired runtime or reads
- * the `casePlanState` blob, outside a closed allowlist in which every entry
- * says why it is still there.
+ * under `lib/`, `src/` or `appinfo/` that names the retired runtime or the
+ * `casePlanState` blob.
  *
- * The allowlist is the drain and the schema declaration it reads, and the two
- * leave together. OpenRegister drops a property the schema does not declare
- * on the next save, so removing the declaration while a blob remains destroys
- * that blob. `testTheSchemaKeepsTheBlobForAsLongAsTheDrainShips` ties the two
- * mechanically: the property may only go in the commit that removes the drain,
- * and the drain may only go once its report shows zero blobs (design.md
- * section 4).
+ * The allowlist is empty and stays empty. It held the drain and the schema
+ * declaration the drain read, for as long as a blob could still exist. Both
+ * left in one commit, after the drain report showed zero blobs (design.md
+ * section 4), and `testTheBlobAndItsDrainAreGone` keeps them out.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -74,29 +70,11 @@ final class CmmnRetirementTest extends TestCase {
 	];
 
 	/**
-	 * The drain: the only code that may still read the blob.
+	 * Files that may still name the retired runtime. None.
 	 *
 	 * @var array<string, string> Path => why it is still here.
 	 */
-	private const DRAIN = [
-		'lib/Service/CasePlanDrain/CasePlanMigrationService.php' => 'the drain reads each blob, hands it to OpenRegister and clears it once the rows are verified',
-		'lib/Service/CasePlanDrain/CasePlanBlob.php' => 'the drain decodes the blob; docblocks name the property',
-		'lib/Command/MigrateCasePlansCommand.php' => 'the occ entry of the drain; its help text names the property',
-		'lib/Repair/MigrateCmmnCasePlans.php' => 'the upgrade entry of the drain; its docblock names the property',
-	];
-
-	/**
-	 * The schema files that still declare or describe the blob.
-	 *
-	 * @var array<string, string> Path => why it is still here.
-	 */
-	private const DECLARATION = [
-		'lib/Settings/dossiq_register.json' => 'declares case.casePlanState so no save strips a blob the drain has not moved yet',
-		'lib/Settings/dossiq_mock_register.json' => 'mirrors the declaration and carries three seeded example values',
-		'lib/Settings/register.d/39-search-declarations.json' => 'its note lists the property among the JSON blobs that declare no match type',
-		'lib/Settings/register.d/70-cmmn-case-model.json' => 'the caseModel description names where the runtime state used to live; reworded with the declaration',
-		'appinfo/info.xml' => 'the comment on the drain repair step names the property',
-	];
+	private const ALLOWED = [];
 
 	/**
 	 * Every file under one directory, relative to the root.
@@ -157,49 +135,14 @@ final class CmmnRetirementTest extends TestCase {
 	}//end schemaDeclaresTheBlob()
 
 	/**
-	 * Nothing outside the allowlist names the retired runtime (REQ-RCMN-003).
+	 * Nothing names the retired runtime, and the allowlist is empty (REQ-RCMN-003).
 	 *
 	 * @return void
 	 */
-	public function testNothingOutsideTheAllowlistNamesTheRetiredRuntime(): void {
-		$allowed = array_merge(self::DRAIN, self::DECLARATION);
-		$unlisted = array_diff_key($this->references(), $allowed);
-
-		$this->assertSame([], $unlisted, self::DOOR);
-	}//end testNothingOutsideTheAllowlistNamesTheRetiredRuntime()
-
-	/**
-	 * Every allowlist entry still earns its place, and says why.
-	 *
-	 * An entry whose file no longer names the runtime is stale: it would let
-	 * a later reference in through a door nobody is watching.
-	 *
-	 * @return void
-	 */
-	public function testEveryAllowlistEntryIsStillNeededAndGivesItsReason(): void {
-		$allowed = array_merge(self::DRAIN, self::DECLARATION);
-		$stale = array_keys(array_diff_key($allowed, $this->references()));
-
-		$this->assertSame([], $stale, 'These allowlist entries name nothing retired any more; remove them.');
-		foreach ($allowed as $path => $reason) {
-			$this->assertGreaterThan(20, strlen($reason), $path.' needs a reason.');
-		}
-	}//end testEveryAllowlistEntryIsStillNeededAndGivesItsReason()
-
-	/**
-	 * Only the drain reaches the allowlist with the engine's names, never a class.
-	 *
-	 * The allowlist exists for blob access. No entry may name the retired
-	 * namespace, the controller or a route: those have no reason to survive.
-	 *
-	 * @return void
-	 */
-	public function testTheAllowlistCoversBlobAccessOnly(): void {
-		$allowed = array_merge(self::DRAIN, self::DECLARATION);
-		foreach (array_intersect_key($this->references(), $allowed) as $path => $labels) {
-			$this->assertSame('the casePlanState blob', $labels, $path.' names more than the blob. '.self::DOOR);
-		}
-	}//end testTheAllowlistCoversBlobAccessOnly()
+	public function testNothingNamesTheRetiredRuntime(): void {
+		$this->assertSame([], self::ALLOWED, 'The allowlist is closed. '.self::DOOR);
+		$this->assertSame([], $this->references(), self::DOOR);
+	}//end testNothingNamesTheRetiredRuntime()
 
 	/**
 	 * The retired code is gone (REQ-RCMN-003, REQ-RCMN-004).
@@ -238,28 +181,22 @@ final class CmmnRetirementTest extends TestCase {
 	}//end testThePlanSlotIsServedByThePanelOverOpenRegister()
 
 	/**
-	 * The blob stays declared for exactly as long as the drain ships (REQ-RCMN-004).
-	 *
-	 * Removing the declaration while the drain still has work destroys the
-	 * blobs it has not moved. Keeping the drain after the declaration is gone
-	 * leaves code that reads a property OpenRegister no longer returns. So
-	 * they leave in one commit, and both lists are then empty.
+	 * The blob and its drain are gone, in the shipped schema and the seed data (REQ-RCMN-004).
 	 *
 	 * @return void
 	 */
-	public function testTheSchemaKeepsTheBlobForAsLongAsTheDrainShips(): void {
-		$drainShips = false;
-		foreach (array_keys(self::DRAIN) as $path) {
-			$drainShips = ($drainShips === true || is_file(self::ROOT.'/'.$path) === true);
-		}
+	public function testTheBlobAndItsDrainAreGone(): void {
+		$this->assertFalse($this->schemaDeclaresTheBlob());
+		$this->assertDirectoryDoesNotExist(self::ROOT.'/lib/Service/CasePlanDrain');
+		$this->assertFileDoesNotExist(self::ROOT.'/lib/Command/MigrateCasePlansCommand.php');
+		$this->assertFileDoesNotExist(self::ROOT.'/lib/Repair/MigrateCmmnCasePlans.php');
+		$this->assertStringNotContainsString('migrate-case-plans', (string) file_get_contents(self::ROOT.'/appinfo/info.xml'));
 
-		$this->assertSame(
-			$drainShips,
-			$this->schemaDeclaresTheBlob(),
-			'case.casePlanState and the drain leave together: OpenRegister strips an undeclared property on save.'
-		);
-		$this->assertSame($drainShips, self::DRAIN !== [] || self::DECLARATION !== []);
-	}//end testTheSchemaKeepsTheBlobForAsLongAsTheDrainShips()
+		$register = json_decode((string) file_get_contents(self::ROOT.'/lib/Settings/dossiq_register.json'), true);
+		$handlingModel = ($register['components']['schemas']['caseType']['properties']['handlingModel'] ?? []);
+		$this->assertSame(['bpmn', 'cmmn'], ($handlingModel['enum'] ?? null));
+		$this->assertStringContainsString("OpenRegister's case layer", (string) ($handlingModel['description'] ?? ''));
+	}//end testTheBlobAndItsDrainAreGone()
 
 	/**
 	 * A BPMN case never touches the case layer (REQ-RCMN-005).
