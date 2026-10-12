@@ -24,7 +24,7 @@
  *
  * @link https://www.Integriq.nl
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\EventDispatcher\Event;
 /**
  * A provider question with a synchronous answer slot.
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 abstract class StufProviderQueryEvent extends Event {
 
@@ -80,7 +80,7 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @return string The source id.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getSourceId(): string {
 		return $this->sourceId;
@@ -92,7 +92,7 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @return string The referentienummer.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getReferentienummer(): string {
 		return $this->referentienummer;
@@ -107,7 +107,7 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function refuse(string $appId, string $reason): void {
 		if ($this->answeredBy !== null) {
@@ -125,7 +125,7 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @return bool True once answered.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function isAnswered(): bool {
 		return $this->answeredBy !== null;
@@ -137,7 +137,7 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @return string|null The app id, null while unanswered.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getAnsweredBy(): ?string {
 		return $this->answeredBy;
@@ -149,7 +149,7 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @return string|null The reason, null when not refused.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getRefusal(): ?string {
 		return $this->refusal;
@@ -161,7 +161,7 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @return array The payload, [] while unanswered or refused.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getAnswer(): array {
 		return $this->answer;

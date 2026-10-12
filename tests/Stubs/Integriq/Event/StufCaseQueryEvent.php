@@ -22,7 +22,7 @@
  *
  * @link https://www.Integriq.nl
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Integriq\Event;
 /**
  * A case query (zakLv01).
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 class StufCaseQueryEvent extends StufProviderQueryEvent {
 
@@ -57,7 +57,7 @@ class StufCaseQueryEvent extends StufProviderQueryEvent {
 	 *
 	 * @return array<string, string> StUF-ZKN element name to value.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getCriteria(): array {
 		return $this->criteria;
@@ -72,7 +72,7 @@ class StufCaseQueryEvent extends StufProviderQueryEvent {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function answerCases(string $appId, array $cases): void {
 		$this->setAnswer(appId: $appId, payload: ['cases' => array_values($cases)]);

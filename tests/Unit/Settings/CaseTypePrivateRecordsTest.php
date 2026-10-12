@@ -25,7 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-woo-request-is-an-authorisation-container-req-wrt-006
+ * @spec openspec/changes/woo-review-triage/specs/woo-review-triage/spec.md#requirement-a-woo-request-is-an-authorisation-container-req-wrt-006
  */
 
 declare(strict_types=1);
