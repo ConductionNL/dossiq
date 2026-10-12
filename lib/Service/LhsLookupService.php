@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -55,6 +56,13 @@ class LhsLookupService {
 	 * Valid gevolg values (impact axis of the LHS matrix).
 	 */
 	private const VALID_GEVOLG = ['1', '2', '3', '4'];
+
+	/**
+	 * The stored decision table that answers the lookup (seeded by the LHS
+	 * package): inputs `behaviour` (A-D) and `consequence` (1-4), outputs
+	 * `interventionStep` and optionally `description`.
+	 */
+	public const DECISION_TABLE = 'dossiq.lhs-intervention';
 
 	/**
 	 * Embedded fallback table (behaviour:gevolg → interventieStep).
@@ -87,12 +95,14 @@ class LhsLookupService {
 	 *
 	 * @param SettingsService $settingsService Settings bridge
 	 * @param LoggerInterface $logger Logger
+	 * @param StoredDecisionTables|null $tables The stored LHS intervention table in OpenRegister.
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-8
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?StoredDecisionTables $tables = null,
 	) {
 	}//end __construct()
 
@@ -120,7 +130,13 @@ class LhsLookupService {
 			throw new RuntimeException('Invalid gevolg value: ' . $gevolg . '. Must be 1, 2, 3 or 4.');
 		}
 
-		// Try OpenRegister first.
+		// The stored decision table first (the LHS package seeds it), then the
+		// legacy matrix cells, then the embedded table.
+		$cell = $this->lookupFromDecisionTable(behaviour: $behaviour, gevolg: $gevolg);
+		if ($cell !== null) {
+			return $cell;
+		}
+
 		$cell = $this->lookupFromRegister(behaviour: $behaviour, gevolg: $gevolg);
 		if ($cell !== null) {
 			return $cell;
@@ -140,6 +156,44 @@ class LhsLookupService {
 			'source' => 'fallback',
 		];
 	}//end lookup()
+
+	/**
+	 * Evaluate the stored LHS intervention table in OpenRegister's register.
+	 *
+	 * @param string $behaviour Validated behaviour row (A-D).
+	 * @param string $gevolg Validated consequence column (1-4).
+	 *
+	 * @return array<string, mixed>|null The cell, or null when the store or the table is absent or does not answer.
+	 *
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 */
+	private function lookupFromDecisionTable(string $behaviour, string $gevolg): ?array {
+		$answer = null;
+		try {
+			$answer = $this->tables?->evaluate(
+				reference: self::DECISION_TABLE,
+				inputs: ['behaviour' => $behaviour, 'consequence' => $gevolg]
+			);
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'LHS lookup: the stored decision table did not answer: ' . $e->getMessage(),
+				['app' => Application::APP_ID, 'table' => self::DECISION_TABLE]
+			);
+		}
+
+		$intervention = ($answer['outputs']['interventionStep'] ?? null);
+		if (is_string($intervention) === false || $intervention === '') {
+			return null;
+		}
+
+		return [
+			'behaviourRow' => $behaviour,
+			'consequenceColumn' => $gevolg,
+			'interventionStep' => $intervention,
+			'description' => (string)($answer['outputs']['description'] ?? ''),
+			'source' => 'decision-table',
+		];
+	}//end lookupFromDecisionTable()
 
 	/**
 	 * Look up a cell from the OpenRegister lhsMatrixCell schema.

@@ -844,6 +844,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 nothing. In BOTH blocks: hermiq may come before dossiq or after.
             -->
             <step>OCA\Dossiq\Repair\ShipAssistantPrompts</step>
+            <!--
+                Copies dossiq's own decisionTable rows into OpenRegister's
+                decision-tables register (openregister#4572), keyed dossiq.<key>.
+                A copy: refused or disabled tables stay in dossiq, a table already
+                under its key is kept. Not on install: a fresh install has none.
+            -->
+            <step>OCA\Dossiq\Repair\MoveDecisionTablesToOpenRegister</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -889,6 +896,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder; a fresh install has none
               BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
+              MoveDecisionTablesToOpenRegister  copies existing dossiq decision tables into OpenRegister; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
