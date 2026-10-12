@@ -56,7 +56,7 @@ const manifest = readJson('src', 'manifest.json')
 const menuLayout = readJson('src', 'menu-layout.json')
 const iconsSource = read('src', 'icons.js')
 const mainSource = read('src', 'main.js')
-const registerSource = read('src', 'components', 'case', 'registerCaseSections.js')
+const registerSource = read('src', 'components', 'case', 'registerNavCardGrid.js')
 
 /** OpenRegister's schema list for the dossiq register. One target, two doors. */
 const TARGET = '/apps/openregister/#/registers/dossiq'
@@ -244,7 +244,7 @@ describe('Manage object types', () => {
 		// passesContextPredicates returns false when runtime is absent, so a
 		// card gated on a dot-path against a manifest with no runtime block is
 		// hidden from everyone and nothing says so.
-		expect(mainSource).toContain('runtime: { user: { isAdmin:')
+		expect(mainSource).toMatch(/runtime: \{\s*user: \{ isAdmin:/)
 		expect(mainSource).toContain("currentPermissions().includes('admin')")
 	})
 })

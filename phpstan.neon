@@ -38,6 +38,9 @@ parameters:
         # reported 57 false errors against a clean baseline — e.g. "Call to an
         # undefined method OCP\Http\Client\IClient::delete()".
         - tests/Stubs/Flow
+        # OpenRegister's #[McpTool] attribute and IMcpScannableServices
+        # (hermiq-ai-tooling): declaration-only, same reason as Flow/.
+        - tests/Stubs/Mcp
         # The decision app's event contract, under BOTH namespaces it has
         # shipped (OCA\Decidiq, formerly OCA\Decidesk). Scanned for the same
         # reason as Flow/ and with the same scoping discipline: these are

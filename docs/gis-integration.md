@@ -3,7 +3,7 @@
 Geografische functionaliteit in Dossiq: locaties op zaken, kaartlagen, een geo-viewer en een externe WFS-bron voor zaaklocaties. Deze pagina beschrijft het gebruik vanuit het perspectief van behandelaar, beheerder en manager, en sluit af met een externe-integratie- en troubleshooting-paragraaf.
 
 > **Specs:** `openspec/changes/gis-integration/proposal.md`, `openspec/changes/gis-integration/design.md`
-> **Schema's:** `case.geometry`, `mapLayer` (zie [ADR-000](../openspec/architecture/adr-000-data-model.md))
+> **Schema's:** `case.geometry`, `mapLayer` (zie [ADR-000](https://github.com/ConductionNL/dossiq/blob/development/openspec/architecture/adr-000-data-model.md))
 > **Status:** in opbouw — frontend-componenten en WFS-endpoint worden geleverd in opvolgende iteraties van `gis-integration`.
 
 ## Overzicht

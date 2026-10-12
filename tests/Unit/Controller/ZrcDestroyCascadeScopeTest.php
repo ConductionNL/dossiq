@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\Dossiq\Controller\ZrcController;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseDateNormaliser;
@@ -155,9 +156,8 @@ final class ZrcDestroyCascadeScopeTest extends TestCase {
 			request: $this->createMock(IRequest::class),
 			zgwService: $zgwService,
 			l10n: $l10n,
-			dates: $this->createMock(CaseDateNormaliser::class),
 			caseRelationService: $this->createMock(CaseRelationService::class),
-			archivalDeriver: $this->createMock(ArchivalNominationDeriver::class),
+			statusEffects: $this->createMock(ZrcStatusEffects::class),
 			joinHoming: $this->createMock(DocumentJoinHoming::class),
 		);
 	}//end controllerWith()

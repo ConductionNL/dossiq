@@ -32,3 +32,11 @@ An explanation on every confirmation teaches people to stop reading them.
 
 The moment after pressing send is when someone is paying attention. The
 mail repeats it for the record.
+
+Amended 10 October 2026 (Q-dossiq-L1-4, decision 179): the screen reads
+the case reference, the received moment, the term start and the deadline
+from the submit response. A form submit creates the case in the same
+request, so all four exist before the confirmation renders. There is no
+queue to wait for and no "follows later" line. Built by
+`a-request-form-opens-the-case-at-once` with portaliq's
+`submit-creates-the-case-directly`.

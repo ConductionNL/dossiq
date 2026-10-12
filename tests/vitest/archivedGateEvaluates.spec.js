@@ -13,7 +13,7 @@
  * jsdom, because the evaluator imports `@nextcloud/auth`, which reads
  * `window` on load.
  *
- * @spec openspec/changes/simple-structure-profile/specs/case-management/spec.md#REQ-CM-73
+ * @spec openspec/specs/case-management/spec.md#REQ-CM-73
  */
 
 import { evaluateVisibleWhen } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'

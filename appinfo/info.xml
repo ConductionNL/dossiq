@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261010201000</version>
+    <version>0.4.47-unstable.20261011130000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -162,7 +162,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
             such cases was removed earlier. Nothing migrated to a timer.
             See openspec/changes/case-status-onto-engine-lifecycle.
         -->
-        <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
+        <!--
+            WOODeadlineCheckJob is RETIRED: a Woo request's statutory term is
+            an ordinary term instance with an armed engine timer, and its
+            ladder rungs reach the handler through the generic
+            Service/Termijn/TermHandlerNotice, on the days the term definition
+            lists in tellHandlerAt (td-woo-verzoek: 7 and 0)
+            (termijnbewaking-op-engine-timers 2.1, decision 182).
+        -->
         <!--
             lifecycle-acts-on-the-case REQ-LIFE-04: a case type may declare a
             period of no activity after which dossiq closes the case. Off by
@@ -347,6 +354,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\RenameCollidingSchemaSlugs</step>
             <step>OCA\Dossiq\Repair\InitializeSettings</step>
             <!--
+                After the import, so the case schema already declares the
+                channel slug enum and communicationChannelSource (decision 171):
+                every stored ZGW channel URL or intake word becomes a slug, the
+                old value kept beside it.
+            -->
+            <step>OCA\Dossiq\Repair\NormaliseCommunicationChannelValues</step>
+            <!--
                 The shipped register data assigns flow steps to Nextcloud
                 groups (task-behandelaar -> "behandelaars"). Provision them
                 before anything imports or runs that data: the completion
@@ -355,6 +369,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
+            <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <!-- Nextcloud never removes a job info.xml stops naming: parked EmailPdfRetryJob, removed AppointmentReminderJob and BerichtenboxReadStatusJob. -->
             <step>OCA\Dossiq\Repair\RetireUnscheduledBackgroundJobs</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
@@ -410,6 +425,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 case form could not offer them. Sets isDraft false on exactly
                 those, once per instance; see the class for why once.
             -->
+            <!--
+                Installs the shipped case definition packages under
+                lib/Settings/packages/ (ADR-118, capability C19). Before
+                PublishSeededCaseTypes and MigrateWorkflowDefinitions, like the
+                seed steps it replaces one package at a time. In BOTH blocks:
+                a fresh install runs only <install>.
+            -->
+            <step>OCA\Dossiq\Repair\InstallShippedPackages</step>
             <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!--
                 AFTER EVERY STEP THAT CREATES A CASE TYPE, AND IT USED TO RUN
@@ -682,6 +705,10 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  changes nothing. Unmapped codes are kept, listed on the row and in
                  the output. Post-migration only: a fresh install has none. -->
             <step>OCA\Dossiq\Repair\MapWooRefusalGroundCodes</step>
+            <!-- woo-review-triage: a document assessed before relevance existed
+                 gets one in-scope review, so it does not read as unmarked and
+                 hold up its case. Idempotent; sets no grant. -->
+            <step>OCA\Dossiq\Repair\CreateDocumentReviews</step>
             <!-- woo-publish-decision-from-the-case: copies each Woo decision's
                  publication state onto its case, so existing Woo cases show it.
                  Idempotent (app config key woo_publication_state_backfill),
@@ -695,6 +722,32 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  and the case differs. Idempotent, counted, non-fatal.
                  Post-migration only: a fresh install has no cases. -->
             <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
+            <!-- communication-portal-conversation-on-the-case D-2: each portal
+                 message's attachments are copied into the message folder portaliq
+                 serves, once, behind a persisted key. Post-migration only: a
+                 fresh install has no portal messages. -->
+            <step>OCA\Dossiq\Repair\CopyMessageAttachmentsIntoMessageFolders</step>
+            <!-- site-business-and-authorisation D2: a portal case filed before
+                 portalParty existed gets subject:<portalSubject>, once. -->
+            <step>OCA\Dossiq\Repair\BackfillPortalParty</step>
+            <!-- retire-cmmn-caseplanstate group 2: every CMMN case's casePlanState
+                 blob moves into OpenRegister plan-item rows (ensureItems), is
+                 verified, and only then cleared. Convergent; an unmappable case
+                 keeps its blob and is logged. Post-migration only: a fresh
+                 install has no blobs. -->
+            <step>OCA\Dossiq\Repair\MigrateCmmnCasePlans</step>
+            <!-- inspection-checklists-onto-task 4.1: every inspectieChecklist and
+                 inspectionChecklist (with its checklistItem rows) becomes one
+                 inspectionChecklistTemplate carrying legacyRef. Skips what is
+                 folded; never folds a checklist half. Post-migration only: a
+                 fresh install has no older checklists. -->
+            <step>OCA\Dossiq\Repair\FoldInspectionChecklistTemplates</step>
+            <!-- inspection-checklists-onto-task 4.2: every inspectieRapport,
+                 inspectionChecklistRun and inspectionResult becomes one
+                 inspection task (OpenRegister's import path), keyed on
+                 metadata.legacyRef. After the fold, so runs find their
+                 template. Post-migration only: a fresh install has no runs. -->
+            <step>OCA\Dossiq\Repair\CarryInspectionRunsOntoTasks</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
@@ -784,6 +837,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 is kept. In BOTH blocks: integriq may come before dossiq or after.
             -->
             <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
+            <!--
+                Ships the initial assistant prompt library into hermiq
+                (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
+                every prompt an administrator touched, so a rerun restores
+                nothing. In BOTH blocks: hermiq may come before dossiq or after.
+            -->
+            <step>OCA\Dossiq\Repair\ShipAssistantPrompts</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -822,10 +882,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
               CopyEmbeddedBezwaarAuditTrail     copies entries a fresh install never wrote
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
+              CreateDocumentReviews          marks existing assessed Woo documents in scope; a fresh install has none
               BackfillWooPublicationState       shows the publication state on existing Woo cases; a fresh install has none
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
+              CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder; a fresh install has none
+              BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
@@ -918,6 +981,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
+            <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
@@ -929,6 +993,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
+            <!--
+                Installs the shipped case definition packages under
+                lib/Settings/packages/ (ADR-118, capability C19). Before
+                PublishSeededCaseTypes and MigrateWorkflowDefinitions, like the
+                seed steps it replaces one package at a time. In BOTH blocks:
+                a fresh install runs only <install>.
+            -->
+            <step>OCA\Dossiq\Repair\InstallShippedPackages</step>
             <step>OCA\Dossiq\Repair\PublishSeededCaseTypes</step>
             <!-- LAST OF THE SEEDS, because it projects a basis workflow onto
                  every case type the steps above just created. See the
@@ -1019,20 +1091,31 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 is kept. In BOTH blocks: integriq may come before dossiq or after.
             -->
             <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
+            <!--
+                Ships the initial assistant prompt library into hermiq
+                (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
+                every prompt an administrator touched, so a rerun restores
+                nothing. In BOTH blocks: hermiq may come before dossiq or after.
+            -->
+            <step>OCA\Dossiq\Repair\ShipAssistantPrompts</step>
         </install>
     </repair-steps>
 
     <commands>
         <command>OCA\Dossiq\Command\AdoptShippedFlowsCommand</command>
+        <command>OCA\Dossiq\Command\VerifyWooDeliveredSetCommand</command>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
+        <command>OCA\Dossiq\Command\InstallPackageCommand</command>
         <command>OCA\Dossiq\Command\MigrateCaseTeamsCommand</command>
         <command>OCA\Dossiq\Command\MigrateAutomaticActionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateWorkflowDefinitionsToFlowsCommand</command>
         <command>OCA\Dossiq\Command\MigrateLhsToDecisionTablesCommand</command>
         <command>OCA\Dossiq\Command\MigrateTenantsCommand</command>
+        <command>OCA\Dossiq\Command\ImportCaseRecordsCommand</command>
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
         <command>OCA\Dossiq\Command\RollbackCasePlansCommand</command>
+        <command>OCA\Dossiq\Command\MigrateCasePlansCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
     </commands>
@@ -1041,8 +1124,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <admin>OCA\Dossiq\Settings\AdminSettings</admin>
         <admin>OCA\Dossiq\Settings\EmailSettings</admin>
         <admin-section>OCA\Dossiq\Sections\SettingsSection</admin-section>
-        <personal>OCA\Dossiq\Settings\PersonalSettings</personal>
-        <personal-section>OCA\Dossiq\Sections\PersonalSection</personal-section>
     </settings>
 
     <navigations>

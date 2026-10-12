@@ -284,3 +284,349 @@ The case page SHALL declare Gegevens before Stukken and the timeline.
 - **WHEN** it is declared
 - **THEN** its blocks SHALL read tasks, steps, detail, documents, timeline, the calls to action, citizenCase
 - @e2e exclude {a declaration; asserted in tests/Unit/Portal/PortalCasePageTest.php::testTheCasePageCarriesTheResidentsOwnCase}
+
+### Requirement: The case collection publishes the documents a resident may see (REQ-PORTAL-018)
+`mijnZaken` MUST declare `documents: {label: "Stukken", provider: "caseDocuments"}`.
+`caseDocuments(caseId)` MUST return, for that case only, each document whose
+status is final or archived, whose confidentiality is `openbaar`, `beperkt_openbaar` or
+`zaakvertrouwelijk`, and that a decision on the case links or that the
+organisation sent, as `{id, title, kind, date, file}` with the file on the
+case object. A document a decision links MUST carry `kind: decision` and the
+decision date.
+
+#### Scenario: The resident sees the decision and the letters sent to them
+- **GIVEN** a case with a final decision letter, a final outgoing letter, a draft, an internal note and a neighbour's incoming letter
+- **WHEN** the resident opens the case in the portal
+- **THEN** the decision letter MUST be listed first under Decision and the outgoing letter under Documents, and nothing else from the organisation
+
+#### Scenario: Nothing is answered without a case
+- **GIVEN** OpenRegister is not available, or the case id is empty
+- **WHEN** portaliq asks for the case's documents
+- **THEN** the answer MUST be an empty list
+
+### Requirement: The inbox names the message box recipient (REQ-PORTAL-019)
+The `berichten` inbox MUST declare `messageBox: {recipientProvider: "messageBoxRecipient"}`.
+`messageBoxRecipient(messageId)` MUST return the applicant's BSN only for an
+organisation's message on a case whose applicant is a person with a valid BSN
+and to whom the message is addressed, and null for every other message.
+
+#### Scenario: A letter to the applicant reaches their message box
+- **GIVEN** a handler's message on a case filed by a resident with a valid BSN, addressed to that resident
+- **WHEN** portaliq asks who receives it in the message box
+- **THEN** the answer MUST be that resident's BSN
+
+#### Scenario: A reply or a message to a representative names nobody
+- **GIVEN** a resident's own reply, or a message addressed to someone other than the applicant
+- **WHEN** portaliq asks who receives it
+- **THEN** the answer MUST be null and nothing MUST be sent
+
+### Requirement: The overview greets and names its lists (REQ-ROD-001)
+The citizen contribution's `overzicht` page MUST open with a portaliq `greeting` block without
+the date, so the page greets the resident by the time of day and their first name. Its `tasks`
+block MUST carry the label "Wat u nog moet doen", its `cases` block "Lopende zaken" and its
+`inbox` block "Nieuwe berichten". Nothing else on the page MUST change.
+
+#### Scenario: Sanne opens her overview in the afternoon
+@e2e exclude PHPUnit tests/Unit/Portal/PortalContributionProviderTest.php reads the declaration; the words are portaliq's (GreetingBlock) and the coordinator sees them live
+- **GIVEN** the Zuiddrecht example resident, signed in at 14:00
+- **WHEN** the overview opens
+- **THEN** it reads "Goedemiddag, Sanne", then "Wat u nog moet doen", "Lopende zaken" and "Nieuwe berichten" above their lists
+
+#### Scenario: Only the declaration changes
+@e2e exclude PHPUnit tests/Unit/Portal/PortalCasePageTest.php pins the case page's blocks
+- **GIVEN** the citizen contribution
+- **WHEN** the pages are built
+- **THEN** the case page's blocks are as before, in the same order
+
+### Requirement: A resident's writes on their own case are declared (REQ-PORTAL-013)
+The contribution MUST declare exactly one `type: update` action on `case`
+carrying `citizenWrite` with `typeField: caseType`, `typeRegister: dossiq` and
+`typeSchema: caseType`, scoped by `portalSubject`, whose `fields` whitelist
+holds only fields the applicant supplied, and MUST serve it to every audience
+the case collection is served to.
+
+#### Scenario: A resident opens their case screen
+- **GIVEN** a resident signed in with DigiD with a dossiq case of type "Melding openbare ruimte"
+- **WHEN** they open the case in the portal
+- **THEN** the case screen MUST show the case instead of "This case cannot be changed from the portal."
+
+#### Scenario: A resident corrects their description
+- **GIVEN** the same case in status Ontvangen, where the case type opens `description` to `client`
+- **WHEN** the resident corrects the description and saves
+- **THEN** the case MUST carry the new description, and the handler MUST see the amendment on the case timeline
+
+### Requirement: The case type decides what a resident may change and withdraw (REQ-PORTAL-014)
+A case type MUST be able to declare `portalWritable`, `portalAmendmentWindow`,
+`portalDocumentWindow` and `portalWithdrawal` in the shapes portaliq reads. A
+case type MUST NOT be saved with a `portalWithdrawal` whose `targetStatus` is
+not reachable from each of its open statuses.
+
+#### Scenario: A resident withdraws a report still waiting to be picked up
+- **GIVEN** a case type declaring withdrawal while Ontvangen, onto Ingetrokken, and a resident's case in Ontvangen
+- **WHEN** the resident withdraws it in the portal and confirms
+- **THEN** the case MUST be in status Ingetrokken and the assignee MUST be told
+
+#### Scenario: An unreachable withdrawal status is refused
+- **GIVEN** a functional administrator editing a case type whose workflow has no transition from Ontvangen to Ingetrokken
+- **WHEN** they save a withdrawal onto Ingetrokken while Ontvangen
+- **THEN** the save MUST be refused with a sentence naming Ingetrokken
+
+### Requirement: The Woo request action declares its four steps (REQ-SWS-001)
+The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw vraag"
+(`onderwerp`, `omschrijving`), "Periode en documenten" (`periodeVan`, `periodeTot`,
+`documentSoorten`, `toelichting`), "Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`,
+`verzoekerType`) and "Controleren en versturen" as a review of every answer. Every whitelisted
+field MUST belong to exactly one step. Each step MUST use the keys `id`, `title`,
+`description` and `fields`; the review step MUST carry `review: true` and no fields. The
+labels MUST be the ones of `DossiqWoo.dc.html`. No field MUST be declared `required`: portaliq
+drops `required` on an action without a schema (portaliq REQ-SMF-023). The steps, draft and
+confirmation follow portaliq REQ-SMF-020 to REQ-SMF-022, which cover endpoint actions with
+`fields`. This builds on REQ-PORTAL-020 and keeps its endpoint, method
+and assertion.
+
+#### Scenario: A resident moves through the steps
+- **GIVEN** a resident signed in with DigiD on a site that renders declared steps
+- **WHEN** they start "Informatie opvragen (Woo-verzoek)"
+- **THEN** the form MUST show step 1 of 4, "Uw vraag", and only its two fields
+- **AND** step 4 MUST list every answer with a link to change the step it came from
+
+#### Scenario: No form-only required field
+- **GIVEN** the declared action
+- **WHEN** the provider test reads its `fieldConfigs`
+- **THEN** no field MUST carry `required`
+
+#### Scenario: Every field has a step
+- **GIVEN** the declared action
+- **WHEN** the provider test compares `fields` with the fields of all steps
+- **THEN** each field MUST appear in exactly one step
+
+### Requirement: A resident starts a Woo request without a dossier (REQ-SWS-002)
+The citizen contribution MUST offer `startWooVerzoekAlgemeen`, posting to the same route as
+`startWooVerzoek`, with the same steps and fields except `collectionId`, and without
+`attachTo`. `startWooVerzoek` MUST keep `attachTo` and `rowField` unchanged.
+
+#### Scenario: From the home page
+- **GIVEN** a resident with no dossier
+- **WHEN** they send a Woo request through `startWooVerzoekAlgemeen`
+- **THEN** dossiq MUST answer 201 and the case MUST show under the resident's cases without case objects
+
+### Requirement: A half-filled Woo request can be saved and resumed (REQ-SWS-003)
+Both Woo actions MUST declare `draft` with `retentionDays: 30`. Dossiq MUST NOT receive or store
+anything before the resident sends the request.
+
+#### Scenario: Save and come back
+- **GIVEN** a resident on step 2 of the Woo request on a site that stores drafts
+- **WHEN** they choose "Opslaan en later verdergaan" and return the next day
+- **THEN** the form MUST reopen on step 2 with their answers
+- **AND** no case MUST exist for the unsent request
+
+### Requirement: The confirmation names the case and the date (REQ-SWS-004)
+Both Woo actions MUST declare a `confirmation` with a title, a body using `{identifier}` and
+`{deadline}`, and a sentence on where to find the request. A body sentence whose placeholder has
+no value MUST be left out.
+
+#### Scenario: The resident reads their case number
+- **GIVEN** a request sent and answered with identifier 2026-0003 and deadline 30 October 2026
+- **WHEN** the confirmation shows
+- **THEN** it MUST read "Uw zaaknummer is 2026-0003. U krijgt uiterlijk 30 oktober 2026 antwoord."
+
+### Requirement: A resident starts a Woo request from the portal (REQ-PORTAL-020)
+The citizen contribution, served to `citizen` and `client`, MUST offer the
+endpoint action `startWooVerzoek` (`POST
+/index.php/apps/dossiq/api/portal/woo-verzoek`, fields `collectionId`,
+`onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`), attached to the
+dossier page by `attachTo: {app: "opencatalogi", schema: "collection"}` and
+`rowField: "collectionId"`. The receiving
+route MUST verify portaliq's `X-Portal-Subject` assertion before anything else,
+take the resident from its `sub` claim and never from the body, and call
+`WooRequestIntake::start()` with `origin: portal`. It MUST answer 201 with
+`{caseId, caseUrl}`, 401 for a missing or invalid assertion, 403 for an
+audience other than `citizen` or `client`, 400 for an
+unusable request and 404 for a dossier that is not the resident's. Implements
+hydra `openspec/changes/woo-citizen-journey/specs/woo-citizen-journey/spec.md`, "A Woo request MUST be created by one dossiq path, from the portal and
+from pipelinq alike".
+
+#### Scenario: A signed-in resident submits the form
+- **GIVEN** a resident signed in with DigiD (audience `client`) on their dossier page
+- **WHEN** they submit "Start een Woo-verzoek" with an onderwerp
+- **THEN** portaliq forwards the action and dossiq answers 201 with the new case
+- **AND** the case MUST show under Mijn zaken with its deadline
+
+#### Scenario: A forged request
+- **GIVEN** a request to the route without a valid assertion, or with a subjectRef in the body
+- **WHEN** it arrives
+- **THEN** dossiq MUST answer 401 for the missing assertion and MUST ignore any subjectRef in the body
+
+### Requirement: A resident reads dossiq's messages in full in the portal inbox (REQ-PORTAL-005)
+The citizen `berichten` inbox collection MUST project `body`, `receivedAt` and
+`read` from `portaalBericht`, and MUST declare `filesDownload`, so the shared
+portal inbox shows a dossiq message's text, date, read state and attachments.
+Marking a message read MUST record when the resident read it.
+
+#### Scenario: A message from the handler shows in full
+- **GIVEN** a handler sent a message with one attachment about the resident's
+  case
+- **WHEN** the resident opens the inbox in the portal
+- **THEN** they MUST see the subject, the text, the date and the attachment
+- **AND** opening the attachment MUST download it
+
+@e2e exclude Rendered by portaliq's inbox, a sibling repo; dossiq's declarations are pinned by tests/Unit/Portal/PortalConversationTest.php and PortalContributionProviderTest.php.
+
+### Requirement: A reply carries its case without the resident typing it (REQ-PORTAL-006)
+The `berichten` collection MUST declare a reply through `replyToMessage` that
+carries `caseId` from the message answered. `replyToMessage` MUST offer the
+resident's own cases as a choice for `caseId` and MUST accept files as
+attachments.
+
+#### Scenario: Reply to a message
+- **GIVEN** a message from the handler about case "Kapvergunning Dorpsstraat 4"
+- **WHEN** the resident presses Reply, writes a text, adds a photo and sends
+- **THEN** the reply MUST be stored on that case with the photo attached
+- **AND** the resident MUST NOT have been asked for a case number
+
+@e2e exclude Rendered by portaliq's reply form, a sibling repo; the reply, carry and case choice are pinned by tests/Unit/Portal/PortalConversationTest.php.
+
+### Requirement: A resident asks a question from the case and finds the answer there (REQ-PORTAL-007)
+The `mijnZaken` detail MUST offer "Ask a question about this case", which
+creates a message on that case, and MUST list the messages about that case in
+both directions, newest first, through a `caseMessages` provider that answers
+only the resident's own messages.
+
+#### Scenario: Ask on the case page
+- **GIVEN** a resident viewing their case in the portal
+- **WHEN** they ask "When will I hear back?"
+- **THEN** the message MUST be stored on that case
+- **AND** the handler's answer MUST appear under Berichten on the same case page
+
+@e2e exclude Rendered by portaliq's case page, a sibling repo; the question and the caseMessages provider are pinned by tests/Unit/Portal/PortalConversationTest.php and PortalCaseMessagesTest.php.
+
+### Requirement: The handler sees a resident's message on the case and answers from it (REQ-PORTAL-008)
+A message a resident sends about a case MUST appear on that case's timeline as
+an internal portal message entry with a follow-up. The case page MUST let the
+handler send a message to the resident of a case with a portal subject, and
+Reply on a resident's message. The handler's message MUST reach the resident's
+portal inbox and close the follow-up.
+
+#### Scenario: Answer a resident's question from the case
+- **GIVEN** a resident asked a question about their case in the portal
+- **WHEN** the handler opens the case
+- **THEN** the timeline MUST show the question with an open follow-up
+- **AND** after the handler presses Reply and sends an answer, the follow-up
+  MUST be closed and the answer MUST be in the resident's inbox
+### Requirement: The resident sees what the organisation still needs from them (REQ-SRPD-001)
+An `aanvullingsverzoek` on a case that has a `portalSubject` MUST carry the same
+`portalSubject`, written when the request is asked. The citizen contribution, served to
+`citizen` and `client`, MUST offer the collection `vragenAanU` on schema `aanvullingsverzoek`,
+scoped by `portalSubject` and projected to `case`, `summary`, `missingItems`,
+`hersteltermijn`, `state` and `requestedAt`. No other field of the request MAY be projected.
+This is a new requirement: today no request reaches the portal.
+
+#### Scenario: A handler asks, the resident sees the question
+- **GIVEN** a resident's Woo request case with a `portalSubject`
+- **WHEN** the handler asks for a clarification with summary "Bedoelt u alleen de kap van maart 2026?" and a hersteltermijn of 12 October
+- **THEN** the resident's `vragenAanU` MUST list one open request for that case with that summary and that date
+- **AND** the request MUST NOT expose `rationale`, `requestedBy` or `pauseReason`
+
+#### Scenario: Someone else's request stays invisible
+- **GIVEN** an open request on another resident's case
+- **WHEN** the resident reads `vragenAanU`
+- **THEN** the request MUST NOT be returned
+
+### Requirement: A case says who must act (REQ-SRPD-002)
+The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
+`waitingOnApplicant` is true or `waitingOn` is `applicant`, `thirdParty` when `waitingOn` is
+`thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
+projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
+collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
+`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
+or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
+
+#### Scenario: The case waits on the resident
+- **GIVEN** a running case with an open aanvullingsverzoek
+- **WHEN** the resident's overview lists the case
+- **THEN** the case card MUST read "U bent aan zet"
+
+#### Scenario: The card reads one declared field
+- **GIVEN** the `mijnZaken` collection
+- **WHEN** portaliq normalises the manifest
+- **THEN** `turnField` MUST be `portalTurn` and `portalTurn` MUST be a projected field
+
+#### Scenario: The case waits on the organisation
+- **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
+- **WHEN** the overview lists it
+- **THEN** the card MUST read "De gemeente is aan zet"
+
+### Requirement: A case hands the portal its steps (REQ-SRPD-003)
+The provider MUST answer `caseSteps(caseId)` with the case type's statuses in `order`, folded
+so that consecutive statuses sharing a public label form one step. Each step MUST carry the
+public label (or the status name when none is declared), the public description, a state
+`done`, `current` or `todo`, and for a done or current step the date the case entered it. The
+`mijnZaken` collection MUST declare it as `steps` with the label "Waar staat uw aanvraag?".
+The steps MUST come from the case type and never from the page. This is a new requirement.
+
+#### Scenario: A Woo request in assessment
+- **GIVEN** a case of the seeded Woo type in status "Zoeken documenten"
+- **WHEN** portaliq asks `caseSteps` for it
+- **THEN** the answer MUST hold five steps: Ontvangen (done), In behandeling (current), Besluit, Besluit genomen and Afgehandeld (todo)
+
+#### Scenario: Another resident's case
+- **GIVEN** a case id that is not in the resident's `mijnZaken`
+- **WHEN** portaliq asks for its steps on the resident's behalf
+- **THEN** portaliq MUST refuse before calling the provider, as it does for `caseTimeline`
+
+### Requirement: A case names its handling team in public words (REQ-SRPD-004)
+The case schema MUST carry `assignedGroupPublicName`, a calculation over the handling team's
+public name, empty when the team declares none. It MUST be on the citizen detail fields. An
+internal team name MUST never reach the portal. This is a new requirement.
+
+#### Scenario: A team without a public name
+- **GIVEN** a case handled by a team that declares no public name
+- **WHEN** the resident opens the case
+- **THEN** "Behandeld door" MUST NOT be shown
+
+### Requirement: The resident pages are declared, and none of them is a menu entry (REQ-SRPD-005)
+The citizen contribution MUST declare the pages `overzicht`, `mijnZaken`, `berichten` and
+`verzoeken` with the blocks of design D4, using only block types and keys portaliq
+`site-mijn-omgeving-components` defines (`tasks`, `inbox`, `cases`, `steps`, `documents`,
+`timeline`, `collection`, `detail`, `action`, `cta`, `citizenCase`). `overzicht` MUST declare
+`home: true`. `mijnZaken` MUST be a record page on the case collection, so opening a case
+lands on it with that case chosen. Its open-question block MUST be a `tasks` block on
+`vragenAanU` with `recordField: case`. "Bericht sturen" MUST be a `cta` on `replyToMessage` with
+`withRecord: true`, and `replyToMessage` MUST declare `recordField: 'caseId'`. Every resident page MUST
+declare `menu: false`, so the site menu shows one "Zaken" and one "Berichten", both portaliq's
+own. The case page MUST hold, in this order, the open question for the case, the steps, the
+documents, "Wat er is gebeurd", and beside them the facts, "Bericht sturen" and the
+withdrawal.
+
+#### Scenario: One Zaken, one Berichten
+- **GIVEN** a resident signed in on a site where portaliq honours `menu: false`
+- **WHEN** the menu is built
+- **THEN** "Zaken" and "Berichten" MUST each appear once
+- **AND** no dossiq page MUST appear as a menu entry
+
+#### Scenario: No placeholder block names
+- **GIVEN** the declared resident pages
+- **WHEN** portaliq normalises them
+- **THEN** no block MUST be dropped as an unknown type
+
+#### Scenario: Only this case's question
+- **GIVEN** a resident with open questions on cases 2026-0003 and 2026-0004
+- **WHEN** case 2026-0003 is open on the case page
+- **THEN** the tasks block MUST list only the question on 2026-0003
+
+#### Scenario: A case opens on its page
+- **GIVEN** the resident's case 2026-0003 in portaliq's case list
+- **WHEN** they open it
+- **THEN** the page `mijnZaken` MUST open with the open question first, the steps, "Documenten", "Wat er is gebeurd", "In het kort" and "Verzoek intrekken"
+
+### Requirement: Dossiq offers its start points to the signed-out home (REQ-SRPD-006)
+Each action a resident may start without a dossier, `startWooVerzoekAlgemeen`,
+`createBezwaar` and `createKlacht`, MUST carry a one-sentence `summary` of at most 200
+characters and the `audiences` it serves, a subset of dossiq's audiences, so a site page can list them as
+"Wat wilt u regelen?" tiles. A visitor who is not signed in and picks one MUST be asked to
+sign in before the form opens.
+
+#### Scenario: The home lists what a resident can arrange
+- **GIVEN** a site page with the start points widget and dossiq installed
+- **WHEN** a signed-out visitor opens it
+- **THEN** it MUST list "Informatie opvragen (Woo-verzoek)", "Bezwaar maken" and "Klacht indienen" with their summaries

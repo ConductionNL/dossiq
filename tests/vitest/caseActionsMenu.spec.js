@@ -364,6 +364,7 @@ describe('The Related cases tab', () => {
 		// test is about; the list is exact so a silent reorder reddens.
 		expect(sections).toEqual([
 			'case-related',
+			'case-programme',
 			'case-sub-cases',
 			'case-objects',
 			'case-object-types-link',
@@ -851,7 +852,7 @@ describe('Archive and Restore on the case page', () => {
 			archived,
 			'the archived strip is missing from the stack',
 		).toBeGreaterThan(-1)
-		expect(archived).toBeLessThan(stack.indexOf('<CaseFollowStrip'))
+		expect(archived).toBeLessThan(stack.indexOf('<CaseUnreadPanel'))
 		// `objectData` and not `object`, for the reason the strip itself gives.
 		expect(stack).toContain('<CaseArchivedStrip :objectData="objectData" />')
 

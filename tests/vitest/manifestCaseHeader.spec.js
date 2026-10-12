@@ -88,7 +88,10 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// 62 -> 64: `woo-refusal-grounds-list` adds WooRefusalGrounds and
 		// WooRefusalGroundDetail, the settings list of the grounds a refusal
 		// cites. A settings register, so a page and not a lens on a case list.
-		expect(manifest.pages).toHaveLength(64)
+		// 64 -> 62: `tenancy-onto-openregister-organisation` step 5 retires
+		// Tenants and TenantDetail; a tenant is an OpenRegister organisation.
+		// 62 -> 63: `woo-delivered-set-is-a-record` adds one page.
+		expect(manifest.pages).toHaveLength(63)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)
@@ -313,12 +316,14 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-data-panel',
 			'case-files',
+			'case-document-review',
 			'case-notes-panel',
 			'case-timeline-panel',
 			'case-people-panel',
 			'case-communication-panel',
 			'case-email-panel',
 			'case-work-panel',
+			'case-change-proposals',
 			'case-decisions-panel',
 			'case-related-panel',
 			'case-custody-panel',

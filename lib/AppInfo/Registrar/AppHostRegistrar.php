@@ -32,14 +32,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
-use OCA\Dossiq\Dashboard\CasesOverviewWidget;
-use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
-use OCA\Dossiq\Dashboard\MyTasksWidget;
-use OCA\Dossiq\Dashboard\OverdueCasesWidget;
-use OCA\Dossiq\Dashboard\StalledCasesWidget;
-use OCA\Dossiq\Dashboard\StartCaseWidget;
-use OCA\Dossiq\Dashboard\TaskRemindersWidget;
-use OCA\Dossiq\Mcp\DossiqToolProvider;
+use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -125,16 +118,7 @@ class AppHostRegistrar {
 			[
 				'namespace' => 'OCA\\Dossiq',
 				'sectionName' => 'Dossiq',
-				'dashboardWidgets' => [
-					CasesOverviewWidget::class,
-					MyTasksWidget::class,
-					OverdueCasesWidget::class,
-					DeadlineAlertsWidget::class,
-					TaskRemindersWidget::class,
-					StalledCasesWidget::class,
-					StartCaseWidget::class,
-				],
-				'mcpProvider' => DossiqToolProvider::class,
+				'dashboardWidgets' => (new DashboardWidgetList())->classes(),
 			]
 		);
 	}//end register()

@@ -13,6 +13,10 @@
  * "SHALL NOT be recomputed on read": the stamp is a record of what the citizen
  * was told, not a derivation of what today's calendar would say.
  *
+ * The same write carries the case's start date and its type's receipt date
+ * answer, when the case does not already carry them: the create form no
+ * longer asks either (receipt-and-start-dates-are-set-at-creation).
+ *
  * @category Listener
  * @package  OCA\Dossiq\Listener
  *
@@ -34,11 +38,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Service\Intake\CaseReceiptDates;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -62,19 +69,43 @@ class IntakeTermStartListener implements IEventListener {
 	 * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
 	 * @param SettingsService          $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface          $logger          Records a case that went unstamped.
+	 * @param CaseReceiptDates         $receiptDates    The receipt and start dates a case is missing.
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
 	 */
 	public function __construct(
 		private readonly IntakeTermStart $intake,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseReceiptDates $receiptDates,
 	) {
 	}//end __construct()
 
 	/**
-	 * Handle a case-created event.
+	 * Handle a case-creating or case-created event.
+	 *
+	 * BEFORE THE CASE IS STORED (ObjectCreatingEvent) is where the fields are
+	 * set. Two defects found live on 11 October 2026 came from writing them
+	 * after it:
+	 *
+	 * 1. OpenRegister's materialised `startDate` calculation runs on the same
+	 *    creating event and falls back to its own `now`, which it formats in
+	 *    the process zone (UTC). A case made at 01:52 in Amsterdam was stored
+	 *    with the day before, and a later write keeps what the case carries.
+	 *    Registered above that calculation
+	 *    ({@see \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY}),
+	 *    this listener sets the day in the administered zone first, and the
+	 *    calculation keeps it.
+	 * 2. The second write sent the whole case back, including materialised
+	 *    readOnly fields another listener had already changed, and
+	 *    OpenRegister refused it ("Cannot modify readOnly properties"). No
+	 *    case got its stamp or its `receiptDate` answer.
+	 *
+	 * The created event stays as the fallback for a path that stores a case
+	 * without the creating event (the bulk save). It writes only the fields
+	 * it adds, through the partial write.
 	 *
 	 * @param Event $event The event.
 	 *
@@ -90,8 +121,14 @@ class IntakeTermStartListener implements IEventListener {
 	 * and what is left is one write.
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function handle(Event $event): void {
+		if ($event instanceof ObjectCreatingEvent) {
+			$this->setBeforeStore(entity: $event->getObject());
+			return;
+		}
+
 		if (($event instanceof ObjectCreatedEvent) === false) {
 			return;
 		}
@@ -101,38 +138,88 @@ class IntakeTermStartListener implements IEventListener {
 			return;
 		}
 
-		if ($this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
-			return;
-		}
-
 		$caseId = trim((string)($payload['id'] ?? ($payload['uuid'] ?? '')));
-		if ($caseId === '' || $this->intake->isStamped(case: $payload) === true) {
+		if ($caseId === '') {
 			return;
 		}
 
-		$stamp = $this->intake->stampFor(receivedAt: $this->intake->arrivalOf(case: $payload));
-		if ($stamp === []) {
-			// Already logged by IntakeTermStart, naming the moment it could
-			// not place. Nothing is written: a half stamp is a claim.
+		$changes = $this->changesFor(case: $payload);
+		if ($changes === []) {
 			return;
 		}
 
-		$this->write(case: $payload, caseId: $caseId, changes: $stamp);
+		$this->write(caseId: $caseId, changes: $changes);
 	}//end handle()
 
 	/**
-	 * Write the stamp onto the stored case.
+	 * Set the stamp and the dates on a case that is about to be stored.
 	 *
-	 * @param array<string, mixed> $case    The case as the event carried it.
+	 * @param ObjectEntity $entity The case being created.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 */
+	private function setBeforeStore(ObjectEntity $entity): void {
+		try {
+			$payload = $entity->jsonSerialize();
+		} catch (Throwable $e) {
+			$this->logger->debug(
+				'Dossiq intake: a case being created could not be read',
+				['exception' => $e->getMessage()],
+			);
+			return;
+		}
+
+		$changes = $this->changesFor(case: $payload);
+		if ($changes === []) {
+			return;
+		}
+
+		$entity->setObject(array_merge($entity->getObject(), $changes));
+	}//end setBeforeStore()
+
+	/**
+	 * The fields a case is missing for its stamp and its dates, or [].
+	 *
+	 * The stamp is written once. An empty stamp means the calendar did not
+	 * answer, already logged by IntakeTermStart: nothing of it is written,
+	 * because a half stamp is a claim. The receipt and start dates do not wait
+	 * for the calendar: they are the day the request came in, which is known
+	 * either way. Each is written only when the case does not carry it, so an
+	 * import keeps its own and a replay writes nothing.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<string, mixed> The fields to set.
+	 */
+	private function changesFor(array $case): array {
+		if ($this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
+			return [];
+		}
+
+		$changes = [];
+		if ($this->intake->isStamped(case: $case) === false) {
+			$changes = $this->intake->stampForCase(case: $case);
+		}
+
+		return array_merge($changes, $this->receiptDates->changesFor(case: $case));
+	}//end changesFor()
+
+	/**
+	 * Write the missing fields onto the stored case, and nothing else.
+	 *
+	 * Only the fields this listener adds are sent. Sending the case as the
+	 * event carried it also sent the materialised readOnly fields, which
+	 * another listener may have changed since, and the store refused the
+	 * whole write.
+	 *
 	 * @param string               $caseId  The case uuid.
-	 * @param array<string, mixed> $changes The three fields.
+	 * @param array<string, mixed> $changes The fields to add.
 	 *
 	 * @return void
 	 */
-	private function write(array $case, string $caseId, array $changes): void {
-		$payload = array_merge($case, $changes);
-		unset($payload['@self'], $payload['id'], $payload['uuid']);
-
+	private function write(string $caseId, array $changes): void {
 		try {
 			$objectService = $this->settingsService->getObjectService();
 			$register = $this->settingsService->getConfigValue('register');
@@ -141,11 +228,12 @@ class IntakeTermStartListener implements IEventListener {
 				return;
 			}
 
-			$objectService->saveObject(
-				object: $payload,
+			$this->patchObjectAsArray(
+				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				uuid: $caseId,
+				id: $caseId,
+				changes: $changes,
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

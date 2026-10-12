@@ -1,0 +1,156 @@
+name: Case definition packages
+
+# Installs every case definition package dossiq ships, plus the neutral
+# fixture package, on a CLEAN instance, then reads the rows back through the
+# OpenRegister objects API with each package's Newman collection
+# (tests/integration/packages/<id>.postman_collection.json). Hydra ADR-118,
+# testing split: a package is proven installed on a real instance, not by
+# unit tests of its data.
+#
+# The fixture package is installed on every run so the job always proves the
+# installer end to end, including on a branch that ships no package yet: an
+# install job with nothing to install would pass by doing nothing.
+
+on:
+  pull_request:
+    branches: [development, beta, main]
+    paths:
+      - 'lib/Settings/packages/**'
+      - 'lib/Service/CaseDefinition/**'
+      - 'lib/Service/Starter/**'
+      - 'lib/Repair/InstallShippedPackages.php'
+      - 'lib/Command/InstallPackageCommand.php'
+      - 'tests/fixtures/packages/**'
+      - 'tests/integration/packages/**'
+      - '.github/workflows/packages.yml'
+  push:
+    branches: [development]
+  workflow_dispatch:
+
+concurrency:
+  group: packages-${{ github.head_ref || github.ref_name }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Install packages on a clean instance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # PostgreSQL, not SQLite: integriq's migrations declare JSON columns, which
+    # Nextcloud's SQLite platform refuses ("Unknown database type json"), so
+    # enabling it on SQLite fails before dossiq is reached.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nextcloud
+          POSTGRES_PASSWORD: nextcloud
+          POSTGRES_DB: nextcloud
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nextcloud"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout Nextcloud server
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          repository: nextcloud/server
+          ref: stable32
+          path: server
+
+      - name: Checkout server submodules
+        run: cd server && git submodule update --init 3rdparty
+
+      - name: Checkout app
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: server/apps/dossiq
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, intl, pdo_pgsql, pgsql, zip, gd, curl, xml, json
+          tools: composer:v2
+
+      - name: Checkout and install the apps dossiq runs on
+        run: |
+          for app in openregister decidiq integriq; do
+            git clone --depth 1 --branch development "https://github.com/ConductionNL/${app}.git" "server/apps/${app}"
+            if [ -f "server/apps/${app}/composer.json" ]; then
+              (cd "server/apps/${app}" && composer install --no-progress --prefer-dist --optimize-autoloader --no-dev)
+            fi
+          done
+
+      - name: Install Nextcloud and enable the apps
+        run: |
+          cd server
+          php occ maintenance:install --database pgsql --database-host 127.0.0.1 --database-port 5432 \
+            --database-name nextcloud --database-user nextcloud --database-pass nextcloud \
+            --admin-user admin --admin-pass admin
+          for app in openregister decidiq integriq; do
+            php occ app:enable "$app"
+          done
+          (cd apps/dossiq && composer install --no-progress --prefer-dist --optimize-autoloader --no-dev)
+          php occ app:enable dossiq
+
+      - name: Install every shipped package and the fixture package
+        run: |
+          cd server
+          php occ dossiq:package:install --list
+          php occ dossiq:package:install --list --root apps/dossiq/tests/fixtures/packages
+          if [ -n "$(php occ dossiq:package:install --list)" ]; then
+            php occ dossiq:package:install --all
+          fi
+          php occ dossiq:package:install --root apps/dossiq/tests/fixtures/packages fixture-case-type
+          # A second run must find everything current and write nothing.
+          php occ dossiq:package:install --root apps/dossiq/tests/fixtures/packages fixture-case-type | tee /tmp/second-run.txt
+          grep -q ': current\.' /tmp/second-run.txt
+          # A setting naming the schema of an app this instance lacks refuses
+          # the package, and the refusal names the app.
+          if php occ dossiq:package:install --root apps/dossiq/tests/fixtures/packages fixture-settings > /tmp/settings-run.txt; then
+            cat /tmp/settings-run.txt
+            echo "::error::fixture-settings installed although fixture-app is not installed."
+            exit 1
+          fi
+          cat /tmp/settings-run.txt
+          grep -q 'refused\..*fixture-app' /tmp/settings-run.txt
+
+      - name: Start PHP built-in server
+        run: |
+          cd server
+          php -S 0.0.0.0:8080 > /tmp/php-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/status.php > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:8080/status.php
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Read the rows back
+        run: |
+          npm install -g newman
+          shopt -s nullglob
+          collections=(server/apps/dossiq/tests/integration/packages/*.postman_collection.json)
+          if [ "${#collections[@]}" -eq 0 ]; then
+            echo "::error::No package collection found; the read-back did not run."
+            exit 1
+          fi
+          fail=0
+          for collection in "${collections[@]}"; do
+            echo "=== ${collection##*/}"
+            newman run "$collection" --env-var baseUrl=http://localhost:8080 || fail=1
+          done
+          exit "$fail"

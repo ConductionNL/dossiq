@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "dossiq demo data",
-    "version": "1.3.5",
+    "version": "1.3.6",
     "description": "Demo data covering every schema this app supplies, offered as the first step of the app's setup walkthrough. Generated from the schemas themselves, so every object satisfies the schema that will validate it."
   },
   "x-openregister": {
@@ -737,7 +737,7 @@
           "tenantId": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
+            "$ref": "nc-organisation",
             "description": "Owning tenant: cross-tenant resolution is rejected by the registry",
             "title": "Tenant ID"
           },
@@ -1236,7 +1236,7 @@
       "beschikking": {
         "slug": "beschikking",
         "icon": "FileCertificateOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:GovernmentPermit",
         "title": "Beschikking",
         "description": "Formal decision (Awb besluit) with full lifecycle: ontwerp -> akkoord-mandaat -> ondertekend -> verzonden -> ontvangen-bevestiging -> gearchiveerd. Immutable once ondertekend. State transitions are guarded by mandaat-verificatie (akkoord) and TSP-handtekening (onderteken) and logged via stateMachineLog.",
@@ -1275,7 +1275,19 @@
             "type": "string",
             "title": "Reference Mark",
             "maxLength": 255,
-            "description": "User-visible decision number (e.g. Z/2026/04832/B01)"
+            "description": "The decision number, e.g. B-2026-000123: one running number per organisation per year. A correction gets its own number."
+          },
+          "supersedes": {
+            "type": "string",
+            "title": "Replaces",
+            "description": "The beschikking this one corrects or withdraws. Empty for a first decision.",
+            "facetable": true
+          },
+          "supersededBy": {
+            "type": "string",
+            "title": "Replaced by",
+            "description": "The beschikking that corrected or withdrew this one. Written once, and empty while this one is in force.",
+            "facetable": true
           },
           "templateId": {
             "type": "string",
@@ -7901,7 +7913,7 @@
       "inspectionChecklistTemplate": {
         "slug": "inspectionChecklistTemplate",
         "icon": "ClipboardListOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:HowTo",
         "title": "Inspection Checklist Template",
         "description": "Long-lived configuration template for an inspection checklist. Owns sections, items, response-type rules and follow-up action defaults. Publishing an edit creates a new version and retires the previous one.",
@@ -7984,6 +7996,11 @@
                       "responseType"
                     ],
                     "properties": {
+                      "id": {
+                          "type": "string",
+                          "description": "Stable key an answer names; kept when the label changes",
+                          "title": "Id"
+                      },
                       "order": {
                         "type": "integer",
                         "description": "Display order of the item",
@@ -8059,6 +8076,16 @@
                         "description": "Allowed values when responseType is meerkeuze",
                         "title": "Choices"
                       },
+                      "weight": {
+                          "type": "number",
+                          "description": "Weight of this item in a scored checklist",
+                          "title": "Weight"
+                      },
+                      "parent": {
+                          "type": "string",
+                          "description": "Id of the item this one is nested under",
+                          "title": "Parent"
+                      },
                       "failureAction": {
                         "type": "object",
                         "description": "Conditional follow-up dispatched on failure",
@@ -8096,6 +8123,11 @@
               }
             },
             "title": "Sections"
+          },
+          "legacyRef": {
+              "type": "string",
+              "description": "<slug>/<uuid> of the older checklist this template was folded from, so the fold runs once per source",
+              "title": "Legacy reference"
           },
           "seedKey": {
             "type": "string",
@@ -11103,7 +11135,7 @@
       "penaltyPaymentCalculation": {
         "slug": "penaltyPaymentCalculation",
         "icon": "Calculator",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:MonetaryAmount",
         "title": "Dwangsom Berekening",
         "description": "Daily-accruing dwangsom calculation per AWB 4:17. Tracks current day, tariff tier, cumulative amount in EUR cents, plafond enforcement.",
@@ -11186,6 +11218,260 @@
             "default": "awb-default",
             "title": "Tariff Regime",
             "description": "Active tariff regime"
+          },
+          "rateBands": {
+            "type": "array",
+            "title": "Rate bands",
+            "description": "Daily rate per band of days in EUR cents, as {upTo, rate}; empty means the Awb 4:17 bands (23, 35, 45 euro).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "upTo": {
+                  "type": "integer",
+                  "title": "Up to day",
+                  "description": "Last day of the accrual this band covers; leave it out on the final band.",
+                  "minimum": 1
+                },
+                "rate": {
+                  "type": "integer",
+                  "title": "Daily rate",
+                  "description": "Amount added per day inside this band, in EUR cents.",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "rate"
+              ]
+            }
+          },
+          "stoppedOn": {
+            "type": "string",
+            "format": "date",
+            "title": "Stopped on",
+            "description": "The day accrual stopped (decision filed, objection lodged); empty while it runs."
+          }
+        },
+        "configuration": {
+          "x-openregister-calculations": {
+            "currentDag": {
+              "type": "integer",
+              "materialise": true,
+              "description": "Whole days accrued from startDate to stoppedOn, or to today while running.",
+              "expression": {
+                "max": [
+                  0,
+                  {
+                    "diffDays": [
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "stoppedOn"
+                          },
+                          {
+                            "now": []
+                          }
+                        ]
+                      },
+                      {
+                        "prop": "startDate"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "cumulativeAmount": {
+              "type": "integer",
+              "materialise": true,
+              "description": "The amount accrued over rateBands (Awb 4:17 bands when empty), capped at plafondCalculated.",
+              "expression": {
+                "graduated": [
+                  {
+                    "max": [
+                      0,
+                      {
+                        "diffDays": [
+                          {
+                            "coalesce": [
+                              {
+                                "prop": "stoppedOn"
+                              },
+                              {
+                                "now": []
+                              }
+                            ]
+                          },
+                          {
+                            "prop": "startDate"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "rateBands"
+                      },
+                      {
+                        "lit": [
+                          {
+                            "upTo": 14,
+                            "rate": 2300
+                          },
+                          {
+                            "upTo": 28,
+                            "rate": 3500
+                          },
+                          {
+                            "rate": 4500
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "plafondCalculated"
+                      },
+                      144200
+                    ]
+                  }
+                ]
+              }
+            },
+            "dailyRate": {
+              "type": "integer",
+              "materialise": true,
+              "description": "The rate of the band the last accrued day falls in; 0 before the first day.",
+              "expression": {
+                "coalesce": [
+                  {
+                    "bandRate": [
+                      {
+                        "max": [
+                          0,
+                          {
+                            "diffDays": [
+                              {
+                                "coalesce": [
+                                  {
+                                    "prop": "stoppedOn"
+                                  },
+                                  {
+                                    "now": []
+                                  }
+                                ]
+                              },
+                              {
+                                "prop": "startDate"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "rateBands"
+                          },
+                          {
+                            "lit": [
+                              {
+                                "upTo": 14,
+                                "rate": 2300
+                              },
+                              {
+                                "upTo": 28,
+                                "rate": 3500
+                              },
+                              {
+                                "rate": 4500
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  0
+                ]
+              }
+            },
+            "plafondBereikt": {
+              "type": "boolean",
+              "materialise": true,
+              "description": "True once the accrued amount reaches the ceiling.",
+              "expression": {
+                "gte": [
+                  {
+                    "graduated": [
+                      {
+                        "max": [
+                          0,
+                          {
+                            "diffDays": [
+                              {
+                                "coalesce": [
+                                  {
+                                    "prop": "stoppedOn"
+                                  },
+                                  {
+                                    "now": []
+                                  }
+                                ]
+                              },
+                              {
+                                "prop": "startDate"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "rateBands"
+                          },
+                          {
+                            "lit": [
+                              {
+                                "upTo": 14,
+                                "rate": 2300
+                              },
+                              {
+                                "upTo": 28,
+                                "rate": 3500
+                              },
+                              {
+                                "rate": 4500
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "plafondCalculated"
+                          },
+                          144200
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "plafondCalculated"
+                      },
+                      144200
+                    ]
+                  }
+                ]
+              }
+            }
           }
         }
       },
@@ -13680,18 +13966,16 @@
       "tenant": {
         "slug": "tenant",
         "icon": "OfficeBuildingOutline",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "deprecated": true,
-        "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantContext and MandateValidationMiddleware consume them directly. Run `occ dossiq:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major dossiq release after spec acceptance; existing rows remain readable until then.",
+        "deprecationNote": "Retired as the tenant admin store (ADR-022, consume-or-tenant-fleet-wide): identity, lifecycle status and quotas live on OpenRegister's Organisation, and `occ dossiq:migrate-tenants` plus the MigrateTenantsToOrganisations repair step project the legacy rows onto Organisations. The schema stays as the read-only anchor of the tenant audit trail. The only write left is creating an anchor; nothing updates or deletes a tenant object.",
         "x-schema-org": "schema:Organization",
         "title": "Tenant",
-        "description": "DEPRECATED (migrate-tenant-to-or-tenant): legacy SaaS tenant record. Tenant identity now lives on OpenRegister's Organisation entity; this schema is retained only so pre-migration rows remain readable until sunset. Originally: a single municipality / customer of the dossiq platform, carrying lifecycle status, tier, and isolation mode.",
+        "description": "The read-only anchor of the tenant audit trail. Tenant identity, status and quotas live on OpenRegister's Organisation, and every tenant uuid is the uuid of its Organisation. A tenant object stays only so that every tenant audit entry has an object to hang on (decision Q4): dossiq creates one, once, when onboarding starts for an Organisation, and never updates or deletes one (decision Q6).",
         "type": "object",
         "required": [
           "slug",
-          "displayName",
-          "status",
-          "tier"
+          "displayName"
         ],
         "properties": {
           "slug": {
@@ -13963,9 +14247,9 @@
       "tenantOnboardingTask": {
         "slug": "tenantOnboardingTask",
         "icon": "CheckboxMarkedCircleOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Tenant Onboarding Task",
-        "description": "One step of the tenant onboarding workflow: drives the onboarding checklist UI.",
+        "description": "Frozen record of a tenant onboarding step as it was before the steps moved onto OpenRegister's task engine (remove-casetask task 7.1). New steps are engine tasks; a tenant's rows here are carried onto the engine the first time an admin opens its onboarding, and are kept as written.",
         "type": "object",
         "required": [
           "tenantRef",
@@ -13976,8 +14260,8 @@
           "tenantRef": {
             "type": "string",
             "format": "uuid",
-            "$ref": "tenant",
-            "description": "Reference to the parent Tenant",
+            "$ref": "nc-organisation",
+            "description": "The OpenRegister Organisation this step belongs to. Its uuid is the tenant uuid.",
             "title": "Tenant Reference"
           },
           "step": {
@@ -25510,6 +25794,60 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-1-1"
+        },
+        "title": "Voorbeeld Title 1",
+        "kind": "parkeren-bewoner",
+        "portalSubject": "Voorbeeld Portalsubject 1",
+        "theme": "Voorbeeld Theme 1",
+        "case": "00000000-0000-4000-8000-000000000000",
+        "decision": "00000000-0000-4000-8000-000000000000",
+        "validFrom": "2026-03-01",
+        "validUntil": "2026-03-01",
+        "status": "active",
+        "kenteken": "ABCDEF",
+        "adres": "Voorbeeld Adres 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-2-2"
+        },
+        "title": "Voorbeeld Title 2",
+        "kind": "parkeren-bezoeker",
+        "portalSubject": "Voorbeeld Portalsubject 2",
+        "theme": "Voorbeeld Theme 2",
+        "case": "00000000-0000-4000-8000-000000000001",
+        "decision": "00000000-0000-4000-8000-000000000001",
+        "validFrom": "2026-03-02",
+        "validUntil": "2026-03-02",
+        "status": "suspended",
+        "kenteken": "BCDEFG",
+        "adres": "Voorbeeld Adres 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "permit",
+          "slug": "permit-voorbeeld-title-3-3"
+        },
+        "title": "Voorbeeld Title 3",
+        "kind": "parkeren-bedrijf",
+        "portalSubject": "Voorbeeld Portalsubject 3",
+        "theme": "Voorbeeld Theme 3",
+        "case": "00000000-0000-4000-8000-000000000002",
+        "decision": "00000000-0000-4000-8000-000000000002",
+        "validFrom": "2026-03-03",
+        "validUntil": "2026-03-03",
+        "status": "revoked",
+        "kenteken": "CDEFGH",
+        "adres": "Voorbeeld Adres 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "plannedAction",
           "slug": "dossiq-planned-action-1"
         },
@@ -25592,6 +25930,321 @@
         "assessedBy": "admin",
         "assessedAt": "2026-03-03T09:00:00+00:00"
       },
+        {
+          "@self": {
+            "register": "dossiq",
+            "schema": "wooDeliveredSet",
+            "slug": "woodeliveredset-1"
+          },
+          "case": "00000000-0000-4000-8000-000000000000",
+          "decision": "demo-decision-1",
+          "status": "frozen",
+          "deliveredAt": "2026-03-04T10:00:00+00:00",
+          "deliveredBy": "admin",
+          "publication": "demo-publication-1",
+          "items": [
+            {
+              "assessment": "demo-assessment-1",
+              "classification": "openbaar",
+              "deliveredRef": "00000000-0000-4000-8000-000000000100",
+              "originalRef": "00000000-0000-4000-8000-000000000100",
+              "fileName": "document-1.pdf",
+              "size": 11,
+              "sha256": "63b0221edf521fbb30571759bd3c4391c86b4eaff92c8cc83aed8fa7353801b3"
+            }
+          ],
+          "setHash": "6382946e8be79d4eaf6aa7263fbc019ba3664b2fd10d1fe38568ae2fdf80741a"
+        },
+        {
+          "@self": {
+            "register": "dossiq",
+            "schema": "wooDeliveredSet",
+            "slug": "woodeliveredset-2"
+          },
+          "case": "00000000-0000-4000-8000-000000000001",
+          "decision": "demo-decision-2",
+          "status": "frozen",
+          "deliveredAt": "2026-03-05T10:00:00+00:00",
+          "deliveredBy": "admin",
+          "publication": "demo-publication-2",
+          "items": [
+            {
+              "assessment": "demo-assessment-2",
+              "classification": "openbaar",
+              "deliveredRef": "00000000-0000-4000-8000-000000000101",
+              "originalRef": "00000000-0000-4000-8000-000000000101",
+              "fileName": "document-2.pdf",
+              "size": 11,
+              "sha256": "448804ec8e4e319bdfcfb876ac6e40c90d15535b4f83dfb3cef51fff82034e9b"
+            }
+          ],
+          "setHash": "82cfc2fd530b2286836ab4578a1519663acb9b13bf3aa4c955bc05f3a67ee12b"
+        },
+        {
+          "@self": {
+            "register": "dossiq",
+            "schema": "wooDeliveredSet",
+            "slug": "woodeliveredset-3"
+          },
+          "case": "00000000-0000-4000-8000-000000000002",
+          "decision": "demo-decision-3",
+          "status": "frozen",
+          "deliveredAt": "2026-03-06T10:00:00+00:00",
+          "deliveredBy": "admin",
+          "publication": "demo-publication-3",
+          "items": [
+            {
+              "assessment": "demo-assessment-3",
+              "classification": "deels_openbaar",
+              "deliveredRef": "00000000-0000-4000-8000-000000000103",
+              "originalRef": "00000000-0000-4000-8000-000000000102",
+              "fileName": "document-3.pdf",
+              "size": 11,
+              "sha256": "fb5d6e17f59360e33b489a84b1312aaaacd90c827fb583124a00e8e5ff947098"
+            }
+          ],
+          "setHash": "59c579cbb95165b48274c47cb52d43e67f53851c15555039ecd53ba58972ffe4"
+        },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooSearchPlan",
+          "slug": "woosearchplan-demo-1",
+          "id": "f65a9bc7-28ad-5e6b-9c3b-edb82ae8332d"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "custodians": [
+          {
+            "name": "Wethouder Ruimte",
+            "function": "Bestuur"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "terms": "Stationsweg",
+        "recordedBy": "admin",
+        "recordedAt": "2026-10-01T10:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooRequestConfiguration",
+          "slug": "woorequestconfiguration-demo-1",
+          "id": "782b6029-20bc-551f-8a80-9f6a9faeefde"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "custodians": [
+          {
+            "name": "Wethouder Ruimte",
+            "function": "Bestuur"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "terms": "Stationsweg"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooExclusion",
+          "slug": "wooexclusion-demo-1",
+          "id": "156c6f75-e8a6-5a8b-9157-897db9c329f6"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "source": "files",
+        "location": "/Team Ruimte",
+        "fileName": "notulen-kopie-1.pdf",
+        "reason": "duplicate",
+        "custodian": "Wethouder Ruimte",
+        "note": "Voorbeeld",
+        "excludedBy": "admin",
+        "excludedAt": "2026-10-02T09:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooCollectionQuery",
+          "slug": "woocollectionquery-demo-1",
+          "id": "52995c2e-e21b-5644-b57b-be35d2e29bc6"
+        },
+        "case": "a611dd46-f7be-4adb-970e-e098f07567f5",
+        "source": "files",
+        "terms": "Stationsweg",
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "runBy": "admin",
+        "runAt": "2026-10-02T08:30:00Z",
+        "resultKeys": [
+          "101",
+          "201"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooSearchPlan",
+          "slug": "woosearchplan-demo-2",
+          "id": "d89d84df-6da5-5e89-bae9-4663a258ca20"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "custodians": [
+          {
+            "name": "Afdeling Vergunningen",
+            "function": "Vergunningen"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "terms": "Stationsweg",
+        "recordedBy": "admin",
+        "recordedAt": "2026-10-01T10:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooRequestConfiguration",
+          "slug": "woorequestconfiguration-demo-2",
+          "id": "b4e8aa99-f5c9-5232-aae5-76e66d49bc91"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "custodians": [
+          {
+            "name": "Afdeling Vergunningen",
+            "function": "Vergunningen"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "terms": "Stationsweg"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooExclusion",
+          "slug": "wooexclusion-demo-2",
+          "id": "0292a2c7-83de-5933-a1ef-712de75e8594"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "source": "files",
+        "location": "/Team Ruimte",
+        "fileName": "notulen-kopie-2.pdf",
+        "reason": "out-of-period",
+        "custodian": "Afdeling Vergunningen",
+        "note": "Voorbeeld",
+        "excludedBy": "admin",
+        "excludedAt": "2026-10-02T09:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooCollectionQuery",
+          "slug": "woocollectionquery-demo-2",
+          "id": "b1393b7c-c38c-5040-a477-45394e5f4bbf"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "source": "files",
+        "terms": "Stationsweg",
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "runBy": "admin",
+        "runAt": "2026-10-02T08:30:00Z",
+        "resultKeys": [
+          "102",
+          "202"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooSearchPlan",
+          "slug": "woosearchplan-demo-3",
+          "id": "e79e37b9-0e48-5c96-835e-e940cbe9cb54"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "custodians": [
+          {
+            "name": "Team Verkeer",
+            "function": "Mobiliteit"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "terms": "Stationsweg",
+        "recordedBy": "admin",
+        "recordedAt": "2026-10-01T10:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooRequestConfiguration",
+          "slug": "woorequestconfiguration-demo-3",
+          "id": "99a8f9c3-a99f-5dd6-81e6-56c36e18ab3f"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "custodians": [
+          {
+            "name": "Team Verkeer",
+            "function": "Mobiliteit"
+          }
+        ],
+        "systems": [
+          "files",
+          "cases"
+        ],
+        "terms": "Stationsweg"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooExclusion",
+          "slug": "wooexclusion-demo-3",
+          "id": "8c8a7941-63e6-5a95-a87b-ba0a5e987f1d"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "source": "files",
+        "location": "/Team Ruimte",
+        "fileName": "notulen-kopie-3.pdf",
+        "reason": "unreadable",
+        "custodian": "Team Verkeer",
+        "note": "Voorbeeld",
+        "excludedBy": "admin",
+        "excludedAt": "2026-10-02T09:00:00Z"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooCollectionQuery",
+          "slug": "woocollectionquery-demo-3",
+          "id": "b42af740-5fd4-5249-8741-e289c6f19a16"
+        },
+        "case": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "source": "files",
+        "terms": "Stationsweg",
+        "periodFrom": "2025-01-01",
+        "periodTo": "2025-12-31",
+        "runBy": "admin",
+        "runAt": "2026-10-02T08:30:00Z",
+        "resultKeys": [
+          "103",
+          "203"
+        ]
+      },
       {
         "@self": {
           "register": "dossiq",
@@ -25651,6 +26304,279 @@
         "readAt": null,
         "lastError": "This address opted out (instance).",
         "simulated": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "documentReview",
+          "slug": "documentreview-documentreview-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "documentRef": "Voorbeeld Documentref 1",
+        "relevance": "unmarked",
+        "relevanceSource": "reviewer",
+        "rule": "Voorbeeld Rule 1",
+        "overturnedRule": "Voorbeeld Overturnedrule 1",
+        "markedBy": "Voorbeeld Markedby 1",
+        "markedAt": "2026-03-01T09:00:00+00:00",
+        "batch": "Voorbeeld Batch 1",
+        "depth": {},
+        "pageCount": 1,
+        "pagesRequired": [
+          1
+        ],
+        "pagesSeen": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "documentReview",
+          "slug": "documentreview-documentreview-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "documentRef": "Voorbeeld Documentref 2",
+        "relevance": "in-scope",
+        "relevanceSource": "rule",
+        "rule": "Voorbeeld Rule 2",
+        "overturnedRule": "Voorbeeld Overturnedrule 2",
+        "markedBy": "Voorbeeld Markedby 2",
+        "markedAt": "2026-03-02T09:00:00+00:00",
+        "batch": "Voorbeeld Batch 2",
+        "depth": {},
+        "pageCount": 2,
+        "pagesRequired": [
+          2
+        ],
+        "pagesSeen": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "documentReview",
+          "slug": "documentreview-documentreview-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "documentRef": "Voorbeeld Documentref 3",
+        "relevance": "out-of-scope",
+        "relevanceSource": "reviewer",
+        "rule": "Voorbeeld Rule 3",
+        "overturnedRule": "Voorbeeld Overturnedrule 3",
+        "markedBy": "Voorbeeld Markedby 3",
+        "markedAt": "2026-03-03T09:00:00+00:00",
+        "batch": "Voorbeeld Batch 3",
+        "depth": {},
+        "pageCount": 3,
+        "pagesRequired": [
+          3
+        ],
+        "pagesSeen": [
+          {}
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "recallSample",
+          "slug": "recallsample-recallsample-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "seed": 1,
+        "documents": [
+          "Voorbeeld Documents 1"
+        ],
+        "drawnBy": "Voorbeeld Drawnby 1",
+        "drawnAt": "2026-03-01T09:00:00+00:00",
+        "nullSetSize": 1,
+        "found": 1,
+        "judgements": {},
+        "batch": "Voorbeeld Batch 1",
+        "k": 1,
+        "confidence": 1.0,
+        "elusionRate": 1.0,
+        "elusionUpper": 1.0,
+        "recallEstimate": 1.0,
+        "recallLowerBound": 1.0,
+        "estimatedAt": "2026-03-01T09:00:00+00:00",
+        "stoppingRuleMetAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "recallSample",
+          "slug": "recallsample-recallsample-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "seed": 2,
+        "documents": [
+          "Voorbeeld Documents 2"
+        ],
+        "drawnBy": "Voorbeeld Drawnby 2",
+        "drawnAt": "2026-03-02T09:00:00+00:00",
+        "nullSetSize": 2,
+        "found": 2,
+        "judgements": {},
+        "batch": "Voorbeeld Batch 2",
+        "k": 2,
+        "confidence": 2.0,
+        "elusionRate": 2.0,
+        "elusionUpper": 2.0,
+        "recallEstimate": 2.0,
+        "recallLowerBound": 2.0,
+        "estimatedAt": "2026-03-02T09:00:00+00:00",
+        "stoppingRuleMetAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "recallSample",
+          "slug": "recallsample-recallsample-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "seed": 3,
+        "documents": [
+          "Voorbeeld Documents 3"
+        ],
+        "drawnBy": "Voorbeeld Drawnby 3",
+        "drawnAt": "2026-03-03T09:00:00+00:00",
+        "nullSetSize": 3,
+        "found": 3,
+        "judgements": {},
+        "batch": "Voorbeeld Batch 3",
+        "k": 3,
+        "confidence": 3.0,
+        "elusionRate": 3.0,
+        "elusionUpper": 3.0,
+        "recallEstimate": 3.0,
+        "recallLowerBound": 3.0,
+        "estimatedAt": "2026-03-03T09:00:00+00:00",
+        "stoppingRuleMetAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reviewBatch",
+          "slug": "reviewbatch-voorbeeld-name-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "name": "Voorbeeld Name 1",
+        "assignee": "Voorbeeld Assignee 1",
+        "documents": [
+          "Voorbeeld Documents 1"
+        ],
+        "filter": {},
+        "task": "Voorbeeld Task 1",
+        "status": "open"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reviewBatch",
+          "slug": "reviewbatch-voorbeeld-name-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "name": "Voorbeeld Name 2",
+        "assignee": "Voorbeeld Assignee 2",
+        "documents": [
+          "Voorbeeld Documents 2"
+        ],
+        "filter": {},
+        "task": "Voorbeeld Task 2",
+        "status": "closed"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reviewBatch",
+          "slug": "reviewbatch-voorbeeld-name-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "name": "Voorbeeld Name 3",
+        "assignee": "Voorbeeld Assignee 3",
+        "documents": [
+          "Voorbeeld Documents 3"
+        ],
+        "filter": {},
+        "task": "Voorbeeld Task 3",
+        "status": "open"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stoppingRule",
+          "slug": "stoppingrule-stoppingrule-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "targetRecall": 0.0,
+        "confidence": 0.9,
+        "declaredBy": "Voorbeeld Declaredby 1",
+        "declaredAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stoppingRule",
+          "slug": "stoppingrule-stoppingrule-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "targetRecall": 0.0,
+        "confidence": 0.95,
+        "declaredBy": "Voorbeeld Declaredby 2",
+        "declaredAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "stoppingRule",
+          "slug": "stoppingrule-stoppingrule-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "targetRecall": 0.0,
+        "confidence": 0.99,
+        "declaredBy": "Voorbeeld Declaredby 3",
+        "declaredAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "triageRule",
+          "slug": "triagerule-voorbeeld-name-1-1"
+        },
+        "case": "00000000-0000-4000-8000-000000000000",
+        "name": "Voorbeeld Name 1",
+        "effect": "in-scope",
+        "conditions": {},
+        "order": 0,
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "triageRule",
+          "slug": "triagerule-voorbeeld-name-2-2"
+        },
+        "case": "00000000-0000-4000-8000-000000000001",
+        "name": "Voorbeeld Name 2",
+        "effect": "out-of-scope",
+        "conditions": {},
+        "order": 0,
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "triageRule",
+          "slug": "triagerule-voorbeeld-name-3-3"
+        },
+        "case": "00000000-0000-4000-8000-000000000002",
+        "name": "Voorbeeld Name 3",
+        "effect": "in-scope",
+        "conditions": {},
+        "order": 0,
+        "active": true
       }
     ]
   }

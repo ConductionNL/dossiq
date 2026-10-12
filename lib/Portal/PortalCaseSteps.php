@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * The public steps of one case, read from the case and its case type.
  *
- * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
  */
 class PortalCaseSteps {
 	use SearchesObjects;
@@ -63,7 +63,7 @@ class PortalCaseSteps {
 	 *
 	 * @return array<int, array<string, string>> The steps.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	public function forCase(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();

@@ -75,12 +75,14 @@ class PackageWriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param LoggerInterface $logger   What an import writes about itself.
-	 * @param SettingsService $settings The register and schema names.
+	 * @param LoggerInterface    $logger   What an import writes about itself.
+	 * @param SettingsService    $settings The register and schema names.
+	 * @param ExistingRowMatcher $matcher  Finds a row a seeder already wrote under another id.
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly SettingsService $settings,
+		private readonly ExistingRowMatcher $matcher,
 	) {
 	}//end __construct()
 
@@ -136,6 +138,216 @@ class PackageWriter {
 			skipped: $written['skipped'],
 		);
 	}//end writeCollections()
+
+	/**
+	 * Write a whole package's rows, or none of them.
+	 *
+	 * A group is the rows bound for one schema, named by the settings key that
+	 * resolves it (`case_type_schema`, `workflow_template_schema`, or whatever a
+	 * seed file names). Every group goes in one run: when any row fails, every
+	 * row this run created goes back out, across all groups, so a half-installed
+	 * package never shows up as a case type with no statuses.
+	 *
+	 * A row the instance already holds is left alone and reported as skipped.
+	 * That is what makes a second install of the same package a no-op, and it
+	 * is why nothing here replaces: a replaced row cannot be rolled back.
+	 *
+	 * A row the instance holds under another id, because a seeder wrote it
+	 * before the package existed, is adopted: nothing is written, the existing
+	 * row is reported, and every later row of the package that names the
+	 * package's id names the existing one instead (decision 190). An adopted
+	 * row is never taken back, since this run did not create it.
+	 *
+	 * @param string                                                          $package The package id, for the messages.
+	 * @param array<int, array{schemaKey: string, rows: array<int, array<string, mixed>>}> $groups  The rows, per schema key.
+	 *
+	 * @return array{
+	 *     status: string,
+	 *     message: string,
+	 *     written: array<int, array<string, mixed>>,
+	 *     skipped: array<int, string>,
+	 *     adopted: array<int, array<string, mixed>>
+	 * }
+	 *         Each written and adopted entry carries schemaKey, schema, id and row;
+	 *         an adopted entry's row is the one this instance already held.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function writePackage(string $package, array $groups): array {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		if ($objectService === null || $register === '') {
+			return [
+				'status' => 'error',
+				'message' => "Package '{$package}' was not installed: this instance has no OpenRegister register configured.",
+				'written' => [],
+				'skipped' => [],
+				'adopted' => [],
+			];
+		}
+
+		$run = ['written' => [], 'skipped' => [], 'adopted' => [], 'ids' => [], 'caseTypes' => []];
+
+		try {
+			foreach ($groups as $group) {
+				$this->writeGroup(objectService: $objectService, register: $register, group: $group, run: $run);
+			}
+		} catch (\Throwable $e) {
+			$this->undo(written: $run['written']);
+
+			return [
+				'status' => 'error',
+				'message' => "Package '{$package}' was not installed, and nothing it wrote was kept: " . $e->getMessage(),
+				'written' => [],
+				'skipped' => [],
+				'adopted' => [],
+			];
+		}
+
+		return [
+			'status' => 'success',
+			'message' => "Package '{$package}': " . count($run['written']) . ' row(s) written, '
+				. count($run['adopted']) . ' adopted, ' . count($run['skipped']) . ' already present.',
+			'written' => $run['written'],
+			'skipped' => $run['skipped'],
+			'adopted' => $run['adopted'],
+		];
+	}//end writePackage()
+
+	/**
+	 * Take back rows a package write created.
+	 *
+	 * Public because the write is not the last step of an install: the
+	 * installer records every row in the shipped-set ledger afterwards, and a
+	 * row it cannot record is a row it has to take back.
+	 *
+	 * @param array<int, array{id: string}> $written The rows {@see self::writePackage()} reported written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function undo(array $written): void {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		if ($objectService === null) {
+			return;
+		}
+
+		$this->rollBack(objectService: $objectService, register: $register, ids: array_column($written, 'id'));
+	}//end undo()
+
+	/**
+	 * Write the rows of one group, collecting what became of each.
+	 *
+	 * @param object                                                        $objectService The OpenRegister object service.
+	 * @param string                                                        $register      The register.
+	 * @param array{schemaKey: string, rows: array<int, array<string, mixed>>} $group         The group.
+	 * @param array<string, array<mixed>>                                   $run           Collects written, skipped
+	 *                                                                                     and adopted rows, the ids
+	 *                                                                                     adopted and the case types
+	 *                                                                                     among them.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the group's schema key resolves to nothing.
+	 */
+	private function writeGroup(object $objectService, string $register, array $group, array &$run): void {
+		$schema = $this->settings->getConfigValue(key: $group['schemaKey']);
+		if ($schema === '') {
+			throw new RuntimeException("No schema is configured for '{$group['schemaKey']}', so its rows cannot be written.");
+		}
+
+		foreach ($group['rows'] as $row) {
+			$row = $this->pointedAtAdopted(row: $row, ids: $run['ids']);
+			$packageId = $this->existingId(row: $row);
+			if ($packageId !== '' && $this->holds(objectService: $objectService, register: $register, schema: $schema, id: $packageId) === true) {
+				$run['skipped'][] = $packageId;
+				continue;
+			}
+
+			$existing = $this->matcher->find(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				schemaKey: $group['schemaKey'],
+				row: $row,
+				caseTypes: $run['caseTypes'],
+			);
+			if ($existing !== null && $this->existingId(row: $existing) !== '') {
+				$this->adopt(group: $group, schema: $schema, packageId: $packageId, existing: $existing, run: $run);
+				continue;
+			}
+
+			$outcome = $this->writeRow(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				row: $row,
+				strategy: self::STRATEGY_SKIP,
+			);
+
+			$run['written'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'id' => $outcome['id'], 'row' => $row];
+		}//end foreach
+	}//end writeGroup()
+
+	/**
+	 * Take an existing row as the package's, and point later rows at it.
+	 *
+	 * @param array{schemaKey: string} $group     The group the row belongs to.
+	 * @param string                   $schema    The schema.
+	 * @param string                   $packageId The id the package gives the row.
+	 * @param array<string, mixed>     $existing  The row this instance holds.
+	 * @param array<string, array<mixed>> $run    The run so far.
+	 *
+	 * @return void
+	 */
+	private function adopt(array $group, string $schema, string $packageId, array $existing, array &$run): void {
+		$existingId = $this->existingId(row: $existing);
+		if ($packageId !== '') {
+			$run['ids'][$packageId] = $existingId;
+		}
+
+		if ($group['schemaKey'] === ExistingRowMatcher::CASE_TYPE_KEY) {
+			$run['caseTypes'][] = $existingId;
+		}
+
+		$run['adopted'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'id' => $existingId, 'row' => $existing];
+	}//end adopt()
+
+	/**
+	 * The row with every package id that was adopted replaced by the id it has here.
+	 *
+	 * References sit in plain fields (`caseType`) and inside JSON strings
+	 * (a flow's `steps` and `transitions`), so every string value is rewritten,
+	 * at any depth. A package id is a UUID, so it cannot occur by accident
+	 * inside other text. The row's own id is left alone.
+	 *
+	 * @param array<string, mixed>  $row The row.
+	 * @param array<string, string> $ids Package id to existing id.
+	 *
+	 * @return array<string, mixed> The row.
+	 */
+	private function pointedAtAdopted(array $row, array $ids): array {
+		if ($ids === []) {
+			return $row;
+		}
+
+		$own = ($row['id'] ?? null);
+		array_walk_recursive(
+			$row,
+			static function (mixed &$value) use ($ids): void {
+				if (is_string($value) === true) {
+					$value = strtr($value, $ids);
+				}
+			}
+		);
+		if ($own !== null) {
+			$row['id'] = $own;
+		}
+
+		return $row;
+	}//end pointedAtAdopted()
 
 	/**
 	 * Write every row of every collection, and say what became of each.

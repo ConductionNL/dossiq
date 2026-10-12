@@ -22,7 +22,7 @@
  * The gates read `src/menu-layout.json` only (gate-53), so the no-loss rule
  * for the simple file is held here and nowhere else.
  *
- * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
+ * @spec openspec/specs/nav-dedup-and-grouping/spec.md
  * @spec openspec/changes/case-types-in-my-menu/specs/case-type-navigation/spec.md#REQ-CTN-001
  */
 
@@ -90,13 +90,13 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 35 entries: 13 main, 4 footer, 15 settings, 3 integrations', () => {
+	it('still counts 36 entries: 13 main, 5 footer, 15 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(35)
+		expect(flat(menu)).toHaveLength(36)
 		expect(count('main')).toBe(13)
-		expect(count('footer')).toBe(4)
+		expect(count('footer')).toBe(5)
 		expect(count('settings')).toBe(15)
 		expect(count('integrations')).toBe(3)
 	})
@@ -267,11 +267,13 @@ describe('the simple profile', () => {
 		expect(mainSource).toContain('capabilities?.nldesign?.logos?.emblem')
 	})
 
-	it('draws the sidebar of the design: New case, two counts, the day close card and help', () => {
+	it('draws the sidebar of the design: New case, two counts and help, no day close card', () => {
 		// DqZijbalk: a solid "Nieuwe zaak" button under the brand, a count
-		// beside My work and the team queue, a "Dag afsluiten" card above the
-		// footer and "Hulp en uitleg" in the footer. All are nextcloud-vue
-		// 2.64.0 opt-ins; the full profile declares none of them.
+		// beside My work and the team queue and "Hulp en uitleg" in the
+		// footer. All are nextcloud-vue 2.64.0 opt-ins; the full profile
+		// declares none of them. The "Dag afsluiten" card the board draws
+		// above the footer is gone from the menu (Ruben, 11 Oct 2026): the
+		// day close page stays, reached from the Mijn werk header link.
 		const manifestNewCase = manifest()
 			.pages.find((page) => page.id === 'MyWorkHome')
 			.config.headerActions.find((action) => action.id === 'new-case')
@@ -281,8 +283,12 @@ describe('the simple profile', () => {
 			icon: 'Plus',
 			action: { ...manifestNewCase, id: 'nav-new-case' },
 		})
-		expect(built.nav.card.link.route).toBe('EndOfDay')
+		expect(built.nav.card).toBeUndefined()
 		expect(built.pages.some((page) => page.id === 'EndOfDay')).toBe(true)
+		const myWorkHome = built.pages.find((page) => page.id === 'MyWorkHome')
+		expect(
+			myWorkHome.config.viewLinks.some((link) => link.route === 'EndOfDay'),
+		).toBe(true)
 
 		// The counts use the filters of the pages they open, so the number
 		// beside an entry is the number of rows behind it.
@@ -340,6 +346,7 @@ describe('the simple profile', () => {
 				'CasesDeletedMenu',
 				'CaseObjectsMenu',
 				'MailIntakeLogMenu',
+				'WooReportsMenu',
 			]),
 		)
 		// Everything the full profile has in settings is still there.
@@ -354,7 +361,9 @@ describe('the simple profile', () => {
 		const ids = (menu, name) => section(menu, name).map((entry) => entry.id)
 		expect(ids(built.menu, 'integrations')).toEqual(ids(full, 'integrations'))
 		expect(ids(built.menu, 'footer')).toEqual(
-			ids(full, 'footer').filter((id) => id !== 'MailIntakeLogMenu'),
+			ids(full, 'footer').filter(
+				(id) => id !== 'MailIntakeLogMenu' && id !== 'WooReportsMenu',
+			),
 		)
 	})
 
@@ -387,6 +396,11 @@ describe('the simple profile', () => {
 					linked.add(action.target)
 				}
 			}
+			// The My work page draws its links as pills on the view-switch
+			// row (`viewLinks`, nextcloud-vue 2.79.0), as DqMijnWerk does.
+			for (const link of page.config?.viewLinks ?? []) {
+				linked.add(link.route)
+			}
 		}
 		const lost = flat(build(fullFile).menu)
 			.filter((entry) => !shown.has(entry.id))
@@ -408,12 +422,14 @@ describe('the simple profile', () => {
 				.find((page) => page.id === pageId)
 				.config.headerActions.map((action) => action.id)
 
-		expect(actionIds(built, 'MyWorkHome')).toEqual([
-			'new-case',
-			'open-your-queue',
-			'open-assigned-to-me',
-			'open-end-of-day',
-		])
+		// DqMijnWerk: the three links are pills on the switch row, not
+		// buttons in the header.
+		expect(actionIds(built, 'MyWorkHome')).toEqual(['new-case'])
+		expect(
+			built.pages
+				.find((page) => page.id === 'MyWorkHome')
+				.config.viewLinks.map((link) => link.route),
+		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
 		expect(actionIds(built, 'Dashboard')).toEqual([
 			'new-case',
 			'open-end-of-day',
@@ -431,6 +447,8 @@ describe('the simple profile', () => {
 		}
 	})
 
+	// 69 -> 67: tenancy step 5 retires the Tenants and TenantDetail pages.
+	// 67 -> 68: woo-delivered-set-is-a-record adds one page.
 	it('builds the same 68 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))

@@ -1,0 +1,64 @@
+{
+  "_note": "case-session-with-parties-and-minutes (C12, ADR-118, decision 191). A case type declares the sessions a case of it holds (a hearing, a zitting, an inspection talk) in `sessions[]`, so a procedure that needs a session with parties and minutes declares one instead of shipping a class. SessionDefinition is the single authority on the entry shape; these properties only have to exist, because OpenRegister stores no undeclared key. The session record carries `sessionKey`, the `sessions[]` entry it belongs to, and `title`. `calendarProvider` shows sessions in Nextcloud Calendar through OpenRegister's virtual calendar, which reads the record under the viewer's own rights.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "title": "Sessions",
+            "description": "The sessions a case of this type holds with its parties: who is invited, how long before the session the file opens for inspection, whether a party may waive it, and whether minutes and recording consent are required.",
+            "default": [],
+            "items": {
+              "type": "object",
+              "required": ["key"],
+              "properties": {
+                "key": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9-]*$", "description": "The session key, written on each session as `sessionKey`."},
+                "label": {"type": "string", "description": "What the session is called on screen and in the calendar."},
+                "inviteeRoles": {"type": "array", "items": {"type": "string"}, "default": [], "description": "The party roles that may be invited. Empty means any role."},
+                "minInvitees": {"type": "integer", "minimum": 0, "default": 1, "description": "How many invitees a session needs at least."},
+                "inspectionFloorDays": {"type": "integer", "minimum": 0, "default": 0, "description": "Days before the session that the file is open for inspection. A session cannot be planned closer than this."},
+                "waivable": {"type": "boolean", "default": false, "description": "Whether a party may waive the session."},
+                "minutesRequired": {"type": "boolean", "default": true, "description": "Whether a session can only be closed with minutes (a summary or a document)."},
+                "recordingConsentRequired": {"type": "boolean", "default": true, "description": "Whether an audio recording is accepted only with recording consent granted."},
+                "attendanceGraceHours": {"type": "integer", "minimum": 0, "default": 1, "description": "Hours after the session start during which attendance can be added without a correction reason."},
+                "statuses": {
+                  "type": "object",
+                  "description": "The session status written at each step, when the case type uses other names than the defaults.",
+                  "properties": {
+                    "planned": {"type": "string", "default": "planned"},
+                    "waived": {"type": "string", "default": "afgezien"},
+                    "executed": {"type": "string", "default": "executed"},
+                    "cancelled": {"type": "string", "default": "cancelled"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "hearingSession": {
+        "properties": {
+          "sessionKey": {
+            "type": "string",
+            "title": "Session",
+            "description": "The `sessions[]` entry of the case type this session belongs to."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "What the session is called, from the case type's session label. Shown in the calendar."
+          }
+        },
+        "configuration": {
+          "calendarProvider": {
+            "enabled": true,
+            "dtstart": "scheduledDate",
+            "titleTemplate": "{{ title }}",
+            "descriptionTemplate": "{{ location }}"
+          }
+        }
+      }
+    }
+  }
+}

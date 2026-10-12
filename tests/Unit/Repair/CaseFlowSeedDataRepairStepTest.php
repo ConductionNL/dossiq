@@ -122,6 +122,7 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 		array $cases = [],
 		array $statuses = [],
 		bool $configured = true,
+		bool $titleFindsIt = true,
 	): CaseFlowSeedDataRepairStep {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn(true);
@@ -131,7 +132,8 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 		);
 
 		$index = $this->createMock(CaseFlowSeedIndex::class);
-		$index->method('caseTypeByTitle')->willReturn($caseType);
+		$index->method('caseTypeBySlug')->willReturn($caseType);
+		$index->method('caseTypeByTitle')->willReturn($titleFindsIt === true ? $caseType : null);
 		$index->method('caseTitlesFor')->willReturn($cases);
 
 		$lookup = $this->createMock(StatusTypeLookup::class);
@@ -219,6 +221,23 @@ class CaseFlowSeedDataRepairStepTest extends TestCase {
 		$this->assertNotSame([], $this->savedTo('status_type_schema'), 'its missing statuses must still arrive');
 		$this->assertNotSame([], $this->savedTo('case_schema'), 'its missing cases must still arrive');
 	}//end testAnExistingCaseTypeStillGetsItsMissingStatusesAndCases()
+
+	/**
+	 * A case type an earlier run stored is found by its slug, not created again.
+	 *
+	 * The title is translatable, so OpenRegister stores it as a language map
+	 * and a lookup by the plain title finds nothing. Every repair pass then
+	 * created "Omgevingsvergunning kleine bouwactiviteit" again, and the New
+	 * case picker offered it twice (review-check, 11 October 2026, N-5).
+	 *
+	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 */
+	public function testACaseTypeStoredByAnEarlierRunIsFoundBySlug(): void {
+		$step = $this->step($this->store(), caseType: ['id' => 'ct-existing'], titleFindsIt: false);
+		$step->run($this->createMock(IOutput::class));
+
+		$this->assertSame([], $this->savedTo('case_type_schema'), 'A rerun must not create the case type a second time.');
+	}//end testACaseTypeStoredByAnEarlierRunIsFoundBySlug()
 
 	/**
 	 * A status that already exists is not created again.

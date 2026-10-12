@@ -29,7 +29,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 
 declare(strict_types=1);
@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\CaseType\PortalWithdrawalTarget;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -59,7 +60,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+ * @spec openspec/specs/portal-contribution/spec.md
  */
 class CaseTypePortalWithdrawalListener implements IEventListener {
 
@@ -79,6 +80,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 * @param PortalWithdrawalTarget $target          Owns the rule.
 	 * @param IL10N                  $l10n            Translation service.
 	 * @param LoggerInterface        $logger          Structured logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -87,6 +89,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 		private readonly PortalWithdrawalTarget $target,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -97,7 +100,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-citizen-writes-on-the-case/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatingEvent === true) {
@@ -200,7 +203,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 				continue;
 			}
 
-			$title = trim((string)($status['name'] ?? ($status['title'] ?? '')));
+			$title = $this->text->textOf(value: ($status['name'] ?? ($status['title'] ?? null)), language: $this->l10n->getLanguageCode());
 			if ($title === '') {
 				$title = $id;
 			}

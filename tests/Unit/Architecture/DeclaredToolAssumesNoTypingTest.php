@@ -24,9 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Architecture;
 
-use OCA\Dossiq\Mcp\DossiqToolProvider;
-use OCA\Dossiq\Mcp\Tool\DossiqCaseAuthorizer;
-use OCA\Dossiq\Mcp\Tool\DossiqCaseReader;
+use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -90,12 +88,20 @@ class DeclaredToolAssumesNoTypingTest extends TestCase {
 	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-assistant-via-hermiq/spec.md
 	 */
 	public function testNoDeclaredToolAssumesItWasTyped(): void {
-		$provider = new DossiqToolProvider(
-			caseReader: $this->createMock(DossiqCaseReader::class),
-			authorizer: $this->createMock(DossiqCaseAuthorizer::class),
-		);
+		// Since dossiq-mcp-adoption the tools are declared on the schemas
+		// (`x-openregister-mcp`) and OpenRegister derives them, so the
+		// contracts are read from the merged register the import reads.
+		$settings = dirname(__DIR__, 3) . '/lib/Settings';
+		$base = json_decode((string)file_get_contents($settings . '/dossiq_register.json'), true);
+		[$merged] = (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $settings . '/register.d');
 
-		$tools = $provider->getTools();
+		$tools = [];
+		foreach ($merged['components']['schemas'] as $slug => $schema) {
+			foreach (($schema['configuration']['x-openregister-mcp']['tools'] ?? []) as $verb => $config) {
+				$tools[] = ['id' => 'dossiq.' . $slug . '.' . $verb] + $config;
+			}
+		}
+
 		$this->assertNotEmpty($tools, 'dossiq declares no tool at all, so this test cannot see one.');
 
 		foreach ($tools as $tool) {

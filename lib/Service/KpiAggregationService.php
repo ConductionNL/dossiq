@@ -49,6 +49,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -106,6 +107,7 @@ class KpiAggregationService {
 	 * @param ContainerInterface $container The DI container.
 	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
 	 * @param EngineTaskInbox $engineTasks The engine's task counter.
+	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
 	 *
 	 * @return void
@@ -115,6 +117,7 @@ class KpiAggregationService {
 		private ContainerInterface $container,
 		private IAppManager $appManager,
 		private EngineTaskInbox $engineTasks,
+		private IL10N $l10n,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -158,6 +161,17 @@ class KpiAggregationService {
 				filters: (self::OPEN_WORK + ['deadline' => ['lt' => $today]])
 			),
 			'completedCount' => count($closed),
+			// The reader's OWN closed cases, this month and last, for the My
+			// work tile "Closed in <month>" and its "<last month>: n" line.
+			'myCompletedCount' => $this->myClosed(ids: $ids, userId: $userId, from: $monthStart, to: $monthEnd),
+			'myCompletedLastMonth' => $this->myClosed(
+				ids: $ids,
+				userId: $userId,
+				from: $now->modify('first day of last month')->format('Y-m-d'),
+				to: $now->modify('last day of last month')->format('Y-m-d')
+			),
+			'thisMonthName' => $this->monthName(date: $now),
+			'lastMonthName' => $this->monthName(date: $now->modify('first day of last month')),
 			// The ENGINE counts, and it counts server-side. Both tiles used
 			// to be object counts over `caseTask`; the terminality split and
 			// the due window are now predicates the engine understands, so
@@ -190,6 +204,10 @@ class KpiAggregationService {
 			'newToday' => 0,
 			'overdueCount' => 0,
 			'completedCount' => 0,
+			'myCompletedCount' => 0,
+			'myCompletedLastMonth' => 0,
+			'thisMonthName' => '',
+			'lastMonthName' => '',
 			'taskCount' => 0,
 			'tasksDueToday' => 0,
 			'statusBreakdown' => [],
@@ -302,6 +320,56 @@ class KpiAggregationService {
 
 		return $rows;
 	}//end rows()
+
+	/**
+	 * How many cases this user closed between two days, both included.
+	 *
+	 * @param array<string, string> $ids The register and schema ids.
+	 * @param string $userId The assignee.
+	 * @param string $from The first day, Y-m-d.
+	 * @param string $to The last day, Y-m-d.
+	 *
+	 * @return int The count.
+	 */
+	private function myClosed(array $ids, string $userId, string $from, string $to): int {
+		return $this->countCases(
+			ids: $ids,
+			filters: [
+				'assignee' => $userId,
+				'isFinalStatus' => 1,
+				'endDate' => ['gte' => $from, 'lte' => $to],
+			]
+		);
+	}//end myClosed()
+
+	/**
+	 * The month's name in the reader's language, through the app catalogue.
+	 *
+	 * The English names are the catalogue keys, so a language without them
+	 * reads English rather than a blank.
+	 *
+	 * @param DateTimeImmutable $date Any day of the month.
+	 *
+	 * @return string The month name, lower case.
+	 */
+	private function monthName(DateTimeImmutable $date): string {
+		$names = [
+			1 => 'January',
+			2 => 'February',
+			3 => 'March',
+			4 => 'April',
+			5 => 'May',
+			6 => 'June',
+			7 => 'July',
+			8 => 'August',
+			9 => 'September',
+			10 => 'October',
+			11 => 'November',
+			12 => 'December',
+		];
+
+		return mb_strtolower($this->l10n->t($names[(int)$date->format('n')]));
+	}//end monthName()
 
 	/**
 	 * The cases that reached a final status during the current calendar month.
