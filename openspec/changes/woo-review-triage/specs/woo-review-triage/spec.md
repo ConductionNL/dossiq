@@ -33,9 +33,13 @@ at a `reviewBatch`, is refused at save and the whole schema fails to import. The
 own `parentCase` edge stays as it is; it is case to case and does not reach these records.
 
 Each of the seven SHALL carry the authorization block
-`{"scope": "private", "read": ["authenticated"], "create": ["authenticated"], "update": ["authenticated"], "delete": ["dossiq-coordinators"]}`,
-and the register version SHALL be raised so it reaches an installed instance. No schema of the
-seven SHALL grant read to authenticated users without `scope` `private`.
+`{"scope": "private", "read": [staff], "create": [staff], "update": [staff], "delete": ["dossiq-coordinators"]}`,
+where staff is `dossiq-medewerkers` and `dossiq-background-service`, the two groups the dossiq
+register itself is closed to (case-access-control REQ-ACC-11; `RegisterAccessDeclaredTest` refuses
+`authenticated` on any schema). The register version SHALL be raised so it reaches an installed
+instance. No schema of the seven SHALL grant read without `scope` `private`. OpenRegister keeps the
+schema block as the ceiling of a grant, so a reviewer named by a batch reads it only as a member of
+`dossiq-medewerkers`.
 
 `OCA\Dossiq\Woo\WooAssessmentAccess::reconcile(string $caseId): array` SHALL also make the grants
 on every record of the seven that names the case equal this table, with owning group
@@ -50,6 +54,12 @@ on every record of the seven that names the case equal this table, with owning g
 | `wooSearchPlan` | read, update | none |
 | `wooCollectionQuery` | read, update | none |
 | `wooDeliveredSet` | read | none |
+
+The read column of this table is configuration, not code (decision 182): the `woo-verzoek` case
+type lists each record under `reviewerAccess.records` with the generic reader rule of
+case-reviewer-access REQ-CRA-008, `readers: own` with `userField: assignee` for `reviewBatch`,
+`readers: own` with `reviewerRowField: batch` for `documentReview`, and `readers: assignee` for the
+others. `CaseReviewerAccess::reconcile()` is the reconciler; `WooAssessmentAccess` was never built.
 
 It SHALL NOT grant `delete` or `share` on any of them. Its answer keeps the shape REQ-WSA-002
 defines, `{status, granted, revoked, refused}`, with the seven counted in.

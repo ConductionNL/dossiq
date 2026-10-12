@@ -44,6 +44,15 @@ class InMemoryRegister {
 	public array $rows = [];
 
 	/**
+	 * Schemas whose rows a search under the caller's own access does not answer,
+	 * as OpenRegister does for a private record the caller holds no grant on.
+	 * A search with `_rbac` false still answers them.
+	 *
+	 * @var list<string>
+	 */
+	public array $hiddenFromCaller = [];
+
+	/**
 	 * How many times a row was saved, so a test can say a write happened once.
 	 *
 	 * @var int
@@ -134,6 +143,10 @@ class InMemoryRegister {
 		bool $_multitenancy = true,
 	): array {
 		$matches = [];
+		if ($_rbac === true && in_array($schema, $this->hiddenFromCaller, true) === true) {
+			return $matches;
+		}
+
 		foreach (($this->rows[$schema] ?? []) as $row) {
 			if ($this->matches(row: $row, filters: $filters) === true) {
 				$matches[] = $row;

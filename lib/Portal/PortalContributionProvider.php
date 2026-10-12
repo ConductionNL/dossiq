@@ -206,8 +206,11 @@ class PortalContributionProvider {
 		'wooPublicationUrl',
 		// THE TERM IN WORDS AND WHERE THE RESULT IS PUBLIC, in the shapes of
 		// portaliq's portalCase (woo-dossier-shared-with-the-requester
-		// REQ-WDS-002 and REQ-WDS-003). Both are written by dossiq only.
+		// REQ-WDS-002 and REQ-WDS-003). All three are written by dossiq only.
+		// `legalDecisionDate` is the day the decision is due, empty while the
+		// term stands still; `termNote` then says why.
 		'termNote',
+		'legalDecisionDate',
 		'resultLink',
 	];
 

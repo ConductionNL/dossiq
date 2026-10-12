@@ -68,7 +68,7 @@
             "description": "Looking a company up in the chamber-of-commerce register.",
             "order": 90,
             "available": false,
-            "unavailableMessage": "The adapter is built and bound, and no screen or service calls it yet. Configuring it changes nothing until one does.",
+            "unavailableMessage": "Dossiq ships no KvK client, and no screen or service in dossiq looks a company up. Integriq holds the KvK source.",
             "sourceTemplate": "kvk"
         },
         {

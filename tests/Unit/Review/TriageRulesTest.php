@@ -87,6 +87,12 @@ class TriageRulesTest extends TestCase {
 	protected function setUp(): void {
 		$this->store = new InMemoryRegister();
 		$this->access = $this->createMock(CaseReviewerAccess::class);
+		// Every record of the case regardless of the caller, as CaseRecordLookup reads it.
+		$this->access->method('recordsOf')->willReturnCallback(
+			fn (string $schemaKey, string $caseField, string $caseId): array => array_values(
+				array_filter($this->store->all(schema: 'triageRule'), static fn (array $row): bool => ($row[$caseField] ?? '') === $caseId)
+			)
+		);
 		$this->text = $this->createMock(DocumentText::class);
 		$this->text->method('extracted')->willReturnCallback(fn (array $document): ?string => ($this->texts[(int)($document['fileId'] ?? 0)] ?? null));
 	}//end setUp()
@@ -213,6 +219,23 @@ class TriageRulesTest extends TestCase {
 		$this->assertSame(0, $applied['counts']['Tweede']);
 		$this->assertSame('in-scope', $this->reviewOf(id: 'doc-1')['relevance']);
 	}//end testTheFirstMatchingRuleDecides()
+
+	/**
+	 * Whoever applies the rules applies the case's rules, also the ones they hold no grant on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+	 */
+	public function testApplyRunsRulesTheCallerCannotRead(): void {
+		$this->document(id: 'doc-1', provenance: ['source' => 'files', 'custodian' => 'A. de Wit']);
+		$rules = $this->rules();
+		$rules->save(caseId: 'case-x', input: ['name' => 'Persoon', 'conditions' => ['custodian' => 'A. de Wit'], 'effect' => 'out-of-scope']);
+		$this->store->hiddenFromCaller = ['triageRule'];
+
+		$this->assertSame([], $rules->forCase(caseId: 'case-x'), 'the listing is what the caller may read');
+		$this->assertSame(1, $rules->apply(caseId: 'case-x')['counts']['Persoon']);
+	}//end testApplyRunsRulesTheCallerCannotRead()
 
 	/**
 	 * A rule never changes a reviewer's marking, also not one set back to unmarked.

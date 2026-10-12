@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * timers are cancelled by subject on the case id.
  *
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class DsoDeadlineTimerTest extends TestCase {
 	use MakesCaseDateNormaliser;
