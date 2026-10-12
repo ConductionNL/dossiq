@@ -3019,12 +3019,6 @@
             "visible": false,
             "title": "Status History"
           },
-          "casePlanState": {
-            "type": "string",
-            "description": "CMMN runtime plan-item state, holding planItemStates, milestones, caseFile and eventLog. Only the case model engine writes it. It is present when the case type's handlingModel is 'cmmn', and empty for cases handled by BPMN.",
-            "visible": false,
-            "title": "Case Plan State"
-          },
           "activity": {
             "type": "string",
             "description": "Activity log entries (JSON-encoded array)",
@@ -3559,7 +3553,7 @@
             "$ref": "caseType",
             "onDelete": "CASCADE",
             "title": "Case Type",
-            "description": "Reference to the case type this case model belongs to. That caseType's handlingModel MUST be 'cmmn' for this model to be loadable by CaseModelEngine."
+            "description": "Reference to the case type this case model belongs to. That caseType's handlingModel must be 'cmmn' for this model to be handed to OpenRegister's case layer when a case starts."
           },
           "version": {
             "type": "integer",
@@ -3617,7 +3611,7 @@
           "planItems": {
             "type": "array",
             "title": "Plan Items",
-            "description": "The case-plan tree: stages (nestable via parentId), human tasks, and milestones. Each item's lifecycle is tracked at runtime in case.casePlanState: the definition here is immutable data.",
+            "description": "The case-plan tree: stages (nestable via parentId), human tasks, and milestones. OpenRegister's case layer holds each item's lifecycle as a plan-item row: the definition here is immutable data.",
             "items": {
               "type": "object",
               "required": [
@@ -16883,7 +16877,6 @@
         "relatedCases": "Voorbeeld Relatedcases 1",
         "geometry": "Voorbeeld Geometry 1",
         "statusHistory": "Voorbeeld Statushistory 1",
-        "casePlanState": "Voorbeeld Caseplanstate 1",
         "activity": "Voorbeeld Activity 1",
         "extensionCount": 0,
         "sourceOrganisation": "Voorbeeld",
@@ -16915,7 +16908,6 @@
         "relatedCases": "Voorbeeld Relatedcases 2",
         "geometry": "Voorbeeld Geometry 2",
         "statusHistory": "Voorbeeld Statushistory 2",
-        "casePlanState": "Voorbeeld Caseplanstate 2",
         "activity": "Voorbeeld Activity 2",
         "extensionCount": 0,
         "sourceOrganisation": "Voorbeeld",
@@ -16947,7 +16939,6 @@
         "relatedCases": "Voorbeeld Relatedcases 3",
         "geometry": "Voorbeeld Geometry 3",
         "statusHistory": "Voorbeeld Statushistory 3",
-        "casePlanState": "Voorbeeld Caseplanstate 3",
         "activity": "Voorbeeld Activity 3",
         "extensionCount": 0,
         "sourceOrganisation": "Voorbeeld",

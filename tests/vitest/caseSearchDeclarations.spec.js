@@ -70,7 +70,6 @@ const SILENT = [
 	'attentionFlag',
 	'attentionFlagHistory',
 	'attentionMarkers',
-	'casePlanState',
 	'commissieBesluit',
 	'conversations',
 	'erasureCounts',

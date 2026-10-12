@@ -7,25 +7,18 @@
  * Three things only a running instance can show. The case page of a case
  * whose type is driven by the case layer renders the plan OpenRegister holds
  * and asks dossiq's retired routes nothing. A caseworker completes an item
- * from the panel and the page shows the state OpenRegister answers. And a case
- * that still carried a plan in the old blob shows the same items in the same
- * states once the drain has run.
+ * from the panel and the page shows the state OpenRegister answers. And the
+ * retired routes answer 404.
  *
  * ASSERT IDS, NOT LABELS. Nothing forces the language of the E2E instance, so
  * every locator is a `data-testid` or a `data-state`, and the only text
  * asserted is text this fixture seeded.
  *
- * THE DRAIN CASE IS CREATED BEFORE ITS MODEL IS PUBLISHED, on purpose. dossiq
- * projects a plan at case start, so a case created under a published model
- * already has rows, and the drain reports a case whose rows disagree with its
- * blob instead of overwriting them. A case that predates the model has no
- * rows, which is what a case from before the bridge looked like.
- *
- * WHAT IS NOT HERE. An illegal transition, an unreachable OpenRegister, the
- * double run of the drain and the unmappable cases are excluded in the spec
- * and carry their proof in `tests/vitest/casePlanPanel.spec.js`,
- * `tests/Unit/Service/CasePlanDrain/CasePlanMigrationServiceTest.php` and
- * `tests/Unit/Service/CmmnRetirementTest.php`.
+ * WHAT IS NOT HERE. An illegal transition and an unreachable OpenRegister are
+ * excluded in the spec and carry their proof in
+ * `tests/vitest/casePlanPanel.spec.js`. The drain and its proof left with the
+ * `casePlanState` property; `tests/Unit/Service/CmmnRetirementTest.php` keeps
+ * both out.
  */
 
 import { expect, test } from '@playwright/test'
@@ -38,11 +31,8 @@ import {
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
-	showObject,
-	updateObject,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
-import { occRun } from './helpers/occ.ts'
 
 /** The plan every case of this suite gets: one stage holding two tasks. */
 const PLAN_ITEMS = [
@@ -61,13 +51,8 @@ const PLAN_ITEMS = [
 	},
 ]
 
-/** What the drained case recorded in its blob before the drain. */
-const RECORDED = { intake: 'active', controle: 'completed', advies: 'active' }
-
 /** The case started under the published model. */
 let liveCase = ''
-/** The case that predates the model and carries a blob. */
-let drainCase = ''
 
 test.describe('The adaptive case plan after the local engine retired', () => {
 	test.setTimeout(240_000)
@@ -95,9 +80,6 @@ test.describe('The adaptive case plan after the local engine retired', () => {
 				}),
 			)
 
-		// Before the model exists: no plan is projected for this one.
-		drainCase = await seed('drain')
-
 		await createObject(api, token, 'caseModel', {
 			title: `${RUN_PREFIX} Plan`,
 			caseType,
@@ -105,16 +87,8 @@ test.describe('The adaptive case plan after the local engine retired', () => {
 			planItems: PLAN_ITEMS,
 		})
 
-		// After: this one gets its plan in OpenRegister at case start.
+		// The case gets its plan in OpenRegister at case start.
 		liveCase = await seed('live')
-
-		await updateObject(api, token, 'case', drainCase, {
-			casePlanState: JSON.stringify({
-				planItemStates: RECORDED,
-				caseFile: {},
-				eventLog: [],
-			}),
-		})
 
 		await api.dispose()
 	})
@@ -204,33 +178,5 @@ test.describe('The adaptive case plan after the local engine retired', () => {
 		}
 
 		await api.dispose()
-	})
-
-	// @e2e openspec/specs/retire-cmmn-caseplanstate/spec.md#a-drained-case-shows-the-same-plan
-	test('a drained case shows the same items in the same states', async ({
-		page,
-		playwright,
-		baseURL,
-	}) => {
-		const drained = await occRun(['dossiq:cmmn:migrate-case-plans'])
-		expect(drained.code, drained.output).toBe(0)
-
-		const api = await playwright.request.newContext({ baseURL })
-		const after = await showObject(api, 'case', drainCase)
-		expect(
-			after.casePlanState ?? '',
-			'the blob is cleared once the rows are verified',
-		).toBe('')
-		await api.dispose()
-
-		await page.goto(`/apps/${REGISTER}/cases/${drainCase}`)
-		await expect(page.getByTestId('case-plan')).toBeVisible(PAGE_LOAD)
-
-		for (const [key, state] of Object.entries(RECORDED)) {
-			await expect(
-				row(page, key).locator('.case-plan__state'),
-				`${key} is ${state}`,
-			).toHaveAttribute('data-state', state, { timeout: 30_000 })
-		}
 	})
 })

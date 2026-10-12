@@ -349,31 +349,6 @@ class CasePlanProjectionService {
 	}//end projectAtCaseStart()
 
 	/**
-	 * The converted definition of a caseType's published caseModel.
-	 *
-	 * The drain of in-flight blobs ({@see CasePlanMigrationService}) needs the
-	 * same definition the projection hands OpenRegister at case start, so both
-	 * read it from here and a case migrated later gets the plan a case
-	 * started now would get.
-	 *
-	 * @param string $caseTypeId The caseType uuid.
-	 *
-	 * @return array{settings: array<string, mixed>, items: array<int, array<string, mixed>>} The definition.
-	 *
-	 * @throws UnexpectedValueException `no_published_case_model`, or the conversion's refusal by name.
-	 *
-	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
-	 */
-	public function definitionForCaseType(string $caseTypeId): array {
-		$model = $this->findPublishedModel(caseTypeId: $caseTypeId);
-		if ($model === null) {
-			throw new UnexpectedValueException('no_published_case_model');
-		}
-
-		return $this->convertModel(caseModel: $model);
-	}//end definitionForCaseType()
-
-	/**
 	 * Hand the converted definition to OpenRegister's case layer.
 	 *
 	 * @param object                                                                       $plans      The resolved CasePlanService.

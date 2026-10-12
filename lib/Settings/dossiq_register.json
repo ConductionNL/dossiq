@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.32"
+        "version": "0.20.33"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.18.0",
+                "version": "1.18.1",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -179,7 +179,7 @@
                         ],
                         "default": "bpmn",
                         "title": "Handling Model",
-                        "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) uses the structured workflow template. 'cmmn' uses the adaptive case model. A case type is driven by exactly one of the two."
+                        "description": "Which engine drives cases of this type. 'bpmn' (default) uses the structured workflow template. 'cmmn' uses the adaptive case plan: the published case model is handed to OpenRegister's case layer when a case starts, and OpenRegister holds and moves the plan items. A case type is driven by exactly one of the two."
                     },
                     "defaultImpact": {
                         "type": "string",
@@ -1756,7 +1756,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.41.0",
+                "version": "1.42.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -3577,12 +3577,6 @@
                         "description": "History of status changes (JSON-encoded array)",
                         "visible": false,
                         "title": "Status history"
-                    },
-                    "casePlanState": {
-                        "type": "string",
-                        "description": "CMMN runtime plan-item state, holding planItemStates, milestones, caseFile and eventLog. Only the case model engine writes it. It is present when the case type's handlingModel is 'cmmn', and empty for cases handled by BPMN.",
-                        "visible": false,
-                        "title": "Case Plan State"
                     },
                     "activity": {
                         "type": "string",
