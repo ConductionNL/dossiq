@@ -357,3 +357,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         complexity) had no caller in `lib/`. The live answers are `Zgw/ZrcEindstatus` (slice 6c)
         and the read-access filter in `ZrcController`, each with its own suite; the eight tests of
         the two dead methods went with them.
+  - [x] 8b `ZgwBrcRulesService` (1: ExcessiveClassComplexity 89 against 50). It keeps the create
+        rules of a besluit (brc-001, 002, 007; complexity 38) and builds two rule groups the same
+        way 8a does: `Zgw/BrcImmutabilityRules` (update and patch: besluittype, identificatie and
+        verantwoordelijkeOrganisatie may not change, a PUT carries the last two forward; 30) and
+        `Zgw/BrcDocumentLinkRules` (brc-003, 004, 008 for a besluitinformatieobject; 21). The
+        lookup by URL and the list decoding both sides need sit in the trait
+        `Zgw/ReadsLinkedObjects`. `setContext()` is forwarded; removing the forward to the
+        document rules makes four tests fail (checked).
+        Characterisation, green on the single class first: 11 tests added to
+        `ZgwBrcRulesServiceTest` (26 in all), because update and patch had none. They pin two
+        things worth knowing: an empty stored `title` does not fall through to `identifier`, and
+        a PUT that sends an empty identificatie against a stored one is refused instead of
+        filled. Behaviour kept, not fixed here.
+        Own tests: `tests/Unit/Service/Zgw/BrcImmutabilityRulesTest` (8) and
+        `BrcDocumentLinkRulesTest` (5), the second with every lookup keyed on its own schema.
