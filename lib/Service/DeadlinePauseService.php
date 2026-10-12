@@ -34,7 +34,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
 use OCA\Dossiq\Service\Pause\PauseReasonReader;
-use OCA\Dossiq\Service\Termijn\DayCount;
+use OCA\Dossiq\Service\Time\DayCount;
 use RuntimeException;
 
 /**

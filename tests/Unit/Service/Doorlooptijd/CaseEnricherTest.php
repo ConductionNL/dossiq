@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Doorlooptijd\CaseEnricher
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
- * @uses \OCA\Dossiq\Service\Termijn\DayCount
+ * @uses \OCA\Dossiq\Service\Time\DayCount
  */
 class CaseEnricherTest extends TestCase {
 	use MakesCaseDateNormaliser;

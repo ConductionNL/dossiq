@@ -26,7 +26,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\TermResolution;
-use OCA\Dossiq\Service\Termijn\DayCount;
+use OCA\Dossiq\Service\Time\DayCount;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use Psr\Log\LoggerInterface;
 use RuntimeException;

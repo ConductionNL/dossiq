@@ -51,7 +51,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
- * @uses \OCA\Dossiq\Service\Termijn\DayCount
+ * @uses \OCA\Dossiq\Service\Time\DayCount
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

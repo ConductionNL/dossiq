@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * Arming, re-arming and cancelling the advice timer.
  *
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
- * @uses \OCA\Dossiq\Service\Termijn\DayCount
+ * @uses \OCA\Dossiq\Service\Time\DayCount
  */
 class AdviceTimerTest extends TestCase {
 	use MakesCaseDateNormaliser;

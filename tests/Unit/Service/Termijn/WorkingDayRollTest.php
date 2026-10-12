@@ -36,7 +36,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Termijn\WorkingDayRoll
  * @uses \OCA\Dossiq\Service\SettingsService
- * @uses \OCA\Dossiq\Service\Termijn\DayCount
+ * @uses \OCA\Dossiq\Service\Time\DayCount
  */
 class WorkingDayRollTest extends TestCase {
 	/**
