@@ -62,7 +62,7 @@ export const STATUS_WAITING_ON = ['us', 'applicant', 'thirdParty']
  * @param {unknown} waitingOn The candidate value.
  * @return {boolean} True when the value is in the list.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function isWaitingOn(waitingOn) {
 	return typeof waitingOn === 'string' && STATUS_WAITING_ON.includes(waitingOn)
@@ -78,7 +78,7 @@ export function isWaitingOn(waitingOn) {
  * @param {unknown} maximumDwell The candidate value.
  * @return {number|string} A positive whole number, or '' for no maximum.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function normaliseMaximumDwell(maximumDwell) {
 	const days = Number(maximumDwell)

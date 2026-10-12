@@ -13,7 +13,7 @@
 // with two condition vocabularies has two places to look and two ways to be
 // wrong, and the status-declaration change said so in its own residue.
 //
-// @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+// @spec openspec/specs/status-transition-engine/spec.md
 
 /**
  * The three things a status can do to a field, in the order the editor lists them.
@@ -42,7 +42,7 @@ export const CONDITION_KINDS = ['fieldPresent', 'fieldEquals', 'documentPresent'
  * @param {string} rule Which of the three, defaulting to required.
  * @return {object} The row.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function fieldRule(rule = 'required') {
 	return {
@@ -60,7 +60,7 @@ export function fieldRule(rule = 'required') {
  * @param {string} kind Which question is asked.
  * @return {object} The condition.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function ruleCondition(kind = 'fieldPresent') {
 	return {
@@ -77,7 +77,7 @@ export function ruleCondition(kind = 'fieldPresent') {
  * @param {unknown} condition The stored condition.
  * @return {object|null} The condition.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function normaliseCondition(condition) {
 	if (!condition || typeof condition !== 'object') {
@@ -109,7 +109,7 @@ export function normaliseCondition(condition) {
  * @param {unknown} rules The rules as the form holds them.
  * @return {Array<object>} The rows worth saving.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function pruneFieldRules(rules) {
 	if (Array.isArray(rules) === false) {
@@ -145,7 +145,7 @@ export function pruneFieldRules(rules) {
  * @param {unknown} groups The groups as the form holds them.
  * @return {Array<string>} The names.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function normaliseGroups(groups) {
 	if (Array.isArray(groups) === false) {
@@ -168,7 +168,7 @@ export function normaliseGroups(groups) {
  *
  * @return {object} The labels, by rule id.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function fieldRuleLabels() {
 	return {
@@ -183,7 +183,7 @@ export function fieldRuleLabels() {
  *
  * @return {object} The labels, by kind.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function conditionKindLabels() {
 	return {
@@ -205,7 +205,7 @@ export function conditionKindLabels() {
  * @param {object} caseObject The case as OpenRegister answered it.
  * @return {{state: string, hidden: Array<string>, readOnly: Array<string>, required: Array<string>}} The answer.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function fieldRulesOf(caseObject) {
 	const published = caseObject?.['@self']?.fieldRules
@@ -224,7 +224,7 @@ export function fieldRulesOf(caseObject) {
  * @param {unknown} names The published list.
  * @return {Array<string>} The names.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 function asNames(names) {
 	if (Array.isArray(names) === false) {
@@ -240,7 +240,7 @@ function asNames(names) {
  * @param {object} rules The answer, as `fieldRulesOf` shapes it.
  * @return {boolean} True when at least one list has a name in it.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function hasFieldRules(rules) {
 	return (
@@ -279,7 +279,7 @@ export const STATE_FIELD_REFUSAL_CODES = [
  * @param {object} body The response body, or anything at all.
  * @return {{code: string, field: string, state: string, message: string}|null} The refusal.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function stateFieldRefusal(body) {
 	const errors = body?.errors ?? body

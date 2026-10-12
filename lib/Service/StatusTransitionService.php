@@ -373,7 +373,7 @@ class StatusTransitionService {
 	 * @throws RuntimeException When a closing transition carries no result type.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function writeMove(
 		array $caseAtSave,
