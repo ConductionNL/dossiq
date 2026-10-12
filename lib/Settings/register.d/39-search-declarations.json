@@ -411,6 +411,18 @@
           "chasesSent": {
             "matchType": "range",
             "inputControl": "range"
+          },
+          "externalReference": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "contestedCase": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "contestedDecision": {
+            "matchType": "exact",
+            "inputControl": "text"
           }
         }
       }
