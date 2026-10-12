@@ -493,3 +493,13 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         active. Behaviour kept, not changed here.
         Own tests: `tests/Unit/Service/Zgw/ZtcConceptRulesTest` (6), `ZtcTypeReferencesTest` (4,
         every search asserted with its schema) and `ZtcPublishAndDeleteChecksTest` (6).
+  - [ ] 8h `StatusTransitionService` (2: CouplingBetweenObjects 18 against 13, and
+        ExcessiveParameterList, 14 constructor arguments against 10). Not a move: the design is in
+        design.md, "StatusTransitionService: two facades". `Transitions/CaseDeclarations` over the
+        four classes that read what was declared, `Transitions/CaseMoveLedger` over the three
+        that write. The engine keeps the decision and the order of the checks.
+    - [x] Design written (design.md).
+    - [ ] Characterisation: `tests/Unit/Service/StatusTransitionServiceOrderTest.php`, the eight
+          points of the design, green on the single class, own commit.
+    - [ ] The two facades with their own tests, the engine delegating, both suppressions removed,
+          `phpmd.suppressWarnings` lowered by 2.
