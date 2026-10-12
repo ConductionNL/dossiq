@@ -54,7 +54,6 @@ class ExternalRegisterRegistrar {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		(new KvkRegistrar())->register(context: $context);
 		(new BrpRegistrar())->register(context: $context);
 		(new BagRegistrar())->register(context: $context);
 		(new BrkRegistrar())->register(context: $context);

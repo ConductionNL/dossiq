@@ -974,7 +974,7 @@
       "dwangsomUitbetaling": {
         "slug": "dwangsomUitbetaling",
         "icon": "BankTransfer",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "searchable": false,
         "x-schema-org": "schema:PaymentAction",
         "title": "Dwangsom Uitbetaling",
@@ -1046,6 +1046,11 @@
             "type": "string",
             "title": "Bank Confirmation Reference",
             "description": "ERP/bank confirmation reference"
+          },
+          "payableId": {
+            "type": "string",
+            "title": "Finance payable",
+            "description": "The payable the finance app answered with when the payout was handed to it; empty while it is not with finance"
           },
           "actualPaymentDate": {
             "type": "string",

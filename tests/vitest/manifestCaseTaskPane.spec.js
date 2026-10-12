@@ -330,7 +330,6 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 			'utf8',
 		)
 		for (const child of [
-			'TaskCaseCard',
 			'TaskWaitingCaseSection',
 			'TaskNotesLeaf',
 			'TaskEventsLeaf',
@@ -338,6 +337,9 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		]) {
 			expect(view, `${child} must be mounted`).toContain(`<${child}`)
 		}
+		// The case card is the library's facts widget, not an app component.
+		expect(view).toContain('data-testid="task-case-card"')
+		expect(view).toContain('<CnFactsWidget :content="caseFacts"')
 	})
 
 	it('drives the lifecycle with the engine verbs, not CnLifecycleActions', () => {
@@ -360,15 +362,16 @@ describe('the TaskDetail page after the retype (remove-casetask 2.1)', () => {
 		expect(view).toContain('engineTasks.invoke(')
 	})
 
-	it('leaves the two card components in place, as plain children', () => {
+	it('keeps the waiting-case section as a plain child, and the case card is the library widget', () => {
 		// They are no longer registry entries: nothing in the manifest names
 		// them any more, and a registry key no manifest resolves is dead
 		// configuration. The FILES stay, because the page still mounts them.
 		expect(registrySource()).not.toMatch(/^\tTaskCaseCard: \{/m)
 		expect(registrySource()).not.toMatch(/^\tTaskWaitingCaseSection: \{/m)
+		// TaskCaseCard is gone: the card is CnFactsWidget over the case.
 		expect(
 			fs.existsSync(path.join(ROOT, 'src/components/tasks/TaskCaseCard.vue')),
-		).toBe(true)
+		).toBe(false)
 		expect(
 			fs.existsSync(
 				path.join(ROOT, 'src/components/flow/TaskWaitingCaseSection.vue'),

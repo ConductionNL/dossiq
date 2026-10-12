@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentDefaults;
@@ -280,7 +281,7 @@ class WooGatherAddTest extends TestCase {
 			caseDocuments: $caseDocuments,
 			store: $store,
 			assessments: new WOODocumentAssessmentService(settingsService: $this->settings, userSession: $session, logger: $this->createMock(LoggerInterface::class), caseDocuments: $caseDocuments),
-			plans: new WooSearchPlans(settingsService: $this->settings),
+			plans: new WooSearchPlans(settingsService: $this->settings, templates: $this->createMock(RecordTemplateReader::class)),
 			provenance: new CaseDocumentProvenance(store: $store, caseDocuments: $caseDocuments),
 		);
 

@@ -21,7 +21,7 @@
  *     register configured" and return early. The ZGW mapping surface goes
  *     quiet rather than broken.
  *   - `dwangsom_callback_secret` is the HMAC key
- *     `DwangsomPaymentCallbackController` validates the external payment
+ *     `PayoutCallbackController` validates the external payment
  *     provider's `X-Procest-Signature` against. Lose it and every inbound
  *     callback starts failing signature validation.
  *   - the `email_imap_*` block is the shared-mailbox connection, `ai_*` the AI

@@ -11,7 +11,8 @@
  * barred from another reviewer's records. This class computes who must read
  * each such record and hands the OpenRegister work to ObjectReadGrants:
  * the case assignee reads all of them, every named reviewer reads them unless
- * `hideOthers` is on, the supervising group owns them, and the author of a
+ * `hideOthers` is on or the record's own `readers` rule narrows it
+ * (CaseRecordReaders), the supervising group owns them, and the author of a
  * record (its OpenRegister owner) and the supervisors are the only ones who
  * may change it.
  *
@@ -37,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Repair\SeedStaffGroup;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -62,6 +64,13 @@ class CaseReviewerAccess {
 	private readonly CaseRecordLookup $lookup;
 
 	/**
+	 * Who reads one record, from its declared `readers` rule.
+	 *
+	 * @var CaseRecordReaders
+	 */
+	private readonly CaseRecordReaders $recordReaders;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService  $settingsService The object service, register and schema keys.
@@ -80,6 +89,7 @@ class CaseReviewerAccess {
 		private readonly IGroupManager $groupManager,
 	) {
 		$this->lookup = new CaseRecordLookup(settingsService: $settingsService, caseTypes: $caseTypes, resolver: $resolver);
+		$this->recordReaders = new CaseRecordReaders();
 	}//end __construct()
 
 	/**
@@ -88,7 +98,10 @@ class CaseReviewerAccess {
 	 * @param array<string, mixed> $caseType The effective case type row.
 	 *
 	 * @return array{
-	 *     records: list<array{schemaKey: string, caseField: string}>,
+	 *     records: list<array{
+	 *         schemaKey: string, caseField: string, readers: string, userField: string, reviewerRowField: string,
+	 *         assigneeMay: string, reviewersMay: string
+	 *     }>,
 	 *     reviewers: list<array{schemaKey: string, caseField: string, userField: string}>,
 	 *     supervisorGroup: string,
 	 *     hideOthers: bool
@@ -103,7 +116,8 @@ class CaseReviewerAccess {
 			$row = (array)$row;
 			$schemaKey = trim((string)($row['schemaKey'] ?? ''));
 			if ($schemaKey !== '') {
-				$records[] = ['schemaKey' => $schemaKey, 'caseField' => trim((string)($row['caseField'] ?? 'case'))];
+				$entry = ['schemaKey' => $schemaKey, 'caseField' => trim((string)($row['caseField'] ?? 'case'))];
+				$records[] = ($entry + $this->recordReaders->ruleOf(declared: $row));
 			}
 		}
 
@@ -157,7 +171,8 @@ class CaseReviewerAccess {
 			return $answer;
 		}
 
-		$readers = $this->readersOf(caseId: $caseId, case: $case, declaration: $declaration);
+		$assignee = trim((string)($case['assignee'] ?? ''));
+		$reviewers = $this->reviewersOf(caseId: $caseId, declaration: $declaration);
 		$answer['status'] = 'reconciled';
 		foreach ($declaration['records'] as $declared) {
 			$schema = $this->settingsService->getConfigValue($declared['schemaKey']);
@@ -165,7 +180,13 @@ class CaseReviewerAccess {
 				$result = $this->grants->reconcile(
 					schema: $schema,
 					uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					readers: $readers,
+					readers: $this->recordReaders->toGrant(
+						rule: $declared,
+						record: $row,
+						assignee: $assignee,
+						reviewers: $reviewers,
+						hideOthers: $declaration['hideOthers']
+					),
 					group: $declaration['supervisorGroup']
 				);
 				$answer['granted'] += $result['granted'];
@@ -376,27 +397,73 @@ class CaseReviewerAccess {
 	}//end isSupervisor()
 
 	/**
-	 * The user ids that must read the case's private records.
+	 * Whether a grant can reach this user at all.
+	 *
+	 * OpenRegister keeps a record's schema as the ceiling of a grant, and the
+	 * dossiq register is closed to everybody outside the staff group
+	 * (case-access-control REQ-ACC-11). A person outside it who is named as a
+	 * reviewer gets the grant and still reads nothing; an administrator reads
+	 * everything regardless. Asked before somebody is named, so the refusal
+	 * comes with a sentence instead of an empty screen.
+	 *
+	 * @param string $userId The user about to be named as a reader.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reader-is-somebody-the-register-admits-req-cra-009
+	 */
+	public function isAdmittedReader(string $userId): bool {
+		if ($userId === '') {
+			return false;
+		}
+
+		return $this->groupManager->isAdmin($userId) === true
+			|| $this->groupManager->isInGroup($userId, SeedStaffGroup::STAFF_GROUP) === true;
+	}//end isAdmittedReader()
+
+	/**
+	 * Every record of one kind on a case, read regardless of the caller's own grants.
+	 *
+	 * For a rule that holds for the case whoever asks (a document sits in one
+	 * batch, every rule of the case applies). A listing shown to a person
+	 * reads under that person's access instead and never calls this.
+	 *
+	 * @param string $schemaKey The app setting that names the record's schema.
+	 * @param string $caseField The field on the record that holds the case.
+	 * @param string $caseId    The case uuid.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-reads-it-req-cra-008
+	 */
+	public function recordsOf(string $schemaKey, string $caseField, string $caseId): array {
+		return $this->lookup->rowsOf(schema: $this->settingsService->getConfigValue($schemaKey), field: $caseField, caseId: $caseId);
+	}//end recordsOf()
+
+	/**
+	 * The reviewers named on the case, by the id of the row that names them.
 	 *
 	 * @param string               $caseId      The case uuid.
-	 * @param array<string, mixed> $case        The case row.
 	 * @param array<string, mixed> $declaration The normalised declaration.
 	 *
-	 * @return list<string>
+	 * @return array<string, list<string>>
 	 */
-	private function readersOf(string $caseId, array $case, array $declaration): array {
-		$readers = [trim((string)($case['assignee'] ?? ''))];
-		if ($declaration['hideOthers'] === false) {
-			foreach ($declaration['reviewers'] as $source) {
-				$schema = $this->settingsService->getConfigValue($source['schemaKey']);
-				foreach ($this->lookup->rowsOf(schema: $schema, field: $source['caseField'], caseId: $caseId) as $row) {
-					foreach ((array)($row[$source['userField']] ?? []) as $user) {
-						$readers[] = trim((string)$user);
-					}
+	private function reviewersOf(string $caseId, array $declaration): array {
+		$reviewers = [];
+		foreach ($declaration['reviewers'] as $source) {
+			$schema = $this->settingsService->getConfigValue($source['schemaKey']);
+			foreach ($this->lookup->rowsOf(schema: $schema, field: $source['caseField'], caseId: $caseId) as $index => $row) {
+				$rowId = $this->caseTypes->rowId(row: $row);
+				if ($rowId === '') {
+					$rowId = $source['schemaKey'] . '#' . $index;
+				}
+
+				foreach ((array)($row[$source['userField']] ?? []) as $user) {
+					$reviewers[$rowId][] = trim((string)$user);
 				}
 			}
 		}
 
-		return array_values(array_unique(array_filter($readers, static fn (string $user): bool => $user !== '')));
-	}//end readersOf()
+		return $reviewers;
+	}//end reviewersOf()
 }//end class

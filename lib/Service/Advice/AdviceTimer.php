@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Advice;
 
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -130,11 +131,13 @@ class AdviceTimer {
 	 * @param SettingsService    $settingsService Resolves the engine and the reminder setting.
 	 * @param CaseDateNormaliser $dates           Today, in the administered zone.
 	 * @param LoggerInterface    $logger          Logs engine refusals.
+	 * @param DayCount           $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -165,7 +168,7 @@ class AdviceTimer {
 
 		$today    = $this->dates->today();
 		$deadline = $deadline->setTimezone($this->dates->timeZone())->setTime(0, 0, 0);
-		$daysLeft = (int) $today->diff($deadline)->format('%r%a');
+		$daysLeft = $this->days->signed(from: $today, to: $deadline);
 
 		$cancelled = $this->cancel(adviceId: $adviceId, reason: 'Superseded by the current deadline');
 		if ($cancelled !== null) {

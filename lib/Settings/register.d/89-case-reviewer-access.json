@@ -29,6 +29,49 @@
                       "description": "The field on the record that holds the case.",
                       "default": "case",
                       "maxLength": 64
+                    },
+                    "readers": {
+                      "type": "string",
+                      "title": "Who reads it",
+                      "description": "Who on the case reads the record. All: the assignee and every reviewer. Assignee: the assignee only. Own: the assignee and the reviewers the record names. Supervisors always read it.",
+                      "enum": [
+                        "all",
+                        "assignee",
+                        "own"
+                      ],
+                      "default": "all"
+                    },
+                    "userField": {
+                      "type": "string",
+                      "title": "Named reviewer field",
+                      "description": "Used with own. The field on the record that holds its reviewer's user id.",
+                      "maxLength": 64
+                    },
+                    "reviewerRowField": {
+                      "type": "string",
+                      "title": "Reviewer record field",
+                      "description": "Used with own. The field on the record that points at a record naming its reviewers.",
+                      "maxLength": 64
+                    },
+                    "assigneeMay": {
+                      "type": "string",
+                      "title": "What the assignee may do",
+                      "description": "Read: the case assignee reads the record. Update: the assignee also changes it.",
+                      "enum": [
+                        "read",
+                        "update"
+                      ],
+                      "default": "read"
+                    },
+                    "reviewersMay": {
+                      "type": "string",
+                      "title": "What reviewers may do",
+                      "description": "Read: the reviewers who read the record only read it. Update: they also change it.",
+                      "enum": [
+                        "read",
+                        "update"
+                      ],
+                      "default": "read"
                     }
                   }
                 }

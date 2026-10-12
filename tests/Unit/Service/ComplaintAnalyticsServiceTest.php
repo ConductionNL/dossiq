@@ -31,6 +31,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for ComplaintAnalyticsService.
  *
  * @covers \OCA\Dossiq\Service\ComplaintAnalyticsService
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class ComplaintAnalyticsServiceTest extends TestCase {
 
@@ -98,6 +99,33 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->assertSame(2, $result['Bejegening']);
 		$this->assertSame(1, $result['Wachttijd']);
 	}//end testGetFrequencyByDimensionGroupsByCategorie()
+
+	/**
+	 * getAverageResolutionTime: the mean days from receipt to deadline, per category.
+	 *
+	 * Only handled complaints count, and one without both dates is left out
+	 * rather than counted as zero days.
+	 *
+	 * @return void
+	 */
+	public function testGetAverageResolutionTimeCountsDaysPerCategory(): void {
+		$complaints = [
+			['category' => 'Bejegening', 'status' => 'handled', 'receiptDate' => '2026-03-01', 'afhandelDeadline' => '2026-03-11'],
+			['category' => 'Bejegening', 'status' => 'handled', 'receiptDate' => '2026-03-01', 'afhandelDeadline' => '2026-03-16'],
+			['category' => 'Wachttijd', 'status' => 'handled', 'receiptDate' => '2026-01-31', 'afhandelDeadline' => '2026-03-04'],
+			['category' => 'Wachttijd', 'status' => 'in_handling', 'receiptDate' => '2026-03-01', 'afhandelDeadline' => '2026-03-02'],
+			['category' => 'Wachttijd', 'status' => 'handled', 'receiptDate' => '2026-03-01'],
+		];
+
+		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
+
+		$result = $this->service->getAverageResolutionTime('2026-01-01', '2026-12-31');
+
+		$this->assertSame(['Bejegening' => 12.5, 'Wachttijd' => 32.0], $result);
+	}//end testGetAverageResolutionTimeCountsDaysPerCategory()
 
 	/**
 	 * getMonthlyTrend: produces correct month groupings.
