@@ -4,7 +4,7 @@
  * DayCount unit tests.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\Termijn
+ * @package  OCA\Dossiq\Tests\Unit\Service\Term
  *
  * @author    Conduction Development Team <dev@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,18 +18,18 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
+namespace OCA\Dossiq\Tests\Unit\Service\Term;
 
 use DateTime;
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Dossiq\Service\Termijn\DayCount;
+use OCA\Dossiq\Service\Term\DayCount;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The two day counts, and the difference between them.
  *
- * @covers \OCA\Dossiq\Service\Termijn\DayCount
+ * @covers \OCA\Dossiq\Service\Term\DayCount
  */
 class DayCountTest extends TestCase {
 	/**

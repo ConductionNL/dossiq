@@ -1,5 +1,5 @@
 {
-  "about": "Files under lib/ that still call DateTimeInterface::diff() themselves instead of asking Service/Termijn/DayCount. An entry names the open change that takes the file and says why it is not taken yet. DayCountIsTheOnlyDiffTest fails on a file that is not listed, on an entry without a change or a reason, and on an entry whose file no longer calls diff(), so the list can only shrink.",
+  "about": "Files under lib/ that still call DateTimeInterface::diff() themselves instead of asking Service/Term/DayCount. An entry names the open change that takes the file and says why it is not taken yet. DayCountIsTheOnlyDiffTest fails on a file that is not listed, on an entry without a change or a reason, and on an entry whose file no longer calls diff(), so the list can only shrink.",
   "measured": "2026-10-12",
   "entries": [
     {
