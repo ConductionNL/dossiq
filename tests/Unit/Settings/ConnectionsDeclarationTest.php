@@ -266,7 +266,7 @@ class ConnectionsDeclarationTest extends TestCase {
 	 * Only KvK is declared unavailable, and it says why in words that are true.
 	 *
 	 * BRP and KvK were both once marked "Specified, not built yet", which was
-	 * false for both. KvK's adapter is built and bound and nothing calls it.
+	 * false for both. Dossiq ships no KvK client (ADR-118): integriq holds the source.
 	 *
 	 * @return void
 	 */
@@ -278,7 +278,7 @@ class ConnectionsDeclarationTest extends TestCase {
 
 		$this->assertSame(expected: ['kvk'], actual: array_column($unavailable, 'key'));
 		$message = (string)$this->connectionsByKey()['kvk']['unavailableMessage'];
-		$this->assertMatchesRegularExpression(pattern: '/built and bound/i', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/no KvK client/i', string: $message);
 		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 	}//end testOnlyKvkIsUnavailableAndSaysWhy()
 

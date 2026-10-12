@@ -313,6 +313,25 @@ final class KpiAggregationServiceTest extends TestCase {
 	}
 
 	/**
+	 * A case that ended before it started pulls the mean down by its days.
+	 *
+	 * The duration carries its sign, so a typo in one date shows in the figure
+	 * instead of reading as an ordinary lead time.
+	 *
+	 * @return void
+	 */
+	public function testAnEndBeforeTheStartCountsAsNegativeDays(): void {
+		$closed = [
+			['startDate' => '2026-09-01', 'endDate' => '2026-09-21'],
+			['startDate' => '2026-09-11', 'endDate' => '2026-09-01'],
+		];
+
+		$kpis = $this->service(closedCases: $closed)->computeKpis('admin');
+
+		$this->assertSame(5.0, $kpis['avgProcessingDays'], '20 and -10 days average 5.');
+	}
+
+	/**
 	 * A row that is neither an array nor a readable entity folds to nothing
 	 * rather than crashing the whole payload.
 	 *

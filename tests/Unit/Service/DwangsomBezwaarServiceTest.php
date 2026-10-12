@@ -23,6 +23,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\DwangsomBezwaarService;
+use OCA\Dossiq\Service\Money\PayoutRequester;
+use OCA\Dossiq\Service\Money\PayoutService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Shillinq\Event\PayableCancelRequestedEvent;
+use OCA\Shillinq\Event\PayableRaisedEvent;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
@@ -33,11 +39,17 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\DwangsomBezwaarService
  *
  * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Money\PayoutService
+ * @uses \OCA\Dossiq\Service\Money\PayoutRequester
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class DwangsomBezwaarServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
+	private SettingsService $settings;
 	private DwangsomBezwaarService $service;
 
 	protected function setUp(): void {
@@ -58,6 +70,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 			},
 		);
 
+		$this->settings = $settings;
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->service = new DwangsomBezwaarService(
 			$settings,
@@ -126,4 +139,87 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->service->registerBezwaar('does-not-exist', 'AWB 7:1', 'foo');
 	}
+
+	/**
+	 * The objection service over a payout service whose finance app answers as told.
+	 *
+	 * @param string|null $cancelRefusal What finance refuses a withdrawal with, or null to accept.
+	 * @param array<int, object> $seen Collects the dispatched commands.
+	 *
+	 * @return DwangsomBezwaarService The service.
+	 */
+	private function withFinance(?string $cancelRefusal, array &$seen): DwangsomBezwaarService {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use ($cancelRefusal, &$seen): void {
+				$seen[] = $event;
+				if ($event instanceof PayableCancelRequestedEvent && $cancelRefusal !== null) {
+					$event->refuse($cancelRefusal);
+					return;
+				}
+
+				$event->accept('p-' . count($seen), 'requested');
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$payouts = new PayoutService(
+			settingsService: $this->settings,
+			dates: $this->caseDates(),
+			payouts: new PayoutRequester(dispatcher: $dispatcher),
+		);
+		$this->objects->seed('dwangsomUitbetaling', [
+			'id' => 'u-1',
+			'penaltyPaymentCalculation' => 'b-1',
+			'amount' => 50000,
+			'accountHolderName' => 'J. Burger',
+			'iban' => 'NL91ABNA0417164300',
+			'reference' => 'PROC-DWS-FIRST',
+			'payableId' => 'p-0',
+			'status' => 'voorbereid',
+		]);
+
+		return new DwangsomBezwaarService($this->settings, new TermijnService($this->settings, $logger), $logger, $payouts);
+	}//end withFinance()
+
+	/**
+	 * An objection withdraws a payout from finance under its reference before it
+	 * goes on hold; resolving it raises the new amount under a new reference.
+	 *
+	 * @return void
+	 */
+	public function testAnObjectionWithdrawsThePayoutFromFinanceAndResolvingRaisesItAgain(): void {
+		$seen = [];
+		$service = $this->withFinance(cancelRefusal: null, seen: $seen);
+
+		$service->registerBezwaar('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
+		$held = $this->objects->store['dwangsomUitbetaling']['u-1'];
+		self::assertInstanceOf(PayableCancelRequestedEvent::class, $seen[0]);
+		self::assertSame('PROC-DWS-FIRST', $seen[0]->getReference());
+		self::assertSame('on-hold-objection', $held['status']);
+		self::assertSame('', $held['payableId']);
+
+		$service->resolveBezwaar('b-1', 30000, 'AWB 7:11');
+		$resumed = $this->objects->store['dwangsomUitbetaling']['u-1'];
+		self::assertInstanceOf(PayableRaisedEvent::class, $seen[1]);
+		self::assertSame(300.0, $seen[1]->toArray()['amount']);
+		self::assertNotSame('PROC-DWS-FIRST', $resumed['reference']);
+		self::assertSame('p-2', $resumed['payableId']);
+		self::assertSame('voorbereid', $resumed['status']);
+	}//end testAnObjectionWithdrawsThePayoutFromFinanceAndResolvingRaisesItAgain()
+
+	/**
+	 * A payout finance already approved stays with finance: it is not put on hold.
+	 *
+	 * @return void
+	 */
+	public function testAPayoutFinanceAlreadyApprovedIsNotPutOnHold(): void {
+		$seen = [];
+		$service = $this->withFinance(cancelRefusal: 'The payable under reference PROC-DWS-FIRST is approved, so only finance can undo it.', seen: $seen);
+
+		$service->registerBezwaar('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
+
+		$row = $this->objects->store['dwangsomUitbetaling']['u-1'];
+		self::assertSame('voorbereid', $row['status']);
+		self::assertSame('p-0', $row['payableId']);
+	}//end testAPayoutFinanceAlreadyApprovedIsNotPutOnHold()
 }

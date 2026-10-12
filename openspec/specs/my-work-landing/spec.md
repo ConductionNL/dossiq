@@ -95,3 +95,17 @@ manifest MUST still decide which widgets a view holds.
 - **WHEN** they move a widget in edit mode and reload the page
 - **THEN** My team MUST show the widget where they put it
 - **AND** My work MUST keep its own arrangement
+
+### Requirement: My team shows the unclaimed work of the reader's own teams
+
+The My team view of the landing page SHALL carry the Dashboard's
+`your-teams-queue` preset unchanged, so its queue SHALL be the Queue page's
+filter narrowed to `assignedGroup: @myGroups`.
+
+#### Scenario: The team view and the Dashboard agree
+
+- **GIVEN** the manifest
+- **THEN** the first widget of the My team view SHALL equal the `your-teams-queue` preset
+- **AND** its filter SHALL equal the Queue page's filter plus `assignedGroup: "@myGroups"`
+
+@e2e exclude A manifest invariant, asserted in tests/vitest/landingViews.spec.js.

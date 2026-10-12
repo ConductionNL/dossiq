@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Flow;
 
-use OCA\Dossiq\Service\Dmn\DecisionTableService;
+use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
@@ -40,6 +40,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeMap
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
  * @covers \OCA\Dossiq\Service\Flow\RetiredWebhookSteps
+ * @uses   \OCA\Dossiq\Service\Dmn\StoredDecisionTables
  */
 class RetiredNodeTranslatorTest extends TestCase {
 
@@ -60,8 +61,12 @@ class RetiredNodeTranslatorTest extends TestCase {
 				: ''
 		);
 
-		$tables = $this->createMock(DecisionTableService::class);
-		$tables->method('findByKey')->willReturn($table);
+		$tables = $this->getMockBuilder(StoredDecisionTables::class)->disableOriginalConstructor()->onlyMethods(['find'])->getMock();
+		if ($table === null) {
+			$tables->method('find')->willThrowException(new \UnexpectedValueException('No decision table has the key or id "dossiq.weg".'));
+		} else {
+			$tables->method('find')->with('dossiq.' . $table['key'])->willReturn($table);
+		}
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($tables);
@@ -297,11 +302,11 @@ class RetiredNodeTranslatorTest extends TestCase {
 	}//end testSetFieldWithoutACaseSchemaIsRefused()
 
 	/**
-	 * A decision carries the stored table inline and writes the mapped outputs to the case.
+	 * A decision names the stored table by tableRef and writes the mapped outputs to the case.
 	 *
 	 * @return void
 	 */
-	public function testADecisionCarriesItsTableAndWritesItsOutputs(): void {
+	public function testADecisionNamesItsStoredTableAndWritesItsOutputs(): void {
 		$table = [
 			'id' => 'uuid-1',
 			'@self' => ['id' => 'uuid-1'],
@@ -318,12 +323,11 @@ class RetiredNodeTranslatorTest extends TestCase {
 		);
 
 		self::assertSame(['openregister.decision-table', 'openregister.object-write'], array_column($steps, 'type'));
-		self::assertArrayNotHasKey('id', $steps[0]['config']['table']);
-		self::assertArrayNotHasKey('@self', $steps[0]['config']['table']);
-		self::assertSame('toets', $steps[0]['config']['table']['key']);
+		self::assertSame('dossiq.toets', $steps[0]['config']['tableRef']);
+		self::assertArrayNotHasKey('table', $steps[0]['config'], 'the table lives once in the register, not inline in the step');
 		self::assertSame(['uitkomst' => 'besluit'], $steps[0]['config']['outputMapping']);
 		self::assertSame(['besluit' => '{{ besluit }}', 'reden' => '{{ reden }}'], $steps[1]['config']['fields']);
-	}//end testADecisionCarriesItsTableAndWritesItsOutputs()
+	}//end testADecisionNamesItsStoredTableAndWritesItsOutputs()
 
 	/**
 	 * A decision naming a table that does not exist is refused.
@@ -332,7 +336,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 	 */
 	public function testADecisionWithoutItsTableIsRefused(): void {
 		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('no decision table has the key "weg"');
+		$this->expectExceptionMessage('is not in OpenRegister\'s decision-tables register as "dossiq.weg"');
 
 		$this->translator(table: null)->translate(translation: RetiredNodeMap::DECISION, config: ['decisionKey' => 'weg']);
 	}//end testADecisionWithoutItsTableIsRefused()
@@ -546,7 +550,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 		);
 
 		$this->expectException(UnmappableStep::class);
-		$this->expectExceptionMessage('could not be read');
+		$this->expectExceptionMessage('no openregister');
 
 		$translator->translate(translation: RetiredNodeMap::DECISION, config: ['decisionKey' => 'toets']);
 	}//end testAnUnreachableTableStoreIsARefusal()

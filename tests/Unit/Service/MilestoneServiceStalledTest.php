@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Milestone\MilestoneRepository
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Milestone\MilestoneSchedule
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class MilestoneServiceStalledTest extends TestCase {
 
@@ -213,6 +214,12 @@ class MilestoneServiceStalledTest extends TestCase {
 		$this->assertSame('documenten_compleet', $stalled[0]['milestoneIdentifier']);
 		$this->assertSame('behandelaar-a', $stalled[0]['assignee']);
 		$this->assertGreaterThan(0, $stalled[0]['daysOverdue']);
+		// The exact count, not only its sign: the days from the reported
+		// deadline to today.
+		$this->assertSame(
+			expected: (int)(new \DateTimeImmutable($stalled[0]['deadline']))->diff(new \DateTimeImmutable('today'))->days,
+			actual: $stalled[0]['daysOverdue']
+		);
 
 	}//end testOverdueCaseIsFlagged()
 
@@ -394,6 +401,11 @@ class MilestoneServiceStalledTest extends TestCase {
 
 		$this->assertSame(expected: 'documenten_compleet', actual: $row['milestoneIdentifier']);
 		$this->assertLessThan(0, $row['daysOverdue']);
+		// Before the deadline the count is the days still to go, negated.
+		$this->assertSame(
+			expected: (-1 * (int)(new \DateTimeImmutable('today'))->diff(new \DateTimeImmutable($row['deadline']))->days),
+			actual: $row['daysOverdue']
+		);
 		$this->assertGreaterThan($today, $row['deadline']);
 		$this->assertSame(expected: [], actual: $detector->findStalledCases(thresholdDays: 0));
 	}//end testWaitingOnNamesTheMilestoneBeforeItIsLate()
