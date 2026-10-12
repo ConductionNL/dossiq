@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCA\Dossiq\Service\Email\SenderIdentity;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -200,6 +201,7 @@ class CaseTypePublishServiceTest extends TestCase {
 				remedy: new RemedyClauseDeclaration(),
 				handling: new CaseTypeHandling(),
 				reachability: new CaseTypeReachability(),
+				senders: $this->createMock(originalClassName: SenderIdentity::class),
 			),
 			fieldRules: new CaseStateFieldRuleProjector(
 				store: $store,

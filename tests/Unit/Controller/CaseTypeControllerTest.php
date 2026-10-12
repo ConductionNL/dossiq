@@ -110,7 +110,7 @@ class CaseTypeControllerTest extends TestCase {
 			'statusTypes' => [['id' => 's1', 'name' => 'Ontvangen'], ['id' => 's2', 'name' => 'Besluit']],
 		];
 		$dates = $this->createMock(CaseStageDatesService::class);
-		$dates->method('reachedDatesFor')->with('case-1')->willReturn(['s1' => '2026-10-05']);
+		$dates->method('reachedDatesFor')->with('case-1', $this->anything())->willReturn(['s1' => '2026-10-05']);
 
 		$response = $this->controller(
 			resolver: $this->resolverAnswering($blueprint),

@@ -50,6 +50,11 @@ class NoticeOfDefaultService {
 	public const TARIFF_AWB_GRACE = 14;
 
 	/**
+	 * The Awb 4:17 first-band daily rate in cents, the fallback of a deviating regime without one.
+	 */
+	public const TARIFF_AWB_FIRST_BAND = 2300;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
@@ -190,13 +195,12 @@ class NoticeOfDefaultService {
 				'noticeOfDefault' => $ingebrekestellingId,
 				'deadlineInstance' => $termInstanceId,
 				'startDate' => $startAt,
-				'currentDag' => 0,
-				'dailyRate' => 0,
-				'cumulativeAmount' => 0,
 				'plafondCalculated' => (int)$regime['plafond'],
-				'plafondBereikt' => false,
 				'status' => 'lopend',
 				'regime' => $regimeLabel,
+				// The day count, rate, amount and ceiling flag are stored calculations over rateBands; empty bands are the
+				// Awb 4:17 bands, a deviating regime pays one flat daily rate.
+				'rateBands' => $this->rateBands(regime: $regime),
 			]
 		);
 
@@ -221,6 +225,27 @@ class NoticeOfDefaultService {
 
 		return $calculation;
 	}//end startDwangsomBerekening()
+
+	/**
+	 * The rate bands a regime accrues over: none for the Awb default, one
+	 * flat band for a deviating regime (the Awb first-band rate when it names none).
+	 *
+	 * @param array<string, mixed> $regime The resolved regime.
+	 *
+	 * @return list<array{rate: int}> The bands.
+	 */
+	private function rateBands(array $regime): array {
+		if ($regime['custom'] !== true) {
+			return [];
+		}
+
+		$rate = (int)($regime['dailyTariff'] ?? 0);
+		if ($rate <= 0) {
+			$rate = self::TARIFF_AWB_FIRST_BAND;
+		}
+
+		return [['rate' => $rate]];
+	}//end rateBands()
 
 	/**
 	 * Resolve the dwangsom regime (AWB-default or custom from definition).

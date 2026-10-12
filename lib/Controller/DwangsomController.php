@@ -5,7 +5,7 @@
  *
  * REST surface for DwangsomBerekening state + bezwaar lifecycle +
  * beschikking-stop. Defers all business logic to
- * {@see DwangsomCalculationService} and {@see DwangsomBezwaarService}
+ * {@see AccruingAmountSettler} and {@see DwangsomBezwaarService}
  * (ADR-022).
  *
  * @category Controller
@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\DwangsomBezwaarService;
-use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
@@ -55,7 +55,7 @@ class DwangsomController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param DwangsomCalculationService $calc Calculation service.
+	 * @param AccruingAmountSettler $settler Stops the stored accrual and locks the amount.
 	 * @param DwangsomBezwaarService $objection Bezwaar service.
 	 * @param SettingsService $settings Settings.
 	 * @param IUserSession $userSession User session.
@@ -65,7 +65,7 @@ class DwangsomController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DwangsomCalculationService $calc,
+		private readonly AccruingAmountSettler $settler,
 		private readonly DwangsomBezwaarService $objection,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
@@ -239,7 +239,7 @@ class DwangsomController extends Controller {
 			return $denied;
 		}
 
-		$row = $this->calc->stopForBeschikking($id);
+		$row = $this->settler->settle(schemaConfigKey: 'dwangsom_berekening_schema', id: $id, status: 'gestopt-wegens-decision');
 		if ($row === null) {
 			return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}

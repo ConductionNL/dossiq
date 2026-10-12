@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCP\Migration\IOutput;
@@ -79,12 +80,14 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	 *                                           then failed must be able to finish
 	 *                                           on the next repair pass.
 	 * @param LoggerInterface   $logger          Logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly StatusTypeLookup $statuses,
 		private readonly CaseFlowSeedIndex $index,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -221,7 +224,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 		$counts = ['caseTypes' => 0, 'statuses' => 0, 'cases' => 0, 'skipped' => 0];
 
 		foreach (($data['caseTypes'] ?? []) as $caseType) {
-			if (is_array($caseType) === false || trim((string)($caseType['title'] ?? '')) === '') {
+			if (is_array($caseType) === false || $this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
 				continue;
 			}
 
@@ -235,7 +238,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 					output: $output
 				);
 			} catch (Throwable $e) {
-				$title = (string)($caseType['title'] ?? '');
+				$title = $this->text->textOf(value: ($caseType['title'] ?? null));
 				$output->warning('Case-flow seed failed for "' . $title . '": ' . $e->getMessage());
 				$this->logger->warning(
 					'Dossiq case-flow seed failed',
@@ -275,11 +278,11 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 		array &$counts,
 		IOutput $output,
 	): void {
-		$title = (string)$caseType['title'];
+		$title = $this->text->textOf(value: $caseType['title']);
 		$statusTypes = ($caseType['statusTypes'] ?? []);
 		unset($caseType['statusTypes']);
 
-		$existing = $this->index->caseTypeByTitle(schemas: $schemas, title: $title);
+		$existing = $this->existingCaseType(schemas: $schemas, caseType: $caseType, title: $title);
 
 		$caseTypeId = '';
 		if ($existing !== null) {
@@ -320,6 +323,30 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 	}//end seedOne()
 
 	/**
+	 * The case type an earlier run already created, or null.
+	 *
+	 * By the seed's slug: the title is translatable and stored as a language
+	 * map, so a lookup by title never matched and every run created the type
+	 * again. A seed row without a slug still falls back to its title.
+	 *
+	 * @param array<string,string> $schemas  Register and schema names.
+	 * @param array<string,mixed>  $caseType The seed's case type.
+	 * @param string               $title    Its title.
+	 *
+	 * @return array<string,mixed>|null The stored case type, or null.
+	 *
+	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 */
+	private function existingCaseType(array $schemas, array $caseType, string $title): ?array {
+		$slug = trim((string)($caseType['slug'] ?? ''));
+		if ($slug !== '') {
+			return $this->index->caseTypeBySlug(schemas: $schemas, slug: $slug);
+		}
+
+		return $this->index->caseTypeByTitle(schemas: $schemas, title: $title);
+	}//end existingCaseType()
+
+	/**
 	 * Create the statuses this case type is missing.
 	 *
 	 * 🔑 Each carries the `caseType` back-reference, which is the ONLY link the
@@ -343,7 +370,7 @@ class CaseFlowSeedDataRepairStep implements IRepairStep {
 				continue;
 			}
 
-			$name = (string)($status['name'] ?? '');
+			$name = $this->text->textOf(value: ($status['name'] ?? null));
 			if ($name === '' || isset($present[$name]) === true) {
 				continue;
 			}

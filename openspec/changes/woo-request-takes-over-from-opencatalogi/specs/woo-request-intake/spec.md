@@ -12,7 +12,10 @@ the case: `requestedInformation` to `wooRequest.omschrijving` and, cut at 120 ch
 boundary, to `wooRequest.onderwerp`; `requesterName` to `wooRequest.verzoekerNaam`;
 `requesterEmail` to `wooRequest.verzoekerEmail`; and `channel` to the case `intakeChannel`
 (`web` to `website`, `email` to `email`, `post` to `post`, `counter` to `balie`, `phone` to
-`phone`). Phone and address SHALL be kept on the requester role. `origin` SHALL be one of
+`phone`). Phone and address SHALL be kept beside the name and e-mail address, as
+`wooRequest.verzoekerTelefoon` and `wooRequest.verzoekerAdres` (amended 10 Oct: the Woo case type
+seeds no requester role type, and a role requires a participant reference an anonymous requester
+does not have). `origin` SHALL be one of
 `portal-form` or `opencatalogi`, and both SHALL be added to `WooRequestIntake::ORIGINS` and to the
 `wooRequest.origin` enum. For these two origins `subjectRef` SHALL be optional.
 
@@ -86,6 +89,15 @@ which no due moment passes, and a resume that puts the term back on the clock; a
 that counts `met`, `missed`, `running` and `suspended` and answers no share when nothing is decided.
 Every scenario SHALL name the opencatalogi test it mirrors.
 
+Nothing in this requirement is code for the procedure (decision 182). The term, its extension, its
+suspension and the report are the generic term engine, for every case type; what is Woo is the
+term definition (28 days, one extension of 14) and the case type the report groups by. The report
+SHALL classify every term instance as `met` (decided on or before its end), `missed` (ran out, or
+decided after its end), `suspended` (paused) or `running`, and SHALL answer `metShare` (also
+published as `binnenTermijnPct`) as met / (met + missed) with one decimal, or null when that sum is
+0. The dashboard snapshot's `withinTermijnPercent` SHALL follow the same rule, and the dashboard
+SHALL show no figure for null.
+
 #### Scenario: One extension, a second refused
 - **GIVEN** a Woo case received 2026-10-05 with `deadline` 2026-11-02
 - **WHEN** the handler extends with the reason "Zienswijzen van derden" and then tries again
@@ -110,35 +122,30 @@ Every scenario SHALL name the opencatalogi test it mirrors.
 
 ### Requirement: Every stored opencatalogi request is imported exactly once (REQ-WTO-004)
 
-`OCA\Dossiq\Woo\OpenCatalogiWooImport::run(bool $dryRun = false): array` SHALL read every
-`wooRequest` object in opencatalogi's register as the system and SHALL answer
-`{imported: int, alreadyImported: int, failed: list<{requestId, reference, reason}>, unmigrated: int, migrated: list<{requestId, reference, caseId, termTimer}>}`.
-`unmigrated` SHALL count the source requests that carry no `migratedTo`. The command
-`occ dossiq:woo:import-opencatalogi [--dry-run]` SHALL call it and print the same numbers.
+The import is the generic `case-record-import` capability (REQ-CRI-001 to REQ-CRI-003, decision
+182); what is Woo about it is configuration. The seeded Woo case type (`woo-verzoek`,
+`register.d/81-woo-verzoek.json`) SHALL declare one `recordImports` entry, key
+`opencatalogi-woo-requests`, that reads every `wooRequest` object in opencatalogi's `publication`
+register, and `occ dossiq:case:import-records woo-verzoek` SHALL run it. `unmigrated` SHALL count the
+source requests that carry no `migratedTo`.
 
-For each source request it SHALL:
+The declaration SHALL:
 
-1. find an existing case whose `wooRequest.origin` is `opencatalogi` and whose
-   `wooRequest.originReference` is the source uuid, and skip the create when one exists;
-2. otherwise write a Woo case with `startDate` from `receivedAt`, the requester from the request,
-   `intakeChannel` from `channel`, and the old reference in a new case property
-   `formerReferences` (list of `{application: 'opencatalogi', reference}`), declared searchable;
+1. match an existing case on `wooRequest.originReference` (the source uuid, written with
+   `wooRequest.origin` `opencatalogi`), so a second run writes no second case;
+2. write `startDate` and `receivedAt` from `receivedAt`, the requester into `wooRequest`
+   (`verzoekerNaam`, `verzoekerEmail`, `verzoekerTelefoon`, `verzoekerAdres`), the question into
+   `title` and `wooRequest.onderwerp` (cut at 120 characters) and `description` and
+   `wooRequest.omschrijving`, `intakeChannel` from `channel` (`web` website, `email`, `post`,
+   `counter` balie, `phone`; empty is `other`), and the old reference in `formerReferences`
+   (`{application: 'opencatalogi', reference}`), declared searchable;
 3. map the status: `received` to "Ontvangst", `in_progress` to "Beoordelen documenten",
    `awaiting_clarification` to "Beoordeling ontvankelijkheid" with the term suspended, `decided` to
-   "Afgehandeld" with `endDate` from `decidedAt`, and `withdrawn` to "Afgehandeld" with the result
-   "Ingetrokken";
-4. carry the term: the deadline the source reports (`dueAt` after its extension and suspensions),
-   `extensionCount` and `extensionReason`, and arm a FlowTimer for every open case with the SLA
-   spanning `startDate` to that deadline, suspended at once when the source is suspended, exactly
-   once (REQ-TOT-006);
-5. only after the case and its timer both exist, stamp the source with `migratedTo` (the case
-   uuid) and `migratedAt`.
-
-A request whose case or timer could not be completed SHALL NOT be stamped, SHALL be listed in
-`failed` with the reason, and SHALL be completed by the next run without a second case. The import
-SHALL never stop or alter opencatalogi's own term timer. It SHALL answer each one in `migrated`
-so the caller can stop it. A stamp write that opencatalogi's schema refuses SHALL count the
-request as failed, never as migrated.
+   "Afgehandeld" with `endDate` from `decidedAt` and the term closed, and `withdrawn` to "Afgehandeld"
+   with the result "Ingetrokken";
+4. carry the term from `dueAt` (after its extension and suspensions), `extensionCount` and
+   `extensionReason` (REQ-CRI-003; one extension is the case type's `extensionPeriod`, P14D);
+5. stamp `migratedTo` (the case uuid) and `migratedAt`, and answer `termTimer` as the source timer.
 
 #### Scenario: A running request moves with its remaining time
 - **GIVEN** an opencatalogi `wooRequest` WOO-2026-A1B2C3, `received` on 2026-10-05, `dueAt` 2026-11-02, no extension
@@ -170,43 +177,43 @@ request as failed, never as migrated.
 
 #### Scenario: No opencatalogi, nothing to import
 - **GIVEN** opencatalogi is not installed
-- **WHEN** `occ dossiq:woo:import-opencatalogi` runs
+- **WHEN** `occ dossiq:case:import-records woo-verzoek` runs
 - **THEN** it SHALL say opencatalogi is not installed, answer zeros, exit 0 and write nothing
 
 ### Requirement: The decision and inventory are drafted from the organisation's templates (REQ-WTO-005)
 
-When the handler creates the Woo decision (POST `/api/cases/{id}/woo/decision`), dossiq SHALL ask
-filinq for a besluit draft and an inventory draft through one adapter,
-`OCA\Dossiq\Woo\WooDecisionDrafts::draft(string $caseId): array`, which answers
-`{status: 'drafted'|'not-drafted', besluitFileId?: int, inventoryFileId?: int, template?: string, reasonCode?: string, reason?: string}`.
-The adapter SHALL use the contract filinq's `woo-request-workflow` amendment names: it dispatches
-`new \OCA\Filinq\Event\DocumentGenerationRequestedEvent(request: [...], requestingApp: 'dossiq')`
-once with `templateSlug` `woo-besluit` and once with `woo-inventarislijst`, each with
-`data` `['wooDecision' => ...]` in the shape filinq's spec declares, `object` the case reference and
-`format` `pdf`, and then reads `isHandled()`, `getResult()` (`fileId`, `path`, `name`, `mime`,
-`size`, `format`, `template`, `object`, `metadata`, `requestingApp`, `warnings`) or `getError()`.
-The drafts SHALL be filed as documents on the case. The decision record SHALL be written either
-way, and SHALL carry the draft status.
+Decision 182: the drafting is the generic capability `case-document-drafts` (REQ-CDD-001 to
+REQ-CDD-003), configured here. The Woo case type (`register.d/81-woo-verzoek.json`) SHALL declare
+`documentDrafts.decision` (template `woo-besluit`) and `documentDrafts.inventory` (template
+`woo-inventarislijst`), both in namespace `dossiq`, format `docx`, data key `wooDecision`, with
+`reference` (case `identifier`), `subject` (case `title`), `receivedAt` (case `startDate`),
+`decisionDate` (`@today`), `documents` (the case's `woo_assessment_schema` records by `caseRef`,
+sorted by `documentRef`, numbered into `inventoryNumber`, `classification` mapped `openbaar` to
+`disclose`, `deels_openbaar` to `partially-disclose`, `niet_openbaar` to `withhold`, and
+`weigeringsgronden` as `groundCodes`) and `decisionKind` (the shared assessment, `not-held` without
+documents, `partially-disclose` when mixed). When the handler creates the Woo decision,
+`WOODecisionService::assembleDecision()` SHALL draft both and answer them under `draft` and
+`inventoryDraft`; the decision record SHALL be written either way. The organisation's letterhead
+and name come from the filinq template, not from the data. The `woo-besluit` and
+`woo-inventarislijst` templates themselves are filinq content (filinq's `woo-request-workflow`).
 
 #### Scenario: filinq drafts the besluit
-- **GIVEN** filinq installed with an organisation-edited Woo besluit template
+- **GIVEN** filinq installed with the organisation's `woo-besluit` template
 - **WHEN** the handler creates the decision on a fully assessed Woo case
-- **THEN** a besluit document and an inventory document SHALL be on the case, and the response SHALL say `drafted` with the template filinq used
+- **THEN** a besluit document and an inventory document SHALL be on the case, and the response SHALL say `drafted`
 
 #### Scenario: The wooDecision has the shape filinq checks
 - **GIVEN** a Woo case with one `openbaar`, one `deels_openbaar` and one `niet_openbaar` assessment, the last two with weigeringsgronden
 - **WHEN** dossiq builds the `wooDecision` for the draft request
-- **THEN** it SHALL carry `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind`, `organisation` and three `documents` with unique `inventoryNumber`s, assessments `disclose`, `partially-disclose` and `withhold`, and non-empty `groundCodes` on the last two
+- **THEN** it SHALL carry `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind` and three `documents` with unique `inventoryNumber`s, assessments `disclose`, `partially-disclose` and `withhold`, and non-empty `groundCodes` on the last two
 
 ### Requirement: Without filinq the decision says no draft was made (REQ-WTO-006)
 
-When the event comes back neither handled nor refused (filinq absent), `draft()` SHALL answer
-`not-drafted` with reason code `filinq-missing`. When `getError()` answers, it SHALL answer
-`not-drafted` with `filinq-refused` and filinq's error as the reason. It SHALL NOT file a placeholder
-document. The decision response and the case page SHALL say that
-no draft was generated and why.
+Per REQ-CDD-003: without filinq (not installed, or nobody answered the event) the draft SHALL answer
+`filinq-missing`; on filinq's error it SHALL answer `failed` with filinq's error as the reason. No
+placeholder document SHALL be filed. The decision response SHALL carry that answer.
 
 #### Scenario: No filinq, no fake letter
 - **GIVEN** filinq is not installed
 - **WHEN** the handler creates the decision
-- **THEN** the decision SHALL be stored, the response SHALL carry `draft.status` `not-drafted` with `filinq-missing`, and no new document SHALL be on the case
+- **THEN** the decision SHALL be stored, the response SHALL carry `draft.status` `filinq-missing`, and no new document SHALL be on the case

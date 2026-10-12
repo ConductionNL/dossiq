@@ -76,6 +76,13 @@ class HermiqAiFeatureClient {
 	private const GROUPING_PATH = '/index.php/apps/hermiq/api/report-similarity/evaluate';
 
 	/**
+	 * hermiq's read of one group, followed by the group uuid.
+	 *
+	 * @var string
+	 */
+	private const GROUP_PATH = '/index.php/apps/hermiq/api/report-similarity/groups/';
+
+	/**
 	 * The same timeout the assistant client uses.
 	 *
 	 * @var int
@@ -231,6 +238,25 @@ class HermiqAiFeatureClient {
 		);
 
 	}//end groupFor()
+
+	/**
+	 * One group as it now stands: the count, the members, the near-duplicates
+	 * and the reasons.
+	 *
+	 * A read, unlike groupFor(), which places a report in a group: asking
+	 * groupFor() again for the same report would add it a second time.
+	 *
+	 * @param string $groupId The group uuid hermiq answered with.
+	 *
+	 * @return array<string, mixed> The group.
+	 *
+	 * @throws HermiqAssistantException When hermiq is absent, unreachable or refuses.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-near-duplicates-are-visible-beside-the-group
+	 */
+	public function group(string $groupId): array {
+		return $this->get(path: self::GROUP_PATH . rawurlencode($groupId));
+	}//end group()
 
 	/**
 	 * One GET against hermiq.

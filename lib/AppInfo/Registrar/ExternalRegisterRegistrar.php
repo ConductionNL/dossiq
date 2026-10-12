@@ -39,8 +39,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  */
 class ExternalRegisterRegistrar {
 	/**
-	 * Register the wave-4 external base-register ports plus the dormant
-	 * external-ZGW / ZTC client aliases.
+	 * Register the wave-4 external base-register ports. Outbound ZGW goes
+	 * through integriq's delivery seam, not a dossiq client (ADR-118).
 	 *
 	 * All ports are dormant log-only by default; flip the matching
 	 * `integration.<name>.mode` config tier and, where a downstream deployment
@@ -59,6 +59,5 @@ class ExternalRegisterRegistrar {
 		(new BagRegistrar())->register(context: $context);
 		(new BrkRegistrar())->register(context: $context);
 		(new WozRegistrar())->register(context: $context);
-		(new ExternalZgwRegistrar())->register(context: $context);
 	}//end register()
 }//end class

@@ -1,0 +1,20 @@
+{
+  "_note": "ai-features-on-the-case-consume-hermiq task 1.1 (REQ-AIC-01, design D-1). A case type declares, per AI feature, where that feature appears: on the case page, on the create form, or nowhere. The key is the slug hermiq registers the feature under, so one feature is one thing across the two apps. CaseTypeAiFeatures reads it, and an undeclared feature renders nothing and makes no call. Deliberately no provider, model or residency here (REQ-AIC-02): those are read from hermiq's AI feature register and nowhere else. A fragment rather than an edit to dossiq_register.json, per ADR-037. OpenRegister's magic mapper stores only declared properties, so without this declaration the setting is answered 200 and kept nowhere.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "aiFeatures": {
+            "type": "object",
+            "title": "AI features",
+            "description": "Which AI features this case type uses, and where each one appears. Name a feature by the name hermiq gives it, then pick case (on the case page, for the handler), intake (on the form a resident or the front office files with) or none (considered and switched off). A feature not listed here does not appear and is never asked for. Which model a feature uses, and where that model runs, is set in hermiq and shown here, never chosen here.",
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["case", "intake", "none"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

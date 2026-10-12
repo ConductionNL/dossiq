@@ -95,7 +95,11 @@ class OneDateWritePathTest extends TestCase {
 			'Controller/TermijnController.php',
 			'Service/DeadlineExtensionService.php',
 		],
-		'ZrcController' => ['Controller/ZrcController.php'],
+		'ZrcController' => [
+			'Controller/ZrcController.php',
+			// The eindstatus date moved here in method-decomposition slice 6c.
+			'Service/Zgw/ZrcStatusEffects.php',
+		],
 		'ComplaintController' => [
 			'Controller/ComplaintController.php',
 			'Service/ComplaintService.php',
@@ -120,7 +124,7 @@ class OneDateWritePathTest extends TestCase {
 		],
 		'DwangsomController' => [
 			'Controller/DwangsomController.php',
-			'Service/DwangsomCalculationService.php',
+			'Service/Money/AccruingAmountSettler.php',
 		],
 		'DwangsomPaymentCallbackController' => [
 			'Controller/DwangsomPaymentCallbackController.php',

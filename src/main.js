@@ -23,10 +23,10 @@ import {
 	translate as t,
 } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { createApp, h, markRaw } from 'vue'
+import { createApp, h, markRaw, watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import { registerCaseSections } from './components/case/registerCaseSections.js'
+import { registerNavCardGrid } from './components/case/registerNavCardGrid.js'
 import appIcons from './icons.js'
 import logger from './logger.js'
 import bundledManifest from './manifest.json'
@@ -51,6 +51,7 @@ import {
 } from './utils/structureProfile.js'
 import {
 	translateBannerCopy,
+	translateFieldOverrideLabels,
 	translateLensLabels,
 } from './utils/translateLensLabels.js'
 
@@ -89,7 +90,7 @@ registerBuiltinDashboardWidgets()
 // The `case-sections` container type, which is what lets the case page's tab
 // strip hold six tabs instead of fourteen. See the module for why it goes in
 // the SHARED catalog and not in `registry.js`.
-registerCaseSections()
+registerNavCardGrid()
 try {
 	registerTranslations()
 } catch (e) {
@@ -240,8 +241,11 @@ const profiledManifest = {
 	},
 }
 const builtManifest = markRaw(
-	translateBannerCopy(
-		translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+	translateFieldOverrideLabels(
+		translateBannerCopy(
+			translateLensLabels(profiledManifest, (label) => t('dossiq', label)),
+			(label) => t('dossiq', label),
+		),
 		(label) => t('dossiq', label),
 	),
 )
@@ -301,7 +305,17 @@ router.beforeEach(permissionGuard)
 // The browser tab names the page ("Cases - Dossiq - Nextcloud"), the way
 // Nextcloud's own apps do, instead of the same server-rendered title on every
 // route. See `utils/pageTitle.js`.
-installPageTitles(router, builtManifest, (label) => t('dossiq', label))
+// A list narrowed to one case type (a "My case types" entry, `?caseType=`) is
+// named after that case type. Those entries come with the backend delta, which
+// lands after the first route, so the title follows the resolved menu.
+const retitlePage = installPageTitles(
+	router,
+	builtManifest,
+	(label) => t('dossiq', label),
+	document,
+	() => resolvedManifest.value?.menu,
+)
+watch(() => resolvedManifest.value?.menu, retitlePage)
 
 // The case page subscribes to the case it is showing (gap register row 2.20).
 // It is wired here rather than in a component because `#CaseDetail` is rendered

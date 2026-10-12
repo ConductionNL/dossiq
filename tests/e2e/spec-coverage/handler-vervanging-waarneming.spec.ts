@@ -378,22 +378,22 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	 * this file's rewrite found under most of its citations.
 	 *
 	 * The registration itself is asserted in the test below, on the stored row.
-	 * This stays as what it is: the personal-settings section mounts and offers
-	 * the action that opens the form.
+	 * This stays as what it is: the substitution section of the user settings
+	 * dialog mounts and offers the action that opens the form.
 	 */
-	test('substitution renders under personal settings with a register action', async ({
+	test('substitution renders in the user settings dialog with a register action', async ({
 		page,
 	}) => {
 		await page.goto(`/index.php${SubstitutionPersonalSettings}`, {
 			timeout: 60_000,
 		})
 		await dismissSupportDialog(page)
-		// The mount point the template declares. Asserting it first separates
-		// "the section did not load" from "the section loaded without the
-		// button", which is the distinction the old guard erased.
+		// The dialog section UserSettings.vue declares. Asserting it first
+		// separates "the section did not load" from "the section loaded
+		// without the button", which is the distinction the old guard erased.
 		await expect(
-			page.locator('#dossiq-personal-settings'),
-			'the personal-settings mount point must be on the page',
+			page.getByRole('dialog').locator('#settings-section_substitution'),
+			'the substitution section must be in the user settings dialog',
 		).toBeAttached({ timeout: 30_000 })
 		await expect(
 			page

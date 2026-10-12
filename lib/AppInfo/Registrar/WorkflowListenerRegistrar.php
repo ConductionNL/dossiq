@@ -140,6 +140,8 @@ class WorkflowListenerRegistrar {
 		// When the request arrived, and when its clock starts. Written once at
 		// creation and never recomputed: the stamp is a record of what the
 		// citizen was told, not a derivation of what today's calendar says.
+		// It also runs before the case is stored, registered with the intake
+		// listeners (IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY).
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: IntakeTermStartListener::class

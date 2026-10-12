@@ -20,7 +20,7 @@
         "x-notes": "woo-refusal-grounds-list. The seed is exactly the 25 entries of design D-2 (21 citable grounds and 4 group nodes), settled against the Woo version geldend van 15-08-2026. A ground is never deleted: WooRefusalGroundDeleteGuard refuses a delete while an assessment cites it, and an administrator retires it instead. Read is open to every authenticated account because handlers cite the grounds; writes are admin plus the dossiq beheerders group. OpenRegister fails an unlisted action closed once the block is non-empty, so all four actions are named.",
         "authorization": {
           "read": [
-            "authenticated"
+            "dossiq-medewerkers"
           ],
           "create": [
             "admin",

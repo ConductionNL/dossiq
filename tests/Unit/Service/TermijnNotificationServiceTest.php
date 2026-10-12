@@ -39,6 +39,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  *
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
+ * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
+ * @uses \OCA\Dossiq\Service\Email\SenderIdentity
+ * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
