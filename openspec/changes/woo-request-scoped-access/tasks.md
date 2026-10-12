@@ -12,11 +12,10 @@ red; put the failing line in the PR body. Double OpenRegister classes with
 
 ## 1. The assessment is private
 
-- [ ] 1.1 Add the authorization block of REQ-WSA-001 to `wooDocumentAssessment` in
-  `lib/Settings/register.d/83-woo-document-assessment.json` and raise its `version` to `1.1.0`
-  (REQ-WSA-001).
-  - **fails today**: `tests/Unit/Settings/WooAssessmentSchemaAccessTest.php`
-    `testTheAssessmentIsPrivate` and `testOnlyCoordinatorsDelete`, reading the shipped JSON.
+- [x] 1.1 `wooDocumentAssessment` carries `scope: private` (read/create/update `authenticated`,
+  delete `dossiq-coordinators`), version 1.2.0 (REQ-WSA-001).
+  - done: `lib/Settings/register.d/83-woo-document-assessment.json`; digests regenerated, register 0.20.30.
+    Decision 185: the shipped JSON is procedure configuration, proven by Newman (1.2), no unit test.
 - [ ] 1.2 Prove the block reaches the instance and is enforced (REQ-WSA-001).
   - Newman `tests/newman/woo-request-scoped-access.postman_collection.json`, folder `private`:
     read the schema and assert `authorization.scope` is `private`; as an unassigned user, list
@@ -24,20 +23,20 @@ red; put the failing line in the PR body. Double OpenRegister classes with
 
 ## 2. Grants follow the assignment
 
-- [ ] 2.1 Add `lib/Woo/WooAssessmentAccess.php` with `reconcile(string $caseId): array` per
-  REQ-WSA-002 and REQ-WSA-004, resolving `ObjectSharingService` and `ObjectOwnershipService` from
-  the container and answering `unavailable` when they do not resolve.
-  - unit `tests/Unit/Woo/WooAssessmentAccessTest.php`: `testTheAssigneeGetsReadOnly`,
-    `testBatchReviewersAreGranted`, `testAFormerAssigneeIsRevoked`, `testCoordinatorsOwnTheGroup`,
-    `testNoUpdateDeleteOrShareIsEverGranted`, `testHidingWithholdsAnotherReviewersVerdict`,
-    `testWithoutSharingItIsUnavailableAndWritesNothing`, `testASecondRunChangesNothing`.
-- [ ] 2.2 Call `reconcile()` from `WOODocumentAssessmentService::bulkUpsert()` after a create, and from
-  the batch creation of `woo-review-triage` when that route exists (REQ-WSA-002).
-  - **fails today**: `tests/Unit/Service/WOODocumentAssessmentServiceTest.php`
-    `testACreatedAssessmentIsGrantedToTheAssignee`.
-  - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
-    `testBulkAssessReconcilesTheCase`.
-- [ ] 2.3 Add `lib/Listener/WooCaseReassignGuardListener.php` on OpenRegister's `ObjectUpdatingEvent`
+- [x] 2.1 Decision 182: generic, not `WooAssessmentAccess`. `lib/Service/Access/CaseReviewerAccess.php`
+  (`declarationFor`, `reconcile`, `reconcileAll`, `mayChange`, `isSupervisor`) over the case type's
+  `reviewerAccess` (`register.d/89-case-reviewer-access.json`), and `lib/Service/Access/ObjectReadGrants.php`
+  (the OpenRegister side: `listGrants`/`grant`/`revoke` on `ObjectSharingService`, `setOwnerGroup` on
+  `ObjectOwnershipService`, resolved by name, `unavailable` without them). The Woo case type declares
+  it (case type object 1.3.0). REQ-CRA-001/002.
+  - done: `tests/Unit/Service/Access/CaseReviewerAccessTest.php` (8), `ObjectReadGrantsTest.php` (5:
+    read bit only, owner skipped, former reader revoked, group/inherited grants kept, second run
+    changes nothing, refusal counted, unavailable).
+- [ ] 2.2 `bulkUpsert()` reconciles the case after a create (REQ-CRA-002): done,
+  `WOODocumentAssessmentServiceTest::testACreatedAssessmentReconcilesTheCase`. Open: the batch
+  creation of `woo-review-triage` (L8's `ReviewBatches`, not on development) calls
+  `CaseReviewerAccess::reconcile()` when it lands.
+- [x] 2.3 Add `lib/Listener/WooCaseReassignGuardListener.php` on OpenRegister's `ObjectUpdatingEvent`
   (refuse per REQ-WSA-005 with `setErrors()` and `stopPropagation()`, as `CaseDeleteGuardListener`
   does on delete) and on `ObjectUpdatedEvent` (run `reconcile()`). Read both event classes in
   openregister first; `ObjectUpdatingEvent` has `getNewObject()` and `getOldObject()`. Register
@@ -48,21 +47,33 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   - Through the caller: Newman folder `reassign` in the collection of 1.2: a PUT on the case by the
     handler answers the refusal, a PUT by a coordinator succeeds and the former handler then reads
     no assessment.
+  - done, generic (decision 182): `lib/Listener/CaseReassignGuardListener.php` (refuses with
+    `reassign-needs-supervisor` via `CaseReviewerAccess::reassignRefusal()`, reconciles after the
+    save), bound by `lib/AppInfo/Registrar/CaseAccessListenerRegistrar.php` from `ListenerRegistrar`.
+    Tests: `tests/Unit/Listener/CaseReassignGuardListenerTest.php` (the three named tests plus
+    administrator, unchanged assignee, no session, other schema, undeclared case type, with the
+    real event classes and the real `CaseReviewerAccess`; its unscoped reads moved to `lib/Service/Access/CaseRecordLookup.php` with `CaseRecordLookupTest`), `tests/Unit/AppInfo/CaseAccessListenerRegistrarTest.php`,
+    `CaseReviewerAccessTest::testOnlyASupervisorHandsOnACaseWithPrivateRecords`. A write without a
+    signed-in user (job, import, flow) is let through and still reconciled. The Newman folder stays
+    open with 1.2.
 
 ## 3. A reviewer edits only their own
 
-- [ ] 3.1 In `bulkUpsert()`, refuse per document a change to an assessment owned by someone else
-  unless the caller is a coordinator or an administrator, with the error shape of REQ-WSA-003.
-  Find the existing assessment with `searchObjectsAsArraysUnscoped()` and use only its
-  `documentRef` and uuid (REQ-WSA-003).
-  - **fails today**: `WOODocumentAssessmentServiceTest::testASecondReviewerCannotOverwrite`,
-    `testACoordinatorMayOverwrite`, `testAHiddenAssessmentIsNotDuplicated`,
-    `testTheErrorHidesWhatTheCallerCannotRead`.
-- [ ] 3.2 Apply the same rule to `saveRedactionProposal()` and the redaction proposal review
+- [x] 3.1 `bulkUpsert()` refuses per document a change to an assessment someone else made unless
+  the caller supervises (`CaseReviewerAccess::mayChange`), error `owned-by-another-reviewer` without
+  author or verdict; the existing-assessment lookup runs unscoped (REQ-CRA-003).
+  - done: `WOODocumentAssessmentServiceTest::testASecondReviewerCannotOverwrite`.
+- [x] 3.2 Apply the same rule to `saveRedactionProposal()` and the redaction proposal review
   (REQ-WSA-003).
   - **fails today**: `tests/Unit/Service/WOOAnonymisationAssistServiceTest.php`
     `testAnotherReviewersProposalCannotBeChanged`; through the caller
     `WOOAssessmentControllerTest::testReviewRedactionProposalRefusesAnotherReviewersProposal`.
+  - done: the rule sits in `WOODocumentAssessmentService::saveRedactionProposal()`, which proposing
+    and reviewing both write through: 403 `owned-by-another-reviewer` via `CaseReviewerAccess::assertMayChange`,
+    no author named. Test `WOODocumentAssessmentServiceTest::testAnotherReviewersProposalCannotBeChanged`
+    (in the service that holds the rule, not the assist service, which is doubled there);
+    `WOOAssessmentControllerTest::testReviewRedactionProposalRefusesAnotherReviewersProposal` and
+    `testProposeRedactionRefusesAnotherReviewersAssessment` (403 with the rule, was a 400).
 - [ ] 3.3 Newman folder `ownership` in the collection of 1.2: reviewer A assesses a document,
   reviewer B posts another verdict for it through `/api/cases/{id}/woo/assessment` and through the
   OpenRegister object API; both are refused and the verdict is unchanged; a coordinator's change is
@@ -70,11 +81,11 @@ red; put the failing line in the PR body. Double OpenRegister classes with
 
 ## 4. Hiding another reviewer's verdict
 
-- [ ] 4.1 Add `woo_review_hide_others` to `ConfigKeys` (default off) and to the Woo admin settings
-  section, and make `getOutstanding()` count a document with an unreadable assessment as assessed
-  (REQ-WSA-004).
-  - **fails today**: `WOODocumentAssessmentServiceTest::testAnUnreadableAssessmentIsNotOutstanding`
-    and `tests/Unit/Service/SettingsServiceTest.php` `testHidingIsOffByDefault`.
+- [x] 4.1 Decision 182: hiding is the case type's `reviewerAccess.hideOthers` (default off), not an
+  app setting; `reconcile()` honours it (`CaseReviewerAccessTest::testHidingLeavesOnlyTheAssigneeAsReader`).
+  - done: `getOutstanding()` reads the assessments unscoped (document references only), so a
+    document with an unreadable assessment counts as assessed:
+    `WOODocumentAssessmentServiceTest::testAnUnreadableAssessmentStillCountsAsAssessed`.
 - [ ] 4.2 The case's Woo assessment section (added by `woo-case-screens-and-objections`) shows a
   document that is not outstanding and has no readable assessment as "Assessed by another
   reviewer", with no classification, grounds or author (REQ-WSA-004). If that section is not on
@@ -84,14 +95,16 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   - e2e `tests/e2e/woo-blind-review.spec.ts`: hiding on, two reviewer users, four documents
     assessed by the first; the second sees ten documents, four of them "Assessed by another
     reviewer". Cite REQ-WSA-004.
+  - Waits on a board (decision 162): no board shows this state, so it is on the design backlog as
+    `DqBeoordelingAfgeschermd`. The backend half (the count) is 4.1.
 
 ## 5. Existing assessments and the redaction half
 
-- [ ] 5.1 Add `POST /api/woo/access/reconcile` (administrator only, `#[AuthorizedAdminSetting]` or an
-  explicit admin check that fails closed) calling `reconcile()` for every Woo case (REQ-WSA-006).
-  - unit `tests/Unit/Controller/WooAccessControllerTest.php` `testANonAdminIsRefused`,
-    `testItSumsEveryCase`, `testUnavailableWritesNothing`; Newman folder `reconcile` runs it twice
-    and asserts the second answer is zero granted and zero revoked.
+- [x] 5.1 Generic `POST /api/cases/reviewer-access/reconcile` (administrator only, fails closed)
+  over `CaseReviewerAccess::reconcileAll()` (REQ-CRA-004).
+  - done: `lib/Controller/CaseReviewerAccessController.php`,
+    `tests/Unit/Controller/CaseReviewerAccessControllerTest.php` (non-admin refused, sums, 503 unavailable).
+    Newman folder `reconcile` stays with 1.2.
 - [ ] 5.2 If `openregister/reviewer-owns-their-decisions` is merged: declare `x-openregister-review`
   on the document schema per REQ-WSA-007, add the key to `SchemaSlugMap::SCHEMA_ANNOTATION_KEYS`,
   and prove it reaches the instance (REQ-WSA-007).

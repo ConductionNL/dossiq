@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use RuntimeException;
 
@@ -64,6 +65,7 @@ class WooCollection {
 	 * @param DocumentRecordStore          $store           A document's record and its join to the case.
 	 * @param WOODocumentAssessmentService $assessments     Whether a document is assessed.
 	 * @param WooSearchPlans               $plans           The plan's custodians and systems.
+	 * @param CaseDocumentProvenance       $provenance      Where each document was found.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -71,6 +73,7 @@ class WooCollection {
 		private readonly DocumentRecordStore $store,
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly WooSearchPlans $plans,
+		private readonly CaseDocumentProvenance $provenance,
 	) {
 	}//end __construct()
 
@@ -166,13 +169,13 @@ class WooCollection {
 			}
 		}
 
-		$provenance = $this->provenanceOf(caseId: $caseId, documentId: $documentRef);
+		$provenance = $this->provenance->forDocument(caseId: $caseId, documentId: $documentRef);
 
 		return $this->record(
 			caseId: $caseId,
 			fields: [
 				'documentRef' => $documentRef,
-				'custodian' => (string)($provenance['custodian'] ?? ''),
+				'custodian' => $provenance['custodian'],
 				'reason' => $reason,
 				'note' => $note,
 				'excludedBy' => $userId,
@@ -254,47 +257,23 @@ class WooCollection {
 	 */
 	private function count(string $caseId, string $documentId, array &$custodians, array &$systems): void {
 		$record = ($this->store->findRecord(recordId: $documentId) ?? []);
-		$provenance = $this->provenanceOf(caseId: $caseId, documentId: $documentId, record: $record);
+		$provenance = $this->provenance->forDocument(caseId: $caseId, documentId: $documentId, record: $record);
 		$bytes = (int)($record['bestandsomvang'] ?? 0);
 
-		$custodian = (string)($provenance['custodian'] ?? '');
+		$custodian = $provenance['custodian'];
 		if ($custodian !== '') {
 			$custodians[$custodian] = ($custodians[$custodian] ?? $this->zero());
 			$custodians[$custodian]['documents']++;
 			$custodians[$custodian]['bytes'] += $bytes;
 		}
 
-		$system = (string)($provenance['sourceSystem'] ?? ($provenance['source'] ?? ''));
+		$system = $provenance['sourceSystem'];
 		if ($system !== '') {
 			$systems[$system] = ($systems[$system] ?? $this->zero());
 			$systems[$system]['documents']++;
 			$systems[$system]['bytes'] += $bytes;
 		}
 	}//end count()
-
-	/**
-	 * A document's provenance: on its record when it was copied, on this case's join when it was linked.
-	 *
-	 * @param string                    $caseId     The case uuid.
-	 * @param string                    $documentId The document uuid.
-	 * @param array<string, mixed>|null $record     The record when already read.
-	 *
-	 * @return array<string, mixed> The provenance, [] when there is none.
-	 */
-	private function provenanceOf(string $caseId, string $documentId, ?array $record = null): array {
-		$record = ($record ?? $this->store->findRecord(recordId: $documentId) ?? []);
-		if (is_array($record['provenance'] ?? null) === true) {
-			return $record['provenance'];
-		}
-
-		foreach ($this->store->joinsFor(recordId: $documentId, caseId: $caseId) as $join) {
-			if (is_array($join['provenance'] ?? null) === true) {
-				return $join['provenance'];
-			}
-		}
-
-		return [];
-	}//end provenanceOf()
 
 	/**
 	 * An empty total.

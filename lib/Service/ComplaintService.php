@@ -470,8 +470,10 @@ class ComplaintService {
 		description: 'Complaints (klachten) past their handling deadline: number, subject, category, status, handler and deadlines. Never the complainant.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'complaint',
-		action: 'listOverdue'
+		action: 'listOverdue',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function listOverdueComplaints(): array {
 		$today = $this->dates->today();

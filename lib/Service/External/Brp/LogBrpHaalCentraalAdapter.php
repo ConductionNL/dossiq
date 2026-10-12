@@ -9,9 +9,8 @@
  * result so the surrounding lifecycle (citizen zaak intake,
  * briefcode resolution, register-set seed) stays observable until
  * an openconnector-backed binding to the Haal Centraal Personen-API
- * is wired in via `Application::register()`. Mirrors the
- * `LogDigidSamlAdapter` dormant-default pattern used across the
- * Dossiq external surface.
+ * is wired in via `Application::register()`. Follows the dormant-default
+ * pattern used across the Dossiq external surface.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\External\Brp

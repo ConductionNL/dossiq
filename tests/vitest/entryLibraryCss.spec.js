@@ -36,9 +36,7 @@ describe('entries that use the library load its stylesheet', () => {
 	)
 
 	it('finds the entries that import the library', () => {
-		expect(users).toEqual(
-			expect.arrayContaining(['main.js']),
-		)
+		expect(users).toEqual(expect.arrayContaining(['main.js']))
 	})
 
 	it.each(users)('🔴 %s imports the library stylesheet', (entry) => {

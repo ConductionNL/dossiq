@@ -16,6 +16,10 @@
             "matchType": "exact",
             "inputControl": "text"
           },
+          "formerReferences": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
           "tags": {
             "matchType": "fuzzy",
             "inputControl": "multiselect"

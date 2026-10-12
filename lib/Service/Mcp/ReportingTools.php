@@ -82,8 +82,10 @@ class ReportingTools {
 		description: 'Statutory deadline figures for the organisation: cases running, at risk or past their deadline. Counts only, no case rows.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'deadline',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getDeadlineDashboard(): array {
 		$refusal = $this->refuseOutsideReportingAudience();
@@ -110,8 +112,10 @@ class ReportingTools {
 		description: 'Lead times (doorlooptijden) of cases against their statutory deadline, per month and per case type. Aggregates only.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'leadTime',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getDoorlooptijdMetrics(?string $caseType = null, string $period = '12m', int $atRiskDays = 5): array {
 		$refusal = $this->refuseOutsideReportingAudience();
@@ -148,8 +152,10 @@ class ReportingTools {
 		description: 'The current user\'s case figures as the dashboard shows them: open, overdue, due this week and completed. Counts only.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'kpi',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getKpiOverview(): array {
 		$user = $this->userSession->getUser();
@@ -173,8 +179,10 @@ class ReportingTools {
 		description: 'Open cases per handler, for a coordinator who divides the work. Counts only.',
 		readOnlyHint: true,
 		scope: 'read',
+		reach: 'user',
 		subject: 'workload',
-		action: 'report'
+		action: 'report',
+		annotations: ['outsideAgent' => true]
 	)]
 	public function getWorkload(): array {
 		$user = $this->userSession->getUser();
