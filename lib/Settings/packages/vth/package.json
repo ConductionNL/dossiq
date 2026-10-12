@@ -1,0 +1,12 @@
+{
+  "id": "vth",
+  "title": "Vergunningen, toezicht en handhaving",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows"
+  ],
+  "install": "auto",
+  "description": "Six VTH case types (omgevingsvergunning bouwactiviteit, sloopmelding, toezichtzaak bouw, toezichtzaak milieu, handhavingszaak, invorderingszaak) with their statuses, roles, document types and fields, and four published flows. Handhavingszaak has two routes: regulier (the default) and spoedeisend. Installed on every install and upgrade; on an instance where the former VTH seeders ran, the existing rows are adopted."
+}

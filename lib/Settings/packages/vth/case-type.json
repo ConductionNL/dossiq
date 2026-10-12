@@ -1,0 +1,804 @@
+{
+  "caseType": [
+    {
+      "id": "cde0095e-f462-5781-ae3b-3b994a56c3c4",
+      "isDraft": false,
+      "title": "Omgevingsvergunning Bouwactiviteit",
+      "category": "Vergunningen",
+      "description": "Omgevingsvergunning voor bouwactiviteiten onder de Omgevingswet. Reguliere procedure (8 weken) of uitgebreide procedure (26 weken).",
+      "processingDeadline": "P56D",
+      "suspensionAllowed": true,
+      "extensionAllowed": true,
+      "extensionPeriod": "P42D",
+      "confidentiality": "openbaar",
+      "origin": "aanvragen",
+      "identifier": "omgevingsvergunning-bouwactiviteit"
+    },
+    {
+      "id": "4f6f897c-20c9-5f3e-9242-025df86ca038",
+      "isDraft": false,
+      "title": "Sloopmelding",
+      "category": "Vergunningen",
+      "description": "Melding voor sloopactiviteiten. Beoordelingstermijn 4 weken.",
+      "processingDeadline": "P28D",
+      "suspensionAllowed": false,
+      "confidentiality": "openbaar",
+      "origin": "melden",
+      "identifier": "sloopmelding"
+    },
+    {
+      "id": "fd452b2a-0f6c-5dee-9f52-339e836567bd",
+      "isDraft": false,
+      "title": "Toezichtzaak Bouw",
+      "category": "Toezicht en handhaving",
+      "description": "Toezichtzaak voor bouwactiviteiten met meerdere inspectiefases (fundering, ruwbouw, oplevering).",
+      "confidentiality": "intern",
+      "origin": "ambtshalve",
+      "identifier": "toezichtzaak-bouw"
+    },
+    {
+      "id": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
+      "isDraft": false,
+      "title": "Toezichtzaak Milieu",
+      "category": "Toezicht en handhaving",
+      "description": "Toezichtzaak voor milieuactiviteiten (periodiek of incidenteel).",
+      "confidentiality": "intern",
+      "origin": "ambtshalve",
+      "identifier": "toezichtzaak-milieu"
+    },
+    {
+      "id": "9e4fe525-6aac-525c-978e-c3d74bc0213d",
+      "isDraft": false,
+      "title": "Handhavingszaak",
+      "category": "Toezicht en handhaving",
+      "description": "Handhavingszaak met LHS-classificatie (Landelijke Handhavingsstrategie). Omvat vooraankondiging, zienswijze, handhavingsbesluit, begunstigingstermijn en hercontrole.",
+      "confidentiality": "zaakvertrouwelijk",
+      "origin": "ambtshalve",
+      "identifier": "handhavingszaak",
+      "workflowDefinition": "6f5b5055-b2a5-5008-a177-528e4b2b4a72"
+    },
+    {
+      "id": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",
+      "isDraft": false,
+      "title": "Invorderingszaak",
+      "category": "Toezicht en handhaving",
+      "description": "Invorderingszaak voor verbeurde dwangsommen.",
+      "confidentiality": "zaakvertrouwelijk",
+      "origin": "ambtshalve",
+      "identifier": "invorderingszaak"
+    }
+  ],
+  "statusTypes": [
+    {
+      "id": "0f70296e-265f-54b2-8fb4-7be31558fa31",
+      "name": "Ontvangen",
+      "description": "Aanvraag is ontvangen",
+      "order": 1,
+      "isFinal": false,
+      "role": "intake",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "3f1d1df0-5bb6-5f1e-8291-1b33faba41eb",
+      "name": "Ontvankelijkheidstoets",
+      "description": "Controle op volledigheid van de aanvraag",
+      "order": 2,
+      "isFinal": false,
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "49a76389-5119-5f0f-9292-8b3050d9b7ee",
+      "name": "In behandeling",
+      "description": "Aanvraag wordt inhoudelijk beoordeeld",
+      "order": 3,
+      "isFinal": false,
+      "role": "in-progress",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "31b95147-5ddf-53a5-8e0f-cde7066c25a7",
+      "name": "Advies",
+      "description": "Advies wordt ingewonnen bij interne/externe partijen",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "8f57f93c-d5ab-5d8c-bb87-4d5d3d2922e2",
+      "name": "Besluitvorming",
+      "description": "Besluit wordt genomen over de vergunning",
+      "order": 5,
+      "isFinal": false,
+      "role": "review",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "cf2e1552-77a6-532f-8cd2-965317d25858",
+      "name": "Bekendmaking",
+      "description": "Besluit wordt bekendgemaakt",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "54897b1a-07bd-58a6-932e-f5e7b86509e1",
+      "name": "Afgehandeld",
+      "description": "Zaak is afgehandeld",
+      "order": 7,
+      "isFinal": true,
+      "role": "closed",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "9073ad9c-9a40-5778-9ba8-2c77c2729a34",
+      "name": "Ontvangen",
+      "description": "Melding ontvangen",
+      "order": 1,
+      "isFinal": false,
+      "role": "intake",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "6ca89972-2c9d-5a4d-a982-a43d379ba77b",
+      "name": "Beoordeling",
+      "description": "Melding wordt beoordeeld",
+      "order": 2,
+      "isFinal": false,
+      "role": "in-progress",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "77f363f3-8823-526f-b429-50dd3cb89b0e",
+      "name": "Akkoord",
+      "description": "Melding akkoord bevonden",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "5d6023eb-fa48-51af-9a1d-d48e9070f862",
+      "name": "Afgehandeld",
+      "description": "Zaak afgehandeld",
+      "order": 4,
+      "isFinal": true,
+      "role": "closed",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "f20608d3-c6af-5a46-83fa-be67234eb9ea",
+      "name": "Gepland",
+      "description": "Inspectie is gepland",
+      "order": 1,
+      "isFinal": false,
+      "role": "intake",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "fdc5fb65-ee0f-5555-b4ba-1d254318427e",
+      "name": "Inspectie fase 1",
+      "description": "Fundering-inspectie",
+      "order": 2,
+      "isFinal": false,
+      "role": "in-progress",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "43f31ad2-7ab5-5d32-9297-e9f7bc347d14",
+      "name": "Inspectie fase 2",
+      "description": "Ruwbouw-inspectie",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "4f010be8-553c-599a-a18a-0e3da6abe584",
+      "name": "Inspectie fase 3",
+      "description": "Oplevering-inspectie",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "6708b73f-76f8-548b-9d03-bfda94c82a06",
+      "name": "Rapport",
+      "description": "Eindrapportage wordt opgesteld",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "729d0eb2-8121-569b-ad93-7114618a16c0",
+      "name": "Opvolging",
+      "description": "Opvolging van geconstateerde afwijkingen",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "0dafe7a0-cb02-561e-a5c9-d1983a45f2d6",
+      "name": "Afgehandeld",
+      "description": "Toezichtzaak afgehandeld",
+      "order": 7,
+      "isFinal": true,
+      "role": "closed",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "d6529b26-2e23-58bd-9862-3acc3e6d2915",
+      "name": "Gepland",
+      "description": "Inspectie gepland",
+      "order": 1,
+      "isFinal": false,
+      "role": "intake",
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "73c02cf3-2bd6-593b-b5d2-c64128e6e784",
+      "name": "Inspectie",
+      "description": "Inspectie wordt uitgevoerd",
+      "order": 2,
+      "isFinal": false,
+      "role": "in-progress",
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "99ec1774-2aac-5da5-91f0-158eb10f7153",
+      "name": "Rapport",
+      "description": "Rapportage",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "9687465a-3763-5b21-9cbd-72e4aee663bb",
+      "name": "Opvolging",
+      "description": "Opvolging",
+      "order": 4,
+      "isFinal": false,
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "3556fed1-057c-5154-ac70-e23e549a21ca",
+      "name": "Afgehandeld",
+      "description": "Afgehandeld",
+      "order": 5,
+      "isFinal": true,
+      "role": "closed",
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "77c260b4-aa92-5dd8-9091-4ef0f9242e20",
+      "name": "Constatering",
+      "description": "Overtreding is geconstateerd",
+      "order": 1,
+      "isFinal": false,
+      "role": "intake",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "f8b82073-0d78-5712-a98a-e7bb2d577276",
+      "name": "Vooraankondiging",
+      "description": "Vooraankondiging verstuurd",
+      "order": 2,
+      "isFinal": false,
+      "role": "in-progress",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "b5d9837f-dbe5-5062-b145-d1f7275cb144",
+      "name": "Zienswijze",
+      "description": "Zienswijzetermijn loopt",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "3f733edd-9ea7-55e8-8950-dac293c48152",
+      "name": "Handhavingsbesluit",
+      "description": "Handhavingsbesluit genomen",
+      "order": 4,
+      "isFinal": false,
+      "role": "review",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "9adc6835-dc6c-5752-8bef-951b4f6a622c",
+      "name": "Begunstigingstermijn",
+      "description": "Begunstigingstermijn loopt",
+      "order": 5,
+      "isFinal": false,
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "730b3d39-9b6f-57c5-a660-1263b5b2a177",
+      "name": "Hercontrole",
+      "description": "Hercontrole wordt uitgevoerd",
+      "order": 6,
+      "isFinal": false,
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "98695b5a-61a7-545f-8ee8-b8b94a67e059",
+      "name": "Afgehandeld",
+      "description": "Handhavingszaak afgehandeld",
+      "order": 7,
+      "isFinal": true,
+      "role": "closed",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "03658fcb-6e3e-5cc3-8625-3ad8691893f2",
+      "name": "Verbeuring",
+      "description": "Dwangsom is verbeurd",
+      "order": 1,
+      "isFinal": false,
+      "role": "intake",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    },
+    {
+      "id": "086b4d8a-0b58-5e8c-b1b3-0deeb6b9240a",
+      "name": "Invordering",
+      "description": "Invordering is gestart",
+      "order": 2,
+      "isFinal": false,
+      "role": "in-progress",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    },
+    {
+      "id": "9f64fdfd-e195-589b-ad34-8138ddf0f92d",
+      "name": "Betaald",
+      "description": "Dwangsom is betaald",
+      "order": 3,
+      "isFinal": false,
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    },
+    {
+      "id": "9d668ca1-222f-5595-aacd-9e05529faac1",
+      "name": "Afgehandeld",
+      "description": "Invorderingszaak afgehandeld",
+      "order": 4,
+      "isFinal": true,
+      "role": "closed",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "83c4148d-5456-5d30-881c-3c94be5cebbf",
+      "name": "Behandelaar",
+      "description": "Medewerker die de aanvraag behandelt",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "369a0fff-8c1e-5f2b-b9f3-d051c2f5cf79",
+      "name": "Aanvrager",
+      "description": "Persoon die de vergunning aanvraagt",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "ddfceaef-68b5-50df-a19d-f4307f516ce4",
+      "name": "Gemachtigde",
+      "description": "Gemachtigd persoon namens de aanvrager",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "5801dd08-74ba-560e-b516-db2802c8f1aa",
+      "name": "Adviseur (welstand)",
+      "description": "Welstandscommissie adviseur",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "5a6da1a6-d47d-5b40-bf35-004f5dc27fff",
+      "name": "Adviseur (brandweer)",
+      "description": "Brandweer/Veiligheidsregio adviseur",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "9df3a2f3-219d-5c7f-ac19-57557d39e260",
+      "name": "Teamleider",
+      "description": "Leidinggevende van het behandelteam",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "09125179-b1e3-5eb4-962f-261a3cd6280c",
+      "name": "Behandelaar",
+      "description": "Medewerker die de melding beoordeelt",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "7c929073-ce01-5fec-a7cc-9acd8fd2e477",
+      "name": "Melder",
+      "description": "Persoon die de sloopmelding doet",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "4656466f-28ca-5d6a-9757-105c31390feb",
+      "name": "Inspecteur",
+      "description": "Toezichthouder die de inspectie uitvoert",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "4441b3da-74ac-5ccd-93ce-a1933ee786a9",
+      "name": "Contactpersoon",
+      "description": "Contactpersoon op de bouwlocatie",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "6b9d7ab8-4d70-5c0a-9d12-30bfcf2b5578",
+      "name": "Opdrachtgever",
+      "description": "Opdrachtgever van de bouwwerkzaamheden",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "12206e8b-d464-5c37-8715-c1a889ddf110",
+      "name": "Inspecteur",
+      "description": "Milieu-inspecteur",
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "9a3de96c-f236-5f61-ae72-b6e9ded6248d",
+      "name": "Contactpersoon",
+      "description": "Contactpersoon bij de inrichting",
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "b24e71d8-5dee-5281-a669-066e2f25c3ec",
+      "name": "Inrichtinghouder",
+      "description": "Houder van de milieuvergunning",
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "af3893e2-b14b-525b-982a-944706c44f67",
+      "name": "Behandelaar",
+      "description": "Handhavingsmedewerker",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "2a7abef1-75b2-5020-8006-892743dbdada",
+      "name": "Overtreder",
+      "description": "De overtreder",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "ed48cea5-bdb8-51c9-9612-b0c6bbc1b92b",
+      "name": "Gemachtigde",
+      "description": "Gemachtigde van de overtreder",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "2ff045da-51bb-5318-829b-6f88f84f4b1d",
+      "name": "Teamleider",
+      "description": "Leidinggevende handhaving",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "33b6bb47-08d0-54d7-acd0-2bbf638d2e7a",
+      "name": "Behandelaar",
+      "description": "Medewerker die invordering behandelt",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    },
+    {
+      "id": "8ef34f11-012a-5f53-96ad-b25682cff915",
+      "name": "Overtreder",
+      "description": "De overtreder/schuldenaar",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    }
+  ],
+  "propertyDefinitions": [
+    {
+      "id": "09abe0b4-8d15-5ffc-8264-71dd02a8b776",
+      "name": "bouwkosten",
+      "propertyType": "number",
+      "description": "Geschatte bouwkosten (EUR)",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "86a69f95-bdd3-5aef-a812-8c9c05435474",
+      "name": "oppervlakte",
+      "propertyType": "number",
+      "description": "Bouwoppervlakte in m2",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "649513ea-540f-5adb-967a-210b08b5b48e",
+      "name": "aantalBouwlagen",
+      "propertyType": "number",
+      "description": "Aantal bouwlagen",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "911827a6-5e0f-5d4b-9e51-41124316db49",
+      "name": "bagObject",
+      "propertyType": "string",
+      "description": "BAG object referentie",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "e1e8f40c-6c4b-551b-a7c2-1397dacf6fef",
+      "name": "activiteiten",
+      "propertyType": "json",
+      "description": "Activiteiten uit DSO verzoek",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "9d92e44f-adea-54ab-9708-b10a12e4029f",
+      "name": "procedureType",
+      "propertyType": "enum",
+      "description": "Procedure type: regulier of uitgebreid",
+      "enumValues": [
+        "regulier",
+        "uitgebreid"
+      ],
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "e3523d38-e3da-5ffc-bfa4-358bb2bd166a",
+      "name": "dsoVerzoekId",
+      "propertyType": "string",
+      "description": "DSO verzoek identificatie",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "016293d3-eab1-5735-a26b-7a958b84cc00",
+      "name": "asbestInventarisatie",
+      "propertyType": "boolean",
+      "description": "Of asbestinventarisatie is uitgevoerd",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "65040fb3-ab55-5e6b-8542-6e52364f3028",
+      "name": "sloopOppervlakte",
+      "propertyType": "number",
+      "description": "Oppervlakte te slopen in m2",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "83bcee9a-5280-53b6-8bbc-0c706023f35a",
+      "name": "bouwvergunningZaak",
+      "propertyType": "string",
+      "description": "Referentie naar de bouwvergunningzaak",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "a1d9bbf7-d884-5552-a945-9cc3873f047a",
+      "name": "inspectieFases",
+      "propertyType": "json",
+      "description": "Lijst van inspectiefases (fundering, ruwbouw, oplevering)",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "0cef59bb-7fc5-5d88-a5f0-49291de6336a",
+      "name": "laatsteInspectieResultaat",
+      "propertyType": "enum",
+      "description": "Resultaat van de laatste inspectie",
+      "enumValues": [
+        "conform",
+        "niet_conform",
+        "deels_conform"
+      ],
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "2e83c7fe-1115-5d03-a084-cb43b4099d7b",
+      "name": "inspectieType",
+      "propertyType": "enum",
+      "description": "Type inspectie",
+      "enumValues": [
+        "periodiek",
+        "incidenteel"
+      ],
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "b4c879e3-1c72-59b1-8df2-25eebf56d1ea",
+      "name": "risicoCategorie",
+      "propertyType": "enum",
+      "description": "Risicocategorie van de inrichting",
+      "enumValues": [
+        "hoog",
+        "midden",
+        "laag"
+      ],
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "c7457bfd-a84c-55a0-8caf-125f8b87a4f7",
+      "name": "voorgaandeInspecties",
+      "propertyType": "number",
+      "description": "Aantal eerdere inspecties",
+      "caseType": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+    },
+    {
+      "id": "47a3cd65-fefa-56ea-a3d1-525f810b6d54",
+      "name": "overtredingstype",
+      "propertyType": "string",
+      "description": "Type overtreding",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "03580d3a-34eb-54e4-914f-ab4e68b2a737",
+      "name": "ernst",
+      "propertyType": "enum",
+      "description": "Ernst van de overtreding (LHS)",
+      "enumValues": [
+        "gering",
+        "aanzienlijk",
+        "ernstig"
+      ],
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "e2bcf724-1fb2-52f3-893b-552a89e7dabd",
+      "name": "gedrag",
+      "propertyType": "enum",
+      "description": "Gedrag van de overtreder (LHS)",
+      "enumValues": [
+        "goedwillend",
+        "onverschillig",
+        "calculerend",
+        "crimineel"
+      ],
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "19a44aac-2b80-5a97-82f4-9b4da5598995",
+      "name": "intervention",
+      "propertyType": "string",
+      "description": "Gekozen interventie (uit LHS matrix)",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "3d631df4-96f4-53cc-8565-43fbb6521322",
+      "name": "penaltyPaymentAmount",
+      "propertyType": "number",
+      "description": "Dwangsom per overtreding (EUR)",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "04f2003f-0247-5c3d-b3b8-8865893227b4",
+      "name": "penaltyPaymentMaximum",
+      "propertyType": "number",
+      "description": "Maximale dwangsom (EUR)",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "569adf94-b8f8-5b34-8cda-d089abc9ddb2",
+      "name": "compliancePeriod",
+      "propertyType": "number",
+      "description": "Begunstigingstermijn in dagen",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "ac97c98e-1710-5925-9f10-304e235b156c",
+      "name": "bronInspectie",
+      "propertyType": "string",
+      "description": "Referentie naar de toezichtzaak",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "e14587b0-6ca6-5586-bfc1-9018ac3ca7c4",
+      "name": "bronHandhavingszaak",
+      "propertyType": "string",
+      "description": "Referentie naar de handhavingszaak",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    },
+    {
+      "id": "a527ee63-7431-5f95-a619-4e27beb5b176",
+      "name": "verbeurdBedrag",
+      "propertyType": "number",
+      "description": "Verbeurd bedrag (EUR)",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    },
+    {
+      "id": "132fd3b0-3b28-5b39-9707-7312e6ff43ef",
+      "name": "verbeuringsDatum",
+      "propertyType": "date",
+      "description": "Datum van verbeuring",
+      "caseType": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+    }
+  ],
+  "documentTypes": [
+    {
+      "id": "f666ba38-f249-511e-b8d5-347f9907a4f3",
+      "name": "Bouwtekening",
+      "description": "Technische bouwtekeningen",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "a16841c9-1e56-5c61-8e74-6c0b4972442e",
+      "name": "Constructieberekening",
+      "description": "Constructieve berekeningen",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "49edaf92-4060-5f94-9abe-d82f0df0f538",
+      "name": "Situatietekening",
+      "description": "Situatietekening van het perceel",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "8f343124-5e03-54ca-9215-3f17f6b57d1c",
+      "name": "Welstandsadvies",
+      "description": "Advies van de welstandscommissie",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "a7747d6a-1726-5488-bb7d-22b928ab8730",
+      "name": "Foto's bestaande situatie",
+      "description": "Foto's van de huidige situatie",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "8a8e03cd-bbe6-51ab-9dd0-b8ccc2ebe95d",
+      "name": "Besluit",
+      "description": "Het vergunningsbesluit",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "b6967107-6835-57dd-9be0-b4aba9ff2fe4",
+      "name": "Bekendmakingstekst",
+      "description": "Tekst voor publicatie van het besluit",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
+      "id": "55d3196d-cf5b-5d86-83a5-696368934adf",
+      "name": "Sloopplan",
+      "description": "Plan voor de sloopwerkzaamheden",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "3051f03e-125c-501b-a344-fcc9d97952d6",
+      "name": "Asbestinventarisatie",
+      "description": "Rapport asbestinventarisatie",
+      "caseType": "4f6f897c-20c9-5f3e-9242-025df86ca038"
+    },
+    {
+      "id": "bd750f71-8095-51d6-83d9-50fb15f09deb",
+      "name": "Constateringsrapport",
+      "description": "Rapport van constateringen tijdens inspectie",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "81458f3d-7edd-5d2d-96e8-c54bdebf6153",
+      "name": "Inspectieapport",
+      "description": "Formeel inspectierapport",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "94781a5b-5bff-50e2-853e-858caa8b8e9a",
+      "name": "Foto's",
+      "description": "Foto's gemaakt tijdens inspectie",
+      "caseType": "fd452b2a-0f6c-5dee-9f52-339e836567bd"
+    },
+    {
+      "id": "6e0f3d3d-4b88-5b7e-8092-9311cae12da5",
+      "name": "Constateringsrapport",
+      "description": "Rapport van de constatering",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "c84a3fe2-e938-55c4-8623-9c0d21f8464a",
+      "name": "Vooraankondigingsbrief",
+      "description": "Brief vooraankondiging handhaving",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "4a0eb7fc-6aed-55bd-9959-ae0e7a0059c2",
+      "name": "Handhavingsbesluit",
+      "description": "Het handhavingsbesluit",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "9830e346-b8c4-5804-a3dc-0ca6a13dc9bf",
+      "name": "Dwangsombeschikking",
+      "description": "Beschikking last onder dwangsom",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    },
+    {
+      "id": "bb207d52-ab01-5c1e-bad8-fd17a32ba6b6",
+      "name": "Hercontrolerapport",
+      "description": "Rapport van de hercontrole",
+      "caseType": "9e4fe525-6aac-525c-978e-c3d74bc0213d"
+    }
+  ]
+}
