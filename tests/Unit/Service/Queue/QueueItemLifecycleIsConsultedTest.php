@@ -61,7 +61,9 @@ use OCA\Dossiq\Service\Queue\QueueSource;
 use OCA\Dossiq\Service\Queue\QueueSourceCatalogue;
 use OCA\Dossiq\Service\Queue\QueueViewPreferences;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueCaseFacts;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
+use OCA\Dossiq\Service\Queue\UrgencyScorer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\WorkQueueService;
@@ -149,6 +151,8 @@ class LifecycleFakeSource implements QueueSource {
  * @uses \OCA\Dossiq\Service\Queue\QueueSourceCatalogue
  * @uses \OCA\Dossiq\Service\Queue\QueueViewPreferences
  * @uses \OCA\Dossiq\Service\WorkQueueService
+ * @uses \OCA\Dossiq\Service\Queue\UrgencyScorer
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Queue\QueueSource
  * @uses \OCA\Dossiq\Service\SettingsService
@@ -397,9 +401,9 @@ class QueueItemLifecycleIsConsultedTest extends TestCase {
 			settingsService: $this->createMock(originalClassName: SettingsService::class),
 			engineTasks: $this->createMock(originalClassName: EngineTaskInbox::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			dates: $this->caseDates(),
 			urgencySettings: new QueueUrgencySettings(settings: $this->createMock(originalClassName: SettingsService::class)),
-			journal: $this->createMock(originalClassName: CaseJournal::class),
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class)),
+			caseFacts: new QueueCaseFacts(settingsService: $this->createMock(SettingsService::class), journal: $this->createMock(originalClassName: CaseJournal::class), dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class)),
 		);
 	}//end scorer()
 
