@@ -13,10 +13,9 @@
  * - npsLv01: the person as dossiq knows them, as the initiator of a case
  *   (initiatorType person, initiatorSourceId = BSN). Dossiq is not a BRP; a
  *   BSN no case names is an empty answer, because dossiq looked.
- * - zakLk01, edcLk01: refused. Dossiq takes case and document changes through
- *   its own API and forms, not over an unauthenticated-user StUF write path.
- *   A refusal is a StUF Fo01 to the case system, where the old stub answered
- *   a Bv01 for a change it never made.
+ * - zakLk01, edcLk01: not this listener's. {@see StufProviderWriteListener}
+ *   carries them out (decision 206). One that reaches this listener anyway is
+ *   refused.
  *
  * Replaces StufZknMessageResponder, whose four handlers were stubs.
  *
