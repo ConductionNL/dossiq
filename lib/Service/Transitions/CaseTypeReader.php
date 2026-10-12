@@ -61,7 +61,8 @@ class CaseTypeReader {
 	 *
 	 * @param string $caseTypeId CaseType UUID.
 	 *
-	 * @return array{suspensionAllowed: bool, extensionAllowed: bool, extensionPeriod: string, initialStatus: string, title: string}
+	 * @return array{suspensionAllowed: bool, extensionAllowed: bool, extensionPeriod: string,
+	 *               maxExtensions: int|null, initialStatus: string, title: string}
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -72,10 +73,31 @@ class CaseTypeReader {
 			'suspensionAllowed' => $this->flag(value: ($row['suspensionAllowed'] ?? false)),
 			'extensionAllowed' => $this->flag(value: ($row['extensionAllowed'] ?? false)),
 			'extensionPeriod' => (string)($row['extensionPeriod'] ?? ''),
+			'maxExtensions' => $this->limit(value: ($row['maxExtensions'] ?? null)),
 			'initialStatus' => (string)($row['initialStatus'] ?? ''),
 			'title' => $this->text->textOf(value: ($row['title'] ?? ($row['name'] ?? null))),
 		];
 	}//end read()
+
+	/**
+	 * How often a term may be extended, or null when the case type states no limit.
+	 *
+	 * Anything that is not a whole number above zero is no limit: an empty
+	 * field must not read as "never", which `extensionAllowed` already says.
+	 *
+	 * @param mixed $value The stored value.
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	private function limit(mixed $value): ?int {
+		if (is_numeric($value) === false || (int)$value < 1) {
+			return null;
+		}
+
+		return (int)$value;
+	}//end limit()
 
 	/**
 	 * The payment rule one case type declares, or null when it declares none.

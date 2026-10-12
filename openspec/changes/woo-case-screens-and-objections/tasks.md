@@ -33,12 +33,19 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
 
 ## 2. Extend and decide from the case page
 
-- [ ] 2.1 Add `src/dialogs/WooExtendDialog.vue` and header action `woo-extend`, visible while the
+- [x] 2.1 Add `src/dialogs/WooExtendDialog.vue` and header action `woo-extend`, visible while the
   term runs and `countExtensions` is 0. Reason is required. Show the new deadline and the
   `noticeStatus` and `noticeReason` from the response; show a 409 sentence as is (REQ-WCS-002).
   - vitest `src/dialogs/__tests__/WooExtendDialog.spec.js`: `testAReasonIsRequired`,
     `testItShowsThatTheRequesterWasNotTold`, `testA409IsShownAsTheServerSaysIt`.
   - **fails today**: `WooScreensManifestTest::testTheExtendActionIsHiddenAfterOneExtension`.
+  - Built: generic per decision 182, not as written. No `WooExtendDialog` and no `woo-extend` action. The
+    Extend term act of `CaseLifecycleMenuDialog` (board DqVolgendeStap) got a case type limit
+    (`caseType.maxExtensions`, REQ-TEL-001) and says whether the requester was told (REQ-TEL-002). The
+    Woo case type states `maxExtensions` 1. Tests: `CaseLifecycleServiceTest`,
+    `CaseTypeReaderExtensionLimitTest`, `CaseLifecycleControllerTest`, `CaseBulkActionsTest`, vitest
+    `caseLifecycleMenu.spec.js` and `caseLifecycleHelpers.spec.js`. Red first:
+    dq-l10-logs/r5/red-extension-limit.log.
 - [ ] 2.2 Add `src/dialogs/WooDecisionDialog.vue` and header action `woo-decide`, visible while the
   case has no Woo decision. It counts the assessments per classification from the section's data,
   disables submit while any document is outstanding and names it, and posts

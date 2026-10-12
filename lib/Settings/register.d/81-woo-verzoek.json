@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.2",
+          "version": "1.4.3",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -471,7 +471,8 @@
         ],
         "documentReview": {
           "enabled": true
-        }
+        },
+        "maxExtensions": 1
       },
       {
         "@self": {

@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.18.0",
+                "version": "1.19.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -414,6 +414,12 @@
                                 }
                             }
                         }
+                    },
+                    "maxExtensions": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "How often the term of a case of this type may be extended. An extension past this number is refused and the refusal says so. Leave it empty and the number is bounded only by the term's own rule.",
+                        "title": "Maximum number of extensions"
                     },
                     "maxSuspensionDays": {
                         "type": "integer",

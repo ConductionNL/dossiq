@@ -460,7 +460,7 @@ class CaseLifecycleServiceTest extends TestCase {
 	 *
 	 * @return CaseLifecycleService The service, wired to the mirroring fakes.
 	 */
-	private function serviceWithTheDeadlineMirror(): CaseLifecycleService {
+	private function serviceWithTheDeadlineMirror(array $notice = []): CaseLifecycleService {
 		$this->case['deadline'] = '2026-09-01';
 		$this->case['statutoryDeadline'] = '2026-09-01';
 
@@ -495,7 +495,7 @@ class CaseLifecycleServiceTest extends TestCase {
 
 		$extensionService = $this->createMock(DeadlineExtensionService::class);
 		$extensionService->method('requestExtension')->willReturnCallback(
-			fn (string $termInstanceId, string $rationale, string $newEndDate): array => $mirror($newEndDate)
+			fn (string $termInstanceId, string $rationale, string $newEndDate): array => ($mirror($newEndDate) + $notice)
 		);
 
 		return new CaseLifecycleService(
@@ -551,4 +551,122 @@ class CaseLifecycleServiceTest extends TestCase {
 		$this->assertSame('2026-09-15', $this->case['statutoryDeadline']);
 		$this->assertStringContainsString('"type":"extend"', (string)$this->case['activity']);
 	}//end testExtendOnATermSavesTheCaseTheMirrorWrote()
+
+	/**
+	 * A case type that states how often its term may be extended is held to
+	 * it: the extension past the limit is refused by name, and the state says
+	 * beforehand that it is no longer offered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testExtendIsRefusedOnceTheCaseTypesLimitIsReached(): void {
+		$service = $this->serviceLimitedTo(maxExtensions: 1);
+
+		$this->assertTrue($service->state(caseId: 'case-1')['canExtend']);
+		$this->assertSame(1, $service->state(caseId: 'case-1')['maxExtensions']);
+
+		$state = $service->extend(caseId: 'case-1', reason: 'Zienswijzen van derden');
+
+		$this->assertSame(1, $state['extensionCount']);
+		$this->assertFalse($state['canExtend'], 'the one extension is used');
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('extension_limit_reached');
+
+		$service->extend(caseId: 'case-1', reason: 'Nog een keer');
+	}//end testExtendIsRefusedOnceTheCaseTypesLimitIsReached()
+
+	/**
+	 * A case type that states no limit keeps the behaviour it had.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testACaseTypeWithoutALimitAnswersNone(): void {
+		$state = $this->service->state(caseId: 'case-1');
+
+		$this->assertNull($state['maxExtensions']);
+		$this->assertTrue($state['canExtend']);
+	}//end testACaseTypeWithoutALimitAnswersNone()
+
+	/**
+	 * The answer to an extension says whether the requester was told, in the
+	 * words the term engine gave.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
+	 */
+	public function testExtendAnswersWhetherTheRequesterWasTold(): void {
+		$service = $this->serviceWithTheDeadlineMirror(
+			notice: [
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'no-channel',
+				'noticeReason' => 'The requester has no reachable channel.',
+			]
+		);
+
+		$state = $service->extend(caseId: 'case-1', reason: 'Zienswijzen van derden');
+
+		$this->assertSame(
+			[
+				'noticeStatus' => 'not-sent',
+				'noticeChannel' => '',
+				'noticeReasonCode' => 'no-channel',
+				'noticeReason' => 'The requester has no reachable channel.',
+			],
+			$state['notice']
+		);
+	}//end testExtendAnswersWhetherTheRequesterWasTold()
+
+	/**
+	 * A case without a statutory term has no notice to send, and the answer
+	 * says so instead of leaving the key out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
+	 */
+	public function testExtendWithoutATermSaysNoNoticeWasSent(): void {
+		$state = $this->service->extend(caseId: 'case-1', reason: 'Meer onderzoek nodig');
+
+		$this->assertSame('not-sent', $state['notice']['noticeStatus']);
+		$this->assertSame('no-statutory-term', $state['notice']['noticeReasonCode']);
+	}//end testExtendWithoutATermSaysNoNoticeWasSent()
+
+	/**
+	 * The service over a case type that allows a stated number of extensions.
+	 *
+	 * @param int $maxExtensions How often the term may be extended.
+	 *
+	 * @return CaseLifecycleService
+	 */
+	private function serviceLimitedTo(int $maxExtensions): CaseLifecycleService {
+		$caseTypes = $this->createMock(CaseTypeReader::class);
+		$caseTypes->method('read')->willReturn(
+			[
+				'suspensionAllowed' => true,
+				'extensionAllowed' => true,
+				'extensionPeriod' => 'P14D',
+				'maxExtensions' => $maxExtensions,
+				'initialStatus' => 'st-received',
+				'title' => 'Woo-verzoek',
+			]
+		);
+		$caseTypes->method('isFinalStatus')->willReturn(false);
+
+		return new CaseLifecycleService(
+			store: $this->store,
+			caseTypes: $caseTypes,
+			termService: $this->termService,
+			pauseService: $this->pauseService,
+			extensionService: $this->extensionService,
+			logger: $this->createMock(LoggerInterface::class),
+			endings: $this->createMock(originalClassName: CaseEndingActs::class),
+		);
+	}//end serviceLimitedTo()
 }//end class
