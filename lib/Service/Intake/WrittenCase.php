@@ -1,21 +1,20 @@
 <?php
 
 /**
- * Dossiq Woo Written Case (site-woo-request-in-steps D4)
+ * Dossiq written case
  *
  * What a write answered, read once: the case's id, and the case number and
  * deadline the write itself produced. The confirmation a resident reads names
  * both, so they are read back from what was written rather than made up by
  * the caller.
  *
- * Its own class because {@see WooRequestIntake} is at the complexity phpmd
- * refuses, and because "what did the store just answer" is a question about
- * the store's shapes, not about Woo requests. The object service answers an
- * array, an entity with `jsonSerialize()`, or an entity with `getObject()`,
- * depending on its version and the call.
+ * Its own class because "what did the store just answer" is a question about
+ * the store's shapes, not about the request that asked for the write. The
+ * object service answers an array, an entity with `jsonSerialize()`, or an
+ * entity with `getObject()`, depending on its version and the call.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Service
+ * @package  OCA\Dossiq\Service\Intake
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -31,14 +30,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Service\Intake;
 
 /**
  * The id, number and deadline of a case that was just written.
  *
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
  */
-class WooWrittenCase {
+class WrittenCase {
 
 	/**
 	 * What the write answered.

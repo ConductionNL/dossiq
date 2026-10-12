@@ -342,7 +342,7 @@ Kinds: procedure logic moves onto a capability; standards adapter stays code; ge
 | `Woo/WooRequestIntake.php` | 493 | Opens a Woo request case for a resident, optionally from their dossier. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
 | `Woo/WooRequestRefused.php` | 89 | A Woo request that was refused, with the reason as a code. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
 | `Woo/WooRequesterProperties.php` | 174 | The requester details as entries of a case's `properties` bag. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
-| `Woo/WooWrittenCase.php` | 128 | The id, number and deadline of a case that was just written. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
+| `Service/Intake/WrittenCase.php` (was `Woo/WooWrittenCase.php`) | 128 | The id, number and deadline of a case that was just written. | procedure logic | C10 request intake from a form | OpenRegister forms + dossiq Intake core |
 
 ## migration
 

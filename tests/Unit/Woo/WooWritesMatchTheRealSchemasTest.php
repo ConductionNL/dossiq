@@ -57,7 +57,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses   \OCA\Dossiq\Woo\WooCaseLedger
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRequestForm

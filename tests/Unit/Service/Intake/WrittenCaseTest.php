@@ -21,7 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Intake;
 
 use JsonSerializable;
-use OCA\Dossiq\Woo\WooWrittenCase;
+use OCA\Dossiq\Service\Intake\WrittenCase;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
  *
  * The fixture is a neutral case: nothing in it belongs to one procedure.
  *
- * @covers \OCA\Dossiq\Woo\WooWrittenCase
+ * @covers \OCA\Dossiq\Service\Intake\WrittenCase
  *
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
  */
@@ -57,7 +57,7 @@ class WrittenCaseTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnArrayAnswerIsReadAsItIs(): void {
-		$read = (new WooWrittenCase())->read(saved: $this->row());
+		$read = (new WrittenCase())->read(saved: $this->row());
 
 		self::assertSame('case-1', $read['id']);
 		self::assertSame(
@@ -77,7 +77,7 @@ class WrittenCaseTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheIdComesFromSelfThenIdThenUuid(): void {
-		$case = new WooWrittenCase();
+		$case = new WrittenCase();
 
 		self::assertSame('self-id', $case->read(saved: ['@self' => ['id' => 'self-id'], 'id' => 'top', 'uuid' => 'u'])['id']);
 		self::assertSame('top', $case->read(saved: ['id' => 'top', 'uuid' => 'u'])['id']);
@@ -120,7 +120,7 @@ class WrittenCaseTest extends TestCase {
 			}//end getUuid()
 		};
 
-		$read = (new WooWrittenCase())->read(saved: $entity);
+		$read = (new WrittenCase())->read(saved: $entity);
 
 		self::assertSame('entity-uuid', $read['id']);
 		self::assertSame('Z-2026-000123', $read['answer']['identifier']);
@@ -153,7 +153,7 @@ class WrittenCaseTest extends TestCase {
 			}//end getObject()
 		};
 
-		$read = (new WooWrittenCase())->read(saved: $entity);
+		$read = (new WrittenCase())->read(saved: $entity);
 
 		self::assertSame('case-1', $read['id']);
 		self::assertSame('2026-11-09', $read['answer']['deadline']);
@@ -165,7 +165,7 @@ class WrittenCaseTest extends TestCase {
 	 * @return void
 	 */
 	public function testABlankOrMissingValueIsLeftOut(): void {
-		$read = (new WooWrittenCase())->read(saved: ['id' => 'case-2', 'identifier' => '  ', 'deadline' => '2026-11-09']);
+		$read = (new WrittenCase())->read(saved: ['id' => 'case-2', 'identifier' => '  ', 'deadline' => '2026-11-09']);
 
 		self::assertSame(['deadline' => '2026-11-09'], $read['answer']);
 	}//end testABlankOrMissingValueIsLeftOut()
@@ -176,7 +176,7 @@ class WrittenCaseTest extends TestCase {
 	 * @return void
 	 */
 	public function testSomethingUnreadableAnswersNothing(): void {
-		$case = new WooWrittenCase();
+		$case = new WrittenCase();
 
 		self::assertSame(['id' => '', 'answer' => []], $case->read(saved: null));
 		self::assertSame(['id' => '', 'answer' => []], $case->read(saved: 'not a row'));

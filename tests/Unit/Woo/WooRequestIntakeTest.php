@@ -43,7 +43,7 @@ use RuntimeException;
  * caller either has.
  *
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader

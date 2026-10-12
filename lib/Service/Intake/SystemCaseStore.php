@@ -36,7 +36,6 @@ namespace OCA\Dossiq\Service\Intake;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\UnscopedObjectReader;
-use OCA\Dossiq\Woo\WooWrittenCase;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -159,6 +158,6 @@ class SystemCaseStore {
 			return null;
 		}
 
-		return (new WooWrittenCase())->read(saved: $saved);
+		return (new WrittenCase())->read(saved: $saved);
 	}//end write()
 }//end class
