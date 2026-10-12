@@ -28,6 +28,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @spec openspec/specs/admin-settings/spec.md
+ * @spec openspec/changes/import-vocabulary-guard/specs/admin-settings/spec.md
  */
 
 declare(strict_types=1);
@@ -133,6 +134,236 @@ class ShippedDeclarationsOpenRegisterAcceptsTest extends TestCase {
 			. 'simply never created. Slugless: ' . implode(', ', $slugless)
 		);
 	}//end testEveryMergedSchemaCarriesASlug()
+
+	/**
+	 * Every property key is one OpenRegister's import accepts.
+	 *
+	 * OpenRegister refuses a property key outside its vocabulary, and a
+	 * refusal rejects the WHOLE schema: the import logs `PARTIAL IMPORT`, the
+	 * register keeps the schema it already had, and the app's own import
+	 * still reads as done. Measured 2026-10-11 on a live upgrade, where two
+	 * such values cost the case schema this round's changes. The accepted
+	 * vocabulary is the snapshot in `tests/schemas/openregister-accepted-vocabulary.json`,
+	 * read from OpenRegister's own published endpoints.
+	 *
+	 * @return void
+	 */
+	public function testEveryPropertyKeyIsOneOpenRegisterAccepts(): void {
+		$vocabulary = $this->acceptedVocabulary();
+		$offenders = [];
+		foreach ($this->walkedProperties() as $path => $property) {
+			foreach (array_keys($property) as $key) {
+				if ($this->isAcceptedKey(key: (string)$key, vocabulary: $vocabulary) === false) {
+					$offenders[] = $path . ' ' . $key;
+				}
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$offenders,
+			'OpenRegister refuses these property keys, and one refusal rejects the whole schema at import: '
+			. implode(', ', $offenders)
+		);
+	}//end testEveryPropertyKeyIsOneOpenRegisterAccepts()
+
+	/**
+	 * Every closed-list modifier carries a value OpenRegister accepts.
+	 *
+	 * `inputControl` is the control a LIST surface renders to filter on a
+	 * field, not a form widget. `textarea` shipped on
+	 * `aanvullingsverzoek.applicantAnswer` and OpenRegister refused the whole
+	 * schema. A long text gets its textarea on a form from `maxLength` alone.
+	 *
+	 * @return void
+	 */
+	public function testEveryClosedListModifierCarriesAValueOpenRegisterAccepts(): void {
+		$allowed = $this->acceptedVocabulary()['allowedValues'];
+		$this->assertArrayHasKey('inputControl', $allowed);
+		$this->assertArrayHasKey('matchType', $allowed);
+
+		$offenders = [];
+		$seen = 0;
+		foreach ($this->walkedProperties() as $path => $property) {
+			foreach ($allowed as $key => $values) {
+				if (array_key_exists($key, $property) === false) {
+					continue;
+				}
+
+				$seen++;
+				$value = $property[$key];
+				if (is_string($value) === false || in_array(strtolower(trim($value)), $values, true) === false) {
+					$offenders[] = $path . ' ' . $key . '=' . json_encode($value);
+				}
+			}
+		}
+
+		// A walk that reached nothing would pass every time.
+		$this->assertGreaterThan(100, $seen, 'The walk reached almost no inputControl or matchType declarations');
+		$this->assertSame(
+			[],
+			$offenders,
+			'OpenRegister refuses these values, and one refusal rejects the whole schema at import: '
+			. implode(', ', $offenders)
+		);
+	}//end testEveryClosedListModifierCarriesAValueOpenRegisterAccepts()
+
+	/**
+	 * Every role an extending-form map names is one OpenRegister accepts.
+	 *
+	 * `hideOnCreate` is a nextcloud-vue 2.79.0 form role. OpenRegister refused
+	 * it as an unknown key until it learned form roles, and the refusal
+	 * rejected the case schema. The pin below holds both halves: the case
+	 * declaration maps it, and OpenRegister accepts it.
+	 *
+	 * @return void
+	 */
+	public function testEveryExtendsFormRoleIsOneOpenRegisterAccepts(): void {
+		$vocabulary = $this->acceptedVocabulary();
+		$annotation = $vocabulary['extendsForm']['annotation'];
+		$accepted = array_merge(
+			array_keys($vocabulary['extendsForm']['sourceAliases']),
+			$vocabulary['extendsForm']['formRoles']
+		);
+
+		$declarations = [];
+		foreach ($this->schemas() as $name => $schema) {
+			$this->collectDeclarations(node: $schema, annotation: $annotation, path: $name, found: $declarations);
+		}
+
+		$this->assertArrayHasKey('case/properties/caseType', $declarations, 'The case form declaration was not found');
+
+		$offenders = [];
+		foreach ($declarations as $path => $declaration) {
+			foreach (array_keys(($declaration['map'] ?? [])) as $role) {
+				$role = (string)$role;
+				if ($this->isAcceptedKey(key: $role, vocabulary: $vocabulary) === false
+					&& in_array($role, $accepted, true) === false
+				) {
+					$offenders[] = $path . ' ' . $role;
+				}
+			}
+		}
+
+		$this->assertArrayHasKey('hideOnCreate', $declarations['case/properties/caseType']['map']);
+		$this->assertContains('hideOnCreate', $vocabulary['extendsForm']['formRoles']);
+		$this->assertSame(
+			[],
+			$offenders,
+			'OpenRegister refuses these extending-form roles, which rejects the whole schema at import: '
+			. implode(', ', $offenders)
+		);
+	}//end testEveryExtendsFormRoleIsOneOpenRegisterAccepts()
+
+	/**
+	 * Whether OpenRegister accepts a property key.
+	 *
+	 * @param string               $key        The key.
+	 * @param array<string, mixed> $vocabulary The accepted vocabulary.
+	 *
+	 * @return bool
+	 */
+	private function isAcceptedKey(string $key, array $vocabulary): bool {
+		if (in_array($key, $vocabulary['keys'], true) === true) {
+			return true;
+		}
+
+		if (str_starts_with($key, $vocabulary['vendorExtensionPrefix']) === true) {
+			return true;
+		}
+
+		$localisation = $vocabulary['localisation'];
+		$separator = $localisation['separator'];
+		$parts = explode($separator, $key, 2);
+
+		return count($parts) === 2
+			&& in_array($parts[0], $localisation['keys'], true) === true
+			&& preg_match($localisation['languageTagPattern'], $parts[1]) === 1;
+	}//end isAcceptedKey()
+
+	/**
+	 * Every property of every merged schema, nested ones included.
+	 *
+	 * @return array<string, array<string, mixed>> Path to property.
+	 */
+	private function walkedProperties(): array {
+		$found = [];
+		foreach ($this->schemas() as $name => $schema) {
+			$this->walkProperties(properties: ($schema['properties'] ?? []), path: $name, found: $found);
+		}
+
+		$this->assertNotEmpty($found, 'The walk found no properties at all');
+
+		return $found;
+	}//end walkedProperties()
+
+	/**
+	 * Walk a properties map, descending into object and array-item properties.
+	 *
+	 * @param mixed                               $properties The properties map.
+	 * @param string                              $path       Where it sits.
+	 * @param array<string, array<string, mixed>> $found      Collected properties.
+	 *
+	 * @return void
+	 */
+	private function walkProperties(mixed $properties, string $path, array &$found): void {
+		if (is_array($properties) === false) {
+			return;
+		}
+
+		foreach ($properties as $name => $property) {
+			if (is_array($property) === false) {
+				continue;
+			}
+
+			$here = $path . '/' . (string)$name;
+			$found[$here] = $property;
+			$this->walkProperties(properties: ($property['properties'] ?? []), path: $here, found: $found);
+			$items = ($property['items'] ?? null);
+			if (is_array($items) === true) {
+				$this->walkProperties(properties: ($items['properties'] ?? []), path: $here . '[]', found: $found);
+			}
+		}
+	}//end walkProperties()
+
+	/**
+	 * Collect every extending-form declaration under a node.
+	 *
+	 * @param mixed                               $node       The node.
+	 * @param string                              $annotation The annotation key.
+	 * @param string                              $path       Where the node sits.
+	 * @param array<string, array<string, mixed>> $found      Collected declarations.
+	 *
+	 * @return void
+	 */
+	private function collectDeclarations(mixed $node, string $annotation, string $path, array &$found): void {
+		if (is_array($node) === false) {
+			return;
+		}
+
+		foreach ($node as $key => $child) {
+			if ((string)$key === $annotation && is_array($child) === true) {
+				$found[$path] = $child;
+				continue;
+			}
+
+			$this->collectDeclarations(node: $child, annotation: $annotation, path: $path . '/' . (string)$key, found: $found);
+		}
+	}//end collectDeclarations()
+
+	/**
+	 * The snapshot of what OpenRegister's import accepts.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function acceptedVocabulary(): array {
+		$path = __DIR__ . '/../../schemas/openregister-accepted-vocabulary.json';
+		$decoded = json_decode((string)file_get_contents($path), true);
+		$this->assertIsArray($decoded, 'tests/schemas/openregister-accepted-vocabulary.json must be readable JSON');
+		$this->assertNotEmpty($decoded['keys'] ?? [], 'The vocabulary snapshot lists no keys');
+
+		return $decoded;
+	}//end acceptedVocabulary()
 
 	/**
 	 * The merged schema map.

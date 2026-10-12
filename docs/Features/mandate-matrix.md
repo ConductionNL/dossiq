@@ -53,4 +53,4 @@ Automates the Dutch mandaatregeling (Awb art. 10:3): replaces static Word/Excel 
 - `MandaatGebruik` (write-once audit)
 - `MandaatEscalatie`
 
-See [ADR-000](../../openspec/architecture/adr-000-data-model.md) for field definitions.
+See [ADR-000](https://github.com/ConductionNL/dossiq/blob/development/openspec/architecture/adr-000-data-model.md) for field definitions.

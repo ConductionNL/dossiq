@@ -31,7 +31,9 @@ use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
+use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -52,6 +54,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\PagesSeen
  */
 class WOOAssessmentControllerTest extends TestCase {
 
@@ -269,6 +275,56 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testBulkAssessWithAnUnknownGroundAnswers422()
 
 	/**
+	 * A verdict on an in-scope document whose required pages are unseen is not stored, and the answer names the pages.
+	 *
+	 * @return void
+	 */
+	public function testBulkAssessRefusesUnseenPages(): void {
+		$store = new InMemoryRegister();
+		$store->seed(schema: 'document', uuid: 'doc-001', row: ['case' => 'case-uuid-001']);
+		$store->seed(schema: 'document', uuid: 'doc-002', row: ['case' => 'case-uuid-001']);
+		$store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-001', 'relevance' => 'in-scope', 'pagesRequired' => [1, 2, 3], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
+		$store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-uuid-001', 'documentRef' => 'doc-002', 'relevance' => 'in-scope', 'pagesRequired' => [1], 'pagesSeen' => [['page' => 1, 'by' => 'j.dejong']]]);
+		$this->request->method('getParam')->willReturnMap([
+			['assessments', [], [
+				['documentRef' => 'doc-001', 'classification' => 'openbaar'],
+				['documentRef' => 'doc-002', 'classification' => 'openbaar'],
+			]],
+		]);
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$config = ['register' => 'dossiq', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview', 'document_schema' => 'document'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($config[$key] ?? ''));
+		$reviews = new DocumentRelevance(settingsService: $settings, logger: $this->logger);
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, reviews: $reviews);
+		$controller = new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$service,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$this->untranslated(),
+		);
+
+		$response = $controller->bulkAssess('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('doc-001', $response->getData()['errors'][0]['documentRef']);
+		$this->assertSame('Open these pages before giving a verdict: 2, 3.', $response->getData()['errors'][0]['errors']['pagesSeen']);
+		$stored = array_column($store->all('wooDocumentAssessment'), 'documentRef');
+		$this->assertSame(['doc-002'], $stored);
+	}//end testBulkAssessRefusesUnseenPages()
+
+	/**
 	 * An unreadable list refuses the whole call with 503 and the rule.
 	 *
 	 * @return void
@@ -388,6 +444,34 @@ class WOOAssessmentControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}//end testCreateDecisionReturns422WhenDocumentsOutstanding()
+
+	/**
+	 * A decision that waits for unseen pages answers 409 naming the documents and pages; publish does the same.
+	 *
+	 * @return void
+	 */
+	public function testDecisionAndPublishAnswer409NamingTheUnseenPages(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['decision', [], []], ['decisionId', '', '']]);
+		$this->decisionService->method('assembleDecision')->willThrowException(
+			new RefusedException(rule: 'review-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
+		);
+		$this->decisionService->method('unseenPages')->willReturn(['doc-7' => [7]]);
+		$this->publicationService->method('publish')->willReturn(['available' => false, 'reason' => 'pages_unseen', 'unseen' => ['doc-7' => [7]]]);
+
+		$decision = $this->controller->createDecision('case-uuid-001');
+		$this->assertSame(409, $decision->getStatus());
+		$this->assertSame('review-pages-unseen', $decision->getData()['error']);
+		$this->assertSame(['doc-7' => [7]], $decision->getData()['unseen']);
+
+		$published = $this->controller->publishDecision('case-uuid-001');
+		$this->assertSame(409, $published->getStatus());
+		$this->assertSame(['doc-7' => [7]], $published->getData()['unseen']);
+		$this->assertSame('Publishing waits until every required page has been seen.', $published->getData()['message']);
+	}//end testDecisionAndPublishAnswer409NamingTheUnseenPages()
 
 	/**
 	 * PublishDecision returns 401 when user is not authenticated.
@@ -532,6 +616,45 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->assertTrue($data['available']);
 		$this->assertSame('pub-001', $data['publicationId']);
 	}//end testPublishDecisionReturnsResultWhenAuthenticated()
+
+	/**
+	 * The publish answer carries the delivered set's id (woo-delivered-set-is-a-record REQ-WDS-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function testPublishDecisionAnswersTheSetId(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->publicationService->method('publish')->willReturn(['available' => true, 'publicationId' => 'pub-001', 'deliveredSet' => 'set-001']);
+
+		$response = $this->controller->publishDecision('case-uuid-001');
+
+		$this->assertSame('set-001', $response->getData()['deliveredSet']);
+	}//end testPublishDecisionAnswersTheSetId()
+
+	/**
+	 * An unrecorded delivered set refuses the publish with 503 and a sentence.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 */
+	public function testAnUnrecordedSetRefusesThePublish(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->publicationService->method('publish')->willReturn(['available' => false, 'reason' => 'delivered_set_not_written']);
+
+		$response = $this->controller->publishDecision('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertStringContainsString('recorded', $response->getData()['message']);
+	}//end testAnUnrecordedSetRefusesThePublish()
 
 	/**
 	 * WithdrawPublication returns 401 when user is not authenticated.
@@ -749,4 +872,63 @@ class WOOAssessmentControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 	}//end testReviewRedactionProposalMapsRuntimeFailureTo400()
+
+	/**
+	 * Another reviewer's proposal is refused with 403 and its rule, not a 400 (REQ-CRA-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testReviewRedactionProposalRefusesAnotherReviewersProposal(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('p.bakker');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['decision', '', 'approve'],
+			['spans', null, null],
+		]);
+
+		$this->anonymisationAssist->method('reviewProposal')->willThrowException(
+			new \OCA\Dossiq\Exception\RefusedException(
+				rule: 'owned-by-another-reviewer',
+				sentence: 'Another reviewer assessed this document.',
+				status: Http::STATUS_FORBIDDEN,
+			)
+		);
+
+		$response = $this->controller->reviewRedactionProposal('case-uuid-001', 'doc-uuid-001');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('owned-by-another-reviewer', $response->getData()['error']);
+	}//end testReviewRedactionProposalRefusesAnotherReviewersProposal()
+
+	/**
+	 * Proposing on another reviewer's assessment is refused the same way.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testProposeRedactionRefusesAnotherReviewersAssessment(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('p.bakker');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([['text', '', 'Jan Jansen woont hier']]);
+
+		$this->anonymisationAssist->method('proposeSpans')->willThrowException(
+			new \OCA\Dossiq\Exception\RefusedException(
+				rule: 'owned-by-another-reviewer',
+				sentence: 'Another reviewer assessed this document.',
+				status: Http::STATUS_FORBIDDEN,
+			)
+		);
+
+		$response = $this->controller->proposeRedaction('case-uuid-001', 'doc-uuid-001');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('owned-by-another-reviewer', $response->getData()['error']);
+	}//end testProposeRedactionRefusesAnotherReviewersAssessment()
 }//end class

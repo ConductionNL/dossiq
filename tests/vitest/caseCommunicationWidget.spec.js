@@ -129,57 +129,48 @@ describe('the Communication widget', () => {
 })
 
 describe('the Log contact action', () => {
-	it('opens a contactmoment form asking for the handler fields only', () => {
+	// parties-and-contact-moments-consume-pipelinq 2.5 (board
+	// DqZaakContactmomenten): the action used to be an `open-form` that saved
+	// straight to OpenRegister, so no dossiq service ran, the moment never
+	// reached pipelinq and pipelinq's refusal could not be shown. It opens a
+	// dossiq dialog that posts to the case route, where ContactMomentService
+	// writes the record and seeds the KCC fields the form never asked.
+	it('opens the dossiq dialog, not a form that saves past the service', () => {
 		const logContact = action('log-contact')
 
 		expect(logContact).toBeTruthy()
-		expect(logContact.type).toBe('open-form')
-		expect(logContact.register).toBe('dossiq')
-		expect(logContact.schema).toBe('contactmoment')
-		expect(logContact.includeFields).toEqual([
-			'notificationChannel',
-			'direction',
-			'startTime',
-			'summary',
-			'callerIdentification',
-			// timeline-entries-default-internal (#2907): an entry is internal
-			// unless the handler says otherwise, so the form has to carry the
-			// side of the counter rather than leave it to a default nobody saw.
-			'visibleToApplicant',
-		])
-	})
-
-	it('seeds the case it was opened from', () => {
-		expect(action('log-contact').props.case).toBe('@objectId')
-		expect(action('log-contact').props.relatedCases).toEqual(['@objectId'])
-	})
-
-	it('seeds every required property the form does not ask for', () => {
-		const logContact = action('log-contact')
-		const required = contactmoment().required
-		const asked = new Set(logContact.includeFields)
-		const seeded = new Set(Object.keys(logContact.props))
-
-		const missing = required.filter(
-			(key) => asked.has(key) === false && seeded.has(key) === false,
-		)
+		expect(logContact.type).toBe('open-modal')
+		expect(logContact.target).toBe('LogContactDialog')
 		expect(
-			missing,
-			'a required property that is neither asked nor seeded makes every save from this button a 400',
-		).toEqual([])
+			logContact.register,
+			'an open-modal action writes nothing itself',
+		).toBeUndefined()
 	})
 
-	it('asks for or seeds nothing the schema does not declare', () => {
-		const logContact = action('log-contact')
-		const properties = Object.keys(contactmoment().properties)
+	it('hands the dialog the case it was opened from', () => {
+		expect(action('log-contact').props.caseId).toBe('@objectId')
+	})
 
-		for (const key of [
-			...logContact.includeFields,
-			...Object.keys(logContact.props),
-		]) {
-			expect(properties, `${key} is not a contactmoment property`).toContain(
-				key,
-			)
-		}
+	it('posts to the case route that runs ContactMomentService', () => {
+		const dialog = fs.readFileSync(
+			path.resolve(__dirname, '../../src/dialogs/LogContactDialog.vue'),
+			'utf8',
+		)
+		const api = fs.readFileSync(
+			path.resolve(__dirname, '../../src/services/pipelinqCaseApi.js'),
+			'utf8',
+		)
+		const routes = fs.readFileSync(
+			path.resolve(__dirname, '../../appinfo/routes.php'),
+			'utf8',
+		)
+
+		expect(dialog).toContain('logContactMoment(')
+		expect(api).toContain(
+			"axios.post(caseUrl(caseId, '/contact-moments'), moment)",
+		)
+		expect(routes).toMatch(
+			/pipelinqContactMoment#logContactMoment'[^\n]*\/api\/cases\/\{caseId\}\/pipelinq\/contact-moments'[^\n]*'POST'/,
+		)
 	})
 })

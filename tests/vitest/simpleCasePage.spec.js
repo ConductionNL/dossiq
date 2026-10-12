@@ -244,7 +244,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 26 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 28 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -258,12 +258,12 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(26)
+		expect(placed).toHaveLength(28)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
 		expect(count('Case')).toBe(16)
 		expect(count('Publication')).toBe(3)
-		expect(count('Dossier')).toBe(1)
+		expect(count('Dossier')).toBe(3)
 		expect(count('admin')).toBe(2)
 	})
 
@@ -353,13 +353,13 @@ describe('the tabs', () => {
 	const tabsOf = (config) =>
 		config.widgets.find((widget) => widget.id === 'case-panels').content
 
-	it('shows five and keeps the other nine under More, losing none', () => {
+	it('shows five and keeps the other ten under More, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow).map((tab) => tab.label),
 		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'History'])
-		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(9)
+		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(10)
 		const widgetIds = (content) => content.tabs.map((tab) => tab.widgetId).sort()
 		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
 	})
@@ -394,11 +394,11 @@ describe('the tabs', () => {
 		// reads, holds all of them. The simple page reads that collection.
 		expect('stagesEndpoint' in find(simple, 'case-stages').content).toBe(false)
 
+		// The deadline tile only loses its own label in the side column, where
+		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline']
 		const others = (config) =>
-			config.widgets.filter(
-				(widget) =>
-					widget.id !== 'case-panels' && widget.id !== 'case-stages',
-			)
+			config.widgets.filter((widget) => !patched.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})
@@ -469,21 +469,25 @@ describe('the tabs', () => {
 				.map((entry) => entry.id)
 				.filter((id) => !gone.includes(id)),
 		)
+		// The body is ONE full-width column in the simple structure: the side
+		// column leaves the grid 824px wide, under the library's 1000px
+		// breakpoint, so the grid is a single stacked column at every desktop
+		// width and the order is the order of `gridY`. The tabs card (`5`) leads,
+		// as DqZaak draws it, and hours booked (`6`) follows the plan, terms and
+		// flows. Sizes are the manifest's, except three that would scroll inside.
 		for (const entry of simple.layout) {
 			const was = original.layout.find((item) => item.id === entry.id)
-			if (entry.id === '6') {
-				// Hours booked moves to where the stages were, beside the tabs.
-				expect(entry).toEqual({
-					...was,
-					gridX: 9,
-					gridY: 4,
-					gridWidth: 3,
-					gridHeight: 2,
-				})
-				continue
-			}
-			expect(entry, entry.id).toEqual(was)
+			expect(entry.gridX, entry.id).toBe(0)
+			expect(entry.gridWidth, entry.id).toBe(12)
+			// Taller where the cell would scroll inside: the tabs card (Overview
+			// measured 784px over its 720), the flow runs and hours booked.
+			const taller = { 5: 19, 7: 7, 6: 3 }
+			expect(entry.gridHeight, entry.id).toBe(taller[entry.id] ?? was.gridHeight)
 		}
+		const order = [...simple.layout]
+			.sort((a, b) => a.gridY - b.gridY)
+			.map((entry) => entry.id)
+		expect(order.slice(0, 6)).toEqual(['presence-strip', '5', '12', '11', '7', '6'])
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {

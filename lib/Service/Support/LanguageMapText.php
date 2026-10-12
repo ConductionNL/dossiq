@@ -79,4 +79,28 @@ class LanguageMapText {
 
 		return '';
 	}//end textOf()
+
+	/**
+	 * One value as text, or the fallback when it holds none.
+	 *
+	 * For the places that named a fallback in the cast this replaces, such as
+	 * `(string)($row['title'] ?? $id)`: an empty map, like a missing value,
+	 * answers the fallback rather than an empty label.
+	 *
+	 * @param mixed  $value    A string, a language map, or anything else.
+	 * @param string $fallback The text when the value holds none.
+	 * @param string $language The reader's language code, or '' for none.
+	 *
+	 * @return string The text, or the fallback.
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	public function textOr(mixed $value, string $fallback, string $language = ''): string {
+		$text = $this->textOf(value: $value, language: $language);
+		if ($text === '') {
+			return $fallback;
+		}
+
+		return $text;
+	}//end textOr()
 }//end class

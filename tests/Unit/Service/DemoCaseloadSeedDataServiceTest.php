@@ -69,7 +69,7 @@ final class DemoCaseloadSeedDataServiceTest extends TestCase {
 	 */
 	private const PROCESSING_DAYS = [
 		'omgevingsvergunning' => 56,
-		'subsidieaanvraag' => 42,
+		'subsidieaanvraag' => 56,
 		'klacht-behandeling' => 42,
 		'melding-openbare-ruimte' => 14,
 	];

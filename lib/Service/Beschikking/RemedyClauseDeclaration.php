@@ -39,12 +39,24 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
+
 /**
  * Reads the remedy a case type declares, and writes the clause its decisions print.
  *
  * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
  */
 class RemedyClauseDeclaration {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 */
+	public function __construct(
+		private readonly LanguageMapText $text = new LanguageMapText(),
+	) {
+	}//end __construct()
 
 	/**
 	 * The case type property holding the declaration.
@@ -217,7 +229,7 @@ class RemedyClauseDeclaration {
 			return [];
 		}
 
-		$title = trim((string)($caseType['title'] ?? ''));
+		$title = $this->text->textOf(value: ($caseType['title'] ?? null));
 		if ($title === '') {
 			$title = 'this case type';
 		}

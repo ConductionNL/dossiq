@@ -22,7 +22,7 @@
  * answers 400 and meeting that refusal after the click teaches the holder
  * nothing.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 import axios from '@nextcloud/axios'

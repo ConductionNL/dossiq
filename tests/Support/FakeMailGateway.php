@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Tests\Support;
 
 use OCA\Dossiq\Service\Email\AuthenticationResult;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\Email\OutboundState;
 
 /**
  * An in-memory mail account the intake tests read.
@@ -107,6 +108,20 @@ class FakeMailGateway implements MailGatewayInterface {
 	 * @var string
 	 */
 	public string $dkim = AuthenticationResult::NONE;
+
+	/**
+	 * Every message handed to sendMessage(), with the account it left from.
+	 *
+	 * @var array<int, array{accountId: int, message: array<string, mixed>}>
+	 */
+	public array $sent = [];
+
+	/**
+	 * The state the next sendMessage() answers, one of the OutboundState constants.
+	 *
+	 * @var string
+	 */
+	public string $sendState = OutboundState::SENT;
 
 	/**
 	 * Every move that was asked for, in order.
@@ -342,6 +357,28 @@ class FakeMailGateway implements MailGatewayInterface {
 
 		return $this->synchronisation;
 	}//end unpackSynchronisation()
+
+	/**
+	 * Record the message and answer the configured state.
+	 *
+	 * An unavailable gateway takes nothing, exactly like the real one.
+	 *
+	 * @param integer              $accountId The account.
+	 * @param array<string, mixed> $message   The message.
+	 *
+	 * @return array{state: string, outboxId: int|null} The configured answer.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function sendMessage(int $accountId, array $message): array {
+		if ($this->available === false || $this->sendState === OutboundState::UNAVAILABLE) {
+			return ['state' => OutboundState::UNAVAILABLE, 'outboxId' => null];
+		}
+
+		$this->sent[] = ['accountId' => $accountId, 'message' => $message];
+
+		return ['state' => $this->sendState, 'outboxId' => count($this->sent)];
+	}//end sendMessage()
 
 	/**
 	 * Put one message in a folder, with its raw source.

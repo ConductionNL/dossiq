@@ -23,6 +23,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Review\DocumentRelevance;
+use OCA\Dossiq\Review\PagesSeen;
+use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
@@ -80,6 +84,11 @@ interface WooPublicationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Woo\WooCaseLedger
  * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\PagesSeen
  */
 class WooPublicationServiceTest extends TestCase {
 
@@ -294,6 +303,39 @@ class WooPublicationServiceTest extends TestCase {
 	}//end testCheckAvailabilityReportsAvailable()
 
 	// -- publish() / withdraw() — D6 single-save behaviour -------------------
+
+	/**
+	 * Publish waits for the last page: page 7 of one in-scope document unseen answers pages_unseen naming it, and nothing is sent.
+	 *
+	 * @return void
+	 */
+	public function testPublishWaitsForTheLastPage(): void {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$store = new InMemoryRegister();
+		$store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-001', 'documentRef' => 'doc-7', 'relevance' => 'in-scope', 'pagesRequired' => [6, 7], 'pagesSeen' => [['page' => 6, 'by' => 'a']]]);
+		$store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-001', 'documentRef' => 'doc-8', 'relevance' => 'out-of-scope', 'pagesRequired' => [1]]);
+		$config = ['register' => 'dossiq', 'document_review_schema' => 'documentReview', 'decision_schema' => 'decision'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
+		$logger = $this->createMock(LoggerInterface::class);
+		$service = new WooPublicationService(
+			settingsService: $settings,
+			apiClient: $this->apiClient,
+			categoryMapper: new WooCategoryMapper(),
+			appManager: $this->appManager,
+			logger: $logger,
+			pagesSeen: new PagesSeen(reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), depth: new ReviewDepth()),
+		);
+		$this->apiClient->expects($this->never())->method('createPublication');
+
+		$result = $service->publish('case-001', 'decision-001');
+
+		$this->assertFalse($result['available']);
+		$this->assertSame('pages_unseen', $result['reason']);
+		$this->assertSame(['doc-7' => [7]], $result['unseen']);
+	}//end testPublishWaitsForTheLastPage()
 
 	/**
 	 * publish() with no disclosable documents reports no_publishable_documents

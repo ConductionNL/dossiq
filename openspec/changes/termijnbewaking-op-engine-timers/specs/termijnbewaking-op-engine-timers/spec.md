@@ -91,6 +91,22 @@ ignored.
 - **AND** an `exceeded` TermijnGebeurtenis MUST be recorded with basis `AWB 4:13`
 - @e2e exclude covered by TermijnTimerFiredListener unit tests
 
+#### Scenario: The handler is told on the rungs the term definition names
+
+- **GIVEN** a term definition with `tellHandlerAt: [7, 0]` (the seeded Woo request term) and a case held by a handler
+- **WHEN** its 7-day rung or its end rung is dispatched
+- **THEN** the case's assignee MUST get one Nextcloud notification (`term_nearing` with the days left, `term_exceeded` at the end)
+- **AND** a rung the definition does not name, or a definition without `tellHandlerAt`, MUST tell nobody
+- **AND** no procedure-specific job MAY send the same warning (the Woo daily check is retired)
+- @e2e exclude a notification is server-side; covered by TermHandlerNoticeTest and DeadlineMonitoringSeedDataServiceTest, live pass owed (decision 139)
+
+#### Scenario: An extension re-opens the rungs that lie ahead again
+
+- **GIVEN** an instance that recorded rungs 14, 7 and 2 and is extended to nine days from today
+- **WHEN** the extension is stored
+- **THEN** `notificatiesVerstuurd` MUST keep 14 and drop 7 and 2, so the handler is told again a week before the new end
+- @e2e exclude covered by DeadlineExtensionLimitTest
+
 ### Requirement: REQ-TOT-004 — No dossiq TimedJob computes deadline thresholds
 
 dossiq SHALL NOT ship a TimedJob that computes deadline thresholds, days-left buckets or overdue

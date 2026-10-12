@@ -57,6 +57,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class StatusDwellTimerTest extends TestCase {
 	use MakesCaseDateNormaliser;

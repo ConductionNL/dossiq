@@ -74,6 +74,38 @@ final class CaseStageDatesServiceTest extends TestCase {
 	}//end testUnreadableMovesAreLeftOut()
 
 	/**
+	 * The first step takes the day the case was created, the others keep theirs.
+	 *
+	 * @return void
+	 */
+	public function testTheFirstStepTakesTheDayTheCaseWasCreated(): void {
+		$steps = [
+			['id' => 's2', 'order' => 2],
+			['id' => 's1', 'order' => 1],
+			['id' => 's3', 'order' => 3],
+		];
+
+		$dates = $this->service()->withInitialStatus(['s2' => '2026-10-07'], $steps, '2026-10-03T09:00:00+00:00');
+
+		$this->assertSame(['s2' => '2026-10-07', 's1' => '2026-10-03'], $dates);
+	}//end testTheFirstStepTakesTheDayTheCaseWasCreated()
+
+	/**
+	 * A first step that already has a move keeps it, and an unreadable creation date adds nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFirstStepWithADateKeepsItAndNoCreationDayAddsNothing(): void {
+		$steps = [['id' => 's1', 'order' => 1]];
+
+		$this->assertSame(
+			['s1' => '2026-10-04'],
+			$this->service()->withInitialStatus(['s1' => '2026-10-04'], $steps, '2026-10-03T09:00:00+00:00')
+		);
+		$this->assertSame([], $this->service()->withInitialStatus([], $steps, ''));
+	}//end testAFirstStepWithADateKeepsItAndNoCreationDayAddsNothing()
+
+	/**
 	 * Without an object store the answer is none, not an error.
 	 *
 	 * @return void

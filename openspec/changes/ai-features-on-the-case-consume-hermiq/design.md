@@ -64,18 +64,32 @@ people wrote will find it obvious that one confirmation went out.
 
 ## D-5. The intake tool is a declaration over the path that already exists
 
-hermiq's intake grant covers tools an owning app annotated `citizenIntake` **and**
-whose id ends in `create`. It checks the verb as well as the annotation, because
-an annotation is a claim.
+hermiq's intake grant covers a tool only when the owning app marks it
+`citizenIntake` **and** declares `scope: create` and `action: create`, read off
+the tool's dotted `mcpId` (decision 177; it used to read the last segment of the
+id, which a curated two-part id such as `dossiq.fileCase` does not have). It
+checks the taxonomy as well as the mark, because a mark is a claim.
+OpenRegister forwards the free-form `annotations` map from `#[McpTool]`
+(openregister REQ-ATTR-007), at the same copy points as `reach`.
 
-dossiq's half is therefore small on purpose: declare `dossiq.case.create` with
-that annotation, and have it call the same creation path the create form calls.
+dossiq's half is therefore small on purpose: declare `dossiq.fileCase`
+(`IntakeTools::fileCase`) with that mark, and have it write through the same
+path the create form writes through: one `saveObject()` on the case schema, as
+the caller, never elevated (`CaseIntakeFiling`). The case schema, the case
+type's intake requirements, the duplicate policy and RBAC all run on that write.
 The temptation is a second, looser path, because a conversation has not collected
 every field the form asks for. The answer to a missing field is a refusal hermiq
 turns into a handover to a person, not a second definition of a valid case.
+The tool throws on a refusal, so OpenRegister audits the call as failed and
+hermiq sees an error rather than a filing.
 
-The read tools gain `outsideAgent` so the same catalogue serves hermiq's outbound
-surface, where the caller's own rights still decide per call.
+The conversation creates the case directly. There is no intake object in
+between (decision 179).
+
+The six curated reads gain `outsideAgent` so the same catalogue serves hermiq's
+outbound surface, where the caller's own rights still decide per call. The
+hand-written `DossiqToolProvider` this design first named is gone
+(dossiq-mcp-adoption); the tools are `#[McpTool]` attributes.
 
 ## D-6. Two drifts fixed on the way past
 

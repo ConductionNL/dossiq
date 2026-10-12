@@ -176,11 +176,12 @@ class DeadlineReportingService {
 	 */
 	private function accumulateRow(array $row, array &$bucket): void {
 		$bucket['totaal']++;
-		$status = (string)($row['status'] ?? '');
-		if ($status === 'completed') {
+		$outcome = $this->outcomes->classify(row: $row);
+		if ($outcome === TermOutcome::MET) {
 			$bucket['withinTerm']++;
 		}
 
+		$status = (string)($row['status'] ?? '');
 		if ($status === 'exceeded') {
 			$bucket['overschrijdingen']++;
 		}
@@ -189,7 +190,6 @@ class DeadlineReportingService {
 			$bucket['verlengingen']++;
 		}
 
-		$outcome = $this->outcomes->classify(row: $row);
 		if ($outcome !== '') {
 			$bucket[$outcome]++;
 		}
@@ -216,18 +216,15 @@ class DeadlineReportingService {
 			// $byType entries are only created when a row is counted, so
 			// 'totaal' is always >= 1 here.
 			$total = $b['totaal'];
-			$binnenPct = round(($b['withinTerm'] / $total) * 100, 1);
+			// The share of DECIDED terms that were met: a running term is not
+			// in the denominator, and a share of nothing is null, no figure.
+			$binnenPct = $this->outcomes->shareMet(met: $b['met'], missed: $b['missed']);
 
 			$avgDur = 0.0;
 
 			$aantalDoorlooptijden = count($b['doorlooptijdenDagen']);
 			if ($aantalDoorlooptijden > 0) {
 				$avgDur = round(array_sum($b['doorlooptijdenDagen']) / $aantalDoorlooptijden, 1);
-			}
-
-			$metShare = 0.0;
-			if (($b['met'] + $b['missed']) > 0) {
-				$metShare = round(($b['met'] / ($b['met'] + $b['missed'])) * 100, 1);
 			}
 
 			$perType[$type] = [
@@ -246,7 +243,7 @@ class DeadlineReportingService {
 				'missed' => $b['missed'],
 				'running' => $b['running'],
 				'suspended' => $b['suspended'],
-				'metShare' => $metShare,
+				'metShare' => $binnenPct,
 			];
 		}//end foreach
 
@@ -333,10 +330,7 @@ class DeadlineReportingService {
 		$overrun = $totals['overrun'];
 		$durations = $totals['durations'];
 
-		$withinTermPercent = 0.0;
-		if ($total > 0) {
-			$withinTermPercent = round(($within / $total) * 100, 1);
-		}
+		$withinTermPercent = $this->outcomes->shareMet(met: $within, missed: $totals['missed']);
 
 		$aantalDuraties = count($durations);
 		$avgDurationDays = 0.0;
@@ -360,11 +354,12 @@ class DeadlineReportingService {
 	 * @param array<int, array<string, mixed>> $rows Instance rows.
 	 * @param array<string, mixed> $filters Optional filters (afdeling, zaaktype).
 	 *
-	 * @return array{total:int,within:int,overrun:int,durations:array<int,int>} Counters plus the collected doorlooptijden.
+	 * @return array{total:int,within:int,missed:int,overrun:int,durations:array<int,int>} Counters plus the collected doorlooptijden.
 	 */
 	private function collectKpiTotals(array $rows, array $filters): array {
 		$total = 0;
 		$within = 0;
+		$missed = 0;
 		$overrun = 0;
 		$durations = [];
 		foreach ($rows as $row) {
@@ -373,12 +368,16 @@ class DeadlineReportingService {
 			}
 
 			$total++;
-			$status = (string)($row['status'] ?? '');
-			if ($status === 'completed') {
+			$outcome = $this->outcomes->classify(row: $row);
+			if ($outcome === TermOutcome::MET) {
 				$within++;
 			}
 
-			if ($status === 'exceeded') {
+			if ($outcome === TermOutcome::MISSED) {
+				$missed++;
+			}
+
+			if ((string)($row['status'] ?? '') === 'exceeded') {
 				$overrun++;
 			}
 
@@ -392,6 +391,7 @@ class DeadlineReportingService {
 		return [
 			'total' => $total,
 			'within' => $within,
+			'missed' => $missed,
 			'overrun' => $overrun,
 			'durations' => $durations,
 		];
@@ -422,7 +422,7 @@ class DeadlineReportingService {
 			$line = [
 				$type,
 				(string)($row['totaal'] ?? 0),
-				(string)($row['binnenTermijnPct'] ?? 0),
+				(string)($row['binnenTermijnPct'] ?? ''),
 				(string)($row['gemiddeldeDoorlooptijdDagen'] ?? 0),
 				(string)($row['verlengingen'] ?? 0),
 				(string)($row['overschrijdingen'] ?? 0),

@@ -38,11 +38,18 @@ export const tdWidgetMixin = {
 		/**
 		 * Format a number as a one-decimal percentage.
 		 *
-		 * @param {number|string} v Raw value.
-		 * @return {string} e.g. `92.4 %`.
+		 * A share of nothing arrives as null (no term decided yet). That is no
+		 * figure, so it shows a dash, not `0.0 %` and not `100.0 %`.
+		 *
+		 * @param {number|string|null} v Raw value, null when there is no figure.
+		 * @return {string} e.g. `92.4 %`, or `—` without a figure.
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
+		 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
 		 */
 		percent(v) {
+			if (v === null || v === undefined || v === '') {
+				return '—'
+			}
 			return `${(Number(v) || 0).toFixed(1)} %`
 		},
 		/**

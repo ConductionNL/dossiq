@@ -14,7 +14,6 @@
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
-		"TenantsMenu",
 		"SubstitutionAdminMenu",
 		"BezwaarCommitteesMenu",
 		"PersonalQueueMenu",
@@ -28,12 +27,10 @@
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",
-		"TenantsMenu": "openregister:organisation",
 		"SubstitutionAdminMenu": "Cases",
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
 	"settingsSection": [
-		"TenantsMenu",
 		"WmsLayersMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
@@ -188,14 +185,6 @@
 				}
 			}
 		},
-		"card": {
-			"title": "Close out your day",
-			"text": "See what is still open today and get it ready for tomorrow.",
-			"link": {
-				"label": "To the day close",
-				"route": "EndOfDay"
-			}
-		},
 		"footer": ["settings", "Documentation"]
 	},
 	"pages": [
@@ -232,8 +221,44 @@
 								"id": "simple-first-today",
 								"type": "custom",
 								"title": "First today",
-								"_note": "DqMijnWerk names ONE case, the one of yours furthest past its deadline, with its acts. The library banner counts cases and cannot name one, so FirstTodayWidget draws the library's attention card around the case it finds, and draws nothing when none of yours is due. See its registry entry.",
-								"content": {}
+								"_note": "DqMijnWerk names ONE case, the one of yours furthest past its deadline, with its acts. The library banner counts cases and cannot name one, so FirstTodayWidget draws the library's attention card around the case it finds, and draws nothing when none of yours is due. `content` is the DECLARATION of what is past term (the same filter and link appinfo/attention.json carries for LaunchPad): the widget reads the filter from `visibleWhen.source` and its first action from `actions[0]`, so the dashboard and the feed cannot count differently. See its registry entry.",
+								"content": {
+									"layout": "attention",
+									"variant": "error",
+									"kicker": "First today",
+									"title": "Cases past their deadline",
+									"reason": "{value} of your cases are past their deadline or end today.",
+									"visibleWhen": {
+										"source": {
+											"register": "dossiq",
+											"schema": "case",
+											"filter": {
+												"assignee": "@me",
+												"isFinalStatus": false,
+												"statusHiddenInLists": false,
+												"isDraft": false,
+												"deadline[lt]": "@today+1d"
+											}
+										},
+										"op": "gt",
+										"value": 0
+									},
+									"actions": [
+										{
+											"label": "Open these cases",
+											"route": {
+												"name": "Cases",
+												"query": {
+													"assignee": "@me",
+													"isFinalStatus": "false",
+													"statusHiddenInLists": "false",
+													"isDraft": "false",
+													"deadline[lt]": "@today+1d"
+												}
+											}
+										}
+									]
+								}
 							},
 							{
 								"id": "simple-my-open",
@@ -898,6 +923,12 @@
 					"export-dossier": {
 						"group": "Dossier"
 					},
+					"woo-search-plan": {
+						"group": "Dossier"
+					},
+					"woo-gather-documents": {
+						"group": "Dossier"
+					},
 					"case-rebind": {
 						"group": "Case"
 					},
@@ -915,6 +946,18 @@
 					}
 				},
 				"widgets": {
+					"case-tile-deadline": {
+						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole.",
+						"content": {
+							"field": "deadline",
+							"icon": "ClockAlertOutline",
+							"showDate": true,
+							"thresholds": {
+								"warn": 14,
+								"danger": 5
+							}
+						}
+					},
 					"case-stages": {
 						"content": {
 							"currentField": "status",
@@ -1010,6 +1053,11 @@
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
 									"overflow": true
+								},
+								{
+									"widgetId": "case-document-review",
+									"label": "Review",
+									"overflow": true
 								}
 							],
 							"variant": "segmented"
@@ -1021,11 +1069,71 @@
 					"kpi-2": null,
 					"kpi-5": null,
 					"3": null,
+					"presence-strip": {
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1
+					},
+					"5": {
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 12,
+						"gridHeight": 19
+					},
+					"12": {
+						"gridX": 0,
+						"gridY": 20,
+						"gridWidth": 12,
+						"gridHeight": 6
+					},
+					"11": {
+						"gridX": 0,
+						"gridY": 26,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					"7": {
+						"gridX": 0,
+						"gridY": 29,
+						"gridWidth": 12,
+						"gridHeight": 7
+					},
 					"6": {
-						"gridX": 9,
-						"gridY": 4,
-						"gridWidth": 3,
-						"gridHeight": 2
+						"gridX": 0,
+						"gridY": 36,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					"money-payments": {
+						"gridX": 0,
+						"gridY": 39,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"money-contract": {
+						"gridX": 0,
+						"gridY": 43,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"family-plan-panel": {
+						"gridX": 0,
+						"gridY": 47,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"work-projects": {
+						"gridX": 0,
+						"gridY": 51,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"documents-merge-to-pdf": {
+						"gridX": 0,
+						"gridY": 55,
+						"gridWidth": 12,
+						"gridHeight": 4
 					},
 					"case-banners": null
 				}
@@ -1455,6 +1563,43 @@
 			"id": "Queue",
 			"title": "Team queue",
 			"config": {
+				"folderSidebar": null,
+				"searchPlaceholder": "Search by case, number or requester",
+				"columns": [
+					{
+						"key": "title",
+						"width": "328px",
+						"label": "Case",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier} · {initiatorDisplayName}"
+					},
+					{
+						"key": "caseType",
+						"width": "179px",
+						"label": "Type",
+						"formatter": "caseTypeName"
+					},
+					{
+						"key": "deadline",
+						"width": "141px",
+						"label": "Deadline",
+						"widget": "date",
+						"widgetProps": {
+							"variantWhen": [
+								{
+									"op": "lt",
+									"value": 0,
+									"variant": "error"
+								},
+								{
+									"op": "lte",
+									"value": 5,
+									"variant": "warning"
+								}
+							]
+						}
+					}
+				],
 				"showTitle": true,
 				"countText": "{shown} of {total} open cases without a handler, oldest first",
 				"footerNote": "a case leaves the queue as soon as someone picks it up",
@@ -1473,6 +1618,58 @@
 						"label": "New case",
 						"variant": "primary",
 						"icon": "Plus"
+					}
+				]
+			}
+		},
+		{
+			"id": "CaseTypes",
+			"_note": "The case type list as DqZaaktypen draws it (relay 8): the title with its identifier under it, Domain, Processing time and Version, no folder sidebar (the Domain column carries it), and the lenses All, Published and Draft. The board also has a Meegeleverd lens and a Status pill that read origin and isDraft; those are not drawn: `origin` has no values the board names yet, so inventing a lens over it would count the wrong cases.",
+			"config": {
+				"folderSidebar": null,
+				"showTitle": true,
+				"countSubtitle": "{total} case types",
+				"columns": [
+					{
+						"key": "title",
+						"label": "Case type",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier}"
+					},
+					{
+						"key": "category",
+						"label": "Domain"
+					},
+					{
+						"key": "processingDeadline",
+						"label": "Processing time"
+					},
+					{
+						"key": "version",
+						"label": "Version"
+					}
+				],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {
+							"supersededBy": "IS NULL"
+						},
+						"default": true
+					},
+					{
+						"label": "Published",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Draft",
+						"filter": {
+							"supersededBy": "IS NULL",
+							"isDraft": true
+						}
 					}
 				]
 			}

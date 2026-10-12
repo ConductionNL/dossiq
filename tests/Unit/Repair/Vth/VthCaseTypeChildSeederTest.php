@@ -30,6 +30,7 @@ use RuntimeException;
  * Covers the write that was missing.
  *
  * @covers \OCA\Dossiq\Repair\Vth\VthCaseTypeChildSeeder
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class VthCaseTypeChildSeederTest extends TestCase {
 

@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -102,6 +103,11 @@ class DwangsomBezwaarService {
 		}
 
 		$calculation['status'] = 'objection-bevroren';
+		// The stored accrual reads stoppedOn: an objection freezes the amount.
+		if ((string)($calculation['stoppedOn'] ?? '') === '') {
+			$calculation['stoppedOn'] = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
 		try {
 			$calculation = ($this->saveObjectAsArray(
 				objectService: $objectService,

@@ -30,6 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use DateTime;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Task\EngineInboxQuery;
+use OCA\Dossiq\Service\Task\OnboardingSteps;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\TenantOrganisationResolver;
 use OCA\Dossiq\Service\TenantService;
@@ -63,6 +66,13 @@ trait MakesTenantAnchors {
 	private array $organisations = [];
 
 	/**
+	 * OpenRegister's task engine, where onboarding steps live.
+	 *
+	 * @var InMemoryTaskEngine
+	 */
+	private InMemoryTaskEngine $engine;
+
+	/**
 	 * Every error logged by the chain, message and context.
 	 *
 	 * @var array<int, array{0: string, 1: array<string, mixed>}>
@@ -79,6 +89,7 @@ trait MakesTenantAnchors {
 		$this->anchorTrail = new RecordingAuditTrailMapper();
 		$this->organisations = [];
 		$this->anchorErrors = [];
+		$this->engine = new InMemoryTaskEngine();
 	}//end startAnchorStore()
 
 	/**
@@ -108,6 +119,7 @@ trait MakesTenantAnchors {
 	private function anchorContainer(): ContainerInterface {
 		$objects = new EntityAnsweringRegister(register: $this->anchorStore);
 		$trail = $this->anchorTrail;
+		$engine = $this->engine;
 
 		$mapper = $this->createMock(OrganisationByUuidStub::class);
 		$mapper->method('findByUuid')->willReturnCallback(
@@ -122,8 +134,11 @@ trait MakesTenantAnchors {
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($objects, $trail, $mapper): object {
+			static function (string $id) use ($objects, $trail, $mapper, $engine): object {
 				return match ($id) {
+					'OCA\\OpenRegister\\Service\\Task\\TaskService',
+					'OCA\\OpenRegister\\Service\\Task\\TaskInboxService',
+					'OCA\\OpenRegister\\Service\\Task\\TaskFormCompletion' => $engine,
 					'OCA\\OpenRegister\\Service\\ObjectService' => $objects,
 					'OCA\\OpenRegister\\Db\\AuditTrailMapper' => $trail,
 					'OCA\\OpenRegister\\Db\\OrganisationMapper' => $mapper,
@@ -191,6 +206,63 @@ trait MakesTenantAnchors {
 			logger: $logger,
 		);
 	}//end realTenantService()
+
+	/**
+	 * The real OnboardingSteps over the in-memory engine.
+	 *
+	 * @return OnboardingSteps The steps.
+	 */
+	private function realOnboardingSteps(): OnboardingSteps {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('isOpenRegisterAvailable')->willReturn(true);
+
+		$container = $this->anchorContainer();
+		$logger = $this->anchorLogger();
+
+		return new OnboardingSteps(
+			settings: $settings,
+			container: $container,
+			logger: $logger,
+			inboxQuery: $this->anchorInboxQuery(settings: $settings, container: $container, logger: $logger)
+		);
+	}//end realOnboardingSteps()
+
+	/**
+	 * The real EngineInboxQuery, reading the in-memory engine.
+	 *
+	 * Only the lookup of OpenRegister's inbox service is replaced, because
+	 * OpenRegister is not installed in dossiq's test run; the criteria are
+	 * built and the rows unwrapped by the production code.
+	 *
+	 * @param SettingsService    $settings  OpenRegister availability.
+	 * @param ContainerInterface $container The anchor container.
+	 * @param LoggerInterface    $logger    The anchor logger.
+	 *
+	 * @return EngineInboxQuery The query.
+	 */
+	private function anchorInboxQuery(SettingsService $settings, ContainerInterface $container, LoggerInterface $logger): EngineInboxQuery {
+		return new class($settings, $container, $logger) extends EngineInboxQuery {
+			/**
+			 * Constructor.
+			 *
+			 * @param SettingsService    $settings  OpenRegister availability.
+			 * @param ContainerInterface $engine    The anchor container.
+			 * @param LoggerInterface    $logger    The anchor logger.
+			 */
+			public function __construct(SettingsService $settings, private ContainerInterface $engine, LoggerInterface $logger) {
+				parent::__construct(settings: $settings, container: $engine, logger: $logger);
+			}
+
+			/**
+			 * The in-memory engine's inbox.
+			 *
+			 * @return object|null The inbox.
+			 */
+			protected function resolveInbox(): ?object {
+				return $this->engine->get('OCA\\OpenRegister\\Service\\Task\\TaskInboxService');
+			}
+		};
+	}//end anchorInboxQuery()
 
 	/**
 	 * The real TenantAuditTrailService over the shared store and trail.

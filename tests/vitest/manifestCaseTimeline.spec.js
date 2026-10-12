@@ -62,7 +62,6 @@ const OTHER_SIDEBARS = {
 	// an always-empty drawer.
 	AdviceDetail: 2,
 	WmsLayerDetail: 2,
-	TenantDetail: 2,
 	TransferDetail: 2,
 	WorkflowDefinitionDetail: 2,
 	StatusRecordDetail: 2,
@@ -79,7 +78,7 @@ describe('CaseDetail — one history tab (task 1.1)', () => {
 		)
 		expect(auditTabs).toHaveLength(1)
 		expect(auditTabs[0].id).toBe('audit')
-		expect(auditTabs[0].label).toBe('History')
+		expect(auditTabs[0].label).toBe('Audit trail')
 	})
 
 	it('has no version-history tab left on the case page', () => {

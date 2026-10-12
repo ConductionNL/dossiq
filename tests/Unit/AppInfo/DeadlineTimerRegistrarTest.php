@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 use OCA\Dossiq\AppInfo\Registrar\DeadlineTimerRegistrar;
 use OCA\Dossiq\Listener\AdviceTimerFiredListener;
 use OCA\Dossiq\Listener\MilestoneStallTimerListener;
+use OCA\Dossiq\Listener\RoutedCaseAcceptanceListener;
+use OCA\Dossiq\Listener\TakeBackTimerFiredListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -55,9 +57,13 @@ class DeadlineTimerRegistrarTest extends TestCase {
 
 		(new DeadlineTimerRegistrar())->register(context: $context);
 
-		$this->assertCount(expectedCount: 12, haystack: $registered);
+		$this->assertCount(expectedCount: 14, haystack: $registered);
 		$this->assertContains(needle: ['OCA\OpenRegister\Event\FlowTimerFiredEvent', AdviceTimerFiredListener::class], haystack: $registered);
 		$this->assertContains(needle: ['OCA\OpenRegister\Event\ObjectCreatedEvent', MilestoneStallTimerListener::class], haystack: $registered);
 		$this->assertContains(needle: ['OCA\OpenRegister\Event\ObjectUpdatedEvent', MilestoneStallTimerListener::class], haystack: $registered);
+		$this->assertContains(needle: ['OCA\OpenRegister\Event\FlowTimerFiredEvent', TakeBackTimerFiredListener::class], haystack: $registered);
+		$this->assertContains(needle: ['OCA\OpenRegister\Event\ObjectUpdatedEvent', RoutedCaseAcceptanceListener::class], haystack: $registered);
+		// Accepting is an edit: a created case accepts nothing.
+		$this->assertNotContains(needle: ['OCA\OpenRegister\Event\ObjectCreatedEvent', RoutedCaseAcceptanceListener::class], haystack: $registered);
 	}//end testEveryClockIsAttached()
 }//end class
