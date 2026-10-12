@@ -59,7 +59,7 @@ class CaseRecordReadersTest extends TestCase {
 	}//end readersOf()
 
 	public function testAnEntryWithoutARuleSharesWithEveryoneOnTheCase(): void {
-		self::assertSame(['readers' => 'all', 'userField' => '', 'reviewerRowField' => ''], $this->readers->ruleOf(declared: []));
+		self::assertSame(['readers' => 'all', 'userField' => '', 'reviewerRowField' => '', 'assigneeMay' => 'read', 'reviewersMay' => 'read'], $this->readers->ruleOf(declared: []));
 		self::assertSame(['handler', 'reviewer1', 'reviewer2', 'reviewer3'], $this->readersOf(declared: []));
 	}//end testAnEntryWithoutARuleSharesWithEveryoneOnTheCase()
 
@@ -99,7 +99,67 @@ class CaseRecordReadersTest extends TestCase {
 		self::assertSame(['handler'], $this->readersOf(declared: ['readers' => 'own'], record: ['assignee' => 'reviewer1', 'batch' => 'b-1']));
 	}//end testOwnWithoutAFieldReachesTheAssigneeOnly()
 
+	/**
+	 * The grants of one record under a declared entry.
+	 *
+	 * @param array<string, mixed> $declared   The `reviewerAccess.records` entry.
+	 * @param array<string, mixed> $record     The record row.
+	 * @param bool                 $hideOthers Whether reviewers are hidden from each other.
+	 * @param string               $assignee   The case assignee.
+	 *
+	 * @return array<string, int>
+	 */
+	private function grantsOf(array $declared, array $record = [], bool $hideOthers = false, string $assignee = 'handler'): array {
+		return $this->readers->toGrant(
+			rule: $this->readers->ruleOf(declared: $declared),
+			record: $record,
+			assignee: $assignee,
+			reviewers: self::REVIEWERS,
+			hideOthers: $hideOthers,
+		);
+	}//end grantsOf()
+
+	public function testEveryReaderIsGrantedReadOnlyUnlessTheEntrySaysUpdate(): void {
+		self::assertSame(['handler' => 1, 'reviewer1' => 1, 'reviewer2' => 1, 'reviewer3' => 1], $this->grantsOf(declared: []));
+		self::assertSame(['handler' => 1], $this->grantsOf(declared: ['readers' => 'assignee', 'reviewersMay' => 'update']), 'a reviewer who does not read the record gains nothing');
+	}//end testEveryReaderIsGrantedReadOnlyUnlessTheEntrySaysUpdate()
+
+	public function testReviewersWhoReadTheRecordMayUpdateItWhenTheEntrySaysSo(): void {
+		$declared = ['readers' => 'own', 'reviewerRowField' => 'batch', 'reviewersMay' => 'update'];
+
+		self::assertSame(['handler' => 1, 'reviewer2' => 3, 'reviewer3' => 3], $this->grantsOf(declared: $declared, record: ['batch' => 'b-2']));
+		self::assertSame(['handler' => 1], $this->grantsOf(declared: $declared, record: ['batch' => 'b-of-another-case']));
+		self::assertSame(['handler' => 1], $this->grantsOf(declared: ['readers' => 'all', 'reviewersMay' => 'update'], hideOthers: true), 'hidden reviewers gain no update either');
+	}//end testReviewersWhoReadTheRecordMayUpdateItWhenTheEntrySaysSo()
+
+	public function testTheAssigneeMayUpdateWhenTheEntrySaysSo(): void {
+		self::assertSame(['handler' => 3, 'reviewer1' => 1, 'reviewer2' => 1, 'reviewer3' => 1], $this->grantsOf(declared: ['assigneeMay' => 'update']));
+	}//end testTheAssigneeMayUpdateWhenTheEntrySaysSo()
+
+	public function testAnAssigneeWhoAlsoReviewsGetsTheWiderOfTheTwo(): void {
+		$declared = ['readers' => 'own', 'userField' => 'assignee', 'reviewersMay' => 'update'];
+
+		self::assertSame(['handler' => 3], $this->grantsOf(declared: $declared, record: ['assignee' => 'handler']));
+		self::assertSame(['handler' => 3, 'reviewer1' => 1], $this->grantsOf(declared: ['readers' => 'own', 'userField' => 'assignee', 'assigneeMay' => 'update'], record: ['assignee' => ['reviewer1', 'handler']]));
+	}//end testAnAssigneeWhoAlsoReviewsGetsTheWiderOfTheTwo()
+
+	public function testAnythingButUpdateInFullIsRead(): void {
+		foreach (['', 'write', 'UPDATE', 'delete', true, 3, ['update'], null] as $declared) {
+			$rule = $this->readers->ruleOf(declared: ['assigneeMay' => $declared, 'reviewersMay' => $declared]);
+			self::assertSame(['read', 'read'], [$rule['assigneeMay'], $rule['reviewersMay']], var_export($declared, true));
+		}
+
+		self::assertSame('update', $this->readers->ruleOf(declared: ['reviewersMay' => ' update '])['reviewersMay']);
+	}//end testAnythingButUpdateInFullIsRead()
+
+	public function testNobodyIsEverGrantedDeleteOrShare(): void {
+		$grants = $this->grantsOf(declared: ['assigneeMay' => 'update', 'reviewersMay' => 'update']);
+
+		self::assertSame([3], array_values(array_unique($grants)));
+	}//end testNobodyIsEverGrantedDeleteOrShare()
+
 	public function testACaseWithoutAnAssigneeHasNoEmptyReader(): void {
 		self::assertSame(['reviewer1'], $this->readersOf(declared: ['readers' => 'own', 'userField' => 'assignee'], record: ['assignee' => 'reviewer1'], assignee: ''));
+		self::assertSame(['reviewer1' => 1], $this->grantsOf(declared: ['readers' => 'own', 'userField' => 'assignee'], record: ['assignee' => 'reviewer1'], assignee: ''));
 	}//end testACaseWithoutAnAssigneeHasNoEmptyReader()
 }//end class
