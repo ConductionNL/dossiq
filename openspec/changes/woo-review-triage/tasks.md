@@ -243,6 +243,22 @@ record. OpenRegister refuses a parent that references another schema
     `CaseReviewerAccessTest::testAReviewerMayUpdateTheRecordsOfTheirOwnBatch`. An administrator runs
     `POST /api/cases/reviewer-access/reconcile` once after the upgrade, so existing batches and rules get the
     assignee's update grant. Still open: (c).
+  - Round 7, `documentReview` private (6.1, and (c) for its writers). The schema carries the private block
+    (1.0.3, register 0.20.40) and the woo-verzoek case type (1.4.6) lists it: `readers: own`,
+    `reviewerRowField: batch`, `assigneeMay: update`, `reviewersMay: update`, the first row of the table. Every
+    rule that reads reviews reads the whole case through `DocumentRelevance::forCase()` (case-reviewer-access
+    REQ-CRA-011), so a batch reviewer's marking never makes a second review and the decision still waits for
+    pages on reviews the caller cannot read. The relevance route, the pages-seen route and the triage apply
+    call `CaseReviewerAccess::reconcileAfterCreate()` when they create a review; the batch create already
+    reconciled. The repair step still calls nothing. Tests: `DocumentRelevanceTest`,
+    `PagesSeenTest::testTheDecisionWaitsForPagesOnReviewsTheCallerCannotRead`,
+    `TriageRulesTest::testApplySharesTheReviewsItCreates` and `testApplyHonoursReviewsTheCallerCannotRead`,
+    `DocumentReviewControllerTest::testAReviewTheCallerCannotReadIsNotMadeTwiceAndStillCounts`, and over the
+    shipped register `tests/Unit/Settings/CaseTypePrivateRecordAccessTest.php` (a colleague off the case is
+    refused, the assignee still reads and updates; red controls in `dq-l8-logs/r7/`). An administrator runs
+    `POST /api/cases/reviewer-access/reconcile` once after the upgrade: until then the reviews the repair step
+    made have no owner and no grants, so only an administrator reads or changes them. Still open of (c):
+    the gather add, the search plan save, the query record and the exclusion route, with their three schemas.
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.

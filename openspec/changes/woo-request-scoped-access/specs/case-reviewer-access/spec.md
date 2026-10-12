@@ -107,6 +107,42 @@ reaches the records that already exist. A second run SHALL grant and revoke noth
 - **WHEN** the case is reconciled
 - **THEN** the assignee SHALL hold a read grant only
 
+### Requirement: A rule of the case reads the whole case (REQ-CRA-011)
+
+A private record is read by a slice of the people on the case, so a search under the caller's own
+access answers only that slice. A rule that holds for the case SHALL NOT read it that way. Such a
+rule (what still holds up the decision, which required pages nobody saw, which documents a rule may
+mark, whether a document already has a record) SHALL read every record of the case regardless of
+the caller's grants, and SHALL keep only the records that name that case. `CaseReviewerAccess::recordsOf()`
+is that read; `DocumentRelevance::forCase()` makes the same read for the reviews. A writer that
+looks up a record before it writes SHALL use this read, so it never makes a second record for a
+document whose record the caller cannot read. The write itself SHALL run under the caller's own
+access: a caller without an update grant is refused by OpenRegister. A route that reaches such a
+rule SHALL check access to the case first and SHALL NOT answer a record's row from this read; a
+person lists records through OpenRegister, under their own access.
+
+A writer that creates a declared record SHALL call `CaseReviewerAccess::reconcileAfterCreate()` in
+the same request. The record is stored by then, so a reconcile that cannot run SHALL be logged and
+answered as `failed`, SHALL NOT undo the write, and SHALL leave the record without grants.
+
+#### Scenario: A batch reviewer marks a document they were not given
+@e2e exclude Read and write over an object service double, covered by tests/Unit/Review/DocumentRelevanceTest.php testMarkingChangesTheReviewTheCallerCannotRead and tests/Unit/Controller/DocumentReviewControllerTest.php testAReviewTheCallerCannotReadIsNotMadeTwiceAndStillCounts; the live refusal is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with a review on document 9 that `p.bakker` holds no grant on
+- **WHEN** `p.bakker` marks document 9
+- **THEN** the write SHALL address the review that exists, and no second review SHALL be made for document 9
+
+#### Scenario: The decision waits for a page on a review the caller cannot read
+@e2e exclude Rule over an object service double, covered by tests/Unit/Review/PagesSeenTest.php testTheDecisionWaitsForPagesOnReviewsTheCallerCannotRead.
+- **GIVEN** an in-scope document with required page 7 unseen, on a review the caller holds no grant on
+- **WHEN** the caller asks whether every required page was seen
+- **THEN** the answer SHALL be the refusal `review-pages-unseen`
+
+#### Scenario: A reconcile that cannot run keeps the write
+@e2e exclude Failure path over a sharing double, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testAReconcileThatCannotRunAfterAWriteIsAnsweredAsFailedAndKeepsTheWrite.
+- **GIVEN** a writer that stored two records and a sharing service that throws
+- **WHEN** it calls `reconcileAfterCreate()`
+- **THEN** the answer SHALL be `{status: failed, refused: 2}` and no exception SHALL reach the writer
+
 ### Requirement: A reader is somebody the register admits (REQ-CRA-009)
 
 OpenRegister keeps a record's schema as the ceiling of a grant, and the dossiq register is closed to

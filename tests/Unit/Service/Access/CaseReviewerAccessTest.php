@@ -58,6 +58,8 @@ class CaseReviewerAccessTest extends TestCase {
 
 	private bool $available = true;
 
+	private bool $sharingDown = false;
+
 	private CaseTypeStore&MockObject $caseTypes;
 
 	private CaseReviewerAccess $access;
@@ -84,7 +86,15 @@ class CaseReviewerAccessTest extends TestCase {
 		$resolver->method('effectiveCaseType')->willReturnCallback(fn (string $id): array => $id === self::CASE_TYPE ? $this->caseType : []);
 
 		$grants = $this->createMock(ObjectReadGrants::class);
-		$grants->method('available')->willReturnCallback(fn (): bool => $this->available);
+		$grants->method('available')->willReturnCallback(
+			function (): bool {
+				if ($this->sharingDown === true) {
+					throw new \RuntimeException('sharing down');
+				}
+
+				return $this->available;
+			}
+		);
 		$grants->method('reconcile')->willReturnCallback(
 			function (string $schema, string $uuid, array $readers, string $group): array {
 				$this->calls[] = ['schema' => $schema, 'uuid' => $uuid, 'readers' => array_map('strval', array_keys($readers)), 'grants' => $readers, 'group' => $group];
@@ -105,6 +115,7 @@ class CaseReviewerAccessTest extends TestCase {
 			resolver: $resolver,
 			grants: $grants,
 			groupManager: $groups,
+			logger: $this->createMock(\Psr\Log\LoggerInterface::class),
 		);
 
 		$this->register->seed('case', self::CASE_ID, ['caseType' => self::CASE_TYPE, 'assignee' => 'handler']);
@@ -227,6 +238,19 @@ class CaseReviewerAccessTest extends TestCase {
 			array_column($this->calls, 'grants', 'uuid'),
 		);
 	}//end testTheAssigneeMayUpdateARecordWhenItsEntrySaysSo()
+
+	public function testAReconcileThatCannotRunAfterAWriteIsAnsweredAsFailedAndKeepsTheWrite(): void {
+		$this->declare();
+		$this->sharingDown = true;
+
+		self::assertSame(
+			['status' => 'failed', 'granted' => 0, 'revoked' => 0, 'refused' => 2],
+			$this->access->reconcileAfterCreate(caseId: self::CASE_ID, created: 2),
+			'the writer already stored its records, so it gets an answer and no exception'
+		);
+		self::assertSame([], $this->calls, 'nothing was granted: the records wait for an administrator');
+		self::assertSame('nothing-created', $this->access->reconcileAfterCreate(caseId: self::CASE_ID, created: 0)['status']);
+	}//end testAReconcileThatCannotRunAfterAWriteIsAnsweredAsFailedAndKeepsTheWrite()
 
 	public function testOnlyStaffAndAdministratorsCanBeNamedAsReaders(): void {
 		self::assertTrue($this->access->isAdmittedReader(userId: 'reviewer1'), 'a member of the staff group');

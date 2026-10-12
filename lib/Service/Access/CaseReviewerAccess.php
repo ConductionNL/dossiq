@@ -43,6 +43,8 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IGroupManager;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Who reads and who changes the records a case type keeps private to the case.
@@ -78,6 +80,7 @@ class CaseReviewerAccess {
 	 * @param CaseTypeResolver $resolver        The effective case type.
 	 * @param ObjectReadGrants $grants          The OpenRegister side.
 	 * @param IGroupManager    $groupManager    Supervisors and administrators.
+	 * @param LoggerInterface  $logger          Says when a reconcile after a write could not run.
 	 *
 	 * @return void
 	 */
@@ -87,6 +90,7 @@ class CaseReviewerAccess {
 		private readonly CaseTypeResolver $resolver,
 		private readonly ObjectReadGrants $grants,
 		private readonly IGroupManager $groupManager,
+		private readonly LoggerInterface $logger,
 	) {
 		$this->lookup = new CaseRecordLookup(settingsService: $settingsService, caseTypes: $caseTypes, resolver: $resolver);
 		$this->recordReaders = new CaseRecordReaders();
@@ -315,10 +319,16 @@ class CaseReviewerAccess {
 	/**
 	 * Reconcile the case when a writer created declared records; nothing when it created none.
 	 *
+	 * The record is already stored when this runs, so a reconcile that cannot
+	 * run never undoes the write: it is logged and answered as `failed`, with
+	 * the record left without its grants, which is the closed side. An
+	 * administrator's reconcile picks it up (REQ-CRA-004).
+	 *
 	 * @param string $caseId  The case uuid.
 	 * @param int    $created How many records the writer created.
 	 *
 	 * @return array{status: string, granted: int, revoked: int, refused: int}
+	 *         `status` is `nothing-created`, `failed`, or what reconcile() answers.
 	 *
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
 	 */
@@ -327,7 +337,16 @@ class CaseReviewerAccess {
 			return ['status' => 'nothing-created', 'granted' => 0, 'revoked' => 0, 'refused' => 0];
 		}
 
-		return $this->reconcile(caseId: $caseId);
+		try {
+			return $this->reconcile(caseId: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq reviewer access: a record was stored but the grants of its case could not be reconciled',
+				['case' => $caseId, 'exception' => $e->getMessage()]
+			);
+		}
+
+		return ['status' => 'failed', 'granted' => 0, 'revoked' => 0, 'refused' => $created];
 	}//end reconcileAfterCreate()
 
 	/**
