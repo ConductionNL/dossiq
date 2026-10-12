@@ -283,11 +283,14 @@ class ConnectionsDeclarationTest extends TestCase {
 	}//end testOnlyKvkIsUnavailableAndSaysWhy()
 
 	/**
-	 * BRP names the key that wakes it, and offers no settings link.
+	 * BRP names the setting that wakes it, and offers no settings link.
 	 *
-	 * BRP is built and called, and reaches nothing until its tier key moves off
-	 * `log`. No admin section writes that key, so the row's message is the only
-	 * place an integrator learns it (REQ-ADMIN-019).
+	 * Dossiq ships no BRP client (ADR-118). The conflict-of-interest check
+	 * reads family relations through integriq's BRP source, and that read is
+	 * off until `relationFields` is set on the source. No admin section in
+	 * dossiq writes it, so the row's message is the only place an
+	 * administrator learns it (REQ-ADMIN-019). The retired tier key is gone
+	 * from the message: setting it changes nothing any more.
 	 *
 	 * @return void
 	 */
@@ -296,7 +299,9 @@ class ConnectionsDeclarationTest extends TestCase {
 
 		$message = (string)($brp['unconfiguredMessage'] ?? '');
 
-		$this->assertMatchesRegularExpression(pattern: '/integration\\.brp\\.mode/', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/relationFields/', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/Integriq/', string: $message);
+		$this->assertDoesNotMatchRegularExpression(pattern: '/integration\\.brp\\.mode/', string: $message);
 		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $brp);
 		$this->assertArrayNotHasKey(key: 'available', array: $brp);

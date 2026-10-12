@@ -1,8 +1,9 @@
 {
-  "ceiling": 263,
+  "ceiling": 262,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-10-12, openspec/changes/brp-client-retired: the conflict-of-interest check reads relations through integriq, and `ConflictOfInterestService::lookupRelationViaBrp` left with dossiq's BRP client. A read that gives no answer now blocks instead of answering null. The ceiling went 263 to 262.",
     "2026-10-12, openspec/changes/retire-cmmn-caseplanstate task 3.1: the local CMMN runtime retired, taking `Cmmn/CaseModelLoader::getActiveModel` with it. The ceiling went 264 to 263.",
     "2026-10-10, openspec/changes/remove-casetask task 7.1: onboarding steps moved onto the engine. OnboardingSteps reads through EngineInboxQuery and resolves its services inside each verb's own try block, so it adds no site; TenantOnboardingService::markStepComplete went, legacyRows (the one-off carry of the old rows) arrived. The ceiling stays 257.",
     "2026-10-10, openspec/changes/tenancy-onto-openregister-organisation tasks 6.9 and 6.15: TenantSaasService retired with the tenant admin store, taking its three sites (getById, getObjectService, listActive). TenantService::getObjectService arrived with the audit anchor. The ceiling went 259 to 257.",
@@ -445,13 +446,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`rows()` answers `return []` when OpenRegister cannot be searched for the incidents on a case; the catch logs at warning naming the read. The empty list is \"could not look\", and the incidents tab draws nothing rather than claiming a case has no reports."
-    },
-    {
-      "file": "lib/Service/ConflictOfInterestService.php",
-      "method": "lookupRelationViaBrp",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`lookupRelationViaBrp()` answers `return null` when the read fails; the catch logs at warning (\"BRP relationship lookup failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/ConflictOfInterestService.php",
