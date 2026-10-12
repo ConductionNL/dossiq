@@ -165,6 +165,7 @@ class FakeObjectService {
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class BeschikkingServiceTest extends TestCase {
 

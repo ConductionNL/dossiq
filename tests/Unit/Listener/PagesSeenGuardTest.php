@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\PagesSeen
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+ * @uses \OCA\Dossiq\Listener\LinkMarkerListener
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
  */
 class PagesSeenGuardTest extends TestCase {
 

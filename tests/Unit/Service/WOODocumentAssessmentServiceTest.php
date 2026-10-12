@@ -74,6 +74,7 @@ interface RedactionProposalObjectServiceStub {
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
  */
 class WOODocumentAssessmentServiceTest extends TestCase {
 

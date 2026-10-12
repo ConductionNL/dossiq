@@ -65,6 +65,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Woo\WooCollection
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
  */
 class WooGatherAddTest extends TestCase {
 

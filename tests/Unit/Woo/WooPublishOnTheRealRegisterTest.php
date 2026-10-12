@@ -59,6 +59,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
  */
 class WooPublishOnTheRealRegisterTest extends TestCase {
 

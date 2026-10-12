@@ -56,6 +56,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\PagesSeen
  */
 class WOOAssessmentControllerTest extends TestCase {
 

@@ -87,6 +87,8 @@ interface WooPublicationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\PagesSeen
  */
 class WooPublicationServiceTest extends TestCase {
 

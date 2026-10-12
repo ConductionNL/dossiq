@@ -55,6 +55,11 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\ReviewDepth
+ * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Woo\WooCaseDocuments
+ * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  */
 class DocumentReviewControllerTest extends TestCase {
 

@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\LinkMarkerListener
+ * @uses \OCA\Dossiq\Service\Relation\LinkMarkerRule
+ * @uses \OCA\Dossiq\Service\Relation\LinkMarkerRuleReader
  */
 class LinkMarkerListenerTest extends TestCase {
 

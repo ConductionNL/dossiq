@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Session\SessionDefinition
  * @covers \OCA\Dossiq\Service\Session\SessionRules
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class SessionDefinitionTest extends TestCase {
 

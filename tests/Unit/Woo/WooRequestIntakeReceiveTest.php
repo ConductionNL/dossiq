@@ -57,6 +57,7 @@ use stdClass;
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class WooRequestIntakeReceiveTest extends TestCase {
 
