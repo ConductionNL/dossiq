@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 use OCA\Dossiq\Repair\MigrateWorkflowDefinitions;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
+use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
+use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -46,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Workflow\BackfilledTemplateShape
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard
  */
 class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 
@@ -109,6 +112,58 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 
 		self::assertSame([], $this->written(method: 'patch', schema: '53'));
 	}//end testATemplateTheBackfillDidNotWriteIsLeftAlone()
+
+	/**
+	 * A case type whose only definition is a draft still gets its basis template.
+	 *
+	 * A package may ship a flow as a draft for an administrator to finish. A
+	 * draft is offered to nobody, so a case type holding nothing else has no
+	 * flow a case can follow until the backfill writes one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 */
+	public function testACaseTypeHoldingOnlyADraftStillGetsItsBasisTemplate(): void {
+		$this->runStep(caseType: self::caseType(), versions: [self::template(lifecycle: 'draft')]);
+
+		$saved = $this->written(method: 'save', schema: '53');
+		self::assertCount(1, $saved, 'The basis template is written beside the draft.');
+		self::assertSame('Woo-verzoek (basis)', $saved[0]['title'] ?? null);
+		self::assertSame('published', $saved[0]['lifecycleStatus'] ?? null);
+	}//end testACaseTypeHoldingOnlyADraftStillGetsItsBasisTemplate()
+
+	/**
+	 * A case type that holds a published or a deprecated definition gets no basis template.
+	 *
+	 * Deprecating the last definition is something an administrator did, so
+	 * the backfill does not answer it with a new one.
+	 *
+	 * @param string $lifecycle The lifecycle of the definition the case type holds.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider lifecyclesThatAreNotADraft
+	 *
+	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 */
+	public function testACaseTypeHoldingMoreThanDraftsIsLeftAlone(string $lifecycle): void {
+		$this->runStep(
+			caseType: self::caseType(),
+			versions: [self::template(lifecycle: 'draft'), self::template(lifecycle: $lifecycle)]
+		);
+
+		self::assertSame([], $this->written(method: 'save', schema: '53'));
+	}//end testACaseTypeHoldingMoreThanDraftsIsLeftAlone()
+
+	/**
+	 * The lifecycles that are not a draft.
+	 *
+	 * @return array<string, array{0: string}> The cases.
+	 */
+	public static function lifecyclesThatAreNotADraft(): array {
+		return ['published' => ['published'], 'deprecated' => ['deprecated']];
+	}//end lifecyclesThatAreNotADraft()
 
 	/**
 	 * Run the real step over a store double.
@@ -211,6 +266,10 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 			settingsService: $settings,
 			workflowService: $workflow,
 			logger: $this->createMock(LoggerInterface::class),
+			lifecycle: new WorkflowLifecycleGuard(
+				$this->createMock(WorkflowDefinitionRepository::class),
+				$this->createMock(LoggerInterface::class),
+			),
 		);
 		$step->run($this->createMock(IOutput::class));
 	}//end runStep()
@@ -249,6 +308,26 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 
 		return $caseType;
 	}//end caseType()
+
+	/**
+	 * A definition somebody else wrote, in the given lifecycle.
+	 *
+	 * @param string $lifecycle draft, published or deprecated.
+	 *
+	 * @return array<string, mixed> The definition.
+	 */
+	private static function template(string $lifecycle): array {
+		return [
+			'id' => 'tpl-' . $lifecycle,
+			'title' => 'Eigen flow',
+			'caseType' => 'ct-woo',
+			'lifecycleStatus' => $lifecycle,
+			'isDraft' => ($lifecycle === 'draft'),
+			'isActive' => ($lifecycle === 'published'),
+			'steps' => '[]',
+			'transitions' => '[]',
+		];
+	}//end template()
 
 	/**
 	 * A basis template as the old backfill stored it.

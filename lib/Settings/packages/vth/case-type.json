@@ -585,6 +585,13 @@
       "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
     },
     {
+      "id": "a3930809-10c8-5e57-986f-d63f7a614af4",
+      "name": "inhoudelijkeToets",
+      "propertyType": "boolean",
+      "description": "Inhoudelijke toets afgerond",
+      "caseType": "cde0095e-f462-5781-ae3b-3b994a56c3c4"
+    },
+    {
       "id": "016293d3-eab1-5735-a26b-7a958b84cc00",
       "name": "asbestInventarisatie",
       "propertyType": "boolean",

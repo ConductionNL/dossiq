@@ -9,5 +9,5 @@
     "seed"
   ],
   "install": "auto",
-  "description": "Six VTH case types (omgevingsvergunning bouwactiviteit, sloopmelding, toezichtzaak bouw, toezichtzaak milieu, handhavingszaak, invorderingszaak) with their statuses, roles, document types and fields, four published flows, and three inspection checklists for toezichtzaak bouw. Handhavingszaak has two routes: regulier (the default) and spoedeisend. Installed on every install and upgrade; on an instance where the former VTH seeders ran, the existing rows are adopted."
+  "description": "Six VTH case types (omgevingsvergunning bouwactiviteit, sloopmelding, toezichtzaak bouw, toezichtzaak milieu, handhavingszaak, invorderingszaak) with their statuses, roles, document types and fields, four published flows, six draft flows an administrator can finish and publish, and three inspection checklists for toezichtzaak bouw. Handhavingszaak has two routes: regulier (the default) and spoedeisend. Installed on every install and upgrade; on an instance where the former VTH seeders ran, the existing rows are adopted."
 }

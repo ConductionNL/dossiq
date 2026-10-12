@@ -1021,8 +1021,7 @@ export const useWorkflowStore = defineStore('workflow', {
 			return {
 				// Provenance tag only — nothing in PHP or JS reads or validates
 				// `_format`, so it is not a compatibility surface. Renamed with
-				// the app id, in step with the six seed templates in
-				// lib/Settings/vth-templates/*.json. (Contrast `seriesKey` and
+				// the app id. (Contrast `seriesKey` and
 				// `CASES_ON_MAP_KEY`, which OpenRegister UPSERTS on and which are
 				// therefore frozen at the old prefix.)
 				_format: 'dossiq-workflow-v1',

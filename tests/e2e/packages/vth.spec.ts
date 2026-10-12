@@ -14,6 +14,10 @@
  * have no identifier: there the journey finds the case type by its title.
  * Either way there is exactly one, which is the point of adoption.
  *
+ * Six more flows ship as drafts for an administrator to finish (decision 208).
+ * The journey reads them as drafts, and asks for each of their case types
+ * which flow a case follows: a published one, never the draft.
+ *
  * Writes nothing.
  */
 
@@ -27,6 +31,17 @@ const CASE_TYPES = [
 	{ identifier: 'toezichtzaak-milieu', title: 'Toezichtzaak Milieu', flows: [] },
 	{ identifier: 'handhavingszaak', title: 'Handhavingszaak', flows: ['Handhavingstraject', 'Spoedig herstel (Awb 5:31)'] },
 	{ identifier: 'invorderingszaak', title: 'Invorderingszaak', flows: [] },
+]
+
+// The draft flows, per case type. `follows` is the published flow a case of
+// that type follows; null where the package ships none and the basis flow of
+// the case type answers.
+const DRAFTS = [
+	{ identifier: 'omgevingsvergunning-bouwactiviteit', drafts: ['Omgevingsvergunning Bouwactiviteit (regulier)', 'Omgevingsvergunning Bouwactiviteit (uitgebreid)'], follows: 'Aanvraag omgevingsvergunning' },
+	{ identifier: 'sloopmelding', drafts: ['Sloopmelding'], follows: null },
+	{ identifier: 'toezichtzaak-bouw', drafts: ['Toezichtzaak Bouw'], follows: 'Toezichtbezoek' },
+	{ identifier: 'toezichtzaak-milieu', drafts: ['Toezichtzaak Milieu'], follows: null },
+	{ identifier: 'handhavingszaak', drafts: ['Handhavingszaak'], follows: 'Handhavingstraject' },
 ]
 
 const CHECKLISTS = [
@@ -50,6 +65,23 @@ async function rows(page: Page, schema: string): Promise<any[]> {
 		const body = await res.json().catch(() => null)
 		return Array.isArray(body) ? body : (body?.results ?? [])
 	}, schema)
+}
+
+/**
+ * The flow a case of one case type follows, as the app answers it.
+ *
+ * @param page The page, on any dossiq route.
+ * @param caseTypeId The case type.
+ * @return The HTTP status and the flow, null when there is none.
+ */
+async function followedFlow(page: Page, caseTypeId: string): Promise<{ status: number, definition: any }> {
+	return await page.evaluate(async (id: string) => {
+		const res = await fetch(`/index.php/apps/dossiq/api/workflow-definitions/active/${id}`, {
+			headers: { Accept: 'application/json', requesttoken: (window as any).OC?.requestToken ?? '' },
+		})
+		const body = await res.json().catch(() => null)
+		return { status: res.status, definition: body?.definition ?? null }
+	}, caseTypeId)
 }
 
 /**
@@ -97,6 +129,43 @@ test.describe('package vth', () => {
 			.filter((row) => String(row.caseType ?? '') === ids['toezichtzaak-bouw'])
 		for (const name of CHECKLISTS) {
 			expect(checklists.filter((row) => row.name === name), `checklist ${name}`).toHaveLength(1)
+		}
+	})
+
+	// @e2e openspec/changes/vth-package/specs/vth-workflow-templates/spec.md#scenario-a-draft-flow-is-stored-as-a-draft
+	// @e2e openspec/changes/vth-package/specs/vth-workflow-templates/spec.md#scenario-a-case-does-not-follow-a-draft-flow
+	// @e2e openspec/changes/vth-package/specs/vth-workflow-templates/spec.md#scenario-a-case-type-with-only-a-draft-flow-keeps-its-basis-flow
+	test('the six draft flows are drafts, and no case follows one', async ({ page }) => {
+		test.setTimeout(120_000)
+		await page.goto('/index.php/apps/dossiq', PAGE_LOAD)
+		await dismissSupportDialog(page)
+
+		const caseTypes = await rows(page, 'caseType')
+		const flows = await rows(page, 'workflowTemplate')
+		for (const entry of DRAFTS) {
+			const title = CASE_TYPES.find((caseType) => caseType.identifier === entry.identifier)?.title
+			const caseType = caseTypes.find((row) => row.identifier === entry.identifier
+				|| (!row.identifier && row.title === title))
+			expect(caseType, `case type ${entry.identifier}`).toBeTruthy()
+			const caseTypeId = idOf(caseType)
+			const own = flows.filter((row) => String(row.caseType ?? '') === caseTypeId)
+
+			const draftIds: string[] = []
+			for (const draftTitle of entry.drafts) {
+				const found = own.filter((row) => row.title === draftTitle)
+				expect(found.map(idOf), `${entry.identifier} holds the draft flow ${draftTitle} once`).toHaveLength(1)
+				expect(found[0].lifecycleStatus, `${draftTitle} is a draft`).toBe('draft')
+				expect(found[0].isActive, `${draftTitle} is not active`).toBe(false)
+				draftIds.push(idOf(found[0]))
+			}
+
+			const followed = await followedFlow(page, caseTypeId)
+			expect(followed.status, `${entry.identifier} has a flow a case follows`).toBe(200)
+			expect(followed.definition?.lifecycleStatus, `${entry.identifier} follows a published flow`).toBe('published')
+			expect(draftIds, `${entry.identifier} does not follow a draft`).not.toContain(String(followed.definition?.id ?? ''))
+			if (entry.follows !== null) {
+				expect(followed.definition?.title, `${entry.identifier} follows its published flow`).toBe(entry.follows)
+			}
 		}
 	})
 })
