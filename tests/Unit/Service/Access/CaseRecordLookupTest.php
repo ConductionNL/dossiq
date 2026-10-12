@@ -105,6 +105,64 @@ class CaseRecordLookupTest extends TestCase {
 		$lookup->rowsOf(schema: 'review', field: 'case', caseId: 'c-1');
 	}//end testAValueWithMoreRowsThanItReadsIsRefusedNotReadInPart()
 
+	public function testEveryRowOfASchemaIsReadOverItsPages(): void {
+		$this->register->pages = true;
+		for ($n = 0; $n < 2300; $n++) {
+			$this->register->seed('caseType', 'ct-' . $n, ['title' => 'type ' . $n]);
+		}
+
+		$rows = $this->lookup->everyRowOf(schema: 'caseType');
+
+		self::assertCount(2300, $rows, 'three pages, none dropped at the first');
+		self::assertCount(2300, array_unique(array_column($rows, 'id')), 'no row twice');
+		self::assertSame([], $this->lookup->everyRowOf(schema: ''), 'no schema, no rows');
+	}//end testEveryRowOfASchemaIsReadOverItsPages()
+
+	public function testASchemaWithMoreRowsThanItReadsIsRefusedNotReadInPart(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(
+			new class {
+
+				/**
+				 * @param array<string, mixed> $filters The filters.
+				 *
+				 * @return list<array<string, mixed>>
+				 */
+				public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+					return array_fill(0, (int)$filters['_limit'], ['id' => 'x']);
+				}//end searchObjectsBySlug()
+			}
+		);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$lookup = new CaseRecordLookup(settingsService: $settings, caseTypes: new CaseTypeStore($settings), resolver: $this->createMock(CaseTypeResolver::class));
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('not read in part');
+		$lookup->everyRowOf(schema: 'caseType');
+	}//end testASchemaWithMoreRowsThanItReadsIsRefusedNotReadInPart()
+
+	public function testAReadThatFailsIsNotAnEmptySchema(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(
+			new class {
+
+				/**
+				 * @param array<string, mixed> $filters The filters.
+				 *
+				 * @return never
+				 */
+				public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): never {
+					throw new \RuntimeException('the store is down');
+				}//end searchObjectsBySlug()
+			}
+		);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$lookup = new CaseRecordLookup(settingsService: $settings, caseTypes: new CaseTypeStore($settings), resolver: $this->createMock(CaseTypeResolver::class));
+
+		$this->expectExceptionMessage('the store is down');
+		$lookup->everyRowOf(schema: 'caseType');
+	}//end testAReadThatFailsIsNotAnEmptySchema()
+
 	public function testTheCaseAndItsCaseType(): void {
 		$case = $this->lookup->caseRow(caseId: 'c-1');
 

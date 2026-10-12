@@ -231,11 +231,16 @@ class CaseRecordGrantsBackfill {
 	/**
 	 * The case types that keep records private to the case, in a fixed order.
 	 *
+	 * Read by the walk itself, a page at a time. The shared case type listing
+	 * answers one page and answers nothing when its read fails, and a walk
+	 * over nothing would report every case reconciled. Here a failed read
+	 * throws, so the run says it did not finish.
+	 *
 	 * @return list<string>
 	 */
 	private function declaringCaseTypes(): array {
 		$ids = [];
-		foreach ($this->caseTypes->everyCaseType(scope: ['_rbac' => false, '_multitenancy' => false]) as $caseType) {
+		foreach ($this->lookup->everyRowOf(schema: $this->settingsService->getConfigValue('case_type_schema')) as $caseType) {
 			$caseTypeId = $this->caseTypes->rowId(row: $caseType);
 			if ($caseTypeId === '') {
 				continue;

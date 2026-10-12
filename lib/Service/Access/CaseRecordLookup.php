@@ -140,6 +140,46 @@ class CaseRecordLookup {
 	}//end page()
 
 	/**
+	 * Every row of a schema, read regardless of the caller and a page at a time.
+	 *
+	 * For a walk that must not miss a row: a read that fails throws, and a
+	 * schema with more rows than this reads is refused, never read in part.
+	 *
+	 * @param string $schema The schema slug; '' answers none.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @throws RuntimeException When the schema holds more rows than this reads.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-existing-records-are-reconciled-on-upgrade-req-cra-012
+	 */
+	public function everyRowOf(string $schema): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		$rows = [];
+		for ($page = 0; $page < self::MAX_PAGES; $page++) {
+			$read = $this->searchObjectsAsArraysUnscoped(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['_limit' => self::PAGE, '_offset' => ($page * self::PAGE)]
+			);
+			$rows = array_merge($rows, array_values($read));
+			if (count($read) < self::PAGE) {
+				return $rows;
+			}
+		}
+
+		throw new RuntimeException(
+			'Dossiq case record lookup: more than '.(self::MAX_PAGES * self::PAGE).' rows of '.$schema.'; not read in part'
+		);
+	}//end everyRowOf()
+
+	/**
 	 * The case row, or [].
 	 *
 	 * @param string $caseId The case uuid.
