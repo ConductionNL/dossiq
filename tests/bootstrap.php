@@ -483,7 +483,9 @@ if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') ===
 // DocumentSearchRequestedEvent and DocumentFetchRequestedEvent ride it too
 // (woo-requests-gather-documents-from-sources): WooSources searches and fetches
 // integriq's Microsoft 365 connection by name.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent', 'SourceRequestedEvent', 'OutboundSendDecisionRequestedEvent', 'DocumentSearchRequestedEvent', 'DocumentFetchRequestedEvent'] as $stubEvent) {
+// The three StUF-ZDS events ride it too (stuf onto integriq, decision 193):
+// StufIntegriqBridge sends outbound StUF and forwards confirmations by name.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent', 'SourceRequestedEvent', 'OutboundSendDecisionRequestedEvent', 'DocumentSearchRequestedEvent', 'DocumentFetchRequestedEvent', 'StufZdsCaseRequestedEvent', 'StufZdsCaseConcludedEvent', 'StufZdsConfirmationReceivedEvent', 'StufProviderQueryEvent', 'StufCaseQueryEvent', 'StufPersonQueryEvent', 'StufCaseMutationEvent', 'StufDocumentMutationEvent', 'StufProviderRequestReceivedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}

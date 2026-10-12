@@ -1444,7 +1444,7 @@
         "digest": "a03ddc03548b6f4f1e1b67d743e8eb531b859ee26edabf38bc67d2d223249af9"
     },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufEndpoint": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "6ca8957cbe63ad3c88c0049ad519a85c12b1e31dedc3f5037759dd6520ab660b"
     },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufMessage": {
