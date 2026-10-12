@@ -242,28 +242,11 @@ class ConflictOfInterestServiceTest extends TestCase {
 		self::assertSame(ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE, $r['reason']);
 	}//end testFailingRelationshipLookupBlocks()
 
-	/**
-	 * A manually-registered conflict trumps automatic detection — and does not
-	 * need identity resolution at all.
-	 *
-	 * @return void
-	 */
-	public function testManualRegistrationOverridesAuto(): void {
-		$svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class));
-		$svc->registerConflict('Z/2026/4', 'persoonlijk');
-
-		$r = $svc->checkConflict('alice', 'Z/2026/4', ['applicantBsn' => '222']);
-
-		self::assertTrue($r['conflict']);
-		self::assertSame('persoonlijk', $r['reason']);
-	}//end testManualRegistrationOverridesAuto()
-
-	// testClearConflictUnblocks was removed with
-	// ConflictOfInterestService::clearConflict(), which had no caller. The
-	// manual-override map it cleared is request-scoped and filled only by
-	// registerConflict(), which has no caller either; the override behaviour
-	// that is still reachable is asserted by testManualRegistrationOverridesAuto
-	// above.
+	// testManualRegistrationOverridesAuto and testClearConflictUnblocks were
+	// removed with ConflictOfInterestService::registerConflict() and
+	// clearConflict() (dossiq#1302). Neither had a production caller, and the
+	// map they filled was request-scoped, so the override could never outlive
+	// the request that set it. checkConflict() is the only entry point left.
 
 	/**
 	 * A dormant BRP adapter yields no relation — with identity resolved, that is
