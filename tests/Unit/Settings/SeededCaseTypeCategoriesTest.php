@@ -92,18 +92,24 @@ class SeededCaseTypeCategoriesTest extends TestCase {
 
 
 	/**
-	 * The besluitvorming template bundles name one for the case type they seed.
+	 * Every case type a shipped package carries names one.
 	 *
 	 * @return void
 	 */
-	public function testEveryTemplateBundleCaseTypeHasACategory(): void {
-		$bundles = glob(self::SETTINGS . '/templates/bvw-*.json');
-		$this->assertNotEmpty(actual: $bundles);
-		foreach ($bundles as $path) {
-			$bundle = json_decode((string)file_get_contents($path), true);
-			$this->assertCategory(caseType: $bundle['caseType'], where: basename($path));
+	public function testEveryPackageCaseTypeHasACategory(): void {
+		$packages = glob(self::SETTINGS . '/packages/*/case-type.json');
+		$this->assertNotEmpty(actual: $packages);
+		foreach ($packages as $path) {
+			$caseTypes = (array)(json_decode((string)file_get_contents($path), true)['caseType'] ?? []);
+			if (array_is_list($caseTypes) === false) {
+				$caseTypes = [$caseTypes];
+			}
+
+			foreach ($caseTypes as $caseType) {
+				$this->assertCategory(caseType: (array)$caseType, where: basename(dirname($path)));
+			}
 		}
-	}//end testEveryTemplateBundleCaseTypeHasACategory()
+	}//end testEveryPackageCaseTypeHasACategory()
 
 
 	/**

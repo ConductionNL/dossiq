@@ -38,8 +38,6 @@ use PHPUnit\Framework\TestCase;
  * Asserts every shipped seed payload only writes properties its schema declares.
  *
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageInstaller
- * @covers \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder
- * @covers \OCA\Dossiq\Service\SeedDataService
  *
  * `RegisterFragmentMerger` is declared as USED, not covered: the test reads a
  * merged register to know which properties a schema declares, so it executes
@@ -54,8 +52,8 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	/**
 	 * Collection key to the schema slug its records are written to.
 	 *
-	 * These are the fan-out points the seeders share: `TemplateBundleSeeder::
-	 * seedChildren()` and `SeedDataService` both take the records under these
+	 * These are the fan-out points the seeders share: `VTHTemplateService::
+	 * seedSubObjects()` and the package installer both take the records under these
 	 * keys off the case-type payload and write each one, verbatim plus a
 	 * `caseType` back-reference, into the named schema. A key listed here is
 	 * therefore BOTH a collection of payloads to check AND a key the parent
@@ -99,8 +97,8 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 * a matching `unset()` in the seeder re-opens the defect this sweep exists
 	 * to catch.
 	 *
-	 * - `statusTypes` … `resultTypes`, `workflowTemplate`, `initialStatusName`:
-	 *   `TemplateBundleSeeder::splitBundle()`, lib/Service/Besluitvorming/TemplateBundleSeeder.php.
+	 * - `workflowTemplate`: the VTH template seeders take the flow off the
+	 *   case type and write it to its own schema.
 	 * - `caseTypeSlug`: `VthSeedDataRepairStep::seedInspectionChecklists()`
 	 *   resolves it to the `caseType` uuid and drops the slug.
 	 *
@@ -108,7 +106,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 */
 	private const SEEDER_CONSUMED_KEYS = [
 		'workflowTemplate',
-		'initialStatusName',
 		'caseTypeSlug',
 	];
 
@@ -119,10 +116,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 */
 	private const SEED_FILES = [
 		'case_flow_seed_data.json',
-		'bezwaar_seed_data.json',
-		'templates/bvw-college-besluit.json',
-		'templates/bvw-mandaatbesluit.json',
-		'templates/bvw-raadsbesluit.json',
 		'templates/omgevingsvergunning.json',
 		'templates/woo-verzoek.json',
 		'templates/vth-handhavingszaak.json',
@@ -289,7 +282,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 				foreach ($value as $index => $record) {
 					if ($this->isPayload(node: $record) === false) {
 						// A record that is not an object is not a payload at
-						// all. `TemplateBundleSeeder::seedChildren()` skips a
+						// all. A seeder that reads child rows skips a
 						// non-array record, so a collection shipped as bare
 						// strings seeds NOTHING and still reports success.
 						$findings[] = $childPointer . '[' . $index . ']: not an object, so the'

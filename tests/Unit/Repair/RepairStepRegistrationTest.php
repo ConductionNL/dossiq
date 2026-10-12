@@ -219,10 +219,7 @@ class RepairStepRegistrationTest extends TestCase {
 	public function testAStepNeverRunsBeforeWhatItDependsOn(): void {
 		$dependencies = [
 			// consumer => providers.
-			'SeedBezwaarWorkflowDefinition' => ['SeedBezwaarBeroepData'],
 			'MigrateWorkflowDefinitions' => [
-				'SeedBezwaarBeroepData',
-				'SeedBesluitvormingTemplates',
 				'InstallShippedPackages',
 				'CaseFlowSeedDataRepairStep',
 			],

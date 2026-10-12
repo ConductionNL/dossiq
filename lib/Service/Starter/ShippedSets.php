@@ -40,11 +40,6 @@ use OCA\Dossiq\Service\CaseDefinition\PackageDirectory;
 class ShippedSets {
 
 	/**
-	 * The bezwaar and beroep case types seeded from `bezwaar_seed_data.json`.
-	 */
-	public const BEZWAAR_BEROEP = 'bezwaar-beroep';
-
-	/**
 	 * The VTH case types, seeded from the shipped vergunning, toezicht and
 	 * handhaving configuration.
 	 *
@@ -66,7 +61,6 @@ class ShippedSets {
 	 * @var array<string, string>
 	 */
 	public const VERSIONS = [
-		self::BEZWAAR_BEROEP => '1.0.0',
 		self::VTH => '1.0.0',
 		self::MUNICIPAL_ROLES => '1.0.0',
 	];

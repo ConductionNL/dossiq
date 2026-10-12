@@ -1,5 +1,5 @@
 {
-  "_note": "woo-case-screens-and-objections REQ-WCS-006 (decision 182: the procedure is configuration). The Bezwaar case type, seeded with the Woo request case type so an objection against a Woo decision has a case type to open: the Woo case type's remedy declaration (81-woo-verzoek.json) names it, and RemedyLodging opens it. Moved here from bezwaar_seed_data.json _caseTypes_disabled; Beroep and Subsidie stay parked there. Term P6W, one extension of P6W (Awb art. 7:10 lid 1 and 3).",
+  "_note": "woo-case-screens-and-objections REQ-WCS-006 (decision 182: the procedure is configuration). The Bezwaar case type, seeded with the Woo request case type so an objection against a Woo decision has a case type to open: the Woo case type's remedy declaration (81-woo-verzoek.json) names it, and RemedyLodging opens it. Its roles and its flow, and the Beroep case type, ship in the package lib/Settings/packages/bezwaar-beroep (installed on request), which names this case type and these statuses by the same uuids. Term P6W, one extension of P6W (Awb art. 7:10 lid 1 and 3).",
   "components": {
     "objects": [
       {
@@ -47,7 +47,8 @@
         "description": "Bezwaarschrift is ontvangen",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 1,
-        "isFinal": false
+        "isFinal": false,
+        "role": "intake"
       },
       {
         "@self": {
@@ -75,7 +76,8 @@
         "description": "Inhoudelijke behandeling gestart",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 3,
-        "isFinal": false
+        "isFinal": false,
+        "role": "in-progress"
       },
       {
         "@self": {
@@ -145,7 +147,8 @@
         "description": "Bezwaarprocedure is volledig afgerond",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 8,
-        "isFinal": true
+        "isFinal": true,
+        "role": "closed"
       },
       {
         "@self": {

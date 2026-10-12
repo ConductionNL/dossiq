@@ -94,7 +94,7 @@ class SeedDataOriginTest extends TestCase {
 
 		self::assertTrue(
 			condition: $this->shipped->stamp(
-				set: ShippedSets::BEZWAAR_BEROEP,
+				set: ShippedSets::MUNICIPAL_ROLES,
 				targetSchema: 'caseType',
 				targetObject: 'ct-1',
 				object: $caseType,
@@ -104,7 +104,7 @@ class SeedDataOriginTest extends TestCase {
 		$state = $this->shipped->stateOf(targetSchema: 'caseType', targetObject: 'ct-1', object: $caseType);
 
 		self::assertSame(expected: ShippedConfigurationService::STATE_SHIPPED, actual: $state['state']);
-		self::assertSame(expected: ShippedSets::BEZWAAR_BEROEP, actual: $state['set']);
+		self::assertSame(expected: ShippedSets::MUNICIPAL_ROLES, actual: $state['set']);
 		self::assertSame(expected: '1.0.0', actual: $state['setVersion']);
 	}//end testASeededObjectNobodyEditedReadsAsShipped()
 
@@ -118,7 +118,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -130,7 +130,7 @@ class SeedDataOriginTest extends TestCase {
 		$state = $this->shipped->stateOf(targetSchema: 'caseType', targetObject: 'ct-1', object: $edited);
 
 		self::assertSame(expected: ShippedConfigurationService::STATE_CHANGED, actual: $state['state']);
-		self::assertSame(expected: ShippedSets::BEZWAAR_BEROEP, actual: $state['set']);
+		self::assertSame(expected: ShippedSets::MUNICIPAL_ROLES, actual: $state['set']);
 	}//end testAnEditedShippedObjectReadsAsChangedHere()
 
 	/**
@@ -162,13 +162,13 @@ class SeedDataOriginTest extends TestCase {
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
 		);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -208,7 +208,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar', 'processingDeadline' => 'P6W'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -218,7 +218,7 @@ class SeedDataOriginTest extends TestCase {
 			targetSchema: 'caseType',
 			objectsKey: 'case_type_schema',
 			targetObject: 'ct-1',
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			newShipped: ['title' => 'Bezwaar', 'processingDeadline' => 'P12W'],
 		);
 
@@ -242,7 +242,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar', 'processingDeadline' => 'P6W'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -256,7 +256,7 @@ class SeedDataOriginTest extends TestCase {
 			targetSchema: 'caseType',
 			objectsKey: 'case_type_schema',
 			targetObject: 'ct-1',
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			newShipped: ['title' => 'Bezwaar', 'processingDeadline' => 'P12W'],
 		);
 
@@ -274,7 +274,7 @@ class SeedDataOriginTest extends TestCase {
 			targetSchema: 'caseType',
 			objectsKey: 'case_type_schema',
 			targetObject: 'ct-1',
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			newShipped: ['title' => 'Bezwaar', 'processingDeadline' => 'P12W'],
 		);
 
@@ -294,7 +294,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,
@@ -325,7 +325,7 @@ class SeedDataOriginTest extends TestCase {
 		$caseType = ['id' => 'ct-1', 'title' => 'Bezwaar'];
 		$this->harness->seed(schema: 'caseType', uuid: 'ct-1', row: $caseType);
 		$this->shipped->stamp(
-			set: ShippedSets::BEZWAAR_BEROEP,
+			set: ShippedSets::MUNICIPAL_ROLES,
 			targetSchema: 'caseType',
 			targetObject: 'ct-1',
 			object: $caseType,

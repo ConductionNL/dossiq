@@ -12,21 +12,11 @@ Implements AWB-compliant (Algemene wet bestuursrecht) bezwaar (objection) and be
 
 ### Backend
 
-**`lib/Service/SeedDataService`**
-- Seeds bezwaar/beroep case types from `lib/Settings/bezwaar_seed_data.json`
-- Idempotent: checks for existing objects by `identifier` before creating
-- Resolves name-to-UUID references in workflow steps/transitions after creation
-- Returns a summary with counts: `caseTypes`, `statusTypes`, `roleTypes`, `workflows`, `skipped`
+The case types ship as the case definition package `lib/Settings/packages/bezwaar-beroep/` (hydra ADR-118). The package holds both case types, their status and role types, and one flow each. Every row carries a fixed id, so a second install recognises its own rows.
 
-**`lib/Repair/SeedBezwaarBeroepData`**
-- `IRepairStep` executed during app installation or upgrade
-- Delegates to `SeedDataService::seedBezwaarBeroepData()`
-- Skips if OpenRegister is not available (`SettingsService::isOpenRegisterAvailable`)
-- Exceptions are caught and logged: never propagated
+The package is `install: on-request`: no upgrade writes it. An administrator installs it with `occ dossiq:package:install bezwaar-beroep`, or through the setup action `POST /api/setup/action/seed`. The package installer writes every row or none and records each one in the shipped-set ledger.
 
-**`lib/Settings/bezwaar_seed_data.json`**
-- Pre-defined case types: `bezwaar` and `beroep`
-- Each includes: status types (e.g. `ontvangen`, `in-behandeling`, `beslissing-genomen`), role types, and a workflow template with steps, transitions, and guards
+The package was converted once from the old seed by `scripts/packages/seed-to-package.py`, which resolved status names into fixed status ids. The seeder classes that used to do this at runtime are gone.
 
 ### Frontend (Vue)
 
@@ -46,6 +36,5 @@ Implements AWB-compliant (Algemene wet bestuursrecht) bezwaar (objection) and be
 
 ## Testing
 
-Unit tests are in:
-- `tests/Unit/Service/SeedDataServiceTest.php`: ObjectService unavailable → failure, missing config → failure, happy path summary structure, idempotency (existing → skipped), seed data file integrity
-- `tests/Unit/Repair/SeedBezwaarBeroepDataTest.php`: getName, skip when OpenRegister unavailable, call seed service, info output on success, exception handling
+- `tests/integration/packages/bezwaar-beroep.postman_collection.json`: the packages workflow installs the package on a clean instance and reads the case types, statuses, roles, flows and ledger rows back.
+- `tests/e2e/packages/bezwaar-beroep.spec.ts`: an administrator installs the package through the setup action and finds both case types in the case type list.

@@ -57,7 +57,8 @@
               "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Omgevingsvergunning Bouwactiviteit\"));",
               "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"omgevingsvergunning-bouwactiviteit\"));",
               "pm.test('processingDeadline as shipped', () => pm.expect(row.processingDeadline).to.eql(\"P56D\"));",
-              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"openbaar\"));"
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"openbaar\"));",
+              "pm.test('list layout as shipped', () => pm.expect(row['x-index'].columns).to.eql([\"identifier\", \"title\", \"status\", \"procedureType\", \"besluitdatum\", \"deadline\"]));"
             ]
           }
         }
@@ -546,7 +547,8 @@
               "const row = pm.response.json();",
               "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Toezichtzaak Bouw\"));",
               "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"toezichtzaak-bouw\"));",
-              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"intern\"));"
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"intern\"));",
+              "pm.test('list layout as shipped', () => pm.expect(row['x-index'].columns).to.eql([\"identifier\", \"title\", \"status\", \"assignee\", \"deadline\"]));"
             ]
           }
         }
@@ -1341,7 +1343,7 @@
       ]
     },
     {
-      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 1 - Fundering",
+      "name": "toezichtzaak-bouw: inspection-checklists Bouwtoezicht fase 1 - Fundering",
       "request": {
         "method": "GET",
         "header": [
@@ -1369,7 +1371,7 @@
       ]
     },
     {
-      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 2 - Ruwbouw",
+      "name": "toezichtzaak-bouw: inspection-checklists Bouwtoezicht fase 2 - Ruwbouw",
       "request": {
         "method": "GET",
         "header": [
@@ -1397,7 +1399,7 @@
       ]
     },
     {
-      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 3 - Oplevering",
+      "name": "toezichtzaak-bouw: inspection-checklists Bouwtoezicht fase 3 - Oplevering",
       "request": {
         "method": "GET",
         "header": [

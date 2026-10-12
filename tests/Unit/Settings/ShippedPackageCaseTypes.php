@@ -37,11 +37,18 @@ final class ShippedPackageCaseTypes {
 	/**
 	 * Every case type of every shipped package, children nested, `slug` set to its identifier.
 	 *
+	 * @param string|null $install Only the packages with this install mode (`auto`, `on-request`); null for every package.
+	 *
 	 * @return list<array<string, mixed>> The case types.
 	 */
-	public static function nested(): array {
+	public static function nested(?string $install = null): array {
 		$nested = [];
 		foreach ((array)glob(__DIR__ . '/../../../lib/Settings/packages/*/case-type.json') as $path) {
+			$manifest = json_decode((string)file_get_contents(dirname((string)$path) . '/package.json'), true);
+			if ($install !== null && (string)($manifest['install'] ?? '') !== $install) {
+				continue;
+			}
+
 			$data = json_decode((string)file_get_contents((string)$path), true);
 			if (is_array($data) === false) {
 				continue;
