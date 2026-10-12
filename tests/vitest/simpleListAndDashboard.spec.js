@@ -364,6 +364,8 @@ describe('the landing page', () => {
 		expect(simple.config.widgets).toEqual([])
 		expect(simple.config.greeting).toBe('first')
 		expect(simple.config.showActionsMenu).toBe(false)
+		// DqMijnWerk draws the greeting and the date and nothing after them.
+		expect(simple.config.description).toBe('')
 		const order = [...mine.layout]
 			.sort((a, b) => a.gridY - b.gridY || a.gridX - b.gridX)
 			.map((item) => item.widgetId)
