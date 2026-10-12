@@ -15,11 +15,17 @@
  * second call, and every later run, expects.
  */
 
-import { expect, type Page, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 import { dismissSupportDialog, PAGE_LOAD } from '../helpers/nav.ts'
 
 const CASE_TYPES = [
-	{ identifier: 'subsidie', title: 'Subsidie', flow: 'Subsidie Standaard Workflow' },
+	{
+		identifier: 'subsidie',
+		title: 'Subsidie',
+		flow: 'Subsidie Standaard Workflow',
+	},
 ]
 
 /**
@@ -29,14 +35,27 @@ const CASE_TYPES = [
  * @param id The package id.
  * @return The HTTP status and the decoded body.
  */
-async function install(page: Page, id: string): Promise<{ status: number; body: any }> {
+async function install(
+	page: Page,
+	id: string,
+): Promise<{ status: number; body: any }> {
 	return await page.evaluate(async (packageId: string) => {
 		const w = window as unknown as { OC?: { requestToken?: string } }
-		const token = w.OC?.requestToken || document.head.getAttribute('data-requesttoken') || ''
-		const res = await fetch(`/index.php/apps/dossiq/api/packages/${packageId}/install`, {
-			method: 'POST',
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', requesttoken: token },
-		})
+		const token =
+			w.OC?.requestToken
+			|| document.head.getAttribute('data-requesttoken')
+			|| ''
+		const res = await fetch(
+			`/index.php/apps/dossiq/api/packages/${packageId}/install`,
+			{
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					requesttoken: token,
+				},
+			},
+		)
 		return { status: res.status, body: await res.json().catch(() => null) }
 	}, id)
 }
@@ -50,24 +69,34 @@ async function install(page: Page, id: string): Promise<{ status: number; body: 
  */
 async function caseTypeIds(page: Page, identifier: string): Promise<string[]> {
 	return await page.evaluate(async (wanted: string) => {
-		const res = await fetch(`/index.php/apps/openregister/api/objects/dossiq/caseType?identifier=${encodeURIComponent(wanted)}&_limit=200`, {
-			headers: { Accept: 'application/json' },
-		})
+		const res = await fetch(
+			`/index.php/apps/openregister/api/objects/dossiq/caseType?identifier=${encodeURIComponent(wanted)}&_limit=200`,
+			{
+				headers: { Accept: 'application/json' },
+			},
+		)
 		const body = await res.json().catch(() => null)
 		const rows: any[] = Array.isArray(body) ? body : (body?.results ?? [])
-		return rows.filter((row) => row.identifier === wanted).map((row) => String(row.id ?? row['@self']?.id ?? ''))
+		return rows
+			.filter((row) => row.identifier === wanted)
+			.map((row) => String(row.id ?? row['@self']?.id ?? ''))
 	}, identifier)
 }
 
 test.describe('package subsidie', () => {
 	// @e2e openspec/changes/subsidie-package/specs/subsidieverlening-keten/spec.md#scenario-an-administrator-installs-the-subsidie-package
-	test('an administrator installs subsidie and finds the case type with its flow', async ({ page }) => {
+	test('an administrator installs subsidie and finds the case type with its flow', async ({
+		page,
+	}) => {
 		test.setTimeout(180_000)
 		await page.goto('/index.php/apps/dossiq', PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const first = await install(page, 'subsidie')
-		expect(first.body, `POST /api/packages/subsidie/install returned ${first.status} with no JSON body`).not.toBeNull()
+		expect(
+			first.body,
+			`POST /api/packages/subsidie/install returned ${first.status} with no JSON body`,
+		).not.toBeNull()
 		expect(first.status, first.body?.message).toBe(200)
 		expect(['installed', 'current']).toContain(first.body.status)
 		expect(first.body.package).toBe('subsidie')
@@ -75,13 +104,23 @@ test.describe('package subsidie', () => {
 		for (const caseType of CASE_TYPES) {
 			const ids = await caseTypeIds(page, caseType.identifier)
 			// One case type per identifier: the install adopted or wrote it, never both.
-			expect(ids, `case types with identifier ${caseType.identifier}`).toHaveLength(1)
-			await page.goto(`/index.php/apps/dossiq/settings/case-types/${ids[0]}`, PAGE_LOAD)
+			expect(
+				ids,
+				`case types with identifier ${caseType.identifier}`,
+			).toHaveLength(1)
+			await page.goto(
+				`/index.php/apps/dossiq/settings/case-types/${ids[0]}`,
+				PAGE_LOAD,
+			)
 			await dismissSupportDialog(page)
 			const detail = page.locator('.cn-detail-page')
 			await expect(detail).toBeVisible({ timeout: 30_000 })
-			await expect(detail.getByText(caseType.title, { exact: true }).first()).toBeVisible()
-			await expect(detail.getByText(caseType.flow).first()).toBeVisible({ timeout: 30_000 })
+			await expect(
+				detail.getByText(caseType.title, { exact: true }).first(),
+			).toBeVisible()
+			await expect(detail.getByText(caseType.flow).first()).toBeVisible({
+				timeout: 30_000,
+			})
 		}
 
 		const second = await install(page, 'subsidie')
