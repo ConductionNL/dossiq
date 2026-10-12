@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\ApplicantTermNoteListener;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseTeamAccessListener;
@@ -69,6 +70,14 @@ class CaseTypeListenerRegistrar {
 	 * before them would have its value replaced by the calculated one.
 	 */
 	public const TERM_DEADLINE_PRIORITY = -110;
+
+	/**
+	 * Where the applicant's term note is put into a case save.
+	 *
+	 * BELOW the statutory term's deadline: the note reads the deadline that
+	 * listener just wrote into the save, so it reads no term of its own.
+	 */
+	public const TERM_NOTE_PRIORITY = -120;
 
 	/**
 	 * Register the case type inheritance listeners.
@@ -123,6 +132,14 @@ class CaseTypeListenerRegistrar {
 			event: ObjectUpdatingEvent::class,
 			listener: CaseDeadlineFollowsTermListener::class,
 			priority: self::TERM_DEADLINE_PRIORITY
+		);
+
+		// UPDATE ONLY, for the same reason: a new case has no open request
+		// and no extension, and its first update writes the date.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: ApplicantTermNoteListener::class,
+			priority: self::TERM_NOTE_PRIORITY
 		);
 	}//end register()
 }//end class
