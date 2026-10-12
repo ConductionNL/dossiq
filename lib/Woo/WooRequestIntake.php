@@ -168,9 +168,9 @@ class WooRequestIntake {
 			caseType: $caseType,
 			wooRequest: $wooRequest,
 			intake: [
-				// The statutory clock starts today: `deadline` is startDate plus
-				// the type's processingDeadline (P28D).
-				'startDate' => date('Y-m-d'),
+				// No startDate: dossiq sets it inside the create, from the
+				// receipt and the term start (decision 181, Q11), so a request
+				// sent on Sunday does not count its P28D from Sunday.
 				'portalSubject' => $subjectRef,
 				// THE PARTY THE CASE BELONGS TO, typed as portaliq's mandates name
 				// it. The assertion carries the subject only, so a request is the

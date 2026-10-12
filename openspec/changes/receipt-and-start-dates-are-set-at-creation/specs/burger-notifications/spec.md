@@ -8,7 +8,9 @@ create form SHALL NOT ask for them. The receipt SHALL be the first of: a
 `registrationDate`, `requestedDate`, the creation moment. dossiq SHALL write
 `startDate` as the receipt's calendar day in the administered time zone
 (Europe/Amsterdam unless the tenant or the engine calendar names another)
-when the case carries no `startDate`, and SHALL answer the case type's `receiptDate` question with
+when the case carries no `startDate`. When the term starts on a later day
+than the request came in, `startDate` SHALL be the day the term starts
+instead (decision 181, a-request-form-opens-the-case-at-once). dossiq SHALL answer the case type's `receiptDate` question with
 that day when the type declares one and the case does not answer it. A value
 already on the case SHALL be kept. The statutory term SHALL start from that
 same receipt (REQ-OTE-02). The dates SHALL be written even when the working
@@ -31,6 +33,15 @@ materialised calculation can fill `startDate` first.
 - **GIVEN** the administered zone is Europe/Amsterdam
 - **WHEN** a handler files a case on Sunday 2026-10-11 at 01:52 CEST (Saturday 23:52 UTC)
 - **THEN** the case's `startDate` SHALL be 2026-10-11
+
+#### Scenario: a request sent on Sunday evening starts on Monday
+@e2e exclude the day is set by a create listener with no gesture of its own, and a browser cannot choose the clock; covered through the real listener in tests/Unit/Listener/IntakeTermStartListenerTest.php::testASundaySubmitCarriesItsTermAndStartsOnTheDayTheTermStarts and tests/Unit/Listener/IntakeTermStartListenerTest.php::testTheReceiptAnswerStaysTheDayTheRequestCameIn
+
+- **GIVEN** a working calendar that opens on Monday 2026-10-12 at 08:30
+- **WHEN** a request arrives on Sunday 2026-10-11 at 21:40 without a start date
+- **THEN** the case's `termStartsAt` SHALL be Monday 2026-10-12 at 08:30
+- **AND** its `startDate` SHALL be 2026-10-12
+- **AND** its `receiptDate` answer SHALL be 2026-10-11
 
 #### Scenario: a Woo case is stored with its receipt answer
 @e2e exclude the answer is set by a create listener with no gesture of its own; covered through the real listener in tests/Unit/Listener/IntakeTermStartListenerTest.php::testAWooCaseIsStoredWithItsReceiptAnswer and tests/Unit/Listener/IntakeTermStartListenerTest.php::testTheCreatedFallbackSendsOnlyTheFieldsItAdds

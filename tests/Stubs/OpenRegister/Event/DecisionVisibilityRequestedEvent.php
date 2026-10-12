@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Event;
 
+use OCA\OpenRegister\Db\Decision;
+use OCA\OpenRegister\Service\Decision\ReviewPolicy;
 use OCP\EventDispatcher\Event;
 
 /**
@@ -54,15 +56,15 @@ class DecisionVisibilityRequestedEvent extends Event {
 	/**
 	 * Constructor.
 	 *
-	 * @param object|null          $decision The hidden decision, or null when its record is gone.
+	 * @param Decision|null        $decision The hidden decision, or null when its record is gone.
 	 * @param string               $actorId  The user who reads it.
-	 * @param object               $policy   The review policy that applies.
+	 * @param ReviewPolicy         $policy   The review policy that applies.
 	 * @param array<string, mixed> $subject  subjectType, subjectId, fileId, objectId, register, schema, objectUuid.
 	 */
 	public function __construct(
-		private readonly ?object $decision,
+		private readonly ?Decision $decision,
 		private readonly string $actorId,
-		private readonly object $policy,
+		private readonly ReviewPolicy $policy,
 		private readonly array $subject,
 	) {
 		parent::__construct();
@@ -73,7 +75,7 @@ class DecisionVisibilityRequestedEvent extends Event {
 	 *
 	 * @return object|null
 	 */
-	public function getDecision(): ?object {
+	public function getDecision(): ?Decision {
 		return $this->decision;
 	}//end getDecision()
 
@@ -91,7 +93,7 @@ class DecisionVisibilityRequestedEvent extends Event {
 	 *
 	 * @return object
 	 */
-	public function getPolicy(): object {
+	public function getPolicy(): ReviewPolicy {
 		return $this->policy;
 	}//end getPolicy()
 

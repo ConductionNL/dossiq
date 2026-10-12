@@ -40,6 +40,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Listener\CaseReassignGuardListener
  * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
  * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
@@ -82,7 +83,7 @@ class CaseReassignGuardListenerTest extends TestCase {
 		$grants->method('available')->willReturn(true);
 		$grants->method('reconcile')->willReturnCallback(
 			function (string $schema, string $uuid, array $readers, string $group): array {
-				$this->grantCalls[] = ['uuid' => $uuid, 'readers' => $readers];
+				$this->grantCalls[] = ['uuid' => $uuid, 'readers' => array_map('strval', array_keys($readers))];
 				return ['granted' => count($readers), 'revoked' => 1, 'refused' => 0];
 			}
 		);

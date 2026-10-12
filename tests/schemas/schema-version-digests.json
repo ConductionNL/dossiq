@@ -212,7 +212,7 @@
         "digest": "19c4aefae8b73c710df4be1b07850a503dd462550ec7c48479b9bbdcc4d18144"
     },
     "lib/Settings/dossiq_mock_register.json::dwangsomUitbetaling": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "d5a67ebb01e2387720984895afa8084f75e4c312152ef5458d298164c2fb7807"
     },
     "lib/Settings/dossiq_mock_register.json::emailTemplate": {
@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.43.0",
+        "version": "1.44.0",
         "digest": "b578ccbd77b6c4ff6987dedc29b48fdd1bf6ca6cfd9b329b80bf72ff9e04a5ab"
     },
     "lib/Settings/dossiq_register.json::case-location": {
@@ -1228,7 +1228,7 @@
         "digest": "425910e0859b4adc65eab5ad4c8975e09c15a806b9992831b8d4d5671e2ae24a"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::dwangsomUitbetaling": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "07eefb766e6f75a558f5d26fca5c4d2c344de6f6de84e8a71aebb3f8d6028068"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::noticeOfDefault": {
@@ -1444,7 +1444,7 @@
         "digest": "a03ddc03548b6f4f1e1b67d743e8eb531b859ee26edabf38bc67d2d223249af9"
     },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufEndpoint": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "6ca8957cbe63ad3c88c0049ad519a85c12b1e31dedc3f5037759dd6520ab660b"
     },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufMessage": {
@@ -1454,6 +1454,10 @@
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::zaaksysteemMapping": {
         "version": "1.0.1",
         "digest": "4667ebd5c2caa3dd0a37b95f8ae3ba380ce4be001fc2fcf5e3c0fbf0847ae54e"
+    },
+    "lib/Settings/register.d/81-connected-system-origin.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/81-woo-verzoek.json::case": {
         "version": "",

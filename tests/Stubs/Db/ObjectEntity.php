@@ -258,6 +258,33 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	}//end hasActiveLegalHold()
 
 	/**
+	 * Lifecycle status, as the real `_status` column holds it: `draft`, `active` or null.
+	 *
+	 * @var string|null
+	 */
+	private ?string $status = null;
+
+	/**
+	 * Set the lifecycle status.
+	 *
+	 * @param string|null $status `draft`, `active` or null.
+	 *
+	 * @return void
+	 */
+	public function setStatus(?string $status): void {
+		$this->status = $status;
+	}//end setStatus()
+
+	/**
+	 * Whether this object is a draft. Mirrors the real `ObjectEntity::isDraft()`.
+	 *
+	 * @return bool True for a stored `draft` status.
+	 */
+	public function isDraft(): bool {
+		return $this->status === 'draft';
+	}//end isDraft()
+
+	/**
 	 * Minimal stand-in for the real ObjectEntity::jsonSerialize() — merges
 	 * the raw object data with an `@self.schema` (and `@self.id`) envelope,
 	 * matching the fields dossiq listeners actually read.
@@ -267,6 +294,7 @@ class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
 	public function jsonSerialize(): array {
 		$data = $this->object;
 		$data['@self'] = [
+			'status' => $this->status,
 			'schema' => $this->schema,
 			'id' => $this->uuid,
 			// The real getObjectArray() puts the retention column in `@self`,

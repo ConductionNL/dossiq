@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -56,10 +57,12 @@ class ComplaintAnalyticsService {
 	 *
 	 * @param SettingsService $settingsService Settings service
 	 * @param LoggerInterface $logger Logger
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -164,7 +167,7 @@ class ComplaintAnalyticsService {
 
 			$start = new DateTimeImmutable($receipt);
 			$end = new DateTimeImmutable($afhandelDeadline);
-			$days = (int)$start->diff($end)->days;
+			$days = $this->days->between(from: $start, to: $end);
 
 			$totals[$category] = ($totals[$category] ?? 0) + $days;
 			$counts[$category] = ($counts[$category] ?? 0) + 1;

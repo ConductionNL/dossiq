@@ -266,7 +266,7 @@ class ConnectionsDeclarationTest extends TestCase {
 	 * Only KvK is declared unavailable, and it says why in words that are true.
 	 *
 	 * BRP and KvK were both once marked "Specified, not built yet", which was
-	 * false for both. KvK's adapter is built and bound and nothing calls it.
+	 * false for both. Dossiq ships no KvK client (ADR-118): integriq holds the source.
 	 *
 	 * @return void
 	 */
@@ -278,16 +278,19 @@ class ConnectionsDeclarationTest extends TestCase {
 
 		$this->assertSame(expected: ['kvk'], actual: array_column($unavailable, 'key'));
 		$message = (string)$this->connectionsByKey()['kvk']['unavailableMessage'];
-		$this->assertMatchesRegularExpression(pattern: '/built and bound/i', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/no KvK client/i', string: $message);
 		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 	}//end testOnlyKvkIsUnavailableAndSaysWhy()
 
 	/**
-	 * BRP names the key that wakes it, and offers no settings link.
+	 * BRP names the setting that wakes it, and offers no settings link.
 	 *
-	 * BRP is built and called, and reaches nothing until its tier key moves off
-	 * `log`. No admin section writes that key, so the row's message is the only
-	 * place an integrator learns it (REQ-ADMIN-019).
+	 * Dossiq ships no BRP client (ADR-118). The conflict-of-interest check
+	 * reads family relations through integriq's BRP source, and that read is
+	 * off until `relationFields` is set on the source. No admin section in
+	 * dossiq writes it, so the row's message is the only place an
+	 * administrator learns it (REQ-ADMIN-019). The retired tier key is gone
+	 * from the message: setting it changes nothing any more.
 	 *
 	 * @return void
 	 */
@@ -296,7 +299,9 @@ class ConnectionsDeclarationTest extends TestCase {
 
 		$message = (string)($brp['unconfiguredMessage'] ?? '');
 
-		$this->assertMatchesRegularExpression(pattern: '/integration\\.brp\\.mode/', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/relationFields/', string: $message);
+		$this->assertMatchesRegularExpression(pattern: '/Integriq/', string: $message);
+		$this->assertDoesNotMatchRegularExpression(pattern: '/integration\\.brp\\.mode/', string: $message);
 		$this->assertDoesNotMatchRegularExpression(pattern: '/not built/i', string: $message);
 		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $brp);
 		$this->assertArrayNotHasKey(key: 'available', array: $brp);

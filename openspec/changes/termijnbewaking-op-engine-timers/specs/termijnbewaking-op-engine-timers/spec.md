@@ -129,6 +129,40 @@ allowlist SHALL shrink to empty as phases 2 to 4 land.
 - **THEN** it MUST fail naming the file and instructing the author to arm a FlowTimer
 - @e2e exclude covered by the architecture unit test's self-check fixtures
 
+### Requirement: REQ-TOT-007 — Days between two dates are counted in one place
+
+dossiq SHALL count the calendar days between two moments in one class,
+`OCA\Dossiq\Service\Term\DayCount`, which names the two questions a caller can ask: `between()`
+for a span, never negative, and `signed()` for days left or days overdue, negative when the second
+moment precedes the first. Working days SHALL be asked of `WorkingDayRoll::daysBetween()`, which
+answers from the administered calendar and uses `DayCount` for its calendar mode. No other class
+under `lib/` SHALL call `DateTimeInterface::diff()`. A structural test SHALL enforce this with a
+reason-bearing allowlist naming, per remaining file, the open change that takes it; an entry whose
+file no longer counts SHALL fail as stale, so the list only shrinks. The capability is generic: it
+knows no procedure and no case type.
+
+#### Scenario: Days left carry a sign
+
+- **GIVEN** today and a deadline three days in the past
+- **WHEN** the days left are asked with `signed(from: today, to: deadline)`
+- **THEN** the answer MUST be -3
+- **AND** `between()` for the same two moments MUST answer 3
+- @e2e exclude covered by DayCountTest
+
+#### Scenario: A new ad hoc day count is refused
+
+- **GIVEN** a file under `lib/` that calls `->diff(` and is not on the allowlist
+- **WHEN** the structural test runs
+- **THEN** it MUST fail naming the file and pointing the author at `DayCount`
+- @e2e exclude covered by the architecture unit test DayCountIsTheOnlyDiffTest
+
+#### Scenario: Moving a count changes no number
+
+- **GIVEN** a deadline countdown that counted days itself (complaint alerts, the throughput dashboard, a stalled milestone)
+- **WHEN** it asks `DayCount` instead
+- **THEN** every count its characterisation test pinned beforehand MUST be unchanged
+- @e2e exclude covered by ComplaintServiceTest, CaseEnricherTest and MilestoneServiceStalledTest
+
 ### Requirement: REQ-TOT-005 — Dwangsom accrual is a derivation, settled at decision time
 
 Dwangsom accrual (AWB 4:17 tiers, plafond) SHALL stay dossiq domain arithmetic and SHALL be

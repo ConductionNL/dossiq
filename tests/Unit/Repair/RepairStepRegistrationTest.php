@@ -75,6 +75,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'MoveDocumentsIntoCaseFolders' => 'moves existing document files into their case folders; a fresh install has none',
 		'BackfillPortalParty' => 'fills portalParty on existing portal cases; a fresh install has none',
 		'NormaliseCommunicationChannelValues' => 'turns existing case channels into slugs; a fresh install has none',
+		'MoveDecisionTablesToOpenRegister' => 'copies existing dossiq decision tables into OpenRegister; a fresh install has none',
 		'CopyMessageAttachmentsIntoMessageFolders' => 'copies existing portal message attachments into the message folder; a fresh install has none',
 		'MigratePartnersToOrganisations' => 'moves existing ketenpartner rows onto Organisation',
 		'MigrateTenantsToOrganisations' => 'moves existing legacy tenant rows onto Organisation; a fresh install has none',
@@ -193,12 +194,12 @@ class RepairStepRegistrationTest extends TestCase {
 	 *
 	 * 🔴 THE ORDER IS NOT DOCUMENTATION, IT IS THE CONTRACT. `info.xml` runs
 	 * the steps in the order they are written, and a step registered ahead of
-	 * its own precondition cannot succeed even once. Both blocks shipped
-	 * `SeedVthWorkflowTemplates` ahead of `VthSeedDataRepairStep`, which
-	 * provisions the case types five of the six templates resolve. Every
-	 * fresh install therefore reported "0 seeded, 5 skipped", in an
-	 * info-level line, and carried on green: the VTH catalogue was absent on
-	 * every new instance and nothing ever failed.
+	 * its own precondition cannot succeed even once. Both blocks once shipped
+	 * the VTH workflow seeder ahead of the step that provisioned its case
+	 * types. Every fresh install therefore reported "0 seeded, 5 skipped", in
+	 * an info-level line, and carried on green: the VTH catalogue was absent
+	 * on every new instance and nothing ever failed. Today the `vth` package
+	 * carries those rows and the installer writes them in dependency order.
 	 *
 	 * The pairs are asserted rather than the whole order, because only the pairs
 	 * with a real data dependency are worth freezing. Add a pair here when you
@@ -218,13 +219,8 @@ class RepairStepRegistrationTest extends TestCase {
 	public function testAStepNeverRunsBeforeWhatItDependsOn(): void {
 		$dependencies = [
 			// consumer => providers.
-			'SeedVthWorkflowTemplates' => ['VthSeedDataRepairStep'],
-			'SeedBezwaarWorkflowDefinition' => ['SeedBezwaarBeroepData'],
 			'MigrateWorkflowDefinitions' => [
-				'SeedBezwaarBeroepData',
-				'SeedBesluitvormingTemplates',
-				'VthSeedDataRepairStep',
-				'SeedVthWorkflowTemplates',
+				'InstallShippedPackages',
 				'CaseFlowSeedDataRepairStep',
 			],
 		];

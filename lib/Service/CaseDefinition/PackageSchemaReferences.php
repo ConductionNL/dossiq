@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Resolves a package setting that names another app's schema.
+ * Resolves a package setting or seed file that names another app's schema.
  *
  * A schema id differs per instance, so a package cannot ship one. It ships
  * the schema's address instead: the app that owns it, the register slug (or
@@ -79,24 +79,84 @@ class PackageSchemaReferences {
 				continue;
 			}
 
-			['app' => $app, 'registers' => $registers, 'slug' => $slug] = $reference;
+			['app' => $app, 'slug' => $slug] = $reference;
 
-			$id = null;
-			if ($this->isInstalled(app: $app) === true) {
-				$id = $this->findSchemaId(registers: $registers, slug: $slug);
-			}
-
-			if ($id === null) {
+			$found = $this->locate(reference: $reference);
+			if ($found['schema'] === null) {
 				$missing[] = "{$app}:{$slug}";
-				$reasons[] = $this->reason(app: $app, slug: $slug, registers: $registers);
+				$reasons[] = $found['reason'];
 				continue;
 			}
 
-			$settings[$key] = $id;
+			$settings[$key] = $found['schema'];
 		}
 
 		return ['settings' => $settings, 'missing' => $missing, 'reasons' => $reasons];
 	}//end resolve()
+
+	/**
+	 * Find the register and the schema one address names on this instance.
+	 *
+	 * @param array{app: string, registers: array<int, string>, slug: string} $reference The address.
+	 *
+	 * @return array{register: string|null, schema: string|null, reason: string} The ids, or null for both
+	 *                                                                           with the reason they are missing.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function locate(array $reference): array {
+		['app' => $app, 'registers' => $registers, 'slug' => $slug] = $reference;
+
+		$found = null;
+		if ($this->isInstalled(app: $app) === true) {
+			$found = $this->findSchema(registers: $registers, slug: $slug);
+		}
+
+		if ($found === null) {
+			return ['register' => null, 'schema' => null, 'reason' => $this->reason(app: $app, slug: $slug, registers: $registers)];
+		}
+
+		return ['register' => $found['register'], 'schema' => $found['schema'], 'reason' => ''];
+	}//end locate()
+
+	/**
+	 * The group for one seed file.
+	 *
+	 * A file that names its schema by settings key goes to this app's
+	 * register. A file that names another app's schema by app, register and
+	 * slug goes to that register: the address is resolved here, and a group
+	 * whose schema this instance does not hold carries `missing` and the
+	 * reason, so the package is refused before a row is written.
+	 *
+	 * @param array<string, mixed> $seed The decoded seed file.
+	 *
+	 * @return array<string, mixed> The group.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function seedGroup(array $seed): array {
+		$group = ['schemaKey' => '', 'rows' => array_values((array)$seed['rows'])];
+		$match = (new PackageSeedRules())->matchProperties(match: ($seed['match'] ?? null));
+		if ($match !== []) {
+			$group['match'] = $match;
+		}
+
+		if (is_array($seed['schema']) === false) {
+			$group['schemaKey'] = (string)$seed['schema'];
+
+			return $group;
+		}
+
+		$reference = (array)$this->rules->reference(value: [PackageSettingRules::REFERENCE_KEY => $seed['schema']]);
+		$group['schemaKey'] = "{$reference['app']}:{$reference['slug']}";
+
+		$found = $this->locate(reference: $reference);
+		if ($found['schema'] === null) {
+			return $group + ['missing' => $group['schemaKey'], 'reason' => $found['reason']];
+		}
+
+		return $group + ['register' => $found['register'], 'schema' => $found['schema']];
+	}//end seedGroup()
 
 	/**
 	 * Why a reference could not be resolved, for a person.
@@ -128,14 +188,14 @@ class PackageSchemaReferences {
 	}//end isInstalled()
 
 	/**
-	 * The id of the schema with this slug in the first register that has it.
+	 * The first register that holds a schema with this slug, and that schema.
 	 *
 	 * @param array<int, string> $registers The register slugs, newest first.
 	 * @param string             $slug      The schema slug.
 	 *
-	 * @return string|null The id, or null when no register holds it.
+	 * @return array{register: string, schema: string}|null The two ids, or null when no register holds it.
 	 */
-	private function findSchemaId(array $registers, string $slug): ?string {
+	private function findSchema(array $registers, string $slug): ?array {
 		foreach ($registers as $registerSlug) {
 			try {
 				$registerMapper = $this->container->get('OCA\OpenRegister\Db\RegisterMapper');
@@ -154,7 +214,7 @@ class PackageSchemaReferences {
 			}
 
 			if ($schema !== null) {
-				return (string)$schema->getId();
+				return ['register' => (string)$register->getId(), 'schema' => (string)$schema->getId()];
 			}
 		}
 

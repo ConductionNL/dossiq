@@ -62,6 +62,9 @@ parameters:
         # Filinq's document events (flow-nodes-to-their-owners), same
         # declaration-only-stub discipline as the apps above.
         - tests/Stubs/Filinq
+        # Shillinq's payout commands (Money\PayoutRequester), same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/Shillinq/Event
         # OpenRegister's AppHost store plane (ADR-080). StoreController takes
         # GenericStoreService as an INJECTED type-hint rather than extending a
         # cross-app base, precisely so one scanned stub resolves it; an
@@ -147,7 +150,6 @@ parameters:
         - message: '#Strict comparison using === between true and false will always evaluate to false#'
           paths:
               - lib/Controller/CaseDefinitionController.php
-              - lib/Repair/SeedVthWorkflowTemplates.php
         # ApprovalStepNotificationListener dispatches on `get_class($event)` against
         # OpenRegister's ApprovalStep{Approved,Rejected}Event class-strings. Those
         # classes are co-installed at runtime but absent from static analysis, so
