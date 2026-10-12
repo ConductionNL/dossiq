@@ -16,12 +16,22 @@
  * second call, and every later run, expects.
  */
 
-import { expect, type Page, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 import { dismissSupportDialog, PAGE_LOAD } from '../helpers/nav.ts'
 
 const CASE_TYPES = [
-	{ id: 'b3c1a000-0000-4000-a000-00000000be2a', title: 'Bezwaar', flow: 'Bezwaar Standaard Workflow' },
-	{ id: 'b3c1a000-0000-4000-a000-00000000be30', title: 'Beroep', flow: 'Beroep Standaard Workflow' },
+	{
+		id: 'b3c1a000-0000-4000-a000-00000000be2a',
+		title: 'Bezwaar',
+		flow: 'Bezwaar Standaard Workflow',
+	},
+	{
+		id: 'b3c1a000-0000-4000-a000-00000000be30',
+		title: 'Beroep',
+		flow: 'Beroep Standaard Workflow',
+	},
 ]
 
 /**
@@ -33,10 +43,17 @@ const CASE_TYPES = [
 async function runSeed(page: Page): Promise<{ status: number; body: any }> {
 	return await page.evaluate(async () => {
 		const w = window as unknown as { OC?: { requestToken?: string } }
-		const token = w.OC?.requestToken || document.head.getAttribute('data-requesttoken') || ''
+		const token =
+			w.OC?.requestToken
+			|| document.head.getAttribute('data-requesttoken')
+			|| ''
 		const res = await fetch('/index.php/apps/dossiq/api/setup/action/seed', {
 			method: 'POST',
-			headers: { Accept: 'application/json', 'Content-Type': 'application/json', requesttoken: token },
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				requesttoken: token,
+			},
 		})
 		return { status: res.status, body: await res.json().catch(() => null) }
 	})
@@ -44,26 +61,38 @@ async function runSeed(page: Page): Promise<{ status: number; body: any }> {
 
 test.describe('package bezwaar-beroep', () => {
 	// @e2e openspec/changes/bezwaar-beroep-package/specs/case-types/spec.md#an-administrator-installs-bezwaar-and-beroep
-	test('an administrator installs bezwaar and beroep and finds both case types', async ({ page }) => {
+	test('an administrator installs bezwaar and beroep and finds both case types', async ({
+		page,
+	}) => {
 		test.setTimeout(180_000)
 		await page.goto('/index.php/apps/dossiq', PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const first = await runSeed(page)
-		expect(first.body, `POST /api/setup/action/seed returned ${first.status} with no JSON body`).not.toBeNull()
+		expect(
+			first.body,
+			`POST /api/setup/action/seed returned ${first.status} with no JSON body`,
+		).not.toBeNull()
 		expect(first.status, first.body?.message).toBe(200)
 		expect(first.body.success).toBe(true)
 		expect(['installed', 'current']).toContain(first.body.detail?.status)
 		expect(first.body.detail?.package).toBe('bezwaar-beroep')
 
 		for (const caseType of CASE_TYPES) {
-			await page.goto(`/index.php/apps/dossiq/settings/case-types/${caseType.id}`, PAGE_LOAD)
+			await page.goto(
+				`/index.php/apps/dossiq/settings/case-types/${caseType.id}`,
+				PAGE_LOAD,
+			)
 			await dismissSupportDialog(page)
 			const detail = page.locator('.cn-detail-page')
 			await expect(detail).toBeVisible({ timeout: 30_000 })
-			await expect(detail.getByText(caseType.title, { exact: true }).first()).toBeVisible()
+			await expect(
+				detail.getByText(caseType.title, { exact: true }).first(),
+			).toBeVisible()
 			// The flow under Versions: the case type is usable, not just stored.
-			await expect(detail.getByText(caseType.flow).first()).toBeVisible({ timeout: 30_000 })
+			await expect(detail.getByText(caseType.flow).first()).toBeVisible({
+				timeout: 30_000,
+			})
 		}
 
 		// Asking again finds the package current and writes nothing.
