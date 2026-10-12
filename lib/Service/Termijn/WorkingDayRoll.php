@@ -65,6 +65,7 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 

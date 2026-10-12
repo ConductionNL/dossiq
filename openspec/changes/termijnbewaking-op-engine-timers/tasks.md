@@ -187,7 +187,7 @@
       documented fallback while OpenRegister is an optional runtime dependency. It computes no
       threshold itself (it calls `PauseChaseService::sweep()`), and it cannot go before the engine
       becomes a required dependency, so the list stops at one, not empty, until that phase lands.
-      The `->diff(` sweep, part 1 of 4 (12 Oct, lane L7, REQ-TOT-007): `lib/Service/Termijn/DayCount.php`
+      The `->diff(` sweep, part 1 of 4 (12 Oct, lane L7, REQ-TOT-007): `lib/Service/Term/DayCount.php`
       is the one place that counts the days between two dates (`between()` for a span, `signed()`
       for days left or overdue), and `WorkingDayRoll::daysBetween()` uses it for calendar mode.
       Read off development first: 31 `->diff(` sites in 27 files, all under `lib/Service`. Moved in

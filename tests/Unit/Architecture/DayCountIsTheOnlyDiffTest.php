@@ -3,7 +3,7 @@
 /**
  * Structural guard: days between two dates are counted in one place.
  *
- * `Service\Termijn\DayCount` is the one class under `lib/` that may call
+ * `Service\Term\DayCount` is the one class under `lib/` that may call
  * `DateTimeInterface::diff()`. Every other file that still does is named in
  * `day-count.allowlist.json` with the change that takes it and a reason a
  * reader can check, so a new site has to be classified by its author rather
@@ -43,7 +43,7 @@ class DayCountIsTheOnlyDiffTest extends TestCase {
 	 *
 	 * @var string
 	 */
-	private const OWNER = 'lib/Service/Termijn/DayCount.php';
+	private const OWNER = 'lib/Service/Term/DayCount.php';
 
 	/**
 	 * The spellings PHP offers for the difference between two dates.
@@ -141,7 +141,7 @@ class DayCountIsTheOnlyDiffTest extends TestCase {
 			[],
 			$unexplained,
 			"These files count the days between two dates themselves:\n" . implode("\n", $unexplained)
-			. "\n\nAsk OCA\\Dossiq\\Service\\Termijn\\DayCount (between() for a span, signed() for days left "
+			. "\n\nAsk OCA\\Dossiq\\Service\\Term\\DayCount (between() for a span, signed() for days left "
 			. 'or days overdue), or WorkingDayRoll::daysBetween() for working days.'
 		);
 	}//end testOnlyDayCountCallsDiffUnlessAllowlisted()

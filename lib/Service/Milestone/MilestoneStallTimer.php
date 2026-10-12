@@ -42,7 +42,7 @@ namespace OCA\Dossiq\Service\Milestone;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\DayCount;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 

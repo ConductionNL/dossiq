@@ -21,8 +21,9 @@
  * instant is read in its own zone. It deliberately normalises nothing. A
  * caller that means "calendar dates apart" sets both sides to midnight in one
  * zone first, as the timers do, and a caller that means working days asks
- * {@see WorkingDayRoll::daysBetween()}, which answers from the administered
- * calendar and uses this class for its calendar mode.
+ * {@see \OCA\Dossiq\Service\Termijn\WorkingDayRoll::daysBetween()}, which
+ * answers from the administered calendar and uses this class for its calendar
+ * mode.
  *
  * WHY IT HOLDS NOTHING. No clock, no zone, no calendar: both moments are
  * handed in, so the count is the same in a test as in production and the
@@ -30,7 +31,7 @@
  * anybody's constructor contract.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Termijn
+ * @package  OCA\Dossiq\Service\Term
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -46,7 +47,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Termijn;
+namespace OCA\Dossiq\Service\Term;
 
 use DateTimeInterface;
 
