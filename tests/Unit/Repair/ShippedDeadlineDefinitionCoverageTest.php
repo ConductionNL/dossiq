@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Repair;
 
+use OCA\Dossiq\Tests\Unit\Settings\ShippedPackageCaseTypes;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -46,14 +47,14 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	/**
 	 * Seed files that create case types on a fresh install.
 	 *
-	 * Each is driven by a repair step listed in info.xml's `<install>` block:
-	 * CaseFlowSeedDataRepairStep and VthSeedDataRepairStep respectively.
+	 * Driven by a repair step listed in info.xml's `<install>` block:
+	 * CaseFlowSeedDataRepairStep. The case definition packages are read next
+	 * to it, through ShippedPackageCaseTypes.
 	 *
 	 * @var array<int, string>
 	 */
 	private const CASE_TYPE_SEEDS = [
 		'/../../../lib/Settings/case_flow_seed_data.json',
-		'/../../../lib/Settings/vth_seed_data.json',
 	];
 
 	/**
@@ -130,6 +131,17 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 					continue;
 				}
 
+				$caseTypes[$slug] = $caseType;
+			}
+		}
+
+		// Only the packages a fresh install installs. A package installed on
+		// request (bezwaar-beroep, besluitvorming, subsidie) ships no deadline
+		// definition yet; that is a gap in those packages, not a silent one on
+		// install, and it is theirs to close.
+		foreach (ShippedPackageCaseTypes::nested(install: 'auto') as $caseType) {
+			$slug = trim((string)$caseType['slug']);
+			if ($slug !== '') {
 				$caseTypes[$slug] = $caseType;
 			}
 		}

@@ -1,0 +1,636 @@
+{
+  "caseType": [
+    {
+      "id": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "identifier": "bvw-college-besluit",
+      "title": "College-besluit",
+      "category": "Besluitvorming",
+      "description": "Formeel besluit van het college van burgemeester en wethouders",
+      "purpose": "Vaststellen van collegebesluiten conform het collegeprogramma",
+      "trigger": "Beleidsvoorstel of wettelijke verplichting",
+      "subject": "Bestuurlijk besluit College B&W",
+      "processingDeadline": "P30D",
+      "publicationRequired": true,
+      "internalOrExternal": "intern",
+      "isDraft": false,
+      "confidentiality": "openbaar",
+      "initialStatus": "ec39b5a0-6c03-5015-bebb-7dd55e10317b"
+    },
+    {
+      "id": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "identifier": "bvw-raadsbesluit",
+      "title": "Raadsbesluit",
+      "category": "Besluitvorming",
+      "description": "Formeel besluit van de gemeenteraad, inclusief moties en amendementen",
+      "purpose": "Vaststellen van raadsbesluiten en verordeningen",
+      "trigger": "Raadsvoorstel ingediend door college of raadslid",
+      "subject": "Bestuurlijk besluit Gemeenteraad",
+      "processingDeadline": "P60D",
+      "publicationRequired": true,
+      "internalOrExternal": "intern",
+      "isDraft": false,
+      "confidentiality": "openbaar",
+      "initialStatus": "5903b223-f0fe-580f-8c48-f9986b7583f8"
+    },
+    {
+      "id": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "identifier": "bvw-mandaatbesluit",
+      "title": "Mandaatbesluit",
+      "category": "Besluitvorming",
+      "description": "Besluit genomen op basis van ambtelijk of politiek mandaat",
+      "purpose": "Vastleggen van besluiten binnen gedelegeerde bevoegdheden",
+      "trigger": "Aanvraag of beleidswijziging binnen mandaatgrens",
+      "subject": "Mandaatbesluit",
+      "processingDeadline": "P14D",
+      "publicationRequired": false,
+      "internalOrExternal": "intern",
+      "isDraft": false,
+      "confidentiality": "intern",
+      "initialStatus": "44ed85f7-efc6-5b89-81ec-84ffaa0924f2"
+    }
+  ],
+  "statusTypes": [
+    {
+      "id": "ec39b5a0-6c03-5015-bebb-7dd55e10317b",
+      "name": "Voorstel opstellen",
+      "order": 1,
+      "isFinal": false,
+      "description": "Ambtenaar stelt het collegeadvies op",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "role": "intake"
+    },
+    {
+      "id": "a25d2a57-34e5-53eb-ac90-a8dd8635d835",
+      "name": "Ambtelijk advies",
+      "order": 2,
+      "isFinal": false,
+      "description": "Inhoudelijk advies door beleidsadviseur",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "role": "in-progress"
+    },
+    {
+      "id": "4e78b56b-70d5-5314-b959-d9f0d9279636",
+      "name": "Parafering",
+      "order": 3,
+      "isFinal": false,
+      "description": "Sequentiele goedkeuring door de gemandateerde functionarissen",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "68ab762b-d585-537a-90c2-09cb8677c5e3",
+      "name": "Gereed voor agendering",
+      "order": 4,
+      "isFinal": false,
+      "description": "Alle parafen verzameld, klaar voor planning vergadering",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "6358773e-715f-535b-90c7-e06536561575",
+      "name": "Geagendeerd",
+      "order": 5,
+      "isFinal": false,
+      "description": "Opgevoerd op de agenda van een vergadering",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "522f28c3-005f-510c-9524-8cf548650725",
+      "name": "Vergadering",
+      "order": 6,
+      "isFinal": false,
+      "description": "Behandeling tijdens de vergadering",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "e7da32f4-314d-5e9f-a0c4-6319a784b245",
+      "name": "Besluit genomen",
+      "order": 7,
+      "isFinal": false,
+      "description": "Besluit geregistreerd inclusief stemuitslag",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "7e229319-9026-555d-bc6c-ec64e4c03a89",
+      "name": "Bekendmaking",
+      "order": 8,
+      "isFinal": false,
+      "description": "Publicatie via DROP of LVBB",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "0960a903-030a-5187-a033-7c5645497b7d",
+      "name": "Gearchiveerd",
+      "order": 9,
+      "isFinal": true,
+      "description": "Dossier gearchiveerd conform selectielijst",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "role": "closed"
+    },
+    {
+      "id": "5903b223-f0fe-580f-8c48-f9986b7583f8",
+      "name": "Voorstel opstellen",
+      "order": 1,
+      "isFinal": false,
+      "description": "Steller stelt het raadsvoorstel op",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "role": "intake"
+    },
+    {
+      "id": "d741a40f-1077-5601-8159-6d8013c341c8",
+      "name": "Ambtelijk advies",
+      "order": 2,
+      "isFinal": false,
+      "description": "Inhoudelijk advies door beleidsadviseur",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "role": "in-progress"
+    },
+    {
+      "id": "6c4b7ed5-86b3-50e9-a2f7-5f3b3e8e0821",
+      "name": "Parafering",
+      "order": 3,
+      "isFinal": false,
+      "description": "Sequentiele goedkeuring inclusief griffier",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "c6caebc9-ddff-51ef-a71e-81e7310fd6d5",
+      "name": "Gereed voor agendering",
+      "order": 4,
+      "isFinal": false,
+      "description": "Klaar voor planning raadsvergadering",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "5c6454ae-ee88-57a0-b616-05a936722b0a",
+      "name": "Geagendeerd",
+      "order": 5,
+      "isFinal": false,
+      "description": "Opgevoerd op de raadsagenda",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "fd6b0705-1872-5e91-86d2-4bed79370f11",
+      "name": "Vergadering",
+      "order": 6,
+      "isFinal": false,
+      "description": "Behandeling tijdens de raadsvergadering",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "37063211-c7c3-5f21-b39b-a831bc5f7d4e",
+      "name": "Besluit genomen",
+      "order": 7,
+      "isFinal": false,
+      "description": "Raadsbesluit geregistreerd inclusief stemuitslag",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "64dbb5e3-7252-5a9e-a5d7-6b42bb415bd1",
+      "name": "Bekendmaking",
+      "order": 8,
+      "isFinal": false,
+      "description": "Publicatie via DROP of LVBB",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "75ad89ae-75b8-56ea-8830-7f1f7985b6db",
+      "name": "Gearchiveerd",
+      "order": 9,
+      "isFinal": true,
+      "description": "Dossier gearchiveerd conform selectielijst",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "role": "closed"
+    },
+    {
+      "id": "44ed85f7-efc6-5b89-81ec-84ffaa0924f2",
+      "name": "Voorstel opstellen",
+      "order": 1,
+      "isFinal": false,
+      "description": "Steller stelt het DT-advies op",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "role": "intake"
+    },
+    {
+      "id": "707d6728-d489-51f0-bcd8-eab639874655",
+      "name": "Ambtelijk advies",
+      "order": 2,
+      "isFinal": false,
+      "description": "Inhoudelijk advies",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "role": "in-progress"
+    },
+    {
+      "id": "23463e09-831a-5ec7-8703-ac1d1541ada9",
+      "name": "Parafering",
+      "order": 3,
+      "isFinal": false,
+      "description": "Verkorte goedkeuring: beleidsadviseur en directeur",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "8419cf95-a8b0-5c4a-a484-f44a433e3a07",
+      "name": "Gereed voor agendering",
+      "order": 4,
+      "isFinal": false,
+      "description": "Klaar voor besluit binnen mandaat",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "66d7edd0-376b-5372-9559-7310d59c6404",
+      "name": "Geagendeerd",
+      "order": 5,
+      "isFinal": false,
+      "description": "Opgevoerd voor mandaatbesluit",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "f3d21797-338b-59e3-96de-192560017727",
+      "name": "Vergadering",
+      "order": 6,
+      "isFinal": false,
+      "description": "Behandeling binnen mandaat",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "3e35cc4e-c54b-52ed-85d5-50777c20819d",
+      "name": "Besluit genomen",
+      "order": 7,
+      "isFinal": false,
+      "description": "Mandaatbesluit geregistreerd",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "0b852d48-726b-53a9-ba1c-23cf85d06825",
+      "name": "Gearchiveerd",
+      "order": 8,
+      "isFinal": true,
+      "description": "Dossier gearchiveerd conform selectielijst",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "role": "closed"
+    }
+  ],
+  "roleTypes": [
+    {
+      "id": "ea1d9a50-22a4-5b22-9cb4-1d4537cdc897",
+      "name": "Steller",
+      "description": "Ambtenaar die het voorstel opstelt",
+      "genericRole": "initiator",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "b6bbd50a-ffd8-5cd5-8fb7-b4ec5b859cef",
+      "name": "Portefeuillehouder",
+      "description": "Wethouder of burgemeester verantwoordelijk voor het dossier",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "deee280b-6272-59aa-bde3-627a353e630b",
+      "name": "Beleidsadviseur",
+      "description": "Adviseur die inhoudelijk advies levert",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "b5a20325-0675-5ca5-acb3-c46a368af63b",
+      "name": "Afdelingshoofd",
+      "description": "Hoofd van de betrokken afdeling",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "bdeb505b-2622-5c4c-8f57-9d7c2cb6e74c",
+      "name": "Aanwezig lid",
+      "description": "Lid van het besluitvormend orgaan dat aanwezig was bij de vergadering",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "98550018-a9ed-592a-8061-9d255d4e84d4",
+      "name": "Steller",
+      "description": "Ambtenaar die het voorstel opstelt",
+      "genericRole": "initiator",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "71514cbc-28aa-5984-a6e9-57015b45d5f8",
+      "name": "Portefeuillehouder",
+      "description": "Wethouder of burgemeester verantwoordelijk voor het dossier",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "c7710966-001e-5f39-bcb7-c2e37f3084a0",
+      "name": "Beleidsadviseur",
+      "description": "Adviseur die inhoudelijk advies levert",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "d4f19bce-fcc6-548d-8f91-804b515784ee",
+      "name": "Afdelingshoofd",
+      "description": "Hoofd van de betrokken afdeling",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "3d839d64-0a89-5f80-b159-b56007e1b462",
+      "name": "Griffier",
+      "description": "Raadsgriffier die het raadsproces bewaakt en als eindparafeerder optreedt",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "12546d93-35fa-5c24-8e24-6fa1806dad5c",
+      "name": "Aanwezig lid",
+      "description": "Raadslid dat aanwezig was bij de vergadering",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "9d35a395-b33f-5505-a741-3a48e4f251f2",
+      "name": "Steller",
+      "description": "Ambtenaar die het voorstel opstelt",
+      "genericRole": "initiator",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "b63cd901-d0e2-5913-9118-62695b3f4910",
+      "name": "Beleidsadviseur",
+      "description": "Adviseur die inhoudelijk advies levert",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "193d1710-cab1-5a8e-ba16-65607ca8c1ee",
+      "name": "Directeur",
+      "description": "Directeur die het mandaatbesluit ondertekent",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "6383c6ec-d4bd-5a5f-a2c3-e1a34e560851",
+      "name": "Aanwezig lid",
+      "description": "Lid dat aanwezig was bij de behandeling",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    }
+  ],
+  "propertyDefinitions": [
+    {
+      "id": "ec10e00e-806b-5ef8-bf17-8aa3a78ed6c7",
+      "name": "stemuitslag",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Uitkomst van de stemming (bijv. 'Unaniem', '15-8')",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "22dc6235-bc9c-500b-8e2c-ffa9e48daff5",
+      "name": "portefeuillehouder",
+      "propertyType": "string",
+      "isRequired": true,
+      "description": "Nextcloud-gebruiker van de verantwoordelijk wethouder",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "628a9b2f-e918-56f1-b38b-1f4354654891",
+      "name": "vergadergremium",
+      "propertyType": "string",
+      "isRequired": true,
+      "description": "Het besluitvormend orgaan (College B&W / Gemeenteraad / Commissie)",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "16b2a400-38c3-586c-a251-fca5f6eb4694",
+      "name": "agendanummer",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Nummer op de vergaderagenda (bijv. '5.3')",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "4358d12d-b90a-5ce5-b02b-f5b3fad65256",
+      "name": "handling",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Classificatie als hamerstuk of bespreekstuk",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "49aed882-13ee-5992-ac7b-ab6a2c4d7480",
+      "name": "publicatieReferentie",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Referentie-URI van de publicatie in DROP of LVBB",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "d3f3029c-ee55-524f-80ac-ae27c361c05c",
+      "name": "stemuitslag",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Uitkomst van de stemming (bijv. '23 voor / 8 tegen')",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "0fcee580-ba56-5389-a658-104024791e9f",
+      "name": "portefeuillehouder",
+      "propertyType": "string",
+      "isRequired": true,
+      "description": "Nextcloud-gebruiker van de verantwoordelijk wethouder",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "18fa2289-15d7-5e73-bd55-85fd6229c858",
+      "name": "vergadergremium",
+      "propertyType": "string",
+      "isRequired": true,
+      "description": "Het besluitvormend orgaan (Gemeenteraad)",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "6f4dc873-a843-5534-9db1-6ed10adb6dfe",
+      "name": "agendanummer",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Nummer op de raadsagenda",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "d765debb-8221-57c0-ba46-d0d5a181e355",
+      "name": "handling",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Classificatie als hamerstuk of bespreekstuk",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "58d57a52-aeb8-5ee2-9ecf-19039afe1ce0",
+      "name": "publicatieReferentie",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Referentie-URI van de publicatie in DROP of LVBB",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "57e3a27d-61c8-5989-b937-d199c180f6c1",
+      "name": "stemuitslag",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Uitkomst van de behandeling",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "4d54b6a1-7647-5f59-b863-5f4a2be7fe2d",
+      "name": "vergadergremium",
+      "propertyType": "string",
+      "isRequired": true,
+      "description": "Het mandaathoudende orgaan",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "1a4556e9-1bc6-5f6c-9f47-9d2b6fc498e1",
+      "name": "agendanummer",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Volgnummer",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "723680bf-8d9f-5c03-8a01-afd30fd65433",
+      "name": "handling",
+      "propertyType": "string",
+      "isRequired": false,
+      "description": "Classificatie als hamerstuk of bespreekstuk",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "29724598-5deb-5ea4-8903-5eac1ffdeabb",
+      "name": "mandaatCategorie",
+      "propertyType": "string",
+      "isRequired": true,
+      "description": "Mandaatcategorie uit het mandaatregister (bijv. 'VTH-M-04')",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    }
+  ],
+  "documentTypes": [
+    {
+      "id": "12f6dfcd-7ee4-52a0-8c60-815a3f4d9c1e",
+      "name": "Collegeadvies",
+      "description": "Het voorstel-/adviesdocument",
+      "isRequired": true,
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "f6c2bf69-cdf5-5b19-83c1-1471f4520b75",
+      "name": "Besluitdocument",
+      "description": "Het ondertekende besluitdocument",
+      "isRequired": true,
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "3ad13c52-d717-5f75-bc51-2bcb07c61c7e",
+      "name": "Bekendmakingsbewijs",
+      "description": "Bevestiging van publicatie via DROP/LVBB",
+      "isRequired": true,
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "5f9e74b6-c2e2-5064-a0f7-e2f198932e92",
+      "name": "Raadsvoorstel",
+      "description": "Het voorstel-/adviesdocument",
+      "isRequired": true,
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "56399115-7dcd-5869-a3cf-13fd904ff20d",
+      "name": "Besluitdocument",
+      "description": "Het ondertekende raadsbesluit",
+      "isRequired": true,
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "10d7db42-50b7-5932-8c90-f5ab28a12839",
+      "name": "Bekendmakingsbewijs",
+      "description": "Bevestiging van publicatie via DROP/LVBB",
+      "isRequired": true,
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "4c458102-e0b4-57bf-a609-174162821d71",
+      "name": "DT-advies",
+      "description": "Het voorstel-/adviesdocument",
+      "isRequired": true,
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "01651b77-20e3-5df0-8aa1-1a9131a499fc",
+      "name": "Besluitdocument",
+      "description": "Het ondertekende mandaatbesluit",
+      "isRequired": true,
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    }
+  ],
+  "resultTypes": [
+    {
+      "id": "fe64485c-3c74-597f-93cc-9ba22493c929",
+      "name": "Besluit genomen",
+      "description": "Besluit is genomen en vastgelegd",
+      "archivalPeriod": "P20Y",
+      "archivalAction": "bewaren",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "4138d241-9131-5385-aabc-916220d776d2",
+      "name": "Aangehouden",
+      "description": "Besluit is aangehouden voor een volgende vergadering",
+      "archivalPeriod": "P5Y",
+      "archivalAction": "vernietigen",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "c8a1c08d-077e-5ad2-9540-fff1ae92177e",
+      "name": "Ingetrokken",
+      "description": "Voorstel is ingetrokken",
+      "archivalPeriod": "P5Y",
+      "archivalAction": "vernietigen",
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+    },
+    {
+      "id": "e25f6e19-fb2c-52e0-a0f4-053a16c18ba6",
+      "name": "Besluit genomen",
+      "description": "Raadsbesluit is genomen en vastgelegd",
+      "archivalPeriod": "P20Y",
+      "archivalAction": "bewaren",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "b3630e14-434c-5c34-96d2-3d792450af74",
+      "name": "Aangehouden",
+      "description": "Besluit is aangehouden voor een volgende vergadering",
+      "archivalPeriod": "P5Y",
+      "archivalAction": "vernietigen",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "94f84c3c-9d6e-5ee7-a844-b0e985a0d738",
+      "name": "Ingetrokken",
+      "description": "Voorstel is ingetrokken",
+      "archivalPeriod": "P5Y",
+      "archivalAction": "vernietigen",
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+    },
+    {
+      "id": "33f105f9-6552-5b05-85b6-81452aba73ea",
+      "name": "Besluit genomen",
+      "description": "Mandaatbesluit is genomen en vastgelegd",
+      "archivalPeriod": "P10Y",
+      "archivalAction": "vernietigen",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "41e7a0ca-4279-5fb1-85ce-1e05ece6402c",
+      "name": "Aangehouden",
+      "description": "Besluit is aangehouden",
+      "archivalPeriod": "P5Y",
+      "archivalAction": "vernietigen",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    },
+    {
+      "id": "211a81de-ac28-5670-af4f-600616e0fc3b",
+      "name": "Ingetrokken",
+      "description": "Voorstel is ingetrokken",
+      "archivalPeriod": "P5Y",
+      "archivalAction": "vernietigen",
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+    }
+  ]
+}

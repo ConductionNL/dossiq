@@ -401,3 +401,95 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         filled. Behaviour kept, not fixed here.
         Own tests: `tests/Unit/Service/Zgw/BrcImmutabilityRulesTest` (8) and
         `BrcDocumentLinkRulesTest` (5), the second with every lookup keyed on its own schema.
+  - [x] 8c `WorkQueueService` (1: ExcessiveClassComplexity 93 against 50). Its suppression said a
+        split would fragment one responsibility; it held three. `Queue/UrgencyScorer` scores one
+        item and reads no store (the tier, the working days on the administered calendar with
+        the Monday to Friday walk behind it, the priority and idle parts; 21).
+        `Queue/QueueCaseFacts` reads what a case needs before it is scored (its nearest open
+        term or own deadline, its last activity, the profile of its case type; 33). The service
+        reads the cases and tasks, ranks them and counts the open work (42).
+        The two are injected, not built inside: building them inside pushed the service's
+        coupling to 14 against 13. So the constructor changed, from the date normaliser, the
+        journal and the calendar to the scorer and the facts. Nothing registers the service by
+        hand, the container wires it; four test files build it and got the new arguments, no
+        assertion changed. `scoreItem()` stays on the service for `Queue/QueueOrdering`.
+        Characterisation, green on the single class first: 9 tests added to
+        `WorkQueueServiceTest` (41 in all) for the whole answer of a score and of a task item,
+        the walk in both directions, the calendar that does not answer, the nearest of several
+        terms, and every failed read. They pin one thing worth knowing: a deadline on the
+        weekend just past counts zero working days from Monday, so it reads critical, not
+        overdue. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Queue/UrgencyScorerTest` (5) and `QueueCaseFactsTest` (6).
+        The date-arithmetic audit row moved with the arithmetic to `UrgencyScorer`.
+  - [x] 8d `BrcController` (1: ExcessiveClassComplexity 86 against 50). It keeps the token and
+        scope gates, the pass-through to the shared ZGW service, the 405 on a
+        besluitinformatieobject and the besluit's own create and delete (complexity 41).
+        `Zgw/BrcCrossRegisterSync` holds what the Besluiten API keeps in step elsewhere: the
+        zaakbesluit in the Zaken register (brc-006) and the objectinformatieobject in the
+        Documenten register (brc-005, brc-009; 26). `Zgw/BrcDocumentLinkHandler` holds the three
+        besluitinformatieobject routes (21). The controller builds both, so its constructor, the
+        routes and the container are unchanged.
+        Characterisation, green on the single class first: the controller had no behaviour test
+        at all, so `tests/Unit/Controller/BrcControllerTest.php` is new: 21 tests over every
+        route, each write and delete asserted with its register, schema and payload, each log
+        line with its text. Unchanged and green after the split. Removing either sync call from
+        the controller turns two tests red (checked).
+        Own tests: `tests/Unit/Service/Zgw/BrcCrossRegisterSyncTest` (5) and
+        `BrcDocumentLinkHandlerTest` (6), over a shared recording store.
+        The decision-writer allowlist entry moved with the zaakbesluit write to
+        `BrcCrossRegisterSync`; the two StaticAccess suppressions moved with their methods.
+  - [x] 8e `ZgwRulesBase` (1: ExcessiveClassComplexity 66 against 50; TASK-DECOMP-041/042). The
+        base keeps the context, the URL checks and thin wrappers (complexity 40). What it reads
+        from the store is `Zgw/ZgwRuleLookups` (one object by field, all by field, one by uuid
+        and schema key, and whether a pair of values is taken; 33). The shapes a rule answers
+        with are `Zgw/ZgwRuleResults` (valid, refused, the field of a refusal; 5). Neither
+        extends the base: it has 13 children and PHPMD allows 14, which is why two earlier
+        drafts of the DRC and ZTC slices, whose rule groups each extended it, were red on
+        NumberOfChildren in the full run and are not in this stack. A rules class can hand its
+        lookups object to a collaborator it builds, and that collaborator reads in the request's
+        context without a `setContext()` of its own.
+        Characterisation: no new tests were needed. The 351 tests of the fifteen suites that
+        cover the base (the four rules services, the rule groups and `ZgwRulesBaseUniquenessTest`)
+        were green before and are green, unchanged but for two `@uses` lines each, after.
+        Removing the context forward to the lookups turns them red (checked).
+        Own tests: `tests/Unit/Service/Zgw/ZgwRuleLookupsTest` (6) and `ZgwRuleResultsTest` (3).
+        TASK-DECOMP-041 named `FieldValidator` and `ZgwReferenceResolver` as the targets; the
+        field checks already live in `FieldValidator` (TASK-DECOMP-036), and the lookups took the
+        name of what they do.
+  - [x] 8f `ZgwDrcRulesService` (1: ExcessiveClassComplexity 87 against 50). It keeps the rules of
+        the document itself and the check of an informatieobject URL (drc-001, 005, 006, 007,
+        008; complexity 41). The rest of an objectinformatieobject create is
+        `Zgw/DrcObjectLinkRules` (the object URL of drc-002, and drc-004; 26), and what both
+        sides read from the stored relations is `Zgw/DrcDocumentRelations` (the relations of a
+        document for drc-007, the duplicate check for drc-003; 23). Neither extends the base:
+        each is built over the service's own lookups and result builder (8e), so the request
+        context reaches them without a forward. Building the relations over lookups of their
+        own instead turns six tests red (checked).
+        Characterisation, green on the single class first: 10 tests added to
+        `ZgwDrcRulesServiceTest` (20 in all), because the lock rules, the delete rule, the uuid
+        and full-text duplicate searches and both failure modes had none. They pin that drc-003
+        fails closed (a search that cannot answer is a duplicate) while drc-004 and drc-007 fail
+        open. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Zgw/DrcDocumentRelationsTest` (8, every query asserted
+        with its schema) and `DrcObjectLinkRulesTest` (7). One branch is unreachable and was
+        moved as it stood: "De object URL bevat geen geldig UUID", because `isValidUrl()` already
+        refuses a URL whose path does not end in a uuid.
+  - [x] 8g `ZgwZtcRulesService` (1: ExcessiveClassComplexity 106 against 50). It keeps the create
+        rules of a zaaktype, a besluittype and a zaaktype-informatieobjecttype (ztc-001 and the
+        name lookup; complexity 24) and builds three collaborators, none a child of the base:
+        `Zgw/ZtcConceptRules` over the result builder (ztc-009 and ztc-010, the concept default
+        and the kept concept; 30), `Zgw/ZtcTypeReferences` over the lookups (reference lists to
+        uuids, related zaaktypen, `_directFields`; 31) and `Zgw/ZtcPublishAndDeleteChecks` over
+        the lookups (what a case type needs before publish or delete; 30).
+        The public methods, both constants, the constructor signature, `ZgwBusinessRulesService`
+        and the dispatcher are unchanged. Building the two reading collaborators over lookups
+        of their own instead turns the suites red (checked).
+        Characterisation, green on the single class first: the concept rules had no test at all,
+        so `tests/Unit/Service/ZgwZtcConceptRulesTest.php` (7 tests, every resource against every
+        action) is new, and 6 tests joined `ZgwZtcRulesServiceTest` for the failed reads of the
+        publish and delete checks. They pin: a stored `isDraft` wins over a stored `concept`; a
+        type without either field is a concept; a delete check that cannot read the cases lets
+        the delete through, and one that cannot read the final status types counts every case as
+        active. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Zgw/ZtcConceptRulesTest` (6), `ZtcTypeReferencesTest` (4,
+        every search asserted with its schema) and `ZtcPublishAndDeleteChecksTest` (6).

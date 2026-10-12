@@ -47,7 +47,12 @@ interface ZtcObjectServiceStub {
  * Characterisation tests for the ZTC reference resolution.
  *
  * @covers \OCA\Dossiq\Service\ZgwZtcRulesService
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcConceptRules
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcTypeReferences
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
  * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard

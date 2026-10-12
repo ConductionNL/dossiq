@@ -171,7 +171,10 @@ describe('TaskDetailView', () => {
 		const meta = content.fields.find((f) => f.key === 'case-meta')
 		expect(meta.parts[1].resolve).toMatchObject({ schema: 'caseType' })
 		const status = content.fields.find((f) => f.key === 'case-status')
-		expect(status.resolve).toMatchObject({ schema: 'statusType', labelField: 'name' })
+		expect(status.resolve).toMatchObject({
+			schema: 'statusType',
+			labelField: 'name',
+		})
 	})
 
 	it('draws no case card for a task with no case', async () => {

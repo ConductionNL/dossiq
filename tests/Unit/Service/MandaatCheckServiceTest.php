@@ -231,4 +231,44 @@ class MandaatCheckServiceTest extends TestCase {
 			$denied['conflictReason'],
 		);
 	}
+
+	/**
+	 * A relation step that could not run travels with the verdict, so a
+	 * decision made without it does not read like one made with it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
+	 */
+	public function testARelationStepThatCouldNotRunTravelsWithTheVerdict(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'dossiq',
+					'mandaat_schema' => 'mandate',
+					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
+					default => '',
+				};
+			},
+		);
+		$conflict = $this->createMock(ConflictOfInterestService::class);
+		$conflict->method('checkConflict')->willReturn(
+			['conflict' => false, 'relationCheck' => 'not-available', 'relationCheckReason' => 'integriq-not-installed']
+		);
+		$service = new MandaatCheckService($settings, $this->createMock(LoggerInterface::class), $conflict);
+
+		$allowed = $service->isAuthorized('alice', 'wmo-toekenning', 'Z/2026/7', ['bedragCents' => 100000]);
+		self::assertTrue($allowed['authorized']);
+		self::assertSame('not-available', $allowed['relationCheck']);
+		self::assertSame('integriq-not-installed', $allowed['relationCheckReason']);
+
+		$refused = $service->isAuthorized('eve', 'wmo-toekenning', 'Z/2026/7', ['bedragCents' => 100000]);
+		self::assertFalse($refused['authorized']);
+		self::assertSame('not-available', $refused['relationCheck']);
+
+		// Without a relation step in the answer nothing is added.
+		$this->assertArrayNotHasKey('relationCheck', $this->service->isAuthorized('alice', 'wmo-toekenning', 'Z/2026/1', ['bedragCents' => 100000]));
+	}
 }

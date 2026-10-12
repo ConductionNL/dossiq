@@ -23,9 +23,11 @@ Any feature named on the product page or in info.xml SHALL be traceable to a con
 background job, or Vue view in the shipped code.
 
 #### Scenario: VTH process templates named on the product page match shipped templates
+@e2e exclude compares the product page with files in the repository; there is no screen to drive
+
 - **WHEN** the product page lists named VTH case-type templates
-- **THEN** every named template SHALL exist under `lib/Settings/vth-templates/` or
-  `lib/Settings/templates/`
+- **THEN** every named template SHALL exist as a case type or a flow of the `vth` package under
+  `lib/Settings/packages/vth/`, or under `lib/Settings/templates/`
 - **AND** no template name SHALL be invented or drawn only from free-text sample data
 
 #### Scenario: Third-party/standard integration claims require live code
