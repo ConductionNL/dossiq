@@ -1,10 +1,11 @@
 <?php
 
 /**
- * Dossiq DwangsomUitbetalingService.
+ * Dossiq PayoutService.
  *
- * Prepares payment signals towards the burger after the dwangsom has
- * been locked and processes ERP callbacks confirming actual payment.
+ * Prepares a payout of a settled amount to the party it is owed to, hands it
+ * to the finance app (PayoutRequester, ADR-107), withdraws it while an
+ * objection runs, and processes the signed callbacks that report its progress.
  *
  * IBAN validation is mandatory — missing/invalid IBAN raises an error
  * instead of silently skipping (REQ-TERM-007).
@@ -12,7 +13,7 @@
  * Money values: integer EUR cents throughout (ADR-031).
  *
  * @category Service
- * @package  OCA\Dossiq\Service
+ * @package  OCA\Dossiq\Service\Money
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,22 +27,27 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+ * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
  */
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service;
+namespace OCA\Dossiq\Service\Money;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\TermijnTimerService;
+use OCP\IURLGenerator;
 use RuntimeException;
 
 /**
- * Payment-signal preparation + callback processing for dwangsom payouts.
+ * Payout preparation, finance handoff and callback processing.
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+ * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
  */
-class DwangsomUitbetalingService {
+class PayoutService {
 	use SearchesObjects;
 
 	/**
@@ -51,22 +57,42 @@ class DwangsomUitbetalingService {
 	public const BETALING_UITERLIJK_OFFSET_DAYS = 28;
 
 	/**
+	 * The route the finance app posts each step of the payout to.
+	 */
+	public const CALLBACK_ROUTE = 'dossiq.payoutCallback.callback';
+
+	/**
+	 * The payout category the finance app maps to an expense account
+	 * (shillinq `inboundPayableExpenseAccounts`). A contract literal an
+	 * administrator has configured on the other side: frozen.
+	 */
+	public const CATEGORY = 'dwangsom';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
+	 * @param PayoutRequester|null $payouts Hands the payout to the finance app.
+	 * @param IURLGenerator|null $urls Builds the callback address the finance app posts to.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly ?PayoutRequester $payouts = null,
+		private readonly ?IURLGenerator $urls = null,
 	) {
 	}//end __construct()
 
 	/**
-	 * Prepare a DwangsomUitbetaling row for a locked berekening.
+	 * Prepare a payout row for a settled calculation and raise it in the finance app.
+	 *
+	 * The payout is raised before the row is written: a refusal by finance
+	 * writes nothing. Without a finance app the row stays prepared for the
+	 * external payment provider, as before the handoff.
 	 *
 	 * @param string $calculationId Berekening id.
 	 * @param string $accountHolderName Account holder name.
@@ -75,11 +101,11 @@ class DwangsomUitbetalingService {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @throws RuntimeException When the berekening is missing or IBAN is invalid.
+	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
 	 */
-	public function prepareBetaling(
+	public function preparePayout(
 		string $calculationId,
 		string $accountHolderName,
 		string $iban,
@@ -119,6 +145,7 @@ class DwangsomUitbetalingService {
 			'paymentDateLatest' => $uiterlijk,
 			'status' => 'voorbereid',
 		];
+		$row = $this->raiseInFinance(row: $row);
 
 		return $this->persistDisbursement(
 			objectService: $objectService,
@@ -126,7 +153,125 @@ class DwangsomUitbetalingService {
 			schema: $uSchema,
 			row: $row
 		);
-	}//end prepareBetaling()
+	}//end preparePayout()
+
+	/**
+	 * Prepare a payout from request input: accountHolderName, iban and
+	 * optionally receiptDate (Y-m-d, the day the notice was received).
+	 *
+	 * @param string $calculationId The settled calculation.
+	 * @param array<string, mixed> $input The request input.
+	 *
+	 * @return array<string, mixed> The saved payout row.
+	 *
+	 * @throws RuntimeException When the calculation is missing, the IBAN is invalid, or finance refuses.
+	 * @throws \InvalidArgumentException When the receipt date is malformed.
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 */
+	public function preparePayoutFrom(string $calculationId, array $input): array {
+		$receipt = null;
+		if ((string)($input['receiptDate'] ?? '') !== '') {
+			$receipt = $this->dates->parse((string)$input['receiptDate'], 'receiptDate');
+		}
+
+		return $this->preparePayout(
+			calculationId: $calculationId,
+			accountHolderName: (string)($input['accountHolderName'] ?? ''),
+			iban: (string)($input['iban'] ?? ''),
+			receiptDate: $receipt
+		);
+	}//end preparePayoutFrom()
+
+	/**
+	 * Withdraw a payout from the finance app, for example while an objection runs.
+	 *
+	 * A row that never reached finance is returned unchanged. A withdrawn row
+	 * loses its payableId: its reference is spent in finance, so raiseAgain()
+	 * raises it under a new one.
+	 *
+	 * @param array<string, mixed> $row The payout row.
+	 * @param string $reason Why it is withdrawn.
+	 *
+	 * @return array<string, mixed> The row, not yet saved.
+	 *
+	 * @throws RuntimeException When finance refuses, because it already approved, paid or rejected the payout.
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 */
+	public function withdrawFromFinance(array $row, string $reason): array {
+		if ((string)($row['payableId'] ?? '') === '' || $this->payouts === null) {
+			return $row;
+		}
+
+		$this->payouts->cancel(reference: (string)($row['reference'] ?? ''), reason: $reason);
+		$row['payableId'] = '';
+
+		return $row;
+	}//end withdrawFromFinance()
+
+	/**
+	 * Raise a prepared payout in the finance app again under a new reference,
+	 * for example with the amount an objection decided.
+	 *
+	 * @param array<string, mixed> $row The payout row, with its new amount.
+	 *
+	 * @return array<string, mixed> The row, not yet saved.
+	 *
+	 * @throws RuntimeException When finance refuses the payout.
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 */
+	public function raiseAgain(array $row): array {
+		if ((string)($row['payableId'] ?? '') !== '' || (int)($row['amount'] ?? 0) <= 0) {
+			return $row;
+		}
+
+		$previous = (string)($row['reference'] ?? '');
+		$row['reference'] = $this->buildReference(calculationId: (string)($row['penaltyPaymentCalculation'] ?? ''));
+		$raised = $this->raiseInFinance(row: $row);
+		if ((string)($raised['payableId'] ?? '') === '') {
+			// No finance app answered: keep the reference the provider knows.
+			$row['reference'] = $previous;
+			return $row;
+		}
+
+		return $raised;
+	}//end raiseAgain()
+
+	/**
+	 * Hand a payout row to the finance app and note the payable it answers with.
+	 *
+	 * @param array<string, mixed> $row The payout row.
+	 *
+	 * @return array<string, mixed> The row, with payableId when finance took it.
+	 *
+	 * @throws RuntimeException When finance refuses the payout.
+	 */
+	private function raiseInFinance(array $row): array {
+		if ($this->payouts === null) {
+			return $row;
+		}
+
+		$answer = $this->payouts->request(
+			payout: [
+				'amountCents' => (int)$row['amount'],
+				'payeeName' => (string)$row['accountHolderName'],
+				'iban' => (string)$row['iban'],
+				'reference' => (string)$row['reference'],
+				'description' => trim('Uitbetaling ' . (string)($row['legalBasis'] ?? '')),
+				'category' => self::CATEGORY,
+				'correlationId' => (string)($row['penaltyPaymentCalculation'] ?? ''),
+				'dueOn' => (string)($row['paymentDateLatest'] ?? ''),
+				'callbackUrl' => (string)($this->urls?->linkToRouteAbsolute(self::CALLBACK_ROUTE) ?? ''),
+			]
+		);
+		if ($answer !== null && $answer['payableId'] !== '') {
+			$row['payableId'] = $answer['payableId'];
+		}
+
+		return $row;
+	}//end raiseInFinance()
 
 	/**
 	 * Validate the caller-supplied payment input.
@@ -216,10 +361,10 @@ class DwangsomUitbetalingService {
 	}//end persistUitbetaling()
 
 	/**
-	 * Handle an ERP callback updating the uitbetaling state.
+	 * Handle a signed callback updating the payout state.
 	 *
 	 * @param string $reference Payment reference.
-	 * @param string $status New status (betaald/afgewezen/in-behandeling).
+	 * @param string $status New stored status (in-handling/paid/rejected).
 	 * @param DateTimeImmutable|null $paymentDate Actual payment date.
 	 * @param string $betalingsreferentie ERP/bank reference.
 	 *

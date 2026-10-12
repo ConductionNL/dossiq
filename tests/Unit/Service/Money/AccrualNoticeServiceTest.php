@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for NoticeOfDefaultService.
+ * Unit tests for AccrualNoticeService.
  *
  * Drives the AWB 4:17 registration through valid + premature + duplicate
  * notices, verifies DwangsomBerekening creation, and asserts the
@@ -24,10 +24,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service\Money;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\Money\AccrualNoticeService;
+use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
+use OCA\Dossiq\Tests\Unit\Service\SlaCalculatorFake;
+use OCA\Dossiq\Tests\Unit\Service\WorkingCalendarFake;
+use OCA\Dossiq\Tests\Unit\Service\WorkingCalendarServiceFake;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -37,7 +41,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Dossiq\Service\NoticeOfDefaultService
+ * @covers \OCA\Dossiq\Service\Money\AccrualNoticeService
  *
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
@@ -47,12 +51,12 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
-class NoticeOfDefaultServiceTest extends TestCase {
+class AccrualNoticeServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
 
 	private FakeTermijnStore $objects;
 	private TermijnService $termService;
-	private NoticeOfDefaultService $service;
+	private AccrualNoticeService $service;
 	/**
 	 * The settings mock, reused when a second service is built on a calendar.
 	 *
@@ -89,7 +93,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		$this->settings = $settings;
 		$this->logger = $logger;
 		$this->termService = new TermijnService($settings, $logger);
-		$this->service = new NoticeOfDefaultService($settings, $this->termService, $logger);
+		$this->service = new AccrualNoticeService($settings, $this->termService, $logger);
 
 		// Seed an AWB-default definition.
 		$this->objects->seed('deadlineDefinition', [
@@ -118,7 +122,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidNoticeCreatesBerekeningWithCorrectGrace(): void {
-		$row = $this->service->registerNoticeOfDefault(
+		$row = $this->service->registerNotice(
 			'ti-1',
 			new DateTimeImmutable('2026-03-15'),
 			'email',
@@ -156,7 +160,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'notificatiesVerstuurd' => [],
 		]);
 
-		$row = $this->service->registerNoticeOfDefault(
+		$row = $this->service->registerNotice(
 			'ti-lopend',
 			new DateTimeImmutable('2026-03-15'),
 			'post'
@@ -171,14 +175,14 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testSecondNoticeDoesNotSpawnSecondBerekening(): void {
-		$first = $this->service->registerNoticeOfDefault(
+		$first = $this->service->registerNotice(
 			'ti-1',
 			new DateTimeImmutable('2026-03-15'),
 			'email'
 		);
 		self::assertArrayHasKey('penaltyPaymentCalculation', $first);
 
-		$second = $this->service->registerNoticeOfDefault(
+		$second = $this->service->registerNotice(
 			'ti-1',
 			new DateTimeImmutable('2026-03-20'),
 			'post'
@@ -214,7 +218,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'notificatiesVerstuurd' => [],
 		]);
 
-		$row = $this->service->registerNoticeOfDefault(
+		$row = $this->service->registerNotice(
 			'ti-woo',
 			new DateTimeImmutable('2026-02-15'),
 			'post'
@@ -229,9 +233,9 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 *
 	 * @param array<int, string> $closed Non-working dates as `Y-m-d`.
 	 *
-	 * @return NoticeOfDefaultService The service under test.
+	 * @return AccrualNoticeService The service under test.
 	 */
-	private function serviceOnCalendar(array $closed): NoticeOfDefaultService {
+	private function serviceOnCalendar(array $closed): AccrualNoticeService {
 		$calendars = new WorkingCalendarServiceFake(new WorkingCalendarFake('nl-national', $closed));
 		$calculator = new SlaCalculatorFake();
 
@@ -252,7 +256,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			fallbackCalendar: new WorkingDayCalculator(),
 		);
 
-		return new NoticeOfDefaultService($this->settings, $this->termService, $this->logger, $timers);
+		return new AccrualNoticeService($this->settings, $this->termService, $this->logger, $timers);
 	}
 
 	/**
@@ -262,7 +266,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheGracePeriodEndingOnASundayMovesToTheMonday(): void {
-		$row = $this->serviceOnCalendar([])->registerNoticeOfDefault(
+		$row = $this->serviceOnCalendar([])->registerNotice(
 			'ti-1',
 			new DateTimeImmutable('2026-06-07'),
 			'email',
@@ -280,7 +284,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheSameGracePeriodWithoutTheCalendarKeepsTheSunday(): void {
-		$row = $this->service->registerNoticeOfDefault(
+		$row = $this->service->registerNotice(
 			'ti-1',
 			new DateTimeImmutable('2026-06-07'),
 			'email',
@@ -297,7 +301,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheGracePeriodCountsOnTheAdministeredCalendar(): void {
-		$row = $this->serviceOnCalendar(['2026-03-30'])->registerNoticeOfDefault(
+		$row = $this->serviceOnCalendar(['2026-03-30'])->registerNotice(
 			'ti-1',
 			new DateTimeImmutable('2026-03-15'),
 			'post'
@@ -325,7 +329,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'notificatiesVerstuurd' => [],
 		]);
 
-		$row = $this->serviceOnCalendar([])->registerNoticeOfDefault(
+		$row = $this->serviceOnCalendar([])->registerNotice(
 			'ti-lopend-2',
 			new DateTimeImmutable('2026-06-07'),
 			'post'

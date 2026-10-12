@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dossiq NoticeOfDefaultController.
+ * Dossiq AccrualNoticeController.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\Money\AccrualNoticeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
@@ -43,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
  */
-class NoticeOfDefaultController extends Controller {
+class AccrualNoticeController extends Controller {
 
 	use SearchesObjects;
 
@@ -52,7 +52,7 @@ class NoticeOfDefaultController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param NoticeOfDefaultService $service Service.
+	 * @param AccrualNoticeService $service Service.
 	 * @param SettingsService $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
@@ -60,7 +60,7 @@ class NoticeOfDefaultController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly NoticeOfDefaultService $service,
+		private readonly AccrualNoticeService $service,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -118,7 +118,7 @@ class NoticeOfDefaultController extends Controller {
 		}
 
 		try {
-			$row = $this->service->registerNoticeOfDefault(
+			$row = $this->service->registerNotice(
 				$instanceId,
 				new DateTimeImmutable($whenStr),
 				$channel,
