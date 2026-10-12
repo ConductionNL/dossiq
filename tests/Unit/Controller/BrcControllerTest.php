@@ -128,6 +128,8 @@ final class BrcStore {
  *
  * @covers \OCA\Dossiq\Controller\BrcController
  * @covers \OCA\Dossiq\Controller\ZgwController
+ * @covers \OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync
+ * @covers \OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler
  * @uses \OCA\Dossiq\Service\Zgw\ZgwSearchScope
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  *

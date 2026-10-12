@@ -89,7 +89,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Service/BesluitMaterialisationService.php' => 'THE sanctioned door: materialises the ZGW Besluit as a projection of a decidiq DecisionConcludedEvent outcome; authors nothing of its own.',
 		'lib/Service/Bezwaar/DecisionService.php' => 'Awb record keeper: publish() raises the decision in decidiq (fails closed) and persists only the returned decisionRef plus notification audit on the record.',
 		'lib/Listener/BezwaarDecisionListener.php' => 'Fail-closed guard: reverts a bezwaar status when no published decision exists; probes decision records, never authors one.',
-		'lib/Controller/BrcController.php' => 'ZGW Besluiten API (BRC): external registry writes besluit RECORDS the API mandates; record store compliance, not deliberation.',
+		'lib/Service/Zgw/BrcCrossRegisterSync.php' => 'ZGW Besluiten API (BRC): writes the zaakbesluit link the API mandates beside a besluit RECORD an external registry stored (brc-006); record store compliance, not deliberation. Moved here from BrcController with the code (method-decomposition 8f).',
 		'lib/Repair/LinkInFlightRemainingDecisionsRepair.php' => 'One-time idempotent migration linking in-flight records to their decidiq decisions.',
 		'lib/Repair/RewriteWooPublicationSummaries.php' => 'Idempotent upgrade step that rewrites only the old "WOO besluit voor zaak <uuid>" description on existing Woo besluit records to the wording WOODecisionService already writes; changes words, decides nothing.',
 		'lib/Repair/MapWooRefusalGroundCodes.php' => 'Idempotent upgrade step that rewrites only the refusal ground codes stored on existing Woo assessments and decision records onto the settled list; maps codes, decides nothing.',
