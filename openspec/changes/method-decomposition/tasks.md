@@ -323,4 +323,13 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         cutting an array literal into pieces to pass a length rule hides nothing. Under decision 182
         the honest fix is to move the default mappings into a configuration file the repair step
         reads, which is a refactor-programme decision, not a decomposition slice. Left for that.
-  - [ ] ContactMomentService waits on #3563
+  - [x] `ContactMomentService` (2: `mergeUpdate` CyclomaticComplexity and the class-level
+        ExcessiveClassComplexity; #3563 has landed). What a contact moment may hold on create and
+        on update moved to the new `lib/Service/Kcc/ContactMomentPayload.php` (`forCreate()`,
+        `merged()`, one `oneOf()` for the three lists, one `withTags()`, the end and duration of
+        an update in `withUpdatedEnd()`); the service keeps the lookups, the ownership check and
+        the saves, and its constructor is unchanged. Characterisation, green on the old code
+        first: `tests/Unit/Service/Kcc/ContactMomentWritePathTest.php` (10 tests through create,
+        update, get, list and related over a fake ObjectService). Own test for the new class:
+        `ContactMomentPayloadTest` (11). It pins one thing worth knowing: an update stores
+        `endedAt` as sent, without the normaliser a create uses; behaviour kept, not fixed here.
