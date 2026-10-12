@@ -111,7 +111,7 @@ class PublicationSources {
 	 * @param string $register The dossiq register slug.
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
+	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>, assessments: array<int, array<string, mixed>>}
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
@@ -142,7 +142,7 @@ class PublicationSources {
 			return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $documentSchema, id: $documentRef);
 		};
 
-		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader);
+		return $this->collectDelivery(assessments: $assessments, documentLoader: $documentLoader) + ['assessments' => $assessments];
 	}//end delivery()
 
 	/**

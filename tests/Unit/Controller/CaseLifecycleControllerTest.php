@@ -240,6 +240,24 @@ class CaseLifecycleControllerTest extends TestCase {
 	}//end testARefusedGestureAnswersItsCode()
 
 	/**
+	 * An extension past the case type's limit answers 409 with its own code.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testAnExtensionPastTheLimitAnswers409(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->lifecycle->method('extend')
+			->willThrowException(new RuntimeException('extension_limit_reached'));
+
+		$response = $this->controller()->extend(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('extension_limit_reached', $response->getData()['code']);
+	}//end testAnExtensionPastTheLimitAnswers409()
+
+	/**
 	 * An unexpected failure is a 500 that says nothing about itself.
 	 *
 	 * @return void

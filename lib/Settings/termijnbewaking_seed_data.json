@@ -103,6 +103,24 @@
       "validFrom": "2026-01-01"
     },
     {
+      "id": "td-bezwaar",
+      "caseType": "bezwaar",
+      "kind": "statutory",
+      "legalBasis": "Awb 7:10 lid 1 en 3",
+      "legalBasisSources": [
+        {
+          "article": "Awb art. 7:10 lid 1 (zes weken) en lid 3 (verdaging met ten hoogste zes weken)",
+          "url": "https://wetten.overheid.nl/BWBR0005537/2026-01-01#Hoofdstuk7_Titeldeel7.2_Afdeling7.3_Artikel7:10"
+        }
+      ],
+      "standardDurationDays": 42,
+      "standardDurationWeeks": 6,
+      "countingMode": "calendarDays",
+      "extensionCapacity": 42,
+      "countExtensions": 1,
+      "validFrom": "2026-01-01"
+    },
+    {
       "id": "td-evenementenvergunning-2024",
       "caseType": "evenementenvergunning-2024",
       "kind": "statutory",

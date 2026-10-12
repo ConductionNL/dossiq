@@ -186,7 +186,7 @@ class ConfiguredRegistryService {
 	 * ⚠️ The identifier parameter is named `$uuid`, NOT `$id`. Passing `id:` as
 	 * a named argument raises `Unknown named parameter $id` at runtime, which
 	 * the caller then reports as a generic save/delete failure. This is not
-	 * hypothetical: `InspectionChecklistService::deleteChecklist()` shipped with
+	 * hypothetical: `ChecklistTemplateStore::delete()` (then InspectionChecklistService) shipped with
 	 * exactly that mistake and its admin Delete button 500'd on every use.
 	 *
 	 * @param string $schemaConfigKey Config key naming the schema.
