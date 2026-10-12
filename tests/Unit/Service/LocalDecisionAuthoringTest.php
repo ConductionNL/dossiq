@@ -107,9 +107,9 @@ class LocalDecisionAuthoringTest extends TestCase {
 	];
 
 	/**
-	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The standalone
-	 * decision-table endpoint left when the tables moved to OpenRegister's
-	 * register (decision-tables-live-in-openregister); the KCC entry is a
+	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The first one
+	 * is deprecated stock (dossiq-decisions-to-decidiq) and leaves
+	 * when its endpoint moves to OpenRegister; the KCC entry is a
 	 * sanctioned non-decision consumer and stays. A new entry needs the same
 	 * argument the KCC one made: rules that are not case verdicts, evaluated
 	 * on the SHARED engine with the domain dialect kept app-side.
@@ -117,6 +117,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWED_EVALUATOR_CONSUMERS = [
+		'lib/Controller/DecisionTableController.php' => 'The standalone /api/decisions/{id}/evaluate endpoint, until flow-decision-tables lands in OpenRegister.',
 		'lib/Service/Kcc/RoutingTableEvaluator.php' => 'SANCTIONED, not deprecated stock: KCC contact-moment routing compiled onto the shared evaluator (kcc-routing-onto-or-decision-tables). Routing a call is triage, not a case verdict; the alternative to this consumer is the private matcher wave 4 retires.',
 	];
 

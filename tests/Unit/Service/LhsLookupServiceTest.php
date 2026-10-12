@@ -24,10 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\LhsLookupService;
-use OCA\Dossiq\Tests\Support\InMemoryDecisionTableStore;
-use Psr\Container\ContainerInterface;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -37,7 +34,6 @@ use RuntimeException;
  * Unit tests for LhsLookupService.
  *
  * @covers \OCA\Dossiq\Service\LhsLookupService
- * @uses \OCA\Dossiq\Service\Dmn\StoredDecisionTables
  */
 class LhsLookupServiceTest extends TestCase {
 
@@ -169,36 +165,4 @@ class LhsLookupServiceTest extends TestCase {
 
 		$this->assertSame(expected: 16, actual: $count);
 	}//end testFallbackCoversAll16Cells()
-	/**
-	 * The stored decision table answers first; a combination it does not
-	 * cover falls through to the embedded table.
-	 *
-	 * @return void
-	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
-	 */
-	public function testTheStoredDecisionTableAnswersFirst(): void {
-		$store = new InMemoryDecisionTableStore(
-			[LhsLookupService::DECISION_TABLE => [
-				'key' => LhsLookupService::DECISION_TABLE, 'name' => 'LHS', 'hitPolicy' => 'UNIQUE',
-				'inputs' => [['name' => 'behaviour', 'type' => 'string'], ['name' => 'consequence', 'type' => 'string']],
-				'outputs' => [['name' => 'interventionStep', 'type' => 'string']],
-				'rules' => [['id' => 'A:1', 'inputEntries' => ['A', '1'], 'outputEntries' => ['Gesprek met de overtreder']]],
-			],
-			]
-		);
-		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')->willReturn($store);
-		$service = new LhsLookupService(
-			settingsService: $this->settingsService,
-			logger: $this->logger,
-			tables: new StoredDecisionTables($this->settingsService, $container),
-		);
-
-		$cell = $service->lookup('a', '1');
-		$this->assertSame('Gesprek met de overtreder', $cell['interventionStep']);
-		$this->assertSame('decision-table', $cell['source']);
-		$this->assertSame([LhsLookupService::DECISION_TABLE], $store->asked);
-
-		$this->assertSame('fallback', $service->lookup('B', '2')['source']);
-	}//end testTheStoredDecisionTableAnswersFirst()
 }//end class

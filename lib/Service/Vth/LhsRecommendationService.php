@@ -136,7 +136,7 @@ class LhsRecommendationService {
 		// what it cannot resolve instead of missing silently the way a
 		// hand-indexed dictionary does (dossiq#1596).
 		$intervention = $this->tableLookup->intervention(
-			matrixVersion: (string)($matrix['version'] ?? '1'),
+			matrixId: (string)($matrix['id'] ?? ''),
 			severity: $severity,
 			behaviour: $behaviour,
 			actorType: $actorType,

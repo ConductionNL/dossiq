@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Flow;
 
-use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
+use OCA\Dossiq\Service\Dmn\DecisionTableService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
@@ -354,17 +354,13 @@ class RetiredNodeTranslator {
 	/**
 	 * `dossiq.evaluateDecision`: decide by a stored table and write the outputs onto the case.
 	 *
-	 * OpenRegister's decision-table step names the stored table by `tableRef`
-	 * (openregister#4572): the table lives once in the decision-tables register
-	 * and an edit there reaches every flow. It is read now only to learn which
-	 * outputs to write. The outputs land on the item; the object write then
-	 * stores them.
+	 * OpenRegister's decision-table step carries the table itself, so the
+	 * table the step named by key is read now and placed in the step. The
+	 * outputs land on the item; the object write then stores them.
 	 *
 	 * @param array<string, mixed> $config The retired configuration.
 	 *
 	 * @return array<int, array{type: string, config: array<string, mixed>}> The steps.
-	 *
-	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
 	 */
 	private function decision(array $config): array {
 		$key = trim((string)($config['decisionKey'] ?? ''));
@@ -372,7 +368,7 @@ class RetiredNodeTranslator {
 			throw new UnmappableStep(message: 'the step names no decision table');
 		}
 
-		[$storedKey, $table] = $this->decisionTable(key: $key);
+		$table = $this->decisionTable(key: $key);
 		$outputMapping = (array)($config['outputMapping'] ?? []);
 		$fields = [];
 		foreach ((array)($table['outputs'] ?? []) as $output) {
@@ -386,7 +382,7 @@ class RetiredNodeTranslator {
 			throw new UnmappableStep(message: 'the decision table "' . $key . '" declares no outputs to write');
 		}
 
-		$step = ['tableRef' => $storedKey];
+		$step = ['table' => $table];
 		foreach (['inputMapping', 'outputMapping'] as $mapping) {
 			if (is_array($config[$mapping] ?? null) === true && $config[$mapping] !== []) {
 				$step[$mapping] = $config[$mapping];
@@ -400,41 +396,32 @@ class RetiredNodeTranslator {
 	}//end decision()
 
 	/**
-	 * Read a stored decision table from OpenRegister's register by its dossiq key.
+	 * Read a stored decision table by key, without its storage metadata.
 	 *
-	 * @param string $key The table's dossiq key.
+	 * @param string $key The table key.
 	 *
-	 * @return array{0: string, 1: array<string, mixed>} The stored key and the table definition.
+	 * @return array<string, mixed> The table definition.
 	 *
-	 * @throws UnmappableStep When the table is not in the register, or the store is absent.
-	 *
-	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
+	 * @throws UnmappableStep When the table cannot be read.
 	 */
 	private function decisionTable(string $key): array {
 		try {
-			$tables = $this->container->get(StoredDecisionTables::class);
+			$service = $this->container->get(DecisionTableService::class);
+			$table = null;
+			if ($service instanceof DecisionTableService) {
+				$table = $service->findByKey(key: $key);
+			}
 		} catch (Throwable $e) {
-			throw new UnmappableStep(message: 'the decision table "' . $key . '" could not be looked up: ' . $e->getMessage());
-		}
-
-		if ($tables instanceof StoredDecisionTables === false) {
-			throw new UnmappableStep(message: 'the decision table "' . $key . '" could not be looked up');
-		}
-
-		$storedKey = $tables->keyFor(key: $key);
-		try {
-			$table = $tables->find(reference: $storedKey);
-		} catch (Throwable $e) {
-			throw new UnmappableStep(
-				message: 'the decision table "' . $key . '" is not in OpenRegister\'s decision-tables register as "' . $storedKey . '": ' . $e->getMessage()
-			);
+			throw new UnmappableStep(message: 'the decision table "' . $key . '" could not be read: ' . $e->getMessage());
 		}
 
 		if (is_array($table) === false || $table === []) {
-			throw new UnmappableStep(message: 'OpenRegister\'s decision-table store is not available to read "' . $storedKey . '"');
+			throw new UnmappableStep(message: 'no decision table has the key "' . $key . '"');
 		}
 
-		return [$storedKey, $table];
+		unset($table['@self'], $table['id'], $table['uuid']);
+
+		return $table;
 	}//end decisionTable()
 
 	/**
