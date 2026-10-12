@@ -102,9 +102,7 @@ describe('a case type may carry its own list layout', () => {
 	})
 
 	it('leaves the other seeded case types silent, so they inherit the page', () => {
-		const silent = packaged
-			.filter((c) => !c['x-index'])
-			.map((c) => c.identifier)
+		const silent = packaged.filter((c) => !c['x-index']).map((c) => c.identifier)
 		expect(
 			silent.length,
 			'every seeded case type overrides the page',
