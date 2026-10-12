@@ -354,13 +354,45 @@ export default {
 		taskFacts() {
 			return {
 				fields: [
-					{ key: 'assignee', label: t('dossiq', 'Assignee'), path: 'assignee' },
-					{ key: 'team', label: t('dossiq', 'Team'), path: 'candidateGroups', format: 'list' },
-					{ key: 'due', label: t('dossiq', 'Due'), path: 'dueAt', format: 'date' },
-					{ key: 'expires', label: t('dossiq', 'Expires'), path: 'expiresAt', format: 'date' },
-					{ key: 'priority', label: t('dossiq', 'Priority'), path: 'priority' },
-					{ key: 'requester', label: t('dossiq', 'Requested by'), path: 'requester' },
-					{ key: 'created', label: t('dossiq', 'Created'), path: 'created', format: 'date' },
+					{
+						key: 'assignee',
+						label: t('dossiq', 'Assignee'),
+						path: 'assignee',
+					},
+					{
+						key: 'team',
+						label: t('dossiq', 'Team'),
+						path: 'candidateGroups',
+						format: 'list',
+					},
+					{
+						key: 'due',
+						label: t('dossiq', 'Due'),
+						path: 'dueAt',
+						format: 'date',
+					},
+					{
+						key: 'expires',
+						label: t('dossiq', 'Expires'),
+						path: 'expiresAt',
+						format: 'date',
+					},
+					{
+						key: 'priority',
+						label: t('dossiq', 'Priority'),
+						path: 'priority',
+					},
+					{
+						key: 'requester',
+						label: t('dossiq', 'Requested by'),
+						path: 'requester',
+					},
+					{
+						key: 'created',
+						label: t('dossiq', 'Created'),
+						path: 'created',
+						format: 'date',
+					},
 				],
 			}
 		},
@@ -373,12 +405,19 @@ export default {
 		 */
 		hasFacts() {
 			const task = this.task ?? {}
-			const groups = Array.isArray(task.candidateGroups) ? task.candidateGroups : []
+			const groups = Array.isArray(task.candidateGroups)
+				? task.candidateGroups
+				: []
 			return (
 				groups.length > 0
-				|| ['assignee', 'dueAt', 'expiresAt', 'priority', 'requester', 'created'].some(
-					(key) => String(task[key] ?? '').trim() !== '',
-				)
+				|| [
+					'assignee',
+					'dueAt',
+					'expiresAt',
+					'priority',
+					'requester',
+					'created',
+				].some((key) => String(task[key] ?? '').trim() !== '')
 			)
 		},
 
