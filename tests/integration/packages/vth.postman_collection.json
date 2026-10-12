@@ -1,0 +1,1928 @@
+{
+  "info": {
+    "name": "dossiq package: vth",
+    "description": "Reads every kind of row the vth package writes back through the OpenRegister objects API, after the packages workflow installed it on a clean instance (hydra ADR-118). Ids are the fixed ids in lib/Settings/packages/vth/. Written by scripts/packages/package-to-newman.py.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{adminUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{adminPass}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUser",
+      "value": "admin"
+    },
+    {
+      "key": "adminPass",
+      "value": "admin"
+    }
+  ],
+  "item": [
+    {
+      "name": "case type omgevingsvergunning-bouwactiviteit",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Omgevingsvergunning Bouwactiviteit\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"omgevingsvergunning-bouwactiviteit\"));",
+              "pm.test('processingDeadline as shipped', () => pm.expect(row.processingDeadline).to.eql(\"P56D\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"openbaar\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/0f70296e-265f-54b2-8fb4-7be31558fa31"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Ontvangen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/54897b1a-07bd-58a6-932e-f5e7b86509e1"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afgehandeld\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: role Behandelaar",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/83c4148d-5456-5d30-881c-3c94be5cebbf"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Behandelaar\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: role Aanvrager",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/369a0fff-8c1e-5f2b-b9f3-d051c2f5cf79"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Aanvrager\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: role Gemachtigde",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/ddfceaef-68b5-50df-a19d-f4307f516ce4"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gemachtigde\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: role Adviseur (welstand)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/5801dd08-74ba-560e-b516-db2802c8f1aa"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Adviseur (welstand)\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: role Adviseur (brandweer)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/5a6da1a6-d47d-5b40-bf35-004f5dc27fff"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Adviseur (brandweer)\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: role Teamleider",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/9df3a2f3-219d-5c7f-ac19-57557d39e260"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Teamleider\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: property bouwkosten",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/09abe0b4-8d15-5ffc-8264-71dd02a8b776"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"bouwkosten\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: document type Bouwtekening",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/documentType/f666ba38-f249-511e-b8d5-347f9907a4f3"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Bouwtekening\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "case type sloopmelding",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/4f6f897c-20c9-5f3e-9242-025df86ca038"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Sloopmelding\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"sloopmelding\"));",
+              "pm.test('processingDeadline as shipped', () => pm.expect(row.processingDeadline).to.eql(\"P28D\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"openbaar\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/9073ad9c-9a40-5778-9ba8-2c77c2729a34"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Ontvangen\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"4f6f897c-20c9-5f3e-9242-025df86ca038\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/5d6023eb-fa48-51af-9a1d-d48e9070f862"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afgehandeld\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"4f6f897c-20c9-5f3e-9242-025df86ca038\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: role Behandelaar",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/09125179-b1e3-5eb4-962f-261a3cd6280c"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Behandelaar\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"4f6f897c-20c9-5f3e-9242-025df86ca038\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: role Melder",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/7c929073-ce01-5fec-a7cc-9acd8fd2e477"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Melder\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"4f6f897c-20c9-5f3e-9242-025df86ca038\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: property asbestInventarisatie",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/016293d3-eab1-5735-a26b-7a958b84cc00"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"asbestInventarisatie\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"4f6f897c-20c9-5f3e-9242-025df86ca038\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: document type Sloopplan",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/documentType/55d3196d-cf5b-5d86-83a5-696368934adf"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Sloopplan\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"4f6f897c-20c9-5f3e-9242-025df86ca038\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "case type toezichtzaak-bouw",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Toezichtzaak Bouw\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"toezichtzaak-bouw\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"intern\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/f20608d3-c6af-5a46-83fa-be67234eb9ea"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gepland\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/0dafe7a0-cb02-561e-a5c9-d1983a45f2d6"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afgehandeld\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: role Inspecteur",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/4656466f-28ca-5d6a-9757-105c31390feb"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Inspecteur\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: role Contactpersoon",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/4441b3da-74ac-5ccd-93ce-a1933ee786a9"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Contactpersoon\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: role Opdrachtgever",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/6b9d7ab8-4d70-5c0a-9d12-30bfcf2b5578"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Opdrachtgever\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: property bouwvergunningZaak",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/83bcee9a-5280-53b6-8bbc-0c706023f35a"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"bouwvergunningZaak\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: document type Constateringsrapport",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/documentType/bd750f71-8095-51d6-83d9-50fb15f09deb"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Constateringsrapport\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "case type toezichtzaak-milieu",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Toezichtzaak Milieu\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"toezichtzaak-milieu\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"intern\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/d6529b26-2e23-58bd-9862-3acc3e6d2915"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gepland\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9a39817b-9bee-51a8-8f86-c5b4cdebf4fa\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/3556fed1-057c-5154-ac70-e23e549a21ca"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afgehandeld\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9a39817b-9bee-51a8-8f86-c5b4cdebf4fa\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: role Inspecteur",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/12206e8b-d464-5c37-8715-c1a889ddf110"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Inspecteur\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9a39817b-9bee-51a8-8f86-c5b4cdebf4fa\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: role Contactpersoon",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/9a3de96c-f236-5f61-ae72-b6e9ded6248d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Contactpersoon\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9a39817b-9bee-51a8-8f86-c5b4cdebf4fa\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: role Inrichtinghouder",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/b24e71d8-5dee-5281-a669-066e2f25c3ec"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Inrichtinghouder\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9a39817b-9bee-51a8-8f86-c5b4cdebf4fa\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: property inspectieType",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/2e83c7fe-1115-5d03-a084-cb43b4099d7b"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"inspectieType\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9a39817b-9bee-51a8-8f86-c5b4cdebf4fa\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "case type handhavingszaak",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Handhavingszaak\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"handhavingszaak\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"zaakvertrouwelijk\"));",
+              "pm.test('list layout as shipped', () => pm.expect(row['x-index'].columns).to.eql([\"identifier\", \"title\", \"status\", \"besluitdatum\", \"deadline\"]));",
+              "pm.test('default flow as shipped', () => pm.expect(row.workflowDefinition).to.eql(\"6f5b5055-b2a5-5008-a177-528e4b2b4a72\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/77c260b4-aa92-5dd8-9091-4ef0f9242e20"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Constatering\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/98695b5a-61a7-545f-8ee8-b8b94a67e059"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afgehandeld\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: role Behandelaar",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/af3893e2-b14b-525b-982a-944706c44f67"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Behandelaar\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: role Overtreder",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/2a7abef1-75b2-5020-8006-892743dbdada"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Overtreder\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: role Gemachtigde",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/ed48cea5-bdb8-51c9-9612-b0c6bbc1b92b"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Gemachtigde\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: role Teamleider",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/2ff045da-51bb-5318-829b-6f88f84f4b1d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Teamleider\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: property overtredingstype",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/47a3cd65-fefa-56ea-a3d1-525f810b6d54"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"overtredingstype\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: document type Constateringsrapport",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/documentType/6e0f3d3d-4b88-5b7e-8092-9311cae12da5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Constateringsrapport\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "case type invorderingszaak",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/caseType/0bb7810f-ca79-52b2-8b6d-0508eabec8d7"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Invorderingszaak\"));",
+              "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"invorderingszaak\"));",
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"zaakvertrouwelijk\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "invorderingszaak: first status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/03658fcb-6e3e-5cc3-8625-3ad8691893f2"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Verbeuring\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"0bb7810f-ca79-52b2-8b6d-0508eabec8d7\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "invorderingszaak: final status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/9d668ca1-222f-5595-aacd-9e05529faac1"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Afgehandeld\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"0bb7810f-ca79-52b2-8b6d-0508eabec8d7\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "invorderingszaak: role Behandelaar",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/33b6bb47-08d0-54d7-acd0-2bbf638d2e7a"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Behandelaar\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"0bb7810f-ca79-52b2-8b6d-0508eabec8d7\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "invorderingszaak: role Overtreder",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/roleType/8ef34f11-012a-5f53-96ad-b25682cff915"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Overtreder\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"0bb7810f-ca79-52b2-8b6d-0508eabec8d7\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "invorderingszaak: property bronHandhavingszaak",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/propertyDefinition/e14587b0-6ca6-5586-bfc1-9018ac3ca7c4"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"bronHandhavingszaak\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"0bb7810f-ca79-52b2-8b6d-0508eabec8d7\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 1 - Fundering",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/inspectionChecklistTemplate/3015a8a5-2eda-5fc6-bb3b-d3753f30512d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Bouwtoezicht fase 1 - Fundering\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('status as shipped', () => pm.expect(row.status).to.eql(\"active\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 2 - Ruwbouw",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/inspectionChecklistTemplate/c407ee36-fac4-52b5-afe2-cc1b7cbb871a"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Bouwtoezicht fase 2 - Ruwbouw\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('status as shipped', () => pm.expect(row.status).to.eql(\"active\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 3 - Oplevering",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/inspectionChecklistTemplate/348402f0-99a8-5c1f-a16f-13b9f31ce316"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Bouwtoezicht fase 3 - Oplevering\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('status as shipped', () => pm.expect(row.status).to.eql(\"active\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: flow Aanvraag omgevingsvergunning",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/6499d68d-de4f-5ed4-90cd-d40269134600"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Aanvraag omgevingsvergunning\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"standaard\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"published\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(true));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: draft flow Omgevingsvergunning Bouwactiviteit (regulier)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/8369c5ba-729a-57d7-8fea-d992541f3ce7"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Omgevingsvergunning Bouwactiviteit (regulier)\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"regulier\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"draft\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(false));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: draft flow Omgevingsvergunning Bouwactiviteit (uitgebreid)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/597fcc86-0947-58e6-97e5-9ae26b4b66ca"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Omgevingsvergunning Bouwactiviteit (uitgebreid)\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"cde0095e-f462-5781-ae3b-3b994a56c3c4\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"uitgebreid\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"draft\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(false));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omgevingsvergunning-bouwactiviteit: the flow a case follows",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/workflow-definitions/active/cde0095e-f462-5781-ae3b-3b994a56c3c4"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('a case of this type has a flow to follow (200)', () => pm.response.to.have.status(200));",
+              "const definition = pm.response.json().definition;",
+              "pm.test('the flow a case follows is published', () => pm.expect(definition.lifecycleStatus).to.eql('published'));",
+              "pm.test('the flow a case follows is not a draft of the package', () => pm.expect([\"8369c5ba-729a-57d7-8fea-d992541f3ce7\", \"597fcc86-0947-58e6-97e5-9ae26b4b66ca\"]).to.not.include(definition.id));",
+              "pm.test('the flow a case follows is the published one of the package', () => pm.expect([\"6499d68d-de4f-5ed4-90cd-d40269134600\"]).to.include(definition.id));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: draft flow Sloopmelding",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/d5bf6007-6476-56f7-a970-a75dab999c88"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Sloopmelding\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"4f6f897c-20c9-5f3e-9242-025df86ca038\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"standaard\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"draft\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(false));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sloopmelding: the flow a case follows",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/workflow-definitions/active/4f6f897c-20c9-5f3e-9242-025df86ca038"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('a case of this type has a flow to follow (200)', () => pm.response.to.have.status(200));",
+              "const definition = pm.response.json().definition;",
+              "pm.test('the flow a case follows is published', () => pm.expect(definition.lifecycleStatus).to.eql('published'));",
+              "pm.test('the flow a case follows is not a draft of the package', () => pm.expect([\"d5bf6007-6476-56f7-a970-a75dab999c88\"]).to.not.include(definition.id));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: draft flow Toezichtzaak Bouw",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/53f90427-c604-5a84-ab07-13a124438b32"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Toezichtzaak Bouw\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"standaard\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"draft\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(false));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: flow Toezichtbezoek",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/b3669ad7-c81b-571b-aec5-77956ce6cbf6"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Toezichtbezoek\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"standaard\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"published\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(true));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: the flow a case follows",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/workflow-definitions/active/fd452b2a-0f6c-5dee-9f52-339e836567bd"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('a case of this type has a flow to follow (200)', () => pm.response.to.have.status(200));",
+              "const definition = pm.response.json().definition;",
+              "pm.test('the flow a case follows is published', () => pm.expect(definition.lifecycleStatus).to.eql('published'));",
+              "pm.test('the flow a case follows is not a draft of the package', () => pm.expect([\"53f90427-c604-5a84-ab07-13a124438b32\"]).to.not.include(definition.id));",
+              "pm.test('the flow a case follows is the published one of the package', () => pm.expect([\"b3669ad7-c81b-571b-aec5-77956ce6cbf6\"]).to.include(definition.id));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: draft flow Toezichtzaak Milieu",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/5490e28e-6293-5050-810e-427599e2f9ad"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Toezichtzaak Milieu\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9a39817b-9bee-51a8-8f86-c5b4cdebf4fa\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"standaard\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"draft\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(false));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-milieu: the flow a case follows",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/workflow-definitions/active/9a39817b-9bee-51a8-8f86-c5b4cdebf4fa"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('a case of this type has a flow to follow (200)', () => pm.response.to.have.status(200));",
+              "const definition = pm.response.json().definition;",
+              "pm.test('the flow a case follows is published', () => pm.expect(definition.lifecycleStatus).to.eql('published'));",
+              "pm.test('the flow a case follows is not a draft of the package', () => pm.expect([\"5490e28e-6293-5050-810e-427599e2f9ad\"]).to.not.include(definition.id));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: draft flow Handhavingszaak",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/285a5888-aa79-556e-86c4-2ef85ac84381"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Handhavingszaak\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"regulier\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"draft\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(false));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: flow Handhavingstraject",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/6f5b5055-b2a5-5008-a177-528e4b2b4a72"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Handhavingstraject\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"regulier\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"published\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(true));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: flow Spoedig herstel (Awb 5:31)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/workflowTemplate/6b1676fb-f5a9-5004-ac81-4e86a7e46cb2"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Spoedig herstel (Awb 5:31)\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"9e4fe525-6aac-525c-978e-c3d74bc0213d\"));",
+              "pm.test('variant as shipped', () => pm.expect(row.variant).to.eql(\"spoedeisend\"));",
+              "pm.test('lifecycleStatus as shipped', () => pm.expect(row.lifecycleStatus).to.eql(\"published\"));",
+              "pm.test('isActive as shipped', () => pm.expect(row.isActive).to.eql(true));",
+              "pm.test('isDraft as shipped', () => pm.expect(row.isDraft).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "handhavingszaak: the flow a case follows",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/workflow-definitions/active/9e4fe525-6aac-525c-978e-c3d74bc0213d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('a case of this type has a flow to follow (200)', () => pm.response.to.have.status(200));",
+              "const definition = pm.response.json().definition;",
+              "pm.test('the flow a case follows is published', () => pm.expect(definition.lifecycleStatus).to.eql('published'));",
+              "pm.test('the flow a case follows is not a draft of the package', () => pm.expect([\"285a5888-aa79-556e-86c4-2ef85ac84381\"]).to.not.include(definition.id));",
+              "pm.test('the flow a case follows is the published one of the package', () => pm.expect([\"6f5b5055-b2a5-5008-a177-528e4b2b4a72\"]).to.include(definition.id));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ledger records the package",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/shippedOrigin?targetObject=cde0095e-f462-5781-ae3b-3b994a56c3c4&_limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('ledger reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const row = rows.find(r => r.targetObject === 'cde0095e-f462-5781-ae3b-3b994a56c3c4');",
+              "pm.test('a ledger row names the package and its version', () => {",
+              "    pm.expect(row, 'ledger row for the case type').to.be.an('object');",
+              "    pm.expect(row.set).to.eql('vth');",
+              "    pm.expect(row.setVersion).to.eql('1.0.0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

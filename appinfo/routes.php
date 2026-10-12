@@ -690,9 +690,6 @@ $extra = [
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
         // ── VTH Module ─────────────────────────────────────────────────────
-        // VTH zaaktype template management (admin only).
-    ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
-    ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
         // Checklist templates (admin). The URLs keep their first names; the
         // controllers behind them know no procedure.
     ['name' => 'checklistTemplate#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
