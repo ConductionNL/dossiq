@@ -1693,23 +1693,32 @@
 					{
 						"label": "All",
 						"filter": {
-							"supersededBy": "IS NULL"
+							"supersededBy": {
+								"isnull": true
+							}
 						},
-						"default": true
+						"default": true,
+						"showCount": true
 					},
 					{
 						"label": "Published",
 						"filter": {
-							"supersededBy": "IS NULL",
+							"supersededBy": {
+								"isnull": true
+							},
 							"isDraft": false
-						}
+						},
+						"showCount": true
 					},
 					{
 						"label": "Draft",
 						"filter": {
-							"supersededBy": "IS NULL",
+							"supersededBy": {
+								"isnull": true
+							},
 							"isDraft": true
-						}
+						},
+						"showCount": true
 					}
 				]
 			}
