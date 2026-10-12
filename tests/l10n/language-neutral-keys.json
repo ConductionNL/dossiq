@@ -32,6 +32,7 @@
         "Hit policy",
         "Initiator",
         "Intake",
+        "KvK",
         "Label",
         "Links",
         "Mail",
@@ -70,9 +71,11 @@
         "max {n}",
         "wijken",
         "{count} items",
+        "{count} document",
         "{from} – (no end)",
         "{minutes} min",
         "{percent}%",
-        "Relevant"
+        "Relevant",
+        "{title}"
     ]
 }

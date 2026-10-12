@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Relation\LinkMarkerRule;
+use OCA\Dossiq\Service\Relation\LinkMarkerRuleReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -82,8 +83,6 @@ class LinkMarkerListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-marker-rule-derives-a-flag-on-the-referenced-object-req-lcr-4
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) LinkMarkerRule is built through its validating named constructor.
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatedEvent === false && $event instanceof ObjectUpdatedEvent === false) {
@@ -96,7 +95,7 @@ class LinkMarkerListener implements IEventListener {
 		}
 
 		try {
-			$rules = LinkMarkerRule::listFromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
+			$rules = (new LinkMarkerRuleReader())->fromJson(json: $this->settingsService->getConfigValue(key: self::RULES_KEY));
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the link marker rules do not read: '.$e->getMessage());
 			return;

@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use OCA\Dossiq\Woo\WooReceivedAnswers;
 use OCA\Dossiq\Woo\WooReceivedTerm;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use OCA\Dossiq\Woo\WooRequestRefused;
@@ -52,6 +53,11 @@ use stdClass;
  * @uses \OCA\Dossiq\Woo\WooWrittenCase
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
+ * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class WooRequestIntakeReceiveTest extends TestCase {
 
@@ -202,7 +208,7 @@ class WooRequestIntakeReceiveTest extends TestCase {
 			urlGenerator: $urls,
 			logger: $this->createMock(LoggerInterface::class),
 			receivedTerm: new WooReceivedTerm(settingsService: $settings, terms: $terms, timeline: $this->timeline),
-			dates: $this->caseDates(),
+			receivedAnswers: new WooReceivedAnswers(dates: $this->caseDates()),
 		);
 	}//end intake()
 

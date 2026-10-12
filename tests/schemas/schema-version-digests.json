@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.42.0",
+        "version": "1.44.0",
         "digest": "b578ccbd77b6c4ff6987dedc29b48fdd1bf6ca6cfd9b329b80bf72ff9e04a5ab"
     },
     "lib/Settings/dossiq_register.json::case-location": {
@@ -664,7 +664,7 @@
         "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
-        "version": "1.18.1",
+        "version": "1.19.1",
         "digest": "dbbfd52696a00662451f8e487669d62c5b96851e3e68cff4350fa5cdf5983038"
     },
     "lib/Settings/dossiq_register.json::casetransfer": {
@@ -1444,7 +1444,7 @@
         "digest": "a03ddc03548b6f4f1e1b67d743e8eb531b859ee26edabf38bc67d2d223249af9"
     },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufEndpoint": {
-        "version": "1.0.1",
+        "version": "1.1.0",
         "digest": "6ca8957cbe63ad3c88c0049ad519a85c12b1e31dedc3f5037759dd6520ab660b"
     },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufMessage": {
@@ -1464,7 +1464,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/83-woo-document-assessment.json::wooDocumentAssessment": {
-        "version": "1.2.0",
+        "version": "1.2.1",
         "digest": "1d0a9ca7042939efab4202f938d992bff7ed8a4692b277aca418c42bcaacde6a"
     },
     "lib/Settings/register.d/84-woo-refusal-grounds.json::wooRefusalGround": {
@@ -1480,7 +1480,7 @@
         "digest": "75ebb2f39470202b1281c5d603b9c8fbb65b19583e54bdfb901bb3458120d98d"
     },
     "lib/Settings/register.d/85-woo-dossier-shared.json::aanvullingsverzoek": {
-        "version": "1.3.0",
+        "version": "1.3.1",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-dossier-shared.json::case": {
@@ -1488,7 +1488,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::informatieobject": {
-        "version": "1.4.1",
+        "version": "1.4.2",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/85-woo-gather-provenance.json::zaakinformatieobject": {
@@ -1540,11 +1540,11 @@
         "digest": "216a897adb86c945301ae1dfed15e20a843fa15aa3c18b777b4b0b23ba5bd6e1"
     },
     "lib/Settings/register.d/87-document-review.json::reviewBatch": {
-        "version": "1.0.1",
+        "version": "1.0.2",
         "digest": "198618f15e6efb3d9e1d58f688addf6174aa73585dd3538aaa29b9c1c1f64da3"
     },
     "lib/Settings/register.d/87-document-review.json::triageRule": {
-        "version": "1.0.2",
+        "version": "1.0.4",
         "digest": "93aa28abbf825bf70614e2f818609321708ba0958b40832afb46bc743d34dad3"
     },
     "lib/Settings/register.d/88-review-recall.json::recallSample": {
@@ -1562,6 +1562,10 @@
     "lib/Settings/register.d/89-case-reviewer-access.json::caseType": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/89-document-review-ownership.json::document": {
+        "version": "1.2.0",
+        "digest": "319bcc659570518fe1e09b7c052b4b211764674e326a043c27b244368b5103a1"
     },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",

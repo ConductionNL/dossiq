@@ -50,7 +50,7 @@ final class FrozenRecordFixture {
 	 * @return FreezeDefinition The definition.
 	 */
 	public static function definition(array $override = []): FreezeDefinition {
-		return FreezeDefinition::fromArray(entry: array_merge(self::ENTRY, $override));
+		return new FreezeDefinition(entry: array_merge(self::ENTRY, $override));
 	}//end definition()
 
 	/**

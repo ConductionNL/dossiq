@@ -45,6 +45,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -71,6 +72,7 @@ class LifecycleActorGate {
 	 * @param IUserSession $userSession Names the caller.
 	 * @param LoggerInterface $logger Records a check that could not be made.
 	 * @param BackgroundServiceAccount $serviceAccount Names the account the background jobs act as.
+	 * @param IL10N $l10n Words the refusal in the reader's language.
 	 */
 	public function __construct(
 		private readonly LifecycleCaseTypeRules $rules,
@@ -78,6 +80,7 @@ class LifecycleActorGate {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -186,15 +189,15 @@ class LifecycleActorGate {
 	public function refusalSentence(string $act, array $case): string {
 		$user = $this->userSession->getUser();
 		if ($user !== null && $this->isTheBackgroundAccount(uid: $user->getUID()) === true) {
-			return 'The background account may only close a silent case of a case type that opted in to it.';
+			return $this->l10n->t('The background account may only close a silent case of a case type that opted in to it.');
 		}
 
 		$role = $this->roleFor(act: $act, case: $case);
 		if ($role !== '') {
-			return sprintf('This act needs the %s group.', $role);
+			return $this->l10n->t('This act needs the %s group.', [$role]);
 		}
 
-		return 'This act needs an administrator.';
+		return $this->l10n->t('This act needs an administrator.');
 	}//end refusalSentence()
 
 	/**

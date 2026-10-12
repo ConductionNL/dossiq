@@ -72,6 +72,9 @@ interface RedactionProposalObjectServiceStub {
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
  */
 class WOODocumentAssessmentServiceTest extends TestCase {
 
@@ -476,6 +479,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$this->assertSame(['count' => 1, 'documents' => ['doc-3']], $service->getOutstanding('case-1'));
 	}//end testAnExcludedDocumentIsNotOutstanding()
+
 	/**
 	 * A service over an in-memory register with a doubled reviewer access, signed in as the user.
 	 *
@@ -499,7 +503,7 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		return new WOODocumentAssessmentService($settings, $session, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger), $access);
+		return new WOODocumentAssessmentService($settings, $session, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger), reviewerAccess: $access);
 	}//end serviceWithAccess()
 
 	/**

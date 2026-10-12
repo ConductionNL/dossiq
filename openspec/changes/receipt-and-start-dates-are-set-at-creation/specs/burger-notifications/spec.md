@@ -6,12 +6,15 @@ When a case is created, dossiq SHALL set its receipt and start dates; the
 create form SHALL NOT ask for them. The receipt SHALL be the first of: a
 `receivedAt` the creating path supplied, the case's own `receiptDate` answer,
 `registrationDate`, `requestedDate`, the creation moment. dossiq SHALL write
-`startDate` as the receipt's calendar day when the case carries no
-`startDate`, and SHALL answer the case type's `receiptDate` question with
+`startDate` as the receipt's calendar day in the administered time zone
+(Europe/Amsterdam unless the tenant or the engine calendar names another)
+when the case carries no `startDate`, and SHALL answer the case type's `receiptDate` question with
 that day when the type declares one and the case does not answer it. A value
 already on the case SHALL be kept. The statutory term SHALL start from that
 same receipt (REQ-OTE-02). The dates SHALL be written even when the working
-calendar does not answer.
+calendar does not answer. dossiq SHALL set these fields before the case is
+stored, so the stored case carries them from its first version and no
+materialised calculation can fill `startDate` first.
 
 #### Scenario: a case filed by hand gets both dates from the moment it was made
 @e2e exclude the dates are written by a create listener with no gesture of its own; covered through the real listener in tests/Unit/Listener/IntakeTermStartListenerTest.php::testACaseFiledByHandGetsItsDatesFromCreation
@@ -21,6 +24,21 @@ calendar does not answer.
 - **THEN** the case's `startDate` SHALL be 2026-10-06
 - **AND** its `receiptDate` answer SHALL be 2026-10-06
 - **AND** its `receivedAt` SHALL be Tuesday 2026-10-06 at 10:00
+
+#### Scenario: a case made just after midnight starts that day in the administered zone
+@e2e exclude the day is set by a create listener with no gesture of its own, and a browser cannot choose the clock; covered through the real listener and the real CaseDateNormaliser in tests/Unit/Listener/IntakeTermStartListenerTest.php::testACaseMadeJustAfterMidnightInAmsterdamStartsThatDay and the wiring in tests/Unit/AppInfo/ReceiptDatesRegistrationTest.php
+
+- **GIVEN** the administered zone is Europe/Amsterdam
+- **WHEN** a handler files a case on Sunday 2026-10-11 at 01:52 CEST (Saturday 23:52 UTC)
+- **THEN** the case's `startDate` SHALL be 2026-10-11
+
+#### Scenario: a Woo case is stored with its receipt answer
+@e2e exclude the answer is set by a create listener with no gesture of its own; covered through the real listener in tests/Unit/Listener/IntakeTermStartListenerTest.php::testAWooCaseIsStoredWithItsReceiptAnswer and tests/Unit/Listener/IntakeTermStartListenerTest.php::testTheCreatedFallbackSendsOnlyTheFieldsItAdds
+
+- **GIVEN** a Woo case type that declares a `receiptDate` question
+- **WHEN** a case is created from the UI or the API without a receipt date
+- **THEN** the stored case SHALL answer `receiptDate` with the receipt day
+- **AND** no later write SHALL be needed to add it
 
 #### Scenario: an imported receipt date is kept and starts the term
 @e2e exclude an integration write path with no screen; covered in tests/Unit/Listener/IntakeTermStartListenerTest.php::testAnImportedReceiptIsKeptAndStartsTheTerm and tests/Unit/Listener/DeadlineCaseCreatedListenerTest.php::testAnImportedReceiptDateStartsTheTerm

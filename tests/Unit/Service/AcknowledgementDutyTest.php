@@ -125,6 +125,9 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Woo\WooReceivedAnswers
+ * @uses \OCA\Dossiq\Woo\WooRequestForm
  */
 class AcknowledgementDutyTest extends TestCase {
 	use MakesRealTermNoticeSender;

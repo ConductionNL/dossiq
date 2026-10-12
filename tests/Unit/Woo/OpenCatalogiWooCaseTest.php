@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Woo\WooRequestRefused
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class OpenCatalogiWooCaseTest extends TestCase {
 

@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\StoppingRules
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
  */
 class StoppingRulesTest extends TestCase {
 

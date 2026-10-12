@@ -49,19 +49,75 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\Zgw\ZrcCaseFieldRules;
+use OCA\Dossiq\Service\Zgw\ZrcCaseTypeDefaults;
+use OCA\Dossiq\Service\Zgw\ZrcSubResourceRules;
+use Psr\Log\LoggerInterface;
 
 /**
  * ZRC (Zaken API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
- *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class ZgwZrcRulesService extends ZgwRulesBase {
+	/**
+	 * The field rules a zaak body passes on create, update and patch.
+	 *
+	 * @var ZrcCaseFieldRules
+	 */
+	private ZrcCaseFieldRules $caseFields;
+
+	/**
+	 * What a zaak takes from its zaaktype.
+	 *
+	 * @var ZrcCaseTypeDefaults
+	 */
+	private ZrcCaseTypeDefaults $typeDefaults;
+
+	/**
+	 * The create rules of statussen, resultaten, rollen and zaakeigenschappen.
+	 *
+	 * @var ZrcSubResourceRules
+	 */
+	private ZrcSubResourceRules $subResources;
+
+	/**
+	 * Constructor.
+	 *
+	 * Takes what every rules class takes and builds its three rule groups from
+	 * the same three, so the dispatcher and the container still see one ZRC
+	 * rules service.
+	 *
+	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsService $settingsService The settings service.
+	 * @param FieldValidator $fieldValidator The field validator.
+	 */
+	public function __construct(LoggerInterface $logger, SettingsService $settingsService, FieldValidator $fieldValidator) {
+		parent::__construct(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->caseFields = new ZrcCaseFieldRules(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->typeDefaults = new ZrcCaseTypeDefaults(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->subResources = new ZrcSubResourceRules(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+	}//end __construct()
+
+	/**
+	 * Set the request context here and on every rule group.
+	 *
+	 * @param object|null $objectService The OpenRegister ObjectService.
+	 * @param array|null $mappingConfig The mapping configuration.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function setContext(?object $objectService, ?array $mappingConfig): void {
+		parent::setContext(objectService: $objectService, mappingConfig: $mappingConfig);
+		$this->caseFields->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
+		$this->typeDefaults->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
+		$this->subResources->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
+	}//end setContext()
+
 	/**
 	 * Rules for creating a zaak (POST /zaken/v1/zaken).
 	 *
@@ -110,7 +166,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override
 		// template defaults to prevent leakage (incoming value used only as fallback).
 		if (empty($caseTypeUrl) === false) {
-			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
+			$body = $this->typeDefaults->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
 
 		// Zrc-022: Set default archiefstatus.
@@ -124,9 +180,9 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Auto-assign handler from zaaktype defaultAssignee if no handler set.
-		$body = $this->applyDefaultAssignee(body: $body, caseTypeUrl: $caseTypeUrl);
+		$body = $this->typeDefaults->applyDefaultAssignee(body: $body, caseTypeUrl: $caseTypeUrl);
 
-		return $this->validateCaseFields(result: $this->isValid(body: $body), existingObject: null);
+		return $this->caseFields->validateCaseFields(result: $this->isValid(body: $body), existingObject: null);
 	}//end rulesZakenCreate()
 
 	/**
@@ -151,75 +207,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		);
 	}//end validateZaaktypeReference()
 
-	/**
-	 * Stamp the zaaktype's `defaultAssignee` on a zaak that carries no handler yet.
-	 *
-	 * @param array $body The ZGW request body
-	 * @param mixed $caseTypeUrl The `zaaktype` value from the request body
-	 *
-	 * @return array The body, with `assignee` filled in when one could be resolved
-	 */
-	private function applyDefaultAssignee(array $body, mixed $caseTypeUrl): array {
-		if (empty($body['assignee']) === false || empty($caseTypeUrl) === true || $this->objectService === null) {
-			return $body;
-		}
 
-		$assignee = $this->caseTypeDefaultAssignee(objectService: $this->objectService, caseTypeUrl: $caseTypeUrl);
-		if ($assignee !== null) {
-			$body['assignee'] = $assignee;
-		}
-
-		return $body;
-	}//end applyDefaultAssignee()
-
-	/**
-	 * Read the `defaultAssignee` off the zaaktype a zaak points at.
-	 *
-	 * Returns null whenever the zaaktype cannot be resolved or declares no default — a lookup
-	 * failure is swallowed, exactly as the inline block did.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param mixed $caseTypeUrl The `zaaktype` value from the request body
-	 *
-	 * @return mixed The default assignee, or null when there is none
-	 */
-	private function caseTypeDefaultAssignee(object $objectService, mixed $caseTypeUrl): mixed {
-		$extractedUuid = $this->extractUuid(url: $caseTypeUrl);
-		if ($extractedUuid === null) {
-			return null;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			$caseType = $objectService->find(
-				id: $extractedUuid,
-				register: $register,
-				schema: $schema
-			);
-
-			$ztData = $caseType;
-			if (is_array($caseType) === false) {
-				$ztData = $caseType->jsonSerialize();
-			}
-
-			// CaseTypeHandling is the one reader: the declared block first, the
-			// legacy `defaultAssignee` for a case type nobody has migrated.
-			$handler = (new CaseTypeHandling())->defaultHandler(caseType: (array)$ztData);
-			if ($handler !== '') {
-				return $handler;
-			}
-		} catch (\Throwable $e) {
-			// Zaaktype not found; skip auto-assignment.
-			return null;
-		}//end try
-
-		return null;
-	}//end zaaktypeDefaultAssignee()
 
 	/**
 	 * Rules for updating a zaak (PUT /zaken/v1/zaken/{uuid}).
@@ -255,10 +243,10 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override.
 		$caseTypeUrl = $body['caseType'] ?? '';
 		if (empty($caseTypeUrl) === false) {
-			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
+			$body = $this->typeDefaults->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
 
-		return $this->validateCaseFields(
+		return $this->caseFields->validateCaseFields(
 			result: $this->isValid(body: $body),
 			existingObject: $existingObject
 		);
@@ -293,878 +281,63 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 
 		// Zrc-009: Always override from zaaktype to prevent template leakage.
 		if (empty($caseTypeUrl) === false) {
-			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
+			$body = $this->typeDefaults->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
 
-		return $this->validateCaseFields(
+		return $this->caseFields->validateCaseFields(
 			result: $this->isValid(body: $body),
 			existingObject: $existingObject
 		);
 	}//end rulesZakenPatch()
-
 	/**
-	 * Rules for creating a status (POST /zaken/v1/statussen).
-	 *
-	 * Implements:
-	 * - zrc-016: Validate that statustype belongs to Zaak.zaaktype.statustypen.
-	 *
-	 * NOTE: From `status-transition-engine` onwards, the actual `case.status`
-	 * mutation is owned by `StatusTransitionService`. This method retains
-	 * the zrc-016 ZGW request-shape validation only; callers that want a
-	 * `statusRecord` written for every status mutation should funnel through
-	 * `StatusTransitionService::execute()` or `executeFreeForm()`. The legacy
-	 * write path remains for ZGW API contract compatibility.
+	 * Rules for creating a status (POST /zaken/v1/statussen): zrc-016, answered by the sub-resource rules.
 	 *
 	 * @param array $body The ZGW request body
 	 *
 	 * @return array The validation result
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
 	 */
 	public function rulesStatussenCreate(array $body): array {
-		// Zrc-016: Validate statustype belongs to zaak's zaaktype.
-		$statustypeUrl = $body['statustype'] ?? '';
-		$caseUrl = $body['case'] ?? '';
-		if ($statustypeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $statustypeUrl,
-				fieldName: 'statustype',
-				typeSchemaKey: 'status_type_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		return $this->isValid(body: $body);
+		return $this->subResources->rulesStatussenCreate(body: $body);
 	}//end rulesStatussenCreate()
 
 	/**
-	 * Rules for creating a resultaat (POST /zaken/v1/resultaten).
-	 *
-	 * Implements:
-	 * - zrc-020: Validate that resultaattype belongs to Zaak.zaaktype.resultaattypen.
+	 * Rules for creating a resultaat (POST /zaken/v1/resultaten): zrc-020, answered by the sub-resource rules.
 	 *
 	 * @param array $body The ZGW request body
 	 *
 	 * @return array The validation result
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function rulesResultatenCreate(array $body): array {
-		// Zrc-020: Validate resultaattype belongs to zaak's zaaktype.
-		$resultaattypeUrl = $body['resultaattype'] ?? '';
-		$caseUrl = $body['case'] ?? '';
-		if ($resultaattypeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $resultaattypeUrl,
-				fieldName: 'resultaattype',
-				typeSchemaKey: 'result_type_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		return $this->isValid(body: $body);
+		return $this->subResources->rulesResultatenCreate(body: $body);
 	}//end rulesResultatenCreate()
 
 	/**
-	 * Rules for creating a rol (POST /zaken/v1/rollen).
-	 *
-	 * Implements:
-	 * - zrc-019: Validate that roltype belongs to Zaak.zaaktype.roltypen.
+	 * Rules for creating a rol (POST /zaken/v1/rollen): zrc-019, answered by the sub-resource rules.
 	 *
 	 * @param array $body The ZGW request body
 	 *
 	 * @return array The validation result
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function rulesRollenCreate(array $body): array {
-		// Zrc-019: Validate roltype belongs to zaak's zaaktype.
-		$roltypeUrl = $body['roltype'] ?? '';
-		$caseUrl = $body['case'] ?? '';
-		if ($roltypeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $roltypeUrl,
-				fieldName: 'roltype',
-				typeSchemaKey: 'role_type_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		return $this->isValid(body: $body);
+		return $this->subResources->rulesRollenCreate(body: $body);
 	}//end rulesRollenCreate()
 
 	/**
-	 * Rules for creating a zaakeigenschap (POST /zaken/{zaakUuid}/zaakeigenschappen).
-	 *
-	 * Implements:
-	 * - zrc-018: Validate that eigenschap belongs to Zaak.zaaktype.eigenschappen.
+	 * Rules for creating a zaakeigenschap (POST /zaken/{zaakUuid}/zaakeigenschappen): zrc-018, answered by the sub-resource rules.
 	 *
 	 * @param array $body The ZGW request body
 	 *
 	 * @return array The validation result
 	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function rulesZaakeigenschappenCreate(array $body): array {
-		// Zrc-018: Validate eigenschap belongs to zaak's zaaktype.
-		$attributeUrl = $body['eigenschap'] ?? '';
-		$caseUrl = $body['case'] ?? '';
-		if ($attributeUrl !== '' && $caseUrl !== '') {
-			$error = $this->validateSubResourceType(
-				caseUrl: $caseUrl,
-				typeUrl: $attributeUrl,
-				fieldName: 'eigenschap',
-				typeSchemaKey: 'property_definition_schema'
-			);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		return $this->isValid(body: $body);
+		return $this->subResources->rulesZaakeigenschappenCreate(body: $body);
 	}//end rulesZaakeigenschappenCreate()
-
-	/**
-	 * Derive vertrouwelijkheidaanduiding from zaaktype (zrc-009).
-	 *
-	 * The zaaktype's vertrouwelijkheidaanduiding ALWAYS overrides any value from
-	 * the request or mapping template to prevent template leakage. The incoming
-	 * value is only used as a fallback when the zaaktype field is absent.
-	 *
-	 * @param array $body The request body
-	 * @param string $caseTypeUrl The zaaktype URL
-	 *
-	 * @return array The body with derived vertrouwelijkheidaanduiding
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 */
-	private function deriveVertrouwelijkheidaanduiding(array $body, string $caseTypeUrl): array {
-		$uuid = $this->extractUuid(url: $caseTypeUrl);
-		if ($uuid === null) {
-			return $body;
-		}
-
-		$ztData = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'case_type_schema');
-		if ($ztData === null) {
-			return $body;
-		}
-
-		// Zrc-009: zaaktype value always overrides template default to prevent leakage.
-		$val = $ztData['confidentiality'] ?? ($ztData['confidentialityDesignation'] ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
-		if ($val !== '') {
-			$body['vertrouwelijkheidaanduiding'] = $val;
-		}
-
-		// When zaaktype has no value, preserve any incoming value (fallback).
-		return $body;
-	}//end deriveVertrouwelijkheidaanduiding()
-
-	/**
-	 * Validate a sub-resource type belongs to the zaak's zaaktype (zrc-016..020).
-	 *
-	 * Checks that the type object the URL points at references the zaak's zaaktype. An unknown
-	 * type is refused like a mismatching one; an unresolvable zaak or zaaktype skips the check.
-	 *
-	 * @param string $caseUrl The zaak URL
-	 * @param string $typeUrl The sub-resource type URL (statustype, roltype, etc.)
-	 * @param string $fieldName The field name for error reporting
-	 * @param string $typeSchemaKey Settings key for the type's schema
-	 *
-	 * @return array|null Validation error, or null if valid
-	 */
-	private function validateSubResourceType(
-		string $caseUrl,
-		string $typeUrl,
-		string $fieldName,
-		string $typeSchemaKey,
-	): ?array {
-		$zaaktypeUuid = $this->getCaseTypeUuidOfCase(caseUrl: $caseUrl);
-		if ($zaaktypeUuid === null) {
-			return null;
-		}
-
-		// Extract UUID from the provided type URL.
-		$typeUuid = $this->extractUuid(url: $typeUrl);
-		if ($typeUuid === null) {
-			return null;
-		}
-
-		// Look up the type object and verify its caseType references this zaaktype.
-		$typeData = $this->findBySchemaKey(uuid: $typeUuid, schemaKey: $typeSchemaKey);
-		if ($typeData !== null && $this->extractUuid(url: (string)($typeData['caseType'] ?? '')) === $zaaktypeUuid) {
-			return null;
-		}
-
-		$detail = "Het {$fieldName} hoort niet bij het zaaktype van de zaak.";
-		return $this->error(
-			status: 400,
-			detail: $detail,
-			invalidParams: [$this->fieldError(fieldName: 'nonFieldErrors', code: 'zaaktype-mismatch', reason: $detail)]
-		);
-	}//end validateSubResourceType()
-
-	/**
-	 * The uuid of the zaaktype a zaak URL's zaak points at.
-	 *
-	 * @param string $caseUrl The zaak URL
-	 *
-	 * @return string|null The zaaktype uuid, or null when the zaak or its zaaktype cannot be resolved
-	 */
-	private function getCaseTypeUuidOfCase(string $caseUrl): ?string {
-		if ($this->objectService === null) {
-			return null;
-		}
-
-		$zaakUuid = $this->extractUuid(url: $caseUrl);
-		if ($zaakUuid === null) {
-			return null;
-		}
-
-		$caseTypeId = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema')['caseType'] ?? '';
-		if (empty($caseTypeId) === true) {
-			return null;
-		}
-
-		return $this->extractUuid(url: (string)$caseTypeId);
-	}//end getCaseTypeUuidOfCase()
-
-	/**
-	 * Common zaak field validation for create/update/patch.
-	 *
-	 * Implements, in this order (the first refusal wins):
-	 * - zrc-002: Identificatie immutability on update/patch.
-	 * - zrc-010: Validate communicatiekanaal URL.
-	 * - zrc-011: Validate relevanteAndereZaken URLs.
-	 * - zrc-012: Validate gegevensgroepen (opschorting, verlenging).
-	 * - zrc-013: Validate hoofdzaak URL.
-	 * - zrc-014: Validate betalingsindicatie + laatsteBetaaldatum consistency.
-	 * - zrc-015: Validate productenOfDiensten subset of zaaktype.
-	 * - zrc-022: Validate archiefstatus transition requires archiefnominatie + archiefactiedatum.
-	 *
-	 * Each rule is its own method returning a refusal or null, so this method only sequences
-	 * them (method-decomposition).
-	 *
-	 * @param array $result The current validation result
-	 * @param array|null $existingObject The existing object data
-	 *
-	 * @return array The updated validation result
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 */
-	private function validateCaseFields(array $result, ?array $existingObject): array {
-		$body = $result['enrichedBody'];
-
-		$error = $this->checkIdentificatieImmutable(body: $body, existingObject: $existingObject)
-			?? $this->checkCommunicatiekanaal(body: $body)
-			?? $this->checkRelevanteAndereZaken(body: $body)
-			?? $this->checkGegevensgroep(
-				group: $body['suspension'] ?? null,
-				required: [
-					'indicatie' => ['opschorting.indicatie', 'Indicatie is vereist bij opschorting.', true],
-					'reason'    => ['opschorting.reden', 'Reden is vereist bij opschorting.', false],
-				],
-				detail: 'Opschorting vereist indicatie en reden.'
-			)
-			?? $this->checkGegevensgroep(
-				group: $body['verlenging'] ?? null,
-				required: [
-					'reason' => ['verlenging.reden', 'Reden is vereist bij verlenging.', false],
-					'duur'   => ['verlenging.duur', 'Duur is vereist bij verlenging.', false],
-				],
-				detail: 'Verlenging vereist reden en duur.'
-			)
-			?? $this->checkHoofdzaak(body: $body, existingObject: $existingObject);
-		if ($error !== null) {
-			return $error;
-		}
-
-		// Zrc-014: refuses on create, clears the date on update/patch.
-		$payment = $this->applyBetalingsindicatie(body: $body, existingObject: $existingObject);
-		if ($payment['error'] !== null) {
-			return $payment['error'];
-		}
-
-		$body  = $payment['body'];
-		$error = $this->validateProductenOfDiensten(body: $body) ?? $this->checkArchiefstatus(body: $body);
-		if ($error !== null) {
-			return $error;
-		}
-
-		$result['enrichedBody'] = $body;
-
-		return $result;
-	}//end validateCaseFields()
-
-	/**
-	 * Zrc-002: refuse a changed identificatie on update/patch.
-	 *
-	 * @param array $body The request body
-	 * @param array|null $existingObject The existing zaak, null on create
-	 *
-	 * @return array|null The refusal, or null when acceptable
-	 */
-	private function checkIdentificatieImmutable(array $body, ?array $existingObject): ?array {
-		if ($existingObject === null || isset($body['identificatie']) === false) {
-			return null;
-		}
-
-		$existingId = $existingObject['identifier'] ?? ($existingObject['identificatie'] ?? '');
-		if ($existingId !== '' && $body['identificatie'] !== $existingId) {
-			return $this->fieldImmutableError(fieldName: 'identificatie');
-		}
-
-		return null;
-	}//end checkIdentificatieImmutable()
-
-	/**
-	 * Zrc-010: refuse a communicatiekanaal that is no URL, or no URL of a resource.
-	 *
-	 * @param array $body The request body
-	 *
-	 * @return array|null The refusal, or null when acceptable
-	 */
-	private function checkCommunicatiekanaal(array $body): ?array {
-		$commChannel = $body['communicatiekanaal'] ?? null;
-		if ($commChannel === null || $commChannel === '') {
-			return null;
-		}
-
-		if (filter_var($commChannel, FILTER_VALIDATE_URL) === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De communicatiekanaal URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'communicatiekanaal',
-						code: 'bad-url',
-						reason: 'De communicatiekanaal URL is ongeldig.'
-					),
-				]
-			);
-		}
-
-		if ($this->isValidUrl(url: $commChannel) === false) {
-			// Zrc-010: URL is syntactically valid but does not point to a specific
-			// resource (no UUID path segment) → VNG requires 'invalid-resource'.
-			return $this->error(
-				status: 400,
-				detail: 'De communicatiekanaal URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'communicatiekanaal',
-						code: 'invalid-resource',
-						reason: 'De communicatiekanaal URL wijst niet naar een geldig object.'
-					),
-				]
-			);
-		}
-
-		return null;
-	}//end checkCommunicatiekanaal()
-
-	/**
-	 * Zrc-011: refuse a relevanteAndereZaken entry whose url is no resource URL.
-	 *
-	 * @param array $body The request body
-	 *
-	 * @return array|null The refusal naming the entry's index, or null when acceptable
-	 */
-	private function checkRelevanteAndereZaken(array $body): ?array {
-		$relevanteCases = $body['relevanteAndereZaken'] ?? null;
-		if (is_array($relevanteCases) === false) {
-			return null;
-		}
-
-		foreach ($relevanteCases as $idx => $relCase) {
-			$relUrl = $relCase['url'] ?? '';
-			if ($relUrl !== '' && $this->isValidUrl(url: $relUrl) === false) {
-				return $this->error(
-					status: 400,
-					detail: 'relevanteAndereZaken bevat een ongeldige URL.',
-					invalidParams: [$this->fieldError(
-						fieldName: "relevanteAndereZaken.{$idx}.url",
-						code: 'bad-url',
-						reason: 'De URL is ongeldig.'
-					)
-					]
-				);
-			}
-		}
-
-		return null;
-	}//end checkRelevanteAndereZaken()
-
-	/**
-	 * Zrc-012: a gegevensgroep (opschorting, verlenging) needs all of its required fields.
-	 *
-	 * @param mixed $group The gegevensgroep from the body; anything but an array is skipped
-	 * @param array<string, array{0: string, 1: string, 2: bool}> $required Body key => [field name, reason, null-only]
-	 * @param string $detail The error detail
-	 *
-	 * @return array|null The refusal listing every missing field, or null when acceptable
-	 */
-	private function checkGegevensgroep(mixed $group, array $required, string $detail): ?array {
-		if (is_array($group) === false) {
-			return null;
-		}
-
-		$errors = [];
-		foreach ($required as $key => [$fieldName, $reason, $nullOnly]) {
-			// The opschorting indicatie is a boolean: only a missing one counts, false is an answer.
-			$missing = (($group[$key] ?? '') === '');
-			if ($nullOnly === true) {
-				$missing = (($group[$key] ?? null) === null);
-			}
-
-			if ($missing === true) {
-				$errors[] = $this->fieldError(fieldName: $fieldName, code: 'required', reason: $reason);
-			}
-		}
-
-		if (empty($errors) === true) {
-			return null;
-		}
-
-		return $this->error(status: 400, detail: $detail, invalidParams: $errors);
-	}//end checkGegevensgroep()
-
-	/**
-	 * Zrc-013: the hoofdzaak is a resource URL, not the zaak itself, and not a deelzaak.
-	 *
-	 * @param array $body The request body
-	 * @param array|null $existingObject The existing zaak, null on create
-	 *
-	 * @return array|null The refusal, or null when acceptable
-	 */
-	private function checkHoofdzaak(array $body, ?array $existingObject): ?array {
-		$hoofdzaak = $body['hoofdzaak'] ?? null;
-		if ($hoofdzaak === null || $hoofdzaak === '') {
-			return null;
-		}
-
-		if ($this->isValidUrl(url: $hoofdzaak) === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De hoofdzaak URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(fieldName: 'hoofdzaak', code: 'bad-url', reason: 'De URL is ongeldig.'),
-				]
-			);
-		}
-
-		// Zrc-013d: A zaak cannot be a deelzaak of itself.
-		$selfUuid      = $existingObject['id'] ?? ($existingObject['@self']['id'] ?? null);
-		$hoofdzaakUuid = $this->extractUuid(url: $hoofdzaak);
-		if ($selfUuid !== null && $hoofdzaakUuid !== null && $selfUuid === $hoofdzaakUuid) {
-			return $this->error(
-				status: 400,
-				detail: 'Een zaak kan niet zijn eigen hoofdzaak zijn.',
-				invalidParams: [$this->fieldError(
-					fieldName: 'hoofdzaak',
-					code: 'self-forbidden',
-					reason: 'Een zaak kan niet zijn eigen hoofdzaak zijn.'
-				)
-				]
-			);
-		}
-
-		// Zrc-013c: Deelzaak of deelzaak is not allowed.
-		return $this->validateHoofdzaakNesting(hoofdzaakUrl: $hoofdzaak);
-	}//end checkHoofdzaak()
-
-	/**
-	 * Zrc-014: betalingsindicatie "nvt" and a laatsteBetaaldatum do not go together.
-	 *
-	 * On create the pair is refused. On update/patch the stored values count when the body
-	 * leaves them out, and switching to "nvt" clears the date instead of refusing.
-	 *
-	 * @param array $body The request body
-	 * @param array|null $existingObject The existing zaak, null on create
-	 *
-	 * @return array{error: array|null, body: array} The refusal, or the (possibly cleared) body
-	 */
-	private function applyBetalingsindicatie(array $body, ?array $existingObject): array {
-		$betalingsindicatie = $body['betalingsindicatie'] ?? null;
-		$lastPaid           = $body['laatsteBetaaldatum'] ?? null;
-
-		// On update/patch, also consider existing values when not explicitly sent.
-		if ($existingObject !== null) {
-			$betalingsindicatie ??= $existingObject['paymentIndication'] ?? ($existingObject['betalingsindicatie'] ?? null);
-			$lastPaid           ??= $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
-		}
-
-		if ($betalingsindicatie !== 'nvt' || $lastPaid === null || $lastPaid === '') {
-			return ['error' => null, 'body' => $body];
-		}
-
-		// On create: reject (cannot set date with nvt).
-		if ($existingObject === null) {
-			$error = $this->error(
-				status: 400,
-				detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
-				invalidParams: [$this->fieldError(
-					fieldName: 'laatsteBetaaldatum',
-					code: 'betaling-nvt',
-					reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
-				)
-				]
-			);
-			return ['error' => $error, 'body' => $body];
-		}
-
-		// On update/patch: clear laatsteBetaaldatum when switching to nvt.
-		$body['laatsteBetaaldatum'] = null;
-
-		return ['error' => null, 'body' => $body];
-	}//end applyBetalingsindicatie()
-
-	/**
-	 * Zrc-022: an archiefstatus past nog_te_archiveren needs archiefnominatie and archiefactiedatum.
-	 *
-	 * @param array $body The request body
-	 *
-	 * @return array|null The refusal for the first missing field, or null when acceptable
-	 */
-	private function checkArchiefstatus(array $body): ?array {
-		$archiefstatus = $body['archiefstatus'] ?? null;
-		if ($archiefstatus === null || $archiefstatus === 'nog_te_archiveren') {
-			return null;
-		}
-
-		foreach (['archiefnominatie', 'archiefactiedatum'] as $field) {
-			if (empty($body[$field] ?? null) === true) {
-				return $this->error(
-					status: 400,
-					detail: $field.' is vereist als archiefstatus niet "nog_te_archiveren" is.',
-					invalidParams: [$this->fieldError(fieldName: $field, code: $field.'-not-set', reason: 'Vereist.')]
-				);
-			}
-		}
-
-		return null;
-	}//end checkArchiefstatus()
-
-	/**
-	 * Validate hoofdzaak is not a deelzaak itself (zrc-013).
-	 *
-	 * A deelzaak of a deelzaak is not allowed.
-	 *
-	 * @param string $hoofdzaakUrl The hoofdzaak URL
-	 *
-	 * @return array|null Validation error if hoofdzaak is itself a deelzaak
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 */
-	private function validateHoofdzaakNesting(string $hoofdzaakUrl): ?array {
-		if ($this->objectService === null) {
-			return null;
-		}
-
-		$hoofdzaakUuid = $this->extractUuid(url: $hoofdzaakUrl);
-		if ($hoofdzaakUuid === null) {
-			return null;
-		}
-
-		$hoofdzaakData = $this->findBySchemaKey(uuid: $hoofdzaakUuid, schemaKey: 'case_schema');
-		if ($hoofdzaakData === null) {
-			return $this->error(
-				status: 400,
-				detail: 'De hoofdzaak is ongeldig.',
-				invalidParams: [$this->fieldError(
-					fieldName: 'hoofdzaak',
-					code: 'does-not-exist',
-					reason: 'De hoofdzaak URL verwijst niet naar een bekende zaak.'
-				)
-				]
-			);
-		}
-
-		// If the hoofdzaak itself has a hoofdzaak, it's a deelzaak of a deelzaak.
-		$parentHoofdzaak = $hoofdzaakData['parentCase'] ?? ($hoofdzaakData['mainCase'] ?? ($hoofdzaakData['hoofdzaak'] ?? null));
-		if ($parentHoofdzaak !== null && $parentHoofdzaak !== '') {
-			return $this->error(
-				status: 400,
-				detail: 'Een deelzaak van een deelzaak is niet toegestaan.',
-				invalidParams: [$this->fieldError(
-					fieldName: 'hoofdzaak',
-					code: 'deelzaak-als-hoofdzaak',
-					reason: 'De opgegeven hoofdzaak is zelf een deelzaak.'
-				)
-				]
-			);
-		}
-
-		return null;
-	}//end validateHoofdzaakNesting()
-
-	/**
-	 * Validate productenOfDiensten subset of zaaktype (zrc-015).
-	 *
-	 * ProductenOfDiensten of the zaak must be a subset of
-	 * Zaaktype.productenOfDiensten. A zaaktype that offers no products allows any.
-	 *
-	 * @param array $body The request body
-	 *
-	 * @return array|null Validation error, or null if valid
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 */
-	private function validateProductenOfDiensten(array $body): ?array {
-		$requestProducts = $body['productenOfDiensten'] ?? null;
-		if (is_array($requestProducts) === false || empty($requestProducts) === true) {
-			return null;
-		}
-
-		$allowedProducts = $this->allowedProducts(caseTypeUrl: $body['caseType'] ?? '');
-		if (empty($allowedProducts) === true) {
-			return null;
-		}
-
-		// Validate each product URL format first (basic URL check, no UUID required).
-		foreach ($requestProducts as $product) {
-			if (filter_var($product, FILTER_VALIDATE_URL) === false) {
-				return $this->error(
-					status: 400,
-					detail: 'productenOfDiensten bevat een ongeldige URL.',
-					invalidParams: [
-						$this->fieldError(
-							fieldName: 'productenOfDiensten',
-							code: 'invalid-products-services',
-							reason: "'{$product}' is geen geldige URL."
-						),
-					]
-				);
-			}
-		}
-
-		foreach ($requestProducts as $product) {
-			if (in_array($product, $allowedProducts, true) === false) {
-				return $this->error(
-					status: 400,
-					detail: 'productenOfDiensten bevat een waarde die niet in het zaaktype voorkomt.',
-					invalidParams: [
-						$this->fieldError(
-							fieldName: 'productenOfDiensten',
-							code: 'invalid-products-services',
-							reason: "Product '{$product}' is niet toegestaan voor dit zaaktype."
-						),
-					]
-				);
-			}
-		}
-
-		return null;
-	}//end validateProductenOfDiensten()
-
-	/**
-	 * The products a zaaktype offers, empty when it offers none or cannot be resolved.
-	 *
-	 * Reads `productsOrServices`, then `productsAndServices`, then `productenOfDiensten`; a JSON
-	 * string is decoded.
-	 *
-	 * @param mixed $caseTypeUrl The zaaktype URL from the body
-	 *
-	 * @return array The allowed product URLs
-	 */
-	private function allowedProducts(mixed $caseTypeUrl): array {
-		if ($this->objectService === null || empty($caseTypeUrl) === true) {
-			return [];
-		}
-
-		$zaaktypeUuid = $this->extractUuid(url: $caseTypeUrl);
-		if ($zaaktypeUuid === null) {
-			return [];
-		}
-
-		$ztData = $this->findBySchemaKey(uuid: $zaaktypeUuid, schemaKey: 'case_type_schema');
-		if ($ztData === null) {
-			return [];
-		}
-
-		$allowedProducts = $ztData['productsOrServices'] ?? ($ztData['productsAndServices'] ?? ($ztData['productenOfDiensten'] ?? []));
-		if (is_string($allowedProducts) === true) {
-			$allowedProducts = json_decode($allowedProducts, true) ?? [];
-		}
-
-		if (is_array($allowedProducts) === false) {
-			return [];
-		}
-
-		return $allowedProducts;
-	}//end allowedProducts()
-
-
-
-	/**
-	 * Detect whether a statustype is the eindstatus by volgnummer fallback (zrc-007a).
-	 *
-	 * When `isEindstatus` is not explicitly set on the statustype, the statustype
-	 * with the highest `volgnummer` for the zaaktype is treated as the eindstatus.
-	 *
-	 * @param string $statustypeUuid The statustype UUID to check
-	 * @param string $zaaktypeUuid The zaaktype UUID to fetch all statustypes for
-	 *
-	 * @return bool True if this statustype is the eindstatus
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	public function detectEindstatus(string $statustypeUuid, string $zaaktypeUuid): bool {
-		if ($this->objectService === null) {
-			return false;
-		}
-
-		$statusTypeData = $this->findBySchemaKey(uuid: $statustypeUuid, schemaKey: 'status_type_schema');
-		if ($statusTypeData === null) {
-			return false;
-		}
-
-		// If isEindstatus is explicitly set, use it directly.
-		$isEindstatus = $statusTypeData['isEindstatus'] ?? null;
-		if ($isEindstatus !== null) {
-			return $isEindstatus === true || $isEindstatus === 1 || $isEindstatus === 'true';
-		}
-
-		// Fallback: find the statustype with the highest volgnummer for this zaaktype.
-		return $this->isHighestSequenceNumberStatustype(
-			objectService: $this->objectService,
-			statustypeUuid: $statustypeUuid,
-			zaaktypeUuid: $zaaktypeUuid
-		);
-	}//end detectEindstatus()
-
-	/**
-	 * Test whether a statustype carries the highest `volgnummer` of its zaaktype (zrc-007a).
-	 *
-	 * Returns false when the register/schema are unconfigured or the lookup fails — a failure is
-	 * logged and never raised, exactly as the inline block did.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService
-	 * @param string $statustypeUuid The statustype UUID to check
-	 * @param string $zaaktypeUuid The zaaktype UUID to fetch all statustypes for
-	 *
-	 * @return bool True if this statustype has the highest volgnummer
-	 */
-	private function isHighestSequenceNumberStatustype(object $objectService, string $statustypeUuid, string $zaaktypeUuid): bool {
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-		if (empty($register) === true || empty($statusTypeSchema) === true) {
-			return false;
-		}
-
-		try {
-			$query = $objectService->buildSearchQuery(
-				requestParams: ['caseType' => $zaaktypeUuid, '_limit' => 1000],
-				register: $register,
-				schema: $statusTypeSchema
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			$maxSequenceNumber = -1;
-			$maxStatustypeUuid = null;
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$sequenceNumber = (int)($data['sequenceNumber'] ?? 0);
-				$objId = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($sequenceNumber > $maxSequenceNumber) {
-					$maxSequenceNumber = $sequenceNumber;
-					$maxStatustypeUuid = $objId;
-				}
-			}
-
-			return $maxStatustypeUuid === $statustypeUuid;
-		} catch (\Throwable $e) {
-			$this->logger->warning('detectEindstatus failed: ' . $e->getMessage());
-			return false;
-		}//end try
-	}//end isHighestVolgnummerStatustype()
-
-	/**
-	 * Filter a list of zaken by consumer's authorization scope (zrc-006).
-	 *
-	 * Reads consumer authorizations from context and removes zaken whose
-	 * zaaktype is not authorized or whose vertrouwelijkheidaanduiding exceeds
-	 * the consumer's maxVertrouwelijkheidaanduiding for the zaaktype.
-	 * Falls back to unfiltered when no authorizations context is present.
-	 *
-	 * @param array $cases Array of zaak objects (already serialized to arrays)
-	 * @param array $authorizations The consumer's authorizations array from ZgwAuthMiddleware
-	 *
-	 * @return array The filtered zaken array
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	public function filterZakenForConsumer(array $cases, array $authorizations): array {
-		// No authorizations context → return all zaken unfiltered.
-		if (empty($authorizations) === true) {
-			return $cases;
-		}
-
-		// Build lookup: zaaktype UUID → max vertrouwelijkheidaanduiding level.
-		$allowedZaaktypen = [];
-		foreach ($authorizations as $auth) {
-			$caseTypeUrl = $auth['caseType'] ?? ($auth['zaaktypeUrl'] ?? '');
-			if (empty($caseTypeUrl) === true) {
-				continue;
-			}
-
-			$zaaktypeUuid = $this->extractUuid(url: (string)$caseTypeUrl);
-			if ($zaaktypeUuid === null) {
-				continue;
-			}
-
-			$maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? 'zeer_geheim');
-			$maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 8;
-
-			// Keep the most permissive level if zaaktype appears in multiple auths.
-			if (isset($allowedZaaktypen[$zaaktypeUuid]) === false
-				|| $allowedZaaktypen[$zaaktypeUuid] < $maxLevel
-			) {
-				$allowedZaaktypen[$zaaktypeUuid] = $maxLevel;
-			}
-		}//end foreach
-
-		return array_values(
-			array_filter(
-				$cases,
-				function (array $case) use ($allowedZaaktypen): bool {
-					$caseTypeId = $case['caseType'] ?? '';
-					$zaaktypeUuid = $this->extractUuid(url: (string)$caseTypeId);
-
-					if ($zaaktypeUuid === null || isset($allowedZaaktypen[$zaaktypeUuid]) === false) {
-						return false;
-					}
-
-					$caseVa = $case['vertrouwelijkheidaanduiding'] ?? ($case['confidentiality'] ?? 'openbaar');
-					$caseLevel = self::VERTROUWELIJKHEID_LEVELS[(string)$caseVa] ?? 1;
-
-					return $caseLevel <= $allowedZaaktypen[$zaaktypeUuid];
-				}
-			)
-		);
-	}//end filterZakenForConsumer()
 }//end class

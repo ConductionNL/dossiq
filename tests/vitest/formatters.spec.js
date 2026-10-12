@@ -99,3 +99,24 @@ describe('the connection formatters the Integrations page reads', () => {
 		expect(registry.connectionSettingsLabel('')).toBe('')
 	})
 })
+
+describe('the case type list formatters', () => {
+	it('isoDuration puts a statutory term in words and leaves other text alone', () => {
+		expect(formatters.isoDuration('P56D')).not.toBe('P56D')
+		expect(formatters.isoDuration('Termijn van de rechtbank')).toBe(
+			'Termijn van de rechtbank',
+		)
+		expect(formatters.isoDuration('')).toBe('')
+	})
+
+	it('versionLabel writes the version as a phrase and nothing for no version', () => {
+		expect(formatters.versionLabel(3)).toBe('Version 3')
+		expect(formatters.versionLabel(null)).toBe('')
+	})
+
+	it('draftState says Draft only for a draft, and Published for everything else', () => {
+		expect(formatters.draftState(true)).toBe('Draft')
+		expect(formatters.draftState(false)).toBe('Published')
+		expect(formatters.draftState(undefined)).toBe('Published')
+	})
+})

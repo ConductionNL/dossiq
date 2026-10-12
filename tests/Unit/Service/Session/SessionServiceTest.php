@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Session\SessionService
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
+ * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
  */

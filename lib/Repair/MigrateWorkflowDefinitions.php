@@ -31,7 +31,10 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
+use OCA\Dossiq\Service\Workflow\BackfilledTemplateShape;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -54,17 +57,29 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	private const OUTCOME_NONE = 'none';
 
 	/**
+	 * Builds the steps and transitions of a basis template from the ordered status types.
+	 *
+	 * @var BackfilledTemplateShape
+	 */
+	private readonly BackfilledTemplateShape $shape;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service
 	 * @param WorkflowDefinitionService $workflowService The workflow definition service
 	 * @param LoggerInterface $logger The logger interface
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param BackfilledTemplateLabels $labels Names a basis template, and heals one stored as "Array".
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
 		private WorkflowDefinitionService $workflowService,
 		private LoggerInterface $logger,
+		LanguageMapText $text = new LanguageMapText(),
+		private readonly BackfilledTemplateLabels $labels = new BackfilledTemplateLabels(),
 	) {
+		$this->shape = new BackfilledTemplateShape(text: $text);
 	}//end __construct()
 
 	/**
@@ -198,7 +213,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		string $templateSchema,
 		string $caseSchema,
 	): string {
-		$row = $this->normalize(row: $caseType);
+		$row = $this->objectToArrayOrNull(value: $caseType);
 		if ($row === null) {
 			return self::OUTCOME_NONE;
 		}
@@ -208,14 +223,19 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return self::OUTCOME_NONE;
 		}
 
-		if ((string)($row['workflowDefinition'] ?? '') !== '') {
-			return self::OUTCOME_SKIPPED;
-		}
-
-		// Already has at least one workflowTemplate? Skip — admin
-		// will set the pin via the UI.
+		// Already pinned, or already has at least one workflowTemplate? Skip,
+		// the admin sets the pin via the UI. A basis template this step wrote
+		// before titles were read as text is healed on the way past.
 		$existing = $this->workflowService->listVersions($caseTypeId);
-		if ($existing !== []) {
+		if ((string)($row['workflowDefinition'] ?? '') !== '' || $existing !== []) {
+			$this->healBackfilled(
+				templates: $existing,
+				caseType: $row,
+				objectService: $objectService,
+				register: $register,
+				statusSchema: $statusSchema,
+				templateSchema: $templateSchema,
+			);
 			return self::OUTCOME_SKIPPED;
 		}
 
@@ -245,7 +265,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return self::OUTCOME_NONE;
 		}
 
-		$createdNormalized = $this->normalize(row: $created);
+		$createdNormalized = $this->objectToArrayOrNull(value: $created);
 		$newId = (string)($createdNormalized['id'] ?? '');
 
 		// Pin the caseType to the new template.
@@ -263,6 +283,106 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		return self::OUTCOME_MIGRATED;
 	}//end migrateCaseType()
+
+	/**
+	 * Heal the basis templates this step stored with "Array" labels.
+	 *
+	 * Only a template the backfill wrote, and only a label that is literally
+	 * "Array" ({@see BackfilledTemplateLabels::healed()}). The statuses are
+	 * read only when a template needs them. Only the healed fields are
+	 * written, through the partial write.
+	 *
+	 * @param array<int, array<string, mixed>> $templates      The case type's templates.
+	 * @param array<string, mixed>             $caseType       The case type.
+	 * @param object                           $objectService  The ObjectService.
+	 * @param string                           $register       The register.
+	 * @param string                           $statusSchema   The statusType schema.
+	 * @param string                           $templateSchema The workflowTemplate schema.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function healBackfilled(
+		array $templates,
+		array $caseType,
+		object $objectService,
+		string $register,
+		string $statusSchema,
+		string $templateSchema,
+	): void {
+		$statuses = null;
+		foreach ($templates as $template) {
+			$id = (string)($template['id'] ?? '');
+			if ($id === '' || str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === false) {
+				continue;
+			}
+
+			$statuses ??= $this->statusesById(
+				objectService: $objectService,
+				register: $register,
+				statusSchema: $statusSchema,
+				caseTypeId: (string)($caseType['id'] ?? ''),
+			);
+			$changes = $this->labels->healed(template: $template, caseType: $caseType, statusesById: $statuses);
+			if ($changes === []) {
+				continue;
+			}
+
+			try {
+				$this->patchObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $templateSchema,
+					id: $id,
+					changes: $changes,
+				);
+			} catch (\Throwable $e) {
+				$this->logger->warning(
+					'Dossiq: workflow backfill could not heal the labels of a basis template',
+					['app' => Application::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
+				);
+			}
+		}//end foreach
+	}//end healBackfilled()
+
+	/**
+	 * A case type's statuses, by id.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param string $register      The register.
+	 * @param string $statusSchema  The statusType schema.
+	 * @param string $caseTypeId    The case type.
+	 *
+	 * @return array<string, array<string, mixed>> The statuses.
+	 */
+	private function statusesById(object $objectService, string $register, string $statusSchema, string $caseTypeId): array {
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $statusSchema,
+				filters: ['caseType' => $caseTypeId, '_limit' => 500],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: workflow backfill could not read the statuses to heal a basis template',
+				['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+			);
+			return [];
+		}
+
+		$byId = [];
+		foreach ($rows as $raw) {
+			$row = $this->objectToArrayOrNull(value: $raw);
+			$id = (string)(($row ?? [])['id'] ?? '');
+			if ($row !== null && $id !== '') {
+				$byId[$id] = $row;
+			}
+		}
+
+		return $byId;
+	}//end statusesById()
 
 	/**
 	 * Pin a caseType, and its open cases, to a freshly created template.
@@ -360,7 +480,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		$statuses = [];
 		foreach ($statusRows as $raw) {
-			$row = $this->normalize(row: $raw);
+			$row = $this->objectToArrayOrNull(value: $raw);
 			if ($row !== null && (string)($row['id'] ?? '') !== '') {
 				$statuses[] = $row;
 			}
@@ -377,17 +497,12 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			},
 		);
 
-		$steps = $this->buildSteps(statuses: $statuses);
-		$transitions = $this->buildTransitions(statuses: $statuses);
-
-		$title = trim((string)($caseType['title'] ?? 'Workflow'));
-		if ($title === '') {
-			$title = 'Workflow';
-		}
+		$steps = $this->shape->steps(statuses: $statuses);
+		$transitions = $this->shape->transitions(statuses: $statuses);
 
 		return [
-			'title' => $title . ' — basis',
-			'description' => 'Backfilled from implicit statusType ordering.',
+			'title' => $this->labels->titleFor(caseTypeTitle: ($caseType['title'] ?? null)),
+			'description' => BackfilledTemplateLabels::MARKER,
 			'caseType' => $caseTypeId,
 			'version' => 1,
 			'isActive' => true,
@@ -398,64 +513,6 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			'nodePositions' => '',
 		];
 	}//end buildTemplateFor()
-
-	/**
-	 * Build the embedded step list from ordered statusType rows.
-	 *
-	 * @param array<int, array<string, mixed>> $statuses Ordered statusType rows
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function buildSteps(array $statuses): array {
-		$steps = [];
-		foreach ($statuses as $status) {
-			if ((bool)($status['isFinal'] ?? false) === true) {
-				continue;
-			}
-
-			$steps[] = [
-				'id' => $this->uuid(),
-				'title' => (string)($status['name'] ?? 'Stap'),
-				'description' => (string)($status['description'] ?? ''),
-				'status' => (string)($status['id'] ?? ''),
-				'order' => (int)($status['order'] ?? 0),
-				'assigneeRole' => '',
-				'isRequired' => false,
-				'checklist' => [],
-				'automaticActions' => [],
-			];
-		}
-
-		return $steps;
-	}//end buildSteps()
-
-	/**
-	 * Build the embedded transition list from ordered statusType rows.
-	 *
-	 * @param array<int, array<string, mixed>> $statuses Ordered statusType rows
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function buildTransitions(array $statuses): array {
-		$transitions = [];
-		$count = count($statuses);
-		for ($i = 0; $i < ($count - 1); $i++) {
-			$from = $statuses[$i];
-			$to = $statuses[($i + 1)];
-
-			$transitions[] = [
-				'id' => $this->uuid(),
-				'fromStatus' => (string)($from['id'] ?? ''),
-				'toStatus' => (string)($to['id'] ?? ''),
-				'label' => (string)($to['name'] ?? 'Door'),
-				'guards' => [],
-				'automaticActions' => [],
-				'allowedRoles' => [],
-			];
-		}
-
-		return $transitions;
-	}//end buildTransitions()
 
 	/**
 	 * Pin every open case of a caseType to workflowVersion 1 and bind it
@@ -492,7 +549,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		}
 
 		foreach ($cases as $row) {
-			$case = $this->normalize(row: $row);
+			$case = $this->objectToArrayOrNull(value: $row);
 			if ($case === null) {
 				continue;
 			}
@@ -545,44 +602,4 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		return array_merge($row, $pin);
 	}//end withPin()
-
-	/**
-	 * Coerce an OpenRegister result row to an associative array.
-	 *
-	 * @param mixed $row Result row from ObjectService
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalize(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialized = $row->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end normalize()
-
-	/**
-	 * Generate a UUID v4 for embedded step / transition identifiers.
-	 *
-	 * @return string
-	 */
-	private function uuid(): string {
-		$bytes = random_bytes(16);
-		$bytes[6] = chr((ord($bytes[6]) & 0x0F) | 0x40);
-		$bytes[8] = chr((ord($bytes[8]) & 0x3F) | 0x80);
-
-		$hex = bin2hex($bytes);
-		return substr($hex, 0, 8) . '-'
-			. substr($hex, 8, 4) . '-'
-			. substr($hex, 12, 4) . '-'
-			. substr($hex, 16, 4) . '-'
-			. substr($hex, 20, 12);
-	}//end uuid()
 }//end class

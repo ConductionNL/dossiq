@@ -122,8 +122,6 @@ class PackageSchemaReferences {
 	 * @param string $app The app id the package names.
 	 *
 	 * @return boolean True when installed.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is the fleet's one rename-aware lookup.
 	 */
 	private function isInstalled(string $app): bool {
 		return FleetAppId::isInstalled(appManager: $this->appManager, canonical: $app);

@@ -61,7 +61,7 @@ function iconIsRegistered(name) {
  * One widget of the CaseDetail page, wherever it lives.
  *
  * Through the shared helper rather than a `find` over `config.widgets`: a
- * widget that moves INTO a tab becomes a section of a `case-sections` group
+ * widget that moves INTO a tab becomes a section of a `sections` group
  * and disappears from the top level, so a top-level lookup returns undefined
  * and every assertion below reads as "the widget was deleted". `case-core`
  * made that move when the Data tab gained the locations map.

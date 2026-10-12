@@ -154,6 +154,12 @@ class ProvisionAssignedGroups implements IRepairStep {
 		// on purpose. Sensitive data should be readable by the people an
 		// administrator names, not by everybody who happened to be installed.
 		'dossiq-sensitive',
+		// The staff group the register level authorization grants
+		// (register.d/91-register-access.json, case-access-by-handling-team).
+		// A register closed to a group the server does not have is closed to
+		// everybody but administrators, so it is provisioned with the rest.
+		// Who else belongs in it is SeedStaffGroup's, once, on the upgrade.
+		'dossiq-medewerkers',
 	];
 
 	/**

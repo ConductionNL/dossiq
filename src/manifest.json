@@ -2575,7 +2575,7 @@
 					},
 					{
 						"id": "case-data-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Data",
 						"icon": "FileDocumentOutline",
 						"_note": "The Data tab: the case record, and where it is. The map is a section here rather than a tab of its own because geography is metadata ON the case rather than a collection beside it, and a handler reading the address wants it next to the fields.",
@@ -2653,7 +2653,8 @@
 											"columns": 2,
 											"include": [
 												"wooPublicationStatus",
-												"wooPublicationUrl"
+												"wooPublicationUrl",
+												"wooWithheldNote"
 											],
 											"hideEmpty": true,
 											"overrides": {
@@ -2661,6 +2662,9 @@
 													"editable": false
 												},
 												"wooPublicationUrl": {
+													"editable": false
+												},
+												"wooWithheldNote": {
 													"editable": false
 												}
 											}
@@ -2876,7 +2880,7 @@
 					},
 					{
 						"id": "case-people-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "People",
 						"icon": "AccountGroupOutline",
 						"_note": "The People tab. Who is involved in the case. Contact WITH them was here too, on the reasoning that a contactmoment records a channel, a direction and a summary against a person; it is the Communication tab now, so a handler reaches the case log without opening the party list first. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
@@ -2957,7 +2961,7 @@
 					},
 					{
 						"id": "case-communication-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Communication",
 						"icon": "Forum",
 						"_note": "The Communication tab: every call, visit and message logged against this case by hand. It was the second section of People. Email is the tab beside this one rather than a section here, because the two are written differently: one is correspondence the system carries, the other a note a handler types after putting the phone down. The section moved verbatim, so its data-testid is still case-section-case-communication. The icon is Forum and not ForumOutline: ForumOutline is in neither icon registry, and an icon a manifest names but no registry carries renders the DEFAULT glyph with no visible breakage. Checked against src/icons.js rather than assumed, which is how this one was caught.",
@@ -3081,7 +3085,7 @@
 					},
 					{
 						"id": "case-work-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Work",
 						"icon": "ClipboardCheckOutline",
 						"_note": "The Work tab. What is still to be done on this case, whether it is a task with a due date or an appointment with a time. The task pane stays in the strip rather than moving to the right column (plan item 3.18): that column already carries four cards, and a fifth would move the complexity rather than remove it. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
@@ -3204,7 +3208,7 @@
 					},
 					{
 						"id": "case-related-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Related",
 						"icon": "LinkVariant",
 						"_note": "The Related tab. The other cases this one is connected to, upward to its parent and related cases and downward to its sub-cases. Case to case only: an object or a location the case concerns is not a case, and sits on the Objects and locations tab. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim. Objects joined on 2026-09-13, from the retired Objects and locations tab: an object linked to a case is a relation like any other, and the tab it came from held one collection once its Locations half became the map on the Data tab.",
@@ -3399,7 +3403,7 @@
 					},
 					{
 						"id": "case-knowledge-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Knowledge",
 						"icon": "BookOpenPageVariant",
 						"_note": "knowledge-base-on-the-case, row 11.26. Two sections, because the row asks two questions that have different answers. The FIRST is the work instruction for this KIND of case, which the case type names once and every case of that type shows without anybody linking anything: that is the whole point of the row, and it is rendered by the `case-work-instruction` type because the value lives on the case TYPE while the page is bound to the CASE, and CnDetailPage reads no `extend`, so a declared widget over a dotted `caseType.knowledgeBasePage` path would render blank while looking configured. The SECOND is the pages somebody linked to THIS case, through OpenRegister's `collectives` leaf. dossiq stores no article text and renders no wiki of its own: Collectives owns the page, its history, its versions and its team, and the team is what makes visibility per role, because a collective is scoped to a Nextcloud team and `roleType.ncGroupId` already names the group behind a role. So a handler who may not read a page in Collectives does not read it through a case either, and there is nothing here to enforce or to leak. TYPE `case-sections` AND NOT TWO TABS: one Knowledge tab that holds both is the reader's question, and CaseSectionsWidget drops the heading of a section whose widget drew nothing, so a case type with no instruction shows the linked pages alone rather than an empty block. The leaf keeps its own `requiredApp: \"collectives\"`, so on an instance without the app it is never registered and that section goes missing rather than drawing an empty knowledge base. `xwiki` is in `case.linkedTypes` beside it for the municipalities that run one. MEASURED 2026-09-20: the `xwiki` descriptor ships in the library but is NOT in `leafIntegrations[]`, and OpenRegister registers it only from its own `main.js`, not from the always-on `integration-global` bundle, so it does not resolve on a dossiq page and nothing here places it. That is an openregister row, not a reason to declare a widget that can never render.",
@@ -3583,7 +3587,7 @@
 					"tabs": [
 						{
 							"id": "audit",
-							"label": "History",
+							"label": "Audit trail",
 							"icon": "History",
 							"_note": "Placement row A05: ONE history of the case. This tab is the case timeline, CnAuditTrailTab over OpenRegister's audit trail for this object, newest first, with the actor and the action on every row. The `version-history` tab that sat beside it is GONE from THIS page: it read the same audit rows as a field diff, which is what made the case show its history twice and neither of them well. The other 13 detail pages keep theirs, and the `VersionHistoryLeafTab` registry entry stays because they resolve it; row A05 scores the case page only. Three things this tab still cannot do, each a need rather than a defect: it cannot OPEN on writes, because `actionFilter` is internal state on CnAuditTrailTab and this widget declares only `register`, `schema`, `objectId`, `title` and `maxDisplay`; it cannot EXPORT, because the tab has no export action; and it cannot carry document, note and mail events beside the audit rows, because a merged per-object feed is the OpenRegister `activity` leaf, which does not exist. Until each lands the tab opens unfiltered over writes and reads, with the Action and User filters it already renders. There is deliberately NO body tab over the same log: the tab strip carries no Timeline entry, because one log in two places is the duplication this row retires. The `case-stages` widget on the grid is not that log: it is where the case is in its process and where a handler moves it, not what has happened to it.",
 							"widgets": [
@@ -3963,6 +3967,31 @@
 						}
 					},
 					{
+						"id": "remedy-lodge",
+						"type": "open-modal",
+						"label": "Register an objection",
+						"icon": "ScaleBalance",
+						"target": "RemedyLodgeDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Register an objection",
+							"lodgeUrl": "/apps/dossiq/api/cases/{caseId}/remedy",
+							"channels": [
+								{ "value": "brief", "label": "Letter" },
+								{ "value": "email", "label": "Email" },
+								{ "value": "form", "label": "Web form" },
+								{ "value": "balie", "label": "Desk" }
+							],
+							"openRoute": { "name": "CaseDetail", "idField": "caseId" }
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "woo-search-plan",
 						"type": "open-modal",
 						"label": "Search plan",
@@ -3985,6 +4014,72 @@
 							"all": [
 								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
 								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
+						"id": "document-assess",
+						"type": "open-modal",
+						"label": "Assess documents",
+						"icon": "FileCheckOutline",
+						"target": "DocumentAssessDialog",
+						"props": {
+							"caseId": "@objectId",
+							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+							"assessUrl": "/apps/dossiq/api/cases/{caseId}/woo/assessment",
+							"classifications": [
+								{ "value": "openbaar", "label": "Public" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "needsGrounds": true },
+								{ "value": "niet_openbaar", "label": "Not public", "needsGrounds": true }
+							],
+							"grounds": {
+								"register": "dossiq",
+								"schema": "wooRefusalGround",
+								"valueField": "code",
+								"labelField": "label",
+								"filter": { "status": "active", "citable": true }
+							},
+							"fields": {
+								"document": "documentRef",
+								"classification": "classification",
+								"grounds": "weigeringsgronden"
+							}
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
+						"id": "assessment-decide",
+						"type": "open-modal",
+						"label": "Woo decision",
+						"icon": "Gavel",
+						"target": "AssessmentDecisionDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Woo decision",
+							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",
+							"assessments": {
+								"register": "dossiq",
+								"schema": "wooDocumentAssessment",
+								"caseField": "caseRef",
+								"classificationField": "classification"
+							},
+							"classifications": [
+								{ "value": "openbaar", "label": "Public" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part" },
+								{ "value": "niet_openbaar", "label": "Not public" }
+							]
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" },
+								{ "field": "wooPublicationStatus", "op": "empty" }
 							]
 						}
 					},
@@ -5178,10 +5273,8 @@
 			"type": "custom",
 			"title": "Workflow board",
 			"component": "WorkflowBoardView",
-			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
-			"config": {
-				"register": "dossiq"
-			}
+			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title. The config names no `register` and no `schema`: the board reads three schemas (statusType, caseType, case) through the object types initializeStores() registers before it fetches, so one register/schema pair names nothing it loads. `register` alone made CnPageRenderer warn on every visit that the page declares only one of the pair, and register nothing. The note lives here and not in `config`, because every config key reaches the board as a fallthrough attribute on its root element.",
+			"config": {}
 		},
 		{
 			"id": "WmsLayers",
@@ -7410,9 +7503,19 @@
 						"sortable": false
 					},
 					{
-						"key": "description",
-						"label": "Description",
-						"sortable": false
+						"key": "openCases",
+						"label": "Open cases",
+						"sortable": false,
+						"aggregate": {
+							"register": "dossiq",
+							"schema": "case",
+							"op": "count",
+							"where": {
+								"requester": "@self.id",
+								"isFinalStatus": false
+							}
+						},
+						"widget": "badge"
 					}
 				],
 				"actions": [
@@ -7475,13 +7578,13 @@
 							"confidentiality": {
 								"enumLabels": {
 									"openbaar": "Public",
-										"beperkt_openbaar": "Restricted public",
-										"intern": "Internal",
-										"zaakvertrouwelijk": "Case confidential",
-										"vertrouwelijk": "Confidential",
-										"confidentieel": "Classified confidential",
-										"geheim": "Secret",
-										"zeer_geheim": "Top secret"
+									"beperkt_openbaar": "Restricted public",
+									"intern": "Internal",
+									"zaakvertrouwelijk": "Case confidential",
+									"vertrouwelijk": "Confidential",
+									"confidentieel": "Classified confidential",
+									"geheim": "Secret",
+									"zeer_geheim": "Top secret"
 								}
 							}
 						},
@@ -7529,12 +7632,93 @@
 							"editable": false,
 							"include": [
 								"displayName",
-								"citizenServiceNumber",
-								"name",
-								"birth",
-								"residence",
 								"description"
-							]
+							],
+							"overrides": {
+								"displayName": {
+									"order": 1
+								},
+								"description": {
+									"order": 2
+								}
+							}
+						},
+						"_note": "The board's Contact card. The BSN is not in it: it shows masked in the side Identity card, so the overview does not undo the mask. Name parts, birth date and address are nested objects, which the data widget does not render; the side cards show them through facts paths instead."
+					},
+					{
+						"id": "contact-open-cases",
+						"type": "record-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"extend": [
+								"caseType",
+								"status"
+							],
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier} · {caseType.title}",
+							"pill": {
+								"field": "status.name",
+								"variant": "purple"
+							},
+							"trailing": [
+								"Done {endDate|date}",
+								"Term {deadline|date}"
+							],
+							"rowRoute": "CaseDetail",
+							"headerLink": {
+								"label": "View all {total} cases",
+								"route": "Cases",
+								"query": {
+									"requester": "@objectId"
+								}
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-latest-moments",
+						"type": "record-list",
+						"title": "Latest contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 3,
+							"presentation": "feed",
+							"icon": {
+								"field": "notificationChannel",
+								"map": {
+									"phone": "PhoneInTalk",
+									"email": "EmailOutline",
+									"balie": "AccountOutline",
+									"chat": "MessageTextOutline",
+									"webformulier": "Earth"
+								},
+								"default": "EmailOutline"
+							},
+							"meta": "{startTime|datetime}",
+							"text": "{summary}",
+							"headerNote": "{total} in total",
+							"emptyText": "No contact moments yet"
 						}
 					},
 					{
@@ -7687,12 +7871,16 @@
 						"type": "tabs",
 						"title": "Panels",
 						"icon": "ViewDashboard",
-						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn. The counts use `countFrom` (nextcloud-vue #1468, the release after 2.79.0): the shape is the library's `source` form of a tab predicate and must be checked against the release when it lands; older libraries ignore the key.",
+						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. Overview is a stack (`widgetIds`): the record's card, its cases and its latest contact moments, as the canonical relation page (nextcloud-vue screens-relation-pages). The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn.",
 						"content": {
 							"ariaLabel": "Details",
 							"tabs": [
 								{
-									"widgetId": "contact-card",
+									"widgetIds": [
+										"contact-card",
+										"contact-open-cases",
+										"contact-latest-moments"
+									],
 									"label": "Overview"
 								},
 								{
@@ -7736,32 +7924,84 @@
 				],
 				"sideColumn": [
 					{
+						"id": "side-reach",
+						"type": "facts",
+						"title": "Reachable via",
+						"content": {
+							"fields": [
+								{
+									"as": "line",
+									"text": "Phone and email are not in the base registration."
+								}
+							],
+							"action": {
+								"label": "Log contact",
+								"icon": "PhoneLogOutline",
+								"type": "open-form",
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"props": {
+									"contact": "@objectId"
+								}
+							}
+						}
+					},
+					{
 						"id": "side-identity",
-						"type": "data",
+						"type": "facts",
 						"title": "Identity",
 						"content": {
-							"title": "Identity",
-							"columns": 1,
-							"include": [
-								"citizenServiceNumber",
-								"birth"
-							],
-							"hideEmpty": true,
-							"editable": false
+							"fields": [
+								{
+									"label": "BSN",
+									"path": "citizenServiceNumber",
+									"format": "masked",
+									"reveal": true
+								},
+								{
+									"label": "Data protection",
+									"path": "indicatieGeheim",
+									"map": {
+										"true": "Yes",
+										"false": "No"
+									}
+								},
+								{
+									"label": "Date of birth",
+									"path": "birth.date",
+									"format": "date-long"
+								},
+								{
+									"as": "line",
+									"text": "Source: Basisregistratie personen"
+								}
+							]
 						}
 					},
 					{
 						"id": "side-address",
-						"type": "data",
-						"title": "Address",
+						"type": "facts",
+						"title": "Home address",
 						"content": {
-							"title": "Address",
-							"columns": 1,
-							"include": [
-								"residence"
+							"fields": [
+								{
+									"as": "text",
+									"parts": [
+										"residence.street",
+										"residence.houseNumber"
+									],
+									"separator": " "
+								},
+								{
+									"as": "text",
+									"parts": [
+										"residence.postcode",
+										"residence.city"
+									],
+									"separator": " "
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"emptyText": "No address on file"
 						}
 					}
 				],
@@ -7772,7 +8012,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 12,
+						"gridHeight": 18,
 						"showTitle": false
 					}
 				],
@@ -7791,7 +8031,27 @@
 							]
 						}
 					]
-				}
+				},
+				"statusPill": {
+					"countFrom": {
+						"register": "dossiq",
+						"schema": "case",
+						"filter": {
+							"requester": "@objectId",
+							"isFinalStatus": false
+						}
+					},
+					"countLabel": {
+						"one": "{count} open case",
+						"other": "{count} open cases"
+					},
+					"variant": "purple"
+				},
+				"typePill": {
+					"text": "Resident",
+					"variant": "info"
+				},
+				"headerMeta": "{residence.street} {residence.houseNumber}, {residence.city}"
 			},
 			"_note": "One person, what they have with us, and the two things you do next. The card is read only: `brpPerson` is read from its source and editing it here would write a fourth version of a citizen's data. The cases list filters `case.requester` on this row's uuid exactly, so a case whose requester is a Nextcloud contact rather than a register row does not appear — the gap requester-on-the-case D1 accepts. No menu entry: a detail page spends no navigation budget."
 		},
@@ -7837,13 +8097,13 @@
 							"confidentiality": {
 								"enumLabels": {
 									"openbaar": "Public",
-										"beperkt_openbaar": "Restricted public",
-										"intern": "Internal",
-										"zaakvertrouwelijk": "Case confidential",
-										"vertrouwelijk": "Confidential",
-										"confidentieel": "Classified confidential",
-										"geheim": "Secret",
-										"zeer_geheim": "Top secret"
+									"beperkt_openbaar": "Restricted public",
+									"intern": "Internal",
+									"zaakvertrouwelijk": "Case confidential",
+									"vertrouwelijk": "Confidential",
+									"confidentieel": "Classified confidential",
+									"geheim": "Secret",
+									"zeer_geheim": "Top secret"
 								}
 							}
 						},
@@ -7893,9 +8153,98 @@
 								"tradeName",
 								"kvkNumber",
 								"legalForm",
-								"address",
 								"description"
-							]
+							],
+							"overrides": {
+								"tradeName": {
+									"order": 1
+								},
+								"kvkNumber": {
+									"order": 2
+								},
+								"legalForm": {
+									"order": 3
+								},
+								"description": {
+									"order": 4
+								}
+							}
+						}
+					},
+					{
+						"id": "contact-open-cases",
+						"type": "record-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"extend": [
+								"caseType",
+								"status"
+							],
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier} · {caseType.title}",
+							"pill": {
+								"field": "status.name",
+								"variant": "purple"
+							},
+							"trailing": [
+								"Done {endDate|date}",
+								"Term {deadline|date}"
+							],
+							"rowRoute": "CaseDetail",
+							"headerLink": {
+								"label": "View all {total} cases",
+								"route": "Cases",
+								"query": {
+									"requester": "@objectId"
+								}
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-latest-moments",
+						"type": "record-list",
+						"title": "Latest contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 3,
+							"presentation": "feed",
+							"icon": {
+								"field": "notificationChannel",
+								"map": {
+									"phone": "PhoneInTalk",
+									"email": "EmailOutline",
+									"balie": "AccountOutline",
+									"chat": "MessageTextOutline",
+									"webformulier": "Earth"
+								},
+								"default": "EmailOutline"
+							},
+							"meta": "{startTime|datetime}",
+							"text": "{summary}",
+							"headerNote": "{total} in total",
+							"emptyText": "No contact moments yet"
 						}
 					},
 					{
@@ -8048,12 +8397,16 @@
 						"type": "tabs",
 						"title": "Panels",
 						"icon": "ViewDashboard",
-						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn. The counts use `countFrom` (nextcloud-vue #1468, the release after 2.79.0): the shape is the library's `source` form of a tab predicate and must be checked against the release when it lands; older libraries ignore the key.",
+						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. Overview is a stack (`widgetIds`): the record's card, its cases and its latest contact moments, as the canonical relation page (nextcloud-vue screens-relation-pages). The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn.",
 						"content": {
 							"ariaLabel": "Details",
 							"tabs": [
 								{
-									"widgetId": "contact-card",
+									"widgetIds": [
+										"contact-card",
+										"contact-open-cases",
+										"contact-latest-moments"
+									],
 									"label": "Overview"
 								},
 								{
@@ -8097,32 +8450,86 @@
 				],
 				"sideColumn": [
 					{
-						"id": "side-identity",
-						"type": "data",
-						"title": "Identity",
+						"id": "side-kvk",
+						"type": "facts",
+						"title": "KvK and address",
 						"content": {
-							"title": "Identity",
-							"columns": 1,
-							"include": [
-								"kvkNumber",
-								"legalForm"
+							"fields": [
+								{
+									"as": "lead",
+									"icon": "OfficeBuildingOutline",
+									"title": [
+										{
+											"path": "kvkNumber",
+											"label": "KvK"
+										}
+									],
+									"subtitle": [
+										"legalForm",
+										{
+											"text": "Trade register"
+										}
+									]
+								},
+								{
+									"as": "text",
+									"parts": [
+										"address.streetName",
+										"address.houseNumber"
+									],
+									"separator": " "
+								},
+								{
+									"as": "text",
+									"parts": [
+										"address.postcode",
+										"address.place"
+									],
+									"separator": " "
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"action": {
+								"label": "Log contact",
+								"icon": "PhoneLogOutline",
+								"type": "open-form",
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"props": {
+									"contact": "@objectId"
+								}
+							}
 						}
 					},
 					{
-						"id": "side-address",
-						"type": "data",
-						"title": "Address",
+						"id": "side-open-case",
+						"type": "record-list",
+						"title": "Open cases",
 						"content": {
-							"title": "Address",
-							"columns": 1,
-							"include": [
-								"address"
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId",
+								"isFinalStatus": false
+							},
+							"extend": [
+								"caseType",
+								"status"
 							],
-							"hideEmpty": true,
-							"editable": false
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier} · {caseType.title}",
+							"pill": {
+								"field": "status.name",
+								"variant": "purple"
+							},
+							"trailing": "Term {deadline|date}",
+							"rowRoute": "CaseDetail",
+							"emptyText": "No open cases"
 						}
 					}
 				],
@@ -8133,7 +8540,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 12,
+						"gridHeight": 18,
 						"showTitle": false
 					}
 				],
@@ -8152,6 +8559,25 @@
 							]
 						}
 					]
+				},
+				"statusPill": {
+					"countFrom": {
+						"register": "dossiq",
+						"schema": "case",
+						"filter": {
+							"requester": "@objectId",
+							"isFinalStatus": false
+						}
+					},
+					"countLabel": {
+						"one": "{count} open case",
+						"other": "{count} open cases"
+					},
+					"variant": "purple"
+				},
+				"typePill": {
+					"field": "legalForm",
+					"variant": "teal"
 				}
 			},
 			"_note": "The same anatomy as ContactDetail over `kvkCompany`, because a detail page takes one schema and an organisation is not a person. Reached from a case's initiator card, not from the Contacts index: the index lists people until a folder can swap the index's schema (the Contacts page's own note has the measurement). Widget ids repeat ContactDetail's on purpose; they are page-scoped, and `npm run check:manifest` is what says so."

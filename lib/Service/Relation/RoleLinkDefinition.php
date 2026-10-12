@@ -7,7 +7,7 @@
  * what the role points at, the relation type it writes and the record it opens.
  * This class is the single authority on that shape. The service that links and
  * the listing that reports missing roles both build definitions through
- * `fromArray()`, so a role that is accepted is a role the service can act on.
+ * its constructor, so a role that is accepted is a role the service can act on.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Relation
@@ -55,54 +55,92 @@ final class RoleLinkDefinition {
 	public const TARGET_OBJECT = 'object';
 
 	/**
-	 * Constructor. Use `fromArray()`, which validates.
+	 * The role key.
 	 *
-	 * One parameter per declared field of a role, so a reader sees the whole
-	 * shape in one place; grouping them would hide which ones are optional.
-	 *
-	 * @param string      $role               The role key.
-	 * @param string      $label              What the role is called on screen.
-	 * @param string      $target             TARGET_CASE or TARGET_OBJECT.
-	 * @param string      $targetSchema       Config key of the target schema ('' for a case).
-	 * @param string      $targetCaseField    Field on the target that holds its case.
-	 * @param string      $natureRelationship Relation type written between the cases.
-	 * @param bool        $requiredAtIntake   Whether intake needs this role.
-	 * @param string      $recordSchema       Config key of the record schema, '' for none.
-	 * @param string      $recordCaseField    Record field that holds the linked case.
-	 * @param string      $recordTargetField  Record field that holds the target.
-	 * @param string|null $recordActorField   Record field for the acting user, or null.
-	 *
-	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+	 * @var string
 	 */
-	private function __construct(
-		public readonly string $role,
-		public readonly string $label,
-		public readonly string $target,
-		public readonly string $targetSchema,
-		public readonly string $targetCaseField,
-		public readonly string $natureRelationship,
-		public readonly bool $requiredAtIntake,
-		public readonly string $recordSchema,
-		public readonly string $recordCaseField,
-		public readonly string $recordTargetField,
-		public readonly ?string $recordActorField,
-	) {
-	}//end __construct()
+	public readonly string $role;
+
+	/**
+	 * What the role is called on screen.
+	 *
+	 * @var string
+	 */
+	public readonly string $label;
+
+	/**
+	 * TARGET_CASE or TARGET_OBJECT.
+	 *
+	 * @var string
+	 */
+	public readonly string $target;
+
+	/**
+	 * Config key of the target schema ('' for a case).
+	 *
+	 * @var string
+	 */
+	public readonly string $targetSchema;
+
+	/**
+	 * Field on the target that holds its case.
+	 *
+	 * @var string
+	 */
+	public readonly string $targetCaseField;
+
+	/**
+	 * Relation type written between the cases.
+	 *
+	 * @var string
+	 */
+	public readonly string $natureRelationship;
+
+	/**
+	 * Whether intake needs this role.
+	 *
+	 * @var bool
+	 */
+	public readonly bool $requiredAtIntake;
+
+	/**
+	 * Config key of the record schema, '' for none.
+	 *
+	 * @var string
+	 */
+	public readonly string $recordSchema;
+
+	/**
+	 * Record field that holds the linked case.
+	 *
+	 * @var string
+	 */
+	public readonly string $recordCaseField;
+
+	/**
+	 * Record field that holds the target.
+	 *
+	 * @var string
+	 */
+	public readonly string $recordTargetField;
+
+	/**
+	 * Record field for the acting user, or null.
+	 *
+	 * @var string|null
+	 */
+	public readonly ?string $recordActorField;
 
 	/**
 	 * Build and validate a role from its stored form.
 	 *
 	 * @param mixed $config One `relations[]` entry.
 	 *
-	 * @return self The role.
-	 *
 	 * @throws InvalidArgumentException When the entry is not a well-formed role.
 	 *
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
 	 */
-	public static function fromArray(mixed $config): self {
+	public function __construct(mixed $config) {
 		if (is_array($config) === false) {
 			throw new InvalidArgumentException('A relation role must be an object.');
 		}
@@ -132,56 +170,18 @@ final class RoleLinkDefinition {
 			throw new InvalidArgumentException("Relation role '$role' has a `record` that is not an object.");
 		}
 
-		$recordSchema = self::text(config: $record, key: 'schema');
-		$actorField = self::text(config: $record, key: 'actorField');
-		if ($actorField === '') {
-			$actorField = null;
-		}
-
-		return new self(
-			role: $role,
-			label: self::textOr(config: $config, key: 'label', default: $role),
-			target: $target,
-			targetSchema: $targetSchema,
-			targetCaseField: self::textOr(config: $config, key: 'targetCaseField', default: 'case'),
-			natureRelationship: $nature,
-			requiredAtIntake: (($config['requiredAtIntake'] ?? false) === true),
-			recordSchema: $recordSchema,
-			recordCaseField: self::textOr(config: $record, key: 'caseField', default: 'case'),
-			recordTargetField: self::textOr(config: $record, key: 'targetField', default: 'target'),
-			recordActorField: $actorField,
-		);
-	}//end fromArray()
-
-	/**
-	 * Every role a case type declares, keyed by role.
-	 *
-	 * @param array<string, mixed> $caseType The case type object.
-	 *
-	 * @return array<string, self> The roles.
-	 *
-	 * @throws InvalidArgumentException When an entry is not a well-formed role, or two share a key.
-	 *
-	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-case-type-declares-the-roles-a-case-can-be-linked-with-req-lcr-1
-	 */
-	public static function allOf(array $caseType): array {
-		$entries = ($caseType['relations'] ?? []);
-		if (is_array($entries) === false) {
-			return [];
-		}
-
-		$roles = [];
-		foreach ($entries as $entry) {
-			$definition = self::fromArray(config: $entry);
-			if (isset($roles[$definition->role]) === true) {
-				throw new InvalidArgumentException("Relation role '{$definition->role}' is declared twice.");
-			}
-
-			$roles[$definition->role] = $definition;
-		}
-
-		return $roles;
-	}//end allOf()
+		$this->role               = $role;
+		$this->label              = self::textOr(config: $config, key: 'label', default: $role);
+		$this->target             = $target;
+		$this->targetSchema       = $targetSchema;
+		$this->targetCaseField    = self::textOr(config: $config, key: 'targetCaseField', default: 'case');
+		$this->natureRelationship = $nature;
+		$this->requiredAtIntake   = (($config['requiredAtIntake'] ?? false) === true);
+		$this->recordSchema       = self::text(config: $record, key: 'schema');
+		$this->recordCaseField    = self::textOr(config: $record, key: 'caseField', default: 'case');
+		$this->recordTargetField  = self::textOr(config: $record, key: 'targetField', default: 'target');
+		$this->recordActorField   = self::textOrNull(config: $record, key: 'actorField');
+	}//end __construct()
 
 	/**
 	 * Whether the role opens a record when a case is linked.
@@ -210,6 +210,23 @@ final class RoleLinkDefinition {
 			'requiredAtIntake'   => $this->requiredAtIntake,
 		];
 	}//end toArray()
+
+	/**
+	 * A trimmed string value, or null when it is absent or empty.
+	 *
+	 * @param array<array-key, mixed> $config The entry.
+	 * @param string                  $key    The key.
+	 *
+	 * @return string|null The value.
+	 */
+	private static function textOrNull(array $config, string $key): ?string {
+		$value = self::text(config: $config, key: $key);
+		if ($value === '') {
+			return null;
+		}
+
+		return $value;
+	}//end textOrNull()
 
 	/**
 	 * A trimmed string value, or a default when it is absent or empty.

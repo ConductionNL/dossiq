@@ -28,10 +28,8 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Review\DocumentRelevance;
-use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewConfiguration;
-use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Review\ReviewSummary;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -53,6 +51,16 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\ReviewDepth
+ * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Woo\WooCaseDocuments
+ * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses \OCA\Dossiq\Review\BatchSelection
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  */
 class DocumentReviewControllerTest extends TestCase {
 
@@ -129,14 +137,20 @@ class DocumentReviewControllerTest extends TestCase {
 				settingsService: $settings,
 				reviews: $reviews,
 				caseDocuments: $caseDocuments,
-				depth: new ReviewDepth(),
 				configuration: new ReviewConfiguration(settingsService: $settings),
 				tasks: $tasks,
 				userManager: $userManager,
 				l10n: $l10n,
+				reviewerAccess: $this->createMock(\OCA\Dossiq\Service\Access\CaseReviewerAccess::class),
 				logger: $logger,
 			),
-			pagesSeen: new PagesSeen(reviews: $reviews, depth: new ReviewDepth()),
+			selection: new \OCA\Dossiq\Review\BatchSelection(
+				reviews: $reviews,
+				provenance: new \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance(
+					store: new \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore(settingsService: $settings),
+					caseDocuments: $caseDocuments,
+				),
+			),
 			caseAccessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,
@@ -257,7 +271,7 @@ class DocumentReviewControllerTest extends TestCase {
 		$this->assertSame(['doc-0' => 'Mail 2025'], $refused->getData()['taken']);
 		$this->assertCount(1, $this->store->all('reviewBatch'));
 
-		$unknown = $this->controller(params: ['name' => 'Map', 'assignee' => 'reviewer-a', 'filter' => ['custodian' => 'j.devries']])->createBatch(id: 'case-x');
+		$unknown = $this->controller(params: ['name' => 'Map', 'assignee' => 'reviewer-a', 'filter' => ['department' => 'Verkeer']])->createBatch(id: 'case-x');
 		$this->assertSame(422, $unknown->getStatus());
 		$this->assertSame('review-batch-filter-unknown', $unknown->getData()['error']);
 	}//end testCreateBatchNamesTheBatchADocumentIsIn()

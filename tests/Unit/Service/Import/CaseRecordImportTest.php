@@ -51,6 +51,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class CaseRecordImportTest extends TestCase {
 

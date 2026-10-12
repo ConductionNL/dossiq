@@ -38,6 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\JsonRequestBody;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BeschikkingService;
@@ -56,12 +57,6 @@ use Throwable;
  * Controller for beschikking lifecycle endpoints.
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T05
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) 60 against 50, crossed by
- * successor() (REQ-BES-012). Decision 182 forbids a new procedure-named
- * controller, so the endpoint joins the one this beschikking lifecycle already
- * has rather than a second beschikking class; the refactor programme of
- * decision 184 moves this controller onto generic capabilities as a whole.
  */
 class BeschikkingController extends Controller {
 	use TranslatesRefusals;
@@ -102,7 +97,7 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = (new JsonRequestBody())->read(request: $this->request);
 		$caseId = (string)($body['caseId'] ?? '');
 		$templateId = null;
 		if (isset($body['templateId']) === true) {
@@ -183,7 +178,7 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$updates = $this->readJsonBody();
+		$updates = (new JsonRequestBody())->read(request: $this->request);
 		// The number and both chain pointers are written by compose() and
 		// issueSuccessor() only (REQ-BES-012), never by a field edit.
 		unset($updates['id'], $updates['currentStatus'], $updates['reference'], $updates['supersedes'], $updates['supersededBy']);
@@ -246,7 +241,7 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = (new JsonRequestBody())->read(request: $this->request);
 		$tspProvider = (string)($body['tspProvider'] ?? '');
 		if ($tspProvider === '') {
 			return new JSONResponse(['error' => 'tspProvider is required'], Http::STATUS_BAD_REQUEST);
@@ -369,14 +364,18 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'You may not change this case'], Http::STATUS_FORBIDDEN);
 		}
 
-		$body = $this->request->getParams();
+		$body   = $this->request->getParams();
+		$reader = new JsonRequestBody();
 
 		try {
 			$successor = $this->decisionService->issueSuccessor(
 				originalId: $id,
 				kind: (string)($body['decisionType'] ?? ''),
-				overrides: $this->successorContentOf(body: $body),
-				templateId: $this->successorTemplateOf(body: $body),
+				// The successor's content as the handler sent it, and nothing
+				// else: the number, the pointers and the status are never read
+				// from the body. A blank template keeps the original's.
+				overrides: $reader->only(body: $body, fields: ['rationale', 'decision', 'addressee']),
+				templateId: $reader->textOrNull(body: $body, field: 'templateId'),
 			);
 
 			return new JSONResponse($successor, Http::STATUS_CREATED);
@@ -391,43 +390,6 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end successor()
-
-	/**
-	 * The successor's content as the handler sent it, and nothing else.
-	 *
-	 * The number, the pointers and the status are never read from the
-	 * body: compose() and the succession write them.
-	 *
-	 * @param array<string, mixed> $body The request parameters.
-	 *
-	 * @return array<string, mixed> Rationale, decision and addressee, where sent.
-	 */
-	private function successorContentOf(array $body): array {
-		$overrides = [];
-		foreach (['rationale', 'decision', 'addressee'] as $field) {
-			if (array_key_exists($field, $body) === true) {
-				$overrides[$field] = $body[$field];
-			}
-		}
-
-		return $overrides;
-	}//end successorContentOf()
-
-	/**
-	 * The template the handler chose, or null to keep the original's.
-	 *
-	 * @param array<string, mixed> $body The request parameters.
-	 *
-	 * @return string|null The template id.
-	 */
-	private function successorTemplateOf(array $body): ?string {
-		$templateId = trim((string)($body['templateId'] ?? ''));
-		if ($templateId === '') {
-			return null;
-		}
-
-		return $templateId;
-	}//end successorTemplateOf()
 
 	/**
 	 * Resolve the current user UID or null.
@@ -499,41 +461,4 @@ class BeschikkingController extends Controller {
 		);
 		return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
 	}//end fail()
-
-	/**
-	 * Read and decode the JSON request body.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function readJsonBody(): array {
-		// Prefer the request object's getContent() when reachable — test
-		// stubs expose a public getContent() so unit tests can drive
-		// controllers without faking php://input.
-		$content = '';
-		if (method_exists($this->request, 'getContent') === true) {
-			try {
-				$raw = $this->request->getContent();
-				if (is_string($raw) === true) {
-					$content = $raw;
-				}
-			} catch (\Throwable $e) {
-				$content = '';
-			}
-		}
-
-		if ($content === '') {
-			$content = (string)file_get_contents('php://input');
-		}
-
-		if ($content === '') {
-			return [];
-		}
-
-		$decoded = json_decode($content, true);
-		if (is_array($decoded) === true) {
-			return $decoded;
-		}
-
-		return [];
-	}//end readJsonBody()
 }//end class

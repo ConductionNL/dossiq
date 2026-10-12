@@ -60,6 +60,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Woo\WooSources
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  */
 class WooCollectionControllerTest extends TestCase {
 

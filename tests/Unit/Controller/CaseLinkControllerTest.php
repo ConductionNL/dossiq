@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Controller\CaseLinkController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseLinkControllerTest extends TestCase {
 

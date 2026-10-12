@@ -35,12 +35,16 @@ use PHPUnit\Framework\TestCase;
 class BackgroundServiceAccountWiringTest extends TestCase {
 
 	/**
-	 * The schemas the reminder sweep writes grant the group create and update,
-	 * and keep every logged-in user and anonymous reads as the open default had.
+	 * The schemas the reminder sweep writes grant the group create, read and
+	 * update, and the dossiq staff group everything. Since
+	 * case-access-by-handling-team (Ruben, 2026-10-11) neither every logged-in
+	 * user nor an anonymous caller is granted anything here.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
 	 */
-	public function testTheSweptSchemasGrantTheGroupAndKeepTheOpenDefault(): void {
+	public function testTheSweptSchemasGrantTheGroupAndTheStaffOnly(): void {
 		$fragment = json_decode(
 			(string)file_get_contents(__DIR__.'/../../../../lib/Settings/register.d/90-background-service-account.json'),
 			true
@@ -48,24 +52,36 @@ class BackgroundServiceAccountWiringTest extends TestCase {
 
 		foreach (['deadlineInstance', 'termijnGebeurtenis'] as $slug) {
 			$auth = $fragment['components']['schemas'][$slug]['authorization'];
-			$this->assertContains(BackgroundServiceAccount::GROUP, $auth['create'], $slug);
-			$this->assertContains(BackgroundServiceAccount::GROUP, $auth['update'], $slug);
-			foreach (['create', 'read', 'update', 'delete'] as $action) {
-				$this->assertContains('authenticated', $auth[$action], $slug.' '.$action);
-			}
-
-			$this->assertContains('public', $auth['read'], $slug);
+			$this->assertStaffAndBackgroundOnly(auth: $auth, slug: $slug);
 		}
-	}//end testTheSweptSchemasGrantTheGroupAndKeepTheOpenDefault()
+	}//end testTheSweptSchemasGrantTheGroupAndTheStaffOnly()
 
 	/**
-	 * Every schema the other background jobs and the timer listener write
-	 * grants the group create and update, keeps every logged-in user, and
-	 * does not open reads to anonymous callers.
+	 * The background group writes and reads; the staff group holds every verb; nobody else.
+	 *
+	 * @param array<string, array<int, string>> $auth The block.
+	 * @param string                            $slug The schema, for the message.
 	 *
 	 * @return void
 	 */
-	public function testTheJobSchemasGrantTheGroupAndStayClosedToAnonymousReads(): void {
+	private function assertStaffAndBackgroundOnly(array $auth, string $slug): void {
+		foreach (['create', 'read', 'update'] as $action) {
+			$this->assertSame(['dossiq-medewerkers', BackgroundServiceAccount::GROUP], $auth[$action], $slug.' '.$action);
+		}
+
+		$this->assertSame(['dossiq-medewerkers'], $auth['delete'], $slug.' delete');
+	}//end assertStaffAndBackgroundOnly()
+
+	/**
+	 * Every schema the other background jobs and the timer listener write
+	 * grants the group create, read and update and the staff group every verb,
+	 * and nobody else (case-access-by-handling-team).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 */
+	public function testTheJobSchemasGrantTheGroupAndTheStaffOnly(): void {
 		$fragment = json_decode(
 			(string)file_get_contents(__DIR__.'/../../../../lib/Settings/register.d/90-background-service-account.json'),
 			true
@@ -88,17 +104,11 @@ class BackgroundServiceAccountWiringTest extends TestCase {
 		];
 		foreach ($written as $slug) {
 			$auth = $fragment['components']['schemas'][$slug]['authorization'];
-			$this->assertContains(BackgroundServiceAccount::GROUP, $auth['create'], $slug);
-			$this->assertContains(BackgroundServiceAccount::GROUP, $auth['update'], $slug);
-			foreach (['create', 'read', 'update', 'delete'] as $action) {
-				$this->assertContains('authenticated', $auth[$action], $slug.' '.$action);
-			}
-
-			$this->assertNotContains('public', $auth['read'], $slug);
+			$this->assertStaffAndBackgroundOnly(auth: $auth, slug: $slug);
 		}
 
 		$this->assertArrayNotHasKey('case', $fragment['components']['schemas']);
-	}//end testTheJobSchemasGrantTheGroupAndStayClosedToAnonymousReads()
+	}//end testTheJobSchemasGrantTheGroupAndTheStaffOnly()
 
 	/**
 	 * The repair step is registered in both the upgrade and the install block.

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
  */
 
 declare(strict_types=1);
@@ -47,6 +47,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  */
 class WooPublicationDeliveredSetTest extends TestCase {
 

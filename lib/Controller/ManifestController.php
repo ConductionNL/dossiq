@@ -35,7 +35,6 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
-use OCP\IURLGenerator;
 use OCP\IUserSession;
 
 /**
@@ -53,13 +52,20 @@ class ManifestController extends Controller {
 	private const CAPTION_ORDER = 30;
 
 	/**
+	 * Where the caption's pencil goes: the hash App.vue answers by opening
+	 * the user settings dialog.
+	 *
+	 * @var string
+	 */
+	public const USER_SETTINGS_HREF = '#user-settings';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
 	 * @param MenuCaseTypesService $menuCaseTypes The per-user menu choice
 	 * @param IUserSession $userSession User session
-	 * @param IURLGenerator $urlGenerator URL generator (personal settings link)
 	 * @param IL10N $l10n Translations (the caption label)
 	 */
 	public function __construct(
@@ -67,7 +73,6 @@ class ManifestController extends Controller {
 		IRequest $request,
 		private readonly MenuCaseTypesService $menuCaseTypes,
 		private readonly IUserSession $userSession,
-		private readonly IURLGenerator $urlGenerator,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -76,8 +81,8 @@ class ManifestController extends Controller {
 	/**
 	 * Return the case-type navigation delta.
 	 *
-	 * The caption "My case types" (with `href` to the Dossiq section of
-	 * Nextcloud's personal settings) and one entry per chosen case type, each
+	 * The caption "My case types" (with `href` to the in-app user settings
+	 * dialog, where the choice is made) and one entry per chosen case type, each
 	 * opening the Cases list filtered on it. An unauthenticated caller is
 	 * refused with 401. Otherwise the response is a no-op delta
 	 * (`['menu' => []]`) whenever OpenRegister is unavailable, the
@@ -109,10 +114,10 @@ class ManifestController extends Controller {
 				'type' => 'caption',
 				'label' => $this->l10n->t('My case types'),
 				'order' => self::CAPTION_ORDER,
-				'href' => $this->urlGenerator->linkToRoute(
-					routeName: 'settings.PersonalSettings.index',
-					arguments: ['section' => 'dossiq']
-				),
+				// The pencil opens the in-app user settings dialog. Dossiq has
+				// no Nextcloud personal settings page: preferences live in that
+				// dialog (Ruben, 11 Oct 2026). App.vue opens it on this hash.
+				'href' => self::USER_SETTINGS_HREF,
 			],
 		];
 

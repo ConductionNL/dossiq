@@ -172,6 +172,56 @@ class BezwaarCreationHookTest extends TestCase {
 	}//end testLinksPrimairBesluitAndCreatesObjection()
 
 	/**
+	 * With the relation service wired, the link is a typed relation, not a bare array on the case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
+	 */
+	public function testTheLinkGoesThroughTheRelationService(): void {
+		$objectService = new class {
+
+			/**
+			 * @var list<string>
+			 */
+			public array $savedSchemas = [];
+
+			/**
+			 * Find.
+			 *
+			 * @return FakeStoredObject
+			 */
+			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): FakeStoredObject {
+				return new FakeStoredObject(['case' => 'primair-1']);
+			}
+
+			/**
+			 * Save.
+			 *
+			 * @return FakeStoredObject
+			 */
+			public function saveObject(array $object, ?array $extend = [], string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): FakeStoredObject {
+				$this->savedSchemas[] = (string)$schema;
+				return new FakeStoredObject($object);
+			}//end saveObject()
+		};
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$relations = $this->createMock(\OCA\Dossiq\Service\CaseRelationService::class);
+		$relations->expects($this->once())->method('addRelation')->with('bezwaar-1', 'primair-1', 'vervolg')->willReturn(['ok' => true]);
+		$hook = new BezwaarCreationHook(
+			$this->settingsService,
+			$this->createMock(IUserSession::class),
+			$this->createMock(\Psr\Log\LoggerInterface::class),
+			$relations,
+		);
+
+		$hook->onBezwaarCreated('bezwaar-1', 'decision-1', []);
+
+		// Only the objection is saved; the case is not rewritten with an array.
+		$this->assertSame(['30'], $objectService->savedSchemas);
+	}//end testTheLinkGoesThroughTheRelationService()
+
+	/**
 	 * When the contested decision has no parent case, no relatedCases
 	 * write happens but the objection is still created.
 	 *

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 /**
  * Recomputes the hashes of a delivered set.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  */
 class WooDeliveredSetVerifier {
 
@@ -60,7 +60,7 @@ class WooDeliveredSetVerifier {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
 	 */
 	public function find(string $setId): ?array {
 		$objectService = $this->settings->getObjectService();
@@ -84,7 +84,7 @@ class WooDeliveredSetVerifier {
 	 *
 	 * @return array{verified: bool, setHash: array{expected: string, actual: string}, items: array<int, array<string, string>>}
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
 	 */
 	public function verify(array $set): array {
 		$items = [];

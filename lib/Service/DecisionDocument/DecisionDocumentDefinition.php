@@ -72,60 +72,124 @@ final class DecisionDocumentDefinition {
 	public const CONTENT_FIELDS = ['kind', 'caseId', 'template', 'decision', 'rationale', 'addressee', 'remedyClause', 'decisionKind'];
 
 	/**
-	 * Constructor.
+	 * The kind's slug.
 	 *
-	 * @param string $kind The kind's slug.
-	 * @param string $template The template id the document renders from; '' for none.
-	 * @param array<int, string> $requiredFields Fields that must be filled before approval.
-	 * @param array<int, array{id: string, when: mixed, message: string}> $rules Validity rules: each must hold.
-	 * @param array<string, mixed> $conditions Named conditions the rules may reference.
-	 * @param string $remedyClause The remedy clause text; '' for none.
-	 * @param bool $remedyRequired Whether a remedy clause is required.
-	 * @param bool $signed Whether the document must be signed.
-	 * @param string $authorityAct The delegated-authority act that decides it; '' for none.
-	 * @param string $decisionKind The decision kind recorded with decidiq; '' for none.
-	 * @param string $series The number series; '' for unnumbered.
-	 * @param string $defaultPrefix The series' default prefix.
-	 * @param array<int, string> $frozenStatuses The statuses from which it is frozen.
+	 * @var string
+	 */
+	public readonly string $kind;
+
+	/**
+	 * The template id the document renders from; '' for none.
+	 *
+	 * @var string
+	 */
+	public readonly string $template;
+
+	/**
+	 * Fields that must be filled before approval.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $requiredFields;
+
+	/**
+	 * Validity rules: each must hold.
+	 *
+	 * @var array<int, array{id: string, when?: mixed, message: string}>
+	 */
+	public readonly array $rules;
+
+	/**
+	 * Named conditions the rules may reference.
+	 *
+	 * @var array<string, mixed>
+	 */
+	public readonly array $conditions;
+
+	/**
+	 * The remedy clause text; '' for none.
+	 *
+	 * @var string
+	 */
+	public readonly string $remedyClause;
+
+	/**
+	 * Whether a remedy clause is required.
+	 *
+	 * @var bool
+	 */
+	public readonly bool $remedyRequired;
+
+	/**
+	 * Whether the document must be signed.
+	 *
+	 * @var bool
+	 */
+	public readonly bool $signed;
+
+	/**
+	 * The delegated-authority act that decides it; '' for none.
+	 *
+	 * @var string
+	 */
+	public readonly string $authorityAct;
+
+	/**
+	 * The decision kind recorded with decidiq; '' for none.
+	 *
+	 * @var string
+	 */
+	public readonly string $decisionKind;
+
+	/**
+	 * The number series; '' for unnumbered.
+	 *
+	 * @var string
+	 */
+	public readonly string $series;
+
+	/**
+	 * The series' default prefix.
+	 *
+	 * @var string
+	 */
+	public readonly string $defaultPrefix;
+
+	/**
+	 * The statuses from which it is frozen.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $frozenStatuses;
+
+	/**
+	 * Read and validate one `decisionDocuments.<kind>` block.
+	 *
+	 * @param string               $kind  The kind's slug.
+	 * @param array<string, mixed> $block The block: one key per field above, each optional.
 	 *
 	 * @throws InvalidArgumentException When the block is incomplete.
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) A value object for one configuration block: each
-	 *                                                 parameter is one key of that block, named.
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    The two booleans are configuration values, not behaviour switches.
+	 * @spec openspec/specs/decision-document/spec.md
 	 */
-	public function __construct(
-		public readonly string $kind,
-		public readonly string $template = '',
-		public readonly array $requiredFields = [],
-		public readonly array $rules = [],
-		public readonly array $conditions = [],
-		public readonly string $remedyClause = '',
-		public readonly bool $remedyRequired = true,
-		public readonly bool $signed = true,
-		public readonly string $authorityAct = '',
-		public readonly string $decisionKind = '',
-		public readonly string $series = '',
-		public readonly string $defaultPrefix = '',
-		public readonly array $frozenStatuses = self::DEFAULT_FROZEN_STATUSES,
-	) {
-		if (trim($kind) === '') {
-			throw new InvalidArgumentException('A decision document definition must name its kind.');
-		}
+	public function __construct(string $kind, array $block) {
+		$series = (array)($block['series'] ?? []);
 
-		if ($remedyRequired === true && trim($remedyClause) === '') {
-			throw new InvalidArgumentException(sprintf('Decision document %s requires a remedy clause but configures none.', $kind));
-		}
+		$this->kind           = $kind;
+		$this->template       = trim((string)($block['template'] ?? ''));
+		$this->requiredFields = array_values(array_filter((array)($block['requiredFields'] ?? []), 'is_string'));
+		$this->rules          = self::rulesOf(block: $block);
+		$this->conditions     = (array)($block['conditions'] ?? []);
+		$this->remedyClause   = trim((string)($block['remedyClause'] ?? ''));
+		$this->remedyRequired = (bool)($block['remedyRequired'] ?? true);
+		$this->signed         = (bool)($block['signed'] ?? true);
+		$this->authorityAct   = trim((string)($block['authorityAct'] ?? ''));
+		$this->decisionKind   = trim((string)($block['decisionKind'] ?? ''));
+		$this->series         = trim((string)($series['name'] ?? ''));
+		$this->defaultPrefix  = trim((string)($series['defaultPrefix'] ?? ''));
+		$this->frozenStatuses = array_values(array_filter((array)($block['frozenStatuses'] ?? self::DEFAULT_FROZEN_STATUSES), 'is_string'));
 
-		foreach ($rules as $rule) {
-			if (trim((string)($rule['id'] ?? '')) === '' || array_key_exists('when', $rule) === false) {
-				throw new InvalidArgumentException(sprintf('Decision document %s declares a rule without an id or a condition.', $kind));
-			}
-		}
-
-		if (array_diff($frozenStatuses, self::STATUSES) !== [] || $frozenStatuses === []) {
-			throw new InvalidArgumentException(sprintf('Decision document %s freezes at a status that is not a decision document status.', $kind));
-		}
+		$this->assertComplete();
 	}//end __construct()
 
 	/**
@@ -146,54 +210,8 @@ final class DecisionDocumentDefinition {
 			return null;
 		}
 
-		return self::fromArray(kind: $kind, block: $block);
+		return new self(kind: $kind, block: $block);
 	}//end fromCaseType()
-
-	/**
-	 * Read a kind from its configuration block.
-	 *
-	 * @param string $kind The kind's slug.
-	 * @param array<string, mixed> $block The block.
-	 *
-	 * @return self The definition.
-	 *
-	 * @throws InvalidArgumentException When the block is incomplete.
-	 *
-	 * @spec openspec/specs/decision-document/spec.md
-	 */
-	public static function fromArray(string $kind, array $block): self {
-		$rules = [];
-		foreach ((array)($block['rules'] ?? []) as $rule) {
-			$rule = (array)$rule;
-			$rules[] = [
-				'id' => trim((string)($rule['id'] ?? '')),
-				'when' => ($rule['when'] ?? null),
-				'message' => trim((string)($rule['message'] ?? '')),
-			];
-			if (array_key_exists('when', $rule) === false) {
-				unset($rules[array_key_last($rules)]['when']);
-			}
-		}
-
-		$series = (array)($block['series'] ?? []);
-		$frozen = array_values(array_filter((array)($block['frozenStatuses'] ?? self::DEFAULT_FROZEN_STATUSES), 'is_string'));
-
-		return new self(
-			kind: $kind,
-			template: trim((string)($block['template'] ?? '')),
-			requiredFields: array_values(array_filter((array)($block['requiredFields'] ?? []), 'is_string')),
-			rules: $rules,
-			conditions: (array)($block['conditions'] ?? []),
-			remedyClause: trim((string)($block['remedyClause'] ?? '')),
-			remedyRequired: (bool)($block['remedyRequired'] ?? true),
-			signed: (bool)($block['signed'] ?? true),
-			authorityAct: trim((string)($block['authorityAct'] ?? '')),
-			decisionKind: trim((string)($block['decisionKind'] ?? '')),
-			series: trim((string)($series['name'] ?? '')),
-			defaultPrefix: trim((string)($series['defaultPrefix'] ?? '')),
-			frozenStatuses: $frozen,
-		);
-	}//end fromArray()
 
 	/**
 	 * The frozen-record entry (C04) for documents of this kind stored in a schema.
@@ -217,14 +235,69 @@ final class DecisionDocumentDefinition {
 		}
 
 		return new FreezeDefinition(
-			schema: $schema,
-			frozenStatuses: $this->frozenStatuses,
-			fields: array_values(array_unique(array_merge(self::CONTENT_FIELDS, $this->requiredFields))),
-			writeOnce: ['signature', 'sentAt'],
-			sealFields: array_values(array_unique(array_merge(self::CONTENT_FIELDS, $this->requiredFields, ['reference']))),
-			successor: $successor,
-			rule: 'decision-document-frozen',
-			message: 'This decision has been signed and cannot be changed. Issue a correcting or withdrawing decision instead.',
+			entry: [
+				'schema' => $schema,
+				'frozenStatuses' => $this->frozenStatuses,
+				'fields' => array_values(array_unique(array_merge(self::CONTENT_FIELDS, $this->requiredFields))),
+				'writeOnce' => ['signature', 'sentAt'],
+				'sealFields' => array_values(array_unique(array_merge(self::CONTENT_FIELDS, $this->requiredFields, ['reference']))),
+				'successor' => $successor,
+				'rule' => 'decision-document-frozen',
+				'message' => 'This decision has been signed and cannot be changed. Issue a correcting or withdrawing decision instead.',
+			]
 		);
 	}//end freezeDefinition()
+
+	/**
+	 * The validity rules of a block, each with an id, a message and, when given, a condition.
+	 *
+	 * @param array<string, mixed> $block The block.
+	 *
+	 * @return array<int, array{id: string, when?: mixed, message: string}> The rules.
+	 */
+	private static function rulesOf(array $block): array {
+		$rules = [];
+		foreach ((array)($block['rules'] ?? []) as $rule) {
+			$rule  = (array)$rule;
+			$entry = [
+				'id' => trim((string)($rule['id'] ?? '')),
+				'when' => ($rule['when'] ?? null),
+				'message' => trim((string)($rule['message'] ?? '')),
+			];
+			if (array_key_exists('when', $rule) === false) {
+				unset($entry['when']);
+			}
+
+			$rules[] = $entry;
+		}
+
+		return $rules;
+	}//end rulesOf()
+
+	/**
+	 * Refuse a block that cannot describe a decision document.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When the block is incomplete.
+	 */
+	private function assertComplete(): void {
+		if (trim($this->kind) === '') {
+			throw new InvalidArgumentException('A decision document definition must name its kind.');
+		}
+
+		if ($this->remedyRequired === true && $this->remedyClause === '') {
+			throw new InvalidArgumentException(sprintf('Decision document %s requires a remedy clause but configures none.', $this->kind));
+		}
+
+		foreach ($this->rules as $rule) {
+			if ($rule['id'] === '' || array_key_exists('when', $rule) === false) {
+				throw new InvalidArgumentException(sprintf('Decision document %s declares a rule without an id or a condition.', $this->kind));
+			}
+		}
+
+		if (array_diff($this->frozenStatuses, self::STATUSES) !== [] || $this->frozenStatuses === []) {
+			throw new InvalidArgumentException(sprintf('Decision document %s freezes at a status that is not a decision document status.', $this->kind));
+		}
+	}//end assertComplete()
 }//end class

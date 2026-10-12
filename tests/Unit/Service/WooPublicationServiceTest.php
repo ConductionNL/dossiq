@@ -29,7 +29,12 @@ use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
+use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
+use OCA\Dossiq\Woo\WooCaseLedger;
+use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -84,8 +89,17 @@ interface WooPublicationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Woo\WooCaseLedger
  * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\PagesSeen
+ * @uses \OCA\Dossiq\Service\Publication\WithheldEntries
+ * @uses \OCA\Dossiq\Service\Publication\WithheldListRecorder
  */
 class WooPublicationServiceTest extends TestCase {
+
+	use EnglishL10n;
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -106,6 +120,13 @@ class WooPublicationServiceTest extends TestCase {
 	 * @var WooPublicationService
 	 */
 	private WooPublicationService $service;
+
+	/**
+	 * Every save the withheld-list fixture saw, as [schema, object].
+	 *
+	 * @var list<array{0: ?string, 1: array<string, mixed>}>
+	 */
+	private array $saves = [];
 
 	/**
 	 * Set up test fixtures.
@@ -497,4 +518,193 @@ class WooPublicationServiceTest extends TestCase {
 
 		$this->assertTrue($result['available']);
 	}//end testWithdrawSucceedsWithSingleSaveWriteBack()
+	// -- the withheld list (woo-decision-records-what-was-withheld) ----------
+
+	/**
+	 * A service on a decided case with seven assessed documents, numbers 3
+	 * and 7 (documentRef order) withheld under 5.1.2.e.
+	 *
+	 * @param WithheldListRecorder|null $recorder       The recorder to wire.
+	 * @param bool                      $installed      Whether opencatalogi is installed.
+	 * @param array<int, mixed>         $publications   Collects the publication ids created.
+	 *
+	 * @return WooPublicationService
+	 */
+	private function decidedCase(?WithheldListRecorder $recorder, bool $installed = true): WooPublicationService {
+		$this->appManager->method('isInstalled')->willReturn($installed);
+		$this->appManager->method('isEnabledForUser')->willReturn($installed);
+
+		$assessments = [];
+		foreach ([7, 2, 3, 1, 5, 4, 6] as $n) {
+			$classification = 'openbaar';
+			$grounds = [];
+			if ($n === 3 || $n === 7) {
+				$classification = 'niet_openbaar';
+				$grounds = ['5.1.2.e'];
+			}
+
+			$assessments[] = ['id' => 'a-' . $n, 'documentRef' => 'doc-' . $n, 'classification' => $classification, 'weigeringsgronden' => $grounds, 'title' => 'Titel ' . $n];
+		}
+
+		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
+		$objectService->method('find')->willReturnCallback(
+			static function (string $id): array {
+				if ($id === 'case-001') {
+					return ['id' => 'case-001', 'title' => 'Test case'];
+				}
+
+				if ($id === 'decision-001') {
+					return ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'decisionDate' => '2026-07-13', 'wooPublication' => ['publicationId' => 'pub-001']];
+				}
+
+				return ['id' => $id, 'title' => 'Document ' . $id, 'fileName' => $id . '.pdf', 'format' => 'application/pdf', 'content' => base64_encode('public content')];
+			}
+		);
+		$objectService->method('searchObjectsBySlug')->willReturn($assessments);
+		$this->saves = [];
+		$objectService->method('saveObject')->willReturnCallback(
+			function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null): array {
+				$this->saves[] = [$schema, $object];
+				return ['id' => $uuid];
+			}
+		);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['case_schema', '', 'case'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['document_schema', '', 'document'],
+			['woo_publication_catalog_slug', 'publication', 'publication'],
+		]);
+		$this->settingsService->method('getWooPublicationConfigValue')->willReturnMap([
+			['woo_publication_register', 'publication'],
+			['woo_publication_schema', 'publication'],
+			['woo_publication_document_schema', 'document'],
+		]);
+		$this->apiClient->method('updatePublication')->willReturn(['id' => 'pub-001']);
+		$this->apiClient->method('createPublication')->willReturn(['id' => 'pub-001']);
+
+		return new WooPublicationService(
+			$this->settingsService,
+			$this->apiClient,
+			new WooCategoryMapper(),
+			$this->appManager,
+			$this->createMock(LoggerInterface::class),
+			null,
+			new WooCaseLedger(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
+		);
+	}//end decidedCase()
+
+	/**
+	 * A recorder whose door is the fake, answering or throwing.
+	 *
+	 * @param FakeWithheldDocuments $door        The fake door.
+	 * @param string                $recordClass The class it looks for.
+	 *
+	 * @return WithheldListRecorder
+	 */
+	private function recorderOn(FakeWithheldDocuments $door, string $recordClass = FakeWithheldDocuments::class): WithheldListRecorder {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($door);
+
+		return new WithheldListRecorder(container: $container, logger: $this->createMock(LoggerInterface::class), l10n: $this->english(), recordClass: $recordClass);
+	}//end recorderOn()
+
+	/**
+	 * Publishing records the two withheld documents, once, by position and grounds only.
+	 *
+	 * @return void
+	 */
+	public function testPublishRecordsTheWithheldDocuments(): void {
+		$door = new FakeWithheldDocuments();
+		$door->answer = ['recorded' => 2, 'refused' => []];
+
+		$result = $this->decidedCase($this->recorderOn($door))->publish('case-001', 'decision-001');
+
+		$this->assertTrue($result['available']);
+		$this->assertSame(
+			[['pub-001', [['position' => 3, 'grounds' => ['5.1.2.e']], ['position' => 7, 'grounds' => ['5.1.2.e']]], 'dossiq']],
+			$door->calls
+		);
+		$this->assertSame(['status' => 'recorded', 'recorded' => 2, 'refused' => []], $result['withheldRecord']);
+	}//end testPublishRecordsTheWithheldDocuments()
+
+	/**
+	 * A refused entry is answered, and the publication stands.
+	 *
+	 * @return void
+	 */
+	public function testARefusedEntryIsReportedAndThePublicationStands(): void {
+		$door = new FakeWithheldDocuments();
+		$door->answer = ['recorded' => 1, 'refused' => [['position' => 7, 'code' => '5.1.2.e', 'reason' => 'unknown-ground']]];
+
+		$result = $this->decidedCase($this->recorderOn($door))->publish('case-001', 'decision-001');
+
+		$this->assertTrue($result['available']);
+		$this->assertSame('pub-001', $result['publicationId']);
+		$this->assertSame([['position' => 7, 'code' => '5.1.2.e', 'reason' => 'unknown-ground']], $result['withheldRecord']['refused']);
+		$caseWrite = array_values(array_filter($this->saves, static fn (array $save): bool => $save[0] === 'case'));
+		$this->assertStringContainsString('number 7 (5.1.2.e, unknown-ground)', (string)($caseWrite[0][1]['wooWithheldNote'] ?? ''));
+	}//end testARefusedEntryIsReportedAndThePublicationStands()
+
+	/**
+	 * A throwing record leaves the publication and says it was not recorded.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingRecordLeavesThePublication(): void {
+		$door = new FakeWithheldDocuments();
+		$door->answer = null;
+
+		$result = $this->decidedCase($this->recorderOn($door))->publish('case-001', 'decision-001');
+
+		$this->assertTrue($result['available']);
+		$this->assertSame(['status' => 'not-recorded', 'reason' => 'record-failed'], $result['withheldRecord']);
+	}//end testAThrowingRecordLeavesThePublication()
+
+	/**
+	 * An opencatalogi without the record door records nothing; the publication stands.
+	 *
+	 * @return void
+	 */
+	public function testAnOlderOpencatalogiRecordsNothing(): void {
+		$door = new FakeWithheldDocuments();
+
+		$result = $this->decidedCase($this->recorderOn($door, 'OCA\OpenCatalogi\Service\Woo\NoSuchDoor'))->publish('case-001', 'decision-001');
+
+		$this->assertTrue($result['available']);
+		$this->assertSame([], $door->calls);
+		$this->assertSame(['status' => 'not-recorded', 'reason' => 'opencatalogi-too-old'], $result['withheldRecord']);
+	}//end testAnOlderOpencatalogiRecordsNothing()
+
+	/**
+	 * Without opencatalogi the publish refuses as before and nothing is recorded.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpencatalogiRecordIsNeverCalled(): void {
+		$recorder = $this->createMock(WithheldListRecorder::class);
+		$recorder->expects($this->never())->method('record');
+
+		$result = $this->decidedCase($recorder, installed: false)->publish('case-001', 'decision-001');
+
+		$this->assertSame(['available' => false, 'reason' => 'opencatalogi_not_installed'], $result);
+	}//end testWithoutOpencatalogiRecordIsNeverCalled()
+
+	/**
+	 * Withdrawing clears the publication's withheld list.
+	 *
+	 * @return void
+	 */
+	public function testWithdrawClearsTheWithheldList(): void {
+		$recorder = $this->createMock(WithheldListRecorder::class);
+		$recorder->expects($this->once())->method('record')->with('pub-001', [])->willReturn(['status' => 'recorded', 'recorded' => 0, 'refused' => []]);
+
+		$result = $this->decidedCase($recorder)->withdraw('decision-001');
+
+		$this->assertTrue($result['available']);
+		$this->assertSame('recorded', $result['withheldRecord']['status']);
+	}//end testWithdrawClearsTheWithheldList()
 }//end class

@@ -8,7 +8,7 @@
  * invited, how long before the session the file opens for inspection, whether
  * a party may waive it, and whether minutes and recording consent are
  * required. This class is the single authority on that shape: the service
- * builds every definition through `fromArray()`, so a session that is accepted
+ * builds every definition through its constructor, so a session that is accepted
  * is a session the service can act on.
  *
  * @category Service
@@ -54,53 +54,85 @@ final class SessionDefinition {
 	];
 
 	/**
-	 * Constructor. Use `fromArray()`, which validates.
+	 * The session key.
 	 *
-	 * One parameter per declared field, so a reader sees the whole shape in
-	 * one place.
-	 *
-	 * @param string                $key                      The session key.
-	 * @param string                $label                    What the session is called.
-	 * @param array<int, string>    $inviteeRoles             Roles that may be invited; empty means any.
-	 * @param int                   $minInvitees              Fewest invitees a session needs.
-	 * @param int                   $inspectionFloorDays      Days the file is open before the session.
-	 * @param bool                  $waivable                 Whether a party may waive the session.
-	 * @param bool                  $minutesRequired          Whether closing needs minutes.
-	 * @param bool                  $audioNeedsConsent        Whether audio needs consent.
-	 * @param int                   $attendanceGraceHours     Hours attendance stays open after the start.
-	 * @param array<string, string> $statuses                 Status written per step.
-	 *
-	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Each flag is a declared field of the entry.
+	 * @var string
 	 */
-	private function __construct(
-		public readonly string $key,
-		public readonly string $label,
-		public readonly array $inviteeRoles,
-		public readonly int $minInvitees,
-		public readonly int $inspectionFloorDays,
-		public readonly bool $waivable,
-		public readonly bool $minutesRequired,
-		public readonly bool $audioNeedsConsent,
-		public readonly int $attendanceGraceHours,
-		public readonly array $statuses,
-	) {
-	}//end __construct()
+	public readonly string $key;
+
+	/**
+	 * What the session is called.
+	 *
+	 * @var string
+	 */
+	public readonly string $label;
+
+	/**
+	 * Roles that may be invited; empty means any.
+	 *
+	 * @var array<int, string>
+	 */
+	public readonly array $inviteeRoles;
+
+	/**
+	 * Fewest invitees a session needs.
+	 *
+	 * @var int
+	 */
+	public readonly int $minInvitees;
+
+	/**
+	 * Days the file is open before the session.
+	 *
+	 * @var int
+	 */
+	public readonly int $inspectionFloorDays;
+
+	/**
+	 * Whether a party may waive the session.
+	 *
+	 * @var bool
+	 */
+	public readonly bool $waivable;
+
+	/**
+	 * Whether closing needs minutes.
+	 *
+	 * @var bool
+	 */
+	public readonly bool $minutesRequired;
+
+	/**
+	 * Whether audio needs consent.
+	 *
+	 * @var bool
+	 */
+	public readonly bool $audioNeedsConsent;
+
+	/**
+	 * Hours attendance stays open after the start.
+	 *
+	 * @var int
+	 */
+	public readonly int $attendanceGraceHours;
+
+	/**
+	 * Status written per step.
+	 *
+	 * @var array<string, string>
+	 */
+	public readonly array $statuses;
 
 	/**
 	 * Build and validate a session from its stored form.
 	 *
 	 * @param mixed $config One `sessions[]` entry.
 	 *
-	 * @return self The session.
-	 *
 	 * @throws InvalidArgumentException When the entry is not a well-formed session.
 	 *
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-case-type-declares-the-sessions-a-case-holds-req-css-1
 	 */
-	public static function fromArray(mixed $config): self {
+	public function __construct(mixed $config) {
 		if (is_array($config) === false) {
 			throw new InvalidArgumentException('A session must be an object.');
 		}
@@ -115,49 +147,17 @@ final class SessionDefinition {
 			$label = $key;
 		}
 
-		return new self(
-			key: $key,
-			label: $label,
-			inviteeRoles: self::roles(config: $config, key: $key),
-			minInvitees: self::count(config: $config, field: 'minInvitees', default: 1, key: $key),
-			inspectionFloorDays: self::count(config: $config, field: 'inspectionFloorDays', default: 0, key: $key),
-			waivable: self::flag(config: $config, field: 'waivable', default: false),
-			minutesRequired: self::flag(config: $config, field: 'minutesRequired', default: true),
-			audioNeedsConsent: self::flag(config: $config, field: 'recordingConsentRequired', default: true),
-			attendanceGraceHours: self::count(config: $config, field: 'attendanceGraceHours', default: 1, key: $key),
-			statuses: self::statuses(config: $config, key: $key),
-		);
-	}//end fromArray()
-
-	/**
-	 * Every session a case type declares, keyed by session key.
-	 *
-	 * @param array<string, mixed> $caseType The case type object.
-	 *
-	 * @return array<string, self> The sessions.
-	 *
-	 * @throws InvalidArgumentException When an entry is malformed, or two share a key.
-	 *
-	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-case-type-declares-the-sessions-a-case-holds-req-css-1
-	 */
-	public static function allOf(array $caseType): array {
-		$entries = ($caseType['sessions'] ?? []);
-		if (is_array($entries) === false) {
-			return [];
-		}
-
-		$sessions = [];
-		foreach ($entries as $entry) {
-			$definition = self::fromArray(config: $entry);
-			if (isset($sessions[$definition->key]) === true) {
-				throw new InvalidArgumentException("Session '{$definition->key}' is declared twice.");
-			}
-
-			$sessions[$definition->key] = $definition;
-		}
-
-		return $sessions;
-	}//end allOf()
+		$this->key                  = $key;
+		$this->label                = $label;
+		$this->inviteeRoles         = self::roles(config: $config, key: $key);
+		$this->minInvitees          = self::count(config: $config, field: 'minInvitees', default: 1, key: $key);
+		$this->inspectionFloorDays  = self::count(config: $config, field: 'inspectionFloorDays', default: 0, key: $key);
+		$this->waivable             = self::flag(config: $config, field: 'waivable', default: false);
+		$this->minutesRequired      = self::flag(config: $config, field: 'minutesRequired', default: true);
+		$this->audioNeedsConsent    = self::flag(config: $config, field: 'recordingConsentRequired', default: true);
+		$this->attendanceGraceHours = self::count(config: $config, field: 'attendanceGraceHours', default: 1, key: $key);
+		$this->statuses             = self::statuses(config: $config, key: $key);
+	}//end __construct()
 
 	/**
 	 * The status this session writes at a step.
@@ -298,8 +298,6 @@ final class SessionDefinition {
 	 * @param bool                    $default The value when absent.
 	 *
 	 * @return bool The value.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The default of a boolean field is a boolean.
 	 */
 	private static function flag(array $config, string $field, bool $default): bool {
 		$value = ($config[$field] ?? null);

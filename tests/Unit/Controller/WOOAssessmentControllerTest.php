@@ -54,6 +54,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\PagesSeen
  */
 class WOOAssessmentControllerTest extends TestCase {
 
@@ -618,7 +622,7 @@ class WOOAssessmentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function testPublishDecisionAnswersTheSetId(): void {
 		$user = $this->createMock(IUser::class);
@@ -633,11 +637,32 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testPublishDecisionAnswersTheSetId()
 
 	/**
+	 * The publish answer carries the withheld record, refusals included.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-published-woo-decision-records-its-withheld-documents-in-opencatalogi-req-wrw-001
+	 */
+	public function testPublishDecisionAnswersTheWithheldRecord(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$record = ['status' => 'recorded', 'recorded' => 1, 'refused' => [['position' => 7, 'code' => '5.1.2.e', 'reason' => 'unknown-ground']]];
+		$this->publicationService->method('publish')->willReturn(['available' => true, 'publicationId' => 'pub-001', 'withheldRecord' => $record]);
+
+		$response = $this->controller->publishDecision('case-uuid-001');
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame($record, $response->getData()['withheldRecord']);
+	}//end testPublishDecisionAnswersTheWithheldRecord()
+
+	/**
 	 * An unrecorded delivered set refuses the publish with 503 and a sentence.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function testAnUnrecordedSetRefusesThePublish(): void {
 		$user = $this->createMock(IUser::class);

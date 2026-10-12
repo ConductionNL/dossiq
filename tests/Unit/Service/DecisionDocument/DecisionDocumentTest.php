@@ -219,7 +219,7 @@ class DecisionDocumentTest extends TestCase {
 	 */
 	public function testRemedyClauseMustBeConfigured(): void {
 		$this->expectException(InvalidArgumentException::class);
-		DecisionDocumentDefinition::fromArray(kind: 'notice', block: ['remedyClause' => '']);
+		new DecisionDocumentDefinition(kind: 'notice', block: ['remedyClause' => '']);
 	}//end testRemedyClauseMustBeConfigured()
 
 	/**
@@ -229,7 +229,7 @@ class DecisionDocumentTest extends TestCase {
 	 */
 	public function testRuleWithoutConditionIsRefused(): void {
 		$this->expectException(InvalidArgumentException::class);
-		DecisionDocumentDefinition::fromArray(kind: 'notice', block: ['remedyRequired' => false, 'rules' => [['id' => 'x']]]);
+		new DecisionDocumentDefinition(kind: 'notice', block: ['remedyRequired' => false, 'rules' => [['id' => 'x']]]);
 	}//end testRuleWithoutConditionIsRefused()
 
 	/**

@@ -54,7 +54,7 @@ const TAB_TEXT_KEYS = ['moreLabel', 'ariaLabel']
  * translate.
  *
  * CnTabsWidget draws `tabs[].label`, `moreLabel` and `ariaLabel` as written,
- * and CaseSectionsWidget draws `sections[].label` as written, so on a Dutch
+ * and the library sections widget draws `sections[].label` as written, so on a Dutch
  * page the case's tabs read Overview, Documents, Contact, Tasks, History and
  * the panels under them Core case data, Woo publication, although every one of
  * those strings has its Dutch entry in this app's catalogue (finding F4,
@@ -113,6 +113,11 @@ export function translateBannerCopy(manifest, translate) {
 			}
 		}
 		translateTabsAndSections(content, translate)
+		// CnCountdownWidget draws its `label` as written, so the case page's
+		// Termijn tile read "Deadline" on a Dutch page (finding N-3).
+		if (widget?.type === 'countdown' && typeof content.label === 'string') {
+			content.label = translate(content.label)
+		}
 		if (widget?.type !== 'banner') {
 			return
 		}
@@ -138,5 +143,60 @@ export function translateBannerCopy(manifest, translate) {
 			}
 		}
 	}
+	return manifest
+}
+
+/** The keys under which a manifest declares per-field overrides. */
+const FIELD_OVERRIDE_KEYS = ['fieldOverrides', 'overrides']
+
+/**
+ * Run the `label` of every field override in the manifest through the host
+ * translate.
+ *
+ * nextcloud-vue's `fieldsFromSchema()` translates a schema property title, and
+ * then copies an override over the field as written. So an override that
+ * renames a field, such as `requester: { label: "Requester" }` on the create
+ * form, the edit form and the Overview tab, put English back over a label the
+ * schema had already given in Dutch (finding N-3). The walk covers every
+ * place an override map sits: a page config, a header action's create form,
+ * the nav's primary action, and a data widget's content.
+ *
+ * @param {object} manifest The built manifest.
+ * @param {(text: string) => string} translate The host translate.
+ * @return {object} The same manifest with its override labels translated.
+ *
+ * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/frontend-locale-completeness/spec.md
+ */
+export function translateFieldOverrideLabels(manifest, translate) {
+	const seen = new Set()
+	const walk = (node) => {
+		if (!node || typeof node !== 'object' || seen.has(node)) {
+			return
+		}
+		seen.add(node)
+		if (Array.isArray(node)) {
+			node.forEach(walk)
+			return
+		}
+		for (const [key, value] of Object.entries(node)) {
+			if (
+				FIELD_OVERRIDE_KEYS.includes(key)
+				&& value
+				&& typeof value === 'object'
+				&& !Array.isArray(value)
+			) {
+				for (const [field, override] of Object.entries(value)) {
+					if (override && typeof override.label === 'string') {
+						value[field] = {
+							...override,
+							label: translate(override.label),
+						}
+					}
+				}
+			}
+			walk(value)
+		}
+	}
+	walk(manifest)
 	return manifest
 }

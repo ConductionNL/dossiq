@@ -42,6 +42,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Controller\BeschikkingController
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class BeschikkingControllerTest extends TestCase {
 	/**

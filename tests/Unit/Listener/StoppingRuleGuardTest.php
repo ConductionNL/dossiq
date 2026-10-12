@@ -40,6 +40,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-a-stopping-rule-is-declared-before-review-and-then-fixed-req-wrs-001
+ * @uses \OCA\Dossiq\Listener\LinkMarkerListener
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
+ * @uses \OCA\Dossiq\Review\StoppingRules
  */
 class StoppingRuleGuardTest extends TestCase {
 

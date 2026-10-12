@@ -74,6 +74,10 @@ interface WOODecisionObjectServiceStub {
  * Unit tests for WOODecisionService.
  *
  * @covers \OCA\Dossiq\Service\WOODecisionService
+ * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
+ * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class WOODecisionServiceTest extends TestCase {
 

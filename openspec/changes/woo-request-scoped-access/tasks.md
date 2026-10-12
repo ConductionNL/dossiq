@@ -113,6 +113,22 @@ red; put the failing line in the PR body. Double OpenRegister classes with
     `decision-owned`.
   - If it is not merged, do not declare the key: say in the PR body that 12.28's redaction half
     waits on openregister issue #4394, and leave this task open.
+  - built (11 Oct, decision 197, ahead of openregister#4583's merge on the coordinator's word):
+    `lib/Settings/register.d/89-document-review-ownership.json` (document 1.2.0, register 0.20.32),
+    `SchemaSlugMap::SCHEMA_ANNOTATION_KEYS` carries `x-openregister-review`,
+    `tests/Unit/Settings/DocumentSchemaReviewTest.php` (3 tests). Generic half REQ-CRA-006:
+    `lib/Service/Access/CaseDecisionAccess.php` + `lib/Listener/CaseDecisionAccessListener.php` on
+    OpenRegister's `DecisionChangeRequestedEvent` (registered in `CaseAccessListenerRegistrar`), so the
+    case type's supervising group decides who changes another reviewer's decision; tests
+    `tests/Unit/Service/Access/CaseDecisionAccessTest.php`, `tests/Unit/Listener/CaseDecisionAccessListenerTest.php`.
+    Open: the Newman `redaction` folder (live pass, decision 139), and the tick waits on #4583 landing.
+  - REQ-CRA-007 (11 Oct, coordinator's decision): `CaseDecisionAccess::maySee()` and the same listener
+    on OpenRegister's `DecisionVisibilityRequestedEvent` (openregister#4592, REQ-DEC-003), so a case-type
+    supervisor sees decisions hidden under `hideOthers` on their cases; a failed read keeps it hidden.
+    Tests `CaseDecisionAccessTest::testACaseTypeSupervisorSeesAHiddenDecision`,
+    `CaseDecisionAccessListenerTest::testASupervisorOfTheCaseSeesTheHiddenDecision`,
+    `testAnyoneElseOrAFailedReadLeavesItHidden`, `CaseAccessListenerRegistrarTest`. Stub
+    `tests/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php`.
 
 ## 6. Live
 

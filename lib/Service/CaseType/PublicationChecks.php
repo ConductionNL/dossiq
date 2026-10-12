@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\SenderIdentity;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use Throwable;
 
@@ -55,6 +56,13 @@ use Throwable;
  * @spec openspec/specs/case-type-publish-validation/spec.md
  */
 class PublicationChecks {
+
+	/**
+	 * Reads a translatable title or name as one string.
+	 *
+	 * @var LanguageMapText
+	 */
+	private readonly LanguageMapText $text;
 
 	/**
 	 * Constructor.
@@ -80,6 +88,7 @@ class PublicationChecks {
 		private readonly CaseTypeReachability $reachability,
 		private readonly SenderIdentity $senders,
 	) {
+		$this->text = new LanguageMapText();
 	}//end __construct()
 
 	/**
@@ -153,7 +162,7 @@ class PublicationChecks {
 			$findings[] = 'Pick the status a new case of this type starts in.';
 		}
 
-		if (trim((string)($caseType['title'] ?? '')) === '') {
+		if ($this->text->textOf(value: ($caseType['title'] ?? null)) === '') {
 			$findings[] = 'Give the case type a title.';
 		}
 
@@ -205,7 +214,7 @@ class PublicationChecks {
 				continue;
 			}
 
-			$title = trim((string)($status['name'] ?? ($status['title'] ?? '')));
+			$title = $this->text->textOf(value: ($status['name'] ?? ($status['title'] ?? null)));
 			if ($title === '') {
 				$title = $id;
 			}

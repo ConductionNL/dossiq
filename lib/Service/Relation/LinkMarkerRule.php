@@ -55,37 +55,50 @@ final class LinkMarkerRule {
 	private const QUESTIONS = ['present', 'in', 'notIn', 'notAfter'];
 
 	/**
-	 * Constructor. Use `fromArray()`, which validates.
+	 * Config key of the source schema.
 	 *
-	 * @param string                            $source     Config key of the source schema.
-	 * @param string                            $field      Source field that references the target.
-	 * @param string                            $target     Config key of the target schema.
-	 * @param string                            $marker     Target field the marker is written to.
-	 * @param array<int, array<string, mixed>>  $conditions The conditions, all of which must hold.
-	 *
-	 * @return void
+	 * @var string
 	 */
-	private function __construct(
-		public readonly string $source,
-		public readonly string $field,
-		public readonly string $target,
-		public readonly string $marker,
-		public readonly array $conditions,
-	) {
-	}//end __construct()
+	public readonly string $source;
+
+	/**
+	 * Source field that references the target.
+	 *
+	 * @var string
+	 */
+	public readonly string $field;
+
+	/**
+	 * Config key of the target schema.
+	 *
+	 * @var string
+	 */
+	public readonly string $target;
+
+	/**
+	 * Target field the marker is written to.
+	 *
+	 * @var string
+	 */
+	public readonly string $marker;
+
+	/**
+	 * The conditions, all of which must hold.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	public readonly array $conditions;
 
 	/**
 	 * Build and validate a rule.
 	 *
 	 * @param mixed $config The stored rule.
 	 *
-	 * @return self The rule.
-	 *
 	 * @throws InvalidArgumentException When the rule is not well formed.
 	 *
 	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-marker-rule-derives-a-flag-on-the-referenced-object-req-lcr-4
 	 */
-	public static function fromArray(mixed $config): self {
+	public function __construct(mixed $config) {
 		if (is_array($config) === false) {
 			throw new InvalidArgumentException('A marker rule must be an object.');
 		}
@@ -105,43 +118,12 @@ final class LinkMarkerRule {
 			self::guardCondition(marker: $config['marker'], condition: $condition);
 		}
 
-		return new self(
-			source: trim($config['source']),
-			field: trim($config['field']),
-			target: trim($config['target']),
-			marker: trim($config['marker']),
-			conditions: array_values($conditions),
-		);
-	}//end fromArray()
-
-	/**
-	 * Every rule in a stored JSON list. A list that does not parse holds no rules.
-	 *
-	 * @param string $json The stored list.
-	 *
-	 * @return array<int, self> The rules.
-	 *
-	 * @throws InvalidArgumentException When an entry is not a well-formed rule.
-	 *
-	 * @spec openspec/changes/linked-case-with-a-role/specs/linked-case-with-a-role/spec.md#requirement-a-marker-rule-derives-a-flag-on-the-referenced-object-req-lcr-4
-	 */
-	public static function listFromJson(string $json): array {
-		if (trim($json) === '') {
-			return [];
-		}
-
-		$decoded = json_decode($json, true);
-		if (is_array($decoded) === false) {
-			throw new InvalidArgumentException('The marker rules are not a JSON list.');
-		}
-
-		$rules = [];
-		foreach ($decoded as $entry) {
-			$rules[] = self::fromArray(config: $entry);
-		}
-
-		return $rules;
-	}//end listFromJson()
+		$this->source     = trim($config['source']);
+		$this->field      = trim($config['field']);
+		$this->target     = trim($config['target']);
+		$this->marker     = trim($config['marker']);
+		$this->conditions = array_values($conditions);
+	}//end __construct()
 
 	/**
 	 * Whether the marker holds for this source and target.
