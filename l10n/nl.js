@@ -9646,6 +9646,7 @@ OC.L10N.register(
         "Window": "Termijn",
         "With a reason. The requester gets a message.": "Met een reden. De verzoeker krijgt bericht.",
         "With an account (DigiD or eHerkenning)": "Met een account (DigiD of eHerkenning)",
+        "With drafts": "Met voorlopige zaken",
         "With the case number and an e-mail address": "Met het zaaknummer en een e-mailadres",
         "Withdraw": "Intrekken",
         "Withdraw publication": "Publicatie intrekken",
