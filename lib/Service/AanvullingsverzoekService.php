@@ -52,6 +52,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -106,12 +107,14 @@ class AanvullingsverzoekService {
 	 * @param LoggerInterface           $logger          Structured logger.
 	 * @param ResidentQuestionTask|null $portalTask      Turns the request into a task in the resident's
 	 *                                                   portal (decision 169), or null in a test that is not about it.
+	 * @param DayCount                  $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly InformationRequestService $act,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?ResidentQuestionTask $portalTask = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -482,7 +485,7 @@ class AanvullingsverzoekService {
 			return 0;
 		}
 
-		return (int)$from->diff(($now ?? new DateTimeImmutable()))->days;
+		return $this->days->between(from: $from, to: ($now ?? new DateTimeImmutable()));
 	}//end daysOpen()
 
 	/**

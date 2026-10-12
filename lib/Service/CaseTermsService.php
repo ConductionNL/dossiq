@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermMoveHistory;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
@@ -74,6 +75,7 @@ class CaseTermsService {
 	 * @param WorkingDayRoll|null $calendar The administered calendar, which counts the
 	 *        planned end and the internal target in working days (REQ-OTE-04). Optional
 	 *        so a build without it counts calendar days and says so in the log.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -82,6 +84,7 @@ class CaseTermsService {
 		private readonly LoggerInterface $logger,
 		private readonly ?TermMoveHistory $moves = null,
 		private readonly ?WorkingDayRoll $calendar = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -481,12 +484,12 @@ class CaseTermsService {
 			return 0;
 		}
 
-		$span = (int)$start->diff($end)->days;
+		$span = $this->days->between(from: $start, to: $end);
 		if ($span <= 0) {
 			return 100;
 		}
 
-		$gone = (int)$start->diff($today)->days;
+		$gone = $this->days->between(from: $start, to: $today);
 		if ($today < $start) {
 			return 0;
 		}
@@ -566,12 +569,7 @@ class CaseTermsService {
 			return 0;
 		}
 
-		$days = (int)$today->diff($endDay)->days;
-		if ($endDay < $today) {
-			return (-1 * $days);
-		}
-
-		return $days;
+		return $this->days->signed(from: $today, to: $endDay);
 	}//end daysLeft()
 
 	/**

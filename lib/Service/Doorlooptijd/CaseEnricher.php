@@ -39,6 +39,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
@@ -56,6 +57,7 @@ class CaseEnricher {
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param DayCount $days Counts the days between two moments.
 	 *
 	 * @return void
 	 */
@@ -64,6 +66,7 @@ class CaseEnricher {
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -152,7 +155,7 @@ class CaseEnricher {
 		$daysRemaining = null;
 		if ($isOpen === true && $deadline !== null) {
 			$deadlineDate = new DateTimeImmutable($deadline);
-			$daysRemaining = (int)$today->diff($deadlineDate)->format('%R%a');
+			$daysRemaining = $this->days->signed(from: $today, to: $deadlineDate);
 		}
 
 		$throughputDays = $this->computeThroughputDays(
@@ -212,8 +215,10 @@ class CaseEnricher {
 			return null;
 		}
 
-		$throughputDays = (int)(new DateTimeImmutable($startDate))
-			->diff(new DateTimeImmutable($endDate))->format('%R%a');
+		$throughputDays = $this->days->signed(
+			from: new DateTimeImmutable($startDate),
+			to: new DateTimeImmutable($endDate)
+		);
 		if ($throughputDays < 0) {
 			return 0;
 		}

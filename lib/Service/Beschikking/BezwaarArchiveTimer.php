@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -106,11 +107,13 @@ class BezwaarArchiveTimer {
 	 * @param SettingsService    $settingsService Resolves the engine.
 	 * @param CaseDateNormaliser $dates           Today and the dates, in the administered zone.
 	 * @param LoggerInterface    $logger          Logs engine refusals.
+	 * @param DayCount           $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -156,7 +159,7 @@ class BezwaarArchiveTimer {
 			$anchor = $today;
 		}
 
-		return $this->arm(trigger: $trigger, triggerId: $triggerId, anchor: $anchor, slaDays: (int) $anchor->diff($archive)->days);
+		return $this->arm(trigger: $trigger, triggerId: $triggerId, anchor: $anchor, slaDays: $this->days->between(from: $anchor, to: $archive));
 	}//end sync()
 
 	/**

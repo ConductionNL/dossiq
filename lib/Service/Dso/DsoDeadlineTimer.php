@@ -49,6 +49,7 @@ namespace OCA\Dossiq\Service\Dso;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -142,11 +143,13 @@ class DsoDeadlineTimer {
 	 * @param SettingsService    $settingsService Resolves the engine and the two lead settings.
 	 * @param CaseDateNormaliser $dates           Today and the deadline, in the administered zone.
 	 * @param LoggerInterface    $logger          Logs engine refusals.
+	 * @param DayCount           $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -182,7 +185,7 @@ class DsoDeadlineTimer {
 			return self::DUE;
 		}
 
-		return $this->arm(case: $case, caseId: $caseId, anchor: $today, slaDays: (int) $today->diff($deadline)->days);
+		return $this->arm(case: $case, caseId: $caseId, anchor: $today, slaDays: $this->days->between(from: $today, to: $deadline));
 	}//end sync()
 
 	/**

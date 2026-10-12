@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Milestone;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 
 /**
@@ -73,12 +74,14 @@ class StalledCaseDetector {
 	 * @param MilestoneRepository $repository Milestone definitions/records reader.
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday arithmetic.
 	 * @param MilestoneSchedule $schedule Projects the timeline, reading `dependsOn`.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly MilestoneRepository $repository,
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly MilestoneSchedule $schedule,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -251,7 +254,7 @@ class StalledCaseDetector {
 				start: $startDate,
 				workingDays: (int)($def['expectedDurationWorkingDays'] ?? 0)
 			));
-			$daysOverdue = (int)$deadline->diff($today)->format('%r%a');
+			$daysOverdue = $this->days->signed(from: $deadline, to: $today);
 
 			if ($daysOverdue > $thresholdDays) {
 				return [
