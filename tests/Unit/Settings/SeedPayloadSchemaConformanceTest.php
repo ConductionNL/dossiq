@@ -70,6 +70,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 		'decisionTypes' => 'decisionType',
 		'propertyDefinitions' => 'propertyDefinition',
 		'inspectionChecklists' => 'inspectionChecklistTemplate',
+		'lhsMatrices' => 'lhsMatrix',
 	];
 
 	/**
@@ -225,6 +226,12 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 			$data = json_decode((string)file_get_contents((string)$path), true);
 			$relative = substr((string)$path, strlen($settingsDir) + 1);
 			$this->assertIsArray(actual: $data, message: $relative . ' must parse as JSON');
+
+			// A seed file that names another app's register (an object) is judged by the
+			// test of that table, not against this register's collections.
+			if (is_array($data['schema'] ?? null) === true) {
+				continue;
+			}
 
 			$collection = null;
 			foreach (self::COLLECTION_SCHEMA as $key => $slug) {
