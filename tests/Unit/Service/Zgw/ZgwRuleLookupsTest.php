@@ -133,6 +133,7 @@ final class ZgwRuleLookupsTest extends TestCase {
 
 		$this->assertSame($store, $this->lookups(store: $store)->objectService());
 		$this->assertSame('5', $this->lookups(store: $store)->register());
+		$this->assertSame(7, $this->lookups(store: $store, mappingConfig: ['sourceRegister' => 7])->register());
 		$this->assertSame('', $this->lookups(store: $store, mappingConfig: null)->register());
 		$this->assertNull($this->lookups(store: null)->objectService());
 	}//end testTheContextIsTheRequests()

@@ -90,14 +90,14 @@ class ZgwRuleLookups {
 	}//end objectService()
 
 	/**
-	 * The register the request's mapping stores in, or '' without one.
+	 * The register the request's mapping stores in, as the mapping holds it, or '' without one.
 	 *
-	 * @return string
+	 * @return mixed
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	public function register(): string {
-		return (string)($this->mappingConfig['sourceRegister'] ?? '');
+	public function register(): mixed {
+		return ($this->mappingConfig['sourceRegister'] ?? '');
 	}//end register()
 
 	/**
