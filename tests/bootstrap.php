@@ -696,6 +696,14 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === fal
 // woo-request-scoped-access 5.2: OpenRegister's vetoable decision event
 // (openregister#4583), so CaseDecisionAccessListenerTest drives handle() with
 // the real getter names. Declaration-only, shared with psalm and phpstan.
+// The two types those events carry. Declaration-only, so the stubs stay as
+// typed as OpenRegister's own and StubApiDriftTest has nothing to report.
+if (class_exists('\\OCA\\OpenRegister\\Db\\Decision') === false) {
+	include_once __DIR__ . '/Stubs/Db/Decision.php';
+}
+if (class_exists('\\OCA\\OpenRegister\\Service\\Decision\\ReviewPolicy') === false) {
+	include_once __DIR__ . '/Stubs/Service/Decision/ReviewPolicy.php';
+}
 if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionChangeRequestedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php';
 }
