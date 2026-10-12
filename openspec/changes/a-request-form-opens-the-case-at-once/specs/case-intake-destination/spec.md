@@ -29,6 +29,19 @@
 - **AND** `startDate` is 2026-10-12, not the Friday the draft was begun
 - **AND** the acknowledgement is queued once
 
+### Requirement: A draft case MUST NOT be treated as received
+
+A case in OpenRegister status `draft` SHALL NOT get a case number, SHALL NOT be placed in a group of similar reports and SHALL NOT get a case plan. Each SHALL happen once, when the draft is sent, on the event OpenRegister sends for it (decisions 180 and 201). A case created outside `draft` SHALL get all three on its create, as before.
+
+#### Scenario: A draft has no case number until it is sent
+@e2e exclude a draft is saved and sent through the portal, which the dossiq e2e rig does not run; covered by `tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php::testADraftIsNumberedWhenItIsSent`
+
+- **GIVEN** a resident who saves a request form as a draft
+- **WHEN** the draft case is stored
+- **THEN** no case number is assigned, no grouping job is queued and no case plan is projected
+- **WHEN** the resident sends it
+- **THEN** the case gets its number, is queued for grouping once and gets its plan
+
 ### Requirement: The confirmation fields MUST be marked on the case schema
 
 `identifier`, `receivedAt`, `termStartsAt` and `deadline` SHALL carry `x-openregister.confirmation: true`. `identifier`, `receivedAt`, `termStartsAt` and `receivedOutsideWorkingHours` SHALL carry `x-openregister.serverSet: true`.

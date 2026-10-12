@@ -15,6 +15,10 @@
   - Routing: dossiq has no create-time routing listener. The case flow `Case behandeling` (trigger `object.created`) sets the intake status and role; skipping drafts there needs an OpenRegister flow trigger that knows the draft status (open point for openregister)
   - Test: a draft create queues no acknowledgement; leaving draft queues exactly one
 
+- [x] 1.5 `CaseNumberListener`, `ReportGroupingOnCreateListener` and `CasePlanProjectionListener` skip a draft and run when it is sent (decisions 180 and 201), through `ReceiptMoment::receivedObject`; each is registered on OpenRegister's `ObjectActivatedEvent` next to its create registration
+  - Test: tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php (from both registrars to the effect, for a draft create, a received create and a sent draft)
+  - Open for openregister: the case flow starts on the flow trigger `object.created`, also for a draft, and the schema's `startDate` and `deadline` calculations run on a draft (Q-dossiq-d179-3)
+
 ## 2. Intake requirement D-5 (intake-says-when-the-term-starts task 2.1)
 
 - [x] 2.1 Amend D-5 in `intake-says-when-the-term-starts/design.md` (done in this change's pull request)

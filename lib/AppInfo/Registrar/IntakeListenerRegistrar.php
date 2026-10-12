@@ -65,6 +65,16 @@ class IntakeListenerRegistrar {
 	public const RECEIPT_DATES_PRIORITY = 100;
 
 	/**
+	 * The event OpenRegister sends when a draft is sent, by name.
+	 *
+	 * The same event `ReceiptMoment::ACTIVATED_EVENT` names; a registration
+	 * test holds the two together.
+	 *
+	 * @var string
+	 */
+	public const DRAFT_SENT_EVENT = 'OCA\\OpenRegister\\Event\\ObjectActivatedEvent';
+
+	/**
 	 * Register the DSO intake and BAG location-validation listeners.
 	 *
 	 * @param IRegistrationContext $context The registration context.
@@ -94,6 +104,11 @@ class IntakeListenerRegistrar {
 		// confirmations owed.
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
+			listener: ReportGroupingOnCreateListener::class
+		);
+		// A draft is not a report yet; it is grouped when it is sent.
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
 			listener: ReportGroupingOnCreateListener::class
 		);
 		// Integriq writes the activity mapping onto its dso_verzoek in an

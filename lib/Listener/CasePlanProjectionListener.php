@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\CasePlanProjectionService;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -53,11 +53,13 @@ class CasePlanProjectionListener implements IEventListener {
 	 * @param CasePlanProjectionService $projection   The caseModel-to-plan projection.
 	 * @param ObjectSchemaSlugResolver  $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface           $logger       Logger.
+	 * @param ReceiptMoment $receipt Tells a received case from a draft (decision 180).
 	 */
 	public function __construct(
 		private readonly CasePlanProjectionService $projection,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 		private readonly LoggerInterface $logger,
+		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
 
@@ -71,11 +73,8 @@ class CasePlanProjectionListener implements IEventListener {
 	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->extractObject(event: $event);
+		// A draft has no plan; the plan is projected when the draft is sent.
+		$payload = $this->receipt->receivedObject(event: $event);
 		if ($payload === null || $this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
 			return;
 		}
@@ -110,31 +109,4 @@ class CasePlanProjectionListener implements IEventListener {
 			['case' => $caseId, 'caseType' => $caseTypeId, 'reason' => $result['reason']]
 		);
 	}//end handle()
-
-	/**
-	 * Extract the OpenRegister object payload from an event.
-	 *
-	 * @param Event $event The dispatched event.
-	 *
-	 * @return array<string, mixed>|null The payload, or null when it carries none.
-	 */
-	private function extractObject(Event $event): ?array {
-		if (method_exists($event, 'getObject') === false) {
-			return null;
-		}
-
-		$object = $event->getObject();
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end extractObject()
 }//end class
