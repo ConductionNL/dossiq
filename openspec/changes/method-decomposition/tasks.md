@@ -122,6 +122,35 @@ baseline-uncovered violations in *untouched* files; zero new ones introduced).
 
 - [ ] **TASK-DECOMP-041**: Move helper methods from ZgwRulesBase to FieldValidator and ZgwReferenceResolver
 - [ ] **TASK-DECOMP-042**: Keep base class lean: only shared error handling, logging, common type resolution
+  - [x] The SSRF guard is out of the base, and out of two more classes that carried a copy of
+        it: `NotificatieService` (subscriber callbacks) and `Ai/AiEndpointGuard` (the model
+        endpoint). One guard replaces the three: `lib/Service/Outbound/OutboundUrlGuard.php`,
+        over `Outbound/HostResolver.php`. It asks two questions that are inverses,
+        `publicAddress()` (https only, no address inside the instance's own network) and
+        `ownNetworkAddress()` (http or https, only an address inside it), answers with the
+        address to connect to, and hands out the request options that pin the name to that
+        address, follow no redirect and verify TLS. `ZgwRulesBase::fetchExternalUrl()` and the
+        notification delivery use `publicAddress()`; `AiEndpointGuard` keeps one decision, which
+        question a model type is asked. Class complexity: ZgwRulesBase 86 to 66,
+        NotificatieService 44 to 19, AiEndpointGuard 38 to 3; the guard is 33, the resolver 6.
+        The base stays above 50 until the uniqueness check moves, so no suppression goes here.
+        Characterisation, green on the three copies first:
+        `tests/Unit/Service/Outbound/OutboundRefusalCasesTest.php`, a table of 38 addresses
+        (every range of every copy with the address on each side of both edges) and 28 URLs
+        (schemes, no host, private and loopback and link-local literals, IPv6, credentials in
+        front, loopback as a decimal). The two tables are unchanged after the merge; the helpers
+        under them now ask the real entry points. `AiEndpointGuardTest` is unchanged and green.
+        The one guard is as strict as the strictest copy on every row, and stricter on purpose
+        in these: plain http is refused for the ZGW fetch (was https only for the other two),
+        IPv6 link-local fe80::/10 is blocked for the ZGW fetch and callbacks (only the model
+        guard had it), a callback no longer follows a redirect (only the ZGW fetch refused
+        them), the ZGW fetch and callbacks connect to the inspected address (only the model call
+        was pinned), and four spellings no copy blocked are blocked: `::ffff:127.0.0.1` and
+        every other IPv4 address written as IPv6, `0.0.0.0/8` and `::`.
+        Own tests: `OutboundUrlGuardTest` (8, names through a table instead of DNS, which no
+        copy could be tested on), `HostResolverTest` (2), `OutboundCallersTest` (6, the request
+        each caller makes: none when refused, one with the guard's options when approved).
+        Twelve mutations of the guard and its call sites each turn tests red (checked).
 
 ### LoadDefaultZgwMappings Repair Step (4 suppressions)
 

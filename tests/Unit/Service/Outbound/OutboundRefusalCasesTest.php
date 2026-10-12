@@ -5,9 +5,10 @@
  *
  * Three classes each carried their own guard against server-side request
  * forgery: ZgwRulesBase (the selectielijst fetch), NotificatieService (the
- * subscriber callback) and Ai/AiEndpointGuard (the model endpoint). This
- * suite is the table of what each one refused, written and green before the
- * three became one, so the single guard can be held to every row.
+ * subscriber callback) and Ai/AiEndpointGuard (the model endpoint). The two
+ * tables below are what each one refused. They were written and green against
+ * the three copies, and have not changed since: only the private helpers at
+ * the bottom did, which now ask the real entry points over the one guard.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service\Outbound
@@ -29,11 +30,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Outbound;
 
 use OCA\Dossiq\Service\Ai\AiEndpointGuard;
-use OCA\Dossiq\Service\FieldValidator;
-use OCA\Dossiq\Service\NotificatieService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\ZgwMappingService;
-use OCA\Dossiq\Service\ZgwRulesBase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -41,11 +37,27 @@ use Psr\Log\LoggerInterface;
 /**
  * The refusal table of the three guards.
  *
- * @coversNothing
+ * @covers \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
+ * @covers \OCA\Dossiq\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Dossiq\Service\Outbound\HostResolver
+ * @uses \OCA\Dossiq\Service\NotificatieService
+ * @uses \OCA\Dossiq\Service\ZgwRulesBase
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */
 class OutboundRefusalCasesTest extends TestCase {
+	use OutboundFakes;
+
+	/**
+	 * Addresses none of the three copies blocked and the one guard does.
+	 *
+	 * The only rows where the guard goes past the strictest copy. Each connects
+	 * to this machine or to a blocked IPv4 address under another spelling.
+	 *
+	 * @var string[]
+	 */
+	private const BLOCKED_BY_NONE_BEFORE = ['::ffff:127.0.0.1', '::ffff:169.254.169.254', '0.0.0.0', '::'];
+
 	/**
 	 * Every address a guard was asked about, and what each guard said.
 	 *
@@ -109,23 +121,35 @@ class OutboundRefusalCasesTest extends TestCase {
 	}//end addresses()
 
 	/**
-	 * Each guard answers for each address what the table says.
+	 * The one guard blocks every address any of the three blocked.
+	 *
+	 * Where none did, it blocks only the four spellings named above. A local
+	 * model is allowed exactly where it was. Each answer is asked twice, for
+	 * the address as a literal and for a name that resolves to it.
 	 *
 	 * @param string $address The address.
-	 * @param bool $zgw Blocked for the ZGW fetch.
-	 * @param bool $notification Blocked for a notification callback.
-	 * @param bool $cloud Blocked for a cloud model.
+	 * @param bool $zgw Blocked for the ZGW fetch, before.
+	 * @param bool $notification Blocked for a notification callback, before.
+	 * @param bool $cloud Blocked for a cloud model, before.
 	 * @param bool $local Allowed for a local model.
 	 *
 	 * @return void
 	 */
 	#[DataProvider('addresses')]
-	public function testEachGuardBlocksWhatTheTableSays(string $address, bool $zgw, bool $notification, bool $cloud, bool $local): void {
-		$this->assertSame($zgw, $this->zgwBlocks(address: $address), 'ZGW fetch');
-		$this->assertSame($notification, $this->notificationBlocks(address: $address), 'notification callback');
-		$this->assertSame($cloud, $this->cloudModelBlocks(address: $address), 'cloud model');
+	public function testTheOneGuardBlocksWhatAnyOfTheThreeBlocked(string $address, bool $zgw, bool $notification, bool $cloud, bool $local): void {
+		$named = $this->guard(names: ['name.test' => [$address]]);
+		$blocked = ($this->guard(names: [])->publicAddress('https://' . $this->asHost(address: $address) . '/') === null);
+
+		$this->assertSame($blocked, $named->publicAddress('https://name.test/') === null, 'literal and name agree');
+		$this->assertSame(
+			($zgw || $notification || $cloud || in_array($address, self::BLOCKED_BY_NONE_BEFORE, true)),
+			$blocked,
+			'outside the own network'
+		);
+		$this->assertSame($cloud || in_array($address, self::BLOCKED_BY_NONE_BEFORE, true), $this->cloudModelBlocks(address: $address), 'cloud model');
 		$this->assertSame($local, $this->localModelAllows(address: $address), 'local model');
-	}//end testEachGuardBlocksWhatTheTableSays()
+		$this->assertSame($local, $named->ownNetworkAddress('http://name.test:11434') !== null, 'local model by name');
+	}//end testTheOneGuardBlocksWhatAnyOfTheThreeBlocked()
 
 	/**
 	 * URLs that are refused whatever a resolver answers, and by which guard.
@@ -219,28 +243,6 @@ class OutboundRefusalCasesTest extends TestCase {
 	}//end testAnAcceptedModelEndpointAnswersWithItsAddress()
 
 	/**
-	 * Whether the ZGW fetch blocks an address.
-	 *
-	 * @param string $address The address.
-	 *
-	 * @return bool
-	 */
-	private function zgwBlocks(string $address): bool {
-		return $this->inBlockList(guard: $this->zgwRules(), class: ZgwRulesBase::class, address: $address);
-	}//end zgwBlocks()
-
-	/**
-	 * Whether a notification callback blocks an address.
-	 *
-	 * @param string $address The address.
-	 *
-	 * @return bool
-	 */
-	private function notificationBlocks(string $address): bool {
-		return $this->inBlockList(guard: $this->notifications(), class: NotificatieService::class, address: $address);
-	}//end notificationBlocks()
-
-	/**
 	 * Whether a cloud model may not sit at an address.
 	 *
 	 * @param string $address The address.
@@ -263,29 +265,29 @@ class OutboundRefusalCasesTest extends TestCase {
 	}//end localModelAllows()
 
 	/**
-	 * Whether the ZGW fetch refuses a URL.
+	 * Whether the ZGW fetch refuses a URL: it answers null and connects to nothing.
 	 *
 	 * @param string $url The URL.
 	 *
 	 * @return bool
 	 */
 	private function zgwRefuses(string $url): bool {
-		$method = new \ReflectionMethod(ZgwRulesBase::class, 'isSafeExternalUrl');
+		$answer = $this->zgwFetch(url: $url, guard: $this->guard(names: null));
 
-		return $method->invoke($this->zgwRules(), $url) === false;
+		return $answer === null && count($this->sent) === 0;
 	}//end zgwRefuses()
 
 	/**
-	 * Whether a notification callback refuses a URL.
+	 * Whether a notification callback refuses a URL: nothing is delivered to it.
 	 *
 	 * @param string $url The URL.
 	 *
 	 * @return bool
 	 */
 	private function notificationRefuses(string $url): bool {
-		$method = new \ReflectionMethod(NotificatieService::class, 'isSafeCallbackUrl');
+		$this->notify(subscription: ['kanalen' => [['name' => 'zaken']], 'callbackUrl' => $url], guard: $this->guard(names: null));
 
-		return $method->invoke($this->notifications(), $url) === false;
+		return count($this->sent) === 0;
 	}//end notificationRefuses()
 
 	/**
@@ -324,44 +326,4 @@ class OutboundRefusalCasesTest extends TestCase {
 
 		return $address;
 	}//end asHost()
-
-	/**
-	 * Whether an address is inside one of a guard's own blocked ranges.
-	 *
-	 * @param object $guard The class that carries the guard.
-	 * @param class-string $class The class that declares it.
-	 * @param string $address The address.
-	 *
-	 * @return bool
-	 */
-	private function inBlockList(object $guard, string $class, string $address): bool {
-		$ranges = (new \ReflectionClassConstant($class, 'BLOCKED_CIDRS'))->getValue();
-		$inRange = new \ReflectionMethod($class, 'ipInCidr');
-		foreach ($ranges as $range) {
-			if ($inRange->invoke($guard, $address, $range) === true) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end inBlockList()
-
-	/**
-	 * A rules object that carries the ZGW fetch guard.
-	 *
-	 * @return ZgwRulesBase
-	 */
-	private function zgwRules(): ZgwRulesBase {
-		return new class($this->createMock(LoggerInterface::class), $this->createMock(SettingsService::class), new FieldValidator()) extends ZgwRulesBase {
-		};
-	}//end zgwRules()
-
-	/**
-	 * A notification service that carries the callback guard.
-	 *
-	 * @return NotificatieService
-	 */
-	private function notifications(): NotificatieService {
-		return new NotificatieService($this->createMock(ZgwMappingService::class), $this->createMock(LoggerInterface::class));
-	}//end notifications()
 }//end class
