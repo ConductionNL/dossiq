@@ -1735,7 +1735,7 @@
       "reason": "`contentFor()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwDrcRulesService.php",
+      "file": "lib/Service/Zgw/DrcDocumentRelations.php",
       "method": "findOioRelationsForDocument",
       "occurrence": 1,
       "class": "read-miss",

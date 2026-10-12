@@ -456,3 +456,21 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         TASK-DECOMP-041 named `FieldValidator` and `ZgwReferenceResolver` as the targets; the
         field checks already live in `FieldValidator` (TASK-DECOMP-036), and the lookups took the
         name of what they do.
+  - [x] 8f `ZgwDrcRulesService` (1: ExcessiveClassComplexity 87 against 50). It keeps the rules of
+        the document itself and the check of an informatieobject URL (drc-001, 005, 006, 007,
+        008; complexity 41). The rest of an objectinformatieobject create is
+        `Zgw/DrcObjectLinkRules` (the object URL of drc-002, and drc-004; 26), and what both
+        sides read from the stored relations is `Zgw/DrcDocumentRelations` (the relations of a
+        document for drc-007, the duplicate check for drc-003; 23). Neither extends the base:
+        each is built over the service's own lookups and result builder (8e), so the request
+        context reaches them without a forward. Building the relations over lookups of their
+        own instead turns six tests red (checked).
+        Characterisation, green on the single class first: 10 tests added to
+        `ZgwDrcRulesServiceTest` (20 in all), because the lock rules, the delete rule, the uuid
+        and full-text duplicate searches and both failure modes had none. They pin that drc-003
+        fails closed (a search that cannot answer is a duplicate) while drc-004 and drc-007 fail
+        open. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Zgw/DrcDocumentRelationsTest` (8, every query asserted
+        with its schema) and `DrcObjectLinkRulesTest` (7). One branch is unreachable and was
+        moved as it stood: "De object URL bevat geen geldig UUID", because `isValidUrl()` already
+        refuses a URL whose path does not end in a uuid.
