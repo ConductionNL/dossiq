@@ -3491,6 +3491,7 @@ OC.L10N.register(
         "Impact": "Impact",
         "Import": "Import",
         "Import case type": "Import case type",
+        "Import case type from a file": "Import case type from a file",
         "Import failed: invalid JSON.": "Import failed: invalid JSON.",
         "Import from Decidiq": "Import from Decidiq",
         "Import JSON": "Import JSON",
