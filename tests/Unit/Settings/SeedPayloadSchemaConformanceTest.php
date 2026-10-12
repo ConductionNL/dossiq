@@ -289,8 +289,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 				foreach ($value as $index => $record) {
 					if ($this->isPayload(node: $record) === false) {
 						// A record that is not an object is not a payload at
-						// all. `VTHTemplateService::seedSubObjects()` and
-						// `TemplateBundleSeeder::seedChildren()` both skip a
+						// all. `TemplateBundleSeeder::seedChildren()` skips a
 						// non-array record, so a collection shipped as bare
 						// strings seeds NOTHING and still reports success.
 						$findings[] = $childPointer . '[' . $index . ']: not an object, so the'

@@ -27,3 +27,9 @@ The `vth` package SHALL carry four published flows: "Aanvraag omgevingsvergunnin
 **Reason**: the flows ship in the `vth` package and the package installer writes them. The repair step and the catalogue files are deleted.
 
 **Migration**: none. The installer adopts the flows the repair step wrote.
+
+### Requirement: VTH workflow template activation service
+
+**Reason**: the service repeated the generic template library for files named `vth-*`, and nothing called its routes. The `vth` package installs the VTH case types and flows.
+
+**Migration**: none. An administrator activates a template through the generic template library, or installs a package.
