@@ -84,6 +84,8 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 */
 	private const DECIDED = [
 		'klacht-behandeling' => ['statutory', 42, 28, 1, 'Awb 9:11'],
+		// Awb 7:10: six weeks, one extension of at most six weeks (the Bezwaar case type of the Woo objections).
+		'bezwaar' => ['statutory', 42, 42, 1, 'Awb 7:10'],
 		'evenementenvergunning-2024' => ['statutory', 56, 56, 1, 'APV 1:2'],
 		'evenementenvergunning' => ['statutory', 56, 56, 1, 'APV 1:2'],
 		'zaaktype-cultuur-subsidie-2026' => ['statutory', 56, 0, 0, 'Awb 4:13'],

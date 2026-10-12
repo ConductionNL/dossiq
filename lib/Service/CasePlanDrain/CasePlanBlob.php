@@ -8,10 +8,9 @@
  * recorded state onto its definition node and turns the event log into the
  * history entries OpenRegister imports as audit rows.
  *
- * It lives outside `Service\Cmmn` on purpose: that namespace is deleted in
- * the removal release (task 3.1) and the structural guard of task 4.2 fails on
- * any reference to it. The drain is the one piece of blob access that guard
- * allowlists until then, and it retires with the `casePlanState` property.
+ * The local engine is gone (task 3.1). The drain is the one piece of blob
+ * access `CmmnRetirementTest` (task 4.2) still allowlists, and it retires
+ * together with the `casePlanState` property (task 3.2).
  *
  * @category Service
  * @package  OCA\Dossiq\Service\CasePlanDrain

@@ -146,7 +146,10 @@ export default {
 	 * @param {number|string|null|undefined} value The version number.
 	 * @return {string} The phrase, or '' when there is no version.
 	 */
-	versionLabel: (value) => (value === null || value === undefined || value === '' ? '' : t('dossiq', 'Version {n}', { n: value })),
+	versionLabel: (value) =>
+		value === null || value === undefined || value === ''
+			? ''
+			: t('dossiq', 'Version {n}', { n: value }),
 
 	/**
 	 * Whether a record is still a draft, as the word a status pill shows.
@@ -155,7 +158,8 @@ export default {
 	 * @param {boolean|null|undefined} value The `isDraft` flag.
 	 * @return {string} Draft or Published.
 	 */
-	draftState: (value) => (value === true ? t('dossiq', 'Draft') : t('dossiq', 'Published')),
+	draftState: (value) =>
+		value === true ? t('dossiq', 'Draft') : t('dossiq', 'Published'),
 
 	/**
 	 * Human label for a case's `status` UUID reference (statusType).

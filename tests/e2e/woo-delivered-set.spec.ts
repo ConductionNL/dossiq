@@ -88,9 +88,9 @@ test.describe('A Woo delivery is a record', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#scenario-a-publish-writes-a-frozen-set
-	// @e2e openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#scenario-an-untouched-set-verifies
-	// @e2e openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#scenario-a-delivered-verdict-cannot-be-changed
+	// @e2e openspec/specs/woo-delivered-set/spec.md#scenario-a-publish-writes-a-frozen-set
+	// @e2e openspec/specs/woo-delivered-set/spec.md#scenario-an-untouched-set-verifies
+	// @e2e openspec/specs/woo-delivered-set/spec.md#scenario-a-delivered-verdict-cannot-be-changed
 	test('a publish writes a frozen set that verifies, and its assessment refuses change', async ({
 		request,
 	}) => {

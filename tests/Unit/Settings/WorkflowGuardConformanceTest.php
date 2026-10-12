@@ -16,14 +16,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Dossiq\Service\MandaatValidationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
-use OCA\Dossiq\Service\Transitions\MandaatGuard;
+use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
@@ -68,7 +67,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Transitions\ChecklistGuard
  *
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
- * @uses \OCA\Dossiq\Service\Transitions\MandaatGuard
+ * @uses \OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard
  */
 class WorkflowGuardConformanceTest extends TestCase {
 
@@ -266,7 +265,7 @@ class WorkflowGuardConformanceTest extends TestCase {
 			new RequiredFieldGuard(),
 			new RequiredDocumentGuard(),
 			new RoleGuard($groupManager, $userManager, new NullLogger()),
-			new MandaatGuard($this->createMock(MandaatValidationService::class)),
+			new DelegatedAuthorityGuard($this->createMock(\Psr\Container\ContainerInterface::class), $this->createMock(\Psr\Log\LoggerInterface::class)),
 			$this->createMock(StatusChecklistGuard::class),
 			$this->createMock(CapacityGuard::class),
 			new NullLogger(),

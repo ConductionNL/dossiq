@@ -91,6 +91,7 @@ if (class_exists(TaskInboxCriteria::class) === false) {
 		 * @param string             $sort           One of the SORT_* values.
 		 * @param boolean            $sortDescending Whether to invert the sort.
 		 * @param string|null        $kind           Restrict to one task kind.
+		 * @param boolean            $includeBlocked Whether blocked tasks are listed too.
 		 *
 		 * @return void
 		 */
@@ -110,6 +111,7 @@ if (class_exists(TaskInboxCriteria::class) === false) {
 			public readonly string $sort = self::SORT_DUE,
 			public readonly bool $sortDescending = false,
 			public readonly ?string $kind = null,
+			public readonly bool $includeBlocked = false,
 		) {
 
 		}//end __construct()
