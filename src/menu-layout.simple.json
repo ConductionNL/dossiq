@@ -1117,31 +1117,31 @@
 					"money-payments": {
 						"gridX": 0,
 						"gridY": 39,
-						"gridWidth": 12,
+						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"money-contract": {
-						"gridX": 0,
-						"gridY": 43,
-						"gridWidth": 12,
+						"gridX": 6,
+						"gridY": 39,
+						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"family-plan-panel": {
 						"gridX": 0,
 						"gridY": 47,
-						"gridWidth": 12,
+						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"work-projects": {
-						"gridX": 0,
-						"gridY": 51,
-						"gridWidth": 12,
+						"gridX": 6,
+						"gridY": 47,
+						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"documents-merge-to-pdf": {
 						"gridX": 0,
 						"gridY": 55,
-						"gridWidth": 12,
+						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"case-banners": null
