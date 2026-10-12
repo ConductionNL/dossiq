@@ -47,6 +47,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -75,6 +76,7 @@ class PhaseTermService {
 	 * @param TermDeclarationReader $declarations What the case type and its phases declare.
 	 * @param ChainTermSplitter $splitter Splitting one chain term over its steps.
 	 * @param LoggerInterface $logger Logger.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -82,6 +84,7 @@ class PhaseTermService {
 		private readonly TermDeclarationReader $declarations,
 		private readonly ChainTermSplitter $splitter,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -322,6 +325,6 @@ class PhaseTermService {
 			return 0;
 		}
 
-		return (int)$from->diff($to)->days;
+		return $this->days->between(from: $from, to: $to);
 	}//end daysBetween()
 }//end class

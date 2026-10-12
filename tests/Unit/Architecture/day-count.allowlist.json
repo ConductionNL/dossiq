@@ -3,16 +3,6 @@
   "measured": "2026-10-12",
   "entries": [
     {
-      "file": "lib/Service/AanvullingsverzoekService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
-    },
-    {
-      "file": "lib/Service/CaseTermsService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
-    },
-    {
       "file": "lib/Service/Cases/IncidentRecord.php",
       "change": "termijnbewaking-op-engine-timers",
       "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
@@ -24,13 +14,8 @@
     },
     {
       "file": "lib/Service/DeadlineExtensionService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
-    },
-    {
-      "file": "lib/Service/DeadlinePauseService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+      "change": "method-decomposition",
+      "reason": "calculateDaysImpact() counts the days an extension adds. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It is a calculation class that owns its day math, which task 4.2 leaves in place; it moves to DayCount when method-decomposition splits the class."
     },
     {
       "file": "lib/Service/DeadlineReportingService.php",
@@ -58,11 +43,6 @@
       "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
     },
     {
-      "file": "lib/Service/PhaseTermService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
-    },
-    {
       "file": "lib/Service/Queue/Source/AssignedCasesSource.php",
       "change": "termijnbewaking-op-engine-timers",
       "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
@@ -78,14 +58,9 @@
       "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
     },
     {
-      "file": "lib/Service/Term/FirstResponseOutcome.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
-    },
-    {
       "file": "lib/Service/TermijnTimerService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+      "change": "method-decomposition",
+      "reason": "spanFor() counts the calendar span a timer is armed with, and asks WorkingDayRoll for working days. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It is a calculation class that owns its day math, which task 4.2 leaves in place; it moves to DayCount when method-decomposition splits the class."
     },
     {
       "file": "lib/Service/WOODeadlineService.php",

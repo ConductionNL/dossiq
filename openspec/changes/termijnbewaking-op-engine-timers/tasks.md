@@ -204,6 +204,15 @@
       `Dso/DsoDeadlineTimer`, `Milestone/MilestoneStallTimer`). Their own tests already pinned the
       armed SLA to the day; each was mutation-checked on the old code first (a count one day off
       turns them red). The list is at 19.
+      Part 3 of 4 (12 Oct, lane L7): the term calculations ask `DayCount`: `CaseTermsService` (term
+      consumed, days left), `DeadlinePauseService` (days of a pause used), `PhaseTermService`
+      (days in a phase), `Term/FirstResponseOutcome` (calendar overrun) and
+      `AanvullingsverzoekService::daysOpen()`. Three were pinned by their own tests
+      (mutation-checked on the old code); term consumed and days open were not, and got
+      characterisation tests first (`PlannedTermTest`, `AanvullingsverzoekServiceTest`).
+      `DeadlineExtensionService` and `TermijnTimerService` stay on the list: both sit at the PHPMD
+      coupling limit, so one more collaborator fails the build, and both are calculation classes
+      that own their day math. They move when `method-decomposition` splits them. The list is at 14.
 
 ## Verify
 
