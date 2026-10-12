@@ -37,7 +37,6 @@ use PHPUnit\Framework\TestCase;
 /**
  * Asserts every shipped seed payload only writes properties its schema declares.
  *
- * @covers \OCA\Dossiq\Repair\VthSeedDataRepairStep
  * @covers \OCA\Dossiq\Service\CaseDefinition\PackageInstaller
  *
  * `RegisterFragmentMerger` is declared as USED, not covered: the test reads a
@@ -79,7 +78,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 * `id` addresses the object: `ObjectService::extractUuidAndNormalizeObject()`
 	 * reads `@self.id` then `id` and uses it as the target uuid. `slug` is read
 	 * by `SaveObject::setSelfMetadata()` and stored on the entity as `@self.slug`,
-	 * which is where `VthSeedDataRepairStep::existingSlugs()` reads it back from.
+	 * which is where a reader finds it again.
 	 * Neither is a schema property and neither is lost.
 	 *
 	 * `uuid` is deliberately NOT on this list. Nothing reads it: the uuid comes
@@ -116,7 +115,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 * @var array<int, string>
 	 */
 	private const SEED_FILES = [
-		'vth_seed_data.json',
 		'case_flow_seed_data.json',
 		'templates/omgevingsvergunning.json',
 		'templates/woo-verzoek.json',
@@ -210,6 +208,44 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	}//end testSeedPayloadsOnlyWriteDeclaredProperties()
 
 	/**
+	 * Every key a package's `seed/` row writes is declared by the schema its file names.
+	 *
+	 * A seed file names its schema by settings key (`<name>_schema`). The rows
+	 * are walked under the collection whose schema slug spells that key, so a
+	 * seed file for a schema this sweep has no collection for fails here
+	 * instead of being skipped.
+	 *
+	 * @return void
+	 */
+	public function testPackageSeedRowsOnlyWriteDeclaredProperties(): void {
+		$settingsDir = __DIR__ . '/../../../lib/Settings';
+		$findings = [];
+
+		foreach ((array)glob($settingsDir . '/packages/*/seed/*.json') as $path) {
+			$data = json_decode((string)file_get_contents((string)$path), true);
+			$relative = substr((string)$path, strlen($settingsDir) + 1);
+			$this->assertIsArray(actual: $data, message: $relative . ' must parse as JSON');
+
+			$collection = null;
+			foreach (self::COLLECTION_SCHEMA as $key => $slug) {
+				$settingsKey = strtolower((string)preg_replace('/(?<!^)[A-Z]/', '_$0', $slug)) . '_schema';
+				if ($settingsKey === (string)($data['schema'] ?? '')) {
+					$collection = $key;
+				}
+			}
+
+			$this->assertNotNull(
+				actual: $collection,
+				message: $relative . ' seeds "' . (string)($data['schema'] ?? '') . '", a schema this sweep cannot judge'
+			);
+
+			$this->collectFindings(node: [$collection => ($data['rows'] ?? [])], pointer: $relative, findings: $findings);
+		}//end foreach
+
+		$this->assertSame(expected: [], actual: $findings, message: implode("\n", $findings));
+	}//end testPackageSeedRowsOnlyWriteDeclaredProperties()
+
+	/**
 	 * Walk a decoded seed tree and record every undeclared payload key.
 	 *
 	 * A key named in COLLECTION_SCHEMA carries payloads for the schema it maps
@@ -246,7 +282,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 				foreach ($value as $index => $record) {
 					if ($this->isPayload(node: $record) === false) {
 						// A record that is not an object is not a payload at
-						// all. `VTHTemplateService::seedSubObjects()` skips a
+						// all. A seeder that reads child rows skips a
 						// non-array record, so a collection shipped as bare
 						// strings seeds NOTHING and still reports success.
 						$findings[] = $childPointer . '[' . $index . ']: not an object, so the'

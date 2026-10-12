@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
-use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
 use OCA\Dossiq\Service\Flow\RetiredWebhookSteps;
@@ -192,12 +191,9 @@ class ShippedActionVocabularyTest extends TestCase {
 	/**
 	 * Every shipped inline action names a type the dispatcher implements.
 	 *
-	 * The only exemptions are the types VthWorkflowGraphResolver declares it
-	 * REWRITES before anything is stored (`spawnCase` names its target by
-	 * template slug, which only the seeder can resolve to a caseType UUID). The
-	 * exemption list is read from the resolver, so a type can only be exempt if
-	 * the code that rewrites it exists — and VthWorkflowGraphResolverTest is
-	 * what proves the rewrite actually happens.
+	 * No type is exempt. The VTH catalogue used to ship `spawnCase`, which a
+	 * seeder rewrote to `createSubCase` before storing it; the `vth` package
+	 * carries the stored form, so nothing is rewritten at install any more.
 	 *
 	 * @return void
 	 */
@@ -217,7 +213,6 @@ class ShippedActionVocabularyTest extends TestCase {
 			foreach ($found as $entry) {
 				$type = (string)($entry['action']['type'] ?? '');
 				if ($type === ''
-					|| in_array($type, VthWorkflowGraphResolver::NORMALISED_TYPES, true) === true
 					|| in_array($type, $executable, true) === true
 				) {
 					continue;
@@ -233,53 +228,6 @@ class ShippedActionVocabularyTest extends TestCase {
 			"Shipped automatic actions name types no handler implements. Each one is a SILENT no-op:\n"
 			. implode("\n", $offenders)
 			. "\nExecutable types: " . implode(', ', $executable)
-		);
-	}
-
-	/**
-	 * Every shipped `spawnCase` carries a target the seeder can normalise.
-	 *
-	 * Without `targetWorkflowSlug` the resolver drops the action, so a catalog
-	 * entry that omits it ships a promise nothing keeps.
-	 *
-	 * @return void
-	 */
-	public function testEverySpawnCaseNamesAKnownTemplate(): void {
-		$templateSlugs = [];
-		foreach (glob(__DIR__ . '/../../../lib/Settings/seed/vth-workflow-templates/*.json') ?: [] as $file) {
-			$data = json_decode((string)file_get_contents($file), true);
-			if (is_array($data) === true && ($data['caseTypeSlug'] ?? '') !== '') {
-				$templateSlugs[] = (string)($data['slug'] ?? '');
-			}
-		}
-
-		$offenders = [];
-		foreach ($this->shippedJsonFiles() as $file) {
-			$data = json_decode((string)file_get_contents($file), true);
-			if (is_array($data) === false) {
-				continue;
-			}
-
-			$found = [];
-			$this->collectActions(node: $data, path: '', found: $found);
-			foreach ($found as $entry) {
-				if ((string)($entry['action']['type'] ?? '') !== 'spawnCase') {
-					continue;
-				}
-
-				$target = (string)($entry['action']['config']['targetWorkflowSlug'] ?? '');
-				if ($target === '' || in_array($target, $templateSlugs, true) === false) {
-					$offenders[] = basename($file) . ' ' . $entry['path'] . ' target=' . ($target ?: '(missing)');
-				}
-			}
-		}
-
-		$this->assertSame(
-			[],
-			$offenders,
-			"spawnCase actions naming an unknown template are dropped at seed time:\n"
-			. implode("\n", $offenders)
-			. "\nKnown templates: " . implode(', ', $templateSlugs)
 		);
 	}
 }

@@ -147,7 +147,6 @@ parameters:
         - message: '#Strict comparison using === between true and false will always evaluate to false#'
           paths:
               - lib/Controller/CaseDefinitionController.php
-              - lib/Repair/SeedVthWorkflowTemplates.php
         # ApprovalStepNotificationListener dispatches on `get_class($event)` against
         # OpenRegister's ApprovalStep{Approved,Rejected}Event class-strings. Those
         # classes are co-installed at runtime but absent from static analysis, so

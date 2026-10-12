@@ -95,7 +95,6 @@ class WorkflowGuardConformanceTest extends TestCase {
 		$root = __DIR__ . '/../../../lib/Settings';
 		$paths = array_merge(
 			(array)glob($root . '/templates/*.json'),
-			(array)glob($root . '/vth-templates/*.json'),
 		);
 
 		$documents = [];
@@ -188,10 +187,10 @@ class WorkflowGuardConformanceTest extends TestCase {
 	/**
 	 * The guard entries in the bundles a PHP loader reads.
 	 *
-	 * `lib/Settings/vth-templates/` is deliberately excluded: no PHP reads that
-	 * directory, so its guards never reach an evaluator.
-	 * {@see testTheVthTemplatesStillHaveNoLoader()} verifies that exclusion
-	 * instead of assuming it, so wiring a loader up makes this test speak.
+	 * Every case definition package is one of them: the package installer
+	 * writes its flows, the draft ones too, because a draft is one publish
+	 * away from the engine. {@see testTheDraftFlowsOfAPackageAreSwept()} keeps
+	 * that from going quiet.
 	 *
 	 * @return array<int, array{path: string, guard: array<string, mixed>}>
 	 */
@@ -625,31 +624,32 @@ class WorkflowGuardConformanceTest extends TestCase {
 	}
 
 	/**
-	 * The VTH templates are still inert, so excluding them from the pass/fail sweep is safe.
+	 * The draft flows of a package are part of the sweeps above.
 	 *
-	 * Their checklist guards name no condition beyond a message, which the
-	 * engine cannot evaluate. That is harmless only while nothing loads them.
+	 * A draft is offered to nobody, and it is one publish away from the engine,
+	 * so its guards are held to what a published flow's are. The control: a
+	 * draft that was not walked would pass every sweep by contributing nothing.
 	 *
 	 * @return void
 	 */
-	public function testTheVthTemplatesStillHaveNoLoader(): void {
-		$hits = [];
-		$directory = new \RecursiveDirectoryIterator(__DIR__ . '/../../../lib');
-		foreach (new \RecursiveIteratorIterator($directory) as $file) {
-			if ($file->isFile() === false || $file->getExtension() !== 'php') {
-				continue;
-			}
+	public function testTheDraftFlowsOfAPackageAreSwept(): void {
+		$fromDrafts = [];
+		foreach ((array)glob(__DIR__ . '/../../../lib/Settings/packages/*', GLOB_ONLYDIR) as $dir) {
+			$flows = (array)($this->packageDocument(dir: (string)$dir)['flows'] ?? []);
+			foreach ($flows as $file => $flow) {
+				if (($flow['lifecycleStatus'] ?? '') !== 'draft') {
+					continue;
+				}
 
-			if (str_contains((string)file_get_contents($file->getPathname()), 'vth-templates') === true) {
-				$hits[] = $file->getPathname();
+				$prefix = 'package:' . basename((string)$dir) . '/flows/' . $file . '/';
+				foreach ($this->loadedGuards() as $entry) {
+					if (str_starts_with($entry['path'], $prefix) === true) {
+						$fromDrafts[$file][] = $entry['path'];
+					}
+				}
 			}
 		}
 
-		$this->assertSame(
-			[],
-			$hits,
-			"lib/Settings/vth-templates/ is now loaded by PHP, so its guards reach the engine. "
-			. "Give them evaluable conditions and fold them into the seeded sweep:\n" . implode("\n", $hits)
-		);
+		$this->assertNotEmpty($fromDrafts, 'No guard of a draft package flow was found; the draft flows were not walked');
 	}
 }

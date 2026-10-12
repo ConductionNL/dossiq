@@ -397,24 +397,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <!--
-                VthSeedDataRepairStep SEEDS THE CASE TYPES SeedVthWorkflowTemplates
-                RESOLVES, SO IT HAS TO GO FIRST. It shipped the other way round,
-                and on a fresh install the lookup could not succeed even once:
-                five of the six templates name a caseType slug
-                (omgevingsvergunning-bouwactiviteit, toezichtzaak-bouw,
-                handhavingszaak twice, klacht-toezicht) that does not exist yet
-                when the template step runs. The install reported it as
-                "0 seeded, 5 skipped ... not found for template ... (run
-                base-register-seed-data first)" and carried on green, so the VTH
-                catalogue was simply absent on every new instance.
-
-                The tell was in the message the step prints about itself: a step
-                that tells you to run something else first is a step that is
-                registered in the wrong place.
-            -->
-            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <!--
                 AFTER THE CASE TYPE SEEDS. Thirteen shipped case types were seeded
@@ -982,10 +964,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
             <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <!-- SEEDS THE CASE TYPES THE TEMPLATE STEP RESOLVES; see the
-                 post-migration block for what the wrong order cost. -->
-            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <!--
                 Installs the shipped case definition packages under

@@ -61,7 +61,7 @@ The installer SHALL record every row it writes in the shipped-set ledger, with t
 
 ### Requirement: A case type a seeder already wrote is adopted, not duplicated (REQ-CT-51)
 
-A seeder wrote its case types under random ids; the package that replaces it ships fixed ids. When the installer meets a case type row whose id this instance does not hold, it SHALL look for a case type with the same `identifier`, and when one exists it SHALL adopt it: write nothing, record the existing row in the ledger under the package, and point every later row of the package that names the package's id (a plain field or inside a JSON string such as a flow's transitions) at the existing id. A row of an adopted case type SHALL be adopted when the case type holds a row of that schema with the same identifier, name, title or key, in that order; otherwise it SHALL be written, pointing at the adopted case type. A failed install SHALL never remove an adopted row. An adopted row SHALL be recorded once per package, so a newer version does not reset its fingerprint (decision 190).
+A seeder wrote its case types under random ids; the package that replaces it ships fixed ids. When the installer meets a case type row whose id this instance does not hold, it SHALL look for a case type with the same `identifier`, and, when none exists, for a case type with the same `title` that carries no identifier (a seeder that keyed its case types by slug, such as the VTH seeder, never set one). When one exists it SHALL adopt it: write nothing, record the existing row in the ledger under the package, and point every later row of the package that names the package's id (a plain field or inside a JSON string such as a flow's transitions) at the existing id. A row of an adopted case type SHALL be adopted when the case type holds a row of that schema with the same identifier, name, title or key, in that order; otherwise it SHALL be written, pointing at the adopted case type. A failed install SHALL never remove an adopted row. An adopted row SHALL be recorded once per package, so a newer version does not reset its fingerprint (decision 190).
 
 #### Scenario: An existing case type is adopted and nothing is written
 @e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten
@@ -83,6 +83,20 @@ A seeder wrote its case types under random ids; the package that replaces it shi
 @e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithAnotherIdentifierIsNotAdopted
 
 - **GIVEN** a case type with the same title but another identifier
+- **WHEN** the installer installs the fixture package
+- **THEN** the package's case type SHALL be written beside it
+
+#### Scenario: A case type without an identifier is adopted by its title
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithoutAnIdentifierIsAdoptedByTitle
+
+- **GIVEN** an instance where a seeder wrote the fixture case type without an identifier, with its statuses, role, flow and property
+- **WHEN** the installer installs the fixture package
+- **THEN** no row SHALL be written, changed or removed
+
+#### Scenario: A case type without an identifier and another title is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithoutAnIdentifierAndAnotherTitleIsNotAdopted
+
+- **GIVEN** a case type with another title and no identifier
 - **WHEN** the installer installs the fixture package
 - **THEN** the package's case type SHALL be written beside it
 

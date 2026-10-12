@@ -707,9 +707,6 @@ $extra = [
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
         // ── VTH Module ─────────────────────────────────────────────────────
-        // VTH zaaktype template management (admin only).
-    ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
-    ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
         // Inspection checklist CRUD (admin).
     ['name' => 'inspectionChecklist#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
     ['name' => 'inspectionChecklist#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
