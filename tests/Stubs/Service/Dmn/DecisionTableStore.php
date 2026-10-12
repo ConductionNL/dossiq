@@ -40,7 +40,7 @@ use UnexpectedValueException;
  * (working calendars, escalation ladders): a flow runs as a system actor, and
  * who may author a table is the register's RBAC, enforced when it is written.
  *
- * @spec openspec/changes/stored-decision-tables/specs/flow-decision-tables/spec.md
+ * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md#REQ-DTO-001
  */
 class DecisionTableStore {
 
@@ -84,7 +84,7 @@ class DecisionTableStore {
 	 *
 	 * @throws UnexpectedValueException When no table carries the reference, or the stored table cannot be executed.
 	 *
-	 * @spec openspec/changes/stored-decision-tables/specs/flow-decision-tables/spec.md
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md#REQ-DTO-001
 	 */
 	public function find(string $reference): array {
 		$reference = trim($reference);
@@ -127,7 +127,7 @@ class DecisionTableStore {
 	 * @throws UnexpectedValueException   When the reference names no executable table.
 	 * @throws DecisionEvaluationException When the evaluation fails, including when no rule matches.
 	 *
-	 * @spec openspec/changes/stored-decision-tables/specs/flow-decision-tables/spec.md
+	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md#REQ-DTO-001
 	 */
 	public function evaluate(string $reference, array $inputs): array {
 		$table  = $this->find(reference: $reference);
