@@ -373,9 +373,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- Nextcloud never removes a job info.xml stops naming: parked EmailPdfRetryJob, removed AppointmentReminderJob and BerichtenboxReadStatusJob. -->
             <step>OCA\Dossiq\Repair\RetireUnscheduledBackgroundJobs</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
-            <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
             <!--
                 REPLACES RegisterOriRegister. dossiq no longer declares an ORI
                 register (ADR-019/ADR-022: raadsinformatie is decidiq's domain,
@@ -398,26 +395,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 that makes a real zero hard to notice.
             -->
             <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
-            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
-            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <!--
-                VthSeedDataRepairStep SEEDS THE CASE TYPES SeedVthWorkflowTemplates
-                RESOLVES, SO IT HAS TO GO FIRST. It shipped the other way round,
-                and on a fresh install the lookup could not succeed even once:
-                five of the six templates name a caseType slug
-                (omgevingsvergunning-bouwactiviteit, toezichtzaak-bouw,
-                handhavingszaak twice, klacht-toezicht) that does not exist yet
-                when the template step runs. The install reported it as
-                "0 seeded, 5 skipped ... not found for template ... (run
-                base-register-seed-data first)" and carried on green, so the VTH
-                catalogue was simply absent on every new instance.
-
-                The tell was in the message the step prints about itself: a step
-                that tells you to run something else first is a step that is
-                registered in the wrong place.
-            -->
-            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <!--
                 AFTER THE CASE TYPE SEEDS. Thirteen shipped case types were seeded
@@ -440,7 +417,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 case type that has no workflow yet into a published "basis"
                 template, so what it can project is decided entirely by which
                 case types exist when it runs. It sat between
-                SeedBezwaarBeroepData and SeedBesluitvormingTemplates, ahead of
+                the old bezwaar and besluitvorming seeds, ahead of
                 the besluitvorming, VTH and case-flow seeds, and reported its
                 own emptiness as success.
 
@@ -832,12 +809,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
             <!--
-                Points DSO intake at integriq's dso_verzoek schema when the key
-                was never set (absent). An admin's value, an empty one included,
-                is kept. In BOTH blocks: integriq may come before dossiq or after.
-            -->
-            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
-            <!--
                 Ships the initial assistant prompt library into hermiq
                 (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
                 every prompt an administrator touched, so a rerun restores
@@ -991,15 +962,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
             <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
-            <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
-            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
-            <!-- SEEDS THE CASE TYPES THE TEMPLATE STEP RESOLVES; see the
-                 post-migration block for what the wrong order cost. -->
-            <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>
-            <step>OCA\Dossiq\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Dossiq\Repair\CaseFlowSeedDataRepairStep</step>
             <!--
                 Installs the shipped case definition packages under
@@ -1094,12 +1056,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
             <!--
-                Points DSO intake at integriq's dso_verzoek schema when the key
-                was never set (absent). An admin's value, an empty one included,
-                is kept. In BOTH blocks: integriq may come before dossiq or after.
-            -->
-            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
-            <!--
                 Ships the initial assistant prompt library into hermiq
                 (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
                 every prompt an administrator touched, so a rerun restores
@@ -1123,7 +1079,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
         <command>OCA\Dossiq\Command\MigrateCasePlansCommand</command>
-        <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
         <command>OCA\Dossiq\Command\DrainIntakeObjectsCommand</command>
     </commands>

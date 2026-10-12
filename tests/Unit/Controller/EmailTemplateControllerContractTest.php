@@ -488,4 +488,41 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame($catalogue, $response->getData());
 	}//end testVariablesReturnsTheCatalogueUnwrappedForTheRouteCaseType()
+
+	/**
+	 * GET /api/casetypes/{caseTypeId}/email-templates refuses an anonymous
+	 * caller with 401 and never reads the templating backend.
+	 *
+	 * @return void
+	 */
+	public function testListTemplatesRefusesAnAnonymousCallerWith401(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->templateService->expects($this->never())->method('listTemplates');
+
+		$response = $this->controller->listTemplates(caseTypeId: 'ct-1');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['message' => 'unauthenticated'], $response->getData());
+	}//end testListTemplatesRefusesAnAnonymousCallerWith401()
+
+	/**
+	 * GET /api/casetypes/{caseTypeId}/email-templates answers 200 with the
+	 * templates of the ROUTE's case type wrapped under `results`.
+	 *
+	 * @return void
+	 */
+	public function testListTemplatesReturnsTheResultsOfTheRouteCaseType(): void {
+		$this->signIn(uid: 'handler');
+		$templates = [['id' => 'tpl-1', 'name' => 'Ontvangstbevestiging']];
+
+		$this->templateService->expects($this->once())
+			->method('listTemplates')
+			->with(caseTypeId: 'ct-42')
+			->willReturn($templates);
+
+		$response = $this->controller->listTemplates(caseTypeId: 'ct-42');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['results' => $templates], $response->getData());
+	}//end testListTemplatesReturnsTheResultsOfTheRouteCaseType()
 }//end class

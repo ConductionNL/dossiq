@@ -65,6 +65,11 @@ class ExistingRowMatcher {
 	private const NAMING_FIELDS = ['identifier', 'name', 'title', 'key'];
 
 	/**
+	 * How many rows are read when looking for the one a seed file matches.
+	 */
+	private const MATCH_LIMIT = 500;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger Where an ambiguous match is reported.
@@ -84,6 +89,7 @@ class ExistingRowMatcher {
 	 * @param array<string, mixed> $row           The package row, its references already
 	 *                                            pointing at ids adopted this run.
 	 * @param array<int, string>   $caseTypes     The ids of case types adopted this run.
+	 * @param array<int, string>   $match         The properties the row's seed file matches on, when it names any.
 	 *
 	 * @return array<string, mixed>|null The existing row.
 	 *
@@ -96,7 +102,12 @@ class ExistingRowMatcher {
 		string $schemaKey,
 		array $row,
 		array $caseTypes,
+		array $match = [],
 	): ?array {
+		if ($match !== []) {
+			return $this->findBy(objectService: $objectService, register: $register, schema: $schema, properties: $match, row: $row);
+		}
+
 		$filters = $this->filtersFor(schemaKey: $schemaKey, row: $row, caseTypes: $caseTypes);
 		if ($filters === []) {
 			return null;
@@ -127,6 +138,107 @@ class ExistingRowMatcher {
 
 		return $found[0];
 	}//end find()
+
+	/**
+	 * The row this instance holds with the same value for one property.
+	 *
+	 * A seed file may name the properties its rows are recognised by (`match`).
+	 * That is how a row outside any case type is adopted: a row a seeder, a
+	 * migration or an administrator wrote under another id. A row is the one
+	 * when it is equal on every property named. Matching on a flag alone
+	 * adopts whichever row has the flag set, whatever it is called.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The schema.
+	 * @param array<int, string>   $properties    The properties to match on.
+	 * @param array<string, mixed> $row           The package row.
+	 *
+	 * @return array<string, mixed>|null The row held here, or null.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function findBy(object $objectService, string $register, string $schema, array $properties, array $row): ?array {
+		$rules = new PackageSeedRules();
+		$wanted = [];
+		foreach ($properties as $property) {
+			$value = ($row[$property] ?? null);
+			if ($rules->isMatchable(value: $value) === false) {
+				return null;
+			}
+
+			$wanted[$property] = $value;
+		}
+
+		// The store is asked for the text values only. How it compares a
+		// number or a flag in a filter is its own business, and an answer
+		// that is too narrow would write a second row; every property is
+		// compared here, on the rows it answers.
+		$filters = array_filter($wanted, 'is_string');
+		$filters['_limit'] = self::MATCH_LIMIT;
+		$found = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: $filters,
+		);
+
+		// The store may answer a wider match than asked; only equal values count.
+		$found = array_values(
+			array_filter(
+				$found,
+				function (array $existing) use ($wanted): bool {
+					foreach ($wanted as $property => $value) {
+						if ($this->isSame(held: ($existing[$property] ?? null), shipped: $value) === false) {
+							return false;
+						}
+					}
+
+					return true;
+				}
+			)
+		);
+		if ($found === []) {
+			return null;
+		}
+
+		if (count($found) > 1) {
+			$this->logger->warning(
+				'Package install: {count} rows in {schema} have {values}; adopting the first',
+				['count' => count($found), 'schema' => $schema, 'values' => json_encode($wanted)]
+			);
+		}
+
+		return $found[0];
+	}//end findBy()
+
+	/**
+	 * Whether the value a row holds is the value the package ships.
+	 *
+	 * A text is equal or it is not. A flag and a number are compared by what
+	 * they mean: a store that answers a flag as 1 or "true" still holds the
+	 * flag, and reading it as different would write a second row.
+	 *
+	 * @param mixed           $held    The value the existing row holds.
+	 * @param string|int|bool $shipped The value the package row carries.
+	 *
+	 * @return bool True when they are the same.
+	 */
+	private function isSame(mixed $held, string|int|bool $shipped): bool {
+		if (is_bool($shipped) === true) {
+			if (is_scalar($held) === false) {
+				return false;
+			}
+
+			return filter_var($held, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === $shipped;
+		}
+
+		if (is_int($shipped) === true) {
+			return is_numeric($held) === true && (string)$held === (string)$shipped;
+		}
+
+		return $held === $shipped;
+	}//end isSame()
 
 	/**
 	 * The case types with the package row's title that carry no identifier.

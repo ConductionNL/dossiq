@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Repair;
 
 use OCA\Dossiq\Repair\PublishSeededCaseTypes;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Unit\Settings\ShippedPackageCaseTypes;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -259,11 +260,16 @@ class PublishSeededCaseTypesTest extends TestCase {
 			}
 		}
 
-		foreach (['vth_seed_data.json', 'case_flow_seed_data.json'] as $seed) {
+		foreach (['case_flow_seed_data.json'] as $seed) {
 			$data = json_decode((string)file_get_contents($root . '/' . $seed), true);
 			foreach (($data['caseTypes'] ?? []) as $caseType) {
 				$shipped[(string)($caseType['slug'] ?? '')] = $caseType;
 			}
+		}
+
+		// The case definition packages name a case type by its identifier.
+		foreach (ShippedPackageCaseTypes::nested() as $caseType) {
+			$shipped[(string)$caseType['slug']] = $caseType;
 		}
 
 		$undeclared = array_keys(array_filter($shipped, static fn (array $row): bool => array_key_exists('isDraft', $row) === false));

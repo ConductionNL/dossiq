@@ -1634,6 +1634,15 @@
 				"folderSidebar": null,
 				"showTitle": true,
 				"countSubtitle": "{total} case types",
+				"headerActions": [
+					{
+						"id": "case-type-import",
+						"type": "open-modal",
+						"label": "Import case type from a file",
+						"icon": "TrayArrowUp",
+						"target": "CaseTypeImportDialog"
+					}
+				],
 				"headerButtons": [
 					{
 						"action": "export",

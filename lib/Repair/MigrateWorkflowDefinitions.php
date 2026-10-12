@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateShape;
+use OCA\Dossiq\Service\Workflow\WorkflowLifecycleGuard;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -69,6 +70,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @param SettingsService $settingsService The settings service
 	 * @param WorkflowDefinitionService $workflowService The workflow definition service
 	 * @param LoggerInterface $logger The logger interface
+	 * @param WorkflowLifecycleGuard $lifecycle Says whether a stored definition is a draft.
 	 * @param LanguageMapText $text A translatable title or name as one string.
 	 * @param BackfilledTemplateLabels $labels Names a basis template, and heals one stored as "Array".
 	 */
@@ -76,6 +78,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		private SettingsService $settingsService,
 		private WorkflowDefinitionService $workflowService,
 		private LoggerInterface $logger,
+		private readonly WorkflowLifecycleGuard $lifecycle,
 		LanguageMapText $text = new LanguageMapText(),
 		private readonly BackfilledTemplateLabels $labels = new BackfilledTemplateLabels(),
 	) {
@@ -223,11 +226,16 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return self::OUTCOME_NONE;
 		}
 
-		// Already pinned, or already has at least one workflowTemplate? Skip,
-		// the admin sets the pin via the UI. A basis template this step wrote
-		// before titles were read as text is healed on the way past.
+		// Already pinned, or already has a workflowTemplate that is or was
+		// published? Skip, the admin sets the pin via the UI. A basis template
+		// this step wrote before titles were read as text is healed on the way
+		// past. A draft does not count: nobody is offered a draft, so a case
+		// type holding only drafts (a package may ship one for an administrator
+		// to finish) would have no flow a case can follow.
 		$existing = $this->workflowService->listVersions($caseTypeId);
-		if ((string)($row['workflowDefinition'] ?? '') !== '' || $existing !== []) {
+		$lifecycles = array_map(fn (array $template): string => $this->lifecycle->statusOf(row: $template), $existing);
+		$moreThanDrafts = (array_diff($lifecycles, [WorkflowLifecycleGuard::STATUS_DRAFT]) !== []);
+		if ((string)($row['workflowDefinition'] ?? '') !== '' || $moreThanDrafts === true) {
 			$this->healBackfilled(
 				templates: $existing,
 				caseType: $row,
