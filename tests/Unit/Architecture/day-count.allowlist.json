@@ -3,59 +3,14 @@
   "measured": "2026-10-12",
   "entries": [
     {
-      "file": "lib/Service/Cases/IncidentRecord.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/ComplaintAnalyticsService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
       "file": "lib/Service/DeadlineExtensionService.php",
       "change": "method-decomposition",
       "reason": "calculateDaysImpact() counts the days an extension adds. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It is a calculation class that owns its day math, which task 4.2 leaves in place; it moves to DayCount when method-decomposition splits the class."
     },
     {
-      "file": "lib/Service/DeadlineReportingService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/Import/CaseRecordImport.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
       "file": "lib/Service/KpiAggregationService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/Lifecycle/SilenceCloseService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/OpenWorkloadAgeService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/Queue/Source/AssignedCasesSource.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/Recycle/DeletionWindowReader.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts the days left before a removed case is deleted for good, a retention window and not a term. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/Subsidie/TerugvorderingService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+      "change": "method-decomposition",
+      "reason": "daysBetween() counts the signed days a closed case took, for the average on the dashboard. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It counts elapsed days for a report or an age, not days to a deadline, and moves to DayCount when method-decomposition splits the class."
     },
     {
       "file": "lib/Service/TermijnTimerService.php",
@@ -69,8 +24,8 @@
     },
     {
       "file": "lib/Service/WorkQueueService.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+      "change": "method-decomposition",
+      "reason": "Counts the days a queue item has sat idle, for its urgency score. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It counts elapsed days for a report or an age, not days to a deadline, and moves to DayCount when method-decomposition splits the class."
     }
   ]
 }

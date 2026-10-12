@@ -30,6 +30,7 @@ use Psr\Log\NullLogger;
  * The days a removed case has left, read off its deletion marker.
  *
  * @covers \OCA\Dossiq\Service\Recycle\DeletionWindowReader
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class DeletionWindowReaderTest extends TestCase {
 	/**

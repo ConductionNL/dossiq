@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -88,6 +89,7 @@ class SilenceCloseService {
 	 * @param CaseJournal $journal The case's own record.
 	 * @param CaseDateNormaliser $dates The ONE class allowed to parse and zone a date.
 	 * @param LoggerInterface $logger Says what was warned and what was closed.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
@@ -96,6 +98,7 @@ class SilenceCloseService {
 		private readonly CaseJournal $journal,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -128,7 +131,7 @@ class SilenceCloseService {
 			return $none;
 		}
 
-		$silent = (int)$last->diff($today)->days;
+		$silent = $this->days->between(from: $last, to: $today);
 		$closesOn = $last->modify('+'.$period.' days')->format('Y-m-d');
 		$warnAt = ($period - $this->rules->warningDays(caseTypeId: $caseTypeId));
 

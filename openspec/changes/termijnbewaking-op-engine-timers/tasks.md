@@ -213,6 +213,17 @@
       `DeadlineExtensionService` and `TermijnTimerService` stay on the list: both sit at the PHPMD
       coupling limit, so one more collaborator fails the build, and both are calculation classes
       that own their day math. They move when `method-decomposition` splits them. The list is at 14.
+      Part 4 of 4 (12 Oct, lane L7): the reporting and age counts ask `DayCount`: complaint
+      resolution days, the two average durations of the deadline report, the days an imported
+      extension adds, incident reporting delay, days of silence before a case closes, open workload
+      age, days since assignment in the personal queue, days left in a deletion window and the
+      interest days of a recovery. Six of them had no test that a wrong number turned red and got
+      characterisation tests first. `KpiAggregationService` and `WorkQueueService` stay on the list
+      for the same coupling reason as the two above.
+      Where the sweep ends: 26 of 31 sites moved, and the list holds 5 files with one site each.
+      Four wait on `method-decomposition`; `WOODeadlineService` goes with the refactor programme.
+      What keeps this task open is its second half: the TimedJob allowlist still names
+      `PauseChaseJob`, which cannot go before OpenRegister is a required dependency.
 
 ## Verify
 

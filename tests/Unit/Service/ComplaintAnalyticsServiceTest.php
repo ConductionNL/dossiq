@@ -31,6 +31,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for ComplaintAnalyticsService.
  *
  * @covers \OCA\Dossiq\Service\ComplaintAnalyticsService
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class ComplaintAnalyticsServiceTest extends TestCase {
 
