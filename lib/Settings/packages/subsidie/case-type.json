@@ -36,7 +36,8 @@
       "description": "Subsidieaanvraag is ontvangen en geregistreerd",
       "order": 1,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "role": "intake"
     },
     {
       "id": "2318408c-cb66-5b32-b06a-7809499ec77f",
@@ -44,7 +45,8 @@
       "description": "Aanvraag wordt inhoudelijk beoordeeld (volledigheid, regeling, begroting)",
       "order": 2,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "role": "in-progress"
     },
     {
       "id": "c1ae2604-721a-54ec-9300-7b0d1c8f9e91",
@@ -52,7 +54,8 @@
       "description": "Subsidie is verleend bij beschikking (Awb art. 4:29 e.v.)",
       "order": 3,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+      "caseType": "b3c1a000-0000-4000-a000-0000000005ab",
+      "role": "closed"
     },
     {
       "id": "93b1b54f-4571-587e-a505-29c0952d342a",
