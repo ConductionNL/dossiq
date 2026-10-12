@@ -1598,7 +1598,7 @@
       "reason": "`computeWorkload()` answers `return []` when the read fails; the catch logs at warning (\"WorkQueue: workload case search failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/WorkQueueService.php",
+      "file": "lib/Service/Queue/QueueCaseFacts.php",
       "method": "nearestActiveTermDeadline",
       "occurrence": 1,
       "class": "read-miss",
@@ -1696,7 +1696,7 @@
       "reason": "`contentFor()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwDrcRulesService.php",
+      "file": "lib/Service/Zgw/DrcDocumentRelations.php",
       "method": "findOioRelationsForDocument",
       "occurrence": 1,
       "class": "read-miss",
@@ -1710,21 +1710,21 @@
       "reason": "`fetchExternalUrl()` answers `return null` when the read fails; the catch logs at warning (\"Failed to fetch external URL\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findAllObjectsByField",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findAllObjectsByField()` answers `return []` when the read fails; the catch logs at warning (\"Reference resolution failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findBySchemaKey",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findBySchemaKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findObjectByField",
       "occurrence": 1,
       "class": "read-miss",
@@ -1745,14 +1745,14 @@
       "reason": "`caseTypeDefaultAssignee()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwZtcRulesService.php",
+      "file": "lib/Service/Zgw/ZtcPublishAndDeleteChecks.php",
       "method": "loadCaseTypeRow",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`loadCaseTypeRow()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwZtcRulesService.php",
+      "file": "lib/Service/Zgw/ZtcPublishAndDeleteChecks.php",
       "method": "loadFinalStatusSlugs",
       "occurrence": 1,
       "class": "read-miss",

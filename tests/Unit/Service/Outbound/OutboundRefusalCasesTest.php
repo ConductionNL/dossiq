@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Outbound\HostResolver
  * @uses \OCA\Dossiq\Service\NotificatieService
  * @uses \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */
