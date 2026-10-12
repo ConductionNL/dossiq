@@ -32,10 +32,14 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   - done: `tests/Unit/Service/Access/CaseReviewerAccessTest.php` (8), `ObjectReadGrantsTest.php` (5:
     read bit only, owner skipped, former reader revoked, group/inherited grants kept, second run
     changes nothing, refusal counted, unavailable).
-- [ ] 2.2 `bulkUpsert()` reconciles the case after a create (REQ-CRA-002): done,
+- [x] 2.2 `bulkUpsert()` reconciles the case after a create (REQ-CRA-002): done,
   `WOODocumentAssessmentServiceTest::testACreatedAssessmentReconcilesTheCase`. Open: the batch
   creation of `woo-review-triage` (L8's `ReviewBatches`, not on development) calls
   `CaseReviewerAccess::reconcile()` when it lands.
+  - done (12 Oct): `lib/Review/ReviewBatches.php` is on development and calls
+    `CaseReviewerAccess::reconcile()` after it stores a batch and after it changes one; a failed
+    reconcile is logged and answered as `failed`, and the reconcile route repairs it.
+    `tests/Unit/Review/ReviewBatchesTest.php` expects the call once for the batch's case.
 - [x] 2.3 Add `lib/Listener/WooCaseReassignGuardListener.php` on OpenRegister's `ObjectUpdatingEvent`
   (refuse per REQ-WSA-005 with `setErrors()` and `stopPropagation()`, as `CaseDeleteGuardListener`
   does on delete) and on `ObjectUpdatedEvent` (run `reconcile()`). Read both event classes in
@@ -105,7 +109,7 @@ red; put the failing line in the PR body. Double OpenRegister classes with
   - done: `lib/Controller/CaseReviewerAccessController.php`,
     `tests/Unit/Controller/CaseReviewerAccessControllerTest.php` (non-admin refused, sums, 503 unavailable).
     Newman folder `reconcile` stays with 1.2.
-- [ ] 5.2 If `openregister/reviewer-owns-their-decisions` is merged: declare `x-openregister-review`
+- [x] 5.2 If `openregister/reviewer-owns-their-decisions` is merged: declare `x-openregister-review`
   on the document schema per REQ-WSA-007, add the key to `SchemaSlugMap::SCHEMA_ANNOTATION_KEYS`,
   and prove it reaches the instance (REQ-WSA-007).
   - unit `tests/Unit/Settings/DocumentSchemaReviewTest.php` `testTheDocumentSchemaDeclaresDeciderOwnership`;
@@ -129,6 +133,24 @@ red; put the failing line in the PR body. Double OpenRegister classes with
     `CaseDecisionAccessListenerTest::testASupervisorOfTheCaseSeesTheHiddenDecision`,
     `testAnyoneElseOrAFailedReadLeavesItHidden`, `CaseAccessListenerRegistrarTest`. Stub
     `tests/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php`.
+  - ticked (12 Oct): openregister#4583 and #4592 are on openregister development (train #4595), and
+    dossiq#3761 is on development (train 3). Checked against the code on openregister development
+    c021ddb06, not against the PR text:
+    - `Schema::setConfiguration()` keeps `x-openregister-review` (it is in the known-key list, so
+      it is not dropped), and `ReviewAnnotationValidator` accepts `ownership`, `supervisors` and
+      `hideOthers` as dossiq declares them.
+    - `ReviewPolicyResolver::forRelation()` reads the key from the configuration of the schema the
+      relation's object, or the object its file belongs to, is stored under.
+    - `DecisionOwnership::refusal()` answers `{error: "decision-owned", decision, decidedBy,
+      decidedAt}`, and under `hideOthers` only `{error, decision}`. `EntityRelationsController`
+      answers it as 403 on PATCH `/api/entity-relations/{id}`.
+    - `DecisionOwnership` dispatches `DecisionChangeRequestedEvent` and `DecisionVisibility`
+      dispatches `DecisionVisibilityRequestedEvent`, both with `objectUuid` in the subject. The
+      constructors and getters equal dossiq's two stubs, and `CaseDecisionAccessListener` reads
+      `getSubject()['objectUuid']`.
+    - Still owed (live pass, decision 139): the Newman folder `redaction`. The collection
+      `tests/newman/woo-request-scoped-access.postman_collection.json` that 1.2, 3.3 and this task
+      name is not written yet, so the live pass has nothing to run until it is.
 
 ## 6. Live
 

@@ -206,10 +206,10 @@ only the day it lands on SHALL be rolled.
 - **AND** the reminder a week earlier SHALL also land on an ordinary day
 
 #### Scenario: The ingebrekestelling grace ends on a Sunday
-@e2e exclude unit fixture pair; NoticeOfDefaultServiceTest
+@e2e exclude unit fixture pair; AccrualNoticeServiceTest
 
 - **GIVEN** a receipt date whose grace period of the regime ends on a Sunday
-- **WHEN** `NoticeOfDefaultService` computes the start of the dwangsom window
+- **WHEN** `AccrualNoticeService` computes the start of the dwangsom window
 - **THEN** the date SHALL move to the following Monday
 - **AND** the regime's validity rules SHALL be unchanged
 

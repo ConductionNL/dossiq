@@ -62,6 +62,9 @@ parameters:
         # Filinq's document events (flow-nodes-to-their-owners), same
         # declaration-only-stub discipline as the apps above.
         - tests/Stubs/Filinq
+        # Shillinq's payout commands (Money\PayoutRequester), same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/Shillinq/Event
         # OpenRegister's AppHost store plane (ADR-080). StoreController takes
         # GenericStoreService as an INJECTED type-hint rather than extending a
         # cross-app base, precisely so one scanned stub resolves it; an

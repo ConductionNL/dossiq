@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WooSourcesController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -141,7 +142,7 @@ class WooSourcesControllerTest extends TestCase {
 			accessGuard: $guard,
 			userSession: $session,
 			l10n: $l10n,
-			plans: new WooSearchPlans(settingsService: $planSettings),
+			plans: new WooSearchPlans(settingsService: $planSettings, templates: $this->createMock(RecordTemplateReader::class)),
 			queries: $this->queries,
 		);
 	}//end controller()

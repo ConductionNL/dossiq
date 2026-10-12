@@ -44,6 +44,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Term\DayCount;
 use Throwable;
 
 /**
@@ -77,8 +78,12 @@ class IncidentRecord {
 	 *        so it has to be counted in the zone the organisation administers;
 	 *        counting it in a zone this class named itself is the zone nobody
 	 *        chose (openspec/changes/one-date-write-path).
+	 * @param DayCount $days Counts the days between two moments.
 	 */
-	public function __construct(private readonly CaseDateNormaliser $dates) {
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+		private readonly DayCount $days = new DayCount(),
+	) {
 	}//end __construct()
 
 	/**
@@ -132,8 +137,10 @@ class IncidentRecord {
 		// hours short of a whole day, and the delay comes out one day low with
 		// nothing to show why.
 		$zone = $this->dates->timeZone();
-		$days = (int)$event->setTimezone($zone)->setTime(0, 0)
-			->diff($recorded->setTimezone($zone)->setTime(0, 0))->days;
+		$days = $this->days->between(
+			from: $event->setTimezone($zone)->setTime(0, 0),
+			to: $recorded->setTimezone($zone)->setTime(0, 0)
+		);
 
 		// A recording BEFORE the event is a typo in the event date, not a
 		// negative delay. Reported as no delay rather than as a number that
