@@ -19,35 +19,33 @@ One app-config key selects the adapter tier per integration, plus tier-specific 
 
 | Key | Values | Default |
 |-----|--------|---------|
-| `integration.brp.mode` | `log` \| `mock` \| `test` | `log` |
-| `integration.brp.baseUrl` | e.g. `http://localhost:5010/haalcentraal/api/brp` (mock) or `https://proefomgeving.haalcentraal.nl/haalcentraal/api/brp` | unset |
-| `integration.brp.apiKey` | proefomgeving X-API-KEY | unset |
 | `integration.dso.baseUrl` | `https://service.pre.omgevingswet.overheid.nl` | unset |
 
 Set a tier with, e.g.:
 
 ```bash
-occ config:app:set dossiq integration.brp.mode --value mock
-occ config:app:set dossiq integration.brp.baseUrl --value http://personen-mock:5010/haalcentraal/api/brp
+occ config:app:set dossiq integration.dso.baseUrl --value https://service.pre.omgevingswet.overheid.nl
 ```
 
 An unknown or unset mode always falls back to `log`.
 
 ## Per-integration status
 
-### BRP (Haal Centraal Personen bevragen) — beta
+### BRP (family relations for the conflict-of-interest check)
 
-- **Test env**: official OSS mock `ghcr.io/brp-api/personen-mock` (runs fully offline, port 5010,
-  `/haalcentraal/api/brp/personen`) and the official proefomgeving
-  `https://proefomgeving.haalcentraal.nl/haalcentraal/api/brp`.
-- **Adapter**: `HaalCentraalBrpAdapter` (X-API-KEY, configurable base URL), selected by
-  `integration.brp.mode`. Never logs the BSN (AVG art. 9); fail-soft on transport errors.
-- **Contract lane**: offline against the personen-mock koppelvlak (`tests/Unit/Service/External/BrpKvkContractTest.php`
-  + recorded fixture in `tests/fixtures/contracts/brp/`). The fixtures are aligned with the
-  `brp-kvk-register-sets` seed personas.
-- **Access request**: proefomgeving X-API-KEY is granted ad-hoc by e-mail to the BRP-API product
-  owner (see the getting-started page of `github.com/BRP-API/Haal-Centraal-BRP-bevragen`).
-  **Status: not requested in this session** (no live proefomgeving credential is bundled).
+Dossiq ships no BRP client. Integriq holds the BRP source. Dossiq asks it one question: who are this case worker's partner, parents and children? The conflict-of-interest check uses the answer to stop a worker deciding on a case of their own family.
+
+The read is off by default. Switch it on in three steps:
+
+1. Check your BRP authorisation (autorisatiebesluit) from RvIG. It must cover the burgerservicenummer of parents, partner and children for this task.
+2. Open the `brp-haalcentraal` source in Integriq and set `relationFields` to `true` in its configuration.
+3. Decide on a test case as a worker whose partner is the applicant. Dossiq refuses, with the reason `partner`.
+
+What you see while it is off: the check still compares the worker with the applicant, and its answer carries `relationCheck: not-available` with the reason. Nothing is asked of the BRP.
+
+What you see when it is on and the BRP does not answer: the decision is refused with `relatie_onbepaald`. Dossiq does not treat silence as "no relation".
+
+The keys `integration.brp.mode`, `integration.brp.baseUrl` and `integration.brp.apiKey` are retired. Setting them changes nothing. Remove them with `occ config:app:delete dossiq integration.brp.mode`, and the same for the other two.
 
 ### KvK (Handelsregister)
 
@@ -100,15 +98,14 @@ adapter refuses every login and makes no external call. The former
 
 | Integration | Grant | Status (this session) |
 |-------------|-------|------------------------|
-| BRP proefomgeving X-API-KEY | e-mail to BRP-API product owner | not requested (offline mock lane wired) |
 | DSO pre-prod (client_id + test key + PKIoverheid cert) | aansluittraject | blocked — formal aansluittraject, customer-side, out of scope |
 | Logius DigiD preproductie + PKIoverheid cert | supplier application | blocked — formal aansluiting, out of scope (simulator shipped) |
 | Preservica Starter | instant signup | not exercised (belongs with migrate-archival-to-or) |
 
 ## What could not be verified in this session
 
-- No live external calls were made against BRP proefomgeving, DSO pre-prod, Logius preprod, or a
+- No live external calls were made against DSO pre-prod, Logius preprod, or a
   real e-Depot — those require credentials/certificates from formal aansluittrajecten that are
   customer-side and out of session scope. The adapters + config tiers + offline/recorded contract
-  lanes are shipped and green; promotion of BRP/KvK from beta → stable is gated on an end-to-end
-  run against the official environment once the credential is granted.
+  lanes are shipped and green. The BRP and KvK sources live in Integriq, and their live pass is
+  Integriq's.
