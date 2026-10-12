@@ -70,7 +70,7 @@ class StufProviderQueryListener implements IEventListener {
 	 *
 	 * @param StufRegisterAccess $register  The stufEndpoint rows.
 	 * @param SettingsService    $settings  The register and case schema.
-	 * @param CaseObjectReader   $caseTypes Reads a case type for its slug.
+	 * @param CaseObjectReader   $caseTypes Reads a case type for its catalogue identifier.
 	 * @param LoggerInterface    $logger    The logger.
 	 */
 	public function __construct(
@@ -272,7 +272,7 @@ class StufProviderQueryListener implements IEventListener {
 	 * The zaaksysteem's zaaktype for a case type, from the endpoint's mapping.
 	 *
 	 * @param string                $caseTypeId The case's caseType uuid.
-	 * @param array<string, string> $mappings   Case type slug (or uuid) to zaaktype omschrijving.
+	 * @param array<string, string> $mappings   Case type catalogue identifier (or uuid) to the zaaksysteem's name for it.
 	 *
 	 * @return string The zaaktype, '' when unmapped.
 	 */
@@ -285,8 +285,12 @@ class StufProviderQueryListener implements IEventListener {
 			return (string)$mappings[$caseTypeId];
 		}
 
-		$slug = (string)($this->caseTypes->loadCaseType(caseTypeId: $caseTypeId)['slug'] ?? '');
-		return (string)($mappings[$slug] ?? '');
+		$identifier = trim((string)($this->caseTypes->loadCaseType(caseTypeId: $caseTypeId)['identifier'] ?? ''));
+		if ($identifier === '') {
+			return '';
+		}
+
+		return (string)($mappings[$identifier] ?? '');
 	}//end zaaktype()
 
 	/**
