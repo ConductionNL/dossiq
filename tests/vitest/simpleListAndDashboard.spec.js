@@ -764,6 +764,14 @@ describe('the case type list', () => {
 		}
 	})
 
+	it('says the count line and the search placeholder in Dutch', () => {
+		// A Dutch reader saw "38 case types": the key was in the manifest and
+		// in no catalogue, so the library drew it as written.
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		expect(nl[list.config.countSubtitle]).toBe('{total} zaaktypen')
+		expect(nl[list.config.searchPlaceholder]).toBe('Zoeken in deze lijst')
+	})
+
 	it('has an Actions menu with the import dialog the case type page already owns', () => {
 		expect(list.config.headerActions).toEqual([
 			expect.objectContaining({
