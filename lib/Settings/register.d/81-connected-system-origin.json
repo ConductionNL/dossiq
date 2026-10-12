@@ -1,0 +1,25 @@
+{
+    "_note": "A case a connected system opened keeps where it came from (decision 206). Generic on purpose: the adapter that received the message (integriq, for StUF-ZDS) names the connection, and dossiq stores the connection id and the identifier the system gave the case, so a later message from the same system finds the same case. Neither field is a wire format's name.",
+    "components": {
+        "schemas": {
+            "case": {
+                "properties": {
+                    "originSystem": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "title": "Origin system",
+                        "description": "The connection through which a connected system opened this case. Empty for a case opened in dossiq.",
+                        "visible": false
+                    },
+                    "originIdentifier": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "title": "Origin identifier",
+                        "description": "The identifier the connected system gave this case, so its later messages find it. Empty for a case opened in dossiq.",
+                        "visible": false
+                    }
+                }
+            }
+        }
+    }
+}
