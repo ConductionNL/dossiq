@@ -70,6 +70,13 @@ class DrcObjectLinkRulesTest extends TestCase {
 	private array $queries = [];
 
 	/**
+	 * The context of every error the rules logged.
+	 *
+	 * @var array<int, array>
+	 */
+	private array $errors = [];
+
+	/**
 	 * Build the rules, with a search that answers from its query when one is given.
 	 *
 	 * @param \Closure|null $answer Maps a query to a search result, or null for no context.
@@ -84,7 +91,12 @@ class DrcObjectLinkRulesTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 
 		$lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settings);
-		$parts   = ['lookups' => $lookups, 'results' => new ZgwRuleResults(), 'settingsService' => $settings, 'fieldValidator' => new FieldValidator(), 'logger' => $logger];
+		$logger->method('error')->willReturnCallback(
+			function (string $message, array $context = []): void {
+				$this->errors[] = $context;
+			}
+		);
+		$parts   = ['lookups' => $lookups, 'results' => new ZgwRuleResults(logger: $logger), 'settingsService' => $settings, 'fieldValidator' => new FieldValidator()];
 		$rules   = new DrcObjectLinkRules(...$parts, relations: new DrcDocumentRelations(...$parts));
 		if ($answer === null) {
 			return $rules;
@@ -241,11 +253,14 @@ class DrcObjectLinkRulesTest extends TestCase {
 	}//end testAMissingCounterpartIsInconsistent()
 
 	/**
-	 * Drc-004 passes when the counterpart is found, and when its lookup fails.
+	 * Drc-004 passes when the counterpart is found, and refuses when its lookup could not run.
+	 *
+	 * The found counterpart is the control: the refusal comes from the failed lookup, not from the body.
+	 * A lookup that ran and found nothing is the third answer, inconsistent-relation (the test above).
 	 *
 	 * @return void
 	 */
-	public function testAFoundCounterpartOrAFailedLookupPasses(): void {
+	public function testAFoundCounterpartPassesAndAFailedLookupRefuses(): void {
 		$body  = ['informatieobject' => self::DOCUMENT_URL, 'object' => self::CASE_URL, 'objectType' => 'case'];
 		$found = static fn (array $query): array => ['total' => (int)self::isCounterpartLookup(query: $query)];
 		$down  = static function (array $query): array {
@@ -257,8 +272,26 @@ class DrcObjectLinkRulesTest extends TestCase {
 		};
 
 		$this->assertTrue($this->rules(answer: $found)->rulesObjectinformatieobjectenCreate(body: $body)['valid']);
-		$this->assertTrue($this->rules(answer: $down)->rulesObjectinformatieobjectenCreate(body: $body)['valid']);
-	}//end testAFoundCounterpartOrAFailedLookupPasses()
+		$this->assertSame([], $this->errors);
+
+		$refused = $this->rules(answer: $down)->rulesObjectinformatieobjectenCreate(body: $body);
+
+		$this->assertSame(
+			[
+				'valid' => false,
+				'status' => 503,
+				'detail' => 'De controle van regel drc-004 kon niet worden uitgevoerd. Er is niets gewijzigd. Probeer het later opnieuw.',
+				'invalidParams' => [],
+				'enrichedBody' => [],
+				'code' => 'check-not-completed',
+			],
+			$refused
+		);
+		$this->assertSame(
+			[['rule' => 'drc-004', 'object' => 'case ' . self::CASE . ' with document ' . self::DOCUMENT, 'cause' => 'down']],
+			$this->errors
+		);
+	}//end testAFoundCounterpartPassesAndAFailedLookupRefuses()
 
 	/**
 	 * Drc-004 is skipped without an objectType, for an unknown one, and without a schema or register.

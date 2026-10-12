@@ -5,7 +5,8 @@
  *
  * Publishing needs a status type, a final one among them, and a valid-from date.
  * Deleting is blocked while active cases use the type and asks for confirmation
- * when only closed cases do.
+ * when only closed cases do. A delete check that cannot read the cases blocks
+ * too: "could not look" is not "no cases".
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Zgw
@@ -31,6 +32,7 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use RuntimeException;
 
 /**
  * Publish and delete checks of a case type.
@@ -41,13 +43,20 @@ class ZtcPublishAndDeleteChecks {
 	use SearchesObjects;
 
 	/**
+	 * The name the delete check goes by in the log.
+	 */
+	private const DELETE_CHECK = 'ztc case type delete check (REQ-CT-01d)';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZgwRuleLookups $lookups Store lookups in the request context.
+	 * @param ZgwRuleResults $results Logs a check that could not run.
 	 * @param SettingsService $settingsService The settings service.
 	 */
 	public function __construct(
 		private readonly ZgwRuleLookups $lookups,
+		private readonly ZgwRuleResults $results,
 		private readonly SettingsService $settingsService,
 	) {
 	}//end __construct()
@@ -169,8 +178,11 @@ class ZtcPublishAndDeleteChecks {
 	 *   ['blocked' => bool, 'requiresConfirmation' => bool, 'message' => string]
 	 *
 	 * - blocked=true   → 409 Conflict; active cases exist.
+	 * - blocked=true with unverified=true → the cases could not be read, so nobody
+	 *   knows whether the type is in use. The caller refuses with the
+	 *   "could not be checked" status, not with a conflict.
 	 * - requiresConfirmation=true → 200 OK with confirmation prompt (closed-only cases).
-	 * - otherwise → safe to delete.
+	 * - otherwise → the check ran and found no cases: safe to delete.
 	 *
 	 * @param string $register Register slug.
 	 * @param string $caseTypeId Case type id.
@@ -181,32 +193,39 @@ class ZtcPublishAndDeleteChecks {
 	 */
 	public function validateDeletion(string $register, string $caseTypeId): array {
 		$default = ['blocked' => false, 'requiresConfirmation' => false, 'message' => ''];
-		if ($this->lookups->objectService() === null || $caseTypeId === '') {
+		if ($caseTypeId === '') {
 			return $default;
 		}
-
-		$caseSchema = (string)$this->settingsService->getConfigValue(key: 'case_schema');
 
 		try {
+			$objectService = $this->lookups->objectService();
+			if ($objectService === null) {
+				throw new RuntimeException('No object service in the request context');
+			}
+
 			$cases = $this->searchObjectsAsArrays(
-				objectService: $this->lookups->objectService(),
+				objectService: $objectService,
 				register: $register,
-				schema: $caseSchema,
+				schema: (string)$this->settingsService->getConfigValue(key: 'case_schema'),
 				filters: ['caseType' => $caseTypeId],
 			);
+			if (count($cases) === 0) {
+				return $default;
+			}
+
+			$finalSlugs = $this->loadFinalStatusSlugs(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
 		} catch (\Throwable $e) {
-			return $default;
-		}
+			// The cases or their final statuses could not be read. Refuse: the type may be in use.
+			$this->results->logNotVerified(rule: self::DELETE_CHECK, object: 'case type ' . $caseTypeId, cause: $e->getMessage());
 
-		if (count($cases) === 0) {
-			return $default;
-		}
-
-		$finalSlugs = $this->loadFinalStatusSlugs(
-			objectService: $this->lookups->objectService(),
-			register: $register,
-			caseTypeId: $caseTypeId,
-		);
+			return [
+				'blocked' => true,
+				'requiresConfirmation' => false,
+				'unverified' => true,
+				'message' => 'Cannot delete case type: the check for cases that use this type could not be completed. '
+					. 'Nothing was deleted. Try again later.',
+			];
+		}//end try
 
 		$tally = $this->tallyCaseClosure(cases: $cases, finalSlugs: $finalSlugs);
 		$activeCount = $tally['active'];
@@ -229,26 +248,24 @@ class ZtcPublishAndDeleteChecks {
 	}//end validateDeletion()
 
 	/**
-	 * Load the ids of the final statusTypes of a case type, or an empty list when unreadable.
+	 * Load the ids of the final statusTypes of a case type. An unreadable list throws.
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param string $register Register slug.
 	 * @param string $caseTypeId Case type id.
 	 *
 	 * @return array<int, string> The final statusType ids.
+	 *
+	 * @throws \Throwable When the status types cannot be read.
 	 */
 	private function loadFinalStatusSlugs(object $objectService, string $register, string $caseTypeId): array {
 		$statusSchema = (string)$this->settingsService->getConfigValue(key: 'status_type_schema');
-		try {
-			$finalStatusTypes = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $statusSchema,
-				filters: ['caseType' => $caseTypeId, 'isFinal' => true],
-			);
-		} catch (\Throwable $e) {
-			return [];
-		}
+		$finalStatusTypes = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $statusSchema,
+			filters: ['caseType' => $caseTypeId, 'isFinal' => true],
+		);
 
 		$finalSlugs = [];
 		foreach ($finalStatusTypes as $row) {

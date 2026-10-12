@@ -56,6 +56,7 @@ interface DrcLifecycleObjectServiceStub {
  * Characterisation tests for the EIO delete, update and chunked create.
  *
  * @covers \OCA\Dossiq\Controller\DrcController
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\Zgw\ZgwSearchScope
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
@@ -106,7 +107,14 @@ class DrcEioLifecycleTest extends TestCase {
 			static fn (array $requestParams, mixed $register, mixed $schema): array => ['schema' => (string)$schema, 'params' => $requestParams]
 		);
 		$objects->method('searchObjectsPaginated')->willReturnCallback(
-			static fn (array $query): array => ['results' => $searches[$query['schema']] ?? []]
+			static function (array $query) use ($searches): array {
+				$answer = ($searches[$query['schema']] ?? []);
+				if ($answer instanceof \Throwable) {
+					throw $answer;
+				}
+
+				return ['results' => $answer];
+			}
 		);
 		$objects->method('deleteObject')->willReturnCallback(function (string $uuid): bool {
 			$this->seen['deleted'][] = $uuid;
@@ -134,6 +142,9 @@ class DrcEioLifecycleTest extends TestCase {
 				$this->seen['destroyed'][] = $resource.':'.$uuid;
 				return new JSONResponse(data: [], statusCode: $destroyStatus);
 			}
+		);
+		$zgw->method('buildValidationError')->willReturnCallback(
+			static fn (array $ruleResult): array => ['detail' => $ruleResult['detail'], 'code' => ($ruleResult['code'] ?? '')]
 		);
 		$zgw->method('getRequestBody')->willReturn($body);
 		$rules = $this->createMock(ZgwBusinessRulesService::class);
@@ -174,6 +185,27 @@ class DrcEioLifecycleTest extends TestCase {
 		$this->assertSame([], $this->seen['files']);
 
 	}//end testDocumentWithARelationIsNotDeleted()
+
+	/**
+	 * A document whose relations could not be looked up is not deleted either: 503, nothing cascades.
+	 *
+	 * The besluit side fails here while the other two answer none. Control: testDeletedDocumentCascades,
+	 * where every search answers and the delete goes through.
+	 *
+	 * @return void
+	 */
+	public function testDocumentWhoseRelationsCannotBeReadIsNotDeleted(): void {
+		$response = $this->controller(stored: ['id' => self::UUID], searches: ['14' => new \RuntimeException('down'), '15' => [['id' => 'gr-1']]])
+			->destroy('enkelvoudiginformatieobjecten', self::UUID);
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame('check-not-completed', $response->getData()['code']);
+		$this->assertStringContainsString('drc-008a', $response->getData()['detail']);
+		$this->assertSame([], $this->seen['destroyed']);
+		$this->assertSame([], $this->seen['deleted']);
+		$this->assertSame([], $this->seen['files']);
+
+	}//end testDocumentWhoseRelationsCannotBeReadIsNotDeleted()
 
 	/**
 	 * A deleted document takes its gebruiksrechten and its stored files with it.

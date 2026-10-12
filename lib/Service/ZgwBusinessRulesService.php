@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher;
 
 /**
@@ -282,6 +283,17 @@ class ZgwBusinessRulesService {
 		}
 
 		$delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
+		if (($delGuard['unverified'] ?? false) === true) {
+			// The check could not read the cases. Nothing says the request is wrong, so no conflict.
+			return [
+				'valid' => false,
+				'status' => ZgwRuleResults::NOT_VERIFIED_STATUS,
+				'detail' => (string)$delGuard['message'],
+				'code' => 'destroy_check_not_completed',
+				'enrichedBody' => $body,
+			];
+		}
+
 		if ($delGuard['blocked'] === true) {
 			return [
 				'valid' => false,

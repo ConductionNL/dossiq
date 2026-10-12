@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Store lookups of the ZGW business rules, in the request context.
@@ -150,6 +151,9 @@ class ZgwRuleLookups {
 	/**
 	 * Find all objects matching a field value.
 	 *
+	 * A search that fails is logged and answers an empty list. A rule that must
+	 * tell "none" from "could not look" reads {@see self::idsByField()} instead.
+	 *
 	 * @param string $register The register to search in
 	 * @param string $schema The schema to search in
 	 * @param string $field The field to match on
@@ -166,35 +170,64 @@ class ZgwRuleLookups {
 		string $value,
 	): array {
 		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 100],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$ids = [];
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$id = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($id !== null) {
-					$ids[] = $id;
-				}
-			}
-
-			return $ids;
+			return $this->idsByField(register: $register, schema: $schema, field: $field, value: $value);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Reference resolution failed: ' . $e->getMessage(),
 				['field' => $field, 'value' => $value]
 			);
 			return [];
-		}//end try
+		}
 	}//end findAllObjectsByField()
+
+	/**
+	 * The ids of the objects that carry a field value. A search that cannot run throws.
+	 *
+	 * An empty list means the search ran and found none.
+	 *
+	 * @param string $register The register to search in
+	 * @param string $schema The schema to search in
+	 * @param string $field The field to match on
+	 * @param string $value The field value to search for
+	 *
+	 * @return array<string> The ids of the matching objects
+	 *
+	 * @throws \Throwable When the store cannot be searched.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function idsByField(
+		string $register,
+		string $schema,
+		string $field,
+		string $value,
+	): array {
+		if ($this->objectService === null) {
+			throw new RuntimeException('No object service in the request context');
+		}
+
+		$query = $this->objectService->buildSearchQuery(
+			requestParams: [$field => $value, '_limit' => 100],
+			register: $register,
+			schema: $schema
+		);
+		$result = $this->objectService->searchObjectsPaginated(query: $query);
+
+		$ids = [];
+		foreach (($result['results'] ?? []) as $obj) {
+			$data = $obj;
+			if (is_array($obj) === false) {
+				$data = $obj->jsonSerialize();
+			}
+
+			$id = $data['id'] ?? ($data['@self']['id'] ?? null);
+			if ($id !== null) {
+				$ids[] = $id;
+			}
+		}
+
+		return $ids;
+	}//end idsByField()
 
 	/**
 	 * Look up an object in OpenRegister by UUID and schema key.

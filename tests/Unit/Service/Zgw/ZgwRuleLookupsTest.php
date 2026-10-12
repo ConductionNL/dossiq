@@ -180,6 +180,37 @@ final class ZgwRuleLookupsTest extends TestCase {
 	}//end testEveryObjectByField()
 
 	/**
+	 * The strict read tells "none" from "could not look": an empty answer is an empty list, a search
+	 * that fails throws, and so does a read without a store.
+	 *
+	 * @return void
+	 */
+	public function testTheStrictReadThrowsWhenItCannotLook(): void {
+		$some = $this->store(search: static fn (array $query): array => ['results' => [['id' => 'a']]]);
+		$none = $this->store(search: static fn (array $query): array => ['results' => []]);
+		$down = $this->store(
+			search: static function (): array {
+				throw new \RuntimeException('down');
+			}
+		);
+
+		$this->assertSame(['a'], $this->lookups(store: $some)->idsByField(register: '5', schema: '9', field: 'document', value: 'x'));
+		$this->assertSame([], $this->lookups(store: $none)->idsByField(register: '5', schema: '9', field: 'document', value: 'x'));
+
+		$thrown = [];
+		foreach ([$down, null] as $store) {
+			try {
+				$this->lookups(store: $store)->idsByField(register: '5', schema: '9', field: 'document', value: 'x');
+			} catch (\RuntimeException $e) {
+				$thrown[] = $e->getMessage();
+			}
+		}
+
+		$this->assertSame(['down', 'No object service in the request context'], $thrown);
+		$this->assertSame([], $this->warnings, 'the strict read leaves the logging to the rule that refuses');
+	}//end testTheStrictReadThrowsWhenItCannotLook()
+
+	/**
 	 * An object by uuid is read in the request's register and the schema the key names.
 	 *
 	 * @return void

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -649,7 +650,8 @@ class DrcController extends ZgwController {
 	/**
 	 * Delete an enkelvoudiginformatieobject.
 	 *
-	 * Refused while ObjectInformatieObjecten point at it (drc-008a). After a successful delete its
+	 * Refused while ObjectInformatieObjecten point at it (drc-008a), and refused when that could
+	 * not be looked up. After a successful delete its
 	 * gebruiksrechten go (drc-008), and its stored files go when the document could be read
 	 * before the delete.
 	 *
@@ -661,9 +663,14 @@ class DrcController extends ZgwController {
 		$hasStoredFiles = $this->isReadableEio(uuid: $uuid);
 
 		// Drc-008a (VNG): Block EIO deletion when OIO relations exist.
-		if ($this->zgwService->getObjectService() !== null
-			&& empty($this->findOioRelationsForEio(eioUuid: $uuid)) === false
-		) {
+		try {
+			$relations = $this->findOioRelationsForEio(eioUuid: $uuid);
+		} catch (\Throwable $e) {
+			// The search did not run, so nobody knows whether relations point here. Refuse.
+			return $this->relationCheckNotCompleted(uuid: $uuid, cause: $e->getMessage());
+		}
+
+		if (empty($relations) === false) {
 			return new JSONResponse(
 				[
 					'detail' => $this->l10n->t('The document cannot be deleted: there are related ObjectInformatieObjecten.'),
@@ -700,6 +707,26 @@ class DrcController extends ZgwController {
 
 		return $response;
 	}//end destroyEio()
+
+	/**
+	 * The answer when the relation check of a document delete could not run (drc-008a).
+	 *
+	 * The same refusal the rules give, logged with the rule and the document. Nothing is deleted.
+	 *
+	 * @param string $uuid The document uuid.
+	 * @param string $cause Why the check could not run.
+	 *
+	 * @return JSONResponse
+	 */
+	private function relationCheckNotCompleted(string $uuid, string $cause): JSONResponse {
+		$refusal = (new ZgwRuleResults(logger: $this->zgwService->getLogger()))
+			->notVerified(rule: 'drc-008a', object: 'document ' . $uuid, cause: $cause);
+
+		return new JSONResponse(
+			data: $this->zgwService->buildValidationError(ruleResult: $refusal),
+			statusCode: $refusal['status']
+		);
+	}//end relationCheckNotCompleted()
 
 	/**
 	 * Whether the document can be read, which is what decides whether its files are cleaned up.
@@ -1177,6 +1204,8 @@ class DrcController extends ZgwController {
 	 * @param string $eioUuid The EIO UUID
 	 *
 	 * @return array List of related object IDs linked to this EIO
+	 *
+	 * @throws \Throwable When a schema cannot be searched.
 	 */
 	private function findOioRelationsForEio(string $eioUuid): array {
 		$objectService = $this->zgwService->getObjectService();
@@ -1237,7 +1266,9 @@ class DrcController extends ZgwController {
 	 * @param string $register The register ID
 	 * @param string $schema The schema ID
 	 *
-	 * @return array List of related object IDs
+	 * @return array List of related object IDs. Empty means the search ran and found none.
+	 *
+	 * @throws \Throwable When the schema cannot be searched.
 	 */
 	private function searchRelationsInSchema(
 		object $objectService,
@@ -1245,36 +1276,30 @@ class DrcController extends ZgwController {
 		string $register,
 		string $schema,
 	): array {
-		try {
-			// Try exact UUID match (OIO may store just the UUID).
-			$query = $objectService->buildSearchQuery(
-				requestParams: ['document' => $eioUuid, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-			$ids = $this->extractIdsFromResults(result: $result);
-			if (empty($ids) === false) {
-				return $ids;
-			}
+		// Try exact UUID match (OIO may store just the UUID).
+		$query = $objectService->buildSearchQuery(
+			requestParams: ['document' => $eioUuid, '_limit' => 1],
+			register: $register,
+			schema: $schema
+		);
+		$result = $objectService->searchObjectsPaginated(query: $query);
+		$ids = $this->extractIdsFromResults(result: $result);
+		if (empty($ids) === false) {
+			return $ids;
+		}
 
-			// Fallback: full-text search by UUID (document field stores
-			// the full URL, and field-specific LIKE is not supported).
-			$query = $objectService->buildSearchQuery(
-				requestParams: ['_search' => $eioUuid, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-			$ids = $this->extractIdsFromResults(result: $result);
-			if (empty($ids) === false) {
-				return $ids;
-			}
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'drc-008a: Relation search failed for schema ' . $schema . ': ' . $e->getMessage()
-			);
-		}//end try
+		// Fallback: full-text search by UUID (document field stores
+		// the full URL, and field-specific LIKE is not supported).
+		$query = $objectService->buildSearchQuery(
+			requestParams: ['_search' => $eioUuid, '_limit' => 1],
+			register: $register,
+			schema: $schema
+		);
+		$result = $objectService->searchObjectsPaginated(query: $query);
+		$ids = $this->extractIdsFromResults(result: $result);
+		if (empty($ids) === false) {
+			return $ids;
+		}
 
 		return [];
 	}//end searchRelationsInSchema()
