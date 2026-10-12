@@ -57,6 +57,13 @@ class StufIntegriqBridge {
 	private const CONFIRMATION_EVENT = 'OCA\Integriq\Event\StufZdsConfirmationReceivedEvent';
 
 	/**
+	 * Integriq's forward event for a StUF provider request (decision 199).
+	 *
+	 * @var string
+	 */
+	private const PROVIDER_EVENT = 'OCA\Integriq\Event\StufProviderRequestReceivedEvent';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IEventDispatcher $dispatcher Carries the events to integriq.
@@ -138,4 +145,30 @@ class StufIntegriqBridge {
 
 		return ['statusCode' => (int)$event->getStatusCode(), 'body' => (string)$event->getBody()];
 	}//end forwardConfirmation()
+
+	/**
+	 * Hand a StUF provider request (zakLv01, zakLk01, npsLv01, edcLk01) to integriq and return its answer.
+	 *
+	 * @param string $rawXml   The raw request body, unchanged.
+	 * @param string $sourceId The integriq source of the endpoint the sender belongs to, '' when unknown (integriq then refuses).
+	 * @param string $service  `cases` or `persons`.
+	 *
+	 * @return array{statusCode:int,body:string}|null Integriq's answer, or null when nobody answered.
+	 *
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
+	 */
+	public function forwardProviderRequest(string $rawXml, string $sourceId, string $service): ?array {
+		$eventClass = self::PROVIDER_EVENT;
+		if (class_exists($eventClass) === false) {
+			return null;
+		}
+
+		$event = new $eventClass(sourceApp: Application::APP_ID, rawXml: $rawXml, sourceId: $sourceId, service: $service);
+		$this->dispatcher->dispatchTyped($event);
+		if ($event->isHandled() === false) {
+			return null;
+		}
+
+		return ['statusCode' => (int)$event->getStatusCode(), 'body' => (string)$event->getBody()];
+	}//end forwardProviderRequest()
 }//end class

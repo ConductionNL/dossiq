@@ -152,6 +152,30 @@ class StufIntegriqBridgeTest extends TestCase {
 	}//end testAnUnansweredConfirmationIsNull()
 
 	/**
+	 * A provider request is forwarded unchanged, with its source and service, and integriq's answer comes back.
+	 *
+	 * @return void
+	 */
+	public function testAProviderRequestIsForwardedAndAnswered(): void {
+		$bridge = $this->bridge(
+			static function (object $event): void {
+				if ($event instanceof \OCA\Integriq\Event\StufProviderRequestReceivedEvent) {
+					$event->answer(statusCode: 500, body: '<Fo02/>');
+				}
+			}
+		);
+
+		$answer = $bridge->forwardProviderRequest(rawXml: '<zakLv01/>', sourceId: 'src-9', service: 'cases');
+
+		$this->assertSame(['statusCode' => 500, 'body' => '<Fo02/>'], $answer);
+		$this->assertSame('<zakLv01/>', $this->events[0]->getRawXml());
+		$this->assertSame('src-9', $this->events[0]->getSourceId());
+		$this->assertSame('cases', $this->events[0]->getService());
+		$this->assertSame('dossiq', $this->events[0]->getSourceApp());
+		$this->assertNull($this->bridge(static fn (): null => null)->forwardProviderRequest(rawXml: '<zakLv01/>', sourceId: 'src-9', service: 'cases'));
+	}//end testAProviderRequestIsForwardedAndAnswered()
+
+	/**
 	 * Build the bridge over a dispatcher that plays integriq.
 	 *
 	 * @param callable $integriq Handles each dispatched event.

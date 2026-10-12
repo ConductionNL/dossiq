@@ -24,9 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 
-use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufVaultService;
 use OCA\Dossiq\Tests\Unit\Fixtures\SchemaAwareStufRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
@@ -41,7 +39,7 @@ use Psr\Log\LoggerInterface;
  * what the schema does not declare, and a filter on an undeclared property
  * matches zero rows rather than being ignored.
  *
- * @covers \OCA\Dossiq\Service\Stuf\StufEnvelopeInspector
+ * @covers \OCA\Dossiq\Controller\StufController
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class StufRegisterContractTest extends TestCase {
@@ -71,16 +69,10 @@ class StufRegisterContractTest extends TestCase {
 	public function testAnInboundEnvelopeResolvesItsEndpointFromTheZender(): void {
 		$this->register->seed(
 			StufRegisterAccess::SCHEMA_ENDPOINT,
-			['id' => 'ep-1', 'recipientApplication' => 'Key2Zaken']
+			['id' => 'ep-1', 'recipientApplication' => 'Key2Zaken', 'integriqSource' => 'src-9']
 		);
 
-		$inspector = new StufEnvelopeInspector($this->register, $this->createMock(StufVaultService::class));
-		$endpoint = $inspector->resolveEndpoint(
-			envelopeXml: '<stuf:zender><stuf:applicatie>Key2Zaken</stuf:applicatie></stuf:zender>'
-		);
-
-		$this->assertNotNull($endpoint, 'The zender application must resolve its endpoint.');
-		$this->assertSame('ep-1', ($endpoint['id'] ?? null));
+		$this->assertSame('src-9', $this->forwardedSource(), 'The zender application must resolve its endpoint, and through it the integriq source.');
 	}//end testAnInboundEnvelopeResolvesItsEndpointFromTheZender()
 
 	/**
@@ -140,11 +132,41 @@ class StufRegisterContractTest extends TestCase {
 	 * @return void
 	 */
 	private function driveEveryRegisterPath(): void {
-		$inspector = new StufEnvelopeInspector($this->register, $this->createMock(StufVaultService::class));
-		$inspector->resolveEndpoint(
-			envelopeXml: '<stuf:zender><stuf:applicatie>Key2Zaken</stuf:applicatie></stuf:zender>'
-		);
+		$this->forwardedSource();
 	}//end driveEveryRegisterPath()
+
+	/**
+	 * Post a provider envelope to the old cases URL and return the integriq source it was forwarded with.
+	 *
+	 * The zender lookup moved from the retired StufEnvelopeInspector into
+	 * StufController's forwarder (decision 199); it is the same register read.
+	 *
+	 * @return string The source id handed to integriq.
+	 */
+	private function forwardedSource(): string {
+		$seen = null;
+		$bridge = $this->createMock(\OCA\Dossiq\Service\Stuf\StufIntegriqBridge::class);
+		$bridge->method('forwardProviderRequest')->willReturnCallback(
+			static function (string $rawXml, string $sourceId, string $service) use (&$seen): array {
+				$seen = $sourceId;
+				return ['statusCode' => 200, 'body' => '<ok/>'];
+			}
+		);
+
+		$controller = new class('dossiq', $this->createMock(\OCP\IRequest::class), $this->register, $bridge, $this->createMock(\OCP\IL10N::class), $this->createMock(\Psr\Log\LoggerInterface::class), $this->createMock(\OCA\Dossiq\Service\IntegrationStatusService::class)) extends \OCA\Dossiq\Controller\StufController {
+			/**
+			 * Serve a fixed body instead of php://input.
+			 *
+			 * @return string
+			 */
+			protected function readRawBody(): string {
+				return '<stuf:zender><stuf:applicatie>Key2Zaken</stuf:applicatie></stuf:zender>';
+			}//end readRawBody()
+		};
+		$controller->cases();
+
+		return (string)$seen;
+	}//end forwardedSource()
 
 	/**
 	 * The status-transition extras and the audit-log filter are declared too.

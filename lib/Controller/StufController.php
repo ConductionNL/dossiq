@@ -18,8 +18,14 @@
  *     and records it. Point the zaaksysteem at integriq's
  *     `/api/stuf-zkn/confirmations` before the next release removes it.
  *
- * The controller owns only the HTTP surface. Envelope parsing and per-message
- * dispatch live in {@see \OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher}.
+ *   - The provider URLs (`/api/stuf/cases`, `/persons`, `/zaken`, `/personen`)
+ *     forward the raw envelope to integriq for one release too (decision 199).
+ *     Integriq authenticates it, asks dossiq through a typed event
+ *     ({@see \OCA\Dossiq\Listener\StufProviderQueryListener}) and answers in
+ *     StUF. Point the zaaksysteem at integriq's
+ *     `/api/stuf-zkn/provider/{sourceId}/cases` and `/persons`.
+ *
+ * The controller owns only the HTTP surface.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -47,7 +53,6 @@ use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\Stuf\StufException;
 use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -71,6 +76,27 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class StufController extends Controller {
+
+	/**
+	 * The case service (zakLv01, zakLk01, edcLk01): integriq's name for it.
+	 *
+	 * @var string
+	 */
+	public const SERVICE_CASES = 'cases';
+
+	/**
+	 * The person service (npsLv01).
+	 *
+	 * @var string
+	 */
+	public const SERVICE_PERSONS = 'persons';
+
+	/**
+	 * Finds the sending application in an envelope's stuurgegevens, whatever the prefix.
+	 *
+	 * @var string
+	 */
+	private const ZENDER_APPLICATION = '#<(?:\w+:)?zender>.*?<(?:\w+:)?applicatie>([^<]+)</(?:\w+:)?applicatie>.*?</(?:\w+:)?zender>#s';
 	/**
 	 * Constructor.
 	 *
@@ -78,7 +104,6 @@ class StufController extends Controller {
 	 * @param IRequest $request The request object.
 	 * @param StufRegisterAccess $register The StUF endpoint and message rows.
 	 * @param StufIntegriqBridge $bridge Asks integriq to send and to record confirmations.
-	 * @param StufSoapRequestDispatcher $dispatcher The inbound SOAP dispatcher.
 	 * @param IL10N $l10n The localization service.
 	 * @param LoggerInterface $logger The logger.
 	 * @param IntegrationStatusService $integrationStatus Records the StUF card's health.
@@ -88,7 +113,6 @@ class StufController extends Controller {
 		IRequest $request,
 		private readonly StufRegisterAccess $register,
 		private readonly StufIntegriqBridge $bridge,
-		private readonly StufSoapRequestDispatcher $dispatcher,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly IntegrationStatusService $integrationStatus,
@@ -111,10 +135,7 @@ class StufController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function cases(): DataDisplayResponse {
-		return $this->dispatcher->dispatch(
-			rawBody: $this->readRawBody(),
-			service: StufSoapRequestDispatcher::SERVICE_CASES
-		);
+		return $this->forwardProviderRequest(service: self::SERVICE_CASES);
 
 	}//end cases()
 
@@ -153,10 +174,7 @@ class StufController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
 	public function persons(): DataDisplayResponse {
-		return $this->dispatcher->dispatch(
-			rawBody: $this->readRawBody(),
-			service: StufSoapRequestDispatcher::SERVICE_PERSONS
-		);
+		return $this->forwardProviderRequest(service: self::SERVICE_PERSONS);
 
 	}//end persons()
 
@@ -292,6 +310,48 @@ class StufController extends Controller {
 	public function inboundLegacyPath(): DataDisplayResponse {
 		return $this->inbound();
 	}//end inboundLegacyPath()
+
+	/**
+	 * Forward a StUF provider request to integriq (decision 199, one release).
+	 *
+	 * The sender's `zender.applicatie` names the stufEndpoint, as it did for the
+	 * retired dispatcher; that endpoint's `integriqSource` is the integriq source
+	 * whose WS-Security integriq checks. An unknown sender is forwarded with no
+	 * source, so integriq refuses it with the same fault as a wrong password.
+	 *
+	 * @param string $service SERVICE_CASES or SERVICE_PERSONS.
+	 *
+	 * @return DataDisplayResponse Integriq's SOAP answer, or a 503 when integriq does not answer.
+	 */
+	private function forwardProviderRequest(string $service): DataDisplayResponse {
+		$rawXml   = $this->readRawBody();
+		$sourceId = '';
+		if (preg_match(self::ZENDER_APPLICATION, $rawXml, $match) === 1) {
+			$endpoint = $this->register->findOne(
+				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
+				filters: ['recipientApplication' => trim($match[1])]
+			);
+			$sourceId = (string)($endpoint['integriqSource'] ?? '');
+		}
+
+		$answer = $this->bridge->forwardProviderRequest(rawXml: $rawXml, sourceId: $sourceId, service: $service);
+		if ($answer === null) {
+			$this->logger->warning(message: 'StUF provider request: integriq did not answer; the zaaksysteem is told to retry');
+			return new DataDisplayResponse('integriq unavailable', Http::STATUS_SERVICE_UNAVAILABLE, ['Content-Type' => 'text/plain; charset=utf-8']);
+		}
+
+		// Integriq answers 200, 400, 401, 413 or 500; anything else reads as a bad gateway.
+		$status = match ($answer['statusCode']) {
+			Http::STATUS_OK => Http::STATUS_OK,
+			Http::STATUS_BAD_REQUEST => Http::STATUS_BAD_REQUEST,
+			Http::STATUS_UNAUTHORIZED => Http::STATUS_UNAUTHORIZED,
+			Http::STATUS_REQUEST_ENTITY_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
+			Http::STATUS_INTERNAL_SERVER_ERROR => Http::STATUS_INTERNAL_SERVER_ERROR,
+			default => Http::STATUS_BAD_GATEWAY,
+		};
+
+		return new DataDisplayResponse($answer['body'], $status, ['Content-Type' => 'text/xml; charset=utf-8']);
+	}//end forwardProviderRequest()
 
 	/**
 	 * Read the raw request body.

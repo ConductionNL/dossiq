@@ -8,5 +8,6 @@
 - [x] `StufZdsCaseConcludedListener` registered by name in `CrossAppListenerRegistrar`.
 - [x] Outbound classes, `StufRetryJob`, `StufMessageBuilder` and their tests deleted; namespace
       constants to `StufNamespaces`.
-- [ ] STOP: provider routes `/api/stuf/cases|persons|zaken|personen` wait for an integriq receiver.
+- [x] Provider routes `/api/stuf/cases|persons|zaken|personen`: resolved by decision 199, see change
+      `stuf-provider-through-integriq`.
 - [ ] Next release: remove the `/api/stuf/inbound` and `/api/stuf/inkomend` forwarders.

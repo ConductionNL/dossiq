@@ -30,7 +30,6 @@ use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -113,7 +112,7 @@ class StufControllerInboundTest extends TestCase {
 			}
 		);
 
-		return new class('dossiq', $this->createMock(IRequest::class), $this->createMock(StufRegisterAccess::class), $bridge, $this->createMock(StufSoapRequestDispatcher::class), $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class)) extends StufController {
+		return new class('dossiq', $this->createMock(IRequest::class), $this->createMock(StufRegisterAccess::class), $bridge, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class)) extends StufController {
 			/**
 			 * Serve a fixed body instead of php://input.
 			 *

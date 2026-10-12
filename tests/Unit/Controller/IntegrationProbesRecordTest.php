@@ -40,7 +40,6 @@ use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
 use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -352,7 +351,6 @@ class IntegrationProbesRecordTest extends TestCase {
 			request: $this->createMock(IRequest::class),
 			register: $register,
 			bridge: $this->createMock(StufIntegriqBridge::class),
-			dispatcher: $this->createMock(StufSoapRequestDispatcher::class),
 			l10n: $this->createMock(IL10N::class),
 			logger: $this->createMock(LoggerInterface::class),
 			integrationStatus: $this->recorder,

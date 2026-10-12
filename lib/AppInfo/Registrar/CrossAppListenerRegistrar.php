@@ -156,6 +156,13 @@ class CrossAppListenerRegistrar {
 			'OCA\Integriq\Event\StufZdsCaseConcludedEvent',
 			'OCA\Dossiq\Listener\StufZdsCaseConcludedListener'
 		);
+		// Decision 199: integriq answers StUF provider requests (zakLv01, zakLk01,
+		// npsLv01, edcLk01) and asks the owning app through these typed events.
+		// By name, as above; one generic listener answers all four.
+		foreach (['StufCaseQueryEvent', 'StufCaseMutationEvent', 'StufPersonQueryEvent', 'StufDocumentMutationEvent'] as $providerEvent) {
+			$context->registerEventListener('OCA\Integriq\Event\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderQueryListener');
+		}
+
 		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
 		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
 		// tracked message, `failed` and `read` included, so this is how a case
