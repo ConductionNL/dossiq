@@ -78,7 +78,7 @@ A move is not a design here. Folding two collaborators into a third to lower the
 
 | The engine asks | Today it holds | After |
 |---|---|---|
-| What does this case declare about its status and its moves? | `StatusDeclarations`, `TransitionDeclarations`, `OfferedTransitions`, `StatusChecklist` | `Transitions/CaseDeclarations` |
+| What does this case declare about its status and its moves? | `StatusDeclarations`, `TransitionDeclarations`, `OfferedTransitions`, `StatusChecklist`, and the status row read of `CaseStatusStore` | `Transitions/CaseDeclarations` |
 | What does a move write, and what did earlier moves write? | `CaseStatusStore`, `CaseResultWriter`, `SideEffectDispatcher` | `Transitions/CaseMoveLedger` |
 | May this person take this move? | `TransitionAuthorizer`, `GuardRegistry`, `TransitionSpecReader`, `ProcessOwnedStatusRule` | unchanged, the engine keeps them |
 | Which workflow does the case run on, and who is asking? | `WorkflowTemplateLoader`, `IUserSession`, `LoggerInterface` | unchanged |
@@ -87,11 +87,12 @@ The engine keeps the decision: which transition, in which order the checks run, 
 
 ### `Transitions/CaseDeclarations` (the read side)
 
-One class over the four that read what an administrator declared. No write to the store goes through it.
+One class over the four that read what an administrator declared, plus the store for one read: the row of a status. No write to the store goes through it.
 
 | Method | Takes over | Answers |
 |---|---|---|
 | `panel(array $case): array` | `StatusDeclarations::panelFor` | `waitingOn`, `dwell`, `derivation` of the status the case is in |
+| `statusFacts(string $statusTypeId): array` | `CaseStatusStore::lookupStatusName`, `lookupStatusColour`, `lookupStatusDescription` | one call, keys `statusName`, `statusColour`, `statusDescription` |
 | `offered(array $transitions, array $case, string $currentId, string $userId): array` | `OfferedTransitions::from` | `transitions` and `withheld` |
 | `assertOpen(array $transition, array $case, string $caseId, string $userId): void` | `TransitionDeclarations::withheldReasons`, `fourEyesRefusal`, `refusalSentence` and the two refusals the engine throws on them | throws `RefusedException` `transition-dependency-open` or `transition-four-eyes`, in that order |
 | `stamp(array $case, string $toStatus): array` | `StatusDeclarations::applyStatusChange` | the case payload with the dwell bookkeeping of the status it enters |
@@ -107,18 +108,22 @@ One class over the three that touch the store or the outside world. It takes who
 | Method | Takes over | Notes |
 |---|---|---|
 | `load(string $caseId): ?array` | `CaseStatusStore::loadCase` | |
-| `statusFacts(string $statusTypeId): array` | `lookupStatusName`, `lookupStatusColour`, `lookupStatusDescription` | one call, keys `statusName`, `statusColour`, `statusDescription` |
 | `reloadUnchanged(string $caseId, int $readVersion, string $currentId): array` | the engine's `assertNoConcurrentChange()` | throws `case_not_found` or `RefusedException` `transition-conflict` |
-| `saveMove(array $case, string $caseId, string $toStatus, ?string $resultTypeId, int $readVersion): array` | the store half of `writeMove()` and all of `applyClosingResult()` | closing result, end date, archival future, status and `@self.version` in ONE save; returns the saved case and its version |
-| `saveFreeForm(array $case, string $toStatus): array` | `assertStatusBelongsToCaseType` and the save of `executeFreeForm()` | no closing result, as today |
-| `recordAndDispatch(array $case, array $move, array $actions): array` | `writeStatusRecord`, `SideEffectDispatcher::dispatch`, the engine's `persistDispatchedActions()` | `$move` is `fromStatus`, `toStatus`, `label`, `comment`, `actor`, `evaluatedGuards`, `noWorkflowTemplate`; returns the record and the dispatched rows |
+| `close(array $case, string $caseId, string $toStatus, ?string $resultTypeId): array` | the engine's `applyClosingResult()` | end date, closing result and archival future on the PAYLOAD; saves nothing |
+| `save(array $case, string $toStatus, ?int $readVersion = null): array` | the save of `writeMove()` and of `executeFreeForm()` | the status and, with a read version, `@self.version`, in ONE save; returns the saved case and its version |
+| `assertStatusOfCaseType(string $caseTypeId, string $statusTypeId): void` | `CaseStatusStore::assertStatusBelongsToCaseType` | the free-form check |
+| `record(string $caseId, array $move): array` | `CaseStatusStore::writeStatusRecord` | `$move` is `fromStatus`, `toStatus`, `label`, `comment`, `actor`, `evaluatedGuards`, `noWorkflowTemplate` |
+| `dispatch(array $actions, array $case, array $move, array $record): array` | `SideEffectDispatcher::dispatch` | builds the transition context from the move and the record |
+| `writeBack(array $record, array $dispatched): array` | the engine's `persistDispatchedActions()` | a failed write is logged at error, the record answered as it stood |
 | `history(string $caseId): ?array` | `findStatusRecords` | `replay()` keeps the sort |
 
-`saveMove()` takes the payload AFTER `CaseDeclarations::stamp()`. The engine calls `stamp()`, then `saveMove()`, then `retime()`: the same order as today, and the only place the two facades meet.
+The engine calls `close()`, then `CaseDeclarations::stamp()`, then `save()`, then `retime()`: the same order as before the split, and the only place the two facades meet. `close()` and `save()` are two methods because the stamp sits between them. A free-form move calls `record()` and `dispatch()` and never `writeBack()`, as before.
+
+As built, two things differ from the first draft of this design. The status row read (`statusFacts`) sits on the read side: it is a declaration, and with it the ledger stays at ten public methods, the PHPMD limit. And the ledger has no `saveMove()` or `recordAndDispatch()`: a single method each would have had to change the order of the stamp, or take a flag for the write-back.
 
 ### The engine after the split
 
-Constructor, nine arguments: `WorkflowTemplateLoader`, `GuardRegistry`, `TransitionAuthorizer`, `TransitionSpecReader`, `IUserSession`, `LoggerInterface`, `ProcessOwnedStatusRule`, `CaseDeclarations`, `CaseMoveLedger`. With `RefusedException`, `GuardFailedException` and `RuntimeException` it couples to 12 classes. Both suppressions go and `phpmd.suppressWarnings` in `.debt-baseline.json` goes down by 2.
+Constructor, nine arguments: `WorkflowTemplateLoader`, `GuardRegistry`, `TransitionAuthorizer`, `TransitionSpecReader`, `IUserSession`, `LoggerInterface`, `ProcessOwnedStatusRule`, `CaseDeclarations`, `CaseMoveLedger`. With `RefusedException`, `GuardFailedException` and `RuntimeException` it couples to 12 classes (measured: whole-tree PHPMD is clean without the suppressions). Both suppressions go and `phpmd.suppressWarnings` in `.debt-baseline.json` goes down by 2.
 
 The public methods and what they return do not change: `getAvailableTransitions()`, `execute()`, `executeFreeForm()`, `replay()`, `isAdmin()`, `ADMIN_GROUP_ID`. The container builds both facades by type, so no registration changes. Every class that injects the engine (32 files under `lib/`) is untouched.
 

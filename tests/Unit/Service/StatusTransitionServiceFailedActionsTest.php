@@ -24,6 +24,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
@@ -44,6 +46,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * The answer names the actions that did not run.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  *
  * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
@@ -128,22 +132,28 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 		$this->service = new StatusTransitionService(
 			templateLoader: $templateLoader,
 			guardRegistry: $guardRegistry,
-			sideEffectDispatcher: $this->dispatcher,
-			store: $store,
 			authorizer: $authorizer,
 			specReader: $specReader,
 			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: $this->logger,
-			resultWriter: $resultWriter,
-			statusChecklist: $this->createMock(originalClassName: StatusChecklist::class),
-			declarations: $this->undeclaredStatuses(),
-			declaredMoves: $this->undeclaredTransitions(),
-			offered: $this->offeredTransitions(
-				guards: $guardRegistry,
-				reader: $specReader,
-				statuses: $this->undeclaredStatuses(),
-			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
+			declarations: new CaseDeclarations(
+				statuses: $this->undeclaredStatuses(),
+				moves: $this->undeclaredTransitions(),
+				offered: $this->offeredTransitions(
+					guards: $guardRegistry,
+					reader: $specReader,
+					statuses: $this->undeclaredStatuses(),
+				),
+				checklist: $this->createMock(originalClassName: StatusChecklist::class),
+				store: $store,
+			),
+			ledger: new CaseMoveLedger(
+				store: $store,
+				resultWriter: $resultWriter,
+				dispatcher: $this->dispatcher,
+				logger: $this->logger,
+			),
 		);
 	}//end setUp()
 

@@ -31,6 +31,8 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
@@ -51,6 +53,8 @@ use RuntimeException;
  * The order of the engine's checks and writes.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
@@ -229,18 +233,24 @@ class StatusTransitionServiceOrderTest extends TestCase {
 		return new StatusTransitionService(
 			templateLoader: $loader,
 			guardRegistry: $guards,
-			sideEffectDispatcher: $dispatcher,
-			store: $store,
 			authorizer: $authorizer,
 			specReader: new TransitionSpecReader(),
 			userSession: $this->createMock(IUserSession::class),
 			logger: $logger,
-			resultWriter: $results,
-			statusChecklist: $checklist,
-			declarations: $statuses,
-			declaredMoves: $moves,
-			offered: $offered,
 			processOwnedStatus: $handSet,
+			declarations: new CaseDeclarations(
+				statuses: $statuses,
+				moves: $moves,
+				offered: $offered,
+				checklist: $checklist,
+				store: $store,
+			),
+			ledger: new CaseMoveLedger(
+				store: $store,
+				resultWriter: $results,
+				dispatcher: $dispatcher,
+				logger: $logger,
+			),
 		);
 	}//end engine()
 

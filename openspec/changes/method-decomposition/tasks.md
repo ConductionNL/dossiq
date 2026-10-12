@@ -493,13 +493,21 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         active. Behaviour kept, not changed here.
         Own tests: `tests/Unit/Service/Zgw/ZtcConceptRulesTest` (6), `ZtcTypeReferencesTest` (4,
         every search asserted with its schema) and `ZtcPublishAndDeleteChecksTest` (6).
-  - [ ] 8h `StatusTransitionService` (2: CouplingBetweenObjects 18 against 13, and
+  - [x] 8h `StatusTransitionService` (2: CouplingBetweenObjects 18 against 13, and
         ExcessiveParameterList, 14 constructor arguments against 10). Not a move: the design is in
-        design.md, "StatusTransitionService: two facades". `Transitions/CaseDeclarations` over the
-        four classes that read what was declared, `Transitions/CaseMoveLedger` over the three
-        that write. The engine keeps the decision and the order of the checks.
-    - [x] Design written (design.md).
-    - [ ] Characterisation: `tests/Unit/Service/StatusTransitionServiceOrderTest.php`, the eight
-          points of the design, green on the single class, own commit.
-    - [ ] The two facades with their own tests, the engine delegating, both suppressions removed,
-          `phpmd.suppressWarnings` lowered by 2.
+        design.md, "StatusTransitionService: two facades". `Transitions/CaseDeclarations` reads
+        what a case declares about its status and its moves (over `StatusDeclarations`,
+        `TransitionDeclarations`, `OfferedTransitions`, `StatusChecklist` and the status row).
+        `Transitions/CaseMoveLedger` holds what a move writes (over `CaseStatusStore`,
+        `CaseResultWriter`, `SideEffectDispatcher`). The engine keeps the decision and the order
+        of the checks, takes nine arguments and couples to 12 classes. Both suppressions are gone
+        (183 to 181). The public methods and their answers are unchanged; the constructor changed.
+        Characterisation, green on the single class first (own commit):
+        `tests/Unit/Service/StatusTransitionServiceOrderTest.php`, 10 tests over the order of the
+        five refusals, the conflict check, the one save of a closing move with the version read,
+        the timer after the save, the record that cannot be written back, the free-form refusals
+        and the shape of the available transitions. Seven mutations of the engine turn it red.
+        Unchanged and green after the split apart from its one constructor helper, as are the
+        five existing engine tests.
+        Own tests: `tests/Unit/Service/Transitions/CaseDeclarationsTest` (4) and
+        `CaseMoveLedgerTest` (6).
