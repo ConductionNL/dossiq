@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
 /**
  * Open the first holding of every case that has none.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class BackfillCaseCustody implements IRepairStep {
 
@@ -70,7 +70,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 * @param IAppConfig       $appConfig       App configuration.
 	 * @param LoggerInterface  $logger          Logger.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -85,7 +85,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function getName(): string {
 		return 'Open the first chain-of-custody holding for every existing case';
@@ -102,7 +102,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -140,7 +140,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 * @param IOutput $output        Progress reporting.
 	 *
 	 * @return void
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function backfill(object $objectService, string $register, string $caseSchema, IOutput $output): void {
 		$rows = $objectService->findAll(['filters' => ['register' => $register, 'schema' => $caseSchema]]);

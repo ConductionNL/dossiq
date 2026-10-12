@@ -1,8 +1,9 @@
 {
-  "ceiling": 255,
+  "ceiling": 262,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-10-10, openspec/changes/remove-casetask task 7.1: onboarding steps moved onto the engine. OnboardingSteps reads through EngineInboxQuery and resolves its services inside each verb's own try block, so it adds no site; TenantOnboardingService::markStepComplete went, legacyRows (the one-off carry of the old rows) arrived. The ceiling stays 257.",
     "2026-10-10, openspec/changes/tenancy-onto-openregister-organisation tasks 6.9 and 6.15: TenantSaasService retired with the tenant admin store, taking its three sites (getById, getObjectService, listActive). TenantService::getObjectService arrived with the audit anchor. The ceiling went 259 to 257.",
     "Every catch (\\Throwable) under lib/Service that answers null or [] within its first three statements. ServiceCatchReturnsNullTest fails on a site that is not here, on an entry whose site is gone, and when the count passes the ceiling. The ceiling only goes down.",
     "This is a debt list with a ceiling, not an endorsement. The class and the reason on each entry were written by the triage that seeded this file on 2026-09-13 from the site's own evidence: what it returns, and whether and how it logs. They say what the site does, not that the site is right.",
@@ -29,8 +30,10 @@
     "2026-10-08, openspec/changes/tenant-isolation-names-the-control-that-runs: TenantSchemaProvisioner was deleted with the schema-per-tenant pipeline (dossiq#2470), and its two sites (listApplicationTables, shardTableMarkers) left with it. The ceiling went 265 to 263.",
     "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation: the active tenant became OpenRegister's active organisation. TenantSessionService::activeTenantId became activeTenant (same site, same answer), and TenantOrganisationResolver::readActiveOrganisation arrived. The ceiling went 263 to 264 here; the TenantService sites that leave later in the same change bring it down.",
     "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation task 3.2: TenantService keeps only isPlatformAdmin(). Its five sites (findOrganisationsByUserId, getOrganisationMapper, getTenantByGroupId, getTenantLifecycleService, getTenantStatus) left with the methods TenantController and TenantMiddleware called. The ceiling went 264 to 259.",
-    "2026-10-10, openspec/changes/bezwaar-beroep-package: SeedDataService was deleted with the bezwaar seed, which became the bezwaar-beroep package. Its createObject site left with it. The ceiling went 257 to 256.",
-    "2026-10-11, openspec/changes/besluitvorming-package: TemplateBundleSeeder was deleted with the besluitvorming bundles, which became the on-request besluitvorming package (decision 190). Its createObject site left with it. The ceiling went 256 to 255."
+    "2026-10-10, openspec/changes/ai-features-on-the-case-consume-hermiq (REQ-AIC-04): ONE site arrived with ReportGroupingConsumer::readCase, the caller's read of the case whose report group is asked for or placed. It is a read miss: a case the caller cannot read answers null exactly like one that does not exist, the catch logs at info naming the case, and the controller turns null into 404 so the endpoint cannot be used to probe for a case. The ceiling went 259 to 260 for that one site and nothing else.",
+    "2026-10-10, openspec/changes/migrate-committees-to-decidiq (task 3): ONE site arrived with GovernanceBodyReader::ask, the read of a committee back from decidiq over its event seam. It is a degradation: when decidiq's listener throws, the catch logs at warning naming the committee and the reader keeps the local row, because a live committee must not read as gone. The ceiling went up by one for that site and nothing else.",
+    "2026-10-10, openspec/changes/bezwaar-beroep-package: SeedDataService was deleted with the bezwaar seed, which became the bezwaar-beroep package. Its createObject site left with it. The ceiling went down by one for that site and nothing else.",
+    "2026-10-11, openspec/changes/besluitvorming-package: TemplateBundleSeeder was deleted with the besluitvorming bundles, which became the on-request besluitvorming package (decision 190). Its createObject site left with it. The ceiling went down by one for that site and nothing else."
   ],
   "classes": {
     "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -509,10 +512,10 @@
     },
     {
       "file": "lib/Service/DeadlineMonitoringSeedDataService.php",
-      "method": "existingDefinitionIds",
+      "method": "existingDefinitions",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`existingDefinitionIds()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`existingDefinitions()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/DeadlineReportingService.php",
@@ -597,13 +600,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findUitbetalingen()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/DwangsomCalculationService.php",
-      "method": "fetchCalculationRow",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`fetchCalculationRow()` answers `return null` when the read fails; the catch logs at warning (\"DwangsomCalculation lookup failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Email/CaseNumberRecognizer.php",
@@ -751,13 +747,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`caseTypeBoundTo()` looks up the case type a form hash is bound to. No binding and an unanswerable search are the same answer to the caller, which offers the ordinary case-type picker instead of a pre-selected one."
-    },
-    {
-      "file": "lib/Service/InspectionChecklistService.php",
-      "method": "getResultsForCase",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`getResultsForCase()` answers `return []` when the read fails; the catch logs at warning (\"Failed to get inspection results for case\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/InspectionChecklistService.php",
@@ -1363,10 +1352,10 @@
     },
     {
       "file": "lib/Service/TenantOnboardingService.php",
-      "method": "markStepComplete",
+      "method": "legacyRows",
       "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`markStepComplete()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: markStepComplete failed\"), so a failed read and an absent record are the same answer."
+      "class": "degradation",
+      "reason": "`legacyRows()` answers `return []` when the legacy `tenantOnboardingTask` rows cannot be read; the catch logs at warning naming the tenant (\"could not read the legacy onboarding rows\"). Nothing is carried onto the engine that run; the carry runs again on the next read, because the tenant still has no engine steps."
     },
     {
       "file": "lib/Service/TenantOrganisationResolver.php",
@@ -1810,6 +1799,20 @@
       "reason": "`registry()` answers `return null` when OpenRegister's node catalogue cannot be resolved; the catch logs at warning (\"OpenRegister node catalogue unavailable for a retired action\") and the caller records the action as failed with `retired_action_needs_openregister`, never as run."
     },
     {
+      "file": "lib/Service/Ai/ReportGroupingConsumer.php",
+      "method": "readCase",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`readCase()` answers `return null` when the case cannot be read as the caller; the catch logs at info (\"ReportGroupingConsumer: case not readable\"), and the controller answers 404 for a case the caller cannot see exactly as for one that does not exist."
+    },
+    {
+      "file": "lib/Service/Governance/GovernanceBodyReader.php",
+      "method": "ask",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`ask()` answers `return null` when decidiq's read event throws; the catch logs at warning (\"the read from decidiq failed; using the local row\") and `resolve()` keeps the local committee row, so a failing decision app never makes a live committee read as archived."
+    },
+    {
       "file": "lib/Service/Zgw/ZgwParentStateResolver.php",
       "method": "draftState",
       "occurrence": 1,
@@ -1822,6 +1825,55 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`searchRowsOrNone()` answers `return []` when a ZTC enrichment search fails; the catch logs at warning naming the schema. It moved out of ZtcController (method-decomposition), where the same catches lived outside lib/Service and were not counted; a failed search leaves one cross-reference list unenriched on a read instead of failing the read."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "sources",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`sources()` answers `return null` when the source register of a declared record import cannot be read; the catch logs at error naming the import key. CaseRecordImport reads null as a failure (\"The source records could not be read.\") and imports nothing, so a failed read is never reported as zero records."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "casesBySource",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`casesBySource()` answers `return null` when the existing cases of the case type cannot be read; the catch logs at warning. CaseRecordImport stops the run and lists the failure, because importing over an unread list would write a half-finished case a second time."
+    },
+    {
+      "file": "lib/Service/Import/RecordImportStore.php",
+      "method": "caseType",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`caseType()` answers `return null` when the case type named to the import cannot be read; the catch logs at warning naming it, and the import answers no case type and runs nothing."
+    },
+    {
+      "file": "lib/Service/Term/TermCarryOver.php",
+      "method": "statutoryInstance",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`statutoryInstance()` answers `return null` when the case's term instances cannot be read; `carry()` then answers the outcome `missing` and changes no term, so the case keeps the term its create bound. It does not log; the import reports the outcome."
+    },
+    {
+      "file": "lib/Service/Access/ObjectReadGrants.php",
+      "method": "find",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`find()` answers `return null` when the record to reconcile cannot be read; `reconcile()` counts it as refused, so a record that could not be read is never reported as reconciled (REQ-CRA-002)."
+    },
+    {
+      "file": "lib/Service/Access/ObjectReadGrants.php",
+      "method": "service",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`service()` answers `return null` when OpenRegister's sharing or ownership service cannot be resolved from the container; `available()` then answers false and the reconciler answers `unavailable` and writes nothing (REQ-CRA-002)."
+    },
+    {
+      "file": "lib/Service/DecisionDocument/DecisionDocumentValidator.php",
+      "method": "holds",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`holds()` answers `return null` when OpenRegister's rule evaluator is absent or cannot evaluate the condition. Null is the documented third value of its `?bool` return: the caller reads it as 'unevaluable' and reports the rule as unchecked rather than as passed or failed. A refusal is never converted into null here."
     }
   ]
 }

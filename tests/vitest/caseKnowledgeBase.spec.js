@@ -76,7 +76,7 @@ describe('a case links the pages that explain it', () => {
 			(w) => w.id === 'case-knowledge-panel',
 		)
 		expect(widget, 'the case page has no Knowledge widget').toBeTruthy()
-		expect(widget.type).toBe('case-sections')
+		expect(widget.type).toBe('sections')
 
 		// The pages the case itself links are STILL the leaf and nothing
 		// dossiq built. The section moved, the ownership did not.

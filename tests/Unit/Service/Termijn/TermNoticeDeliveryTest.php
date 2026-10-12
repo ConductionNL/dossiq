@@ -33,6 +33,9 @@ namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\AanvullingsverzoekService;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
+use OCA\Dossiq\Service\Email\IntakeAccount;
+use OCA\Dossiq\Service\Email\MailTransportPolicy;
+use OCA\Dossiq\Service\Email\OutboundState;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
 use OCA\Dossiq\Service\Pause\PauseChaseService;
@@ -46,9 +49,11 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
+use OCA\Dossiq\Tests\Support\FakeMailGateway;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCA\Dossiq\Tests\Support\InMemoryTermNoticeLedger;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Support\MakesOutboundCaseMail;
 use OCA\Dossiq\Tests\Support\RecordingMessage;
 use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
@@ -63,6 +68,7 @@ use Psr\Log\NullLogger;
  * A deadline near expiry produces one mail, and none to a person who opted out.
  */
 class TermNoticeDeliveryTest extends TestCase {
+	use MakesOutboundCaseMail;
 	use MakesCaseDateNormaliser;
 
 	/**
@@ -147,11 +153,13 @@ class TermNoticeDeliveryTest extends TestCase {
 	/**
 	 * The sender on the real gate, with a recording mailer.
 	 *
-	 * @param string $fromAddress The configured sender address.
+	 * @param string               $fromAddress The configured sender address.
+	 * @param string               $transports  The `mail_transport_by_kind` JSON, '' for the defaults.
+	 * @param FakeMailGateway|null $gateway     The mail app the Mail account transport sends through.
 	 *
 	 * @return TermNoticeSender The sender.
 	 */
-	private function sender(string $fromAddress = 'zaken@gemeente.nl'): TermNoticeSender {
+	private function sender(string $fromAddress = 'zaken@gemeente.nl', string $transports = '', ?FakeMailGateway $gateway = null): TermNoticeSender {
 		$mailer = $this->createMock(IMailer::class);
 		$mailer->method('createMessage')->willReturnCallback(static fn (): RecordingMessage => new RecordingMessage());
 		$mailer->method('send')->willReturnCallback(
@@ -166,6 +174,8 @@ class TermNoticeDeliveryTest extends TestCase {
 			static fn (string $app, string $key, string $default = ''): string => match ($key) {
 				'email_from_address' => $fromAddress,
 				'email_from_name' => 'Gemeente',
+				MailTransportPolicy::CONFIG_KEY => $transports,
+				IntakeAccount::ACCOUNT_KEY => '7',
 				default => $default,
 			}
 		);
@@ -177,10 +187,11 @@ class TermNoticeDeliveryTest extends TestCase {
 		$gateConfig->method('getValueString')->willReturnArgument(2);
 		$gate = new OptOutGate($this->dispatcher, $gateConfig, new NullLogger());
 
+		$optOut = new CaseMailOptOut($gate, $l10n, new UnsubscribeHeaders(new NullLogger()));
+
 		return new TermNoticeSender(
-			mailer: $mailer,
-			appConfig: $appConfig,
-			optOut: new CaseMailOptOut($gate, $l10n, new UnsubscribeHeaders(new NullLogger())),
+			outbound: $this->outboundCaseMail(mailer: $mailer, appConfig: $appConfig, optOut: $optOut, gateway: $gateway),
+			optOut: $optOut,
 			ledger: $this->ledger,
 			logger: $this->logger(),
 		);
@@ -444,4 +455,66 @@ class TermNoticeDeliveryTest extends TestCase {
 		self::assertSame([], $this->sent);
 		self::assertSame([], $this->ledger->rows);
 	}//end testAMissingSenderAddressSendsNothingAndKeepsNoClaim()
+
+	/**
+	 * A notice leaves as kind `notice`: configured to the Mail account, it goes through the account, link in the body.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function testANoticeConfiguredToTheMailAccountLeavesThroughIt(): void {
+		$gateway = new FakeMailGateway();
+		$sender  = $this->sender(transports: '{"notice":"mail-account"}', gateway: $gateway);
+		[$notifications] = $this->notifications($this->instance(), $sender);
+
+		$payload = $notifications->sendTermijnNotification(PauseChaseService::TEMPLATE, 't1', 'burger@example.nl', ['dedupeKey' => 't1:chase:1']);
+
+		self::assertSame('sent', $payload['dispatch']['status']);
+		self::assertSame([], $this->sent, 'nothing went through Nextcloud\'s mailer');
+		self::assertCount(1, $gateway->sent);
+		self::assertSame(7, $gateway->sent[0]['accountId']);
+		self::assertSame(['burger@example.nl'], $gateway->sent[0]['message']['to']);
+		self::assertStringContainsString('Unsubscribe', $gateway->sent[0]['message']['plain'], 'the link travels in the body, the account takes no header');
+		self::assertStringNotContainsString('<br', $gateway->sent[0]['message']['plain'], 'the plain body is the text as written');
+	}//end testANoticeConfiguredToTheMailAccountLeavesThroughIt()
+
+	/**
+	 * Configuring another kind to the Mail account leaves notices on Nextcloud's mailer.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 */
+	public function testANoticeFollowsItsOwnKindNotCaseMail(): void {
+		$gateway = new FakeMailGateway();
+		[$notifications] = $this->notifications($this->instance(), $this->sender(transports: '{"case-mail":"mail-account","notice":"imailer"}', gateway: $gateway));
+
+		$notifications->sendTermijnNotification(PauseChaseService::TEMPLATE, 't1', 'burger@example.nl', ['dedupeKey' => 't1:chase:1']);
+
+		self::assertCount(1, $this->sent);
+		self::assertSame([], $gateway->sent);
+	}//end testANoticeFollowsItsOwnKindNotCaseMail()
+
+	/**
+	 * An unreachable Mail account sends nothing and gives the claim back, so a later run retries.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-sent-once-per-deadline-req-term-071
+	 */
+	public function testAnUnreachableMailAccountKeepsNoClaim(): void {
+		$gateway = new FakeMailGateway();
+		$gateway->sendState = OutboundState::UNAVAILABLE;
+		[$notifications] = $this->notifications($this->instance(), $this->sender(transports: '{"notice":"mail-account"}', gateway: $gateway));
+
+		try {
+			$notifications->sendTermijnNotification(PauseChaseService::TEMPLATE, 't1', 'burger@example.nl', ['dedupeKey' => 't1:chase:1']);
+			self::fail('Nothing was taken, so nothing may read as sent.');
+		} catch (NoticeNotSentException $e) {
+			self::assertSame('mail-failed', $e->getReasonCode());
+		}
+
+		self::assertSame([], $this->ledger->rows);
+	}//end testAnUnreachableMailAccountKeepsNoClaim()
 }//end class

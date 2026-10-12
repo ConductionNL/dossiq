@@ -39,11 +39,9 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
-use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -77,8 +75,6 @@ class TermijnTimerFiredListener implements IEventListener {
 	 *
 	 * @param TermijnService $termService Instance lookup, updates and events.
 	 * @param DeadlineEscalationService $escalationService Threshold bookkeeping and dispatch.
-	 * @param DwangsomCalculationService $penaltyService Dwangsom accrual derivation.
-	 * @param SettingsService $settingsService Settings + ObjectService access.
 	 * @param LoggerInterface $logger Logger.
 	 * @param BackgroundServiceAccount $serviceAccount Who writes when the fire comes
 	 *        from cron with nobody signed in. OpenRegister's FlowTimerWorker is a
@@ -95,8 +91,6 @@ class TermijnTimerFiredListener implements IEventListener {
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly DeadlineEscalationService $escalationService,
-		private readonly DwangsomCalculationService $penaltyService,
-		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
@@ -221,7 +215,6 @@ class TermijnTimerFiredListener implements IEventListener {
 		// Re-read so notifyThreshold sees the freshest notificatiesVerstuurd.
 		$latest = ($this->termService->getTermijnInstance($instanceId) ?? $instance);
 		$this->escalationService->notifyThreshold($latest, $bucket);
-		$this->syncPenaltyAccrual(instanceId: $instanceId);
 	}//end handleBeslistermijnRung()
 
 	/**
@@ -332,52 +325,4 @@ class TermijnTimerFiredListener implements IEventListener {
 
 		return null;
 	}//end bucketFromRungKey()
-
-	/**
-	 * Sync the dwangsom accrual derivation for the instance's running
-	 * berekeningen. Idempotent per day; a failure here never blocks the
-	 * escalation that triggered it.
-	 *
-	 * @param string $instanceId The TermijnInstance id.
-	 *
-	 * @return void
-	 */
-	private function syncPenaltyAccrual(string $instanceId): void {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return;
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: [
-					'deadlineInstance' => $instanceId,
-					'status' => 'lopend',
-				]
-			);
-		} catch (\Throwable $e) {
-			return;
-		}
-
-		foreach ($rows as $row) {
-			$rowId = (string)($row['id'] ?? '');
-			if ($rowId === '') {
-				continue;
-			}
-
-			try {
-				$this->penaltyService->accrueThrough($rowId);
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Dossiq termijn: dwangsom accrual sync failed',
-					['id' => $rowId, 'error' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-	}//end syncPenaltyAccrual()
 }//end class

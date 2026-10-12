@@ -25,7 +25,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -80,7 +80,7 @@ final class CcbCaseStore extends InMemoryRegister {
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyBackfillTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -127,7 +127,7 @@ class CaseCustodyBackfillTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testEveryCaseGetsOneOpenHolding(): void {
 		$this->step()->run($this->createMock(originalClassName: IOutput::class));
@@ -149,7 +149,7 @@ class CaseCustodyBackfillTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheHoldingIsDatedFromTheCase(): void {
 		$this->step()->run($this->createMock(originalClassName: IOutput::class));
@@ -170,7 +170,7 @@ class CaseCustodyBackfillTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testABackfilledHoldingSaysSo(): void {
 		$this->step()->run($this->createMock(originalClassName: IOutput::class));
@@ -187,7 +187,7 @@ class CaseCustodyBackfillTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testRunningItTwiceChangesNothing(): void {
 		$output = $this->createMock(originalClassName: IOutput::class);
@@ -203,7 +203,7 @@ class CaseCustodyBackfillTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testACaseThatAlreadyHasAChainIsLeftAlone(): void {
 		$chain = $this->chain();

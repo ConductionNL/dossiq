@@ -1,0 +1,57 @@
+{
+  "_note": "Decision document (capability C03, decision 182). A case type configures, per kind of decision it issues, what the decision needs: template, required fields, validity rules (OpenRegister named conditions), remedy clause, whether it is signed, the delegated-authority act that decides it, the decidiq decision kind, the number series and the statuses from which it is frozen. Read by DecisionDocumentDefinition. Kept apart from decisionTypes, which holds the ZGW besluittype references as strings. Declared on caseType because OpenRegister's magic mapper stores no undeclared key.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "decisionDocuments": {
+            "type": "object",
+            "title": "Decisions",
+            "description": "Per kind of decision this case type issues: what it must contain, who decides it, and how it is numbered and signed.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "template": {"type": "string", "title": "Template", "description": "The template the decision is written from."},
+                "requiredFields": {"type": "array", "title": "Required fields", "description": "Fields that must be filled before the decision can be approved.", "items": {"type": "string"}},
+                "rules": {
+                  "type": "array",
+                  "title": "Rules",
+                  "description": "Conditions the decision must meet before it can be approved.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {"type": "string", "minLength": 1},
+                      "when": {"title": "Condition", "description": "An OpenRegister condition; may reference a named condition with $condition."},
+                      "message": {"type": "string"}
+                    },
+                    "required": ["id", "when"]
+                  }
+                },
+                "conditions": {"type": "object", "title": "Named conditions", "description": "Named conditions the rules can refer to."},
+                "remedyClause": {"type": "string", "title": "How to object", "description": "The sentence that tells the addressee how and within what time to object or appeal."},
+                "remedyRequired": {"type": "boolean", "default": true, "title": "Remedy clause required"},
+                "signed": {"type": "boolean", "default": true, "title": "Signed", "description": "Whether the decision is signed before it is sent."},
+                "authorityAct": {"type": "string", "title": "Decided under", "description": "The delegated-authority act that decides this kind of decision."},
+                "decisionKind": {"type": "string", "title": "Decision kind", "description": "The kind of decision recorded with decidiq."},
+                "series": {
+                  "type": "object",
+                  "title": "Numbering",
+                  "properties": {
+                    "name": {"type": "string", "description": "The number series (see documentSeries)."},
+                    "defaultPrefix": {"type": "string", "maxLength": 10, "pattern": "^[A-Za-z0-9]*$"}
+                  }
+                },
+                "frozenStatuses": {
+                  "type": "array",
+                  "title": "Frozen from",
+                  "items": {"type": "string", "enum": ["draft", "approved", "signed", "sent", "archived"]},
+                  "default": ["signed", "sent", "archived"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

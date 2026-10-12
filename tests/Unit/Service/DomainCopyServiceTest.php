@@ -35,6 +35,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Starter\DomainCopyService
  *
  * @uses \OCA\Dossiq\Service\Starter\StarterStore
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class DomainCopyServiceTest extends TestCase {
 

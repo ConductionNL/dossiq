@@ -50,13 +50,35 @@
 > the same one phases 2 and 3 need. It is unstarted, and it is the largest
 > single piece of unstarted work in this app's open changes.
 
-- [ ] 2.1 **WOO** — `WOODeadlineService` + `WOODeadlineCheckJob`: arm one `due`/`wettelijk` timer
+- [x] 2.1 **WOO** — `WOODeadlineService` + `WOODeadlineCheckJob`: arm one `due`/`wettelijk` timer
       per Woo-verzoek (28d, verdaging +14d via `extend()`); the check job's threshold walk moves
       to the ladder; opschorting (zienswijze) onto suspend/resume. The Woo dwangsom regime
       (€15/day, max €500) stays a dossiq calculation (already carried by
       `deviatingPenaltyPaymentRegime`). Retire `WOODeadlineCheckJob`; remove its allowlist entry.
       NOTE: the WOO service owns its own notified-thresholds list — migrate it to
       `notificatiesVerstuurd`-style dedup consulted by the shared listener.
+      Built 10 Oct (lane L7, decision 182: generic code, the procedure is configuration). Read off
+      development first: since one-term-engine (#3539) a Woo request already runs on the generic
+      term engine. Its term is the seeded `td-woo-verzoek` definition (28 days, one 14-day
+      extension through `extend()`), `DeadlineCaseCreatedListener` starts the instance and arms
+      the timer with the 14/7/2/0 ladder, opschorting goes through `DeadlinePauseService`, and the
+      Woo dwangsom regime is the definition's `deviatingPenaltyPaymentRegime`. What the job still
+      did that nothing else did was SEND the warning: `DeadlineEscalationService::notifyThreshold()`
+      only logged and recorded. So the missing piece was built generic:
+      `lib/Service/Termijn/TermHandlerNotice.php` tells the case's assignee on the rungs a term
+      definition lists in the new `tellHandlerAt` (deadlineDefinition 1.4.0), called by
+      `notifyThreshold()` after its `notificatiesVerstuurd` dedup, with the generic notifier
+      subjects `term_nearing` / `term_exceeded`. The Woo seed declares `tellHandlerAt: [7, 0]`, and
+      the seed now adds keys a stored definition lacks (never overwriting one), so existing
+      installs get it on upgrade. An extension now drops the recorded rungs that lie ahead of the
+      new end, so the handler is warned again a week before an extended end, as the job did.
+      Retired: `WOODeadlineCheckJob`, its two tests, its info.xml registration and allowlist entry.
+      Behaviour change: overdue is told once at the end rung, not every day. No new Woo-named class.
+      Left for refactor lane R6: `WOODeadlineService::checkAndWarn()` and its private helpers and
+      the `woo_deadline_*` notifier subjects have no sender any more (kept so already delivered
+      notifications still render). Tests: `tests/Unit/Service/Termijn/TermHandlerNoticeTest.php`,
+      `DeadlineMonitoringSeedDataServiceTest`, `DeadlineExtensionLimitTest`. Live check owed
+      (live pass, decision 139): a Woo case seven days before its end notifies its assignee once.
 - [x] 2.2 **Bezwaar** — `Beschikking/BezwaarTermijnScheduler` + `BezwaarTermijnJob`: the
       bezwaartermijn (6 weeks after bekendmaking, AWB 6:7) is anchor-shaped — arm with
       `anchorEvent: bekendmaking`, and use `supersede()` when the bekendmaking moves. Retire
@@ -161,11 +183,17 @@
 - [ ] 4.2 Sweep `lib/` for remaining `->diff(` deadline math outside the allowlisted calculation
       classes; tighten the structural test's allowlist to empty.
       Partly (10 Oct, lane L7): the allowlist in `TimedJobDeadlineThresholdTest` shrank from six
-      to two. Left: `WOODeadlineCheckJob` (task 2.1, waits on #3539 and the Woo lanes, which own
-      the Woo services) and `PauseChaseJob` (the documented fallback while OpenRegister is an
-      optional runtime dependency).
+      to two, then to one when 2.1 retired `WOODeadlineCheckJob`. Left: `PauseChaseJob`, the
+      documented fallback while OpenRegister is an optional runtime dependency. It computes no
+      threshold itself (it calls `PauseChaseService::sweep()`), and it cannot go before the engine
+      becomes a required dependency, so the list stops at one, not empty, until that phase lands.
+      The `->diff(` sweep of `lib/` outside the calculation classes is not done.
 
 ## Verify
 
 - [x] V.1 `openspec validate termijnbewaking-op-engine-timers --strict` exits 0 (10 Oct, openspec 1.12.0).
-- [ ] V.2 After each phase: the structural test's allowlist shrank; hydra gates green on the diff.
+- [x] V.2 After each phase: the structural test's allowlist shrank; hydra gates green on the diff.
+      10 Oct (lane L7, 2.1): allowlist 2 -> 1; `run-hydra-gates.sh --scope-to-diff --base origin/development`
+      on 64f9bbe06: three reds, all inherited (gate 23 names tenant and audit files this diff does not
+      touch, gate 53 cannot resolve ajv locally, gate 101 names the `dossiqIntegration` and
+      `wooRefusalGround` demo data). Phase 2 is complete; phase 4 stops at 4.2.

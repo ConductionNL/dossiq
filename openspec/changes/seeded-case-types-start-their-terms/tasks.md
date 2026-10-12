@@ -12,4 +12,10 @@
 - [x] 2.2 Bind the planned clock from a `kind: planned` definition when the case type declares no `plannedLeadTime`.
   - `tests/Unit/Service/CaseTermsServicePlannedDefinitionTest.php`
   - `tests/Unit/Listener/DeadlineCaseCreatedListenerPlannedTest.php`
-- [ ] 3.1 Ruben: decide the term for `subsidieaanvraag` and `zaaktype-innovatiefonds-2026` (gemeentelijke ASV).
+- [x] 3.1 Ruben: decide the term for `subsidieaanvraag` and `zaaktype-innovatiefonds-2026` (gemeentelijke ASV).
+  Decided 11 Oct: both take eight weeks under the Awb 4:13 lid 2 fallback, statutory,
+  with Awb 4:14 lid 3 as the notice of a later term, in the row shape of
+  `td-cultuur-subsidie-2026`. The case types follow: `subsidieaanvraag` declares P56D and
+  no fixed extension (was P42D plus P28D), `zaaktype-innovatiefonds-2026` declares P8W
+  (was P13W, "ASV art. 3"). Both are off `OPEN_QUESTIONS` and pinned in `DECIDED`.
+  - `tests/Unit/Repair/ShippedDeadlineDefinitionCoverageTest.php::testEachDecidedCaseTypeCarriesItsDecidedTerm`

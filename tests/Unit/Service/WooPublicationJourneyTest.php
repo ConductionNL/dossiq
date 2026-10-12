@@ -41,6 +41,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooCaseLedger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class WooPublicationJourneyTest extends TestCase {
 

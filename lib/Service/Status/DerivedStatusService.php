@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Status;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * Resolves the derived status of a case and the reasons a derivation has not fired.
@@ -51,11 +52,13 @@ class DerivedStatusService {
 	 * @param CaseTypeResolver      $caseTypes  The effective blueprint, so an inherited status counts too.
 	 * @param StatusDeclaration     $declaration What a status says about itself.
 	 * @param DerivedStatusEvaluator $evaluator  Whether a declaration holds.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypes,
 		private readonly StatusDeclaration $declaration,
 		private readonly DerivedStatusEvaluator $evaluator,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -91,7 +94,7 @@ class DerivedStatusService {
 			$verdict = $this->evaluator->evaluate(statusType: $row, case: $case);
 			$verdicts[] = [
 				'statusId' => $statusId,
-				'name' => (string)($row['name'] ?? ($row['title'] ?? '')),
+				'name' => $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null))),
 				'order' => (int)($row['order'] ?? 0),
 				'satisfied' => $verdict['satisfied'],
 				'unmet' => $verdict['unmet'],

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,11 +51,13 @@ class CaseRoleVocabulary {
 	 * @param SettingsService $settingsService OpenRegister access and the configured register and schemas.
 	 * @param PartyVocabulary $parties The kinds of party a case takes and the roles they may hold.
 	 * @param LoggerInterface $logger Says why a sync did nothing.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly PartyVocabulary $parties,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -235,13 +238,13 @@ class CaseRoleVocabulary {
 			return [];
 		}
 
-		$label = trim((string)($row['name'] ?? ''));
+		$label = $this->text->textOf(value: ($row['name'] ?? null));
 		if ($label === '') {
 			$label = $key;
 		}
 
 		$entry = ['key' => $key, 'label' => $label];
-		$description = trim((string)($row['description'] ?? ''));
+		$description = $this->text->textOf(value: ($row['description'] ?? null));
 		if ($description !== '') {
 			$entry['description'] = $description;
 		}

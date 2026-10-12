@@ -32,6 +32,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the SettingsService class.
  *
  * @covers \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler

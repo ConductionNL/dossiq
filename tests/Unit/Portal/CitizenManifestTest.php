@@ -77,6 +77,8 @@ class CitizenManifestTest extends TestCase {
 			$this->assertSame(['antwoord'], $action['requiredFields']);
 			$this->assertSame('POST', $action['method']);
 			$this->assertSame(4000, $action['fieldConfigs']['antwoord']['maxLength']);
+			// portaliq row-action-carries-files REQ-RAF-001: the answer carries up to five files.
+			$this->assertSame(['field' => 'bijlagen', 'max' => 5, 'maxBytes' => 10485760], $action['files']);
 		}
 
 		$routes = include __DIR__ . '/../../../appinfo/routes.php';

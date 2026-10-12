@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Repair\Vth;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use Psr\Log\LoggerInterface;
@@ -80,12 +81,14 @@ class VthCaseTypeChildSeeder {
 	 *
 	 * @param SettingsService $settingsService Resolves the configured schemas.
 	 * @param LoggerInterface $logger Logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -293,7 +296,7 @@ class VthCaseTypeChildSeeder {
 
 		$names = [];
 		foreach ($rows as $row) {
-			$name = trim((string)($row['name'] ?? ($row['title'] ?? '')));
+			$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 			if ($name !== '') {
 				$names[mb_strtolower($name)] = true;
 			}
