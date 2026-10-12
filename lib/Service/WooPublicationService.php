@@ -7,7 +7,7 @@
  * OpenCatalogi's publication model. Builds a disclosure-safe publication
  * payload (redacted documents only, never unredacted originals or withheld
  * documents), creates/updates the publication via
- * {@see OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient}, and
+ * {@see OCA\Dossiq\Service\Publication\OpenCatalogiApiClient}, and
  * writes the resulting publication id/url/status back onto the dossiq
  * `decision` object through a single `ObjectService::saveObject()` call.
  *
@@ -38,7 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\PublicationSources;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;

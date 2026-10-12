@@ -22,7 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Woo\WooCaseLedger;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;

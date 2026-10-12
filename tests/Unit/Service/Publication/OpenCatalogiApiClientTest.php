@@ -29,7 +29,7 @@
  * bare save, which is exactly the defect it exists to catch.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\WooPublication
+ * @package  OCA\Dossiq\Tests\Unit\Service\Publication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -43,10 +43,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\WooPublication;
+namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -307,7 +307,7 @@ class OpenCatalogiApiClientFileServiceDouble {
 }//end class
 
 /**
- * @covers \OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient
+ * @covers \OCA\Dossiq\Service\Publication\OpenCatalogiApiClient
  *
  * @uses   \OCA\Dossiq\AppInfo\Application
  * @uses   \OCA\Dossiq\Service\SettingsService
