@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Unit tests for the Woo recall estimator.
+ * Unit tests for the recall estimator of a document review.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Woo
+ * @package  OCA\Dossiq\Tests\Unit\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -18,16 +18,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Review;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Woo\RecallEstimator;
+use OCA\Dossiq\Review\RecallEstimator;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The elusion estimate and its exact (Clopper-Pearson) bound, pinned to the proposal's hand-computed fixture.
  *
- * @covers \OCA\Dossiq\Woo\RecallEstimator
+ * @covers \OCA\Dossiq\Review\RecallEstimator
  *
  * @spec openspec/changes/woo-review-recall-and-stopping/proposal.md
  */
