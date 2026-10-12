@@ -84,6 +84,7 @@ class ExistingRowMatcher {
 	 * @param array<string, mixed> $row           The package row, its references already
 	 *                                            pointing at ids adopted this run.
 	 * @param array<int, string>   $caseTypes     The ids of case types adopted this run.
+	 * @param string               $match         The property the row's seed file matches on, when it names one.
 	 *
 	 * @return array<string, mixed>|null The existing row.
 	 *
@@ -96,7 +97,12 @@ class ExistingRowMatcher {
 		string $schemaKey,
 		array $row,
 		array $caseTypes,
+		string $match = '',
 	): ?array {
+		if ($match !== '') {
+			return $this->findBy(objectService: $objectService, register: $register, schema: $schema, property: $match, row: $row);
+		}
+
 		$filters = $this->filtersFor(schemaKey: $schemaKey, row: $row, caseTypes: $caseTypes);
 		if ($filters === []) {
 			return null;
@@ -145,7 +151,7 @@ class ExistingRowMatcher {
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
-	public function findBy(object $objectService, string $register, string $schema, string $property, array $row): ?array {
+	private function findBy(object $objectService, string $register, string $schema, string $property, array $row): ?array {
 		$value = ($row[$property] ?? '');
 		if (is_string($value) === false || trim($value) === '') {
 			return null;
