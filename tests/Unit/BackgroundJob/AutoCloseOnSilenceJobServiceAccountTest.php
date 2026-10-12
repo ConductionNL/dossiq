@@ -47,6 +47,7 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -245,12 +246,18 @@ class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 		$groups->method('isAdmin')->willReturn(false);
 		$groups->method('isInGroup')->willReturn(false);
 
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, array $parameters = []): string => vsprintf($text, $parameters)
+		);
+
 		return new LifecycleActorGate(
 			rules: new LifecycleCaseTypeRules(settingsService: $this->settings()),
 			groupManager: $groups,
 			userSession: $this->backgroundSession(),
 			logger: new NullLogger(),
 			serviceAccount: $this->backgroundAccount(),
+			l10n: $l10n,
 		);
 	}//end gate()
 

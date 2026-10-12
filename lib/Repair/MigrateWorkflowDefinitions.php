@@ -31,7 +31,9 @@ namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -59,11 +61,15 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @param SettingsService $settingsService The settings service
 	 * @param WorkflowDefinitionService $workflowService The workflow definition service
 	 * @param LoggerInterface $logger The logger interface
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param BackfilledTemplateLabels $labels Names a basis template, and heals one stored as "Array".
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
 		private WorkflowDefinitionService $workflowService,
 		private LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly BackfilledTemplateLabels $labels = new BackfilledTemplateLabels(),
 	) {
 	}//end __construct()
 
@@ -208,14 +214,19 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return self::OUTCOME_NONE;
 		}
 
-		if ((string)($row['workflowDefinition'] ?? '') !== '') {
-			return self::OUTCOME_SKIPPED;
-		}
-
-		// Already has at least one workflowTemplate? Skip — admin
-		// will set the pin via the UI.
+		// Already pinned, or already has at least one workflowTemplate? Skip,
+		// the admin sets the pin via the UI. A basis template this step wrote
+		// before titles were read as text is healed on the way past.
 		$existing = $this->workflowService->listVersions($caseTypeId);
-		if ($existing !== []) {
+		if ((string)($row['workflowDefinition'] ?? '') !== '' || $existing !== []) {
+			$this->healBackfilled(
+				templates: $existing,
+				caseType: $row,
+				objectService: $objectService,
+				register: $register,
+				statusSchema: $statusSchema,
+				templateSchema: $templateSchema,
+			);
 			return self::OUTCOME_SKIPPED;
 		}
 
@@ -263,6 +274,106 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		return self::OUTCOME_MIGRATED;
 	}//end migrateCaseType()
+
+	/**
+	 * Heal the basis templates this step stored with "Array" labels.
+	 *
+	 * Only a template the backfill wrote, and only a label that is literally
+	 * "Array" ({@see BackfilledTemplateLabels::healed()}). The statuses are
+	 * read only when a template needs them. Only the healed fields are
+	 * written, through the partial write.
+	 *
+	 * @param array<int, array<string, mixed>> $templates      The case type's templates.
+	 * @param array<string, mixed>             $caseType       The case type.
+	 * @param object                           $objectService  The ObjectService.
+	 * @param string                           $register       The register.
+	 * @param string                           $statusSchema   The statusType schema.
+	 * @param string                           $templateSchema The workflowTemplate schema.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	private function healBackfilled(
+		array $templates,
+		array $caseType,
+		object $objectService,
+		string $register,
+		string $statusSchema,
+		string $templateSchema,
+	): void {
+		$statuses = null;
+		foreach ($templates as $template) {
+			$id = (string)($template['id'] ?? '');
+			if ($id === '' || str_contains((string)json_encode($template), BackfilledTemplateLabels::CAST_OF_A_MAP) === false) {
+				continue;
+			}
+
+			$statuses ??= $this->statusesById(
+				objectService: $objectService,
+				register: $register,
+				statusSchema: $statusSchema,
+				caseTypeId: (string)($caseType['id'] ?? ''),
+			);
+			$changes = $this->labels->healed(template: $template, caseType: $caseType, statusesById: $statuses);
+			if ($changes === []) {
+				continue;
+			}
+
+			try {
+				$this->patchObjectAsArray(
+					objectService: $objectService,
+					register: $register,
+					schema: $templateSchema,
+					id: $id,
+					changes: $changes,
+				);
+			} catch (\Throwable $e) {
+				$this->logger->warning(
+					'Dossiq: workflow backfill could not heal the labels of a basis template',
+					['app' => Application::APP_ID, 'template' => $id, 'exception' => $e->getMessage()]
+				);
+			}
+		}//end foreach
+	}//end healBackfilled()
+
+	/**
+	 * A case type's statuses, by id.
+	 *
+	 * @param object $objectService The ObjectService.
+	 * @param string $register      The register.
+	 * @param string $statusSchema  The statusType schema.
+	 * @param string $caseTypeId    The case type.
+	 *
+	 * @return array<string, array<string, mixed>> The statuses.
+	 */
+	private function statusesById(object $objectService, string $register, string $statusSchema, string $caseTypeId): array {
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $statusSchema,
+				filters: ['caseType' => $caseTypeId, '_limit' => 500],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: workflow backfill could not read the statuses to heal a basis template',
+				['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+			);
+			return [];
+		}
+
+		$byId = [];
+		foreach ($rows as $raw) {
+			$row = $this->normalize(row: $raw);
+			$id = (string)(($row ?? [])['id'] ?? '');
+			if ($row !== null && $id !== '') {
+				$byId[$id] = $row;
+			}
+		}
+
+		return $byId;
+	}//end statusesById()
 
 	/**
 	 * Pin a caseType, and its open cases, to a freshly created template.
@@ -380,14 +491,9 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		$steps = $this->buildSteps(statuses: $statuses);
 		$transitions = $this->buildTransitions(statuses: $statuses);
 
-		$title = trim((string)($caseType['title'] ?? 'Workflow'));
-		if ($title === '') {
-			$title = 'Workflow';
-		}
-
 		return [
-			'title' => $title . ' — basis',
-			'description' => 'Backfilled from implicit statusType ordering.',
+			'title' => $this->labels->titleFor(caseTypeTitle: ($caseType['title'] ?? null)),
+			'description' => BackfilledTemplateLabels::MARKER,
 			'caseType' => $caseTypeId,
 			'version' => 1,
 			'isActive' => true,
@@ -415,8 +521,8 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 			$steps[] = [
 				'id' => $this->uuid(),
-				'title' => (string)($status['name'] ?? 'Stap'),
-				'description' => (string)($status['description'] ?? ''),
+				'title' => $this->text->textOr(value: ($status['name'] ?? null), fallback: 'Stap'),
+				'description' => $this->text->textOf(value: ($status['description'] ?? null)),
 				'status' => (string)($status['id'] ?? ''),
 				'order' => (int)($status['order'] ?? 0),
 				'assigneeRole' => '',
@@ -447,7 +553,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 				'id' => $this->uuid(),
 				'fromStatus' => (string)($from['id'] ?? ''),
 				'toStatus' => (string)($to['id'] ?? ''),
-				'label' => (string)($to['name'] ?? 'Door'),
+				'label' => $this->text->textOr(value: ($to['name'] ?? null), fallback: 'Door'),
 				'guards' => [],
 				'automaticActions' => [],
 				'allowedRoles' => [],

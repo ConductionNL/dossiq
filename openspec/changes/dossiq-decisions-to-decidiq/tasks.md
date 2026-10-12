@@ -34,12 +34,15 @@
 > and a migrator, so it wants its own PR and its own e2e run.
 > The SECOND bullet is unchanged and still blocked on decidiq.
 
-- [ ] BLOCKED on openregister `flow-decision-tables`: retire the DMN stack (schema `decisionTable`, `DecisionTableService`, `DecisionTableController` + 5 `/api/decisions` routes, `EvaluateDecisionHandler`, `DossiqTxEvaluateDecisionNode`, `DecisionTablesTab.vue`, `MigrateLhsToDecisionTablesCommand`, `LhsMatrixDecisionTableMigrator`) and shrink the test's DMN allowlist to empty.
+- [ ] Waiting on Q-dossiq-L6-4 (open, 10 Oct): OpenRegister's step carries the table inline and has no store for named tables, while the admin tab, `RetiredNodeTranslator` and the VTH LHS lookup still read stored rows. Retire the DMN stack (schema `decisionTable`, `DecisionTableService`, `DecisionTableController` + 5 `/api/decisions` routes, `EvaluateDecisionHandler`, `DossiqTxEvaluateDecisionNode`, `DecisionTablesTab.vue`, `MigrateLhsToDecisionTablesCommand`, `LhsMatrixDecisionTableMigrator`) and shrink the test's DMN allowlist to empty.
 - [ ] BLOCKED on decidiq: add `woo-decision` to `DecisionIntegrationService::ALLOWED_TYPES` (and its pinned schema enum homes), then repoint `WOODecisionService`'s raise through the delegation seam; the assembly and Art. 5.1/5.2 guard stay.
 
 ## Phase 5: Ruben's calls (grey areas, design.md section 3)
 
-- [ ] DECISION C-2: parafering runtime to decidiq's approval-route engine, or keep the administrative-law record local? Recommendation: keep for now.
-- [ ] DECISION C-3: DROP/LVBB publication mechanics. Recommendation: keep (REQ-DCDH-007 leaves side effects to the caller). Rules the fate of the unmounted `BesluitPublicatiePanel.vue` too.
-- [ ] DECISION C-1/C-4/C-8: confirm outcome storage on the case is case data (recommendation: yes, keep).
-- [ ] DECISION C-9: what the bvw templates seed once C-2/C-3 are ruled.
+Answered 10 Oct (Q-dossiq-L6-1, decision 159): keep all four as the design
+proposes. Nothing is retired by these answers.
+
+- [x] DECISION C-2: parafering runtime stays a local administrative-law record (keep for now). A move to decidiq's approval-route engine would be its own change in both apps.
+- [x] DECISION C-3: DROP/LVBB publication mechanics stay in dossiq (REQ-DCDH-007 leaves side effects to the caller). `BesluitPublicatiePanel.vue` stays in place, unmounted.
+- [x] DECISION C-1/C-4/C-8: the outcome stored on the case is case data, kept. `BesluitMaterialisationService` stays the only writer, as `LocalDecisionAuthoringTest` already pins.
+- [x] DECISION C-9: the bvw templates keep seeding what stays local (the parafering steps and the publish action), since C-2 and C-3 keep both.

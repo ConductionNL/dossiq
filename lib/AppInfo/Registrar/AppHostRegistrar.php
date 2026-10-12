@@ -32,7 +32,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\AppInfo\OpenRegisterAutoloader;
-use OCA\Dossiq\Mcp\DossiqToolProvider;
+use OCA\Dossiq\Mcp\DossiqScannableServices;
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -119,8 +119,12 @@ class AppHostRegistrar {
 				'namespace' => 'OCA\\Dossiq',
 				'sectionName' => 'Dossiq',
 				'dashboardWidgets' => (new DashboardWidgetList())->classes(),
-				'mcpProvider' => DossiqToolProvider::class,
 			]
 		);
+
+		// ADR-063: the classes OpenRegister scans for dossiq's curated
+		// #[McpTool] methods, under the alias it resolves in THIS app's own
+		// container (openregister#390: the shared container does not see it).
+		$context->registerServiceAlias(DossiqScannableServices::ALIAS, DossiqScannableServices::class);
 	}//end register()
 }//end class

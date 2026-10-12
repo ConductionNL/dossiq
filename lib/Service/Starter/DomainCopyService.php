@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Starter;
 
 use OCA\Dossiq\Service\CaseTypeCopyService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -77,11 +78,13 @@ class DomainCopyService {
 	 * @param StarterStore        $store  The OpenRegister seam.
 	 * @param CaseTypeCopyService $copier The copy that carries a case type's children.
 	 * @param LoggerInterface     $logger Logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly StarterStore $store,
 		private readonly CaseTypeCopyService $copier,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -184,7 +187,7 @@ class DomainCopyService {
 			$sourceId = $this->store->idOf(row: $source);
 			$copy = $this->copier->copy(caseTypeId: $sourceId);
 			if ($copy === null) {
-				$notCarried[] = ('caseType:' . (string)($source['title'] ?? $sourceId));
+				$notCarried[] = ('caseType:' . $this->text->textOr(value: ($source['title'] ?? null), fallback: $sourceId));
 				continue;
 			}
 
