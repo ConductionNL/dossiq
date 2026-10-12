@@ -71,6 +71,13 @@ export default [
 	...recommended,
 
 	{
+		// A case definition package's manifest is named package.json (hydra
+		// ADR-118) but is not an npm manifest, so the npm sort rule does not
+		// apply to it. The package validator checks it instead.
+		ignores: ['tests/fixtures/packages/*/package.json', 'lib/Settings/packages/*/package.json'],
+	},
+
+	{
 		// 🔴 SCOPED, and it must be. Flat config resolves a rule's plugin from the
 		// config object the rule sits in, and v9 also lints `.json` (it ships
 		// `@eslint/json`), where `jsdoc` is not registered. An unscoped `jsdoc/*`

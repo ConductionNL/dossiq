@@ -203,6 +203,21 @@
 			}}</span>
 		</div>
 
+		<!-- How often the term may be extended (conditional) -->
+		<div v-if="form.extensionAllowed" class="form-group">
+			<NcTextField
+				:modelValue="thresholdText(form.maxExtensions)"
+				:label="t('dossiq', 'Maximum number of extensions')"
+				:error="!!thresholdErrors.maxExtensions"
+				:helperText="
+					thresholdErrors.maxExtensions
+					|| t('dossiq', 'Leave empty for no limit of its own.')
+				"
+				inputmode="numeric"
+				data-testid="case-type-max-extensions"
+				@update:modelValue="(v) => updateThreshold('maxExtensions', v, 9)" />
+		</div>
+
 		<!-- Confidentiality -->
 		<div class="form-group">
 			<label class="required">{{ t('dossiq', 'Confidentiality') }}</label>

@@ -34,7 +34,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\External\Zgw\NotePush;
+use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\MentionNotificationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,7 +57,7 @@ class NotesController extends Controller {
 	 * @param MentionNotificationService $mentionSvc The mention notification service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
-	 * @param NotePush $notePush Pushes a note to the neighbouring ZGW register, or says why it did not
+	 * @param NotePush $notePush Hands a note to integriq for the neighbouring register, or says why it did not
 	 * @param CaseAccessGuard $caseAccessGuard Decides whether the caller may write notes on this case
 	 */
 	public function __construct(

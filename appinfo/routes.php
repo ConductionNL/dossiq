@@ -74,6 +74,8 @@ $extra = [
     // declaration is read locally first, so an undeclared case type reaches
     // no network at all (REQ-AIC-01).
     ['name' => 'assistant#aiFeatures',   'url' => '/api/assistant/ai-features',  'verb' => 'GET'],
+    ['name' => 'assistant#prompts',      'url' => '/api/assistant/prompts',      'verb' => 'GET'],
+    ['name' => 'reportGroup#show',     'url' => '/api/report-group',           'verb' => 'GET'],
 
         // KCC Klantcontact (kcc-klantcontact-integratie).
         // Static/verb routes precede the {id} wildcard routes.
@@ -375,6 +377,10 @@ $extra = [
     ['name' => 'caseRelation#create',  'url' => '/api/cases/{caseId}/relations',                          'verb' => 'POST'],
         // {aardRelatie} bound nothing: the method signs $natureRelationship. HTTP 400.
     ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{natureRelationship}', 'verb' => 'DELETE'],
+        // Linked case with a role (C11, ADR-118): the roles a case type declares, linking with one, and the configured outcome cascades.
+    ['name' => 'caseLink#roles',   'url' => '/api/cases/{caseId}/links',                 'verb' => 'GET'],
+    ['name' => 'caseLink#link',    'url' => '/api/cases/{caseId}/links/{role}',          'verb' => 'POST'],
+    ['name' => 'caseLink#cascade', 'url' => '/api/links/cascades/{name}/{targetId}',     'verb' => 'POST'],
         // Live conversation on the case — Talk rooms, captures and the major declaration.
     ['name' => 'caseConversation#availability',       'url' => '/api/conversations/availability',        'verb' => 'GET'],
     ['name' => 'caseConversation#start',              'url' => '/api/cases/{caseId}/conversations',      'verb' => 'POST'],
@@ -598,17 +604,6 @@ $extra = [
         // The two `bulk-transition` routes this replaces looped in dossiq.
     ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
 
-        // ── CMMN Adaptive Case Engine (cmmn-adaptive-case) ──────────────
-        // Sibling to the Status Transition Engine above: single write-path
-        // for case.casePlanState on CMMN-managed caseTypes (handlingModel =
-        // 'cmmn'). BPMN-managed caseTypes never reach these routes — the
-        // engine itself refuses to operate on them (case_not_cmmn_managed).
-    ['name' => 'cmmnCase#plan',      'url' => '/api/case/{caseId}/cmmn-plan',           'verb' => 'GET'],
-    ['name' => 'cmmnCase#enable',    'url' => '/api/case/{caseId}/cmmn-plan/enable',    'verb' => 'POST'],
-    ['name' => 'cmmnCase#complete',  'url' => '/api/case/{caseId}/cmmn-plan/complete',  'verb' => 'POST'],
-    ['name' => 'cmmnCase#terminate', 'url' => '/api/case/{caseId}/cmmn-plan/terminate', 'verb' => 'POST'],
-    ['name' => 'cmmnCase#signal',    'url' => '/api/case/{caseId}/cmmn-plan/signal',    'verb' => 'POST'],
-
         // The tenant CRUD + lifecycle routes retired with the tenant admin store
         // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister
         // Organisation, administered through OpenRegister's organisation endpoints.
@@ -704,14 +699,15 @@ $extra = [
         // VTH zaaktype template management (admin only).
     ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
     ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
-        // Inspection checklist CRUD (admin).
-    ['name' => 'inspectionChecklist#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
-    ['name' => 'inspectionChecklist#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
-    ['name' => 'inspectionChecklist#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
-    ['name' => 'inspectionChecklist#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
-        // Per-case inspection result submission and retrieval.
-    ['name' => 'inspectionChecklist#submitResult', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
-    ['name' => 'inspectionChecklist#getResults',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+        // Checklist templates (admin). The URLs keep their first names; the
+        // controllers behind them know no procedure.
+    ['name' => 'checklistTemplate#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
+    ['name' => 'checklistTemplate#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
+    ['name' => 'checklistTemplate#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
+    ['name' => 'checklistTemplate#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
+        // A checklist run on a case: submit one, read them all.
+    ['name' => 'taskChecklist#submit', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
+    ['name' => 'taskChecklist#runs',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
         // What an inspector captured at the site. The metadata validator and
         // the transcription queue both shipped with mobiel-inspectie-offline
         // and had no door, so a photo or a voice memo reached nobody and the
@@ -733,6 +729,7 @@ $extra = [
     ['name' => 'beschikking#akkoord',     'url' => '/api/beschikkingen/{id}/akkoord',          'verb' => 'PATCH'],
     ['name' => 'beschikking#onderteken',  'url' => '/api/beschikkingen/{id}/onderteken',       'verb' => 'PATCH'],
     ['name' => 'beschikking#verzend',     'url' => '/api/beschikkingen/{id}/verzend',          'verb' => 'PATCH'],
+    ['name' => 'beschikking#successor', 'url' => '/api/beschikkingen/{id}/successor', 'verb' => 'POST'],
     ['name' => 'beschikking#update',      'url' => '/api/beschikkingen/{id}',                  'verb' => 'PATCH'],
 
         // ── Consultation (advice requests and responses) ─────────────────
@@ -821,20 +818,42 @@ $extra = [
     ['name' => 'template#activate', 'url' => '/api/templates/{id}/activate', 'verb' => 'POST'],
 
         // ── WOO (Wet open overheid) operations ──────────────────────────
+    // Which documents of a case still wait for an assessment, with titles (document-assessment REQ-DAS-001). Generic: any case type.
+    ['name' => 'documentAssessment#outstanding', 'url' => '/api/cases/{id}/document-assessments/outstanding', 'verb' => 'GET'],
     ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
     ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
     ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
     ['name' => 'wOOAssessment#publishDecision', 'url' => '/api/cases/{id}/woo/publish',        'verb' => 'POST'],
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
+    // Lodge a remedy (bezwaar, ...) against a decided case; the case type's remedy declaration names the case type it opens (woo-case-screens-and-objections REQ-RML-001, generic per decision 182).
+    ['name' => 'remedy#lodge', 'url' => '/api/cases/{id}/remedy', 'verb' => 'POST'],
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
     ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    ['name' => 'mailPartiesReport#show', 'url' => '/api/cases/{id}/reports/mail-parties', 'verb' => 'GET'],
+    // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
+    ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
+    ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
+    ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
+    ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
+    ['name' => 'documentReview#pagesSeen',   'url' => '/api/cases/{id}/review/documents/{documentRef}/pages-seen', 'verb' => 'POST'],
+    // Triage rules (woo-review-triage REQ-WRT-002): visible rules that mark unmarked documents without opening them.
+    ['name' => 'triageRule#index',   'url' => '/api/cases/{id}/review/triage/rules', 'verb' => 'GET'],
+    ['name' => 'triageRule#create',  'url' => '/api/cases/{id}/review/triage/rules', 'verb' => 'POST'],
+    ['name' => 'triageRule#update',  'url' => '/api/cases/{id}/review/triage/rules/{ruleId}', 'verb' => 'PUT'],
+    ['name' => 'triageRule#destroy', 'url' => '/api/cases/{id}/review/triage/rules/{ruleId}', 'verb' => 'DELETE'],
+    ['name' => 'triageRule#apply',   'url' => '/api/cases/{id}/review/triage/apply', 'verb' => 'POST'],
+    // Document review recall (woo-review-recall-and-stopping, generic per decision 182): the stopping rule and recall samples.
+    ['name' => 'recall#recall',              'url' => '/api/cases/{id}/review/recall', 'verb' => 'GET'],
+    ['name' => 'recall#declareStoppingRule', 'url' => '/api/cases/{id}/review/stopping-rule', 'verb' => 'POST'],
+    ['name' => 'recall#drawSample',          'url' => '/api/cases/{id}/review/recall/samples', 'verb' => 'POST'],
+    ['name' => 'recall#judge',               'url' => '/api/cases/{id}/review/recall/samples/{sampleId}/judgements', 'verb' => 'POST'],
+    // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
+    // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
+    ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
     // Re-verify what a Woo delivery sent out (woo-delivered-set-is-a-record REQ-WDS-003).
     ['name' => 'wooDeliveredSet#verify', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/verify', 'verb' => 'GET'],
     ['name' => 'wooDeliveredSet#item', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}', 'verb' => 'GET', 'requirements' => ['index' => '\d+']],
     ['name' => 'wooDeliveredSet#file', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}/{side}', 'verb' => 'GET', 'requirements' => ['index' => '\d+', 'side' => 'original|delivered']],
-    // A resident starts a Woo request from their portal dossier (woo-request-from-a-portal-dossier):
-    // portaliq forwards the endpoint action `startWooVerzoek` here with a signed X-Portal-Subject assertion.
-    ['name' => 'portalWooRequest#start', 'url' => '/api/portal/woo-verzoek', 'verb' => 'POST'],
     ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
     // Gather documents on a Woo case (woo-requests-gather-documents-from-sources D-2, D-3).
     ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
@@ -848,6 +867,8 @@ $extra = [
     ['name' => 'wooCollection#queries',    'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'GET'],
     ['name' => 'wooCollection#storeQuery', 'url' => '/api/cases/{id}/woo/collection/queries',                      'verb' => 'POST'],
     ['name' => 'wooCollection#rerun',      'url' => '/api/cases/{id}/woo/collection/queries/{queryId}/rerun',      'verb' => 'POST'],
+    // Case-scoped reviewer access (case-reviewer-access REQ-CRA-004): administrator only, once after an upgrade.
+    ['name' => 'caseReviewerAccess#reconcile', 'url' => '/api/cases/reviewer-access/reconcile', 'verb' => 'POST'],
     // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
     // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],
@@ -893,7 +914,6 @@ $extra = [
         // and became unreachable the moment it went, which is the dead-endpoint
         // shape this programme already retired once on the AVG page.
     ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
-    ['name' => 'mandaat#mandaatCheck',            'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
         // GIS map-layer CRUD removed (issue #112): base-layer config is now
         // declarative on OpenRegister's maps-overview surface (PDOK WMTS default,

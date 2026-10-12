@@ -1,0 +1,75 @@
+{
+  "_note": "Numbered document series (decision 167, made generic by decision 182). A case type configures, per series, the prefix printed in front of the running number: documentSeries.<series>.prefix, e.g. {\"beschikking\": {\"prefix\": \"B\"}}. The number itself is one running count per series, per organisation, per year, issued by DocumentSeriesNumberer; a series the case type does not configure prints the issuing code's default. Declared on caseType because OpenRegister's magic mapper stores no undeclared key. A series can also number the documents of one set (a dossier, an inventory, an export): order (sort keys, first key first, ties keep their input order), width (zero-padded digits) and gapPolicy (renumber: 1..n on every listing; keep: a number once given stays with its document), read by DocumentSetNumberer.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "documentSeries": {
+            "type": "object",
+            "title": "Document numbering",
+            "description": "Per kind of document, the letters printed before its number, for example B for a beschikking. The number itself counts up per organisation and starts again each year.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "prefix": {
+                  "type": "string",
+                  "maxLength": 10,
+                  "pattern": "^[A-Za-z0-9]+$"
+                },
+                "order": {
+                  "type": "array",
+                  "title": "Order",
+                  "description": "The order the documents of one set are numbered in, first key first. Documents that are equal on every key keep the order they were read in.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "direction": {
+                        "type": "string",
+                        "enum": [
+                          "asc",
+                          "desc"
+                        ],
+                        "default": "asc"
+                      }
+                    },
+                    "required": [
+                      "field"
+                    ]
+                  }
+                },
+                "width": {
+                  "type": "integer",
+                  "title": "Digits",
+                  "description": "How many digits a number in a set is printed with, padded with zeros.",
+                  "minimum": 1,
+                  "maximum": 9,
+                  "default": 2
+                },
+                "gapPolicy": {
+                  "type": "string",
+                  "title": "When a document is removed",
+                  "description": "renumber gives the set 1, 2, 3 again; keep lets every document keep the number it was given, so a removed one leaves a gap.",
+                  "enum": [
+                    "renumber",
+                    "keep"
+                  ],
+                  "default": "renumber"
+                },
+                "numberField": {
+                  "type": "string",
+                  "title": "Number field",
+                  "description": "The field a kept number is stored in on the document.",
+                  "default": "sequence"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -230,6 +230,13 @@ class SchemaSlugMap {
 		'wooRequestConfiguration' => 'woo_request_configuration_schema',
 		'wooExclusion' => 'woo_exclusion_schema',
 		'wooCollectionQuery' => 'woo_collection_query_schema',
+		// The Woo review: relevance, triage rules and batches (woo-review-triage).
+		'documentReview' => 'document_review_schema',
+		'triageRule' => 'triage_rule_schema',
+		'reviewBatch' => 'review_batch_schema',
+		// The recall of a Woo review: the stopping rule and its samples (woo-review-recall-and-stopping).
+		'stoppingRule' => 'stopping_rule_schema',
+		'recallSample' => 'recall_sample_schema',
 		// What a Woo delivery sent out, frozen with its publication (woo-delivered-set-is-a-record).
 		'wooDeliveredSet' => 'woo_delivered_set_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
@@ -333,6 +340,14 @@ class SchemaSlugMap {
 		// answer about duplicates, and a dropped hierarchy block gives a wrong
 		// answer about who may open a dossier.
 		'x-openregister-hierarchy',
+		// Who may change a reviewer's decision on a file of the schema's
+		// objects (a redaction on a document). OpenRegister's
+		// ReviewPolicyResolver reads this block off
+		// `Schema::getConfiguration()` and answers the instance default when
+		// it is absent, which is "anyone who may write the object". So a
+		// dropped block does not fail loudly: a second reviewer silently
+		// overwrites the first reviewer's redaction (REQ-WSA-007).
+		'x-openregister-review',
 	];
 
 	/**

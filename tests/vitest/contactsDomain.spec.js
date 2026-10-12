@@ -236,7 +236,11 @@ describe.each([
 		}
 		const strip = widget(p, 'contact-panels')
 		expect(strip.type).toBe('tabs')
-		expect(strip.content.tabs[0].widgetIds).toEqual(['contact-card', 'contact-open-cases', 'contact-latest-moments'])
+		expect(strip.content.tabs[0].widgetIds).toEqual([
+			'contact-card',
+			'contact-open-cases',
+			'contact-latest-moments',
+		])
 		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
 			undefined,
 			'contact-cases',

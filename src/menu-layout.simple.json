@@ -194,7 +194,7 @@
 			"config": {
 				"widgets": [],
 				"layout": [],
-				"description": "Your work today, then the team",
+				"description": "",
 				"greeting": "first",
 				"showActionsMenu": false,
 				"viewLinks": [
@@ -911,6 +911,9 @@
 					"copy-case": {
 						"group": "Case"
 					},
+					"remedy-lodge": {
+						"group": "Case"
+					},
 					"woo-publish": {
 						"group": "Publication"
 					},
@@ -928,6 +931,12 @@
 					},
 					"woo-gather-documents": {
 						"group": "Dossier"
+					},
+					"document-assess": {
+						"group": "Dossier"
+					},
+					"assessment-decide": {
+						"group": "Publication"
 					},
 					"case-rebind": {
 						"group": "Case"
@@ -1053,6 +1062,11 @@
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
 									"overflow": true
+								},
+								{
+									"widgetId": "case-document-review",
+									"label": "Review",
+									"overflow": true
 								}
 							],
 							"variant": "segmented"
@@ -1064,11 +1078,71 @@
 					"kpi-2": null,
 					"kpi-5": null,
 					"3": null,
+					"presence-strip": {
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1
+					},
+					"5": {
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 12,
+						"gridHeight": 19
+					},
+					"12": {
+						"gridX": 0,
+						"gridY": 20,
+						"gridWidth": 12,
+						"gridHeight": 6
+					},
+					"11": {
+						"gridX": 0,
+						"gridY": 26,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					"7": {
+						"gridX": 0,
+						"gridY": 29,
+						"gridWidth": 12,
+						"gridHeight": 7
+					},
 					"6": {
-						"gridX": 9,
-						"gridY": 4,
-						"gridWidth": 3,
-						"gridHeight": 2
+						"gridX": 0,
+						"gridY": 36,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					"money-payments": {
+						"gridX": 0,
+						"gridY": 39,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"money-contract": {
+						"gridX": 0,
+						"gridY": 43,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"family-plan-panel": {
+						"gridX": 0,
+						"gridY": 47,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"work-projects": {
+						"gridX": 0,
+						"gridY": 51,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					"documents-merge-to-pdf": {
+						"gridX": 0,
+						"gridY": 55,
+						"gridWidth": 12,
+						"gridHeight": 4
 					},
 					"case-banners": null
 				}
@@ -1564,6 +1638,23 @@
 				"folderSidebar": null,
 				"showTitle": true,
 				"countSubtitle": "{total} case types",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "New case type",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
 				"columns": [
 					{
 						"key": "title",
@@ -1577,11 +1668,25 @@
 					},
 					{
 						"key": "processingDeadline",
-						"label": "Processing time"
+						"label": "Processing time",
+						"formatter": "isoDuration"
 					},
 					{
 						"key": "version",
-						"label": "Version"
+						"label": "Version",
+						"formatter": "versionLabel"
+					},
+					{
+						"key": "isDraft",
+						"label": "Status",
+						"formatter": "draftState",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"false": "success",
+								"true": "warning"
+							}
+						}
 					}
 				],
 				"quickFilters": [

@@ -149,12 +149,12 @@ describe('TaskDetailView', () => {
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
 			'active',
 		)
-		expect(wrapper.find('[data-testid="task-detail-assignee"]').text()).toBe(
+		expect(wrapper.find('[data-testid="cn-fact-assignee"] dd').text()).toBe(
 			'hbakker',
 		)
 		// `dueAt`, the engine's spelling. The detail page read `dueDate` and
 		// found nothing on every engine row.
-		expect(wrapper.find('[data-testid="task-detail-due"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="cn-fact-due"]').exists()).toBe(true)
 	})
 
 	it('names every team the task is offered to, in one row', async () => {
@@ -162,7 +162,7 @@ describe('TaskDetailView', () => {
 		// `assignedGroup`, so a task offered to two teams has to say both.
 		const wrapper = await mountPage(TASK)
 
-		expect(wrapper.find('[data-testid="task-detail-team"]').text()).toBe(
+		expect(wrapper.find('[data-testid="cn-fact-team"] dd').text()).toBe(
 			'vergunningen, toezicht',
 		)
 	})
@@ -178,8 +178,8 @@ describe('TaskDetailView', () => {
 			isTerminal: false,
 		})
 
-		expect(wrapper.find('[data-testid="task-detail-due"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="task-detail-team"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="cn-fact-due"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="cn-fact-team"]').exists()).toBe(false)
 		expect(
 			wrapper.find('[data-testid="task-detail-body"]').text(),
 		).not.toContain('—')

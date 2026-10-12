@@ -54,7 +54,7 @@ const TAB_TEXT_KEYS = ['moreLabel', 'ariaLabel']
  * translate.
  *
  * CnTabsWidget draws `tabs[].label`, `moreLabel` and `ariaLabel` as written,
- * and CaseSectionsWidget draws `sections[].label` as written, so on a Dutch
+ * and the library sections widget draws `sections[].label` as written, so on a Dutch
  * page the case's tabs read Overview, Documents, Contact, Tasks, History and
  * the panels under them Core case data, Woo publication, although every one of
  * those strings has its Dutch entry in this app's catalogue (finding F4,

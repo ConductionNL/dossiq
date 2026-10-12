@@ -39,9 +39,7 @@
 		<MenuCaseTypesSettings />
 	</NcAppSettingsSection>
 
-	<NcAppSettingsSection
-		id="notification-routing"
-		:name="t('dossiq', 'Notices')">
+	<NcAppSettingsSection id="notification-routing" :name="t('dossiq', 'Notices')">
 		<p class="dossiq-user-settings__intro">
 			{{
 				t(
@@ -53,9 +51,7 @@
 		<NotificationRoutingSettings />
 	</NcAppSettingsSection>
 
-	<NcAppSettingsSection
-		id="work-digest"
-		:name="t('dossiq', 'Daily overview')">
+	<NcAppSettingsSection id="work-digest" :name="t('dossiq', 'Daily overview')">
 		<p class="dossiq-user-settings__intro">
 			{{
 				t(
@@ -85,9 +81,7 @@
 		<CaseEmailMatchSettings />
 	</NcAppSettingsSection>
 
-	<NcAppSettingsSection
-		id="credentials"
-		:name="t('dossiq', 'Credentials')">
+	<NcAppSettingsSection id="credentials" :name="t('dossiq', 'Credentials')">
 		<p class="dossiq-user-settings__intro">
 			{{
 				t(

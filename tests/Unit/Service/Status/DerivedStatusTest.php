@@ -41,6 +41,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Status\StatusDeclaration
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class DerivedStatusTest extends TestCase {
 

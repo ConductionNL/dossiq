@@ -26,7 +26,6 @@ One app-config key selects the adapter tier per integration, plus tier-specific 
 | `integration.kvk.baseUrl` | default `https://api.kvk.nl/test/api` | unset (uses default) |
 | `integration.kvk.apiKey` | default = public test key (below) | unset (uses default) |
 | `integration.dso.baseUrl` | `https://service.pre.omgevingswet.overheid.nl` | unset |
-| `integration.digid.mode` | `log` \| `simulator` | `log` |
 
 Set a tier with, e.g.:
 
@@ -34,7 +33,6 @@ Set a tier with, e.g.:
 occ config:app:set dossiq integration.kvk.mode --value test
 occ config:app:set dossiq integration.brp.mode --value mock
 occ config:app:set dossiq integration.brp.baseUrl --value http://personen-mock:5010/haalcentraal/api/brp
-occ config:app:set dossiq integration.digid.mode --value simulator
 ```
 
 An unknown or unset mode always falls back to `log`.
@@ -90,22 +88,14 @@ An unknown or unset mode always falls back to `log`.
   aansluittraject and is OUT OF SESSION SCOPE**; the config keys are ready so an operator points
   them at pre-prod once granted, with no code change.
 
-### DigiD / eHerkenning (Logius) — beta (simulator only)
+### DigiD / eHerkenning (Logius)
 
-- **Simulator**: `SimulatorDigidSamlAdapter` / `SimulatorEHerkenningSamlAdapter` model the
-  maykinmedia `django-digid-eherkenning` mock-login pattern — a local BSN/KvK entry, **no real
-  SAML**. Selected by `integration.digid.mode=simulator`. The returned assertion is explicitly
-  flagged `simulator: true` / `authenticatedBy: simulator` so any consuming surface can render a
-  "simulatie" label and mark the session simulator-authenticated.
-- **Cap**: permanently **beta**. A simulator proves the login journey and session wiring, NOT the
-  SAML koppelvlak. Real signature/artifact validation is only provable against **Logius
-  preproductie**, which needs a supplier (Leverancier-route) application + a PKIoverheid
-  certificate (weeks of lead time). **This aansluiting is OUT OF SESSION SCOPE**; the real
-  SAML-artifact adapter and its preprod lane are a follow-up once the cert is granted.
-- **No dossiq DigiD login page** exists today — the auth-broker adapter is consumed server-side
-  by the `zaakportaal-mijngemeente` intake flow. The simulator login form / journey lands with
-  that beta surface; the adapter contract (BSN validation, simulator flagging) is proven by
-  PHPUnit here.
+dossiq has no DigiD or eHerkenning adapter of its own. Logins through DigiD,
+eHerkenning and eIDAS run through integriq's identity broker
+(`OCA\Integriq\Auth\Idp`, routes `/apps/integriq/api/idp/{provider}/start` and
+`/callback`). Until an administrator binds a live broker there, integriq's dormant
+adapter refuses every login and makes no external call. The former
+`integration.digid.mode` key is gone and has no effect.
 
 ### e-Depot (Nationaal Archief) — beta (customer-side aansluittraject)
 

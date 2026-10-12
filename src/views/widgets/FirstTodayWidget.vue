@@ -12,8 +12,9 @@
 	@spec openspec/specs/dashboard/spec.md
 -->
 <template>
-	<CnBannerWidget
-		v-if="found"
+	<component
+		:is="banner"
+		v-if="found && banner"
 		layout="attention"
 		variant="error"
 		:kicker="t('dossiq', 'First today')"
@@ -24,7 +25,7 @@
 </template>
 
 <script>
-import { CnBannerWidget } from '@conduction/nextcloud-vue'
+import { getWidgetTypeEntry } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import { translate as t } from '@nextcloud/l10n'
 import { useObjectStore } from '../../store/modules/object.js'
@@ -35,8 +36,6 @@ const DAY = 86400000
 
 export default {
 	name: 'FirstTodayWidget',
-
-	components: { CnBannerWidget },
 
 	// Declared on purpose: the mount script passes `title`, and the host draws
 	// the heading (hydra#316). See OverdueCasesWidget.
@@ -67,6 +66,21 @@ export default {
 
 	computed: {
 		/**
+		 * The library's banner, taken from the widget registry by its type
+		 * key. CnBannerWidget is not a public export of nextcloud-vue (its
+		 * index says so): a named import resolves to undefined, Vue then
+		 * renders an unknown <cnbannerwidget> element, and the grid keeps an
+		 * empty card for it. That was the blank block under the My work / My
+		 * team switch, seen only by a reader with a case past its term.
+		 *
+		 * @return {object|null} The banner component, or null.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
+		banner() {
+			return getWidgetTypeEntry('banner')?.renderer ?? null
+		},
+
+		/**
 		 * The sentence under the title: number, type, and how late.
 		 *
 		 * @return {string} The reason line.
@@ -95,7 +109,11 @@ export default {
 			return [
 				{
 					id: 'all',
-					label: t('dossiq', this.content?.actions?.[0]?.label ?? 'Open these cases'),
+					label: t(
+						'dossiq',
+						this.content?.actions?.[0]?.label ?? 'Open these cases',
+					),
+
 					route: this.content?.actions?.[0]?.route ?? { name: 'Cases' },
 				},
 				{
@@ -137,8 +155,12 @@ export default {
 				const row = (rows || [])[0] || null
 				this.found = row
 				if (row?.caseType) {
-					const types = await store.fetchCollection('caseType', { _limit: 100 })
-					const type = (types || []).find((item) => item.id === row.caseType)
+					const types = await store.fetchCollection('caseType', {
+						_limit: 100,
+					})
+					const type = (types || []).find(
+						(item) => item.id === row.caseType,
+					)
 					this.caseTypeName = type?.title || ''
 				}
 			} catch {

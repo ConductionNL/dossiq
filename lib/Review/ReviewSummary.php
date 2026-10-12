@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * Dossiq document review: the case summary of relevance beside the verdicts.
+ *
+ * @category Review
+ * @package  OCA\Dossiq\Review
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Review;
+
+use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\WOODocumentAssessmentService;
+
+/**
+ * Reports a case's documents by relevance and by verdict, and what is still outstanding.
+ *
+ * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+ */
+class ReviewSummary {
+
+	use SearchesObjects;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService The settings and OpenRegister access.
+	 * @param DocumentRelevance $reviews The relevance store.
+	 * @param WOODocumentAssessmentService $assessments The verdicts and the outstanding list.
+	 * @param WooCaseDocuments $caseDocuments Where a case's documents are.
+	 * @param ReviewConfiguration $configuration Whether the case type switches document review on.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly DocumentRelevance $reviews,
+		private readonly WOODocumentAssessmentService $assessments,
+		private readonly WooCaseDocuments $caseDocuments,
+		private readonly ReviewConfiguration $configuration,
+	) {
+	}//end __construct()
+
+	/**
+	 * The summary of one case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed> `documents`, `relevance` (unmarked, inScope, outOfScope), `verdicts` and `outstanding`.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	public function forCase(string $caseId): array {
+		$documents = $this->caseDocuments->idsFor(caseId: $caseId);
+		$reviews = $this->reviews->forCase(caseId: $caseId);
+		$verdicts = ['openbaar' => 0, 'deels_openbaar' => 0, 'niet_openbaar' => 0, 'total' => 0];
+		foreach ($this->assessmentRows(caseId: $caseId) as $assessment) {
+			$classification = (string)($assessment['classification'] ?? '');
+			if (isset($verdicts[$classification]) === true && in_array((string)($assessment['documentRef'] ?? ''), $documents, true) === true) {
+				$verdicts[$classification]++;
+				$verdicts['total']++;
+			}
+		}
+
+		return [
+			'enabled' => (($this->configuration->forCase(caseId: $caseId)['enabled'] ?? false) === true),
+			'documents' => count($documents),
+			'relevance' => $this->reviews->count(documentRefs: $documents, reviews: $reviews),
+			'verdicts' => $verdicts,
+			'outstanding' => $this->assessments->getOutstanding(caseId: $caseId),
+			'unseen' => $this->reviews->pages()->unseenInCase(caseId: $caseId),
+		];
+	}//end forCase()
+
+	/**
+	 * The case's documents that carry a verdict, as keys.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, bool> The assessed documents.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function assessed(string $caseId): array {
+		$assessed = [];
+		foreach ($this->assessmentRows(caseId: $caseId) as $assessment) {
+			$ref = (string)($assessment['documentRef'] ?? '');
+			if ($ref !== '' && (string)($assessment['classification'] ?? '') !== '') {
+				$assessed[$ref] = true;
+			}
+		}
+
+		return $assessed;
+	}//end assessed()
+
+	/**
+	 * The case's assessments the caller may read.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> The assessments.
+	 */
+	private function assessmentRows(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['caseRef' => $caseId, '_limit' => 1000],
+		);
+	}//end assessmentRows()
+}//end class

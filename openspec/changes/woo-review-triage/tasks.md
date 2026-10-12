@@ -10,73 +10,152 @@ and construct the real OpenRegister event classes in listener tests.
 If the change is too large for one PR, sections 1 to 3 (relevance, rules, batches) are the first
 PR, sections 4 to 6 the second.
 
+
+**Decision 182 (10 Oct).** Sections 1 to 5 build the generic document review capability (spec
+`specs/document-review/spec.md`, REQ-WRT-001 to REQ-WRT-005), named by what it does: classes in
+`lib/Review/`, `DocumentReviewController`, schemas `documentReview`, `triageRule`, `reviewBatch`,
+routes `/api/cases/{id}/review/...`. A case type switches it on with `documentReview.enabled`; the
+`woo-verzoek` seed sets it (REQ-WRT-W01). The paths and names below were rewritten to the built ones.
+
 ## 1. Relevance apart from the verdict
 
-- [ ] 1.1 Add schema `wooDocumentReview` in `lib/Settings/register.d/87-woo-review.json` with the
+- [ ] 1.1 Add schema `documentReview` in `lib/Settings/register.d/87-document-review.json` with the
   REQ-WRT-001 properties; create one per document at the gather add and for documents already on a
   Woo case through a repair step (idempotent). Bump the register version (REQ-WRT-001).
-  - unit `tests/Unit/Repair/CreateWooDocumentReviewsTest.php` `testEveryDocumentGetsOneReview`,
+  - unit `tests/Unit/Repair/CreateDocumentReviewsTest.php` `testEveryDocumentGetsOneReview`,
     `testASecondRunCreatesNothing`.
-- [ ] 1.2 POST `/api/cases/{id}/woo/documents/{documentRef}/relevance` with `{relevance}`, case
+  - Built: schemas in `87-document-review.json` (register 0.20.23, app version bumped), slug map and config
+    keys, `lib/Review/DocumentRelevance.php`, repair `lib/Repair/CreateDocumentReviews.php` with
+    `CreateDocumentReviewsTest` (`testEveryAssessedDocumentGetsOneInScopeReview`, `testASecondRunCreatesNothing`).
+    The repair marks documents that already carry a verdict in scope (a verdict is a reviewer's judgement that
+    the document is about the request); without that, every existing Woo case would block on unmarked documents.
+    Open: "create one per document at the gather add" belongs in the add that lane L9 builds
+    (`woo-requests-gather-documents-from-sources`). Until then a document without a review reads as unmarked,
+    which is the same state the add would write.
+- [x] 1.2 POST `/api/cases/{id}/review/documents/{documentRef}/relevance` with `{relevance}`, case
   mutation guard. `getOutstanding()` skips out-of-scope documents. The case summary reports the
   three counts (REQ-WRT-001).
   - **fails today**: `tests/Unit/Service/WOODocumentAssessmentServiceTest.php`
     `testAnOutOfScopeDocumentNeedsNoVerdict`, `testUnmarkedDocumentsAreOutstanding`.
-  - Through the caller: `tests/Unit/Controller/WooReviewControllerTest.php`
+  - Through the caller: `tests/Unit/Controller/DocumentReviewControllerTest.php`
     `testTheSummaryReportsRelevanceBesideVerdicts` (the ten-document fixture).
   - `allDocumentsAssessed()` now means every in-scope document has a verdict and none is unmarked.
     Test: `testTheDecisionWaitsForUnmarkedDocuments`.
+  - Built: `DocumentReviewController` (relevance, summary; mutation and read guard through `CaseAccessGuard`),
+    `lib/Review/ReviewSummary.php`, `DocumentRelevance::outstanding()` behind `getOutstanding()`. The three
+    named service tests failed first (class absent); `DocumentReviewControllerTest` also covers the overturned rule
+    and `testAUserWithoutAGrantOnTheCaseIsRefused` (6.3 for this controller).
 
 ## 2. Rules
 
-- [ ] 2.1 Add schema `wooTriageRule` and `lib/Woo/WooTriageRules.php` with
+- [x] 2.1 Add schema `triageRule` and `lib/Review/TriageRules.php` with
   `apply(string $caseId): array` per REQ-WRT-002. Text conditions read the document's extracted
   text through OpenRegister's text extraction where the document has it; a document without text
   never matches a text condition (REQ-WRT-002).
-  - **fails today**: `tests/Unit/Woo/WooTriageRulesTest.php` `testARuleSetsAsideNewsletters`,
+  - **fails today**: `tests/Unit/Review/TriageRulesTest.php` `testARuleSetsAsideNewsletters`,
     `testTheFirstMatchingRuleDecides`, `testARuleNeverChangesAReviewersMarking`,
     `testAnOverturnRecordsTheRule`, `testADocumentWithoutTextNeverMatchesATextCondition`.
-  - Through the caller: `WooReviewControllerTest::testApplyAnswersTheCountPerRule`.
-- [ ] 2.2 A `Triage rules` section on the Woo case page with the rules, their conditions and their
-  counts, and `src/dialogs/WooTriageRuleDialog.vue` to add or edit one (REQ-WRT-002).
-  - vitest `src/dialogs/__tests__/WooTriageRuleDialog.spec.js` `testAnEffectIsRequired`.
+  - Through the caller: `DocumentReviewControllerTest::testApplyAnswersTheCountPerRule`.
+  - Built: `lib/Review/TriageRules.php` (forCase with `decided`/`overturned`, save, delete, apply),
+    `lib/Review/TriageConditions.php` (the eight conditions checked at save and matched; an unknown fact never
+    matches), `lib/Review/DocumentText.php` (OpenRegister's already-extracted text through
+    `TextExtractionService::getExtractedText()`, nothing extracted on demand), and
+    `CaseDocumentProvenance::mailOf()` for `senderDomain` and the mail date (`provenance.mail`, REQ-WRR-003).
+    `custodian` and `sourceSystem` read the provenance (REQ-DPV-001). The five named tests are in
+    `TriageRulesTest` (red first: class absent), with provenance/type/date, inactive, refusals, delete and the
+    reconcile on create. The controller is its own: `lib/Controller/TriageRuleController.php`
+    (`GET|POST /api/cases/{id}/review/triage/rules`, `PUT|DELETE .../rules/{ruleId}`,
+    `POST /api/cases/{id}/review/triage/apply`), so `testApplyAnswersTheCountPerRule` is in
+    `TriageRuleControllerTest` beside `testAUserWithoutAGrantOnTheCaseIsRefused` (6.3 for this controller).
+    `triageRule.conditions` declares its eight properties (schema 1.0.2, register 0.20.31).
+    Open: the mail fields are read but not yet written; the gather add parses them in woo-review-reports 3.1.
+- [x] 2.2 A `Triage rules` section on the Woo case page with the rules, their conditions and their
+  counts, and `src/dialogs/TriageRuleDialog.vue` to add or edit one (REQ-WRT-002).
+  - vitest `src/dialogs/__tests__/TriageRuleDialog.spec.js` `testAnEffectIsRequired`.
+  - Built to board DqWooReview: the section "Rules for relevant or not" in `DocumentReviewPanel.vue`
+    (numbered rules, the conditions as one sentence, the effect, documents decided and overturned, a menu to
+    change, switch off or delete; "Apply the rules to N documents" over the unmarked count) and
+    `src/dialogs/TriageRuleDialog.vue`. vitest `tests/vitest/triageRuleDialog.spec.js` `testAnEffectIsRequired`
+    (the vitest config only collects `tests/vitest/`), and the section in `tests/vitest/documentReview.spec.js`.
 
 ## 3. Batches
 
-- [ ] 3.1 Add schema `wooReviewBatch` and POST `/api/cases/{id}/woo/batches`. It writes the batch on
+- [x] 3.1 Add schema `reviewBatch` and POST `/api/cases/{id}/review/batches`. It writes the batch on
   each review, refuses a document in another open batch, and creates a dossiq task through the
   existing task service, assigned to the reviewer (REQ-WRT-003).
-  - **fails today**: `tests/Unit/Woo/WooReviewBatchesTest.php` `testEachBatchGetsATaskForItsReviewer`,
+  - **fails today**: `tests/Unit/Review/ReviewBatchesTest.php` `testEachBatchGetsATaskForItsReviewer`,
     `testADocumentCannotBeInTwoOpenBatches`, `testABatchByFilterTakesTheMatchingDocuments`.
-  - Through the caller: `WooReviewControllerTest::testCreateBatchRefusesWithoutMutationAccess`.
-- [ ] 3.2 A `Batches` section on the case page with assignee and progress (REQ-WRT-003).
+  - Through the caller: `DocumentReviewControllerTest::testCreateBatchRefusesWithoutMutationAccess`.
+  - Built: `lib/Review/ReviewBatches.php` (select, taken, create, forCase) with `ReviewBatchesTest`
+    (the three named tests plus closed-batch release, unknown filter, incomplete batch, engine refusal, progress);
+    `DocumentReviewController::createBatch` (201, 409 with `taken` naming the batch, mutation guard) and `::batches`
+    (read guard, progress assessed of total), routes `GET|POST /api/cases/{id}/review/batches`. The task goes through
+    `EngineTaskGateway::mirrorImport()` with `metadata.dossiq.kind` `review-batch`.
+    The filter now takes `rule` and the provenance fields `custodian`, `sourceSystem`, `source` through
+    `lib/Review/BatchSelection.php` (`BatchSelectionTest`; `ReviewBatchesTest::testABatchByCustodianTakesThatCustodiansDocuments`);
+    `ReviewBatchDialog.vue` offers them (`tests/vitest/reviewBatchDialog.spec.js`). An unknown field is still refused.
+- [x] 3.2 A `Batches` section on the case page with assignee and progress (REQ-WRT-003).
   - `npm run check:manifest` exits 0.
+  - Built to board DqWooReview (design-system #191): `src/components/case/DocumentReviewPanel.vue` (registry
+    type `document-review`, a `Review` tab beside Files in the case manifest) with the sections Where the review
+    stands (the four tiles and the unseen-pages notice), Stopping rule and how much was found, Batches and reviewers,
+    and What is still open; `src/dialogs/ReviewBatchDialog.vue` makes a batch. On a case whose case type does not
+    set `documentReview.enabled` it says so in one sentence (the summary now answers `enabled` and `unseen`).
+    vitest `tests/vitest/documentReview.spec.js`; `check:manifest` 0.
 
 ## 4. Review depth
 
-- [ ] 4.1 Add `reviewDepth` to `wooRequestConfiguration`. Batch creation sets `depth` and
-  `pagesRequired` per review, sampling with a seeded generator whose seed is stored. Confirm that
-  REQ-WRC-005's copy carries `reviewDepth` (REQ-WRT-004).
-  - **fails today**: `tests/Unit/Woo/WooReviewDepthTest.php` `testASampleDrawsItsSizeWithARecordedSeed`,
+- [x] 4.1 Add `reviewDepth` to the case type's `documentReview` block (decision 182: the depth is
+  case-type configuration, no longer `wooRequestConfiguration`). Batch creation sets `depth` and
+  `pagesRequired` per review, sampling with a seeded generator whose seed is stored (REQ-WRT-004).
+  - **fails today**: `tests/Unit/Review/ReviewDepthTest.php` `testASampleDrawsItsSizeWithARecordedSeed`,
     `testTheSameSeedDrawsTheSamePages`, `testAnUnnamedTypeIsEveryPage`.
-  - `tests/Unit/Woo/WooRequestConfigurationTest.php` `testReviewDepthIsCopied`.
+  - `tests/Unit/Review/ReviewConfigurationTest.php` `testTheCaseTypeConfiguresTheReview` (replaces the
+    planned `WooRequestConfigurationTest::testReviewDepthIsCopied`: a case type is versioned as a whole, so
+    the depth travels with it and needs no copy of its own).
+  - Built: `lib/Review/ReviewDepth.php` (depth per type, seeded sample through `Random\Randomizer` on `Mt19937`,
+    type = informatieobjecttype or mime class) with `ReviewDepthTest` (the three named tests plus short and unknown
+    documents, broken entries, type resolution). `lib/Review/ReviewConfiguration.php` reads `documentReview` from
+    the case's case type; `caseType.documentReview {enabled, reviewDepth}` is declared in
+    `87-document-review.json`, and the `woo-verzoek` seed in `81-woo-verzoek.json` sets `enabled` with an empty
+    depth (REQ-WRT-W01). `ReviewBatches::create()` records `depth` and `pagesRequired` on each review
+    (`ReviewBatchesTest::testTheBatchRecordsTheDepthPerReview`). A document of unknown length requires page 1
+    until the viewer reports its page count (5.1), then the pages are drawn from the recorded depth and seed.
 
 ## 5. Every page seen
 
-- [ ] 5.1 POST `/api/cases/{id}/woo/documents/{documentRef}/pages-seen`, case read guard (a reviewer
+- [ ] 5.1 POST `/api/cases/{id}/review/documents/{documentRef}/pages-seen`, case read guard (a reviewer
   reads, and seeing is reading), appending pages with reviewer and time. The dossiq document view
   on a Woo case calls it as pages are displayed (REQ-WRT-005).
-  - unit `WooReviewControllerTest::testPagesSeenAreAppendedWithTheReviewer`.
+  - unit `DocumentReviewControllerTest::testPagesSeenAreAppendedWithTheReviewer`.
   - vitest on the viewer component: `testEachDisplayedPageIsReportedOnce`.
-- [ ] 5.2 Refuse a verdict while required pages are unseen: in `WOODocumentAssessmentService::validate()`
+  - Built (backend): `DocumentReviewController::pagesSeen` (read guard; `{pages, pageCount}`; answers the review with
+    `unseen`), `DocumentRelevance::recordPagesSeen()` and `unseenPages()`;
+    `DocumentReviewControllerTest::testPagesSeenAreAppendedWithTheReviewer`.
+    Built (client): `src/services/pagesSeenReporter.js`, the call any review viewer makes as a page comes into view
+    (each page once per viewing, batched, re-reported after a failed post), with vitest
+    `testEachDisplayedPageIsReportedOnce` in `tests/vitest/documentReview.spec.js`.
+    Open: dossiq has no paged document viewer to call it from (Nextcloud's Viewer exposes no page events, and no
+    pdf.js is installed); Q-dossiq-L8-1.
+- [x] 5.2 Refuse a verdict while required pages are unseen: in `WOODocumentAssessmentService::validate()`
   for `bulkAssess`, and in a listener on OpenRegister's object updating and creating events for
   `wooDocumentAssessment` (direct API writes) (REQ-WRT-005).
   - **fails today**: `testAVerdictSetWithoutOpeningIsRefused` in
-    `tests/Unit/Listener/WooPagesSeenGuardTest.php`, with the real event class, and
+    `tests/Unit/Listener/PagesSeenGuardTest.php`, with the real event class, and
     `testBulkAssessRefusesUnseenPages` in `WOOAssessmentControllerTest`.
-- [ ] 5.3 `assembleDecision()` and `publish()` refuse with 409 naming documents and pages (REQ-WRT-005).
+  - Built: `lib/Review/PagesSeen.php` (record, unseen per review, document and case, the refusal sentence,
+    `assertAllSeen`) with `PagesSeenTest`; `lib/Listener/PagesSeenGuard.php` on `ObjectCreatingEvent` and
+    `ObjectUpdatingEvent` (registered in `ReviewListenerRegistrar`) with `PagesSeenGuardTest`
+    (`testAVerdictSetWithoutOpeningIsRefused` red first: class absent); `bulkUpsert()` adds the refusal per
+    assessment (`testBulkAssessRefusesUnseenPages` red first with the check removed). Only in-scope documents with
+    `pagesRequired` are held; a document never put in a batch has none, so existing Woo cases do not block.
+- [x] 5.3 `assembleDecision()` and `publish()` refuse with 409 naming documents and pages (REQ-WRT-005).
   - **fails today**: `WooPublicationServiceTest::testPublishWaitsForTheLastPage`,
     `WOODecisionServiceTest::testTheDecisionWaitsForTheLastPage`.
+  - Built: `WOODecisionService::assembleDecision()` throws `woo-pages-unseen` (409) through
+    `PagesSeen::assertAllSeen()`; `WooPublicationService::publish()` answers `pages_unseen` with `unseen` by
+    document; `WOOAssessmentController` answers both with 409 and the unseen pages
+    (`testDecisionAndPublishAnswer409NamingTheUnseenPages`).
 
 ## 6. The request as an authorisation container
 
@@ -94,6 +173,16 @@ record. OpenRegister refuses a parent that references another schema
     reading the merged register the importer reads.
   - Newman `tests/newman/woo-review-triage.postman_collection.json`, folder `schemas`: read each of
     the seven schemas back and assert `authorization.scope` is `private` and no hierarchy key is set.
+  - Partly built (configuration, round 5): `reviewBatch` and `triageRule` (87-document-review.json) carry the
+    private block, no hierarchy, versions raised, register 0.20.33; their creators already reconcile the case in
+    the same request. Held back on purpose: `documentReview`, `wooExclusion`, `wooSearchPlan`, `wooCollectionQuery`
+    stay public until their writers (`DocumentRelevance::mark`, triage apply, `WooCollection::record`,
+    `WooSearchPlans::record`, `WooCollectionQueries` save) call `CaseReviewerAccess::reconcile()`: RBAC-scoped reads
+    would otherwise hide a record from everyone but its author (a plan recorded by a coordinator would read as no
+    plan to the gatherer). `wooDeliveredSet` is not on this branch (lane L10). Named tests, generic (decision
+    182/185): `tests/Unit/Settings/CaseTypePrivateRecordsTest.php` `testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy`
+    and `testNoListedRecordIsReadableByAllUsers`, over every seeded case type's `reviewerAccess.records`, read from
+    the merged register. Open: the four above, and the Newman folder (needs an instance, decision 139).
 - [ ] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
   after the create, in the same request, from every route that creates one of the seven: the gather
   add, the search plan save, the query record, the exclusion route, the rule create, the batch
@@ -105,10 +194,24 @@ record. OpenRegister refuses a parent that references another schema
     `testTheDeliveredSetIsNeverGrantedUpdate`, `testNoGrantReachesAnotherCase`,
     `testAGrantTheCallerMayNotSetIsCountedAndNotRetried` (the sharing double throws
     `NotAuthorizedException`, built with `environmentAwareDouble()` from the real signature).
-  - Through the caller: `WooReviewControllerTest::testCreateBatchGrantsTheReviewerTheirReviews`,
+  - Through the caller: `DocumentReviewControllerTest::testCreateBatchGrantsTheReviewerTheirReviews`,
     `testCreateRuleGrantsTheAssignee`; `WooSourcesControllerTest::testTheAddGrantsTheCaseRecords`;
     `WooPublicationServiceTest::testTheDeliveredSetIsGrantedToTheAssignee`;
-    `CreateWooDocumentReviewsTest::testTheRepairGrantsNothing`.
+    `CreateDocumentReviewsTest::testTheRepairGrantsNothing`.
+  - Partly built (decision 182, generic): the batch create, the recall sample batch and the rule create call
+    `CaseReviewerAccess::reconcile(caseId)` (case-reviewer-access, the generic form of `WooAssessmentAccess`)
+    after the store, in the same request; a failed reconcile is logged and the record stands
+    (`ReviewBatchesTest::testACreatedBatchReconcilesTheCase`, `testASampleBatchReconcilesAndAFailedReconcileKeepsTheBatch`,
+    `TriageRulesTest::testACreatedRuleReconcilesTheCase`).
+  - Round 5: the woo-verzoek case type (1.3.2) lists `reviewBatch` and `triageRule` beside `wooDocumentAssessment`
+    under `reviewerAccess.records`, so `CaseReviewerAccess::reconcile()` grants the assignee and the batch reviewers
+    read on them, owning group `dossiq-coordinators`. Open: (a) the per-record table of REQ-WRT-006 (reviewers read
+    no rules; only their own batch) needs a generic per-record `readers` option on `CaseReviewerAccess`
+    (`all` | `assignee` | `own` via a field naming the reviewer row); not built because lane L9 is restructuring
+    that class on build/dq-l9-7..11; until then batch reviewers read every batch and rule of the case, narrower than
+    before (every authenticated user) but wider than the table; (b) update grants (reconcile grants read only);
+    (c) reconcile from the gather add, the search plan save, the query record, the exclusion route and
+    `DocumentRelevance::mark`, then list those four records too (see 6.1).
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
@@ -125,6 +228,8 @@ record. OpenRegister refuses a parent that references another schema
 - [ ] 7.1 e2e `tests/e2e/woo-review-triage.spec.ts`: apply a rule, overturn one marking, make two
   batches, open a document page by page, try to decide with a page unseen and see the refusal,
   finish, decide. Cite REQ-WRT-001 to REQ-WRT-005.
+  - Written as `tests/e2e/document-review.spec.ts`, citing every scenario of `document-review` and REQ-WRT-W01.
+    Not run (live pass, decision 139). The triage-rule test is red until 2.1 lands.
 
 ## 8. Verify and deliver
 

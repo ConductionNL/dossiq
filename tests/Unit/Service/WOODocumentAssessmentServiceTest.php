@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -71,6 +72,9 @@ interface RedactionProposalObjectServiceStub {
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\DocumentRelevance
  */
 class WOODocumentAssessmentServiceTest extends TestCase {
 
@@ -475,4 +479,252 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 
 		$this->assertSame(['count' => 1, 'documents' => ['doc-3']], $service->getOutstanding('case-1'));
 	}//end testAnExcludedDocumentIsNotOutstanding()
+
+	/**
+	 * A service over an in-memory register with a doubled reviewer access, signed in as the user.
+	 *
+	 * @param InMemoryRegister   $register The register.
+	 * @param CaseReviewerAccess $access   The reviewer access double.
+	 * @param string             $userId   The caller.
+	 *
+	 * @return WOODocumentAssessmentService
+	 */
+	private function serviceWithAccess(InMemoryRegister $register, CaseReviewerAccess $access, string $userId): WOODocumentAssessmentService {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => [
+				'register' => 'dossiq',
+				'woo_assessment_schema' => 'wooDocumentAssessment',
+			][$key] ?? $default
+		);
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn($userId);
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return new WOODocumentAssessmentService($settings, $session, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger), reviewerAccess: $access);
+	}//end serviceWithAccess()
+
+	/**
+	 * REQ-CRA-003: a second reviewer cannot overwrite the first reviewer's assessment.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testASecondReviewerCannotOverwrite(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-7', ['caseRef' => 'case-1', 'documentRef' => 'doc-7', 'classification' => 'niet_openbaar', 'assessedBy' => 'j.devries', '@self' => ['owner' => 'j.devries']]);
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->method('refusalFor')->willReturnCallback(
+			static fn (string $caseId, array $record, string $userId, string $reference): ?array => $userId === ($record['@self']['owner'] ?? '')
+				? null
+				: ['documentRef' => $reference, 'errors' => ['assessment' => 'owned-by-another-reviewer']]
+		);
+		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 0);
+
+		$result = $this->serviceWithAccess(register: $register, access: $access, userId: 'p.bakker')
+			->bulkUpsert('case-1', [['documentRef' => 'doc-7', 'classification' => 'openbaar']]);
+
+		$this->assertSame([['documentRef' => 'doc-7', 'errors' => ['assessment' => 'owned-by-another-reviewer']]], $result['errors'], 'the refusal names neither the author nor the verdict');
+		$this->assertSame('niet_openbaar', $register->row('wooDocumentAssessment', 'a-7')['classification']);
+		$this->assertCount(1, $register->all('wooDocumentAssessment'), 'no second assessment for the same document');
+	}//end testASecondReviewerCannotOverwrite()
+
+	/**
+	 * REQ-CRA-002: a created assessment is reconciled to the people on the case at once.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	public function testACreatedAssessmentReconcilesTheCase(): void {
+		$register = new InMemoryRegister();
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 1)->willReturn(['status' => 'reconciled', 'granted' => 1, 'revoked' => 0, 'refused' => 0]);
+
+		$result = $this->serviceWithAccess(register: $register, access: $access, userId: 'p.bakker')
+			->bulkUpsert('case-1', [['documentRef' => 'doc-8', 'classification' => 'openbaar']]);
+
+		$this->assertSame([], $result['errors']);
+		$this->assertCount(1, $register->all('wooDocumentAssessment'));
+	}//end testACreatedAssessmentReconcilesTheCase()
+
+	/**
+	 * REQ-CRA-003 on the redaction half: another reviewer's assessment keeps its proposal.
+	 *
+	 * Proposing and reviewing both write through saveRedactionProposal(), so
+	 * the rule there covers both.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 */
+	public function testAnotherReviewersProposalCannotBeChanged(): void {
+		$register = new InMemoryRegister();
+		$register->seed('wooDocumentAssessment', 'a-7', ['caseRef' => 'case-1', 'documentRef' => 'doc-7', 'redactionProposal' => ['status' => 'pending_review', 'spans' => []], '@self' => ['owner' => 'j.devries']]);
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->method('assertMayChange')->willReturnCallback(
+			static function (string $caseId, array $record, string $userId): void {
+				if ($userId !== ($record['@self']['owner'] ?? '')) {
+					throw new RefusedException(rule: 'owned-by-another-reviewer', sentence: 'Another reviewer made this record.', status: RefusedException::STATUS_FORBIDDEN);
+				}
+			}
+		);
+
+		try {
+			$this->serviceWithAccess(register: $register, access: $access, userId: 'p.bakker')
+				->saveRedactionProposal('case-1', 'doc-7', ['status' => 'approved', 'spans' => []]);
+			$this->fail('Another reviewer must not change the proposal.');
+		} catch (RefusedException $refusal) {
+			$this->assertSame('owned-by-another-reviewer', $refusal->getRule());
+			$this->assertSame(RefusedException::STATUS_FORBIDDEN, $refusal->getStatus());
+		}
+
+		$this->assertSame('pending_review', $register->row('wooDocumentAssessment', 'a-7')['redactionProposal']['status']);
+		$this->assertSame(0, $register->writes);
+
+		$saved = $this->serviceWithAccess(register: $register, access: $access, userId: 'j.devries')
+			->saveRedactionProposal('case-1', 'doc-7', ['status' => 'approved', 'spans' => []]);
+		$this->assertSame('approved', $saved['redactionProposal']['status'], 'the author may');
+	}//end testAnotherReviewersProposalCannotBeChanged()
+
+	/**
+	 * A document whose assessment the caller may not read is assessed, not outstanding (REQ-WSA-004).
+	 *
+	 * The register hides another reviewer's assessment from a scoped read, as
+	 * OpenRegister's private scope does; the count must still see it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/woo-request-scoped-access/spec.md
+	 */
+	public function testAnUnreadableAssessmentStillCountsAsAssessed(): void {
+		$register = new class extends InMemoryRegister {
+			public function searchObjectsBySlug(
+				string $register,
+				string $schema,
+				array $filters = [],
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				if ($_rbac === true && $schema === 'wooDocumentAssessment') {
+					return [];
+				}
+
+				return parent::searchObjectsBySlug($register, $schema, $filters, $_rbac, $_multitenancy);
+			}
+		};
+		foreach (['doc-1', 'doc-2'] as $doc) {
+			$register->seed('document', $doc, ['case' => 'case-1']);
+		}
+		$register->seed('wooDocumentAssessment', 'a-1', ['caseRef' => 'case-1', 'documentRef' => 'doc-1', '@self' => ['owner' => 'j.devries']]);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($register);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => [
+				'register' => 'dossiq',
+				'document_schema' => 'document',
+				'woo_assessment_schema' => 'wooDocumentAssessment',
+			][$key] ?? $default
+		);
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger));
+
+		$this->assertSame(['count' => 1, 'documents' => ['doc-2']], $service->getOutstanding('case-1'));
+	}//end testAnUnreadableAssessmentStillCountsAsAssessed()
+
+	/**
+	 * The scenario case: 10 documents, 6 in scope, 3 out, 1 unmarked, and 4 of the in-scope ones assessed.
+	 *
+	 * @return WOODocumentAssessmentService The service over that case, with relevance read.
+	 */
+	private function relevanceCase(): WOODocumentAssessmentService {
+		$store = new \OCA\Dossiq\Tests\Support\InMemoryRegister();
+		$marks = ['in-scope', 'in-scope', 'in-scope', 'in-scope', 'in-scope', 'in-scope', 'out-of-scope', 'out-of-scope', 'out-of-scope', 'unmarked'];
+		foreach ($marks as $n => $relevance) {
+			$store->seed(schema: 'document', uuid: 'doc-'.$n, row: ['case' => 'case-x', 'title' => 'Document '.$n]);
+			// doc-9 has no review at all yet, which reads as unmarked too.
+			if ($n < 9) {
+				$store->seed(schema: 'documentReview', uuid: 'review-'.$n, row: ['case' => 'case-x', 'documentRef' => 'doc-'.$n, 'relevance' => $relevance]);
+			}
+
+			if ($n < 4) {
+				$store->seed(schema: 'wooDocumentAssessment', uuid: 'a-'.$n, row: ['caseRef' => 'case-x', 'documentRef' => 'doc-'.$n, 'classification' => 'openbaar']);
+			}
+		}
+
+		// An out-of-scope document that also carries a verdict changes nothing.
+		$store->seed(schema: 'wooDocumentAssessment', uuid: 'a-7', row: ['caseRef' => 'case-x', 'documentRef' => 'doc-7', 'classification' => 'openbaar']);
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
+
+		return new WOODocumentAssessmentService(
+			$settings,
+			$this->userSession,
+			$this->logger,
+			null,
+			null,
+			reviews: new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger),
+		);
+	}//end relevanceCase()
+
+	/**
+	 * An out-of-scope document needs no verdict: it is never outstanding.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	public function testAnOutOfScopeDocumentNeedsNoVerdict(): void {
+		$outstanding = $this->relevanceCase()->getOutstanding(caseId: 'case-x');
+
+		foreach (['doc-6', 'doc-7', 'doc-8'] as $outOfScope) {
+			$this->assertNotContains($outOfScope, $outstanding['documents']);
+		}
+	}//end testAnOutOfScopeDocumentNeedsNoVerdict()
+
+	/**
+	 * The outstanding list holds the two unassessed in-scope documents and the unmarked one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	public function testUnmarkedDocumentsAreOutstanding(): void {
+		$outstanding = $this->relevanceCase()->getOutstanding(caseId: 'case-x');
+
+		$this->assertSame(3, $outstanding['count']);
+		$this->assertEqualsCanonicalizing(['doc-4', 'doc-5', 'doc-9'], $outstanding['documents']);
+	}//end testUnmarkedDocumentsAreOutstanding()
+
+	/**
+	 * The decision waits while a document is unmarked, even when every in-scope one has a verdict.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 */
+	public function testTheDecisionWaitsForUnmarkedDocuments(): void {
+		$store = new \OCA\Dossiq\Tests\Support\InMemoryRegister();
+		$store->seed(schema: 'document', uuid: 'doc-1', row: ['case' => 'case-x']);
+		$store->seed(schema: 'document', uuid: 'doc-2', row: ['case' => 'case-x']);
+		$store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'in-scope']);
+		$store->seed(schema: 'documentReview', uuid: 'r-2', row: ['case' => 'case-x', 'documentRef' => 'doc-2', 'relevance' => 'unmarked']);
+		$store->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['caseRef' => 'case-x', 'documentRef' => 'doc-1', 'classification' => 'openbaar']);
+		$store->seed(schema: 'wooDocumentAssessment', uuid: 'a-2', row: ['caseRef' => 'case-x', 'documentRef' => 'doc-2', 'classification' => 'openbaar']);
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
+		$service = new WOODocumentAssessmentService($settings, $this->userSession, $this->logger, null, null, reviews: new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger));
+
+		$this->assertFalse($service->allDocumentsAssessed(caseId: 'case-x'));
+
+		$store->rows['documentReview']['r-2']['relevance'] = 'out-of-scope';
+		$this->assertTrue($service->allDocumentsAssessed(caseId: 'case-x'));
+	}//end testTheDecisionWaitsForUnmarkedDocuments()
 }//end class

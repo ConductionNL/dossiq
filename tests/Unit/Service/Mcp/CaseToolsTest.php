@@ -24,9 +24,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Mcp;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\CaseAssignmentService;
 use OCA\Dossiq\Service\Mcp\CaseTools;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Task\CaseTaskActions;
+use OCA\Dossiq\Service\Transitions\GuardFailedException;
+use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -67,6 +72,12 @@ class CaseToolsTest extends TestCase {
 	 */
 	private CaseTools $tools;
 
+	private CaseAssignmentService&MockObject $assignment;
+
+	private CaseTaskActions&MockObject $tasks;
+
+	private IGroupManager&MockObject $groups;
+
 	/**
 	 * Build the subject.
 	 *
@@ -76,10 +87,16 @@ class CaseToolsTest extends TestCase {
 		$this->session = $this->createMock(IUserSession::class);
 		$this->guard = $this->createMock(CaseAccessGuard::class);
 		$this->transitions = $this->createMock(StatusTransitionService::class);
+		$this->assignment = $this->createMock(CaseAssignmentService::class);
+		$this->tasks = $this->createMock(CaseTaskActions::class);
+		$this->groups = $this->createMock(IGroupManager::class);
 		$this->tools = new CaseTools(
 			userSession: $this->session,
 			caseAccess: $this->guard,
 			transitions: $this->transitions,
+			assignment: $this->assignment,
+			tasks: $this->tasks,
+			groupManager: $this->groups,
 		);
 	}//end setUp()
 
@@ -137,4 +154,114 @@ class CaseToolsTest extends TestCase {
 		$this->session->method('getUser')->willReturn($user);
 		return $user;
 	}//end user()
+
+	// ── transitionCase (REQ-MCP-204) ─────────────────────────────────
+
+	public function testTransitionOnACaseTheCallerMayNotChangeIsRefusedBeforeTheEngine(): void {
+		$user = $this->user(uid: 'henk');
+		$this->guard->expects($this->once())->method('hasCaseMutationAccess')->with('c-1', $user)->willReturn(false);
+		$this->transitions->expects($this->never())->method('execute');
+
+		$this->assertSame('forbidden', $this->tools->transitionCase(caseId: 'c-1', transitionId: 't-1')['error']);
+	}//end testTransitionOnACaseTheCallerMayNotChangeIsRefusedBeforeTheEngine()
+
+	public function testTransitionRunsTheEngineAsTheCaller(): void {
+		$this->user(uid: 'henk');
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$answer = ['status' => 'ok', 'statusRecord' => ['id' => 'sr-1'], 'dispatchedActions' => [], 'failedActions' => [], 'version' => 4];
+		$this->transitions->expects($this->once())->method('execute')
+			->with('c-1', 't-close', null, 'henk', 'rt-granted')
+			->willReturn($answer);
+
+		$this->assertSame($answer, $this->tools->transitionCase(caseId: 'c-1', transitionId: 't-close', resultTypeId: 'rt-granted'));
+	}//end testTransitionRunsTheEngineAsTheCaller()
+
+	public function testAFailedGuardComesBackAsAnEnvelope(): void {
+		$this->user(uid: 'henk');
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->transitions->method('execute')->willThrowException(new GuardFailedException([['guard' => 'documents-complete', 'passed' => false]]));
+
+		$result = $this->tools->transitionCase(caseId: 'c-1', transitionId: 't-1');
+
+		$this->assertSame('transition-guard-failed', $result['error']);
+		$this->assertSame('documents-complete', $result['failedGuards'][0]['guard']);
+	}//end testAFailedGuardComesBackAsAnEnvelope()
+
+	public function testARefusalCarriesItsRuleAndSentence(): void {
+		$this->user(uid: 'henk');
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->transitions->method('execute')->willThrowException(new RefusedException(rule: 'transition-unauthorized', sentence: 'You may not make this move.'));
+
+		$this->assertSame(
+			['error' => 'transition-unauthorized', 'message' => 'You may not make this move.'],
+			$this->tools->transitionCase(caseId: 'c-1', transitionId: 't-1')
+		);
+	}//end testARefusalCarriesItsRuleAndSentence()
+
+	// ── reassignCase ─────────────────────────────────────────────────
+
+	public function testOnlyACoordinatorMayReassign(): void {
+		$this->user(uid: 'henk');
+		$this->groups->method('isAdmin')->with('henk')->willReturn(false);
+		$this->assignment->expects($this->never())->method('reassign');
+
+		$this->assertSame('forbidden', $this->tools->reassignCase(caseId: 'c-1', toUser: 'fatima')['error']);
+	}//end testOnlyACoordinatorMayReassign()
+
+	public function testACoordinatorReassignsThroughTheAssignmentService(): void {
+		$this->user(uid: 'coordinator');
+		$this->groups->method('isAdmin')->willReturn(true);
+		$this->assignment->expects($this->once())->method('reassign')
+			->with('c-1', 'fatima', 'coordinator')
+			->willReturn(['caseId' => 'c-1', 'assignee' => 'fatima', 'previousAssignee' => 'henk']);
+
+		$this->assertSame('fatima', $this->tools->reassignCase(caseId: 'c-1', toUser: 'fatima')['assignee']);
+	}//end testACoordinatorReassignsThroughTheAssignmentService()
+
+	public function testAReassignRefusalIsAnEnvelope(): void {
+		$this->user(uid: 'coordinator');
+		$this->groups->method('isAdmin')->willReturn(true);
+		$this->assignment->method('reassign')->willThrowException(new \RuntimeException('already_assigned'));
+
+		$this->assertSame(['error' => 'refused', 'message' => 'already_assigned'], $this->tools->reassignCase(caseId: 'c-1', toUser: 'henk'));
+	}//end testAReassignRefusalIsAnEnvelope()
+
+	// ── completeTask ─────────────────────────────────────────────────
+
+	public function testCompletingATaskOnACaseTheCallerMayNotChangeIsRefused(): void {
+		$user = $this->user(uid: 'henk');
+		$this->tasks->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'c-1']);
+		$this->guard->expects($this->once())->method('hasCaseMutationAccess')->with('c-1', $user)->willReturn(false);
+		$this->tasks->expects($this->never())->method('complete');
+
+		$this->assertSame('forbidden', $this->tools->completeTask(taskId: 'task-1')['error']);
+	}//end testCompletingATaskOnACaseTheCallerMayNotChangeIsRefused()
+
+	public function testATaskCompletesThroughTheEngineVerb(): void {
+		$this->user(uid: 'henk');
+		$this->tasks->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'c-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->tasks->expects($this->once())->method('complete')
+			->with('task-1', [], 'done', 'henk')
+			->willReturn(['id' => 'task-1', 'status' => 'completed']);
+
+		$this->assertSame('completed', $this->tools->completeTask(taskId: 'task-1', outcome: ' ')['status']);
+	}//end testATaskCompletesThroughTheEngineVerb()
+
+	public function testAMissingTaskOrADownEngineIsSaidPlainly(): void {
+		$this->user(uid: 'henk');
+		$this->tasks->method('find')->willReturnOnConsecutiveCalls(null, $this->throwException(new \RuntimeException('db down')));
+
+		$this->assertSame('task_not_found', $this->tools->completeTask(taskId: 'task-404')['error']);
+		$this->assertSame('storage_unavailable', $this->tools->completeTask(taskId: 'task-1')['error']);
+	}//end testAMissingTaskOrADownEngineIsSaidPlainly()
+
+	public function testARequiredFieldIsNamedBack(): void {
+		$this->user(uid: 'henk');
+		$this->tasks->method('find')->willReturn(['id' => 'task-1', 'objectUuid' => 'c-1']);
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->tasks->method('complete')->willThrowException(new \RuntimeException('required_field:besluitDatum'));
+
+		$this->assertSame('required_field:besluitDatum', $this->tools->completeTask(taskId: 'task-1')['message']);
+	}//end testARequiredFieldIsNamedBack()
 }//end class

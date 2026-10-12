@@ -76,7 +76,9 @@ describe('the one personal settings screen', () => {
 		expect(infoXml).not.toMatch(/<personal>/)
 		expect(infoXml).not.toMatch(/<personal-section>/)
 		expect(
-			fs.existsSync(path.join(ROOT, 'lib', 'Settings', 'PersonalSettings.php')),
+			fs.existsSync(
+				path.join(ROOT, 'lib', 'Settings', 'PersonalSettings.php'),
+			),
 		).toBe(false)
 		expect(
 			fs.existsSync(path.join(ROOT, 'lib', 'Sections', 'PersonalSection.php')),

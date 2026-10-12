@@ -1,14 +1,14 @@
 {
-  "_note": "woo-requests-gather-documents-from-sources design D-4. A document added through Gather documents on a Woo case records where it was found, so the decision can account for the search. A copied file carries `provenance` on its own informatieobject. A document linked from another case carries it on THIS case's zaakinformatieobject join instead, because the record also belongs to the other case and must not be rewritten by a search on this one. A fragment rather than an edit to 70-document-zaakdossier.json, per ADR-037, because several dossiq lanes build against the document schemas at once.",
+  "_note": "Document provenance (document-provenance REQ-DPV-001, first written by woo-requests-gather-documents-from-sources design D-4). A document collected onto a case, for any case type, records where it was found. A copied file carries `provenance` on its own informatieobject. A document linked from another case carries it on THIS case's zaakinformatieobject join instead, because the record also belongs to the other case and must not be rewritten by a search on this one. Read through CaseDocumentProvenance, never field by field. A fragment rather than an edit to 70-document-zaakdossier.json, per ADR-037.",
   "components": {
     "schemas": {
       "informatieobject": {
-        "version": "1.4.0",
+        "version": "1.4.2",
         "properties": {
           "provenance": {
             "type": "object",
             "title": "Where it was found",
-            "description": "Where this document was found when it was gathered for a Woo request: the source, its location, the search terms, when the search ran and who ran it. Written once, when the document is added through Gather documents.",
+            "description": "Where this document was found when it was collected onto a case: the source and system, the custodian whose files held it, its location, the search terms, when the search ran and who ran it. Written once, when the document is collected.",
             "visible": false,
             "properties": {
               "source": {
@@ -44,26 +44,74 @@
               "custodian": {
                 "type": "string",
                 "title": "Custodian",
-                "description": "The plan custodian whose files this document came from.",
+                "description": "The person or function whose files this document came from.",
                 "maxLength": 255
               },
               "sourceSystem": {
                 "type": "string",
                 "title": "Source system",
-                "description": "The system it came from, as the search plan names it.",
+                "description": "The system it came from.",
                 "maxLength": 64
+              },
+              "mail": {
+                "type": "object",
+                "title": "Mail headers",
+                "description": "The header fields of a collected e-mail, read when it is collected: sender, recipients, cc, date and message id, addresses lower-cased. A mail whose headers cannot be read carries only unreadable: true. Absent on a document that is no mail.",
+                "properties": {
+                  "from": {
+                    "type": "string",
+                    "title": "From",
+                    "maxLength": 320,
+                    "description": "The sender's address."
+                  },
+                  "to": {
+                    "type": "array",
+                    "title": "To",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 320
+                    },
+                    "description": "The recipients' addresses."
+                  },
+                  "cc": {
+                    "type": "array",
+                    "title": "Cc",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 320
+                    },
+                    "description": "The addresses in copy."
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "title": "Sent",
+                    "description": "When the mail was sent, from its Date header."
+                  },
+                  "messageId": {
+                    "type": "string",
+                    "title": "Message id",
+                    "maxLength": 998,
+                    "description": "The Message-ID header, without angle brackets."
+                  },
+                  "unreadable": {
+                    "type": "boolean",
+                    "title": "Headers unreadable",
+                    "description": "True when the mail's headers could not be read; a report counts it under unreadable."
+                  }
+                }
               }
             }
           }
         }
       },
       "zaakinformatieobject": {
-        "version": "1.2.0",
+        "version": "1.2.1",
         "properties": {
           "provenance": {
             "type": "object",
             "title": "Where it was found",
-            "description": "Where this document was found when it was gathered for a Woo request: the source, its location, the search terms, when the search ran and who ran it. Written once, when the document is added through Gather documents.",
+            "description": "Where this document was found when it was collected onto a case: the source and system, the custodian whose files held it, its location, the search terms, when the search ran and who ran it. Written once, when the document is collected.",
             "visible": false,
             "properties": {
               "source": {
@@ -99,13 +147,13 @@
               "custodian": {
                 "type": "string",
                 "title": "Custodian",
-                "description": "The plan custodian whose files this document came from.",
+                "description": "The person or function whose files this document came from.",
                 "maxLength": 255
               },
               "sourceSystem": {
                 "type": "string",
                 "title": "Source system",
-                "description": "The system it came from, as the search plan names it.",
+                "description": "The system it came from.",
                 "maxLength": 64
               }
             }
