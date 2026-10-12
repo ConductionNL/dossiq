@@ -2575,7 +2575,7 @@
 					},
 					{
 						"id": "case-data-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Data",
 						"icon": "FileDocumentOutline",
 						"_note": "The Data tab: the case record, and where it is. The map is a section here rather than a tab of its own because geography is metadata ON the case rather than a collection beside it, and a handler reading the address wants it next to the fields.",
@@ -2876,7 +2876,7 @@
 					},
 					{
 						"id": "case-people-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "People",
 						"icon": "AccountGroupOutline",
 						"_note": "The People tab. Who is involved in the case. Contact WITH them was here too, on the reasoning that a contactmoment records a channel, a direction and a summary against a person; it is the Communication tab now, so a handler reaches the case log without opening the party list first. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
@@ -2957,7 +2957,7 @@
 					},
 					{
 						"id": "case-communication-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Communication",
 						"icon": "Forum",
 						"_note": "The Communication tab: every call, visit and message logged against this case by hand. It was the second section of People. Email is the tab beside this one rather than a section here, because the two are written differently: one is correspondence the system carries, the other a note a handler types after putting the phone down. The section moved verbatim, so its data-testid is still case-section-case-communication. The icon is Forum and not ForumOutline: ForumOutline is in neither icon registry, and an icon a manifest names but no registry carries renders the DEFAULT glyph with no visible breakage. Checked against src/icons.js rather than assumed, which is how this one was caught.",
@@ -3081,7 +3081,7 @@
 					},
 					{
 						"id": "case-work-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Work",
 						"icon": "ClipboardCheckOutline",
 						"_note": "The Work tab. What is still to be done on this case, whether it is a task with a due date or an appointment with a time. The task pane stays in the strip rather than moving to the right column (plan item 3.18): that column already carries four cards, and a fifth would move the complexity rather than remove it. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim.",
@@ -3204,7 +3204,7 @@
 					},
 					{
 						"id": "case-related-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Related",
 						"icon": "LinkVariant",
 						"_note": "The Related tab. The other cases this one is connected to, upward to its parent and related cases and downward to its sub-cases. Case to case only: an object or a location the case concerns is not a case, and sits on the Objects and locations tab. Its panels are inline widget definitions rather than widget ids because CnTabsWidget does not forward availableWidgets to a panel host, so a container nested inside a tab is handed an empty sibling list and can resolve no id. Each one is the definition that held a tab of its own before this change, moved verbatim. Objects joined on 2026-09-13, from the retired Objects and locations tab: an object linked to a case is a relation like any other, and the tab it came from held one collection once its Locations half became the map on the Data tab.",
@@ -3399,7 +3399,7 @@
 					},
 					{
 						"id": "case-knowledge-panel",
-						"type": "case-sections",
+						"type": "sections",
 						"title": "Knowledge",
 						"icon": "BookOpenPageVariant",
 						"_note": "knowledge-base-on-the-case, row 11.26. Two sections, because the row asks two questions that have different answers. The FIRST is the work instruction for this KIND of case, which the case type names once and every case of that type shows without anybody linking anything: that is the whole point of the row, and it is rendered by the `case-work-instruction` type because the value lives on the case TYPE while the page is bound to the CASE, and CnDetailPage reads no `extend`, so a declared widget over a dotted `caseType.knowledgeBasePage` path would render blank while looking configured. The SECOND is the pages somebody linked to THIS case, through OpenRegister's `collectives` leaf. dossiq stores no article text and renders no wiki of its own: Collectives owns the page, its history, its versions and its team, and the team is what makes visibility per role, because a collective is scoped to a Nextcloud team and `roleType.ncGroupId` already names the group behind a role. So a handler who may not read a page in Collectives does not read it through a case either, and there is nothing here to enforce or to leak. TYPE `case-sections` AND NOT TWO TABS: one Knowledge tab that holds both is the reader's question, and CaseSectionsWidget drops the heading of a section whose widget drew nothing, so a case type with no instruction shows the linked pages alone rather than an empty block. The leaf keeps its own `requiredApp: \"collectives\"`, so on an instance without the app it is never registered and that section goes missing rather than drawing an empty knowledge base. `xwiki` is in `case.linkedTypes` beside it for the municipalities that run one. MEASURED 2026-09-20: the `xwiki` descriptor ships in the library but is NOT in `leafIntegrations[]`, and OpenRegister registers it only from its own `main.js`, not from the always-on `integration-global` bundle, so it does not resolve on a dossiq page and nothing here places it. That is an openregister row, not a reason to declare a widget that can never render.",

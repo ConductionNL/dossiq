@@ -54,8 +54,10 @@ const config = createConfig({
              processed by both plugins; the docs side runs MDX-ESM
              over the JSX expression body and trips on it. Exclude
              src/ (pages live there) plus the standard node_modules
-             bucket. */
-          exclude: ['**/node_modules/**', 'src/**'],
+             bucket. i18n/ holds the translated copies of these docs:
+             left in, each one is read a second time as an English
+             page at /docs/i18n/nl/…, and the two writes collide. */
+          exclude: ['**/node_modules/**', 'src/**', 'i18n/**'],
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/ConductionNL/dossiq/tree/main/docs/',
           /* Compute a "Last updated on …" timestamp per doc from the

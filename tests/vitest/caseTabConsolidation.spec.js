@@ -31,10 +31,6 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src/manifest.json')
-const REGISTER_MODULE = path.join(
-	ROOT,
-	'src/components/case/registerCaseSections.js',
-)
 const LIB = path.join(ROOT, 'node_modules/@conduction/nextcloud-vue/src')
 
 const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
@@ -316,12 +312,21 @@ describe('the surfaces that read in exactly one chrome', () => {
 })
 
 describe('the container type this change depends on', () => {
-	it('is registered in the SHARED catalog, with container: true', () => {
-		const source = read(REGISTER_MODULE)
-		expect(source).toContain("registerDashboardWidget('case-sections'")
+	it('is the library\'s `sections` container, registered in the SHARED catalog', () => {
+		// nextcloud-vue registers `sections` itself (CnSectionsWidget) with
+		// container: true, the flag CnDetailWidgetHost reads to hand a widget
+		// the schema, integration context and registry its children need.
+		const source = read(
+			path.join(LIB, 'components/CnSectionsWidget/index.js'),
+		)
+		expect(source).toContain("registerDashboardWidget('sections'")
 		expect(source).toContain('container: true')
-		// `registry.js` is the wrong map: a renderer resolves from it, but
-		// `isContainer` does not read it, so the sections would render blank.
+		// The app no longer carries its own copy of the container.
+		expect(
+			fs.existsSync(
+				path.join(ROOT, 'src/components/case/CaseSectionsWidget.vue'),
+			),
+		).toBe(false)
 		expect(read(path.join(ROOT, 'src/registry.js'))).not.toContain(
 			'case-sections',
 		)
@@ -331,7 +336,7 @@ describe('the container type this change depends on', () => {
 		// Six tabs are a single surface rather than a group of sections: Files
 		// (the case folder through the `files` leaf), the three panes that came
 		// out of the sidebar, Timeline, and Archiving. Every other tab is a
-		// group and declares `case-sections`.
+		// group and declares `sections`.
 		//
 		// Archiving is `custom` on purpose and the manifest says why: every
 		// value on it is read off `@self._retention`, which openregister wrote
@@ -374,7 +379,7 @@ describe('the container type this change depends on', () => {
 		// The tabs the LIBRARY draws from another app's leaf. Files is the
 		// only one left: Knowledge was here too until the case type's work
 		// instruction joined the collectives leaf under it, which made it a
-		// GROUP and so a `case-sections` like every other group. Its leaf did
+		// GROUP and so a `sections` like every other group. Its leaf did
 		// not go anywhere, it just moved one level down, and the assertion
 		// below follows it there rather than being deleted.
 		//
@@ -410,7 +415,7 @@ describe('the container type this change depends on', () => {
 				).toContain(`'${type}': {`)
 				continue
 			}
-			expect(widget(widgetId).type).toBe('case-sections')
+			expect(widget(widgetId).type).toBe('sections')
 
 			if (NESTED_LEAVES[widgetId]) {
 				const [sectionId, integrationId] = NESTED_LEAVES[widgetId]
