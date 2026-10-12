@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * Arming on the bekendmaking, due triggers, switched-off triggers.
  *
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
- * @uses \OCA\Dossiq\Service\Termijn\DayCount
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class BezwaarArchiveTimerTest extends TestCase {
 	use MakesCaseDateNormaliser;
