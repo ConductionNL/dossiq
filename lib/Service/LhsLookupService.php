@@ -67,27 +67,29 @@ class LhsLookupService {
 	/**
 	 * Embedded fallback table (behaviour:gevolg → interventieStep).
 	 *
-	 * Used when the OpenRegister matrix has not been seeded.
+	 * Used when neither the stored table nor the matrix cells answer. It holds
+	 * the same 16 interventions as the shipped grid cells, which are the
+	 * reference (LhsLookupAnswersTheGridTest compares them cell by cell).
 	 *
 	 * @var array<string, string>
 	 */
 	private const FALLBACK_MATRIX = [
-		'A:1' => 'Bestuurlijke waarschuwing',
-		'A:2' => 'Last onder dwangsom',
-		'A:3' => 'Last onder dwangsom',
-		'A:4' => 'Last onder bestuursdwang',
-		'B:1' => 'Bestuurlijke waarschuwing + hersteltermijn',
-		'B:2' => 'Last onder dwangsom',
-		'B:3' => 'Last onder dwangsom + proces-verbaal',
-		'B:4' => 'Last onder bestuursdwang + proces-verbaal',
-		'C:1' => 'Last onder dwangsom',
-		'C:2' => 'Last onder dwangsom + proces-verbaal',
-		'C:3' => 'Proces-verbaal + last onder bestuursdwang',
-		'C:4' => 'Proces-verbaal + last onder bestuursdwang',
-		'D:1' => 'Proces-verbaal + last onder dwangsom',
-		'D:2' => 'Proces-verbaal + last onder bestuursdwang',
-		'D:3' => 'Proces-verbaal + last onder bestuursdwang',
-		'D:4' => 'Proces-verbaal + last onder bestuursdwang + intrekking vergunning',
+		'A:1' => 'Aanspreken / informeren',
+		'A:2' => 'Waarschuwen',
+		'A:3' => 'Bestuurlijke waarschuwing',
+		'A:4' => 'Last onder dwangsom',
+		'B:1' => 'Waarschuwen',
+		'B:2' => 'Bestuurlijke waarschuwing',
+		'B:3' => 'Last onder dwangsom',
+		'B:4' => 'Last onder dwangsom + Proces-verbaal',
+		'C:1' => 'Bestuurlijke waarschuwing',
+		'C:2' => 'Last onder dwangsom',
+		'C:3' => 'Bestuursdwang + Proces-verbaal',
+		'C:4' => 'Bestuursdwang + Proces-verbaal',
+		'D:1' => 'Last onder dwangsom',
+		'D:2' => 'Bestuursdwang + Proces-verbaal',
+		'D:3' => 'Bestuursdwang + Proces-verbaal',
+		'D:4' => 'Bestuursdwang + Proces-verbaal',
 	];
 
 	/**

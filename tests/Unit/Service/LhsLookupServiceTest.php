@@ -106,7 +106,7 @@ class LhsLookupServiceTest extends TestCase {
 	public function testLookupB2ReturnsBestuurlijkeWaarschuwing(): void {
 		$cell = $this->service->lookup(behaviour: 'B', gevolg: '2');
 
-		$this->assertSame(expected: 'Last onder dwangsom', actual: $cell['interventionStep']);
+		$this->assertSame(expected: 'Bestuurlijke waarschuwing', actual: $cell['interventionStep']);
 	}//end testLookupB2ReturnsBestuurlijkeWaarschuwing()
 
 	/**
