@@ -57,10 +57,13 @@ under `unreadable` in the report rather than left out.
 
 ### Requirement: The collection reported by sender, recipient and domain (REQ-WRR-004)
 
-GET `/api/cases/{id}/woo/reports/parties` SHALL answer, over the case's collected mail, counts per
+GET `/api/cases/{id}/reports/mail-parties` SHALL answer, for a case of any type, over the case's collected mail, counts per
 sender address, per recipient address (to and cc), and per mail domain (of sender or any recipient),
 plus `unreadable`, and a CSV of the same. It SHALL require read access to the case and the
-`wooCollectionPartiesReport` switch.
+`wooCollectionPartiesReport` switch. The report is a generic capability (decision 182): it counts
+`provenance.mail` of whatever a case collected, and a case type uses it by collecting mail; the Woo
+case type is the first that does. Each count is per mail: an address or domain named twice in one
+mail counts once for that mail.
 
 #### Scenario: By sender, recipient and domain
 - **GIVEN** the switch on, and three collected mails: two from a.jansen@gemeente.nl to b@aannemer.nl, one from b@aannemer.nl to a.jansen@gemeente.nl

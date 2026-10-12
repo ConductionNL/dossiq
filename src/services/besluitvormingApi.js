@@ -10,8 +10,8 @@
  * WHAT LEFT AND WHY. `addToAgenda`, `confirmAgenda` and `generateAgenda` went
  * with the agenda compiler: decidiq owns agenda-building and meetings, and
  * surfaces them on a case through the `decidesk-decisions` integration leaf.
- * `mandaatCheck` went too — it had no caller at all, while its route stays live
- * for the guard that uses it server-side.
+ * `mandaatCheck` went too: it had no caller, and its route went with the
+ * mandate guard that moved to decidiq's delegated authority check.
  *
  * `generateAgenda` was worse than unused: it POSTed to `/agenda/generate`, for
  * which no route has ever been declared. It could only ever have 404'd.

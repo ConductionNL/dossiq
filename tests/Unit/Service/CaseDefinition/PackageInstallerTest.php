@@ -483,12 +483,19 @@ class PackageInstallerTest extends TestCase {
 	 * identifier and names, random ids, statuses pointing at the random case
 	 * type id.
 	 *
-	 * @param boolean $complete False to seed only the case type and its statuses.
+	 * @param boolean $complete      False to seed only the case type and its statuses.
+	 * @param boolean $hasIdentifier False to seed the case type without an identifier,
+	 *                               as the VTH seeder wrote them.
 	 *
 	 * @return void
 	 */
-	private function seedAsASeederWould(bool $complete = true): void {
-		$this->register->seed('caseType', 'seeded-ct', ['title' => 'Fixture request', 'identifier' => 'fixture-request']);
+	private function seedAsASeederWould(bool $complete = true, bool $hasIdentifier = true): void {
+		$caseType = ['title' => 'Fixture request', 'identifier' => 'fixture-request'];
+		if ($hasIdentifier === false) {
+			unset($caseType['identifier']);
+		}
+
+		$this->register->seed('caseType', 'seeded-ct', $caseType);
 		$this->register->seed('statusType', 'seeded-received', ['name' => 'Received', 'order' => 1, 'caseType' => 'seeded-ct']);
 		$this->register->seed('statusType', 'seeded-done', ['name' => 'Done', 'order' => 2, 'caseType' => 'seeded-ct']);
 		if ($complete === false) {
@@ -528,6 +535,40 @@ class PackageInstallerTest extends TestCase {
 			$this->assertSame('1.0.0', $row['setVersion']);
 		}
 	}//end testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten()
+
+	/**
+	 * A case type a seeder wrote without an identifier is adopted by its title:
+	 * the VTH seeder keyed its case types by slug and never set one.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithoutAnIdentifierIsAdoptedByTitle(): void {
+		$this->seedAsASeederWould(hasIdentifier: false);
+		$before = $this->register->rows;
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(0, $outcome['written']);
+		$this->assertSame(6, $outcome['adopted']);
+		unset($this->register->rows['shippedOrigin']);
+		$this->assertSame($before, $this->register->rows, 'no row was written, changed or removed');
+	}//end testACaseTypeWithoutAnIdentifierIsAdoptedByTitle()
+
+	/**
+	 * A case type with another title and no identifier is not adopted.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeWithoutAnIdentifierAndAnotherTitleIsNotAdopted(): void {
+		$this->register->seed('caseType', 'seeded-ct', ['title' => 'Something else']);
+
+		$outcome = $this->installer()->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(0, $outcome['adopted']);
+		$this->assertCount(2, $this->register->all('caseType'));
+	}//end testACaseTypeWithoutAnIdentifierAndAnotherTitleIsNotAdopted()
 
 	/**
 	 * A case type with another identifier is not adopted, even with the same title.

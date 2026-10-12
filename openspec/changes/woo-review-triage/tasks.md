@@ -48,7 +48,7 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
 
 ## 2. Rules
 
-- [ ] 2.1 Add schema `triageRule` and `lib/Review/TriageRules.php` with
+- [x] 2.1 Add schema `triageRule` and `lib/Review/TriageRules.php` with
   `apply(string $caseId): array` per REQ-WRT-002. Text conditions read the document's extracted
   text through OpenRegister's text extraction where the document has it; a document without text
   never matches a text condition (REQ-WRT-002).
@@ -56,14 +56,31 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
     `testTheFirstMatchingRuleDecides`, `testARuleNeverChangesAReviewersMarking`,
     `testAnOverturnRecordsTheRule`, `testADocumentWithoutTextNeverMatchesATextCondition`.
   - Through the caller: `DocumentReviewControllerTest::testApplyAnswersTheCountPerRule`.
-- [ ] 2.2 A `Triage rules` section on the Woo case page with the rules, their conditions and their
+  - Built: `lib/Review/TriageRules.php` (forCase with `decided`/`overturned`, save, delete, apply),
+    `lib/Review/TriageConditions.php` (the eight conditions checked at save and matched; an unknown fact never
+    matches), `lib/Review/DocumentText.php` (OpenRegister's already-extracted text through
+    `TextExtractionService::getExtractedText()`, nothing extracted on demand), and
+    `CaseDocumentProvenance::mailOf()` for `senderDomain` and the mail date (`provenance.mail`, REQ-WRR-003).
+    `custodian` and `sourceSystem` read the provenance (REQ-DPV-001). The five named tests are in
+    `TriageRulesTest` (red first: class absent), with provenance/type/date, inactive, refusals, delete and the
+    reconcile on create. The controller is its own: `lib/Controller/TriageRuleController.php`
+    (`GET|POST /api/cases/{id}/review/triage/rules`, `PUT|DELETE .../rules/{ruleId}`,
+    `POST /api/cases/{id}/review/triage/apply`), so `testApplyAnswersTheCountPerRule` is in
+    `TriageRuleControllerTest` beside `testAUserWithoutAGrantOnTheCaseIsRefused` (6.3 for this controller).
+    `triageRule.conditions` declares its eight properties (schema 1.0.2, register 0.20.31).
+    Open: the mail fields are read but not yet written; the gather add parses them in woo-review-reports 3.1.
+- [x] 2.2 A `Triage rules` section on the Woo case page with the rules, their conditions and their
   counts, and `src/dialogs/TriageRuleDialog.vue` to add or edit one (REQ-WRT-002).
   - vitest `src/dialogs/__tests__/TriageRuleDialog.spec.js` `testAnEffectIsRequired`.
-  - Open: waits on 2.1 (no rules route yet). The panel of 3.2 leaves the section out until then.
+  - Built to board DqWooReview: the section "Rules for relevant or not" in `DocumentReviewPanel.vue`
+    (numbered rules, the conditions as one sentence, the effect, documents decided and overturned, a menu to
+    change, switch off or delete; "Apply the rules to N documents" over the unmarked count) and
+    `src/dialogs/TriageRuleDialog.vue`. vitest `tests/vitest/triageRuleDialog.spec.js` `testAnEffectIsRequired`
+    (the vitest config only collects `tests/vitest/`), and the section in `tests/vitest/documentReview.spec.js`.
 
 ## 3. Batches
 
-- [ ] 3.1 Add schema `reviewBatch` and POST `/api/cases/{id}/review/batches`. It writes the batch on
+- [x] 3.1 Add schema `reviewBatch` and POST `/api/cases/{id}/review/batches`. It writes the batch on
   each review, refuses a document in another open batch, and creates a dossiq task through the
   existing task service, assigned to the reviewer (REQ-WRT-003).
   - **fails today**: `tests/Unit/Review/ReviewBatchesTest.php` `testEachBatchGetsATaskForItsReviewer`,
@@ -74,8 +91,9 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
     `DocumentReviewController::createBatch` (201, 409 with `taken` naming the batch, mutation guard) and `::batches`
     (read guard, progress assessed of total), routes `GET|POST /api/cases/{id}/review/batches`. The task goes through
     `EngineTaskGateway::mirrorImport()` with `metadata.dossiq.kind` `review-batch`.
-    Open: the filter takes `rule` today. `custodian` and `sourceSystem` are refused (`review-batch-filter-unknown`)
-    until the collected documents carry them (lane L9, woo-request-corpus-collection).
+    The filter now takes `rule` and the provenance fields `custodian`, `sourceSystem`, `source` through
+    `lib/Review/BatchSelection.php` (`BatchSelectionTest`; `ReviewBatchesTest::testABatchByCustodianTakesThatCustodiansDocuments`);
+    `ReviewBatchDialog.vue` offers them (`tests/vitest/reviewBatchDialog.spec.js`). An unknown field is still refused.
 - [x] 3.2 A `Batches` section on the case page with assignee and progress (REQ-WRT-003).
   - `npm run check:manifest` exits 0.
   - Built to board DqWooReview (design-system #191): `src/components/case/DocumentReviewPanel.vue` (registry
@@ -155,6 +173,16 @@ record. OpenRegister refuses a parent that references another schema
     reading the merged register the importer reads.
   - Newman `tests/newman/woo-review-triage.postman_collection.json`, folder `schemas`: read each of
     the seven schemas back and assert `authorization.scope` is `private` and no hierarchy key is set.
+  - Partly built (configuration, round 5): `reviewBatch` and `triageRule` (87-document-review.json) carry the
+    private block, no hierarchy, versions raised, register 0.20.33; their creators already reconcile the case in
+    the same request. Held back on purpose: `documentReview`, `wooExclusion`, `wooSearchPlan`, `wooCollectionQuery`
+    stay public until their writers (`DocumentRelevance::mark`, triage apply, `WooCollection::record`,
+    `WooSearchPlans::record`, `WooCollectionQueries` save) call `CaseReviewerAccess::reconcile()`: RBAC-scoped reads
+    would otherwise hide a record from everyone but its author (a plan recorded by a coordinator would read as no
+    plan to the gatherer). `wooDeliveredSet` is not on this branch (lane L10). Named tests, generic (decision
+    182/185): `tests/Unit/Settings/CaseTypePrivateRecordsTest.php` `testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy`
+    and `testNoListedRecordIsReadableByAllUsers`, over every seeded case type's `reviewerAccess.records`, read from
+    the merged register. Open: the four above, and the Newman folder (needs an instance, decision 139).
 - [ ] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
   after the create, in the same request, from every route that creates one of the seven: the gather
   add, the search plan save, the query record, the exclusion route, the rule create, the batch
@@ -170,6 +198,20 @@ record. OpenRegister refuses a parent that references another schema
     `testCreateRuleGrantsTheAssignee`; `WooSourcesControllerTest::testTheAddGrantsTheCaseRecords`;
     `WooPublicationServiceTest::testTheDeliveredSetIsGrantedToTheAssignee`;
     `CreateDocumentReviewsTest::testTheRepairGrantsNothing`.
+  - Partly built (decision 182, generic): the batch create, the recall sample batch and the rule create call
+    `CaseReviewerAccess::reconcile(caseId)` (case-reviewer-access, the generic form of `WooAssessmentAccess`)
+    after the store, in the same request; a failed reconcile is logged and the record stands
+    (`ReviewBatchesTest::testACreatedBatchReconcilesTheCase`, `testASampleBatchReconcilesAndAFailedReconcileKeepsTheBatch`,
+    `TriageRulesTest::testACreatedRuleReconcilesTheCase`).
+  - Round 5: the woo-verzoek case type (1.3.2) lists `reviewBatch` and `triageRule` beside `wooDocumentAssessment`
+    under `reviewerAccess.records`, so `CaseReviewerAccess::reconcile()` grants the assignee and the batch reviewers
+    read on them, owning group `dossiq-coordinators`. Open: (a) the per-record table of REQ-WRT-006 (reviewers read
+    no rules; only their own batch) needs a generic per-record `readers` option on `CaseReviewerAccess`
+    (`all` | `assignee` | `own` via a field naming the reviewer row); not built because lane L9 is restructuring
+    that class on build/dq-l9-7..11; until then batch reviewers read every batch and rule of the case, narrower than
+    before (every authenticated user) but wider than the table; (b) update grants (reconcile grants read only);
+    (c) reconcile from the gather add, the search plan save, the query record, the exclusion route and
+    `DocumentRelevance::mark`, then list those four records too (see 6.1).
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.

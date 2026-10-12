@@ -4,25 +4,16 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Tests for the inbound StUF confirmation receiver.
+ * Tests for the inbound StUF confirmation URL, now a forwarder to integriq.
  *
- * WHY THIS FILE EXISTS
- *
- * `StufController::inbound()` is a `#[PublicPage]` route. Nothing in
- * Nextcloud's middleware stack will ever refuse a caller on it, so the refusal
- * has to come from the controller — and until this suite, nothing watched it
- * refuse. A guard nobody has watched refuse is a guard nobody has tested:
- * deleting the `verifyWsse()` call left every test in the repository green.
- *
- * Its two sibling public routes, `zaken()` and `personen()`, already had that
- * cover in StufSoapRequestDispatcherAuthTest. This applies the same standard to
- * the third.
- *
- * The suite is written so that DELETING THE GUARD MAKES IT RED. Three arms
- * assert a refusal that only exists because a check runs, and one asserts that
- * a verified sender is still processed — so a controller that refused
- * *everything* would fail too. Without that last arm, `return 422` on the first
- * line would pass the other three.
+ * `StufController::inbound()` is a `#[PublicPage]` route and a wire contract
+ * in the zaaksysteem's configuration. Since decision 193 integriq records the
+ * confirmation and owns the WS-Security check (integriq's
+ * StufZdsConfirmationReceiverTest watches it refuse a wrong password, an
+ * unknown crossRefnummer and a source without credentials). What dossiq must
+ * still get right: the bytes reach integriq unchanged, integriq's refusal is
+ * passed on as a refusal, and integriq being away is a 503 so the sender
+ * retries, never an acknowledgement.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -31,257 +22,105 @@
  * @link     https://conduction.nl
  */
 
+declare(strict_types=1);
+
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Dossiq\Service\IntegrationStatusService;
 use OCA\Dossiq\Controller\StufController;
-use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
-use OCA\Dossiq\Service\Stuf\StufMessageHandler;
-use OCA\Dossiq\Service\Stuf\StufMessageParser;
-use OCA\Dossiq\Service\Stuf\StufServices;
-use OCA\Dossiq\Service\Stuf\StufSoapRequestDispatcher;
-use OCP\AppFramework\Http;
+use OCA\Dossiq\Service\IntegrationStatusService;
+use OCA\Dossiq\Service\Stuf\StufIntegriqBridge;
+use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCP\IL10N;
 use OCP\IRequest;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Behavioural tests for StufController::inbound().
- *
  * @covers \OCA\Dossiq\Controller\StufController
  */
 class StufControllerInboundTest extends TestCase {
 
 	/**
-	 * A minimal Bv01 confirmation envelope carrying a WSSE UsernameToken.
+	 * The body integriq saw, or null when nothing was forwarded.
 	 *
-	 * The token values are deliberately present: an envelope with no token at
-	 * all would be refused by a checker that merely looks for the element,
-	 * which is a weaker guard than the one being tested.
+	 * @var string|null
 	 */
-	private const ENVELOPE = '<?xml version="1.0"?>'
-		. '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"'
-		. ' xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"'
-		. ' xmlns:stuf="http://www.egem.nl/StUF/StUF0301">'
-		. '<soap:Header><wsse:Security><wsse:UsernameToken>'
-		. '<wsse:Username>zaaksysteem</wsse:Username>'
-		. '<wsse:Password>correct-horse</wsse:Password>'
-		. '</wsse:UsernameToken></wsse:Security></soap:Header>'
-		. '<soap:Body><stuf:bevestiging/></soap:Body></soap:Envelope>';
+	private ?string $forwarded = null;
 
 	/**
-	 * A configured endpoint row, as resolveEndpoint() would return it.
-	 *
-	 * @var array<string,mixed>
-	 */
-	private const ENDPOINT = ['id' => 42, 'naam' => 'ZAAKSYSTEEM'];
-
-	/**
-	 * @var StufEnvelopeInspector|MockObject
-	 */
-	private $inspector;
-
-	/**
-	 * @var StufMessageHandler|MockObject
-	 */
-	private $messageHandler;
-
-	/**
-	 * @var StufMessageParser|MockObject
-	 */
-	private $parser;
-
-	/**
-	 * Set up the collaborators.
+	 * Integriq's answer is the zaaksysteem's answer, status and body.
 	 *
 	 * @return void
 	 */
-	protected function setUp(): void {
-		$this->inspector = $this->createMock(StufEnvelopeInspector::class);
-		$this->messageHandler = $this->createMock(StufMessageHandler::class);
-		$this->parser = $this->createMock(StufMessageParser::class);
+	public function testIntegriqsAnswerIsPassedOn(): void {
+		$response = $this->controller(answer: ['statusCode' => 200, 'body' => '<Bv03/>'])->inbound();
 
-		$this->parser->method('parseBevestiging')->willReturn([]);
-		$this->inspector->method('detectBerichtSoort')->willReturn('Bv01');
-		$this->inspector->method('extractCrossRefnummer')->willReturn('xref-1');
-		$this->inspector->method('extractFunctie')->willReturn('ontvanger');
-
-	}//end setUp()
+		$this->assertSame('<Bv01 raw="1"/>', $this->forwarded, 'The bytes reach integriq unchanged');
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame('<Bv03/>', $response->render());
+	}//end testIntegriqsAnswerIsPassedOn()
 
 	/**
-	 * Build the controller with the raw body pinned to a known string.
+	 * Integriq's refusal stays a refusal.
 	 *
-	 * The anonymous subclass overrides `readRawBody()`, the seam that exists
-	 * because `php://input` cannot be driven from a unit test. That seam is the
-	 * reason this endpoint went untested while its siblings did not.
-	 *
-	 * @param string $body The raw request body to serve.
-	 *
-	 * @return StufController
+	 * @return void
 	 */
-	private function controller(string $body): StufController {
-		$services = $this->createMock(StufServices::class);
+	public function testIntegriqsRefusalStaysARefusal(): void {
+		$response = $this->controller(answer: ['statusCode' => 422, 'body' => '<Fo03/>'])->inbound();
 
-		// StufServices exposes its collaborators as readonly promoted
-		// properties, so they are stubbed on the mock rather than injected.
-		$reflection = new \ReflectionClass(StufServices::class);
-		$instance = $reflection->newInstanceWithoutConstructor();
-		foreach (['messageHandler' => $this->messageHandler, 'parser' => $this->parser] as $name => $double) {
-			$property = $reflection->getProperty($name);
-			$property->setAccessible(true);
-			$property->setValue($instance, $double);
-		}
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame('<Fo03/>', $response->render());
+	}//end testIntegriqsRefusalStaysARefusal()
 
-		unset($services);
+	/**
+	 * Integriq away is a 503, so the zaaksysteem retries.
+	 *
+	 * @return void
+	 */
+	public function testIntegriqAwayIsA503(): void {
+		$response = $this->controller(answer: null)->inbound();
 
-		return new class('dossiq', $this->createMock(IRequest::class), $instance, $this->createMock(StufSoapRequestDispatcher::class), $this->inspector, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class), $body, ) extends StufController {
+		$this->assertSame(503, $response->getStatus());
+	}//end testIntegriqAwayIsA503()
+
+	/**
+	 * The deprecated /api/stuf/inkomend forwards the same way.
+	 *
+	 * @return void
+	 */
+	public function testTheLegacyPathForwardsToo(): void {
+		$response = $this->controller(answer: ['statusCode' => 200, 'body' => '<Bv03/>'])->inboundLegacyPath();
+
+		$this->assertSame('<Bv01 raw="1"/>', $this->forwarded);
+		$this->assertSame(200, $response->getStatus());
+	}//end testTheLegacyPathForwardsToo()
+
+	/**
+	 * Build the controller over a bridge that plays integriq.
+	 *
+	 * @param array{statusCode:int,body:string}|null $answer Integriq's answer, null for none.
+	 *
+	 * @return StufController The controller, reading a fixed body.
+	 */
+	private function controller(?array $answer): StufController {
+		$this->forwarded = null;
+		$bridge = $this->createMock(StufIntegriqBridge::class);
+		$bridge->method('forwardConfirmation')->willReturnCallback(
+			function (string $rawXml) use ($answer): ?array {
+				$this->forwarded = $rawXml;
+				return $answer;
+			}
+		);
+
+		return new class('dossiq', $this->createMock(IRequest::class), $this->createMock(StufRegisterAccess::class), $bridge, $this->createMock(IL10N::class), $this->createMock(LoggerInterface::class), $this->createMock(IntegrationStatusService::class)) extends StufController {
 			/**
-			 * @param string $appName App id.
-			 * @param IRequest $request Request.
-			 * @param StufServices $stuf Services.
-			 * @param StufSoapRequestDispatcher $dispatcher Dispatcher.
-			 * @param StufEnvelopeInspector $inspector Inspector.
-			 * @param IL10N $l10n Translations.
-			 * @param LoggerInterface $logger Logger.
-			 * @param IntegrationStatusService $integrationStatus Integration card recorder.
-			 * @param string $body Raw body to serve.
-			 */
-			public function __construct(
-				string $appName,
-				IRequest $request,
-				StufServices $stuf,
-				StufSoapRequestDispatcher $dispatcher,
-				StufEnvelopeInspector $inspector,
-				IL10N $l10n,
-				LoggerInterface $logger,
-				IntegrationStatusService $integrationStatus,
-				private readonly string $body,
-			) {
-				parent::__construct(
-					appName: $appName,
-					request: $request,
-					stuf: $stuf,
-					dispatcher: $dispatcher,
-					inspector: $inspector,
-					l10n: $l10n,
-					logger: $logger,
-					integrationStatus: $integrationStatus,
-				);
-
-			}//end __construct()
-
-			/**
-			 * Serve the pinned body instead of php://input.
+			 * Serve a fixed body instead of php://input.
 			 *
 			 * @return string
 			 */
 			protected function readRawBody(): string {
-				return $this->body;
-			}//end readRawBody()
-
+				return '<Bv01 raw="1"/>';
+			}
 		};
-
 	}//end controller()
-
-	/**
-	 * A tampered WSSE token is refused with 422, and the envelope is never
-	 * interpreted.
-	 *
-	 * This is THE arm the endpoint was missing. Delete the `verifyWsse()` call
-	 * in `inbound()` and this test goes red.
-	 *
-	 * @return void
-	 */
-	public function testATamperedWsseTokenIsRefused(): void {
-		$this->inspector->method('resolveEndpoint')->willReturn(self::ENDPOINT);
-		$this->inspector->method('verifyWsse')->willReturn(false);
-
-		// The refusal must happen BEFORE the envelope is recorded. An endpoint
-		// that logs first and refuses second has already accepted the message.
-		$this->messageHandler->expects($this->never())->method('logInbound');
-
-		$response = $this->controller(self::ENVELOPE)->inbound();
-
-		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
-		$this->assertSame('invalid signature', $response->getData());
-
-	}//end testATamperedWsseTokenIsRefused()
-
-	/**
-	 * An envelope from an unconfigured sender is refused with 400.
-	 *
-	 * @return void
-	 */
-	public function testAnUnresolvableEndpointIsRefused(): void {
-		$this->inspector->method('resolveEndpoint')->willReturn(null);
-		$this->inspector->expects($this->never())->method('verifyWsse');
-		$this->messageHandler->expects($this->never())->method('logInbound');
-
-		$response = $this->controller(self::ENVELOPE)->inbound();
-
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame('unknown endpoint', $response->getData());
-
-	}//end testAnUnresolvableEndpointIsRefused()
-
-	/**
-	 * An empty body is refused with 400 before anything is resolved.
-	 *
-	 * @return void
-	 */
-	public function testAnEmptyBodyIsRefused(): void {
-		$this->inspector->expects($this->never())->method('resolveEndpoint');
-		$this->messageHandler->expects($this->never())->method('logInbound');
-
-		$response = $this->controller('')->inbound();
-
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-		$this->assertSame('empty body', $response->getData());
-
-	}//end testAnEmptyBodyIsRefused()
-
-	/**
-	 * THE POSITIVE CONTROL — a verified sender is processed and acknowledged.
-	 *
-	 * Without this arm, a controller that answered 422 on its first line would
-	 * satisfy every refusal test above. A guard that refuses everything is not
-	 * a working guard; it is an outage.
-	 *
-	 * @return void
-	 */
-	public function testAVerifiedSenderIsProcessedAndAcknowledged(): void {
-		$this->inspector->method('resolveEndpoint')->willReturn(self::ENDPOINT);
-		$this->inspector->method('verifyWsse')->willReturn(true);
-
-		$this->messageHandler->expects($this->once())->method('logInbound');
-
-		$response = $this->controller(self::ENVELOPE)->inbound();
-
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('ack', $response->getData());
-
-	}//end testAVerifiedSenderIsProcessedAndAcknowledged()
-
-	/**
-	 * The guard is keyed to the RESOLVED endpoint, not to the envelope alone.
-	 *
-	 * A checker that verified the token against anything other than the sending
-	 * endpoint's own stored credentials would let one configured system
-	 * impersonate another. This pins the argument.
-	 *
-	 * @return void
-	 */
-	public function testTheTokenIsVerifiedAgainstTheResolvedEndpoint(): void {
-		$this->inspector->method('resolveEndpoint')->willReturn(self::ENDPOINT);
-		$this->inspector->expects($this->once())
-			->method('verifyWsse')
-			->with(self::ENVELOPE, self::ENDPOINT)
-			->willReturn(true);
-
-		$this->controller(self::ENVELOPE)->inbound();
-
-	}//end testTheTokenIsVerifiedAgainstTheResolvedEndpoint()
-
 }//end class

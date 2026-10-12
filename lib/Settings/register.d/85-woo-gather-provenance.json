@@ -3,7 +3,7 @@
   "components": {
     "schemas": {
       "informatieobject": {
-        "version": "1.4.1",
+        "version": "1.4.2",
         "properties": {
           "provenance": {
             "type": "object",
@@ -52,6 +52,54 @@
                 "title": "Source system",
                 "description": "The system it came from.",
                 "maxLength": 64
+              },
+              "mail": {
+                "type": "object",
+                "title": "Mail headers",
+                "description": "The header fields of a collected e-mail, read when it is collected: sender, recipients, cc, date and message id, addresses lower-cased. A mail whose headers cannot be read carries only unreadable: true. Absent on a document that is no mail.",
+                "properties": {
+                  "from": {
+                    "type": "string",
+                    "title": "From",
+                    "maxLength": 320,
+                    "description": "The sender's address."
+                  },
+                  "to": {
+                    "type": "array",
+                    "title": "To",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 320
+                    },
+                    "description": "The recipients' addresses."
+                  },
+                  "cc": {
+                    "type": "array",
+                    "title": "Cc",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 320
+                    },
+                    "description": "The addresses in copy."
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "title": "Sent",
+                    "description": "When the mail was sent, from its Date header."
+                  },
+                  "messageId": {
+                    "type": "string",
+                    "title": "Message id",
+                    "maxLength": 998,
+                    "description": "The Message-ID header, without angle brackets."
+                  },
+                  "unreadable": {
+                    "type": "boolean",
+                    "title": "Headers unreadable",
+                    "description": "True when the mail's headers could not be read; a report counts it under unreadable."
+                  }
+                }
               }
             }
           }

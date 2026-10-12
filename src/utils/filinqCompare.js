@@ -22,7 +22,7 @@ let loading = null
  *
  * @param {object} [roots] The app web roots; defaults to `OC.appswebroots`.
  * @return {boolean} True when filinq is installed.
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+ * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
 export function isFilinqInstalled(roots = globalThis.OC?.appswebroots ?? {}) {
 	return Object.hasOwn(roots || {}, 'filinq')
@@ -38,7 +38,7 @@ export function isFilinqInstalled(roots = globalThis.OC?.appswebroots ?? {}) {
  *
  * @param {object} [env] `{ win, doc, roots }`, for tests.
  * @return {Promise<(function(HTMLElement, object): {unmount: function(): void})|null>} `mountCompare(el, options)`, or null.
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+ * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
 export function loadFilinqCompare(env = {}) {
 	const win = env.win || window
@@ -74,7 +74,7 @@ export function loadFilinqCompare(env = {}) {
  * Forget a load in progress. For tests.
  *
  * @return {void}
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+ * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
 export function resetFilinqCompare() {
 	loading = null

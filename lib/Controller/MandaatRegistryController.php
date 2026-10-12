@@ -15,7 +15,7 @@
  * own HTML page under HTTP 200 and four admin tabs rendered silently empty.
  *
  * ⚠️ Auth posture is deliberate and is the point of the fix. Every method here
- * carries `#[AuthorizedAdminSetting]`, matching `InspectionChecklistController`.
+ * carries `#[AuthorizedAdminSetting]`, matching `ChecklistTemplateController`.
  * The tempting alternative — repointing the frontend at OpenRegister's generic
  * `/apps/openregister/api/objects/dossiq/<schema>` route — resolves, returns
  * clean JSON, and makes the symptom disappear, which is exactly why it was the
