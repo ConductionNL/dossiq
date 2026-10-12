@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DocumentAssessmentController;
+use OCA\Dossiq\Service\Assessment\AssessedDocuments;
 use OCA\Dossiq\Service\Assessment\OutstandingDocuments;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\IL10N;
@@ -33,7 +34,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * REQ-DAS-001 through the route.
+ * REQ-DAS-001 and REQ-DAS-004 through their routes.
  *
  * @covers \OCA\Dossiq\Controller\DocumentAssessmentController
  */
@@ -45,10 +46,16 @@ class DocumentAssessmentControllerTest extends TestCase {
 	 * @param bool                      $signedIn    Whether there is a user.
 	 * @param bool                      $mayRead     Whether the guard grants read access.
 	 * @param OutstandingDocuments|null $outstanding The service, a refusing mock when left out.
+	 * @param AssessedDocuments|null    $assessed    The full list, a refusing mock when left out.
 	 *
 	 * @return DocumentAssessmentController
 	 */
-	private function controller(bool $signedIn, bool $mayRead, ?OutstandingDocuments $outstanding = null): DocumentAssessmentController {
+	private function controller(
+		bool $signedIn,
+		bool $mayRead,
+		?OutstandingDocuments $outstanding = null,
+		?AssessedDocuments $assessed = null,
+	): DocumentAssessmentController {
 		$guard = $this->createMock(CaseAccessGuard::class);
 		$guard->method('hasCaseReadAccess')->willReturn($mayRead);
 		$session = $this->createMock(IUserSession::class);
@@ -61,10 +68,16 @@ class DocumentAssessmentControllerTest extends TestCase {
 			$outstanding->expects($this->never())->method('forCase');
 		}
 
+		if ($assessed === null) {
+			$assessed = $this->createMock(AssessedDocuments::class);
+			$assessed->expects($this->never())->method('forCase');
+		}
+
 		return new DocumentAssessmentController(
 			appName: 'dossiq',
 			request: $this->createMock(IRequest::class),
 			outstanding: $outstanding,
+			assessed: $assessed,
 			guard: $guard,
 			userSession: $session,
 			l10n: $l10n,
@@ -124,4 +137,58 @@ class DocumentAssessmentControllerTest extends TestCase {
 		$this->assertSame(503, $response->getStatus());
 		$this->assertArrayNotHasKey('count', $response->getData());
 	}//end testAnUnreadableRegisterAnswers503()
+
+	/**
+	 * The full list refuses like the outstanding one: 401 without a user, 403 without case access, and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheFullListRefusesWithoutAUserOrCaseAccess(): void {
+		$this->assertSame(401, $this->controller(signedIn: false, mayRead: true)->index(id: 'case-1')->getStatus());
+
+		$response = $this->controller(signedIn: true, mayRead: false)->index(id: 'case-1');
+
+		$this->assertSame(403, $response->getStatus());
+		$this->assertSame('forbidden', $response->getData()['error']);
+		$this->assertNotSame('', $response->getData()['message']);
+		$this->assertArrayNotHasKey('documents', $response->getData());
+	}//end testTheFullListRefusesWithoutAUserOrCaseAccess()
+
+	/**
+	 * A reader gets every document of the case asked for, with its assessment.
+	 *
+	 * @return void
+	 */
+	public function testAReaderGetsEveryDocumentWithItsAssessment(): void {
+		$answer = [
+			'count' => 2,
+			'outstanding' => 1,
+			'documents' => [
+				['id' => 'io-1', 'title' => 'Notitie budget verlichting', 'outstanding' => true, 'assessment' => null],
+				['id' => 'io-2', 'title' => 'Mail aannemer', 'outstanding' => false, 'assessment' => ['classification' => 'openbaar']],
+			],
+		];
+		$assessed = $this->createMock(AssessedDocuments::class);
+		$assessed->expects($this->once())->method('forCase')->with('case-1')->willReturn($answer);
+
+		$response = $this->controller(signedIn: true, mayRead: true, assessed: $assessed)->index(id: 'case-1');
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame($answer, $response->getData());
+	}//end testAReaderGetsEveryDocumentWithItsAssessment()
+
+	/**
+	 * A register that cannot answer the full list is 503, never an empty list.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRegisterAnswers503ForTheFullList(): void {
+		$assessed = $this->createMock(AssessedDocuments::class);
+		$assessed->method('forCase')->willThrowException(new RuntimeException('down'));
+
+		$response = $this->controller(signedIn: true, mayRead: true, assessed: $assessed)->index(id: 'case-1');
+
+		$this->assertSame(503, $response->getStatus());
+		$this->assertArrayNotHasKey('count', $response->getData());
+	}//end testAnUnreadableRegisterAnswers503ForTheFullList()
 }//end class

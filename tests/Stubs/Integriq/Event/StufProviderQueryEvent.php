@@ -2,7 +2,7 @@
 
 /**
  * Integriq StufProviderQueryEvent test stub: a verbatim copy of integriq's lib/Event/StufProviderQueryEvent.php
- * (change stuf-provider-receiver, decision 199), loaded by tests/bootstrap.php only
+ * (changes stuf-provider-receiver and stuf-provider-writes, decisions 199 and 206), loaded by tests/bootstrap.php only
  * when the real class is absent.
  *
  * Integriq StUF Provider Query Event.
@@ -41,6 +41,34 @@ use OCP\EventDispatcher\Event;
 abstract class StufProviderQueryEvent extends Event {
 
 	/**
+	 * The request is understood and the owning app will not carry it out.
+	 *
+	 * @var string
+	 */
+	public const REFUSAL_REFUSED = 'refused';
+
+	/**
+	 * The case or document the request names does not exist.
+	 *
+	 * @var string
+	 */
+	public const REFUSAL_NOT_FOUND = 'not-found';
+
+	/**
+	 * The owning app does not let this source, or its service identity, do this.
+	 *
+	 * @var string
+	 */
+	public const REFUSAL_FORBIDDEN = 'forbidden';
+
+	/**
+	 * The request collides with what is there: the case already exists.
+	 *
+	 * @var string
+	 */
+	public const REFUSAL_CONFLICT = 'conflict';
+
+	/**
 	 * The app that answered, null while unanswered.
 	 *
 	 * @var string|null
@@ -60,6 +88,13 @@ abstract class StufProviderQueryEvent extends Event {
 	 * @var string|null
 	 */
 	private ?string $refusal = null;
+
+	/**
+	 * Why the request was refused.
+	 *
+	 * @var string
+	 */
+	private string $refusalKind = self::REFUSAL_REFUSED;
 
 	/**
 	 * Constructor.
@@ -104,18 +139,25 @@ abstract class StufProviderQueryEvent extends Event {
 	 *
 	 * @param string $appId  The answering app.
 	 * @param string $reason A short reason, safe to return to the case system.
+	 * @param string $kind   Why: one of the REFUSAL_* constants. An unknown kind counts as REFUSAL_REFUSED.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-write-over-stuf-arrives-through-integriq-only
 	 */
-	public function refuse(string $appId, string $reason): void {
+	public function refuse(string $appId, string $reason, string $kind = self::REFUSAL_REFUSED): void {
 		if ($this->answeredBy !== null) {
 			return;
 		}
 
-		$this->answeredBy = $appId;
-		$this->refusal    = $reason;
+		if (in_array($kind, [self::REFUSAL_NOT_FOUND, self::REFUSAL_FORBIDDEN, self::REFUSAL_CONFLICT], true) === false) {
+			$kind = self::REFUSAL_REFUSED;
+		}
+
+		$this->answeredBy  = $appId;
+		$this->refusal     = $reason;
+		$this->refusalKind = $kind;
 		$this->stopPropagation();
 
 	}//end refuse()
@@ -155,6 +197,18 @@ abstract class StufProviderQueryEvent extends Event {
 		return $this->refusal;
 
 	}//end getRefusal()
+
+	/**
+	 * Why the request was refused.
+	 *
+	 * @return string One of the REFUSAL_* constants; REFUSAL_REFUSED when not refused.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-write-over-stuf-arrives-through-integriq-only
+	 */
+	public function getRefusalKind(): string {
+		return $this->refusalKind;
+
+	}//end getRefusalKind()
 
 	/**
 	 * The answer payload.

@@ -99,6 +99,14 @@ const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week'
 const DRAFTS_LENS = 'My drafts'
 
 /**
+ * The lens that shows drafts beside the working set (decision 201).
+ *
+ * A draft is its own object in the status draft (decision 180), and a list of
+ * tasks holds none, so this chip has no counterpart there either.
+ */
+const WITH_DRAFTS_LENS = 'With drafts'
+
+/**
  * The Cases chips, which carry one lens the Tasks list does not.
  *
  * Unread is a per-USER lens over OpenRegister's read state, not a field of the
@@ -160,6 +168,12 @@ const CASE_LENSES = [
 	// work.
 	'Closed with no result',
 	DRAFTS_LENS,
+	// The one lens that asks for drafts beside the working set (decision 201,
+	// REQ-CM-79). OpenRegister leaves drafts out of every list by default, so
+	// this chip is the filter that shows them. It sits beside My drafts
+	// because both are about drafts: that one is yours alone, this one is the
+	// working set with every draft you may read in it.
+	WITH_DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
 	// fees-and-payments-on-the-case (#2930): the cases whose type makes a fee
@@ -203,6 +217,7 @@ const CASES_ONLY = [
 	// A case closes with or without a result; a task completes and has none.
 	'Closed with no result',
 	DRAFTS_LENS,
+	WITH_DRAFTS_LENS,
 	// A fee is due on a CASE, under its type's own rule; a task carries no
 	// payment of its own and nothing on the Tasks list could answer this.
 	'Awaiting payment',
@@ -276,6 +291,44 @@ describe('Cases index lenses', () => {
 		expect(asking).toHaveLength(1)
 		expect(asking[0].label).toBe('Archived')
 		expect(asking[0].filter).toEqual({ _archived: true })
+	})
+
+	it('offers exactly one lens that shows drafts beside the working set', () => {
+		// Decision 201, REQ-CM-79. `_drafts` is OpenRegister's lens over the
+		// stored status: absent is the work list, `any` is drafts beside the
+		// rest. A flat string, because a nested value is JSON-stringified into
+		// the query and matches nothing.
+		const asking = chips('Cases').filter(
+			(entry) => entry.filter && '_drafts' in entry.filter,
+		)
+		expect(asking).toHaveLength(1)
+		expect(asking[0].label).toBe(WITH_DRAFTS_LENS)
+		expect(asking[0].filter).toEqual({
+			isFinalStatus: false,
+			statusHiddenInLists: false,
+			_drafts: 'any',
+		})
+	})
+
+	it('is not the default lens, so drafts are hidden on the first paint', () => {
+		expect(chip('Cases', WITH_DRAFTS_LENS).default).toBeUndefined()
+		expect(
+			chips('Cases').findIndex((entry) => entry.label === WITH_DRAFTS_LENS),
+		).toBeGreaterThanOrEqual(VISIBLE_LENS_COUNT)
+	})
+
+	it('asks for drafts on no other staff list', () => {
+		// The exclusion is the platform's default. A page that spelled
+		// `_drafts: false` would be a second copy of that rule, and a page
+		// that spelled `any` in its base filter would show drafts to
+		// everybody who opens it.
+		const asking = manifest.pages
+			.filter((entry) => entry.type === 'index')
+			.filter((entry) =>
+				JSON.stringify(entry.config?.filter ?? {}).includes('_drafts'),
+			)
+		expect(asking).toEqual([])
+		expect('_drafts' in page('Queue').config.filter).toBe(false)
 	})
 
 	it('is not the default lens, so the archive is never the first paint', () => {

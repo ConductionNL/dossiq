@@ -49,6 +49,11 @@ class PartialSaveGuardTest extends TestCase {
 		// array into it, which the schema refuses however the merge is done.
 		// Fixing it means deciding the activity shape; left for that decision.
 		'lib/Service/ContactMomentService.php recordActivity()' => 'writes an array into a JSON-encoded string property',
+		// A decision table is stored whole: save() builds every column of the
+		// schema (key, name, description, hitPolicy, inputs, outputs, rules,
+		// owner) and replacing the stored row with it is the intent. The guard
+		// sees a literal array and cannot tell a whole object from a patch.
+		'lib/Service/Dmn/StoredDecisionTables.php save()' => 'the row holds every column of the schema, so replacing the stored object is the intent',
 	];
 
 	/**

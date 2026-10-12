@@ -158,9 +158,15 @@ class CrossAppListenerRegistrar {
 		);
 		// Decision 199: integriq answers StUF provider requests (zakLv01, zakLk01,
 		// npsLv01, edcLk01) and asks the owning app through these typed events.
-		// By name, as above; one generic listener answers all four.
-		foreach (['StufCaseQueryEvent', 'StufCaseMutationEvent', 'StufPersonQueryEvent', 'StufDocumentMutationEvent'] as $providerEvent) {
+		// By name, as above; one listener answers the two questions.
+		foreach (['StufCaseQueryEvent', 'StufPersonQueryEvent'] as $providerEvent) {
 			$context->registerEventListener('OCA\Integriq\Event\\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderQueryListener');
+		}
+
+		// Decision 206: the two write events go to their own listener, which
+		// carries a mapped operation out as the background service account.
+		foreach (['StufCaseMutationEvent', 'StufDocumentMutationEvent'] as $providerEvent) {
+			$context->registerEventListener('OCA\Integriq\Event\\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderWriteListener');
 		}
 
 		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq

@@ -115,9 +115,9 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Doorlooptijd/CaseEnricher.php` | 233 | business | engine calendar | the dashboard's derived expected end; it mirrors a statutory term, so it rolls with it or it contradicts it on screen |
 | `lib/Service/Doorlooptijd/DeadlineComplianceCalculator.php` | 168 | neither | | month buckets for a compliance trend |
 | `lib/Service/DsoCaseService.php` | 310 | statutory | `WorkingDayCalculator` | the Omgevingswet term; the day walk is already the calculator's |
-| `lib/Service/DwangsomUitbetalingService.php` | 101 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
+| `lib/Service/Money/PayoutService.php` | 133 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
 | `lib/Service/Kcc/CallbackRetrySchedule.php` | 71 | neither | | the wait before the next callback attempt, 15 minutes doubling to a day. It replaced `Kcc/SlaCalculator.php` (retired by `termijnbewaking-op-engine-timers` 4.1), whose channel SLAs nothing read; a retry wait is not a deadline and has no calendar |
-| `lib/Service/NoticeOfDefaultService.php` | 171 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
+| `lib/Service/Money/AccrualNoticeService.php` | 188 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |
 | `lib/Service/Recycle/RetentionClocks.php` | 144 | neither | | a lawful-purpose retention counted in months (AVG art. 5.1e), where a weekend cannot move the answer; the same verdict `ArchivalNominationDeriver` carries for the Archiefwet side |
@@ -144,6 +144,7 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Termijn/TermDefinitions.php` | 247, 260 | statutory | engine calendar | `endDateCalculated`, which is the row `lib/Service/TermijnService.php` carried at line 109 until the definitions got their own class. The computation did not change when it moved: `TermijnService::createTermijnInstance()` still routes the answer through `TermijnTimerService::rollTermEndFor()`, the one call every other term site makes, so the stored date and the armed timer come from one computation. Working-day definitions reach `WorkingDayRoll` from here, and a calendar that does not answer is logged at warning as a term that is SHORTER than it is owed |
 | `lib/Service/WorkingDayCalculator.php` | 170, 204 | neither | itself | the calendar. It is the fallback the three sites use when the engine is absent, and the only holiday list dossiq is allowed to hold |
 | `lib/Woo/WooThroughputReport.php` | 164 | neither | | the throughput report adds one verdict to a per-reviewer, per-day tally through its own `add()` method. It counts work done on a day; no term is computed and nobody is held to a date |
+| `lib/Service/Term/ApplicantTermNote.php` | 256 | neither | | not date arithmetic: it parses the case type's `extensionPeriod` (ISO 8601) into a `DateInterval` only to say the period in words ("twee weken") in the sentence the applicant reads. No date is computed; the day the decision is due is copied from the case deadline the term engine keeps |
 
 ## Rows added after the reading
 

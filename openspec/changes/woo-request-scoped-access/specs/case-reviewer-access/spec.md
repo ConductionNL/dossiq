@@ -10,7 +10,8 @@ assessments are configuration on the Woo case type (see `woo-request-scoped-acce
 ### Requirement: A case type declares the records it keeps private to the case (REQ-CRA-001)
 
 The case type schema SHALL carry `reviewerAccess` with `records` (a list of `{schemaKey,
-caseField}`: the app setting that names the record's schema and the field holding the case),
+caseField}`: the app setting that names the record's schema and the field holding the case, with
+the optional reader rule of REQ-CRA-008),
 `reviewers` (a list of `{schemaKey, caseField, userField}`: where the case's reviewers are named),
 `supervisorGroup` (default `dossiq-coordinators`) and `hideOthers` (default false). A record schema
 named there SHALL carry `scope: private` in its own authorization block, so OpenRegister admits only
@@ -26,8 +27,9 @@ behave as before: nothing reconciled, every record changeable as before.
 
 `CaseReviewerAccess::reconcile(caseId)` SHALL make every declared record of the case owned by the
 supervising group and readable by the case `assignee` and every reviewer the `reviewers` sources
-name, except where `hideOthers` withholds the reviewers. Through `ObjectReadGrants` it SHALL grant
-only core's read bit, never grant the record's owner, revoke every non-inherited user grant it did
+name, except where `hideOthers` withholds the reviewers or the record's own `readers` rule
+(REQ-CRA-008) narrows it. Through `ObjectReadGrants` it SHALL grant
+only core's read bit, unless the record's entry says a reader may update it (REQ-CRA-010), never grant the record's owner, revoke every non-inherited user grant it did
 not compute, leave group and inherited grants alone, and answer `{status: reconciled | not-declared
 | unavailable, granted, revoked, refused}`. A refusal by OpenRegister SHALL be counted, never
 reported as success. Without OpenRegister's sharing services it SHALL answer `unavailable` and
@@ -43,6 +45,81 @@ created.
 - **GIVEN** `hideOthers` on
 - **WHEN** the case is reconciled
 - **THEN** only the assignee SHALL be granted; each reviewer reads only their own records
+
+### Requirement: A case type says per record who on the case reads it (REQ-CRA-008)
+
+Each entry of `reviewerAccess.records` MAY carry `readers`: `all` (the default: the case assignee
+and every reviewer the `reviewers` sources name, unless `hideOthers` withholds them), `assignee`
+(the case assignee only) or `own` (the case assignee and the reviewers the record itself names).
+With `own` the entry names where the record holds them: `userField`, a field holding user ids, or
+`reviewerRowField`, a field holding the id of a row of one of the `reviewers` sources, whose
+reviewers then read the record. A row of another case SHALL name nobody. The supervising group owns
+the record under all three. A value other than these three SHALL be read as `assignee`, the narrow
+side. `CaseRecordReaders` computes the readers of one record; `CaseReviewerAccess::reconcile()`
+SHALL ask it per record, so narrowing a rule and reconciling revokes the grants that no longer hold.
+
+#### Scenario: A reviewer reads only the batch that names them
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testAReviewerReadsOnlyTheRecordThatNamesThem; the live read is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with assignee `j.devries`, batch 1 naming reviewer `p.bakker`, batch 2 naming `a.smit`, and the batch record declared `readers: own`, `userField: assignee`
+- **WHEN** the case is reconciled
+- **THEN** batch 1 SHALL be read by `j.devries` and `p.bakker`, batch 2 by `j.devries` and `a.smit`, and neither reviewer SHALL hold a grant on the other's batch
+
+#### Scenario: A record for the assignee only
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testARecordSharedWithTheAssigneeOnlyReachesNoReviewer.
+- **GIVEN** the same case and a record declared `readers: assignee`
+- **WHEN** the case is reconciled
+- **THEN** only `j.devries` SHALL hold a read grant on it, and a grant a reviewer held before SHALL be revoked
+
+#### Scenario: A record that belongs to a batch
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testARecordOfABatchIsReadByThatBatchsReviewer.
+- **GIVEN** a record declared `readers: own`, `reviewerRowField: batch`, one row naming batch 2 and one naming no batch
+- **WHEN** the case is reconciled
+- **THEN** the first SHALL be read by `j.devries` and `a.smit`, the second by `j.devries` alone
+
+### Requirement: A case type says per record who on the case may update it (REQ-CRA-010)
+
+Each entry of `reviewerAccess.records` MAY carry `assigneeMay` and `reviewersMay`, each `read` (the
+default) or `update`. With `assigneeMay: update` the case assignee SHALL be granted core's read and
+update bits on the record. With `reviewersMay: update` the reviewers who read the record under its
+`readers` rule (REQ-CRA-008) SHALL be granted both bits; a reviewer who does not read the record
+SHALL gain nothing. An assignee who is also such a reviewer SHALL get the wider of the two. Any
+other value SHALL be read as `read`, the narrow side. Delete and share SHALL never be granted.
+`CaseRecordReaders::toGrant()` computes the bits per reader and `ObjectReadGrants::reconcile()`
+SHALL make the record's user grants equal them: a grant that carries other permissions than its
+reader is due SHALL be revoked and granted again, so widening or narrowing an entry and reconciling
+reaches the records that already exist. A second run SHALL grant and revoke nothing.
+
+#### Scenario: A reviewer updates the records of their own batch
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testAReviewerMayUpdateTheRecordsOfTheirOwnBatch; the live update is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with assignee `j.devries`, batch 2 naming reviewer `a.smit`, and a record declared `readers: own`, `reviewerRowField: batch`, `reviewersMay: update`
+- **WHEN** the case is reconciled
+- **THEN** `a.smit` SHALL hold read and update on the record of batch 2, `j.devries` read only, and nobody delete or share
+
+#### Scenario: A grant that is too narrow is replaced
+@e2e exclude Grant reconciliation against a sharing double, covered by tests/Unit/Service/Access/ObjectReadGrantsTest.php testAGrantWithOtherPermissionsThanDueIsGrantedAgain.
+- **GIVEN** a record on which `a.smit` holds a read grant and the entry now says `reviewersMay: update`
+- **WHEN** the case is reconciled
+- **THEN** the read grant SHALL be revoked and `a.smit` SHALL be granted read and update
+
+#### Scenario: An unknown value grants read only
+@e2e exclude Normalisation of a declaration, covered by tests/Unit/Service/Access/CaseRecordReadersTest.php testAnythingButUpdateInFullIsRead.
+- **GIVEN** an entry with `assigneeMay: write`
+- **WHEN** the case is reconciled
+- **THEN** the assignee SHALL hold a read grant only
+
+### Requirement: A reader is somebody the register admits (REQ-CRA-009)
+
+OpenRegister keeps a record's schema as the ceiling of a grant, and the dossiq register is closed to
+everybody outside `dossiq-medewerkers` (case-access-control REQ-ACC-11). So a grant to a person
+outside that group changes nothing: they still read no record. `CaseReviewerAccess::isAdmittedReader(userId)`
+SHALL answer true only for a member of the staff group or an administrator, and a writer that names
+a person as a reviewer SHALL ask it first and refuse with a sentence that names the group.
+
+#### Scenario: A supervisor outside the staff group
+@e2e exclude A group membership answer, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testOnlyStaffAndAdministratorsCanBeNamedAsReaders.
+- **GIVEN** a member of `dossiq-coordinators` who is no member of `dossiq-medewerkers` and no administrator
+- **WHEN** `isAdmittedReader` is asked about them
+- **THEN** the answer SHALL be false
 
 ### Requirement: A reviewer changes only the records they made (REQ-CRA-003)
 

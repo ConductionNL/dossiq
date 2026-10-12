@@ -22,15 +22,11 @@ One app-config key selects the adapter tier per integration, plus tier-specific 
 | `integration.brp.mode` | `log` \| `mock` \| `test` | `log` |
 | `integration.brp.baseUrl` | e.g. `http://localhost:5010/haalcentraal/api/brp` (mock) or `https://proefomgeving.haalcentraal.nl/haalcentraal/api/brp` | unset |
 | `integration.brp.apiKey` | proefomgeving X-API-KEY | unset |
-| `integration.kvk.mode` | `log` \| `test` \| `live` | `log` |
-| `integration.kvk.baseUrl` | default `https://api.kvk.nl/test/api` | unset (uses default) |
-| `integration.kvk.apiKey` | default = public test key (below) | unset (uses default) |
 | `integration.dso.baseUrl` | `https://service.pre.omgevingswet.overheid.nl` | unset |
 
 Set a tier with, e.g.:
 
 ```bash
-occ config:app:set dossiq integration.kvk.mode --value test
 occ config:app:set dossiq integration.brp.mode --value mock
 occ config:app:set dossiq integration.brp.baseUrl --value http://personen-mock:5010/haalcentraal/api/brp
 ```
@@ -53,17 +49,9 @@ An unknown or unset mode always falls back to `log`.
   owner (see the getting-started page of `github.com/BRP-API/Haal-Centraal-BRP-bevragen`).
   **Status: not requested in this session** (no live proefomgeving credential is bundled).
 
-### KvK (Handelsregister Zoeken) — beta
+### KvK (Handelsregister)
 
-- **Test env**: KvK Developer Portal test environment `https://api.kvk.nl/test/api/v2/zoeken`.
-- **Public test key**: `l7xx1f2691f2520d487b902f4e0b57a0b197` — published openly on
-  developers.kvk.nl/documentation/testing. It is NOT a secret; it only unlocks the fixed set of
-  fictitious companies (KVK 69599084, 68750110, 69599068, 55344526, …). It ships as the adapter
-  default (`KvkApiAdapter::PUBLIC_TEST_API_KEY`).
-- **Adapter**: `KvkApiAdapter`, selected by `integration.kvk.mode=test`. Fail-soft on transport
-  errors.
-- **Contract lane**: `tests/fixtures/contracts/kvk/zoeken-69599084.json` (verbatim test-API
-  response, fetched 2026-07-06); the network lane against the live test API is nightly/label-gated.
+Dossiq ships no KvK client. Integriq holds the KvK source and keeps a company's register data current. Configure it there.
 
 ### DSO / Omgevingswet — beta (config-ready seam)
 
@@ -113,7 +101,6 @@ adapter refuses every login and makes no external call. The former
 | Integration | Grant | Status (this session) |
 |-------------|-------|------------------------|
 | BRP proefomgeving X-API-KEY | e-mail to BRP-API product owner | not requested (offline mock lane wired) |
-| KvK test key | public — no request needed | ✅ in use (public test key) |
 | DSO pre-prod (client_id + test key + PKIoverheid cert) | aansluittraject | blocked — formal aansluittraject, customer-side, out of scope |
 | Logius DigiD preproductie + PKIoverheid cert | supplier application | blocked — formal aansluiting, out of scope (simulator shipped) |
 | Preservica Starter | instant signup | not exercised (belongs with migrate-archival-to-or) |

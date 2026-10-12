@@ -1,0 +1,31 @@
+{
+  "about": "Files under lib/ that still call DateTimeInterface::diff() themselves instead of asking Service/Term/DayCount. An entry names the open change that takes the file and says why it is not taken yet. DayCountIsTheOnlyDiffTest fails on a file that is not listed, on an entry without a change or a reason, and on an entry whose file no longer calls diff(), so the list can only shrink.",
+  "measured": "2026-10-12",
+  "entries": [
+    {
+      "file": "lib/Service/DeadlineExtensionService.php",
+      "change": "method-decomposition",
+      "reason": "calculateDaysImpact() counts the days an extension adds. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It is a calculation class that owns its day math, which task 4.2 leaves in place; it moves to DayCount when method-decomposition splits the class."
+    },
+    {
+      "file": "lib/Service/KpiAggregationService.php",
+      "change": "method-decomposition",
+      "reason": "daysBetween() counts the signed days a closed case took, for the average on the dashboard. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It counts elapsed days for a report or an age, not days to a deadline, and moves to DayCount when method-decomposition splits the class."
+    },
+    {
+      "file": "lib/Service/TermijnTimerService.php",
+      "change": "method-decomposition",
+      "reason": "spanFor() counts the calendar span a timer is armed with, and asks WorkingDayRoll for working days. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It is a calculation class that owns its day math, which task 4.2 leaves in place; it moves to DayCount when method-decomposition splits the class."
+    },
+    {
+      "file": "lib/Service/WOODeadlineService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "signedDaysUntil() serves only checkAndWarn(), which has had no caller since task 2.1 retired the daily check job. The refactor programme (decision 184) deletes the method; routing it first would only collide with that deletion."
+    },
+    {
+      "file": "lib/Service/WorkQueueService.php",
+      "change": "method-decomposition",
+      "reason": "Counts the days a queue item has sat idle, for its urgency score. The class sits at the coupling limit (12 of 13), so one more collaborator fails PHPMD. It counts elapsed days for a report or an age, not days to a deadline, and moves to DayCount when method-decomposition splits the class."
+    }
+  ]
+}

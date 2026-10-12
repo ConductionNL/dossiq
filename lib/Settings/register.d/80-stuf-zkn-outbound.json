@@ -15,7 +15,7 @@
                 "slug": "stufEndpoint",
                 "title": "StUF Endpoint",
                 "icon": "Connection",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "searchable": false,
                 "summary": "Configuration profile for a single zaaksysteem StUF connection.",
                 "description": "Stores the connection details (URL, sectormodel, authentication, TLS cert reference) for one legacy zaaksysteem reachable over StUF 0310. Multiple endpoints per gemeente are supported (transition scenarios).",
@@ -89,6 +89,12 @@
                         "title": "Integriq source",
                         "description": "The id of the integriq StUF-ZKN source that sends this endpoint's messages and receives its confirmations. Dossiq no longer sends StUF itself; without this value an outbound message is refused.",
                         "maxLength": 64
+                    },
+                    "acceptsWrites": {
+                        "type": "boolean",
+                        "title": "Accepts writes",
+                        "description": "Whether the zaaksysteem behind this endpoint may open cases, change cases and add documents in dossiq. Off by default. The messages arrive through the integriq source named above, which authenticates the sender; dossiq carries them out as the background service account.",
+                        "default": false
                     },
                     "endpointUrl": {
                         "type": "string",
@@ -172,7 +178,15 @@
                     "zaaktypeMappings": {
                         "type": "object",
                         "title": "Case type mappings",
-                        "description": "Map from dossiq case.type (slug) to the zaaksysteem's zkn:zaaktype.omschrijving used in Lk01 builds.",
+                        "description": "Map from a dossiq case type (its catalogue identifier or uuid) to the name or code the zaaksysteem uses for that zaaktype. Read in both directions: outgoing messages name the zaaktype, and an incoming case is opened on the case type its zaaktype is mapped to. An incoming case with an unmapped zaaktype is refused.",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "documentTypeMappings": {
+                        "type": "object",
+                        "title": "Document type mappings",
+                        "description": "Map from the zaaksysteem's document type name to the id of a dossiq document type. A document with an unmapped type is refused.",
                         "additionalProperties": {
                             "type": "string"
                         }
