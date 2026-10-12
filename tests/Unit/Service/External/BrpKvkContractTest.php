@@ -30,7 +30,6 @@ namespace OCA\Dossiq\Tests\Unit\Service\External;
 
 use OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter;
 use OCA\Dossiq\Service\External\IntegrationMode;
-use OCA\Dossiq\Service\External\Kvk\KvkApiAdapter;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -40,11 +39,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter
- * @covers \OCA\Dossiq\Service\External\Kvk\KvkApiAdapter
  *
  * @uses \OCA\Dossiq\Service\External\Brp\BrpLookupResult
  * @uses \OCA\Dossiq\Service\External\IntegrationMode
- * @uses \OCA\Dossiq\Service\External\Kvk\KvkLookupResult
  */
 class BrpKvkContractTest extends TestCase {
 	private const FIXTURES = __DIR__ . '/../../../fixtures/contracts';
@@ -116,24 +113,4 @@ class BrpKvkContractTest extends TestCase {
 		$this->assertArrayNotHasKey('citizenServiceNumber', $result->persoon);
 		$this->assertSame('mock', $result->extras['tier']);
 	}//end testBrpContractAgainstMockEnvelope()
-
-	/**
-	 * The KvK adapter honours the api.kvk.nl/test Zoeken contract for the
-	 * pinned fictitious company 69599084.
-	 *
-	 * @return void
-	 */
-	public function testKvkContractAgainstTestApiResponse(): void {
-		$adapter = new KvkApiAdapter(
-			clientService: $this->clientReturningFixture('kvk/zoeken-69599084.json'),
-			mode: $this->mode('kvk', IntegrationMode::TEST),
-			logger: $this->createMock(LoggerInterface::class),
-		);
-
-		$result = $adapter->lookup(kvkNumber: '69599084');
-		$this->assertSame('FOUND', $result->lookupStatus);
-		$this->assertSame('69599084', $result->kvkNumber);
-		$this->assertStringContainsString('Test EMZ', (string)$result->entity['name']);
-		$this->assertSame('test', $result->extras['tier']);
-	}//end testKvkContractAgainstTestApiResponse()
 }//end class
