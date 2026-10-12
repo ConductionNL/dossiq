@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Verify one delivered set and print every item.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+ * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
  */
 class VerifyWooDeliveredSetCommand extends Command {
 
@@ -55,7 +55,7 @@ class VerifyWooDeliveredSetCommand extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'dossiq:woo:verify-delivered-set')
@@ -71,7 +71,7 @@ class VerifyWooDeliveredSetCommand extends Command {
 	 *
 	 * @return int Success only when the set verifies.
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-a-set-is-re-verifiable-req-wds-003
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$set = $this->verifier->find(setId: (string)$input->getArgument('setId'));

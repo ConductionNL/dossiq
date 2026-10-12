@@ -188,6 +188,12 @@ export default {
 		healthClass(row) {
 			const state =
 				row && row.health && row.health.state ? row.health.state : 'ok'
+			if (state === 'unlinked') {
+				return 'stuf-endpoints__health--degraded'
+			}
+			if (state === 'integriq') {
+				return 'stuf-endpoints__health--ok'
+			}
 			return 'stuf-endpoints__health--' + state
 		},
 
@@ -200,6 +206,12 @@ export default {
 		healthLabel(row) {
 			const state =
 				row && row.health && row.health.state ? row.health.state : 'ok'
+			if (state === 'unlinked') {
+				return t('dossiq', 'No integriq source')
+			}
+			if (state === 'integriq') {
+				return t('dossiq', 'Sent through integriq')
+			}
 			if (state === 'circuit_open') {
 				return t('dossiq', 'Circuit open')
 			}

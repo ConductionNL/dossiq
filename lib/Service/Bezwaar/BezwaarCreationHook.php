@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
@@ -61,6 +62,7 @@ class BezwaarCreationHook {
 	 * @param SettingsService $settingsService Schema/register + OR bridge.
 	 * @param IUserSession $userSession Acting user resolver.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseRelationService|null $relations Links the bezwaar to the decided case, typed and symmetric.
 	 *
 	 * @return void
 	 */
@@ -68,6 +70,7 @@ class BezwaarCreationHook {
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseRelationService $relations = null,
 	) {
 	}//end __construct()
 
@@ -192,6 +195,14 @@ class BezwaarCreationHook {
 				. 'skipping relatedCases link',
 				['decision' => $contestedDecisionId]
 			);
+			return;
+		}
+
+		// The case schema keeps relatedCases as the JSON string CaseRelationService
+		// writes, symmetric and typed; writing a bare array here is refused by
+		// that schema. Through the relation service when it is wired.
+		if ($this->relations !== null) {
+			$this->relations->addRelation(caseId: $objectionCaseId, targetId: $primaryDecisionCase, natureRelationship: 'vervolg');
 			return;
 		}
 

@@ -291,7 +291,9 @@ export const CnFactsWidget = {
 		const rows = []
 		for (const field of this.content.fields ?? []) {
 			const raw = (this.objectData ?? {})[field.path]
-			const value = Array.isArray(raw) ? raw.join(', ') : String(raw ?? '').trim()
+			const value = Array.isArray(raw)
+				? raw.join(', ')
+				: String(raw ?? '').trim()
 			if (value === '') continue
 			rows.push(
 				h('div', { 'data-testid': `cn-fact-${field.key}` }, [

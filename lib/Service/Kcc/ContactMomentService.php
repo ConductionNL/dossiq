@@ -39,8 +39,6 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — CRUD service aggregating
- * validation, persistence and IDOR-scoped queries for one entity.
  * @SuppressWarnings(PHPMD.BooleanArgumentFlag)      — $isPrivileged is the standard
  * cross-agent/own-record scoping flag used across the app's controllers.
  *
@@ -52,14 +50,21 @@ class ContactMomentService {
 	 *
 	 * @var array<int, string>
 	 */
-	public const CHANNELS = ['phone', 'email', 'web_form', 'chat', 'social', 'in_person', 'letter'];
+	public const CHANNELS = ContactMomentPayload::CHANNELS;
 
 	/**
 	 * Allowed outcomes for a contact moment.
 	 *
 	 * @var array<int, string>
 	 */
-	public const OUTCOMES = ['open', 'resolved', 'transferred', 'callback_scheduled', 'escalated'];
+	public const OUTCOMES = ContactMomentPayload::OUTCOMES;
+
+	/**
+	 * What a contact moment may hold, on create and on update.
+	 *
+	 * @var ContactMomentPayload
+	 */
+	private ContactMomentPayload $payload;
 
 	/**
 	 * Constructor.
@@ -71,8 +76,9 @@ class ContactMomentService {
 	public function __construct(
 		private SettingsService $settingsService,
 		private LoggerInterface $logger,
-		private CaseDateNormaliser $dates,
+		CaseDateNormaliser $dates,
 	) {
+		$this->payload = new ContactMomentPayload(dates: $dates);
 	}//end __construct()
 
 	/**
@@ -91,103 +97,8 @@ class ContactMomentService {
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
 	 */
 	public function buildPayload(array $data, string $agentId): array {
-		$channel = $this->validateEnum(value: (string)($data['channel'] ?? ''), allowed: self::CHANNELS, label: 'channel');
-		$direction = $this->validateEnum(value: (string)($data['direction'] ?? 'inbound'), allowed: ['inbound', 'outbound'], label: 'direction');
-		$outcome = $this->validateEnum(value: (string)($data['outcome'] ?? 'open'), allowed: self::OUTCOMES, label: 'outcome');
-
-		$payload = [
-			'channel' => $channel,
-			'direction' => $direction,
-			'outcome' => $outcome,
-			'kccAgentRef' => $agentId,
-			'subject' => trim((string)($data['subject'] ?? '')),
-			'summary' => trim((string)($data['summary'] ?? '')),
-		];
-
-		$payload = $this->applyPassthrough(payload: $payload, data: $data);
-		$payload = $this->applyTimestamps(payload: $payload, data: $data);
-
-		return $payload;
+		return $this->payload->forCreate(data: $data, agentId: $agentId);
 	}//end buildPayload()
-
-	/**
-	 * Validate that a value is one of an allowed enum set.
-	 *
-	 * @param string $value The value to validate.
-	 * @param array<int,string> $allowed The allowed values.
-	 * @param string $label The field label for the error message.
-	 *
-	 * @return string The validated value.
-	 *
-	 * @throws OCSBadRequestException When the value is not allowed.
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
-	 */
-	private function validateEnum(string $value, array $allowed, string $label): string {
-		if (in_array($value, $allowed, true) === false) {
-			throw new OCSBadRequestException('Invalid ' . $label);
-		}
-
-		return $value;
-	}//end validateEnum()
-
-	/**
-	 * Copy the optional pass-through string fields onto the payload.
-	 *
-	 * @param array<string,mixed> $payload The payload to extend.
-	 * @param array<string,mixed> $data The request data.
-	 *
-	 * @return array<string,mixed> The extended payload.
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
-	 */
-	private function applyPassthrough(array $payload, array $data): array {
-		$passthrough = [
-			'customerRef',
-			'customerName',
-			'customerPhone',
-			'customerEmail',
-			'assignedTeam',
-			'assignedDomain',
-			'case',
-			'linkedContactMoment',
-		];
-		foreach ($passthrough as $field) {
-			if (isset($data[$field]) === true && $data[$field] !== '') {
-				$payload[$field] = (string)$data[$field];
-			}
-		}
-
-		if (isset($data['tags']) === true && is_array($data['tags']) === true) {
-			$payload['tags'] = array_values(array_map('strval', $data['tags']));
-		}
-
-		return $payload;
-	}//end applyPassthrough()
-
-	/**
-	 * Set the startedAt/endedAt timestamps and duration on the payload.
-	 *
-	 * @param array<string,mixed> $payload The payload to extend.
-	 * @param array<string,mixed> $data The request data.
-	 *
-	 * @return array<string,mixed> The extended payload.
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
-	 */
-	private function applyTimestamps(array $payload, array $data): array {
-		$payload['startedAt'] = $this->dates->nowAsMoment();
-		if (isset($data['startedAt']) === true && $data['startedAt'] !== '') {
-			$payload['startedAt'] = $this->dates->toMoment($data['startedAt'], 'startedAt');
-		}
-
-		if (isset($data['endedAt']) === true && $data['endedAt'] !== '') {
-			$payload['endedAt'] = $this->dates->toMoment($data['endedAt'], 'endedAt');
-			$payload['durationSeconds'] = $this->computeDuration(start: $payload['startedAt'], end: $payload['endedAt']);
-		}
-
-		return $payload;
-	}//end applyTimestamps()
 
 	/**
 	 * Persist a new contact moment.
@@ -246,52 +157,12 @@ class ContactMomentService {
 			isPrivileged: $isPrivileged,
 		);
 
-		$update = $this->mergeUpdate(existing: $existing, data: $data);
+		$update = $this->payload->merged(existing: $existing, data: $data);
 
 		$saved = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string)$id);
 
 		return $this->toArray(value: $saved);
 	}//end update()
-
-	/**
-	 * Merge mutable fields from request data onto an existing contact moment.
-	 *
-	 * @param array<string,mixed> $existing The current contact moment.
-	 * @param array<string,mixed> $data The fields to update.
-	 *
-	 * @return array<string,mixed> The merged contact moment.
-	 *
-	 * @throws OCSBadRequestException When the outcome is invalid.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — flat field-merge guards.
-	 *
-	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-02
-	 */
-	private function mergeUpdate(array $existing, array $data): array {
-		$update = $existing;
-		foreach (['subject', 'summary', 'assignedTeam', 'assignedDomain', 'outcome', 'customerName'] as $field) {
-			if (array_key_exists($field, $data) === true) {
-				$update[$field] = (string)$data[$field];
-			}
-		}
-
-		if (isset($update['outcome']) === true && in_array((string)$update['outcome'], self::OUTCOMES, true) === false) {
-			throw new OCSBadRequestException('Invalid outcome');
-		}
-
-		$hasEnd = (isset($data['endedAt']) === true && $data['endedAt'] !== '');
-		$hasStart = isset($update['startedAt']);
-		if ($hasEnd === true && $hasStart === true) {
-			$update['endedAt'] = (string)$data['endedAt'];
-			$update['durationSeconds'] = $this->computeDuration(start: (string)$update['startedAt'], end: (string)$update['endedAt']);
-		}
-
-		if (isset($data['tags']) === true && is_array($data['tags']) === true) {
-			$update['tags'] = array_values(array_map('strval', $data['tags']));
-		}
-
-		return $update;
-	}//end mergeUpdate()
 
 	/**
 	 * List contact moments with optional filters.
@@ -450,25 +321,6 @@ class ContactMomentService {
 
 		return $arr;
 	}//end findOwned()
-
-	/**
-	 * Compute a duration in seconds between two ISO timestamps.
-	 *
-	 * @param string $start The start timestamp.
-	 * @param string $end The end timestamp.
-	 *
-	 * @return int Duration in seconds (0 when invalid or negative).
-	 */
-	private function computeDuration(string $start, string $end): int {
-		try {
-			$startTs = $this->dates->parse($start, 'startedAt')->getTimestamp();
-			$endTs = $this->dates->parse($end, 'endedAt')->getTimestamp();
-		} catch (\Throwable $e) {
-			return 0;
-		}
-
-		return max(0, ($endTs - $startTs));
-	}//end computeDuration()
 
 	/**
 	 * Normalise an ObjectService result to a plain array.

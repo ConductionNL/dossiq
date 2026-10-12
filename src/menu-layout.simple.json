@@ -911,6 +911,9 @@
 					"copy-case": {
 						"group": "Case"
 					},
+					"remedy-lodge": {
+						"group": "Case"
+					},
 					"woo-publish": {
 						"group": "Publication"
 					},
@@ -928,6 +931,12 @@
 					},
 					"woo-gather-documents": {
 						"group": "Dossier"
+					},
+					"document-assess": {
+						"group": "Dossier"
+					},
+					"assessment-decide": {
+						"group": "Publication"
 					},
 					"case-rebind": {
 						"group": "Case"

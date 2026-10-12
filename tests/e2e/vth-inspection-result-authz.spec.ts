@@ -413,11 +413,11 @@ test.describe('VTH inspection result: only the stored handler may submit', () =>
 	// shared instance, and permission to mutate it is still pending. The two
 	// mutation points, and the assertion each must redden:
 	//
-	//   lib/Controller/InspectionChecklistController.php, submitResult():
+	//   lib/Controller/TaskChecklistController.php, submit() (then InspectionChecklistController::submitResult()):
 	//     return STATUS_OK instead of STATUS_CREATED
 	//     -> "the stored assignee's submission must be created, not merely
 	//        not-refused"
-	//   lib/Service/InspectionChecklistService.php, submitResult():
+	//   lib/Service/Inspection/InspectionRunService.php, submit() (then InspectionChecklistService::submitResult()):
 	//     drop `completedBy` from `$payload`
 	//     -> "the stored result must record <uid> as the person who completed it"
 	//

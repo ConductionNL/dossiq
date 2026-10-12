@@ -155,12 +155,12 @@ describe('ChecklistsTab — response-shape handling (procest#784)', () => {
 		expect(wrapper.findAll('.checklists-tab__item')).toHaveLength(0)
 	})
 
-	it('addresses the admin-guarded InspectionChecklistController route', async () => {
+	it('addresses the admin-guarded ChecklistTemplateController route', async () => {
 		await mountWith([])
 
 		expect(axios.get).toHaveBeenCalledTimes(1)
 		const url = axios.get.mock.calls[0][0]
-		// `/api/vth/checklists` is served by InspectionChecklistController, whose
+		// `/api/vth/checklists` is served by ChecklistTemplateController, whose
 		// every verb carries #[AuthorizedAdminSetting]. Going straight to
 		// OpenRegister's generic object route would work mechanically but would
 		// bypass that guard and add a second write path — see the note on

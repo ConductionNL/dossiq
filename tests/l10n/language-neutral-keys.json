@@ -71,6 +71,7 @@
         "max {n}",
         "wijken",
         "{count} items",
+        "{count} document",
         "{from} – (no end)",
         "{minutes} min",
         "{percent}%",

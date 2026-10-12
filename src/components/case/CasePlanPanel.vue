@@ -4,9 +4,10 @@
 
   The adaptive case plan, served by OpenRegister's case layer.
 
-  Same widget slot as the retiring CMMN panel (`cmmn-case-plan`), new data
-  source. The stages, tasks and milestones are rows in `openregister_case_items`
-  read over `/api/cases`, not a blob this app decodes.
+  The widget slot is `cmmn-case-plan`. The stages, tasks and milestones are rows
+  in `openregister_case_items` read over `/api/cases`. OpenRegister is the only
+  runtime: dossiq holds no case engine of its own and has nothing to fall back
+  on.
 
   IT FAILS CLOSED. An unreachable case layer renders an error with a retry, not
   an empty plan, because "OpenRegister did not answer" and "this case has no
@@ -125,21 +126,7 @@ import {
 	planErrorMessage,
 	transitionPlanItem,
 } from '../../services/casePlanApi.js'
-import {
-	decidePlanSource,
-	hasLocalPlanBlob,
-	mayHoldOpenRegisterPlan,
-	normaliseLocalPlanItems,
-	prefersOpenRegister,
-	SOURCE_LOCAL,
-	SOURCE_OPENREGISTER,
-} from '../../services/casePlanSource.js'
-import {
-	completeTask as completeLocalTask,
-	enableDiscretionaryItem as enableLocalItem,
-	fetchCasePlan as fetchLocalCasePlan,
-	terminateTask as terminateLocalTask,
-} from '../../services/cmmnApi.js'
+import { mayHoldOpenRegisterPlan } from '../../services/casePlanSource.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 
@@ -164,7 +151,6 @@ export default {
 			busy: false,
 			error: '',
 			roots: [],
-			source: 'none',
 		}
 	},
 
@@ -213,38 +199,17 @@ export default {
 			this.loading = true
 			this.error = ''
 			try {
-				// The case is read FIRST, and always. Its caseType says whether
-				// OpenRegister can hold a plan at all: a BPMN case never gets one,
-				// and asking anyway answered 404 on every case page. Reading it
-				// even when OpenRegister then answers rows keeps
-				// `decidePlanSource`'s first rule in one place.
+				// The case is read FIRST. Its caseType says whether OpenRegister
+				// can hold a plan at all: a BPMN case never gets one, and asking
+				// anyway answered 404 on every case page.
 				const caseObject = await this.readCase()
-				const blob = hasLocalPlanBlob(caseObject)
 				const plan = mayHoldOpenRegisterPlan({
-					hasLocalBlob: blob,
 					caseType: await this.readCaseType(caseObject),
 				})
 					? await this.readOpenRegisterPlan()
 					: null
-				const rows = hasPlanRows(plan)
-				const prefer = prefersOpenRegister()
 
-				this.source = decidePlanSource({
-					hasOpenRegisterRows: rows,
-					hasLocalBlob: blob,
-					preferOpenRegister: prefer,
-				})
-
-				if (this.source === SOURCE_OPENREGISTER) {
-					this.roots = groupPlanByStage(plan?.items)
-				} else if (this.source === SOURCE_LOCAL) {
-					const local = await fetchLocalCasePlan(this.caseId)
-					this.roots = groupPlanByStage(
-						normaliseLocalPlanItems(local?.items),
-					)
-				} else {
-					this.roots = []
-				}
+				this.roots = hasPlanRows(plan) ? groupPlanByStage(plan.items) : []
 			} catch (exception) {
 				this.roots = []
 				this.error = planErrorMessage(exception)
@@ -257,10 +222,9 @@ export default {
 		 * Read OpenRegister's plan, treating a 404 as "it holds none".
 		 *
 		 * A 404 is an answer: OpenRegister has no rows for this case, which is
-		 * what a BPMN case, an undrained case and a caseType without a
-		 * caseModel all look like. Every other failure is an outage and is
-		 * rethrown, because falling back to the local engine during one is how
-		 * two runtimes quietly disagree about one case.
+		 * what a BPMN case and a caseType without a caseModel both look like.
+		 * Every other failure is an outage and is rethrown, so the panel shows
+		 * an error instead of an empty plan.
 		 *
 		 * @return {Promise<object|null>} The plan, or null when there is none.
 		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
@@ -278,10 +242,10 @@ export default {
 		},
 
 		/**
-		 * Read the case record, for its `casePlanState` blob and nothing else.
+		 * Read the case record, for the caseType it names and nothing else.
 		 *
 		 * @return {Promise<object>} The case, or an empty object.
-		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-004-the-blob-retires-after-the-drain-not-before
+		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		async readCase() {
 			try {
@@ -340,11 +304,7 @@ export default {
 		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		async enable(item) {
-			await this.act(() =>
-				this.source === SOURCE_LOCAL
-					? enableLocalItem(this.caseId, item.key)
-					: enablePlanItem(item.uuid),
-			)
+			await this.act(() => enablePlanItem(item.uuid))
 		},
 
 		/**
@@ -356,15 +316,7 @@ export default {
 		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		async transition(item, target) {
-			await this.act(() => {
-				if (this.source !== SOURCE_LOCAL) {
-					return transitionPlanItem(item.uuid, target)
-				}
-
-				return target === 'completed'
-					? completeLocalTask(this.caseId, item.key)
-					: terminateLocalTask(this.caseId, item.key)
-			})
+			await this.act(() => transitionPlanItem(item.uuid, target))
 		},
 
 		/**

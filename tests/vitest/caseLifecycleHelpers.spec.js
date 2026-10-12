@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest'
 import {
 	buildTransitionPayload,
+	extensionNotice,
 	refusalMessage,
 	rowId,
 	toStages,
@@ -93,8 +94,77 @@ describe('buildTransitionPayload', () => {
 	})
 })
 
+describe('extensionNotice', () => {
+	const t = (s) => s
+
+	// REQ-TEL-002: the answer to an extension says whether the requester was told.
+	it('says the requester was told when the notice went out', () => {
+		expect(
+			extensionNotice(
+				{ notice: { noticeStatus: 'sent', noticeChannel: 'email' } },
+				t,
+			),
+		).toEqual({
+			told: true,
+			text: 'The term is extended. The requester was told.',
+		})
+	})
+
+	it('says the requester was not told, with the reason the server gave', () => {
+		expect(
+			extensionNotice(
+				{
+					notice: {
+						noticeStatus: 'not-sent',
+						noticeReasonCode: 'no-channel',
+						noticeReason: 'The requester has no reachable channel.',
+					},
+				},
+				t,
+			),
+		).toEqual({
+			told: false,
+			text: 'The term is extended. The requester was not told. The requester has no reachable channel.',
+		})
+	})
+
+	it('translates the reasons dossiq writes itself', () => {
+		const translate = (s) =>
+			s === 'This case has no statutory term, so no notice was sent.'
+				? 'Deze zaak heeft geen wettelijke termijn, dus er is geen bericht verstuurd.'
+				: s
+
+		expect(
+			extensionNotice(
+				{
+					notice: {
+						noticeStatus: 'not-sent',
+						noticeReasonCode: 'no-statutory-term',
+						noticeReason:
+							'This case has no statutory term, so no notice was sent.',
+					},
+				},
+				translate,
+			).text,
+		).toBe(
+			'The term is extended. The requester was not told. Deze zaak heeft geen wettelijke termijn, dus er is geen bericht verstuurd.',
+		)
+	})
+
+	it('answers nothing when the response carries no notice', () => {
+		expect(extensionNotice({}, t)).toBeNull()
+		expect(extensionNotice(null, t)).toBeNull()
+	})
+})
+
 describe('refusalMessage', () => {
 	const t = (s) => s
+
+	it('names the extension limit', () => {
+		expect(refusalMessage({ code: 'extension_limit_reached' }, t)).toBe(
+			'The term of this case was already extended as often as its case type allows.',
+		)
+	})
 
 	it('shows the guard message the engine reported', () => {
 		// `failureMessage` is the key GuardRegistry::evaluateAll writes. Feeding

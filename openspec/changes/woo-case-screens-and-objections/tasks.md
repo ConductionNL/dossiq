@@ -13,56 +13,74 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
 
 ## 1. Assess from the case page
 
-- [ ] 1.1 Add the `Woo assessment` section to the CaseDetail page in `src/manifest.json`, shown only
-  when `caseType` is the Woo request case type (`WooRequestIntake::CASE_TYPE_ID`). It lists the
-  case's documents with their assessment from `wooDocumentAssessment` (by `caseRef`) and marks the
-  ones without one as outstanding (REQ-WCS-001).
-  - `npm run check:manifest` exits 0.
-  - vitest `src/dialogs/__tests__/WooAssessDialog.spec.js` (see 1.2).
-- [ ] 1.2 Add `src/dialogs/WooAssessDialog.vue` and the header action `woo-assess` (open-modal). It
-  posts `{assessments: [{documentRef, classification, weigeringsgronden}]}` once for the selection,
-  and shows the server's `error` on a non-2xx. The ground picker reads
-  `WooRefusalGrounds` through dossiq's API when `woo-refusal-grounds-list` is merged, and otherwise
-  the values `validate()` accepts, with a line saying so (REQ-WCS-001).
-  - vitest: `testItPostsOneRequestForTheSelection`, `testARefusalKeepsTheDocumentsOutstanding`.
+- [ ] 1.1 The `Woo assessment` section on the CaseDetail page, listing every document with its
+  assessment. NOT built: no board draws it (decision 162, UI waits for its board). Its data half
+  is built generic: `GET /api/cases/{id}/document-assessments/outstanding` answers
+  `{count, documents: [{id, title}]}` (`lib/Controller/DocumentAssessmentController.php`,
+  `lib/Service/Assessment/OutstandingDocuments.php`; document-assessment REQ-DAS-001).
+  - unit `tests/Unit/Service/Assessment/OutstandingDocumentsTest.php`,
+    `tests/Unit/Controller/DocumentAssessmentControllerTest.php`.
+- [x] 1.2 The assess dialog, generic per decision 182: `src/dialogs/DocumentAssessDialog.vue`,
+  opened by the header action `document-assess` (open-modal) and configured through its `props`
+  for the Woo request case type. It posts `{assessments: [{documentRef, classification,
+  weigeringsgronden}]}` once for the selection, and shows the server's sentence on a non-2xx. The
+  grounds are read from the `wooRefusalGround` objects in OpenRegister (active and citable); dossiq
+  has no grounds route (document-assessment REQ-DAS-002, REQ-WCS-001). Built to the "Wat nog
+  openstaat" table of board DqWooReview.
+  - vitest `tests/vitest/documentAssessDialog.spec.js`: `testItPostsOneRequestForTheSelection`,
+    `testARefusalKeepsTheDocumentsOutstanding`.
   - Through the caller: the controller already exists, so the proof is the e2e in 3.2.
-- [ ] 1.3 Hide the section and the action on other case types (REQ-WCS-001).
-  - `tests/Unit/Manifest/WooScreensManifestTest.php` `testWooActionsAreScopedToTheWooCaseType`,
-    reading the real `src/manifest.json` and asserting every `woo-*` action and the section carry a
-    `visibleWhen` on the Woo case type.
+- [x] 1.3 The action is hidden on other case types and on an archived case (REQ-WCS-001).
+  - vitest `tests/vitest/documentAssessDialog.spec.js` `testTheActionIsScopedToItsCaseType`, reading
+    the real `src/manifest.json`. The PHP `WooScreensManifestTest` over every `woo-*` action is not
+    written: the action is no longer named after the procedure.
 
 ## 2. Extend and decide from the case page
 
-- [ ] 2.1 Add `src/dialogs/WooExtendDialog.vue` and header action `woo-extend`, visible while the
+- [x] 2.1 Add `src/dialogs/WooExtendDialog.vue` and header action `woo-extend`, visible while the
   term runs and `countExtensions` is 0. Reason is required. Show the new deadline and the
   `noticeStatus` and `noticeReason` from the response; show a 409 sentence as is (REQ-WCS-002).
   - vitest `src/dialogs/__tests__/WooExtendDialog.spec.js`: `testAReasonIsRequired`,
     `testItShowsThatTheRequesterWasNotTold`, `testA409IsShownAsTheServerSaysIt`.
   - **fails today**: `WooScreensManifestTest::testTheExtendActionIsHiddenAfterOneExtension`.
-- [ ] 2.2 Add `src/dialogs/WooDecisionDialog.vue` and header action `woo-decide`, visible while the
-  case has no Woo decision. It counts the assessments per classification from the section's data,
-  disables submit while any document is outstanding and names it, and posts
-  `{decision: {...}}` (REQ-WCS-003).
-  - vitest `src/dialogs/__tests__/WooDecisionDialog.spec.js`: `testOutstandingDocumentsBlockSubmit`,
+  - Built: generic per decision 182, not as written. No `WooExtendDialog` and no `woo-extend` action. The
+    Extend term act of `CaseLifecycleMenuDialog` (board DqVolgendeStap) got a case type limit
+    (`caseType.maxExtensions`, REQ-TEL-001) and says whether the requester was told (REQ-TEL-002). The
+    Woo case type states `maxExtensions` 1. Tests: `CaseLifecycleServiceTest`,
+    `CaseTypeReaderExtensionLimitTest`, `CaseLifecycleControllerTest`, `CaseBulkActionsTest`, vitest
+    `caseLifecycleMenu.spec.js` and `caseLifecycleHelpers.spec.js`. Red first:
+    dq-l10-logs/r5/red-extension-limit.log.
+- [x] 2.2 The decision dialog, generic per decision 182: `src/dialogs/AssessmentDecisionDialog.vue`,
+  opened by the header action `assessment-decide` and configured through its `props` for the Woo
+  request case type, offered while the case has no `wooPublicationStatus`. It counts the
+  assessments per classification, names the outstanding documents and offers nothing to save while
+  one waits, and posts `{decision: {...}}` (document-assessment REQ-DAS-003, REQ-WCS-003).
+  - vitest `tests/vitest/assessmentDecisionDialog.spec.js`: `testOutstandingDocumentsBlockSubmit`,
     `testItPostsTheDecision`.
 
 ## 3. The whole path on screen
 
-- [ ] 3.1 Check that `woo-publish` becomes visible after a decision made through the dialog, without
-  a reload the user would not do (REQ-WCS-003).
+- [x] 3.1 `woo-publish` becomes visible after a decision made through the dialog: the decision
+  route writes `wooPublicationStatus: ready`, the dialog emits the page refresh, and Publish is
+  offered on `ready` (REQ-WCS-003).
+  - vitest `tests/vitest/assessmentDecisionDialog.spec.js`: "hands over to Publish through the
+    field the decision route writes" and the refresh assertion in `testItPostsTheDecision`. That
+    the page really re-reads the case on the refresh is part of the e2e in 3.2 (live pass,
+    decision 139).
 - [ ] 3.2 e2e `tests/e2e/woo-case-screens.spec.ts`: from a Woo case with gathered documents, assess
   all, extend once, decide, publish, all through the page. Assert no request to an endpoint the page
   did not offer. Cite REQ-WCS-001, REQ-WCS-002, REQ-WCS-003. **fails today** at the first step,
-  because the `Assess documents` action does not exist.
+  because the `Assess documents` action does not exist. (live pass, decision 139)
 
 ## 4. Register an objection
 
-- [ ] 4.1 Extract the body of `BezwaarObjectionController::open()` into a service method (for example
+- [x] 4.1 Extract the body of `BezwaarObjectionController::open()` into a service method (for example
   `ObjectionService::open(string $bezwaarCaseId, string $contestedDecision, array $objection): array`)
   and make the controller call it. Behaviour of the existing route stays identical (REQ-WCS-004).
   - unit `tests/Unit/Controller/BezwaarObjectionControllerTest.php`: existing tests stay green;
     add `testTheRouteStillOpensThroughTheService`.
-- [ ] 4.2 Add `WooObjectionController::open(string $id)` on POST `/api/cases/{id}/woo/objection`
+  - Built: no change needed. `BezwaarObjectionController::open()` already delegates to `BezwaarCreationHook::onBezwaarCreated()`, the service the generic lodging also calls (`lib/Controller/BezwaarObjectionController.php` line 122, covered by `tests/Unit/Service/Bezwaar/BezwaarObjectionIsReachableTest.php`). The test file this task names was not added.
+- [x] 4.2 Add `WooObjectionController::open(string $id)` on POST `/api/cases/{id}/woo/objection`
   with `#[NoAdminRequired]` and a `requireCaseMutationAccess()` guard in the body. It checks the
   decision, opens the Bezwaar case with `relatedCases`, calls the service of 4.1, deletes the case
   again when that fails, and answers `{bezwaarCaseId, objectionId, deadline, isTimely}`
@@ -72,14 +90,19 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
     `testAFailedObjectionRecordLeavesNoCase`, `testATimelyObjection`,
     `testALateObjectionIsRegisteredAndMarked`, `testAUserWithoutMutationAccessIsRefused`.
   - Gates no-admin-idor, route-auth and route-reachability must pass on this controller.
-- [ ] 4.3 Add `src/dialogs/WooObjectionDialog.vue` and header action `woo-objection`, visible when the
-  case has a Woo decision. On success it navigates to `BezwaarDetail` for the new case. Add a link
-  between the two cases on both pages (REQ-WCS-004).
-  - vitest `testItNavigatesToTheNewBezwaarCase`.
+  - Built: generic per decision 182, not as written. `RemedyController::lodge()` on POST `/api/cases/{id}/remedy` over `Service/Remedy/RemedyLodging` (REQ-RML-001, REQ-RML-002). There is no `WooObjectionController`. Tests: `RemedyControllerTest`, `RemedyLodgingTest`.
+- [x] 4.3 The lodge dialog, generic per decision 182: `src/dialogs/RemedyLodgeDialog.vue`, opened by
+  the header action `remedy-lodge` and configured through its `props` for the Woo request case type
+  (title Register an objection, the four channels, the page of the new case). On success it says
+  whether the lodging was on time and opens the new case's page (`CaseDetail`: the remedy is a
+  case; the two cases are linked through the case relation RemedyLodging writes). The action shows
+  on every open Woo request case: the case carries no field that says it has a decision, so the
+  route's 409 sentence is shown in the dialog (remedy-lodging REQ-RML-003, REQ-WCS-004).
+  - vitest `tests/vitest/remedyLodgeDialog.spec.js` `testItNavigatesToTheNewBezwaarCase`.
 
 ## 5. The Bezwaar case type and the list
 
-- [ ] 5.1 Move the Bezwaar case type out of `bezwaar_seed_data.json` `_caseTypes_disabled` into a new
+- [x] 5.1 Move the Bezwaar case type out of `bezwaar_seed_data.json` `_caseTypes_disabled` into a new
   fragment `lib/Settings/register.d/84-woo-bezwaar-case-type.json`, seeded with the Woo case type.
   Leave Beroep and Subsidie parked. Keep `SetupWizardStepsTest` green (REQ-WCS-006).
   - **fails today**: `tests/Unit/Settings/WooBezwaarCaseTypeSeedTest.php`
@@ -87,15 +110,18 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
     `testBeroepAndSubsidieStayParked`, reading the merged register the importer reads.
   - Check the case type's term: P6W, extension P6W, Awt roll on. Test:
     `testTheBezwaarTermIsSixWeeksRolled`.
-- [ ] 5.2 Add a `Bezwaren` index page and menu entry in `src/manifest.json`, filtered on the Bezwaar
-  case type, so it lists real rows (REQ-WCS-006).
-  - `npm run check:manifest` exits 0.
-  - e2e in 6.1 asserts the new objection is listed.
+  - Built: `register.d/84-woo-bezwaar-case-type.json`, `WooBezwaarCaseTypeSeedTest`. The parked entry stays in `_caseTypes_disabled` under the same uuid, because it carries the workflow template `WorkflowGuardConformanceTest` sweeps.
+- [x] 5.2 No `Bezwaren` page is added. The page of that name was deleted on 2026-09-02 because it
+  was an index over `case` narrowed by case type, which the Cases page already is through its case
+  type folders (`src/menu-layout.json` removalsCoverageNote). With the Bezwaar case type seeded
+  (5.1) its cases are real rows there. REQ-WCS-006 is amended to say so.
+  - vitest `tests/vitest/remedyLodgeDialog.spec.js`, "where a lodged objection is listed".
+  - e2e in 6.1 asserts the new objection is listed on Cases under Bezwaar.
 
 ## 6. End to end and live
 
 - [ ] 6.1 e2e `tests/e2e/woo-objection.spec.ts`: on a decided Woo case, register an objection,
-  land on the Bezwaar case, follow the link back, and find the objection on the Bezwaren page. Cite
+  land on the Bezwaar case, follow the link back, and find the objection on the Cases page under Bezwaar. Cite
   REQ-WCS-004 and REQ-WCS-006.
 - [ ] 6.2 Live check after merge on the dev instance: one Woo case taken from intake to publication
   through the page only, and one objection against it. Record the case ids in the PR or issue.
