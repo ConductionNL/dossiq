@@ -713,12 +713,12 @@ describe('the built simple manifest', () => {
 
 describe('the case type list', () => {
 	// DqZaaktypen: Downloaden, Acties and the primary button in the header, and
-	// a Status pill beside the version. The lenses draw NO counts: the count
-	// request reads the `supersededBy: IS NULL` filter as no match and answered
-	// 0 on every lens (measured live), and a wrong count is worse than none.
+	// a Status pill beside the version, and a count on every lens (nextcloud-vue
+	// 2.81.0 counts the `supersededBy: IS NULL` filter right; before it answered
+	// 0 on every lens).
 	const list = page(builtSimple, 'CaseTypes')
 
-	it('draws the header buttons and no lens count', () => {
+	it('draws the header buttons and a count on each lens', () => {
 		expect(list.config.headerButtons.map((b) => b.action)).toEqual([
 			'export',
 			'actions-menu',
@@ -726,7 +726,7 @@ describe('the case type list', () => {
 		])
 		expect(list.config.headerButtons[2].variant).toBe('primary')
 		for (const lens of list.config.quickFilters) {
-			expect(lens.showCount, lens.label).toBeUndefined()
+			expect(lens.showCount, lens.label).toBe(true)
 		}
 	})
 

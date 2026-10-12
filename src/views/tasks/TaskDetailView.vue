@@ -793,16 +793,6 @@ export default {
 		overflow-wrap: anywhere;
 	}
 
-	// Nextcloud core styles every `dt` end-aligned with 12px padding, and the
-	// library's facts card does not reset it, so the label column drew right
-	// aligned with 45px rows. Reset here until the library's
-	// `.cn-facts-widget__label` does it itself (named as a gap in the PR).
-	&__facts-card :deep(.cn-facts-widget__label),
-	&__facts-card :deep(.cn-facts-widget__value) {
-		padding: 0;
-		text-align: start;
-	}
-
 	&__checklist-items {
 		margin: 0;
 		padding: 0;
