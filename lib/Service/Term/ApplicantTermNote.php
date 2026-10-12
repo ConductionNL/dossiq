@@ -12,7 +12,7 @@
  * last `extend` entry with the case type's own extension period.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Termijn
+ * @package  OCA\Dossiq\Service\Term
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -30,7 +30,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Termijn;
+namespace OCA\Dossiq\Service\Term;
 
 use DateInterval;
 use Throwable;

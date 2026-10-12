@@ -4,7 +4,7 @@
  * ApplicantTermNote unit tests.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\Termijn
+ * @package  OCA\Dossiq\Tests\Unit\Service\Term
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,9 +20,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
+namespace OCA\Dossiq\Tests\Unit\Service\Term;
 
-use OCA\Dossiq\Service\Termijn\ApplicantTermNote;
+use OCA\Dossiq\Service\Term\ApplicantTermNote;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The sentence and the date an applicant reads about the term, for any case type.
  *
- * @covers \OCA\Dossiq\Service\Termijn\ApplicantTermNote
+ * @covers \OCA\Dossiq\Service\Term\ApplicantTermNote
  *
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */

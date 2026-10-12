@@ -5,7 +5,7 @@
  *
  * Puts what the applicant is told about the term into every save of a case:
  * `termNote` and `legalDecisionDate`, from
- * {@see \OCA\Dossiq\Service\Termijn\ApplicantTermNote}. The portal projects
+ * {@see \OCA\Dossiq\Service\Term\ApplicantTermNote}. The portal projects
  * the case to a field list and cannot follow the term, the open request or
  * the journal, so the words live on the case.
  *
@@ -38,7 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\ApplicantTermNote;
+use OCA\Dossiq\Service\Term\ApplicantTermNote;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;

@@ -26,7 +26,7 @@ use OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar;
 use OCA\Dossiq\Listener\ApplicantTermNoteListener;
 use OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\ApplicantTermNote;
+use OCA\Dossiq\Service\Term\ApplicantTermNote;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Listener\ApplicantTermNoteListener
  * @covers \OCA\Dossiq\AppInfo\Registrar\CaseTypeListenerRegistrar
- * @uses   \OCA\Dossiq\Service\Termijn\ApplicantTermNote
+ * @uses   \OCA\Dossiq\Service\Term\ApplicantTermNote
  * @uses   \OCA\Dossiq\Listener\CaseDeadlineFollowsTermListener
  * @uses   \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
  * @uses   \OCA\Dossiq\Service\Termijn\TermInstanceStore
