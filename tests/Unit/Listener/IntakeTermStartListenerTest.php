@@ -67,6 +67,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\Portal\CitizenManifest
  * @uses   \OCA\Dossiq\Portal\PortalConversation
+ * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  *
  * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md

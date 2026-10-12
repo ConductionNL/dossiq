@@ -25,7 +25,9 @@ use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectActivatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -134,4 +136,42 @@ class ReceiptMomentTest extends TestCase {
 		$this->assertNull($receipt->receivedObject(event: $event));
 		$this->assertNull($receipt->activatedAt(event: $event));
 	}//end testAnUpdateIsNoReceipt()
+
+	/**
+	 * The save that receives an object: a create that is no draft, or the update that sends one.
+	 *
+	 * @return void
+	 */
+	public function testTheReceivingSaveIsACreateThatIsNoDraftOrTheSendOfADraft(): void {
+		$receipt = new ReceiptMoment();
+		$active = $this->entity(status: 'active');
+		$draft = $this->entity(status: 'draft');
+
+		$this->assertSame($active, $receipt->objectBeingReceived(event: new ObjectCreatingEvent($active)));
+		$this->assertNull($receipt->objectBeingReceived(event: new ObjectCreatingEvent($draft)), 'A draft is not received when it is saved.');
+
+		$sent = new ObjectUpdatingEvent($active, $draft);
+		$this->assertSame($active, $receipt->objectBeingReceived(event: $sent), 'Sending the draft is its receipt.');
+		$this->assertTrue($receipt->sendsDraft(event: $sent));
+
+		$this->assertFalse($receipt->sendsDraft(event: new ObjectCreatingEvent($active)), 'A create sends no draft.');
+	}//end testTheReceivingSaveIsACreateThatIsNoDraftOrTheSendOfADraft()
+
+	/**
+	 * Every other save receives nothing: an ordinary update, a draft kept a draft, a post-persist event.
+	 *
+	 * @return void
+	 */
+	public function testAnyOtherSaveReceivesNothing(): void {
+		$receipt = new ReceiptMoment();
+		$active = $this->entity(status: 'active');
+		$draft = $this->entity(status: 'draft');
+
+		foreach ([new ObjectUpdatingEvent($active, $active), new ObjectUpdatingEvent($draft, $draft), new ObjectUpdatingEvent($active, null)] as $event) {
+			$this->assertNull($receipt->objectBeingReceived(event: $event));
+			$this->assertFalse($receipt->sendsDraft(event: $event));
+		}
+
+		$this->assertNull($receipt->objectBeingReceived(event: new ObjectCreatedEvent($active)), 'Already stored: nothing is being received any more.');
+	}//end testAnyOtherSaveReceivesNothing()
 }//end class

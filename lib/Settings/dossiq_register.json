@@ -4139,7 +4139,7 @@
                     "externalReference": {
                         "type": "string",
                         "title": "Earlier reference",
-                        "description": "The reference this request had before it became a case, such as the id of a portal filing that was drained into it. A resident's old link or receipt still finds the case through it (decision 181, Q10). Written by the drain, never typed.",
+                        "description": "The reference this request had before it became a case. An old link or receipt still finds the case through it.",
                         "visible": false,
                         "facetable": false
                     },
@@ -4148,7 +4148,7 @@
                         "format": "uuid",
                         "$ref": "case",
                         "title": "Contested case",
-                        "description": "The case this request is against, when the request contests or complains about another case (an objection, a complaint about how a case was handled). A cross-reference, not a hierarchy: it grants nothing and inherits nothing.",
+                        "description": "The case this request is against, for an objection or a complaint about how a case was handled. It gives no rights on that case.",
                         "visible": false
                     },
                     "contestedDecision": {
@@ -4163,7 +4163,7 @@
                             "type": "string"
                         },
                         "title": "Attachments",
-                        "description": "OpenRegister document ids the requester sent with the request.",
+                        "description": "The documents the requester sent with the request.",
                         "visible": false
                     },
                     "district": {

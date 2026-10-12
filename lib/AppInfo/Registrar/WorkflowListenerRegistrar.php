@@ -36,7 +36,6 @@ use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
-use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -64,6 +63,18 @@ class WorkflowListenerRegistrar {
 		'OCA\Decidiq\Event\DecisionConcludedEvent',
 		'OCA\Decidesk\Event\DecisionConcludedEvent',
 	];
+
+	/**
+	 * The event OpenRegister sends when a draft is sent (it leaves status `draft`).
+	 *
+	 * By name, so an OpenRegister without the draft lifecycle never sends it
+	 * and this app does not need its class. The same name as
+	 * {@see \OCA\Dossiq\Service\Intake\ReceiptMoment::ACTIVATED_EVENT};
+	 * ReceiptDatesRegistrationTest holds the two together.
+	 *
+	 * @var string
+	 */
+	private const DRAFT_SENT_EVENT = 'OCA\OpenRegister\Event\ObjectActivatedEvent';
 
 	/**
 	 * Register the termijn and decision listeners.
@@ -128,10 +139,9 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
 		);
-		// A draft binds no term; sending it does (decision 180). By name, so
-		// an OpenRegister without the draft lifecycle never sends it.
+		// A draft binds no term; sending it does (decision 180).
 		$context->registerEventListener(
-			event: ReceiptMoment::ACTIVATED_EVENT,
+			event: self::DRAFT_SENT_EVENT,
 			listener: DeadlineCaseCreatedListener::class
 		);
 
@@ -188,7 +198,7 @@ class WorkflowListenerRegistrar {
 		);
 		// A draft owes nobody a confirmation; the moment it is sent does.
 		$context->registerEventListener(
-			event: ReceiptMoment::ACTIVATED_EVENT,
+			event: self::DRAFT_SENT_EVENT,
 			listener: AcknowledgementOnCreateListener::class
 		);
 	}//end registerTermijnListeners()

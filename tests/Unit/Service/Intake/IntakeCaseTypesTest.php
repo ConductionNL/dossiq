@@ -30,6 +30,7 @@ use Psr\Log\LoggerInterface;
  * A setting names a case type by identifier or uuid; the case stores the uuid.
  *
  * @covers \OCA\Dossiq\Service\Intake\IntakeCaseTypes
+ * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  *
  * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
  */

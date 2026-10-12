@@ -84,22 +84,19 @@ class CaseReceiptDates {
 	 * appended to the case's own `properties`, the one place a case type's
 	 * answers live (friendly-case-create-form REQ-FCF-003).
 	 *
-	 * @param array<string, mixed> $case             The case, as just created.
-	 * @param string               $termStartsAt     The moment the case's term starts, or '' when no calendar answered.
-	 * @param bool                 $replaceStartDate Write `startDate` over the one the case carries. For a draft
-	 *                                               that is being sent: its start date is the day it was begun,
-	 *                                               filled in by the schema's own calculation, not a date anyone gave.
+	 * @param array<string, mixed> $case         The case, as just created.
+	 * @param string               $termStartsAt The moment the case's term starts, or '' when no calendar answered.
 	 *
 	 * @return array<string, mixed> The fields to write.
 	 *
 	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
-	public function changesFor(array $case, string $termStartsAt = '', bool $replaceStartDate = false): array {
+	public function changesFor(array $case, string $termStartsAt = ''): array {
 		$day = $this->receiptDayOf(case: $case);
 		$changes = [];
 
-		if ($replaceStartDate === true || trim((string)($case[self::START_DATE] ?? '')) === '') {
+		if (trim((string)($case[self::START_DATE] ?? '')) === '') {
 			$changes[self::START_DATE] = $this->startDayOf(receiptDay: $day, termStartsAt: $termStartsAt);
 		}
 
@@ -122,6 +119,24 @@ class CaseReceiptDates {
 
 		return $changes;
 	}//end changesFor()
+
+	/**
+	 * The start date dossiq gives a case, whatever start date it carries.
+	 *
+	 * For the save that sends a draft. The start date a draft carries is the
+	 * day it was begun, filled in by the schema's own calculation, not a date
+	 * anyone gave; the case starts from the moment it was sent.
+	 *
+	 * @param array<string, mixed> $case         The case, naming its receipt.
+	 * @param string               $termStartsAt The moment the case's term starts, or '' when no calendar answered.
+	 *
+	 * @return string The start day, `Y-m-d`.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function startDateFor(array $case, string $termStartsAt): string {
+		return $this->startDayOf(receiptDay: $this->receiptDayOf(case: $case), termStartsAt: $termStartsAt);
+	}//end startDateFor()
 
 	/**
 	 * The day a case starts on: the receipt day, or the later day its term starts.

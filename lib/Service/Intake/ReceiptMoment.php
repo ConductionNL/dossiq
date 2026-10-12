@@ -42,7 +42,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 
 /**
@@ -114,6 +117,53 @@ class ReceiptMoment {
 
 		return ($this->isDraft(object: $before) === true && $this->isDraft(object: $after) === false);
 	}//end leavesDraft()
+
+	/**
+	 * The object a save is about to store, when that save is its receipt.
+	 *
+	 * The create of an object that is not a draft, or the update that sends a
+	 * draft. A listener that sets fields in the receiving save works on this
+	 * entity; any other save answers null and is left alone.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return ObjectEntity|null The object being stored, or null when this save receives nothing.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function objectBeingReceived(Event $event): ?ObjectEntity {
+		if ($event instanceof ObjectCreatingEvent && $this->isDraft(object: $event->getObject()) === false) {
+			return $event->getObject();
+		}
+
+		if ($this->sendsDraft(event: $event) === true) {
+			return $event->getNewObject();
+		}
+
+		return null;
+	}//end objectBeingReceived()
+
+	/**
+	 * Whether a save sends a draft: an update that moves the object out of `draft`.
+	 *
+	 * The draft was begun earlier and arrives now. Its creation moment is
+	 * when the resident started typing, not when they pressed send.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return bool True for the update that sends a draft.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 *
+	 * @psalm-assert-if-true ObjectUpdatingEvent $event
+	 */
+	public function sendsDraft(Event $event): bool {
+		if (($event instanceof ObjectUpdatingEvent) === false) {
+			return false;
+		}
+
+		return $this->leavesDraft(before: $event->getOldObject(), after: $event->getNewObject());
+	}//end sendsDraft()
 
 	/**
 	 * The received object, when this event is a receipt.

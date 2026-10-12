@@ -44,7 +44,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use DateTimeInterface;
 use OCA\Dossiq\Service\Intake\CaseReceiptDates;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
@@ -52,9 +51,6 @@ use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -146,30 +142,20 @@ class IntakeTermStartListener implements IEventListener {
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent) {
-			if ($this->receipt->isDraft(object: $event->getObject()) === false) {
-				$this->setBeforeStore(entity: $event->getObject(), sentAt: null);
+		$entity = $this->receipt->objectBeingReceived(event: $event);
+		if ($entity !== null) {
+			$sentAt = '';
+			if ($this->receipt->sendsDraft(event: $event) === true) {
+				$sentAt = $this->time->now()->format('c');
 			}
 
+			$this->setBeforeStore(entity: $entity, sentAt: $sentAt);
 			return;
 		}
 
-		if ($event instanceof ObjectUpdatingEvent) {
-			if ($this->receipt->leavesDraft(before: $event->getOldObject(), after: $event->getNewObject()) === true) {
-				// The draft was begun earlier; it arrives now. Its creation
-				// moment is when the resident started typing, not when they
-				// pressed send.
-				$this->setBeforeStore(entity: $event->getNewObject(), sentAt: $this->time->now());
-			}
-
-			return;
-		}
-
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		// A draft's own create is not a receipt, on the fallback path either.
+		// The created event, for a path that stored the case without the
+		// creating event. A draft's own create is not a receipt there either,
+		// and any other event answers null.
 		$payload = $this->receipt->receivedObject(event: $event);
 		if ($payload === null) {
 			return;
@@ -180,7 +166,7 @@ class IntakeTermStartListener implements IEventListener {
 			return;
 		}
 
-		$changes = $this->changesFor(case: $payload, sent: false);
+		$changes = $this->changesFor(case: $payload, sentAt: '');
 		if ($changes === []) {
 			return;
 		}
@@ -191,20 +177,15 @@ class IntakeTermStartListener implements IEventListener {
 	/**
 	 * Set the stamp and the dates on a case that is about to be stored.
 	 *
-	 * A draft that is sent names its own receipt: the moment it was sent, read
-	 * first by {@see IntakeTermStart::arrivalOf()} as the case's `receivedAt`.
-	 * A draft that already carries a `receivedAt` (an integration supplied
-	 * one) keeps it.
-	 *
-	 * @param ObjectEntity           $entity The case being saved.
-	 * @param DateTimeInterface|null $sentAt The moment a draft was sent; null on a create.
+	 * @param ObjectEntity $entity The case being saved.
+	 * @param string       $sentAt The moment a draft was sent, ISO 8601; '' on a create.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
-	private function setBeforeStore(ObjectEntity $entity, ?DateTimeInterface $sentAt): void {
+	private function setBeforeStore(ObjectEntity $entity, string $sentAt): void {
 		try {
 			$payload = $entity->jsonSerialize();
 		} catch (Throwable $e) {
@@ -215,11 +196,7 @@ class IntakeTermStartListener implements IEventListener {
 			return;
 		}
 
-		if ($sentAt !== null && trim((string)($payload[IntakeTermStart::RECEIVED_AT] ?? '')) === '') {
-			$payload[IntakeTermStart::RECEIVED_AT] = $sentAt->format('c');
-		}
-
-		$changes = $this->changesFor(case: $payload, sent: ($sentAt !== null));
+		$changes = $this->changesFor(case: $payload, sentAt: $sentAt);
 		if ($changes === []) {
 			return;
 		}
@@ -237,15 +214,24 @@ class IntakeTermStartListener implements IEventListener {
 	 * either way. Each is written only when the case does not carry it, so an
 	 * import keeps its own and a replay writes nothing.
 	 *
-	 * @param array<string, mixed> $case The case.
-	 * @param bool                 $sent True when this save sends a draft: its start date is the day it
-	 *                                   was begun, and it is counted again from the moment it was sent.
+	 * A DRAFT THAT IS SENT names its own receipt: the moment it was sent, read
+	 * first by {@see IntakeTermStart::arrivalOf()} as the case's `receivedAt`
+	 * unless the draft already carries one. Its start date is written again:
+	 * the one it carries is the day it was begun, filled in by the schema's
+	 * own calculation, not a date anyone gave.
+	 *
+	 * @param array<string, mixed> $case   The case.
+	 * @param string               $sentAt The moment a draft was sent, ISO 8601; '' for a create.
 	 *
 	 * @return array<string, mixed> The fields to set.
 	 */
-	private function changesFor(array $case, bool $sent): array {
+	private function changesFor(array $case, string $sentAt): array {
 		if ($this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
 			return [];
+		}
+
+		if ($sentAt !== '' && trim((string)($case[IntakeTermStart::RECEIVED_AT] ?? '')) === '') {
+			$case[IntakeTermStart::RECEIVED_AT] = $sentAt;
 		}
 
 		$changes = [];
@@ -257,10 +243,12 @@ class IntakeTermStartListener implements IEventListener {
 		// the one it already carries (decision 181, Q11).
 		$termStartsAt = trim((string)($changes[IntakeTermStart::TERM_STARTS_AT] ?? ($case[IntakeTermStart::TERM_STARTS_AT] ?? '')));
 
-		return array_merge(
-			$changes,
-			$this->receiptDates->changesFor(case: $case, termStartsAt: $termStartsAt, replaceStartDate: $sent),
-		);
+		$changes = array_merge($changes, $this->receiptDates->changesFor(case: $case, termStartsAt: $termStartsAt));
+		if ($sentAt !== '') {
+			$changes[CaseReceiptDates::START_DATE] = $this->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
+		}
+
+		return $changes;
 	}//end changesFor()
 
 	/**
