@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * Arming on the milestone's deadline, stalled cases, cases waiting on nothing.
  *
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Termijn\DayCount
  */
 class MilestoneStallTimerTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -8,16 +8,6 @@
       "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
     },
     {
-      "file": "lib/Service/Advice/AdviceTimer.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
-    },
-    {
-      "file": "lib/Service/Beschikking/BezwaarArchiveTimer.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
-    },
-    {
       "file": "lib/Service/CaseTermsService.php",
       "change": "termijnbewaking-op-engine-timers",
       "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
@@ -48,11 +38,6 @@
       "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
     },
     {
-      "file": "lib/Service/Dso/DsoDeadlineTimer.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
-    },
-    {
       "file": "lib/Service/Import/CaseRecordImport.php",
       "change": "termijnbewaking-op-engine-timers",
       "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
@@ -66,11 +51,6 @@
       "file": "lib/Service/Lifecycle/SilenceCloseService.php",
       "change": "termijnbewaking-op-engine-timers",
       "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
-    },
-    {
-      "file": "lib/Service/Milestone/MilestoneStallTimer.php",
-      "change": "termijnbewaking-op-engine-timers",
-      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
     },
     {
       "file": "lib/Service/OpenWorkloadAgeService.php",

@@ -199,6 +199,11 @@
       its part: timer arm mappings (4), term calculations (7), reporting and age (11), and
       `WOODeadlineService`, whose countdown has no caller since 2.1 and goes with the refactor
       programme. This task closes when the list holds only that last entry or none.
+      Part 2 of 4 (12 Oct, lane L7): the four timer arm mappings ask `DayCount` for the days from
+      their anchor to their end (`Advice/AdviceTimer`, `Beschikking/BezwaarArchiveTimer`,
+      `Dso/DsoDeadlineTimer`, `Milestone/MilestoneStallTimer`). Their own tests already pinned the
+      armed SLA to the day; each was mutation-checked on the old code first (a count one day off
+      turns them red). The list is at 19.
 
 ## Verify
 
