@@ -160,6 +160,7 @@
         "A kind of work that is planned on a case, and what follows it": "A kind of work that is planned on a case, and what follows it",
         "A legal hold is on this case.": "A legal hold is on this case.",
         "A live conversation runs in Nextcloud Talk. Install Talk to start one from this case.": "A live conversation runs in Nextcloud Talk. Install Talk to start one from this case.",
+        "A mail counts once for an address and once for a domain, also when it names them more than once.": "A mail counts once for an address and once for a domain, also when it names them more than once.",
         "A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.": "A mail whose subject carries no case number, or one that no longer exists, becomes a case of this type. Leave it empty and the mail stays unread in the mailbox, which is what happens today.",
         "A matching document is": "A matching document is",
         "A mention leaves once you have opened what you were mentioned in.": "A mention leaves once you have opened what you were mentioned in.",
@@ -1448,6 +1449,7 @@
         "Collaboration": "Collaboration",
         "Collaboration request": "Collaboration request",
         "Collaboration requests": "Collaboration requests",
+        "Collected mail by sender, recipient and domain": "Collected mail by sender, recipient and domain",
         "College van B&W": "College van B&W",
         "Collegeadvies": "Collegeadvies",
         "Colour": "Colour",
@@ -4075,6 +4077,7 @@
         "Mail that names a case number, like 2026-0042, is added to that case.": "Mail that names a case number, like 2026-0042, is added to that case.",
         "Mailbox folder": "Mailbox folder",
         "Mailbox settings saved.": "Mailbox settings saved.",
+        "Mails collected: {mails}. Headers that could not be read: {unreadable}.": "Mails collected: {mails}. Headers that could not be read: {unreadable}.",
         "Major": "Major",
         "Major channel": "Major channel",
         "Major declared at": "Major declared at",
@@ -4665,6 +4668,7 @@
         "No location set": "No location set",
         "No locations linked to this case yet": "No locations linked to this case yet",
         "No longer want updates about this case?": "No longer want updates about this case?",
+        "No mail collected on this case": "No mail collected on this case",
         "No mandate decisions": "No mandate decisions",
         "No MandateringsBesluit entries yet. Create one or import an export.": "No MandateringsBesluit entries yet. Create one or import an export.",
         "No map layers configured. Add a layer or use a PDOK preset.": "No map layers configured. Add a layer or use a PDOK preset.",
@@ -10055,10 +10059,6 @@
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years",
-        "Collected mail by sender, recipient and domain": "Collected mail by sender, recipient and domain",
-        "No mail collected on this case": "No mail collected on this case",
-        "Mails collected: {mails}. Headers that could not be read: {unreadable}.": "Mails collected: {mails}. Headers that could not be read: {unreadable}.",
-        "A mail counts once for an address and once for a domain, also when it names them more than once.": "A mail counts once for an address and once for a domain, also when it names them more than once."
+        "{years} years": "{years} years"
     }
 }
