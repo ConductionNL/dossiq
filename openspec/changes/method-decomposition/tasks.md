@@ -421,3 +421,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         overdue. Behaviour kept, not changed here.
         Own tests: `tests/Unit/Service/Queue/UrgencyScorerTest` (5) and `QueueCaseFactsTest` (6).
         The date-arithmetic audit row moved with the arithmetic to `UrgencyScorer`.
+  - [x] 8d `BrcController` (1: ExcessiveClassComplexity 86 against 50). It keeps the token and
+        scope gates, the pass-through to the shared ZGW service, the 405 on a
+        besluitinformatieobject and the besluit's own create and delete (complexity 41).
+        `Zgw/BrcCrossRegisterSync` holds what the Besluiten API keeps in step elsewhere: the
+        zaakbesluit in the Zaken register (brc-006) and the objectinformatieobject in the
+        Documenten register (brc-005, brc-009; 26). `Zgw/BrcDocumentLinkHandler` holds the three
+        besluitinformatieobject routes (21). The controller builds both, so its constructor, the
+        routes and the container are unchanged.
+        Characterisation, green on the single class first: the controller had no behaviour test
+        at all, so `tests/Unit/Controller/BrcControllerTest.php` is new: 21 tests over every
+        route, each write and delete asserted with its register, schema and payload, each log
+        line with its text. Unchanged and green after the split. Removing either sync call from
+        the controller turns two tests red (checked).
+        Own tests: `tests/Unit/Service/Zgw/BrcCrossRegisterSyncTest` (5) and
+        `BrcDocumentLinkHandlerTest` (6), over a shared recording store.
+        The decision-writer allowlist entry moved with the zaakbesluit write to
+        `BrcCrossRegisterSync`; the two StaticAccess suppressions moved with their methods.
