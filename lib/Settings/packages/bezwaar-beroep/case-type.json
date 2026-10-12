@@ -123,7 +123,8 @@
       "description": "Bezwaarschrift is ontvangen",
       "order": 1,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "intake"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a02",
@@ -139,7 +140,8 @@
       "description": "Inhoudelijke behandeling gestart",
       "order": 3,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "in-progress"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a04",
@@ -179,7 +181,8 @@
       "description": "Bezwaarprocedure is volledig afgerond",
       "order": 8,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+      "role": "closed"
     },
     {
       "id": "b3c1a000-0000-4000-a000-0000000b2a09",
@@ -203,7 +206,8 @@
       "description": "Beroepschrift ontvangen van rechtbank",
       "order": 1,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "role": "intake"
     },
     {
       "id": "650ef378-4aa7-53c5-8993-739c79903ca6",
@@ -211,7 +215,8 @@
       "description": "Gemeente bereidt verweer voor",
       "order": 2,
       "isFinal": false,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "role": "in-progress"
     },
     {
       "id": "faf41ada-73c9-5ae6-b0ad-f264696660ec",
@@ -251,7 +256,8 @@
       "description": "Beroepsprocedure is afgerond",
       "order": 7,
       "isFinal": true,
-      "caseType": "b3c1a000-0000-4000-a000-00000000be30"
+      "caseType": "b3c1a000-0000-4000-a000-00000000be30",
+      "role": "closed"
     },
     {
       "id": "ea2d92e4-b86f-5bd7-846a-071267dd0b7d",
