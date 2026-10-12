@@ -1749,21 +1749,21 @@
       "reason": "`fetchExternalUrl()` answers `return null` when the read fails; the catch logs at warning (\"Failed to fetch external URL\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findAllObjectsByField",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findAllObjectsByField()` answers `return []` when the read fails; the catch logs at warning (\"Reference resolution failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findBySchemaKey",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findBySchemaKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findObjectByField",
       "occurrence": 1,
       "class": "read-miss",

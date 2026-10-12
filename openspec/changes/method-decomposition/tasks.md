@@ -438,3 +438,21 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `BrcDocumentLinkHandlerTest` (6), over a shared recording store.
         The decision-writer allowlist entry moved with the zaakbesluit write to
         `BrcCrossRegisterSync`; the two StaticAccess suppressions moved with their methods.
+  - [x] 8e `ZgwRulesBase` (1: ExcessiveClassComplexity 66 against 50; TASK-DECOMP-041/042). The
+        base keeps the context, the URL checks and thin wrappers (complexity 40). What it reads
+        from the store is `Zgw/ZgwRuleLookups` (one object by field, all by field, one by uuid
+        and schema key, and whether a pair of values is taken; 33). The shapes a rule answers
+        with are `Zgw/ZgwRuleResults` (valid, refused, the field of a refusal; 5). Neither
+        extends the base: it has 13 children and PHPMD allows 14, which is why two earlier
+        drafts of the DRC and ZTC slices, whose rule groups each extended it, were red on
+        NumberOfChildren in the full run and are not in this stack. A rules class can hand its
+        lookups object to a collaborator it builds, and that collaborator reads in the request's
+        context without a `setContext()` of its own.
+        Characterisation: no new tests were needed. The 351 tests of the fifteen suites that
+        cover the base (the four rules services, the rule groups and `ZgwRulesBaseUniquenessTest`)
+        were green before and are green, unchanged but for two `@uses` lines each, after.
+        Removing the context forward to the lookups turns them red (checked).
+        Own tests: `tests/Unit/Service/Zgw/ZgwRuleLookupsTest` (6) and `ZgwRuleResultsTest` (3).
+        TASK-DECOMP-041 named `FieldValidator` and `ZgwReferenceResolver` as the targets; the
+        field checks already live in `FieldValidator` (TASK-DECOMP-036), and the lookups took the
+        name of what they do.
