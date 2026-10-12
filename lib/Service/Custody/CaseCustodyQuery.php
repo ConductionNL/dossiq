@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Who held this case on a date, and which cases a unit held in a period.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyQuery {
 
@@ -58,7 +58,7 @@ class CaseCustodyQuery {
 	 * @param SettingsService  $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface  $logger          Records a read that could not be answered.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseCustodyChain $chain,
@@ -80,7 +80,7 @@ class CaseCustodyQuery {
 	 *
 	 * @return array<string, mixed>|null The holding.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function holderOn(string $caseId, string $asOf): ?array {
 		$moment = $this->instant(value: $asOf);
@@ -119,7 +119,7 @@ class CaseCustodyQuery {
 	 *
 	 * @return array<int, array<string, mixed>> The holdings, oldest first.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function heldBy(string $organisationUnit, string $from, string $to): array {
 		$organisationUnit = trim($organisationUnit);
@@ -175,7 +175,7 @@ class CaseCustodyQuery {
 	 *
 	 * @return bool True when the holding falls inside the window.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	private function overlaps(array $holding, DateTimeImmutable $windowStart, DateTimeImmutable $windowEnd): bool {
 		$holdingStart = $this->instant(value: (string)($holding['from'] ?? ''));

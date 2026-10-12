@@ -25,7 +25,7 @@ questions, and SHALL have no definition while it is listed.
 - **GIVEN** the shipped seeds
 - **THEN** `klacht-behandeling` SHALL carry a statutory term of 42 calendar days with one extension of at most 28 days, citing Awb art. 9:11
 - **AND** `evenementenvergunning-2024` and `evenementenvergunning` SHALL carry a statutory term of 56 calendar days with one extension of at most 56 days, citing model-APV art. 1:2 and Awb art. 4:13
-- **AND** `zaaktype-cultuur-subsidie-2026` SHALL carry a statutory term of 56 calendar days citing Awb art. 4:13
+- **AND** `zaaktype-cultuur-subsidie-2026`, `subsidieaanvraag` and `zaaktype-innovatiefonds-2026` SHALL each carry a statutory term of 56 calendar days citing Awb art. 4:13 and art. 4:14 lid 3, with no fixed extension, and each case type SHALL declare that same deadline
 - **AND** `melding-openbare-ruimte`, `building-permit`, `grant-application`, `citizen-complaint` and `foi-request` SHALL carry a `planned` service norm equal to their processing deadline and no statutory term
 
 ### Requirement: A term definition cites its sources (REQ-TERM-SCHEMA-005)

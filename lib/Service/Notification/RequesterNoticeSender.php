@@ -356,6 +356,7 @@ class RequesterNoticeSender {
 				subject: $notice['subject'],
 				body: $notice['body'],
 				dedupeKey: $notice['dedupeKey'],
+				case: $case,
 			);
 		} catch (NoticeNotSentException $e) {
 			return $this->refused(code: $e->getReasonCode(), reason: $e->getMessage());

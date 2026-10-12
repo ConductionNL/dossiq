@@ -5,22 +5,22 @@
  * A note written on a case that lives in a neighbouring register, and whether
  * anyone is told what became of it.
  *
- * Before this change nothing pushed a note at all: `ZgwExternalAdapterInterface`
- * declares exactly two pushes, `submitZaak` and `submitDocument`, no caller
- * pushed a note, and no schema on either side carried one. The hole was never
+ * Before this change nothing pushed a note at all: no caller pushed a note,
+ * and no schema on either side carried one. The hole was never
  * a missing connector, because ZGW has no note resource: it was that nothing
  * had decided what a note IS on the wire.
  *
  * WHAT IS DRIVEN HERE is the state every instance in this fleet is in. The
- * adapter an unbound instance has is `LogZgwExternalAdapter`, which is dormant
- * and contacts nothing, so the push answers `no-register` and records
- * NOTHING. That is the assertion: a dormant adapter writing a marker that
+ * note travels through integriq's delivery seam (`case-note` on the
+ * `zgw-documenten` channel), and an unbound instance has no integriq or no
+ * subscription for it, so the push answers `no-register` and records
+ * NOTHING. That is the assertion: an unbound instance writing a marker that
  * reads as a success is the failure this change exists to prevent, and an
  * instance with a real connector is not something a test can conjure.
  *
  * The envelope, the internal guard and the failure path are `@e2e exclude`d in
  * the spec and covered by NoteEnvelopeTest and NotePushTest, which drive an
- * adapter that answers.
+ * integriq that answers.
  *
  * ⚠️ NOT RUN LOCALLY. There is no Playwright run on this box and no instance
  * to run against, so this is written and tagged, not executed.

@@ -86,6 +86,26 @@ class StateMachineService {
 		'legalRemediesClause',
 		'feeAmount',
 		'templateId',
+		// The number and the backward pointer are what a bezwaar cites: a
+		// signed beschikking that could be renumbered, or re-pointed at a
+		// different predecessor, is not the one that was served (REQ-BES-012).
+		'reference',
+		'supersedes',
+	];
+
+	/**
+	 * Fields written once, after signing, and never again.
+	 *
+	 * `supersededBy` is the forward pointer a correction writes on the
+	 * beschikking it replaces: the ONLY field the freeze lets a successor
+	 * write (REQ-BES-012). Empty to a value is allowed at every status; a
+	 * value to anything else is refused, so a replaced beschikking can never
+	 * be replaced a second time and the chain stays linear.
+	 *
+	 * @var array<int, string>
+	 */
+	public const WRITE_ONCE_FIELDS = [
+		'supersededBy',
 	];
 
 	/**
@@ -219,11 +239,20 @@ class StateMachineService {
 	 *
 	 * @return void
 	 *
-	 * @throws RuntimeException 'immutable' when the stored status is frozen and a content field is touched.
+	 * @throws RuntimeException 'immutable' when the stored status is frozen and a content field is touched,
+	 *                          or a write-once field already holds a different value.
 	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function assertMutable(array $stored, array $changed): void {
+		foreach (self::WRITE_ONCE_FIELDS as $field) {
+			$was = (string)($stored[$field] ?? '');
+			if ($was !== '' && array_key_exists($field, $changed) === true && (string)$changed[$field] !== $was) {
+				throw new RuntimeException(self::IMMUTABLE_ERROR);
+			}
+		}
+
 		if ($this->isImmutable(status: (string)($stored['currentStatus'] ?? '')) === false) {
 			return;
 		}

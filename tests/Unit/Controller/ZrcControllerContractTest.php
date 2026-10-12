@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Zgw\ZrcStatusEffects;
 use OCA\Dossiq\Controller\ZrcController;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseRelationService;
@@ -123,9 +124,8 @@ class ZrcControllerContractTest extends TestCase {
 			request: $this->request,
 			zgwService: $this->zgwService,
 			l10n: $this->l10n,
-			dates: $this->caseDates(),
 			caseRelationService: $this->caseRelationService,
-			archivalDeriver: $this->createMock(ArchivalNominationDeriver::class),
+			statusEffects: $this->createMock(ZrcStatusEffects::class),
 			joinHoming: $this->createMock(originalClassName: DocumentJoinHoming::class),
 		);
 	}//end setUp()

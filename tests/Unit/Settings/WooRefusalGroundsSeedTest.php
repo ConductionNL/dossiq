@@ -102,14 +102,15 @@ class WooRefusalGroundsSeedTest extends TestCase {
 	}//end testEveryNarrowerGroundNamesAnExistingParent()
 
 	/**
-	 * Writes are for admins and the beheerders group, reads for every account.
+	 * Writes are for admins and the beheerders group, reads for the dossiq
+	 * staff group (case-access-by-handling-team closed the register).
 	 *
 	 * @return void
 	 */
 	public function testAHandlerCannotWriteAGround(): void {
 		$authorization = (new RealSchemaValidator())->schemas['wooRefusalGround']['authorization'];
 
-		$this->assertSame(['authenticated'], $authorization['read']);
+		$this->assertSame(['dossiq-medewerkers'], $authorization['read']);
 		foreach (['create', 'update', 'delete'] as $action) {
 			$this->assertSame(['admin', 'beheerders'], $authorization[$action], $action);
 			$this->assertNotContains('behandelaars', $authorization[$action], $action);

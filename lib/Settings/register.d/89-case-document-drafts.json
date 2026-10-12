@@ -1,0 +1,86 @@
+{
+  "_note": "case-document-drafts (decision 182: procedures are configuration, code is generic). A case type names, per purpose, the filinq template a document is drafted from and the data it renders. CaseDocumentDrafts asks filinq through its published DocumentGenerationRequestedEvent and files the draft on the case; CaseDraftData builds the data from this declaration. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "documentDrafts": {
+            "type": "object",
+            "title": "Document drafts",
+            "description": "The documents a case of this type can be drafted from a template, by purpose (for example decision): the filinq template, the format, the document type the draft is filed under, and the data it renders.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "templateSlug": {
+                  "type": "string",
+                  "title": "Template",
+                  "description": "The filinq template the document is drafted from, by slug.",
+                  "maxLength": 255
+                },
+                "templateNamespace": {
+                  "type": "string",
+                  "title": "Template namespace",
+                  "description": "The filinq namespace the template slug belongs to.",
+                  "default": "dossiq",
+                  "maxLength": 255
+                },
+                "format": {
+                  "type": "string",
+                  "title": "Format",
+                  "description": "The file format filinq produces.",
+                  "enum": ["pdf", "docx", "odt"],
+                  "default": "pdf"
+                },
+                "documentType": {
+                  "type": "string",
+                  "title": "Document type",
+                  "description": "The document type the draft is filed under on the case.",
+                  "maxLength": 255
+                },
+                "title": {
+                  "type": "string",
+                  "title": "Title",
+                  "description": "The draft's file name.",
+                  "maxLength": 255
+                },
+                "dataKey": {
+                  "type": "string",
+                  "title": "Data key",
+                  "description": "When set, the built data sits under this key beside the case; otherwise beside the case directly.",
+                  "maxLength": 64
+                },
+                "fields": {
+                  "type": "array",
+                  "title": "Fields",
+                  "description": "Values read off the case by dot path, or fixed, each optionally mapped through a list of allowed values.",
+                  "items": {
+                    "type": "object"
+                  },
+                  "default": []
+                },
+                "lists": {
+                  "type": "array",
+                  "title": "Lists",
+                  "description": "Records related to the case, gathered into numbered rows with their own fields.",
+                  "items": {
+                    "type": "object"
+                  },
+                  "default": []
+                },
+                "summaries": {
+                  "type": "array",
+                  "title": "Summaries",
+                  "description": "One field of a list reduced to one answer: the shared value when every row agrees, otherwise the mixed answer.",
+                  "items": {
+                    "type": "object"
+                  },
+                  "default": []
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

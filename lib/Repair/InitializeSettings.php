@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\Access\CaseTeamAccessProjector;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -43,6 +44,7 @@ class InitializeSettings implements IRepairStep {
 	 *
 	 * @param SettingsService         $settingsService The settings service
 	 * @param CaseFieldRoleProjector  $fieldRoles     Puts the per-role field rules back after an import
+	 * @param CaseTeamAccessProjector $teamAccess     Puts the handling team rules back after an import
 	 * @param LoggerInterface         $logger The logger interface
 	 *
 	 * @return void
@@ -50,6 +52,7 @@ class InitializeSettings implements IRepairStep {
 	public function __construct(
 		private SettingsService $settingsService,
 		private CaseFieldRoleProjector $fieldRoles,
+		private CaseTeamAccessProjector $teamAccess,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -131,6 +134,14 @@ class InitializeSettings implements IRepairStep {
 			// ledger is re-applied on every upgrade, idempotently.
 			if ($this->fieldRoles->reapply() === true) {
 				$output->info('Dossiq per-role field rules re-applied to the case schema');
+			}
+
+			// 🔴 THE SAME IMPORT WRITES THE CASE SCHEMA'S AUTHORIZATION FROM THE
+			// REGISTER JSON, which carries the shipped block and not the handling
+			// team rules. Without this every team stops seeing its cases until a
+			// case type is saved (case-access-by-handling-team, REQ-ACC-10).
+			if ($this->teamAccess->reapply() === true) {
+				$output->info('Dossiq handling team rules written to the case schema');
 			}
 
 			if ($result['success'] === true) {
