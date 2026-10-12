@@ -244,7 +244,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 26 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 28 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -258,12 +258,12 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(26)
+		expect(placed).toHaveLength(28)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
 		expect(count('Case')).toBe(16)
 		expect(count('Publication')).toBe(3)
-		expect(count('Dossier')).toBe(1)
+		expect(count('Dossier')).toBe(3)
 		expect(count('admin')).toBe(2)
 	})
 
@@ -394,11 +394,11 @@ describe('the tabs', () => {
 		// reads, holds all of them. The simple page reads that collection.
 		expect('stagesEndpoint' in find(simple, 'case-stages').content).toBe(false)
 
+		// The deadline tile only loses its own label in the side column, where
+		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline']
 		const others = (config) =>
-			config.widgets.filter(
-				(widget) =>
-					widget.id !== 'case-panels' && widget.id !== 'case-stages',
-			)
+			config.widgets.filter((widget) => !patched.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})

@@ -19,7 +19,7 @@
  * And a layout entry naming a widget that no longer exists resolves to nothing
  * and leaves a hole in the grid. None of those raise.
  *
- * @spec openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md
+ * @spec openspec/specs/case-hours-via-humaniq-leaf/spec.md
  */
 
 import fs from 'fs'
@@ -64,7 +64,7 @@ function integrationWidgets() {
 }
 
 describe('the hours surface is a leaf placement', () => {
-	// @spec openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#no-cross-app-register-query-survives
+	// @spec openspec/specs/case-hours-via-humaniq-leaf/spec.md#no-cross-app-register-query-survives
 	it('queries no humaniq register from this manifest', () => {
 		// The scenario's WHEN is literally a search of the file, so the
 		// assertion is a search of the file. The widget used to be a stats
@@ -79,7 +79,7 @@ describe('the hours surface is a leaf placement', () => {
 		).toBe(false)
 	})
 
-	// @spec openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#no-requiredapp-anywhere-on-an-integration-widget
+	// @spec openspec/specs/case-hours-via-humaniq-leaf/spec.md#no-requiredapp-anywhere-on-an-integration-widget
 	it('gates no integration widget on requiredApp', () => {
 		const widgets = integrationWidgets()
 
@@ -100,7 +100,7 @@ describe('the hours surface is a leaf placement', () => {
 		).toEqual([])
 	})
 
-	// @spec openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
+	// @spec openspec/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
 	it('declares no host object context, so the leaf derives it', () => {
 		// REQ-HRS-002's manifest half. The runtime half, that the leaf filters
 		// on `dossiq:case` and the case uuid, is not assertable from here and
@@ -123,7 +123,7 @@ describe('the hours surface is a leaf placement', () => {
 		).toEqual([])
 	})
 
-	// @spec openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-layout-entry-still-resolves
+	// @spec openspec/specs/case-hours-via-humaniq-leaf/spec.md#the-layout-entry-still-resolves
 	it('keeps the hours widget its identity and its cell', () => {
 		const page = caseDetail()
 		const widget = page.config.widgets.find(

@@ -53,6 +53,39 @@ class CaseFlowSeedIndex {
 	}//end __construct()
 
 	/**
+	 * An existing case type with this slug, or null.
+	 *
+	 * The seed names each case type by a slug, and the slug is what makes a
+	 * rerun find what an earlier run created. Looking it up by title found
+	 * nothing: `title` is translatable, so OpenRegister stores it as a
+	 * language map and a filter on the plain string matches no row. Every
+	 * repair pass then created the case type again, which is how
+	 * "Omgevingsvergunning kleine bouwactiviteit" came to be offered twice
+	 * (review-check, 11 October 2026, N-5).
+	 *
+	 * @param array<string,string> $schemas Register and schema names.
+	 * @param string               $slug    The slug the seed gives the case type.
+	 *
+	 * @return array<string,mixed>|null The case type, or null.
+	 *
+	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 */
+	public function caseTypeBySlug(array $schemas, string $slug): ?array {
+		$rows = $this->rows(
+			query: [
+				'@self' => ['register' => $schemas['register'], 'schema' => $schemas['caseType'], 'slug' => $slug],
+				'_limit' => 5,
+			]
+		);
+
+		if ($rows === []) {
+			return null;
+		}
+
+		return $rows[0];
+	}//end caseTypeBySlug()
+
+	/**
 	 * An existing case type with this title, or null.
 	 *
 	 * @param array<string,string> $schemas Register and schema names.

@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
+
 /**
  * Builds the payload for a duplicated or a versioned case type.
  *
@@ -45,6 +47,16 @@ namespace OCA\Dossiq\Service\CaseType;
  * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class DerivedCaseTypePayload {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 */
+	public function __construct(
+		private readonly LanguageMapText $text = new LanguageMapText(),
+	) {
+	}//end __construct()
 
 	/**
 	 * The payload for a duplicate: a second case type, not a version.
@@ -58,7 +70,7 @@ class DerivedCaseTypePayload {
 	public function duplicate(array $source): array {
 		$payload = $this->stripIdentity(data: $source);
 
-		$payload['title'] = 'Copy of ' . (string)($source['title'] ?? '');
+		$payload['title'] = 'Copy of ' . $this->text->textOf(value: ($source['title'] ?? null));
 		$payload['isDraft'] = true;
 		$payload['identifier'] = $this->generateIdentifier(
 			sourceIdentifier: (string)($source['identifier'] ?? '')

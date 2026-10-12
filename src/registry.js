@@ -55,6 +55,9 @@ import CaseLocationMap from './components/case/CaseLocationMap.vue'
 // Who is on the case and in which role, over OpenRegister's party model.
 // @spec openspec/specs/roles-decisions/spec.md
 import CasePartiesWidget from './components/case/CasePartiesWidget.vue'
+// pipelinq on the case (parties-and-contact-moments-consume-pipelinq,
+// boards DqZaakContactmomenten and DqZaakPartijen).
+import CasePipelinqContactMoments from './components/case/CasePipelinqContactMoments.vue'
 // The case's own state on the case page is no longer a registry component at
 // all: the identity band is four configured library tiles (stat + countdown)
 // and the stepper is the library `stages` widget, which is also how the case
@@ -67,6 +70,7 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 import CasePlanPanel from './components/case/CasePlanPanel.vue'
 import CasePlanSociaalDomeinPanel from './components/case/CasePlanSociaalDomeinPanel.vue'
+import CaseProgrammeSection from './components/case/CaseProgrammeSection.vue'
 // What is new on this case since the handler last looked, and where.
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationPanel.vue'
@@ -85,6 +89,9 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
+// The party kinds a case type accepts, declared into pipelinq
+// (parties-and-contact-moments-consume-pipelinq 3.2, board DqZaaktype).
+import CaseTypePartyKindsWidget from './components/caseType/CaseTypePartyKindsWidget.vue'
 import CaseTypePortalWidget from './components/caseType/CaseTypePortalWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
@@ -95,6 +102,9 @@ import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslatio
 // export-leaf URL client-side; no dossiq-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
+// The items of a frozen file set with a per-item document compare, configured per case type (decision 182).
+// @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md
+import FileSetItems from './components/fileSet/FileSetItems.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
@@ -144,10 +154,13 @@ import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
+import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
 // Remind a colleague about this case on a date (case-reminder-as-task).
 // @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 import RemindDialog from './dialogs/RemindDialog.vue'
+import WooSearchPlanDialog from './dialogs/WooSearchPlanDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -368,7 +381,7 @@ const registry = {
 	},
 
 	// --- The filters a case type's own fields offer. ---
-	// @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+	// @spec openspec/specs/case-search-via-or-unified-search/spec.md
 	CaseTypeFieldFilters: {
 		kind: 'page',
 		component: CaseTypeFieldFilters,
@@ -532,6 +545,39 @@ const registry = {
 		_note: 'CaseDetail Actions menu: move this case to a DIFFERENT case type, which the version move beside it cannot do. It is a modal and not a confirm gate because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for rather than derived, and so is every property the target requires in that status and the case does not carry. The dialog derives no verdict: canRebind, the missing names and every refusal come from the server, and the group check lives in the service rather than in this button.',
 	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+	// @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-contact-moment-logged-on-a-case-is-appended-to-pipelinqs-record-req-plq-02
+	LogContactDialog: {
+		kind: 'modal',
+		component: LogContactDialog,
+		propsSchema: {},
+		_note: "CaseDetail `log-contact` header action, board DqZaakContactmomenten. Replaces the open-form that saved straight to OpenRegister's object API: that path ran no dossiq service, so the moment never reached pipelinq's customer record and a refusal could not be shown. This posts to PipelinqCaseController#logContactMoment, where ContactMomentService writes the dossiq record first and appends it to pipelinq, and the answer carries pipelinq's refusal (with the indicator) back. A refusal keeps the dialog open on a summary that says both: the moment is on the case, and pipelinq did not take it. caseId arrives as the unresolved `@objectId` token, so the route answers.",
+	},
+
+	// @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
+	CaseTypePartyKindsWidget: {
+		// @custom-widget-ratchet exclude the vocabulary is pipelinq's and the write is a declaration into pipelinq's register (`dossiq:case:<type>`, patched, never replaced), which only PipelinqCaseController reaches; a declared form over a dossiq schema has nowhere to write it
+		kind: 'widget',
+		component: CaseTypePartyKindsWidget,
+		...PANEL_WIDGET_META,
+		_note: "CaseTypeDetail: the Partijsoorten section. Lists pipelinq's kinds with the accepted ones first in declared order, moves them up and down, and saves the declaration to pipelinq. Without pipelinq it lists dossiq's own three read only and says nothing can be saved.",
+	},
+
+	'case-pipelinq-contact-moments': {
+		// @custom-widget-ratchet exclude a pipelinq contact moment is not a dossiq OBJECT: the rows come from pipelinq's leaf through PipelinqCaseController, by membership of the case set, with a shared marker that counts cases the reader may not open; and filing onto or off a case is pipelinq's act, not an object write
+		kind: 'widget',
+		component: CasePipelinqContactMoments,
+		...PANEL_WIDGET_META,
+		_note: "CaseDetail Communication tab, the Customer record section (board DqZaakContactmomenten): pipelinq's contact moments by membership, the shared line, and the two filing acts. Says in words when pipelinq is absent, which is not the same as no moments.",
+	},
+
+	'case-programme': {
+		// @custom-widget-ratchet exclude the programme and its work items are pipelinq's objects, found by a `dossiq:case` reference only pipelinq's ProgrammePortfolioService resolves, and the progress figure needs the mode that produced it, which no declared widget renders
+		kind: 'widget',
+		component: CaseProgrammeSection,
+		...PANEL_WIDGET_META,
+		_note: "CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq's refusal naming the holder.",
+	},
+
 	CaseHandoverDialog: {
 		kind: 'modal',
 		component: CaseHandoverDialog,
@@ -554,6 +600,22 @@ const registry = {
 		component: CaseMergeDialog,
 		propsSchema: {},
 		_note: "Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server's and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out. WHY THE ACTION IS HIDDEN ON A CLOSED CASE, moved here from the manifest entry: a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog; hiding them in the header too would leave a handler wondering why an act they were told about is not there. The manifest entry carries no `_note` because `$defs/action` sets `additionalProperties: false`, which is the same reason CasePlanFollowUpDialog above records.",
+	},
+
+	// @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-a-handler-searches-the-organisations-sources-from-a-woo-case-req-woo-012
+	GatherDocumentsDialog: {
+		kind: 'modal',
+		component: GatherDocumentsDialog,
+		propsSchema: {},
+		_note: "Gather documents on a Woo request case (woo-requests-gather-documents-from-sources). Searches files and other cases through Nextcloud unified search with the handler's own access, and integriq's Microsoft 365 source through dossiq. Which provider and filters each platform source uses is the answer of GET /woo/sources, so the dialog guesses nothing. A source that cannot answer is listed with its reason, never as an empty result. Each pick is added or refused on its own; the refused ones stay on screen with the server's sentence. The header action shows on the seeded Woo request case type only (WooRequestIntake::CASE_TYPE_ID) and not on an archived case; the manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
+	WooSearchPlanDialog: {
+		kind: 'modal',
+		component: WooSearchPlanDialog,
+		propsSchema: {},
+		_note: "The search plan of a Woo request (woo-request-corpus-collection REQ-WRC-001): whose files, which systems, the period and the terms, recorded before collection. Gather documents refuses to search or add until it is recorded. Recording again changes the same plan object, so the history under the form is that object's OpenRegister audit trail. Shown on the seeded Woo request case type only; the manifest carries no _note because $defs/action refuses one.",
 	},
 
 	// @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
@@ -651,6 +713,14 @@ const registry = {
 		component: CaseCustodyPanel,
 		...PANEL_WIDGET_META,
 		_note: 'CaseDetail Custody tab: every period this case was held, with both ends of each holding, and the takeover requests beside them with accept and refuse. Fails CLOSED on a refusal: a reader who may not open the case is told so, never shown an empty chain, because "this case never changed hands" and "you may not see this" look identical from an empty list. The panel writes no holding: an accept answers a REQUEST and the move opens the holding server-side.',
+	},
+
+	'file-set-items': {
+		// @custom-widget-ratchet exclude the items are an array INSIDE one object (a frozen file set), not OpenRegister objects of their own, so an object-list or object-table has nothing to query; and the per-item Compare opens a dialog that mounts filinq's split view, which no declarative row action does. Deleted the day the library renders an embedded array with row actions
+		kind: 'widget',
+		component: FileSetItems,
+		...PANEL_WIDGET_META,
+		_note: "Generic (decision 182): the items of a frozen file set with file name, classification and SHA-256, and Compare on an item whose file that went out is not its original, opening DocumentCompareDialog over filinq's OCA.Filinq.mountCompare. The case type configures it in the widget content (filesUrl, classificationLabels); the Woo delivered set page is the first user. Without filinq the dialog says so and offers both files as links.",
 	},
 
 	'case-archival-pane': {

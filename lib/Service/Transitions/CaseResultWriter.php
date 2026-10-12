@@ -34,6 +34,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use RuntimeException;
 
 /**
@@ -51,6 +52,7 @@ class CaseResultWriter {
 	 *                                          closes with its parent's result types.
 	 * @param ArchivalNominationDeriver $archivalDeriver The zrc-021 derivation, shared
 	 *                                          with the ZGW API closing path.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 */
@@ -58,6 +60,7 @@ class CaseResultWriter {
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly ArchivalNominationDeriver $archivalDeriver,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -226,7 +229,7 @@ class CaseResultWriter {
 	 */
 	private function lookupResultTypeName(string $resultTypeId): string {
 		$row = $this->findRow(schemaKey: 'result_type_schema', id: $resultTypeId);
-		$name = (string)($row['name'] ?? ($row['title'] ?? ''));
+		$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 		if ($name === '') {
 			return $resultTypeId;
 		}

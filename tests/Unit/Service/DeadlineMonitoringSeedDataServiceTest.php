@@ -119,6 +119,41 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	}
 
 	/**
+	 * The Woo term tells its handler a week before the end and when it runs
+	 * out, through the generic term notice: that is configuration on the
+	 * definition, not a Woo job (termijnbewaking 2.1, decision 182).
+	 *
+	 * @return void
+	 */
+	public function testWooSeedTellsTheHandlerAtSevenDaysAndAtTheEnd(): void {
+		$this->service->seed();
+
+		self::assertSame([7, 0], $this->objects->store['deadlineDefinition']['td-woo-verzoek']['tellHandlerAt']);
+	}
+
+	/**
+	 * A definition seeded by an earlier release gets the keys a later seed
+	 * adds, and keeps the values an administrator set.
+	 *
+	 * @return void
+	 */
+	public function testAStoredDefinitionGetsTheMissingKeysAndKeepsItsOwn(): void {
+		$this->service->seed();
+		$stored = $this->objects->store['deadlineDefinition']['td-woo-verzoek'];
+		unset($stored['tellHandlerAt']);
+		$stored['standardDurationDays'] = 21;
+		$this->objects->store['deadlineDefinition']['td-woo-verzoek'] = $stored;
+
+		$second = $this->service->seed();
+
+		$woo = $this->objects->store['deadlineDefinition']['td-woo-verzoek'];
+		self::assertSame(1, $second['backfilled']);
+		self::assertSame($this->shippedDefinitionCount() - 1, $second['skipped']);
+		self::assertSame([7, 0], $woo['tellHandlerAt']);
+		self::assertSame(21, $woo['standardDurationDays']);
+	}
+
+	/**
 	 * A refused row is COUNTED, so the caller can refuse a success-shaped
 	 * report. This is the "0 definities (0 overgeslagen)" defect: every row
 	 * failed under Anonymous RBAC and the summary still looked like success.

@@ -99,7 +99,7 @@ class CaseVersionDiff {
 			'to' => $this->versionLabel(caseTypeId: $targetId),
 			'status' => [
 				'from' => $statusName,
-				'to' => (string)($mapped['name'] ?? ''),
+				'to' => $this->text->forReader(value: ($mapped['name'] ?? null)),
 				'targetStatusId' => (string)($mapped['id'] ?? ''),
 				'mapped' => ($mapped !== []),
 			],

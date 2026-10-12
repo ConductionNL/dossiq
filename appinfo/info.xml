@@ -162,7 +162,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
             such cases was removed earlier. Nothing migrated to a timer.
             See openspec/changes/case-status-onto-engine-lifecycle.
         -->
-        <job>OCA\Dossiq\BackgroundJob\WOODeadlineCheckJob</job>
+        <!--
+            WOODeadlineCheckJob is RETIRED: a Woo request's statutory term is
+            an ordinary term instance with an armed engine timer, and its
+            ladder rungs reach the handler through the generic
+            Service/Termijn/TermHandlerNotice, on the days the term definition
+            lists in tellHandlerAt (td-woo-verzoek: 7 and 0)
+            (termijnbewaking-op-engine-timers 2.1, decision 182).
+        -->
         <!--
             lifecycle-acts-on-the-case REQ-LIFE-04: a case type may declare a
             period of no activity after which dossiq closes the case. Off by
@@ -355,6 +362,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
+            <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <!-- Nextcloud never removes a job info.xml stops naming: parked EmailPdfRetryJob, removed AppointmentReminderJob and BerichtenboxReadStatusJob. -->
             <step>OCA\Dossiq\Repair\RetireUnscheduledBackgroundJobs</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
@@ -714,6 +722,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- site-business-and-authorisation D2: a portal case filed before
                  portalParty existed gets subject:<portalSubject>, once. -->
             <step>OCA\Dossiq\Repair\BackfillPortalParty</step>
+            <!-- inspection-checklists-onto-task 4.1: every inspectieChecklist and
+                 inspectionChecklist (with its checklistItem rows) becomes one
+                 inspectionChecklistTemplate carrying legacyRef. Skips what is
+                 folded; never folds a checklist half. Post-migration only: a
+                 fresh install has no older checklists. -->
+            <step>OCA\Dossiq\Repair\FoldInspectionChecklistTemplates</step>
+            <!-- inspection-checklists-onto-task 4.2: every inspectieRapport,
+                 inspectionChecklistRun and inspectionResult becomes one
+                 inspection task (OpenRegister's import path), keyed on
+                 metadata.legacyRef. After the fold, so runs find their
+                 template. Post-migration only: a fresh install has no runs. -->
+            <step>OCA\Dossiq\Repair\CarryInspectionRunsOntoTasks</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
@@ -940,6 +960,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
+            <step>OCA\Dossiq\Repair\SeedStaffGroup</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
@@ -1054,6 +1075,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <commands>
         <command>OCA\Dossiq\Command\AdoptShippedFlowsCommand</command>
+        <command>OCA\Dossiq\Command\VerifyWooDeliveredSetCommand</command>
         <command>OCA\Dossiq\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Dossiq\Command\InstallPackageCommand</command>
         <command>OCA\Dossiq\Command\MigrateCaseTeamsCommand</command>
@@ -1072,8 +1094,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <admin>OCA\Dossiq\Settings\AdminSettings</admin>
         <admin>OCA\Dossiq\Settings\EmailSettings</admin>
         <admin-section>OCA\Dossiq\Sections\SettingsSection</admin-section>
-        <personal>OCA\Dossiq\Settings\PersonalSettings</personal>
-        <personal-section>OCA\Dossiq\Sections\PersonalSection</personal-section>
     </settings>
 
     <navigations>

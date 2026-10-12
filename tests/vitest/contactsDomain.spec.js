@@ -184,6 +184,10 @@ describe.each([
 		const p = get()
 		expect(p.config.widgets.map((w) => w.id)).toEqual([
 			'contact-card',
+			// The Overview stack of the relation-page shape (DqContact): the
+			// open cases and the latest contact moments under the card.
+			'contact-open-cases',
+			'contact-latest-moments',
 			'contact-cases',
 			'contact-moments',
 			// The third question this page is for (#2993): what did we send
@@ -223,7 +227,7 @@ describe.each([
 		})
 	})
 
-	it('fills the grid with one tab strip, whose panels are the four widgets', () => {
+	it('fills the grid with one tab strip: an Overview stack, then the three lists', () => {
 		const p = get()
 		expect(p.config.layout.map((l) => l.widgetId)).toEqual(['contact-panels'])
 		for (const item of p.config.layout) {
@@ -232,8 +236,9 @@ describe.each([
 		}
 		const strip = widget(p, 'contact-panels')
 		expect(strip.type).toBe('tabs')
+		expect(strip.content.tabs[0].widgetIds).toEqual(['contact-card', 'contact-open-cases', 'contact-latest-moments'])
 		expect(strip.content.tabs.map((tab) => tab.widgetId)).toEqual([
-			'contact-card',
+			undefined,
 			'contact-cases',
 			'contact-moments',
 			'contact-documents',

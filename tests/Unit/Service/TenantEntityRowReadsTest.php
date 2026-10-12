@@ -4,8 +4,9 @@
  * Tenant services read findAll() rows as entities
  *
  * PINNING TESTS for the tenant services that read `ObjectService::findAll()`
- * rows: onboarding progress and step completion, the tenant configuration and
- * the month's billing events.
+ * rows: the tenant configuration and the month's billing events. Onboarding
+ * progress and step completion left these rows for OpenRegister's task engine
+ * (remove-casetask 7.1); OnboardingStepsTest pins them now.
  *
  * `findAll()` returns `ObjectEntity` objects, never arrays, and `ObjectEntity`
  * does not implement `ArrayAccess`. Every one of these services indexed the
@@ -38,7 +39,6 @@ use OCA\Dossiq\Service\ShillinqIntegrationService;
 use OCA\Dossiq\Service\Tenant\TenantBrandingSanitiser;
 use OCA\Dossiq\Service\TenantBillingService;
 use OCA\Dossiq\Service\TenantConfigurationService;
-use OCA\Dossiq\Service\TenantOnboardingService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -78,7 +78,6 @@ interface TenantEntityRowObjectServiceStub {
 }
 
 /**
- * @covers \OCA\Dossiq\Service\TenantOnboardingService
  * @covers \OCA\Dossiq\Service\TenantConfigurationService
  * @covers \OCA\Dossiq\Service\TenantBillingService
  *
@@ -148,94 +147,6 @@ class TenantEntityRowReadsTest extends TestCase {
 
 		return [$appManager, $container];
 	}//end openRegisterAnswering()
-
-	/**
-	 * The onboarding service over a fake OpenRegister.
-	 *
-	 * @param array<int, mixed> $rows What `findAll()` returns.
-	 *
-	 * @return TenantOnboardingService The service.
-	 */
-	private function onboardingAnswering(array $rows): TenantOnboardingService {
-		[$appManager, $container] = $this->openRegisterAnswering(rows: $rows);
-
-		return new TenantOnboardingService(
-			appManager: $appManager,
-			container: $container,
-			logger: $this->createMock(LoggerInterface::class),
-			billingService: $this->createMock(TenantBillingService::class),
-			tenantService: $this->createMock(\OCA\Dossiq\Service\TenantService::class),
-		);
-	}//end onboardingAnswering()
-
-	/**
-	 * Progress counts the completed steps it reads off the rows.
-	 *
-	 * Before the read was fixed this threw: `$r['status']` on an
-	 * `ObjectEntity` is an Error, outside any catch, so the progress endpoint
-	 * answered 500 for every tenant with at least one step.
-	 *
-	 * @return void
-	 */
-	public function testProgressCountsTheCompletedStepsOfEntityRows(): void {
-		$rows = [];
-		foreach (TenantOnboardingService::STEPS as $index => $step) {
-			$status = 'pending';
-			if ($index < 2) {
-				$status = 'completed';
-			}
-
-			$rows[] = $this->entity(object: ['tenantRef' => 't-1', 'step' => $step, 'status' => $status], uuid: 'task-' . $index);
-		}
-
-		$progress = $this->onboardingAnswering(rows: $rows)->getProgress(tenantId: 't-1');
-
-		$this->assertSame(2, $progress['completed']);
-		$this->assertSame(7, $progress['total']);
-		$this->assertSame(0.29, $progress['fraction']);
-		$this->assertSame(TenantOnboardingService::STEPS, array_column($progress['steps'], 'step'));
-	}//end testProgressCountsTheCompletedStepsOfEntityRows()
-
-	/**
-	 * A step is completed on the row it was read from, not on a new one.
-	 *
-	 * Before the read was fixed, `$task['status'] = ...` on the entity threw,
-	 * the catch logged it and returned null, and the controller answered
-	 * "Step not found" for a step that exists.
-	 *
-	 * @return void
-	 */
-	public function testMarkStepCompleteWritesTheEntityRowBackInPlace(): void {
-		$row = $this->entity(object: ['tenantRef' => 't-1', 'step' => 'branding', 'status' => 'pending'], uuid: 'task-3');
-
-		$task = $this->onboardingAnswering(rows: [$row])->markStepComplete(tenantId: 't-1', step: 'branding', completedBy: 'alice');
-
-		$this->assertNotNull($task, 'a step that exists was reported as not found');
-		$this->assertSame('completed', $task['status']);
-		$this->assertCount(1, $this->saves);
-		$this->assertSame('task-3', $this->saves[0]['uuid'], 'the step must be written back to the row it came from');
-		$this->assertSame('tenantOnboardingTask', $this->saves[0]['schema']);
-		$this->assertSame('branding', $this->saves[0]['object']['step']);
-		$this->assertSame('t-1', $this->saves[0]['object']['tenantRef']);
-		$this->assertSame('completed', $this->saves[0]['object']['status']);
-		$this->assertSame('alice', $this->saves[0]['object']['completedBy']);
-	}//end testMarkStepCompleteWritesTheEntityRowBackInPlace()
-
-	/**
-	 * A row that carries nothing readable is not completed.
-	 *
-	 * Written, it would create a new task holding only the completion fields,
-	 * with no tenant and no step. This passes on the code before the fix as
-	 * well, where the row threw; it guards the fix's own empty-row check.
-	 *
-	 * @return void
-	 */
-	public function testMarkStepCompleteOnAnUnreadableRowWritesNothing(): void {
-		$task = $this->onboardingAnswering(rows: [new stdClass()])->markStepComplete(tenantId: 't-1', step: 'branding', completedBy: 'alice');
-
-		$this->assertNull($task);
-		$this->assertSame([], $this->saves);
-	}//end testMarkStepCompleteOnAnUnreadableRowWritesNothing()
 
 	/**
 	 * The configuration service over a fake OpenRegister.
