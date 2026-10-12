@@ -112,9 +112,9 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Doorlooptijd/CaseEnricher.php` | 233 | business | engine calendar | the dashboard's derived expected end; it mirrors a statutory term, so it rolls with it or it contradicts it on screen |
 | `lib/Service/Doorlooptijd/DeadlineComplianceCalculator.php` | 168 | neither | | month buckets for a compliance trend |
 | `lib/Service/DsoCaseService.php` | 310 | statutory | `WorkingDayCalculator` | the Omgevingswet term; the day walk is already the calculator's |
-| `lib/Service/DwangsomUitbetalingService.php` | 101 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
+| `lib/Service/Money/PayoutService.php` | 133 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
 | `lib/Service/Kcc/CallbackRetrySchedule.php` | 71 | neither | | the wait before the next callback attempt, 15 minutes doubling to a day. It replaced `Kcc/SlaCalculator.php` (retired by `termijnbewaking-op-engine-timers` 4.1), whose channel SLAs nothing read; a retry wait is not a deadline and has no calendar |
-| `lib/Service/NoticeOfDefaultService.php` | 171 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
+| `lib/Service/Money/AccrualNoticeService.php` | 188 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |
 | `lib/Service/Recycle/RetentionClocks.php` | 144 | neither | | a lawful-purpose retention counted in months (AVG art. 5.1e), where a weekend cannot move the answer; the same verdict `ArchivalNominationDeriver` carries for the Archiefwet side |
