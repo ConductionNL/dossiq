@@ -426,15 +426,31 @@ export default {
 		caseFacts() {
 			const caseRoute = { name: 'CaseDetail', params: { id: '@source.id' } }
 			return {
-				source: { register: 'dossiq', schema: 'case', id: '@object.objectUuid' },
+				source: {
+					register: 'dossiq',
+					schema: 'case',
+					id: '@object.objectUuid',
+				},
 				fields: [
-					{ key: 'case-title', as: 'title', path: 'title', route: caseRoute },
+					{
+						key: 'case-title',
+						as: 'title',
+						path: 'title',
+						route: caseRoute,
+					},
 					{
 						key: 'case-meta',
 						as: 'line',
 						parts: [
 							'identifier',
-							{ path: 'caseType', resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' } },
+							{
+								path: 'caseType',
+								resolve: {
+									register: 'dossiq',
+									schema: 'caseType',
+									labelField: 'title',
+								},
+							},
 						],
 					},
 					{
@@ -442,14 +458,22 @@ export default {
 						as: 'line',
 						parts: [
 							{ path: 'assignee', label: t('dossiq', 'Handler') },
-							{ path: 'deadline', label: t('dossiq', 'Case deadline'), format: 'date' },
+							{
+								path: 'deadline',
+								label: t('dossiq', 'Case deadline'),
+								format: 'date',
+							},
 						],
 					},
 					{
 						key: 'case-status',
 						label: t('dossiq', 'Status'),
 						path: 'status',
-						resolve: { register: 'dossiq', schema: 'statusType', labelField: 'name' },
+						resolve: {
+							register: 'dossiq',
+							schema: 'statusType',
+							labelField: 'name',
+						},
 					},
 				],
 
