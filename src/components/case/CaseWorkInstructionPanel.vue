@@ -30,7 +30,7 @@
   NOTHING RENDERS WHEN NO PAGE IS SET, on purpose. Most case types will not
   have one for a while, and a heading over "no work instruction" is a reproach
   to the reader for something an administrator has not done yet.
-  `CaseSectionsWidget` drops the heading of a section whose widget drew
+  the library `sections` widget drops the heading of a section whose widget drew
   nothing, so silence here costs no empty block.
 
   A LOOKUP THAT FAILED IS NOT A CASE TYPE WITHOUT AN INSTRUCTION. The two look

@@ -184,7 +184,7 @@ test.describe('the pages render through the leaf, or the tab is absent', () => {
 		// that names a widget definition, and CnDetailWidgetHost renders
 		// nothing for an integration the registry does not answer rather than
 		// removing itself. What actually disappears is the SECTION, heading
-		// and all, because CaseSectionsWidget drops the heading of a section
+		// and all, because the sections widget drops the heading of a section
 		// that drew nothing. The tab stays because its other section, the case
 		// type's work instruction, is a dossiq surface that needs no
 		// Collectives.
