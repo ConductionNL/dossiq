@@ -16,7 +16,9 @@
  *   the document is on.
  *
  * Every added document records where it was found (`provenance`): the source,
- * its location, the search terms, when and by whom. It is written once, here.
+ * its location, the search terms, when and by whom. It is written once, here,
+ * through the generic CaseFileCollector, which also keeps a collected e-mail's
+ * header fields (`provenance.mail`).
  * A copied file carries it on its own record; a linked document carries it on
  * this case's join, because the record also belongs to the other case.
  *
@@ -42,7 +44,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
+use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -63,7 +65,7 @@ class WooGatherAdd {
 	 *
 	 * @param IRootFolder               $rootFolder  The caller's own files.
 	 * @param DocumentRecordStore       $store       Records and joins in OpenRegister.
-	 * @param DocumentProjectionService $projection  The case folder, and a record for a file in it.
+	 * @param CaseFileCollector         $collector   Writes copied bytes as a document on the case, with provenance.
 	 * @param WooSources                $sources     Fetches an integriq hit.
 	 * @param CaseAccessGuard           $accessGuard Whether the caller may read the case a linked document is on.
 	 * @param IL10N                     $l10n        The refusal sentences.
@@ -73,7 +75,7 @@ class WooGatherAdd {
 	public function __construct(
 		private readonly IRootFolder $rootFolder,
 		private readonly DocumentRecordStore $store,
-		private readonly DocumentProjectionService $projection,
+		private readonly CaseFileCollector $collector,
 		private readonly WooSources $sources,
 		private readonly CaseAccessGuard $accessGuard,
 		private readonly IL10N $l10n,
@@ -208,7 +210,13 @@ class WooGatherAdd {
 			throw new WooPickRefused('not-fetched');
 		}
 
-		return $this->store(caseId: $caseId, fileName: $fetched['fileName'], content: $fetched['content'], provenance: $provenance);
+		return $this->store(
+			caseId: $caseId,
+			fileName: $fetched['fileName'],
+			content: $fetched['content'],
+			provenance: $provenance,
+			mimeType: $fetched['mimeType']
+		);
 	}//end addFetched()
 
 	/**
@@ -250,23 +258,20 @@ class WooGatherAdd {
 	}//end linkDocument()
 
 	/**
-	 * Store bytes in the case folder and write the provenance on the record the file gets.
-	 *
-	 * The node listener normally projects the record while the file is written;
-	 * when it has not (the write ran as another user, or no listener ran), the
-	 * file in the case folder is projected here, through the same service.
+	 * Store bytes in the case folder as a document with its provenance, unless the case holds them already.
 	 *
 	 * @param string               $caseId     The case uuid.
 	 * @param string               $fileName   The file name.
 	 * @param string               $content    The bytes.
 	 * @param array<string, mixed> $provenance Where it was found.
+	 * @param string               $mimeType   The MIME type the source gave, '' when none.
 	 *
 	 * @return string The document record uuid.
 	 *
 	 * @throws WooPickRefused   `write-failed` when the file cannot be read back or no record results.
 	 * @throws WooPickRefused   `duplicate` when the case holds the same bytes; recorded as an exclusion.
 	 */
-	private function store(string $caseId, string $fileName, string $content, array $provenance): string {
+	private function store(string $caseId, string $fileName, string $content, array $provenance, string $mimeType = ''): string {
 		$sha256 = hash('sha256', $content);
 		$duplicateOf = $this->collection->duplicateOf(caseId: $caseId, sha256: $sha256);
 		if ($duplicateOf !== '') {
@@ -286,49 +291,13 @@ class WooGatherAdd {
 			throw new WooPickRefused('duplicate');
 		}
 
-		$fileId = $this->store->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
-		if ($fileId <= 0) {
+		$recordId = $this->collector->collect(caseId: $caseId, fileName: $fileName, content: $content, provenance: $provenance, mimeType: $mimeType);
+		if ($recordId === '') {
 			throw new WooPickRefused('write-failed');
 		}
-
-		$record = $this->store->findRecord(fileId: $fileId);
-		if ($record === null) {
-			$record = $this->projectStoredFile(caseId: $caseId, fileId: $fileId);
-		}
-
-		if ($record === null) {
-			throw new WooPickRefused('write-failed');
-		}
-
-		$record['provenance'] = $provenance;
-		$recordId = $this->store->saveRecord(record: $record);
-		$this->store->ensureJoin(caseId: $caseId, recordId: $recordId);
 
 		return $recordId;
 	}//end store()
-
-	/**
-	 * Project the file just stored in the case folder.
-	 *
-	 * @param string $caseId The case uuid.
-	 * @param int    $fileId The file id.
-	 *
-	 * @return array<string, mixed>|null The record, null when the file is not found there.
-	 */
-	private function projectStoredFile(string $caseId, int $fileId): ?array {
-		$folder = $this->projection->folderOf(objectId: $caseId);
-		if ($folder === null) {
-			return null;
-		}
-
-		foreach ($folder->getById($fileId) as $node) {
-			if ($node instanceof File) {
-				return $this->projection->projectNode(node: $node);
-			}
-		}
-
-		return null;
-	}//end projectStoredFile()
 
 	/**
 	 * Record a pick that could not be read as an exclusion, so what arrived reconciles.

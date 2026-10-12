@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.0",
+          "version": "1.4.1",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -135,6 +135,14 @@
             {
               "schemaKey": "woo_assessment_schema",
               "caseField": "caseRef"
+            },
+            {
+              "schemaKey": "review_batch_schema",
+              "caseField": "case"
+            },
+            {
+              "schemaKey": "triage_rule_schema",
+              "caseField": "case"
             }
           ],
           "reviewers": [

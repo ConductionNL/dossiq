@@ -835,12 +835,19 @@ $extra = [
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
     ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    ['name' => 'mailPartiesReport#show', 'url' => '/api/cases/{id}/reports/mail-parties', 'verb' => 'GET'],
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
     ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
     ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
     ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
     ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
     ['name' => 'documentReview#pagesSeen',   'url' => '/api/cases/{id}/review/documents/{documentRef}/pages-seen', 'verb' => 'POST'],
+    // Triage rules (woo-review-triage REQ-WRT-002): visible rules that mark unmarked documents without opening them.
+    ['name' => 'triageRule#index',   'url' => '/api/cases/{id}/review/triage/rules', 'verb' => 'GET'],
+    ['name' => 'triageRule#create',  'url' => '/api/cases/{id}/review/triage/rules', 'verb' => 'POST'],
+    ['name' => 'triageRule#update',  'url' => '/api/cases/{id}/review/triage/rules/{ruleId}', 'verb' => 'PUT'],
+    ['name' => 'triageRule#destroy', 'url' => '/api/cases/{id}/review/triage/rules/{ruleId}', 'verb' => 'DELETE'],
+    ['name' => 'triageRule#apply',   'url' => '/api/cases/{id}/review/triage/apply', 'verb' => 'POST'],
     // Document review recall (woo-review-recall-and-stopping, generic per decision 182): the stopping rule and recall samples.
     ['name' => 'recall#recall',              'url' => '/api/cases/{id}/review/recall', 'verb' => 'GET'],
     ['name' => 'recall#declareStoppingRule', 'url' => '/api/cases/{id}/review/stopping-rule', 'verb' => 'POST'],
