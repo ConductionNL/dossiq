@@ -13,23 +13,27 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
 
 ## 1. Assess from the case page
 
-- [ ] 1.1 Add the `Woo assessment` section to the CaseDetail page in `src/manifest.json`, shown only
-  when `caseType` is the Woo request case type (`WooRequestIntake::CASE_TYPE_ID`). It lists the
-  case's documents with their assessment from `wooDocumentAssessment` (by `caseRef`) and marks the
-  ones without one as outstanding (REQ-WCS-001).
-  - `npm run check:manifest` exits 0.
-  - vitest `src/dialogs/__tests__/WooAssessDialog.spec.js` (see 1.2).
-- [ ] 1.2 Add `src/dialogs/WooAssessDialog.vue` and the header action `woo-assess` (open-modal). It
-  posts `{assessments: [{documentRef, classification, weigeringsgronden}]}` once for the selection,
-  and shows the server's `error` on a non-2xx. The ground picker reads
-  `WooRefusalGrounds` through dossiq's API when `woo-refusal-grounds-list` is merged, and otherwise
-  the values `validate()` accepts, with a line saying so (REQ-WCS-001).
-  - vitest: `testItPostsOneRequestForTheSelection`, `testARefusalKeepsTheDocumentsOutstanding`.
+- [ ] 1.1 The `Woo assessment` section on the CaseDetail page, listing every document with its
+  assessment. NOT built: no board draws it (decision 162, UI waits for its board). Its data half
+  is built generic: `GET /api/cases/{id}/document-assessments/outstanding` answers
+  `{count, documents: [{id, title}]}` (`lib/Controller/DocumentAssessmentController.php`,
+  `lib/Service/Assessment/OutstandingDocuments.php`; document-assessment REQ-DAS-001).
+  - unit `tests/Unit/Service/Assessment/OutstandingDocumentsTest.php`,
+    `tests/Unit/Controller/DocumentAssessmentControllerTest.php`.
+- [x] 1.2 The assess dialog, generic per decision 182: `src/dialogs/DocumentAssessDialog.vue`,
+  opened by the header action `document-assess` (open-modal) and configured through its `props`
+  for the Woo request case type. It posts `{assessments: [{documentRef, classification,
+  weigeringsgronden}]}` once for the selection, and shows the server's sentence on a non-2xx. The
+  grounds are read from the `wooRefusalGround` objects in OpenRegister (active and citable); dossiq
+  has no grounds route (document-assessment REQ-DAS-002, REQ-WCS-001). Built to the "Wat nog
+  openstaat" table of board DqWooReview.
+  - vitest `tests/vitest/documentAssessDialog.spec.js`: `testItPostsOneRequestForTheSelection`,
+    `testARefusalKeepsTheDocumentsOutstanding`.
   - Through the caller: the controller already exists, so the proof is the e2e in 3.2.
-- [ ] 1.3 Hide the section and the action on other case types (REQ-WCS-001).
-  - `tests/Unit/Manifest/WooScreensManifestTest.php` `testWooActionsAreScopedToTheWooCaseType`,
-    reading the real `src/manifest.json` and asserting every `woo-*` action and the section carry a
-    `visibleWhen` on the Woo case type.
+- [x] 1.3 The action is hidden on other case types and on an archived case (REQ-WCS-001).
+  - vitest `tests/vitest/documentAssessDialog.spec.js` `testTheActionIsScopedToItsCaseType`, reading
+    the real `src/manifest.json`. The PHP `WooScreensManifestTest` over every `woo-*` action is not
+    written: the action is no longer named after the procedure.
 
 ## 2. Extend and decide from the case page
 
@@ -46,21 +50,27 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
     `CaseTypeReaderExtensionLimitTest`, `CaseLifecycleControllerTest`, `CaseBulkActionsTest`, vitest
     `caseLifecycleMenu.spec.js` and `caseLifecycleHelpers.spec.js`. Red first:
     dq-l10-logs/r5/red-extension-limit.log.
-- [ ] 2.2 Add `src/dialogs/WooDecisionDialog.vue` and header action `woo-decide`, visible while the
-  case has no Woo decision. It counts the assessments per classification from the section's data,
-  disables submit while any document is outstanding and names it, and posts
-  `{decision: {...}}` (REQ-WCS-003).
-  - vitest `src/dialogs/__tests__/WooDecisionDialog.spec.js`: `testOutstandingDocumentsBlockSubmit`,
+- [x] 2.2 The decision dialog, generic per decision 182: `src/dialogs/AssessmentDecisionDialog.vue`,
+  opened by the header action `assessment-decide` and configured through its `props` for the Woo
+  request case type, offered while the case has no `wooPublicationStatus`. It counts the
+  assessments per classification, names the outstanding documents and offers nothing to save while
+  one waits, and posts `{decision: {...}}` (document-assessment REQ-DAS-003, REQ-WCS-003).
+  - vitest `tests/vitest/assessmentDecisionDialog.spec.js`: `testOutstandingDocumentsBlockSubmit`,
     `testItPostsTheDecision`.
 
 ## 3. The whole path on screen
 
-- [ ] 3.1 Check that `woo-publish` becomes visible after a decision made through the dialog, without
-  a reload the user would not do (REQ-WCS-003).
+- [x] 3.1 `woo-publish` becomes visible after a decision made through the dialog: the decision
+  route writes `wooPublicationStatus: ready`, the dialog emits the page refresh, and Publish is
+  offered on `ready` (REQ-WCS-003).
+  - vitest `tests/vitest/assessmentDecisionDialog.spec.js`: "hands over to Publish through the
+    field the decision route writes" and the refresh assertion in `testItPostsTheDecision`. That
+    the page really re-reads the case on the refresh is part of the e2e in 3.2 (live pass,
+    decision 139).
 - [ ] 3.2 e2e `tests/e2e/woo-case-screens.spec.ts`: from a Woo case with gathered documents, assess
   all, extend once, decide, publish, all through the page. Assert no request to an endpoint the page
   did not offer. Cite REQ-WCS-001, REQ-WCS-002, REQ-WCS-003. **fails today** at the first step,
-  because the `Assess documents` action does not exist.
+  because the `Assess documents` action does not exist. (live pass, decision 139)
 
 ## 4. Register an objection
 

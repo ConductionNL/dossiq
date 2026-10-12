@@ -932,6 +932,12 @@
 					"woo-gather-documents": {
 						"group": "Dossier"
 					},
+					"document-assess": {
+						"group": "Dossier"
+					},
+					"assessment-decide": {
+						"group": "Publication"
+					},
 					"case-rebind": {
 						"group": "Case"
 					},

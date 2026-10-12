@@ -127,6 +127,7 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Send digital post — the CaseDetail header action's compose surface.
 // @spec openspec/specs/berichtenbox-integration/spec.md
+import AssessmentDecisionDialog from './dialogs/AssessmentDecisionDialog.vue'
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
@@ -158,6 +159,7 @@ import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
@@ -613,6 +615,22 @@ const registry = {
 		component: GatherDocumentsDialog,
 		propsSchema: {},
 		_note: "Gather documents on a Woo request case (woo-requests-gather-documents-from-sources). Searches files and other cases through Nextcloud unified search with the handler's own access, and integriq's Microsoft 365 source through dossiq. Which provider and filters each platform source uses is the answer of GET /woo/sources, so the dialog guesses nothing. A source that cannot answer is listed with its reason, never as an empty result. Each pick is added or refused on its own; the refused ones stay on screen with the server's sentence. The header action shows on the seeded Woo request case type only (WooRequestIntake::CASE_TYPE_ID) and not on an archived case; the manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+	DocumentAssessDialog: {
+		kind: 'modal',
+		component: DocumentAssessDialog,
+		propsSchema: {},
+		_note: "Assess documents from the case page (document-assessment REQ-DAS-002), built to the Wat nog openstaat table of board DqWooReview. Generic (decision 182): the header action that opens it carries the configuration in its props, namely where the outstanding list is read, where the assessment is posted, the classifications and which of them need a ground, the schema the grounds are read from, and the names of the posted fields. The Woo request case type configures it as `document-assess`; no code names the procedure. The selection is posted once. A refusal keeps the dialog open with the server's sentence beside the document, and the list is read again, so nothing reads as saved that the server did not store. The manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+	AssessmentDecisionDialog: {
+		kind: 'modal',
+		component: AssessmentDecisionDialog,
+		propsSchema: {},
+		_note: "Decide a case from the assessments of its documents (document-assessment REQ-DAS-003). Generic (decision 182): the header action carries the title, the outstanding route, the schema the assessments are counted from, the classifications and the decision route in its props. The Woo request case type configures it as `assessment-decide`. It shows the number of documents per classification, names every document that still waits and offers nothing to save while one does, or while the outstanding list cannot be read. On success it asks the page to refresh, because what the page offers next follows from what the server wrote: the Woo decision route sets wooPublicationStatus to ready, which hides this action and shows Publish (Woo). The manifest carries no _note because $defs/action refuses one.",
 	},
 
 	// @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001

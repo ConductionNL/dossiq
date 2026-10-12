@@ -2,19 +2,23 @@
 
 ### Requirement: A Woo case is assessed from the case page (REQ-WCS-001)
 
-On a case of the Woo request case type, the CaseDetail page SHALL show a `Woo assessment` section
-listing every document on the case with its assessment state: outstanding, `openbaar`,
-`deels_openbaar` or `niet_openbaar`, with its grounds. An `Assess documents` header action SHALL
-open a dialog that sets the classification and grounds for one or several selected documents and
-SHALL post them to POST `/api/cases/{id}/woo/assessment` as `{assessments: [...]}`. A refusal from
-the endpoint SHALL be shown with the server's message, and nothing SHALL read as saved. The
-section and the action SHALL NOT appear on any other case type.
+The Woo request case type SHALL configure the generic assess dialog (document-assessment
+REQ-DAS-001 and REQ-DAS-002) as the `Assess documents` header action of the case page: the
+outstanding list from `/api/cases/{id}/document-assessments/outstanding`, the post to
+`/api/cases/{id}/woo/assessment`, the classifications `openbaar`, `deels_openbaar` and
+`niet_openbaar` of which the last two need a ground, and the grounds from the `wooRefusalGround`
+list (active and citable). The action SHALL NOT appear on any other case type, nor on an archived
+case. No code names the procedure (decision 182): the dialog and the route are generic, and this
+requirement is configuration.
+
+A `Woo assessment` section on the case page, listing every document with its assessment, waits
+for its board (decision 162). Until then the dialog lists what is outstanding.
 
 #### Scenario: A handler assesses two documents
 - **GIVEN** a Woo case in status "Beoordelen documenten" with three documents, none assessed
 - **WHEN** the handler selects two, marks them `deels_openbaar` with ground 5.1.2.e, and saves
 - **THEN** POST `/woo/assessment` SHALL be called once with both documents
-- **AND** the section SHALL show those two as `deels_openbaar` with 5.1.2.e and one as outstanding
+- **AND** the dialog SHALL list the one document that is still outstanding
 
 #### Scenario: A refused ground is shown, not swallowed
 - **GIVEN** the endpoint refuses a ground as unknown
@@ -24,7 +28,7 @@ section and the action SHALL NOT appear on any other case type.
 #### Scenario: Not on other cases
 - **GIVEN** an omgevingsvergunning case
 - **WHEN** its page opens
-- **THEN** neither the `Woo assessment` section nor the `Assess documents` action SHALL be present
+- **THEN** the `Assess documents` action SHALL NOT be present
 
 ### Requirement: The Woo term is extended from the case page (REQ-WCS-002)
 
@@ -46,11 +50,14 @@ reasons).
 
 ### Requirement: The Woo decision is made from the case page (REQ-WCS-003)
 
-A Woo case SHALL offer a `Woo decision` header action while it has no decision. Its dialog SHALL
-show the count of documents per classification and the outstanding count, SHALL refuse to submit
-while any document is outstanding, and SHALL post `{decision: {...}}` to POST
-`/api/cases/{id}/woo/decision`. After a stored decision the existing `Publish (Woo)` action SHALL
-be reachable without any API call outside the page.
+The Woo request case type SHALL configure the generic decision dialog (document-assessment
+REQ-DAS-003) as the `Woo decision` header action: the outstanding list, the assessments counted
+from `wooDocumentAssessment` by `caseRef`, the three classifications, and the post of
+`{decision: {...}}` to POST `/api/cases/{id}/woo/decision`. The action SHALL be offered while the
+case has no `wooPublicationStatus`, on the Woo request case type only and not on an archived case.
+The decision route sets `wooPublicationStatus` to `ready`; the dialog asks the page to read the
+case again, so the existing `Publish (Woo)` action, offered on `ready`, SHALL be reachable without
+a reload and without any API call outside the page.
 
 #### Scenario: From assessment to publish on screen
 - **GIVEN** a Woo case whose documents are all assessed, and opencatalogi installed
