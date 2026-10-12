@@ -124,9 +124,9 @@ describe('the cases list', () => {
 		expect(lead[0].default).toBe(true)
 	})
 
-	it('keeps every one of the 18 lenses it had (19 before one-follow-control folded Favourites into Following), with the filter it had', () => {
-		expect(before.quickFilters).toHaveLength(18)
-		expect(simple.quickFilters).toHaveLength(19)
+	it('keeps every one of the 19 lenses it had (With drafts joined them with decision 201), with the filter it had', () => {
+		expect(before.quickFilters).toHaveLength(19)
+		expect(simple.quickFilters).toHaveLength(20)
 		for (const lens of before.quickFilters) {
 			const kept = simple.quickFilters.find(
 				(item) => item.label === lens.label,
