@@ -226,12 +226,10 @@
 			:description="
 				t(
 					'dossiq',
-					'Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.',
+					'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.',
 				)
 			"
-			:loading="!storesReady">
-			<DecisionTablesTab v-if="storesReady" />
-		</CnSettingsSection>
+			:loading="!storesReady" />
 
 		<CnSettingsSection
 			id="section-financial"
@@ -325,7 +323,6 @@ import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
-import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
@@ -368,7 +365,6 @@ export default {
 		FinancialIntegrationTab,
 		EmailSettings,
 		KccIntegrationSettings,
-		DecisionTablesTab,
 		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
