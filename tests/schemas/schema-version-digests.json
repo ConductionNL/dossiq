@@ -1464,7 +1464,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/83-woo-document-assessment.json::wooDocumentAssessment": {
-        "version": "1.2.0",
+        "version": "1.2.1",
         "digest": "1d0a9ca7042939efab4202f938d992bff7ed8a4692b277aca418c42bcaacde6a"
     },
     "lib/Settings/register.d/84-woo-refusal-grounds.json::wooRefusalGround": {
