@@ -54,3 +54,32 @@ stay in the list. Nothing SHALL read as saved unless the server stored it.
 - **WHEN** the handler saves
 - **THEN** the dialog SHALL show the server's sentence beside that document
 - **AND** the document SHALL still be in the list
+
+### Requirement: A case is decided from its assessments in one dialog (REQ-DAS-003)
+
+A case page header action of type `open-modal` MAY open `AssessmentDecisionDialog`. The action's
+`props` SHALL configure it: `title`, `outstandingUrl` and `decideUrl` (with `{caseId}`),
+`assessments` (`{register, schema, caseField, classificationField}`) and `classifications` (each
+`{value, label}`).
+
+The dialog SHALL show the number of documents per classification and the number without an
+assessment. While any document is outstanding it SHALL name those documents and SHALL offer
+nothing to save. When the outstanding list cannot be read it SHALL say so and SHALL offer nothing
+to save either: an unreadable list is not an empty one. When only the counts cannot be read, the
+dialog SHALL say so and SHALL still let the handler decide, because the counts inform and the
+outstanding list decides.
+
+On save the dialog SHALL post `{decision: {...}}` once, with the summary when the handler gave
+one. On success it SHALL ask the page to read the case again. A refusal SHALL be shown with the
+server's sentence, SHALL NOT read as decided, and the outstanding list SHALL be read again.
+
+#### Scenario: One document still waits
+- **GIVEN** a case with one outstanding document
+- **WHEN** the handler opens the dialog
+- **THEN** the dialog SHALL name that document and SHALL offer nothing to save
+
+#### Scenario: Everything is assessed
+- **GIVEN** a case whose documents are all assessed
+- **WHEN** the handler records the decision
+- **THEN** the configured decision route SHALL be called once
+- **AND** the page SHALL read the case again

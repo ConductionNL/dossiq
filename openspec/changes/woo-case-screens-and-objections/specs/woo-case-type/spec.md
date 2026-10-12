@@ -47,11 +47,14 @@ the server's sentence. The action SHALL be hidden once the term has been extende
 
 ### Requirement: The Woo decision is made from the case page (REQ-WCS-003)
 
-A Woo case SHALL offer a `Woo decision` header action while it has no decision. Its dialog SHALL
-show the count of documents per classification and the outstanding count, SHALL refuse to submit
-while any document is outstanding, and SHALL post `{decision: {...}}` to POST
-`/api/cases/{id}/woo/decision`. After a stored decision the existing `Publish (Woo)` action SHALL
-be reachable without any API call outside the page.
+The Woo request case type SHALL configure the generic decision dialog (document-assessment
+REQ-DAS-003) as the `Woo decision` header action: the outstanding list, the assessments counted
+from `wooDocumentAssessment` by `caseRef`, the three classifications, and the post of
+`{decision: {...}}` to POST `/api/cases/{id}/woo/decision`. The action SHALL be offered while the
+case has no `wooPublicationStatus`, on the Woo request case type only and not on an archived case.
+The decision route sets `wooPublicationStatus` to `ready`; the dialog asks the page to read the
+case again, so the existing `Publish (Woo)` action, offered on `ready`, SHALL be reachable without
+a reload and without any API call outside the page.
 
 #### Scenario: From assessment to publish on screen
 - **GIVEN** a Woo case whose documents are all assessed, and opencatalogi installed

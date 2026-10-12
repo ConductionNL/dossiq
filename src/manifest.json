@@ -4005,6 +4005,37 @@
 						}
 					},
 					{
+						"id": "assessment-decide",
+						"type": "open-modal",
+						"label": "Woo decision",
+						"icon": "Gavel",
+						"target": "AssessmentDecisionDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Woo decision",
+							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",
+							"assessments": {
+								"register": "dossiq",
+								"schema": "wooDocumentAssessment",
+								"caseField": "caseRef",
+								"classificationField": "classification"
+							},
+							"classifications": [
+								{ "value": "openbaar", "label": "Public" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part" },
+								{ "value": "niet_openbaar", "label": "Not public" }
+							]
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" },
+								{ "field": "wooPublicationStatus", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "cross-domain-lookup",
 						"type": "open-modal",
 						"label": "Known in another domain",
