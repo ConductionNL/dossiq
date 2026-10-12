@@ -323,4 +323,52 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         cutting an array literal into pieces to pass a length rule hides nothing. Under decision 182
         the honest fix is to move the default mappings into a configuration file the repair step
         reads, which is a refactor-programme decision, not a decomposition slice. Left for that.
-  - [ ] ContactMomentService waits on #3563
+  - [x] `ContactMomentService` (2: `mergeUpdate` CyclomaticComplexity and the class-level
+        ExcessiveClassComplexity; #3563 has landed). What a contact moment may hold on create and
+        on update moved to the new `lib/Service/Kcc/ContactMomentPayload.php` (`forCreate()`,
+        `merged()`, one `oneOf()` for the three lists, one `withTags()`, the end and duration of
+        an update in `withUpdatedEnd()`); the service keeps the lookups, the ownership check and
+        the saves, and its constructor is unchanged. Characterisation, green on the old code
+        first: `tests/Unit/Service/Kcc/ContactMomentWritePathTest.php` (10 tests through create,
+        update, get, list and related over a fake ObjectService). Own test for the new class:
+        `ContactMomentPayloadTest` (11). It pins one thing worth knowing: an update stores
+        `endedAt` as sent, without the normaliser a create uses; behaviour kept, not fixed here.
+- [ ] Slice 8, the class-level suppressions. With the method-level ones gone (AcController's
+      four wait on #3298), what is left on the ZGW surface is ExcessiveClassComplexity,
+      ExcessiveClassLength, TooManyMethods and CouplingBetweenObjects. Those need a class split by
+      concern, not a method split. Same method as before: characterisation through the public
+      callers green on the old class first, then the split, then the same tests again.
+  - [x] 8a `ZgwZrcRulesService` (2: ExcessiveClassComplexity 153 against 50, and
+        ExcessiveClassLength; 1,170 lines to about 310). It keeps the three zaak entry rules and
+        builds three rule groups from its own three collaborators, so its constructor, the
+        dispatcher and the container are unchanged: `Zgw/ZrcCaseFieldRules` (the zrc-002 and
+        zrc-010 to zrc-022 sequence; complexity 38), which builds `Zgw/ZrcCaseRelationRules`
+        (hoofdzaak and products, the two rules that read another object; 28),
+        `Zgw/ZrcCaseTypeDefaults` (default handler and zrc-009 confidentiality; 16) and
+        `Zgw/ZrcSubResourceRules` (zrc-016, 018, 019, 020; 25). `setContext()` is forwarded to
+        every group; removing the forward makes four tests fail (checked).
+        Characterisation: the existing `ZgwZrcCaseFieldRulesTest` (30) and
+        `ZgwZrcRulesServiceTest`, plus the new `ZgwZrcCaseEntryRulesTest` (9: create defaults,
+        the refused zaaktype, default assignee, the three confidentiality spellings, the PUT
+        carry-forward, the PATCH fallback), green on the single class first and unchanged after.
+        Own tests: `tests/Unit/Service/Zgw/ZrcCaseFieldRulesTest`, `ZrcCaseRelationRulesTest`,
+        `ZrcCaseTypeDefaultsTest`, `ZrcSubResourceRulesTest` (20 tests).
+        Removed, not moved: `detectEindstatus()` and `filterZakenForConsumer()` (22 points of
+        complexity) had no caller in `lib/`. The live answers are `Zgw/ZrcEindstatus` (slice 6c)
+        and the read-access filter in `ZrcController`, each with its own suite; the eight tests of
+        the two dead methods went with them.
+  - [x] 8b `ZgwBrcRulesService` (1: ExcessiveClassComplexity 89 against 50). It keeps the create
+        rules of a besluit (brc-001, 002, 007; complexity 38) and builds two rule groups the same
+        way 8a does: `Zgw/BrcImmutabilityRules` (update and patch: besluittype, identificatie and
+        verantwoordelijkeOrganisatie may not change, a PUT carries the last two forward; 30) and
+        `Zgw/BrcDocumentLinkRules` (brc-003, 004, 008 for a besluitinformatieobject; 21). The
+        lookup by URL and the list decoding both sides need sit in the trait
+        `Zgw/ReadsLinkedObjects`. `setContext()` is forwarded; removing the forward to the
+        document rules makes four tests fail (checked).
+        Characterisation, green on the single class first: 11 tests added to
+        `ZgwBrcRulesServiceTest` (26 in all), because update and patch had none. They pin two
+        things worth knowing: an empty stored `title` does not fall through to `identifier`, and
+        a PUT that sends an empty identificatie against a stored one is refused instead of
+        filled. Behaviour kept, not fixed here.
+        Own tests: `tests/Unit/Service/Zgw/BrcImmutabilityRulesTest` (8) and
+        `BrcDocumentLinkRulesTest` (5), the second with every lookup keyed on its own schema.
