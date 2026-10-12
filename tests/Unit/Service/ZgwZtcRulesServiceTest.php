@@ -28,6 +28,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\ZgwZtcRulesService
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcConceptRules
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcTypeReferences
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService

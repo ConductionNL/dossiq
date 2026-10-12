@@ -417,3 +417,22 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         with its schema) and `DrcObjectLinkRulesTest` (7). One branch is unreachable and was
         moved as it stood: "De object URL bevat geen geldig UUID", because `isValidUrl()` already
         refuses a URL whose path does not end in a uuid.
+  - [x] 8d `ZgwZtcRulesService` (1: ExcessiveClassComplexity 106 against 50). It keeps the create
+        rules of a zaaktype, a besluittype and a zaaktype-informatieobjecttype (ztc-001 and the
+        name lookup; complexity 25) and builds three collaborators: `Zgw/ZtcConceptRules`
+        (ztc-009 and ztc-010, the concept default and the kept concept; 29), `Zgw/ZtcTypeReferences`
+        (reference lists to uuids, related zaaktypen, `_directFields`; 30) and
+        `Zgw/ZtcPublishAndDeleteChecks` (what a case type needs before publish or delete; 29).
+        The public methods, both constants, the constructor signature, `ZgwBusinessRulesService`
+        and the dispatcher are unchanged. `setContext()` goes to the two that look things up;
+        removing either forward turns tests red (2 and 12, checked). The concept rules read
+        nothing from the store and get no context.
+        Characterisation, green on the single class first: the concept rules had no test at all,
+        so `tests/Unit/Service/ZgwZtcConceptRulesTest.php` (7 tests, every resource against every
+        action) is new, and 6 tests joined `ZgwZtcRulesServiceTest` for the failed reads of the
+        publish and delete checks. They pin: a stored `isDraft` wins over a stored `concept`; a
+        type without either field is a concept; a delete check that cannot read the cases lets
+        the delete through, and one that cannot read the final status types counts every case as
+        active. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Zgw/ZtcConceptRulesTest` (6), `ZtcTypeReferencesTest` (4,
+        every search asserted with its schema) and `ZtcPublishAndDeleteChecksTest` (6).

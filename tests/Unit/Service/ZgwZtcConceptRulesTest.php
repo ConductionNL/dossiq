@@ -36,6 +36,9 @@ use Psr\Log\LoggerInterface;
  * Characterisation tests for the ZTC concept rules.
  *
  * @covers \OCA\Dossiq\Service\ZgwZtcRulesService
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcConceptRules
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcTypeReferences
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
