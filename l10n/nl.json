@@ -10032,6 +10032,10 @@
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Collected mail by sender, recipient and domain": "Verzamelde mail per afzender, ontvanger en domein",
+        "No mail collected on this case": "Op deze zaak is geen mail verzameld",
+        "Mails collected: {mails}. Headers that could not be read: {unreadable}.": "Verzamelde mails: {mails}. Berichtkoppen die niet te lezen waren: {unreadable}.",
+        "A mail counts once for an address and once for a domain, also when it names them more than once.": "Een mail telt één keer mee voor een adres en één keer voor een domein, ook als het adres of domein er vaker in staat."
     }
 }

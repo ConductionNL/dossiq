@@ -10032,6 +10032,10 @@
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Collected mail by sender, recipient and domain": "Collected mail by sender, recipient and domain",
+        "No mail collected on this case": "No mail collected on this case",
+        "Mails collected: {mails}. Headers that could not be read: {unreadable}.": "Mails collected: {mails}. Headers that could not be read: {unreadable}.",
+        "A mail counts once for an address and once for a domain, also when it names them more than once.": "A mail counts once for an address and once for a domain, also when it names them more than once."
     }
 }
