@@ -43,6 +43,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
 

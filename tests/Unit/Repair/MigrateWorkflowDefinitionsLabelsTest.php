@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels
  *
  * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 
