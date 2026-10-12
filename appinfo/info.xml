@@ -812,12 +812,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
             <!--
-                Points DSO intake at integriq's dso_verzoek schema when the key
-                was never set (absent). An admin's value, an empty one included,
-                is kept. In BOTH blocks: integriq may come before dossiq or after.
-            -->
-            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
-            <!--
                 Ships the initial assistant prompt library into hermiq
                 (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
                 every prompt an administrator touched, so a rerun restores
@@ -1067,12 +1061,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exist.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
-            <!--
-                Points DSO intake at integriq's dso_verzoek schema when the key
-                was never set (absent). An admin's value, an empty one included,
-                is kept. In BOTH blocks: integriq may come before dossiq or after.
-            -->
-            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
             <!--
                 Ships the initial assistant prompt library into hermiq
                 (ai-features-on-the-case-consume-hermiq REQ-AIC-06). hermiq skips
