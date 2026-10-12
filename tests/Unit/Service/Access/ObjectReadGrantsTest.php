@@ -162,7 +162,7 @@ class ObjectReadGrantsTest extends TestCase {
 	}//end setUp()
 
 	public function testReadersAreGrantedReadOnlyAndTheOwnerIsSkipped(): void {
-		$answer = $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler', 'reviewer1', 'reviewer2', 'handler', ''], group: 'dossiq-coordinators');
+		$answer = $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler' => 1, 'reviewer1' => 1, 'reviewer2' => 1, '' => 1, ' ' => 3], group: 'dossiq-coordinators');
 
 		self::assertSame(['user:handler', 'user:reviewer2'], $this->sharing->granted);
 		self::assertSame([ObjectReadGrants::READ, ObjectReadGrants::READ], $this->sharing->permissions, 'no update, delete or share bit is ever granted');
@@ -178,7 +178,7 @@ class ObjectReadGrantsTest extends TestCase {
 			['id' => 'inherited:4', 'type' => 'user', 'sharedWith' => 'parent-reader', 'inherited' => true],
 		];
 
-		$answer = $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler'], group: 'dossiq-coordinators');
+		$answer = $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler' => 1], group: 'dossiq-coordinators');
 
 		self::assertSame(['ocinternal:2'], $this->sharing->revoked);
 		self::assertSame([], $this->sharing->granted);
@@ -186,21 +186,55 @@ class ObjectReadGrantsTest extends TestCase {
 	}//end testAFormerReaderIsRevokedAndAGroupOrInheritedGrantIsLeftAlone()
 
 	public function testASecondRunChangesNothing(): void {
-		$this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler'], group: 'dossiq-coordinators');
+		$this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler' => 1], group: 'dossiq-coordinators');
 		$this->sharing->grants = [['id' => 'ocinternal:9', 'type' => 'user', 'sharedWith' => 'handler']];
 		$this->sharing->granted = [];
 
-		$answer = $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler'], group: 'dossiq-coordinators');
+		$answer = $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler' => 1], group: 'dossiq-coordinators');
 
 		self::assertSame(['granted' => 0, 'revoked' => 0, 'refused' => 0], $answer);
 		self::assertSame(['dossiq-coordinators'], $this->ownership->groups, 'the owning group is set once');
 	}//end testASecondRunChangesNothing()
 
+	public function testAReaderWhoMayUpdateIsGrantedReadAndUpdateAndNothingMore(): void {
+		$answer = $this->grants->reconcile(schema: 'review', uuid: 'a-1', readers: ['handler' => 1, 'reviewer2' => 3, 'reviewer3' => 31, 'reviewer4' => 2], group: '');
+
+		self::assertSame(['user:handler', 'user:reviewer2', 'user:reviewer3', 'user:reviewer4'], $this->sharing->granted);
+		self::assertSame([1, 3, 3, 3], $this->sharing->permissions, 'read always, update when asked, never delete or share');
+		self::assertSame(4, $answer['granted']);
+	}//end testAReaderWhoMayUpdateIsGrantedReadAndUpdateAndNothingMore()
+
+	public function testAGrantWithOtherPermissionsThanDueIsGrantedAgain(): void {
+		$this->sharing->grants = [
+			['id' => 'ocinternal:1', 'type' => 'user', 'sharedWith' => 'reviewer2', 'permissions' => 1],
+			['id' => 'ocinternal:2', 'type' => 'user', 'sharedWith' => 'handler', 'permissions' => 3],
+			['id' => 'ocinternal:3', 'type' => 'user', 'sharedWith' => 'reviewer3', 'permissions' => 3],
+		];
+
+		$answer = $this->grants->reconcile(schema: 'review', uuid: 'a-1', readers: ['reviewer2' => 3, 'handler' => 1, 'reviewer3' => 3], group: '');
+
+		self::assertSame(['ocinternal:1', 'ocinternal:2'], $this->sharing->revoked, 'a read grant where update is due, and an update grant where read is due');
+		self::assertSame(['user:reviewer2', 'user:handler'], $this->sharing->granted);
+		self::assertSame([3, 1], $this->sharing->permissions);
+		self::assertSame(['granted' => 2, 'revoked' => 2, 'refused' => 0], $answer);
+	}//end testAGrantWithOtherPermissionsThanDueIsGrantedAgain()
+
+	public function testASecondRunWithUpdateGrantsChangesNothing(): void {
+		$this->sharing->grants = [
+			['id' => 'ocinternal:1', 'type' => 'user', 'sharedWith' => 'reviewer2', 'permissions' => 3],
+			['id' => 'ocinternal:2', 'type' => 'user', 'sharedWith' => '1001', 'permissions' => 1],
+		];
+
+		$answer = $this->grants->reconcile(schema: 'review', uuid: 'a-1', readers: ['reviewer2' => 3, '1001' => 1], group: '');
+
+		self::assertSame(['granted' => 0, 'revoked' => 0, 'refused' => 0], $answer, 'a numeric user id is matched as the string it is');
+	}//end testASecondRunWithUpdateGrantsChangesNothing()
+
 	public function testARefusalIsCountedNotSwallowed(): void {
 		$this->sharing->refuse = true;
 
-		self::assertSame(['granted' => 0, 'revoked' => 0, 'refused' => 1], $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler'], group: ''));
-		self::assertSame(1, $this->grants->reconcile(schema: 'assessment', uuid: 'missing', readers: ['handler'], group: '')['refused'], 'a record that cannot be read is refused');
+		self::assertSame(['granted' => 0, 'revoked' => 0, 'refused' => 1], $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler' => 1], group: ''));
+		self::assertSame(1, $this->grants->reconcile(schema: 'assessment', uuid: 'missing', readers: ['handler' => 1], group: '')['refused'], 'a record that cannot be read is refused');
 	}//end testARefusalIsCountedNotSwallowed()
 
 	public function testWithoutSharingItIsNotAvailable(): void {
@@ -209,6 +243,6 @@ class ObjectReadGrantsTest extends TestCase {
 		unset($this->services['OCA\OpenRegister\Service\Rbac\ObjectSharingService']);
 
 		self::assertFalse($this->grants->available());
-		self::assertSame(1, $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler'], group: '')['refused']);
+		self::assertSame(1, $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler' => 1], group: '')['refused']);
 	}//end testWithoutSharingItIsNotAvailable()
 }//end class

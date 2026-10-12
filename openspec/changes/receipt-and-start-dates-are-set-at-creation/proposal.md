@@ -45,7 +45,10 @@ the Woo answer, so the term never used what the handler typed.
 - A per case type rule for the start date. Ruben decided on 11 October 2026
   that the start date is always the receipt date, for every case type, with
   no per case type rule. No case type field states one, and none is to be
-  added.
+  added. Amended by a-request-form-opens-the-case-at-once (decision 181,
+  Q11): when the term starts on a later day than the request came in, the
+  start date is the day the term starts. That is still one rule for every
+  case type.
 - Hiding a case type's own question from the create form. The
   `x-openregister-extends-form` declaration renders every definition of the
   chosen type, and nextcloud-vue offers no way to keep one off the form.

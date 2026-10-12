@@ -25,6 +25,38 @@ Nothing in this capability names a procedure. Which case types assess documents 
 - **WHEN** they ask for the outstanding documents
 - **THEN** the answer SHALL be 403 and SHALL carry no documents
 
+### Requirement: A case answers every document with its assessment (REQ-DAS-004)
+
+`GET /api/cases/{id}/document-assessments` SHALL answer `{count, outstanding, documents}` for a
+caller who may read the case. `documents` SHALL carry one entry `{id, title, outstanding,
+assessment}` for every document on the case that was not set aside, titled as REQ-DAS-001 titles
+it. `outstanding` SHALL be the same answer the outstanding list gives for that document, and the
+top-level `outstanding` SHALL be their number.
+
+`assessment` SHALL be the document's assessment as the caller may read it: its own fields and its
+`id`, without the references back to the case and the document. It SHALL be null for an
+outstanding document. It SHALL also be null for a document whose assessment the caller may not
+read; that document SHALL NOT read as outstanding, because somebody did assess it.
+
+The refusals are those of REQ-DAS-001: 401 without a user, 403 without read access to the case,
+503 when the register cannot answer, and never a list beside a refusal.
+
+This is the data of a case page section that lists every document with its assessment. The
+section itself waits for its board (decision 162). Which fields of an assessment a screen shows
+is configuration of that screen.
+
+#### Scenario: Three documents under review
+- **GIVEN** a case with an unassessed document, a document the caller assessed as not public on one ground, and a document set aside
+- **WHEN** a handler who may read the case asks for the document assessments
+- **THEN** the answer SHALL carry `count` 2 and `outstanding` 1
+- **AND** the assessed document SHALL carry its classification and its ground
+- **AND** the set-aside document SHALL NOT be in the list
+
+#### Scenario: Another reviewer's assessment
+- **GIVEN** a document assessed by a reviewer whose assessment the caller may not read
+- **WHEN** the caller asks for the document assessments
+- **THEN** the document SHALL be listed with `outstanding` false and `assessment` null
+
 ### Requirement: A handler assesses several documents in one dialog (REQ-DAS-002)
 
 A case page header action of type `open-modal` MAY open `DocumentAssessDialog`. The action's

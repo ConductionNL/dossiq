@@ -34,6 +34,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Pause\ChaseSchedule;
 use OCA\Dossiq\Service\Pause\PauseReasonReader;
+use OCA\Dossiq\Service\Term\DayCount;
 use RuntimeException;
 
 /**
@@ -59,6 +60,7 @@ class DeadlinePauseService {
 	 *        which is a rationale and no chasing.
 	 * @param ChaseSchedule|null $schedule Turns a reason into the rung offsets the engine
 	 *        fires the reminders on. Optional beside the reader it belongs to.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -66,6 +68,7 @@ class DeadlinePauseService {
 		private readonly ?TermDeclarationReader $declarations = null,
 		private readonly ?PauseReasonReader $reasons = null,
 		private readonly ?ChaseSchedule $schedule = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -316,7 +319,7 @@ class DeadlinePauseService {
 		$durationDays = (int)($instance['pauzeDuurDagen'] ?? 0);
 
 		// Days actually used (cap at the requested duration).
-		$diff = (int)$pauzeStart->diff($aanvullingDatum)->days;
+		$diff = $this->days->between(from: $pauzeStart, to: $aanvullingDatum);
 		$consumed = max(0, min($durationDays, $diff));
 		$unused = $durationDays - $consumed;
 

@@ -103,6 +103,7 @@ class RecallSamples {
 			);
 		}
 
+		$this->batches->assertReviewerAdmitted(assignee: $assignee);
 		$reviews = $this->reviews->forCase(caseId: $caseId);
 		$nullSet = [];
 		$found = 0;

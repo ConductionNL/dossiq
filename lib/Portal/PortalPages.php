@@ -36,6 +36,14 @@ namespace OCA\Dossiq\Portal;
 class PortalPages {
 
 	/**
+	 * The create a list page starts with when that create writes elsewhere.
+	 *
+	 * @var array<string, string>
+	 */
+	private const PAGE_START_ACTIONS = ['verzoeken' => 'createKlacht'];
+
+
+	/**
 	 * One page per listable collection, under one menu group.
 	 *
 	 * The pages portaliq would make when an app declares none (the create
@@ -149,7 +157,7 @@ class PortalPages {
 				'blocks' => [],
 			];
 			foreach ($actions as $action) {
-				if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === $this->schemaOf(collections: $collections, id: $id)) {
+				if ($this->startsOn(action: $action, page: $id, collections: $collections) === true) {
 					$page['blocks'][] = ['type' => 'action', 'action' => (string)$action['id']];
 					break;
 				}
@@ -341,4 +349,30 @@ class PortalPages {
 
 		return $pages;
 	}//end withCaseScreen()
+
+	/**
+	 * Whether a create action is the one a list page starts with.
+	 *
+	 * The action that writes the page's own schema, or the one named for the
+	 * page in {@see self::PAGE_START_ACTIONS}: the complaint opens a case now
+	 * (decision 179, Q8), not a row of the page's list, and the "Klacht
+	 * indienen" page still starts with it.
+	 *
+	 * @param array<string, mixed>             $action      The action.
+	 * @param string                           $page        The page (and collection) id.
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 *
+	 * @return bool True when the page starts with this action.
+	 */
+	private function startsOn(array $action, string $page, array $collections): bool {
+		if (($action['type'] ?? '') !== 'create') {
+			return false;
+		}
+
+		if ((self::PAGE_START_ACTIONS[$page] ?? '') === ($action['id'] ?? null)) {
+			return true;
+		}
+
+		return ($action['schema'] ?? '') === $this->schemaOf(collections: $collections, id: $page);
+	}//end startsOn()
 }//end class

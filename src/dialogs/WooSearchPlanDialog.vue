@@ -10,6 +10,11 @@
   plan, and the history below the form is that plan's OpenRegister audit
   trail, so a decision can show who planned what and when.
 
+  Until the plan is recorded, a handler can start it from a named template of
+  the request configuration (RecordTemplateSelect). The template fills whose
+  files, the systems and the terms, never the period, and the recorded plan
+  names the template it started from (REQ-WRC-005).
+
   @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 -->
 <template>
@@ -34,6 +39,11 @@
 				data-testid="woo-plan-recorded">
 				{{ recordedLine }}
 			</p>
+
+			<RecordTemplateSelect
+				v-if="!plan?.recordedAt"
+				:schema="templateSchema"
+				@apply="applyTemplate" />
 
 			<fieldset
 				class="woo-search-plan__group"
@@ -140,6 +150,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import RecordTemplateSelect from '../components/RecordTemplateSelect.vue'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 const DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -152,6 +163,7 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcDialog,
 		NcTextField,
+		RecordTemplateSelect,
 	},
 
 	props: {
@@ -173,6 +185,8 @@ export default {
 			terms: '',
 			sources: [],
 			plan: null,
+			templateSchema: '',
+			startedFrom: '',
 			history: [],
 			error: '',
 			busy: false,
@@ -244,6 +258,7 @@ export default {
 		async loadPlan() {
 			try {
 				const { data } = await axios.get(this.url('/woo/plan'))
+				this.templateSchema = String(data?.templateSchema ?? '')
 				this.fill(data?.plan ?? null)
 			} catch (error) {
 				this.error =
@@ -279,6 +294,36 @@ export default {
 			if (plan.id) {
 				this.loadHistory(plan.id)
 			}
+		},
+
+		/**
+		 * Fill whose files, the systems and the terms from a named template. The
+		 * period stays as it is: a template never carries one.
+		 *
+		 * @param {{uuid: string, values: object}|null} template The chosen template, null when cleared.
+		 * @return {void}
+		 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-new-request-starts-from-the-configuration-of-an-earlier-one-req-wrc-005
+		 */
+		applyTemplate(template) {
+			this.startedFrom = template?.uuid ?? ''
+			if (!template) {
+				return
+			}
+			const values = template.values ?? {}
+			const custodians = (
+				Array.isArray(values.custodians) ? values.custodians : []
+			)
+				.map((custodian) => ({
+					name: String(custodian?.name ?? custodian ?? '').trim(),
+					function: String(custodian?.function ?? '').trim(),
+				}))
+				.filter((custodian) => custodian.name !== '')
+			this.custodians =
+				custodians.length > 0 ? custodians : [{ name: '', function: '' }]
+			this.systems = Array.isArray(values.systems)
+				? values.systems.map(String)
+				: []
+			this.terms = String(values.terms ?? '')
 		},
 
 		/**
@@ -352,18 +397,24 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				const { data } = await axios.put(this.url('/woo/plan'), {
+				const body = {
 					custodians: this.custodians
 						.filter((custodian) => custodian.name.trim() !== '')
 						.map((custodian) => ({
 							name: custodian.name.trim(),
 							function: custodian.function.trim(),
 						})),
+
 					systems: this.systems,
 					periodFrom: this.periodFrom,
 					periodTo: this.periodTo,
 					terms: this.terms.trim(),
-				})
+				}
+				if (this.startedFrom !== '') {
+					body.startedFrom = this.startedFrom
+				}
+				const { data } = await axios.put(this.url('/woo/plan'), body)
+				this.startedFrom = ''
 				this.fill(data?.plan ?? null)
 				emit(PAGE_REFRESH, {})
 			} catch (error) {

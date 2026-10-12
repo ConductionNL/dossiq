@@ -51,6 +51,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -77,10 +78,12 @@ class OpenWorkloadAgeService {
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger Logger.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -243,7 +246,7 @@ class OpenWorkloadAgeService {
 			return 0;
 		}
 
-		return (int)$from->diff($today)->days;
+		return $this->days->between(from: $from, to: $today);
 	}//end ageOf()
 
 	/**

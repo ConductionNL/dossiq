@@ -87,4 +87,27 @@ class OutstandingDocumentsTest extends TestCase {
 		self::assertSame($none, (new OutstandingDocuments(settingsService: $this->settings(register: new InMemoryRegister(), name: '')))->forCase(caseId: 'case-1'));
 		self::assertSame($none, (new OutstandingDocuments(settingsService: $this->settings(register: new InMemoryRegister())))->forCase(caseId: 'case-1'));
 	}//end testNothingIsOutstandingWithoutDocuments()
+
+	/**
+	 * Under review is every document on the case that was not set aside, assessed or not.
+	 *
+	 * @return void
+	 */
+	public function testUnderReviewIsEveryDocumentThatWasNotSetAside(): void {
+		$register = new InMemoryRegister();
+		foreach (['doc-1', 'doc-2', 'doc-3'] as $doc) {
+			$register->seed(schema: 'document', uuid: $doc, row: ['case' => 'case-1']);
+		}
+
+		$register->seed(schema: 'document', uuid: 'doc-other', row: ['case' => 'case-2']);
+		$register->seed(schema: 'wooDocumentAssessment', uuid: 'a-1', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1']);
+		$register->seed(schema: 'wooExclusion', uuid: 'x-1', row: ['case' => 'case-1', 'documentRef' => 'doc-2']);
+
+		$documents = new OutstandingDocuments(settingsService: $this->settings(register: $register));
+
+		self::assertSame(['doc-1', 'doc-3'], $documents->underReview(caseId: 'case-1'));
+		self::assertSame([], $documents->underReview(caseId: 'case-none'));
+		self::assertSame([], (new OutstandingDocuments(settingsService: $this->settings(register: null)))->underReview(caseId: 'case-1'));
+		self::assertSame([], (new OutstandingDocuments(settingsService: $this->settings(register: $register, name: '')))->underReview(caseId: 'case-1'));
+	}//end testUnderReviewIsEveryDocumentThatWasNotSetAside()
 }//end class

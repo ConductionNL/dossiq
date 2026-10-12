@@ -197,11 +197,11 @@ describe('the connection declaration', () => {
 
 	// BRP and KvK were both once marked "Specified, not built yet", which was
 	// false for both. What separates them is who calls them: nothing injects
-	// the KvK adapter.
+	// a KvK lookup, and dossiq ships no KvK client (ADR-118).
 	it('declares only KvK unavailable, and says why', () => {
 		const unavailable = connections.filter((c) => c.available === false)
 		expect(unavailable.map((c) => c.key)).toEqual(['kvk'])
-		expect(byKey.kvk.unavailableMessage).toMatch(/built and bound/i)
+		expect(byKey.kvk.unavailableMessage).toMatch(/no KvK client/i)
 		expect(byKey.kvk.unavailableMessage).not.toMatch(/not built/i)
 		expect(byKey.kvk.settingsUrl).toBeUndefined()
 	})

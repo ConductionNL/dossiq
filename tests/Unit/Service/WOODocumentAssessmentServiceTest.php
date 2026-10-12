@@ -319,6 +319,17 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 	}//end testGetOutstandingReturnsZeroWhenORUnavailable()
 
 	/**
+	 * Without OpenRegister no document is under review.
+	 *
+	 * @return void
+	 */
+	public function testNoDocumentIsUnderReviewWhenORUnavailable(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
+
+		$this->assertSame([], $this->service->getDocumentsUnderReview('case-uuid-001'));
+	}//end testNoDocumentIsUnderReviewWhenORUnavailable()
+
+	/**
 	 * AllDocumentsAssessed returns true when outstanding count is zero.
 	 *
 	 * @return void
