@@ -72,9 +72,9 @@ class StufProviderWriteListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		// Integriq's classes, optional at runtime: instanceof on an absent class is false.
-		$isCase     = ($event instanceof \OCA\Integriq\Event\StufCaseMutationEvent);
-		$isDocument = ($event instanceof \OCA\Integriq\Event\StufDocumentMutationEvent);
-		if ($isCase === false && $isDocument === false) {
+		if (($event instanceof \OCA\Integriq\Event\StufCaseMutationEvent) === false
+			&& ($event instanceof \OCA\Integriq\Event\StufDocumentMutationEvent) === false
+		) {
 			return;
 		}
 
@@ -88,12 +88,10 @@ class StufProviderWriteListener implements IEventListener {
 			return;
 		}
 
-		// An integriq from before decision 206 sends StUF fields and no operation: refuse, never guess from them.
-		$operation = [];
-		if (method_exists($event, 'getOperation') === true) {
-			$operation = (array)$event->getOperation();
-		}
-
+		// A message integriq did not map onto an operation is refused, never guessed from its StUF fields.
+		// An integriq from before decision 206 has no getOperation(): that call fails, integriq catches
+		// it and answers a server fault, so no write is confirmed there either.
+		$operation = $event->getOperation();
 		if ($operation === []) {
 			$event->refuse(appId: Application::APP_ID, reason: 'Dossiq neemt wijzigingen alleen aan als bewerking van integriq.');
 			return;
