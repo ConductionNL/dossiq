@@ -1112,7 +1112,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\ImportCaseRecordsCommand</command>
         <command>OCA\Dossiq\Command\MigratePartnersCommand</command>
         <command>OCA\Dossiq\Command\MigrateBesluitenToDecidiqCommand</command>
-        <command>OCA\Dossiq\Command\RollbackCasePlansCommand</command>
         <command>OCA\Dossiq\Command\MigrateCasePlansCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>

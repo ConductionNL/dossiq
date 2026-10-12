@@ -604,17 +604,6 @@ $extra = [
         // The two `bulk-transition` routes this replaces looped in dossiq.
     ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
 
-        // ── CMMN Adaptive Case Engine (cmmn-adaptive-case) ──────────────
-        // Sibling to the Status Transition Engine above: single write-path
-        // for case.casePlanState on CMMN-managed caseTypes (handlingModel =
-        // 'cmmn'). BPMN-managed caseTypes never reach these routes — the
-        // engine itself refuses to operate on them (case_not_cmmn_managed).
-    ['name' => 'cmmnCase#plan',      'url' => '/api/case/{caseId}/cmmn-plan',           'verb' => 'GET'],
-    ['name' => 'cmmnCase#enable',    'url' => '/api/case/{caseId}/cmmn-plan/enable',    'verb' => 'POST'],
-    ['name' => 'cmmnCase#complete',  'url' => '/api/case/{caseId}/cmmn-plan/complete',  'verb' => 'POST'],
-    ['name' => 'cmmnCase#terminate', 'url' => '/api/case/{caseId}/cmmn-plan/terminate', 'verb' => 'POST'],
-    ['name' => 'cmmnCase#signal',    'url' => '/api/case/{caseId}/cmmn-plan/signal',    'verb' => 'POST'],
-
         // The tenant CRUD + lifecycle routes retired with the tenant admin store
         // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister
         // Organisation, administered through OpenRegister's organisation endpoints.
