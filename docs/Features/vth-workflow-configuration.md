@@ -28,7 +28,7 @@ Configures the Dossiq workflow engine for VTH (Vergunningen, Toezicht, Handhavin
 - `lhsMatrix`: JSON string of the 4×4 Landelijke Handhavingsstrategie matrix
 
 **Seed data:**
-- `lib/Settings/vth_seed_data.json`: 6 VTH case types (Omgevingsvergunning Regulier/Uitgebreid, Sloopmelding, Toezichtzaak Bouw/Milieu, Handhavingszaak)
+- `lib/Settings/packages/vth/`: the VTH package. Six case types with their statuses, roles, fields and document types, four published flows and three inspection checklists. The package installer writes it on every install and upgrade.
 - `lib/Settings/vth-templates/`: 6 JSON template files, one per case type
 
 ### LHS Matrix
@@ -46,4 +46,4 @@ The Landelijke Handhavingsstrategie (LHS) provides a standard 4×4 enforcement r
 
 Unit tests are in:
 - `tests/Unit/Service/VthSettingsServiceTest.php`: VTH config keys in getSettings(), updateSettings() persists VTH keys, lhsMatrix readable, core keys not overridden
-- `tests/Unit/Settings/VthSchemaTest.php`: all 4 VTH schemas registered, vth-templates dir exists, template files are valid JSON, expected files present, vth_seed_data.json valid
+- `tests/Unit/Settings/VthSchemaTest.php`: all 4 VTH schemas registered, vth-templates dir exists, template files are valid JSON, expected files present
