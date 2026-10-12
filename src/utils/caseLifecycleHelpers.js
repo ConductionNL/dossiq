@@ -99,6 +99,40 @@ export function buildTransitionPayload({ transitionId, comment, resultTypeId }) 
 }
 
 /**
+ * Whether the requester was told about an extension, as one sentence.
+ *
+ * The extension stands either way. A notice that did not go out is said with
+ * its reason, so the handler can tell the requester another way before the
+ * first term ends.
+ *
+ * @param {object|null} body The extend answer (`{..., notice: {noticeStatus, noticeReason}}`).
+ * @param {(key: string) => string} translate The bound t(), taking one string.
+ * @return {{told: boolean, text: string}|null} The sentence, or null when the answer carries no notice.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
+ */
+export function extensionNotice(body, translate) {
+	const t = typeof translate === 'function' ? translate : (s) => s
+	const notice = body?.notice
+	if (!notice || typeof notice !== 'object') {
+		return null
+	}
+
+	if (String(notice.noticeStatus ?? '') === 'sent') {
+		return {
+			told: true,
+			text: t('The term is extended. The requester was told.'),
+		}
+	}
+
+	// The reasons dossiq writes itself are catalogue keys; a reason another
+	// sender wrote passes through t() unchanged.
+	const reason = String(notice.noticeReason ?? '').trim()
+	const text = t('The term is extended. The requester was not told.')
+
+	return { told: false, text: reason === '' ? text : text + ' ' + t(reason) }
+}
+
+/**
  * Turn a server refusal into a sentence.
  *
  * @param {object} body The refusal body ({message, error, code, failedGuards, errors}).
@@ -146,6 +180,10 @@ export function refusalMessage(body, translate) {
 			return t('This case type does not allow suspension.')
 		case 'extension_not_allowed':
 			return t('This case type does not allow an extension.')
+		case 'extension_limit_reached':
+			return t(
+				'The term of this case was already extended as often as its case type allows.',
+			)
 		case 'extension_period_not_configured':
 		case 'extension_period_unreadable':
 			return t('This case type states no extension period.')

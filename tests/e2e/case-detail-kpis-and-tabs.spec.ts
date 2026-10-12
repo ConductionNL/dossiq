@@ -162,6 +162,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 	let caseId = ''
 	let caseTypeTitle = ''
+	let caseTypeUsesTheCaseLayer = false
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		const api = await playwright.request.newContext({ baseURL })
@@ -189,6 +190,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			'the instance must ship at least one PUBLISHED case type — adoptableCaseTypes() excludes drafts (isDraft !== false) and fixture-owned rows',
 		).toBeTruthy()
 		caseTypeTitle = String(chosen.title ?? chosen.name ?? '')
+		caseTypeUsesTheCaseLayer = chosen.handlingModel === 'cmmn'
 
 		const seeded = await seedCase(api, token, {
 			title: `E2E KPI case ${Date.now().toString(36)}`,
@@ -205,13 +207,18 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	// left dangling either, which is the point.
 
 	// @e2e openspec/specs/case-dashboard-view/spec.md#the-progress-tile-is-gone
+	// @e2e openspec/specs/retire-cmmn-caseplanstate/spec.md#a-bpmn-case-is-untouched
 	test('the identity row headlines the case, and the KPI tiles are gone', async ({
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
 		const milestoneCalls: string[] = []
 		const failures: Array<{ status: number; url: string }> = []
+		const planCalls: string[] = []
 		page.on('response', (r) => {
+			if (/\/apps\/openregister\/api\/cases\//.test(r.url())) {
+				planCalls.push(`${r.status()} ${r.url()}`)
+			}
 			if (r.url().includes('milestones/progress')) {
 				milestoneCalls.push(`${r.status()} ${r.url()}`)
 			}
@@ -311,16 +318,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const ABSENT_APPS = /\/apps\/(hermiq|humaniq)\//
 		const OWN = /\/apps\/dossiq\/|\/objects\/dossiq\//
 		const serverErrors = failures.filter((f) => f.status >= 500)
-		// The CMMN panel probes whether this case is CMMN-managed and is answered
-		// 409 for a BPMN-managed one. That is the app saying "no", not failing,
-		// and it is a dossiq URL — so it has to be excluded HERE, not only from
-		// the console list, or this assertion fails on correct behaviour.
+		// No allowance for a 409: the local case engine and its probe routes are
+		// gone, so nothing dossiq owns has a reason to answer one on this page.
 		const ownClientErrors = failures.filter(
-			(f) =>
-				f.status >= 400
-				&& f.status < 500
-				&& OWN.test(f.url)
-				&& !(f.status === 409 || /cmmn-plan/.test(f.url)),
+			(f) => f.status >= 400 && f.status < 500 && OWN.test(f.url),
 		)
 		expect(
 			serverErrors,
@@ -350,13 +351,19 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			)
 		}
 
-		// The CMMN panel probes whether this case is CMMN-managed and gets a 409
-		// for a BPMN-managed one, which is the app answering "no" rather than
-		// failing.
-		const unexpected = errors.filter(
-			(e) => !/\b409\b|cmmn-plan|Failed to load resource/.test(e),
-		)
+		const unexpected = errors.filter((e) => !/Failed to load resource/.test(e))
 		expect(unexpected, `console errors: ${unexpected.join(' | ')}`).toEqual([])
+
+		// A BPMN case is untouched by the case layer: a type without
+		// `handlingModel: cmmn` makes the page ask OpenRegister for no plan.
+		// The adopted type is whatever this instance ships, so the claim is
+		// made only when it is a BPMN one.
+		if (!caseTypeUsesTheCaseLayer) {
+			expect(
+				planCalls,
+				'a BPMN case page asks OpenRegister for no case plan',
+			).toEqual([])
+		}
 	})
 
 	test('the identity row carries no heading and no actions menu', async ({

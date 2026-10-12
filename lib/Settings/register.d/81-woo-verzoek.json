@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.0",
+          "version": "1.4.3",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -121,6 +121,13 @@
         "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
         "subject": "Openbaarmaking van overheidsinformatie",
         "processingDeadline": "P28D",
+        "remedy": {
+          "enabled": true,
+          "kind": "bezwaar",
+          "termDays": 42,
+          "body": "het college van burgemeester en wethouders",
+          "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+        },
         "confidentiality": "intern",
         "isDraft": false,
         "extensionAllowed": true,
@@ -135,6 +142,14 @@
             {
               "schemaKey": "woo_assessment_schema",
               "caseField": "caseRef"
+            },
+            {
+              "schemaKey": "review_batch_schema",
+              "caseField": "case"
+            },
+            {
+              "schemaKey": "triage_rule_schema",
+              "caseField": "case"
             }
           ],
           "reviewers": [
@@ -456,7 +471,8 @@
         ],
         "documentReview": {
           "enabled": true
-        }
+        },
+        "maxExtensions": 1
       },
       {
         "@self": {
