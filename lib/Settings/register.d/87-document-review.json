@@ -116,7 +116,7 @@
       "triageRule": {
         "slug": "triageRule",
         "icon": "Tune",
-        "version": "1.0.3",
+        "version": "1.0.4",
         "searchable": false,
         "title": "Triage rule",
         "description": "A visible rule on a case that marks collected documents in or out of scope without a reviewer opening each one.",
@@ -214,13 +214,16 @@
         "authorization": {
           "scope": "private",
           "read": [
-            "authenticated"
+            "dossiq-medewerkers",
+            "dossiq-background-service"
           ],
           "create": [
-            "authenticated"
+            "dossiq-medewerkers",
+            "dossiq-background-service"
           ],
           "update": [
-            "authenticated"
+            "dossiq-medewerkers",
+            "dossiq-background-service"
           ],
           "delete": [
             "dossiq-coordinators"
@@ -230,7 +233,7 @@
       "reviewBatch": {
         "slug": "reviewBatch",
         "icon": "TrayFull",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "searchable": false,
         "title": "Review batch",
         "description": "A named part of a case's in-scope documents, assigned to one reviewer through a task.",
@@ -292,13 +295,16 @@
         "authorization": {
           "scope": "private",
           "read": [
-            "authenticated"
+            "dossiq-medewerkers",
+            "dossiq-background-service"
           ],
           "create": [
-            "authenticated"
+            "dossiq-medewerkers",
+            "dossiq-background-service"
           ],
           "update": [
-            "authenticated"
+            "dossiq-medewerkers",
+            "dossiq-background-service"
           ],
           "delete": [
             "dossiq-coordinators"

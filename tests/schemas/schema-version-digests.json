@@ -1540,11 +1540,11 @@
         "digest": "216a897adb86c945301ae1dfed15e20a843fa15aa3c18b777b4b0b23ba5bd6e1"
     },
     "lib/Settings/register.d/87-document-review.json::reviewBatch": {
-        "version": "1.0.1",
+        "version": "1.0.2",
         "digest": "198618f15e6efb3d9e1d58f688addf6174aa73585dd3538aaa29b9c1c1f64da3"
     },
     "lib/Settings/register.d/87-document-review.json::triageRule": {
-        "version": "1.0.3",
+        "version": "1.0.4",
         "digest": "93aa28abbf825bf70614e2f818609321708ba0958b40832afb46bc743d34dad3"
     },
     "lib/Settings/register.d/88-review-recall.json::recallSample": {
