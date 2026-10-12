@@ -61,6 +61,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use OCA\Dossiq\Woo\WooReceivedAnswers;
@@ -370,6 +371,8 @@ class PortalContributionProvider {
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
 	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
+	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
+	 *                                                   null, which leaves those actions out.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
@@ -378,6 +381,7 @@ class PortalContributionProvider {
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
 		private readonly ?WooRequestIntake $wooRequests = null,
+		private readonly ?IntakeCaseTypes $caseTypes = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
@@ -781,7 +785,7 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
 	private function citizenContribution(string $group=self::CITIZEN_GROUP, array $labels=self::CITIZEN_PAGE_LABELS): array {
-		$manifest = new CitizenManifest();
+		$manifest = new CitizenManifest(caseTypes: $this->filingCaseTypes());
 		$collections = $manifest->collections();
 		$actions = $manifest->actions();
 
@@ -919,4 +923,19 @@ class PortalContributionProvider {
 		return $contribution;
 
 	}//end inspectorContribution()
+
+	/**
+	 * The case type each filing action opens (decision 179, Q8).
+	 *
+	 * @return array<string, string> Action id to case type uuid; an unknown one is left out.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
+	 */
+	private function filingCaseTypes(): array {
+		if ($this->caseTypes === null) {
+			return [];
+		}
+
+		return $this->caseTypes->caseTypes();
+	}//end filingCaseTypes()
 }//end class

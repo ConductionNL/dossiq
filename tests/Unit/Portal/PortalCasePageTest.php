@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -250,7 +251,14 @@ class PortalCasePageTest extends TestCase {
 	 * @return PortalContributionProvider
 	 */
 	private function provider(): PortalContributionProvider {
-		return new PortalContributionProvider();
+		$caseTypes = $this->createMock(IntakeCaseTypes::class);
+		$caseTypes->method('caseTypes')->willReturn(
+			[
+				'createBezwaar' => 'bbbbbbbb-0000-4000-a000-000000000001',
+				'createKlacht' => 'kkkkkkkk-0000-4000-a000-000000000002',
+			]
+		);
+		return new PortalContributionProvider(caseTypes: $caseTypes);
 	}
 
 	/**

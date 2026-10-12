@@ -29,14 +29,17 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+ * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
+use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseTypeStore;
+use Throwable;
 
 /**
  * The fields a new case is missing for its receipt and start dates.
@@ -71,24 +74,30 @@ class CaseReceiptDates {
 	/**
 	 * The fields to write onto a new case, or [] when it carries them all.
 	 *
-	 * `startDate` is the receipt day when the case has none. The case type's
-	 * `receiptDate` question is answered with the receipt day when the type
-	 * declares it and the case does not answer it; the answer is appended to
-	 * the case's own `properties`, the one place a case type's answers live
-	 * (friendly-case-create-form REQ-FCF-003).
+	 * `startDate` is written when the case has none. It is the receipt day,
+	 * unless the term starts on a later day than the request came in: then it
+	 * is the day the term starts (decision 181, Q11). The case's `deadline` is
+	 * `startDate` plus the processing term, so a request sent on Sunday counts
+	 * from the Monday its confirmation names, not from the Sunday before it.
+	 * The case type's `receiptDate` question is answered with the receipt day
+	 * when the type declares it and the case does not answer it; the answer is
+	 * appended to the case's own `properties`, the one place a case type's
+	 * answers live (friendly-case-create-form REQ-FCF-003).
 	 *
-	 * @param array<string, mixed> $case The case, as just created.
+	 * @param array<string, mixed> $case         The case, as just created.
+	 * @param string               $termStartsAt The moment the case's term starts, or '' when no calendar answered.
 	 *
 	 * @return array<string, mixed> The fields to write.
 	 *
 	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
-	public function changesFor(array $case): array {
+	public function changesFor(array $case, string $termStartsAt = ''): array {
 		$day = $this->receiptDayOf(case: $case);
 		$changes = [];
 
 		if (trim((string)($case[self::START_DATE] ?? '')) === '') {
-			$changes[self::START_DATE] = $day;
+			$changes[self::START_DATE] = $this->startDayOf(receiptDay: $day, termStartsAt: $termStartsAt);
 		}
 
 		if ($this->intake->receiptAnswerOf(case: $case) !== '') {
@@ -110,6 +119,55 @@ class CaseReceiptDates {
 
 		return $changes;
 	}//end changesFor()
+
+	/**
+	 * The start date dossiq gives a case, whatever start date it carries.
+	 *
+	 * For the save that sends a draft. The start date a draft carries is the
+	 * day it was begun, filled in by the schema's own calculation, not a date
+	 * anyone gave; the case starts from the moment it was sent.
+	 *
+	 * @param array<string, mixed> $case         The case, naming its receipt.
+	 * @param string               $termStartsAt The moment the case's term starts, or '' when no calendar answered.
+	 *
+	 * @return string The start day, `Y-m-d`.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function startDateFor(array $case, string $termStartsAt): string {
+		return $this->startDayOf(receiptDay: $this->receiptDayOf(case: $case), termStartsAt: $termStartsAt);
+	}//end startDateFor()
+
+	/**
+	 * The day a case starts on: the receipt day, or the later day its term starts.
+	 *
+	 * Only a LATER day moves it. A term that starts on the receipt day, or a
+	 * term start that does not read as a moment, leaves the receipt day as it
+	 * was written, so a day an integration supplied is not sent through a
+	 * time zone and back.
+	 *
+	 * @param string $receiptDay   The receipt day, `Y-m-d`.
+	 * @param string $termStartsAt The moment the term starts, or ''.
+	 *
+	 * @return string The start day, `Y-m-d`.
+	 */
+	private function startDayOf(string $receiptDay, string $termStartsAt): string {
+		if (trim($termStartsAt) === '') {
+			return $receiptDay;
+		}
+
+		try {
+			$termDay = $this->dates->formatCalendarDate(moment: new DateTimeImmutable($termStartsAt));
+		} catch (Throwable $e) {
+			return $receiptDay;
+		}
+
+		if (strcmp($termDay, $receiptDay) > 0) {
+			return $termDay;
+		}
+
+		return $receiptDay;
+	}//end startDayOf()
 
 	/**
 	 * The day the request was received, `Y-m-d`.
