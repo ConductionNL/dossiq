@@ -136,8 +136,9 @@ class PackageSchemaReferences {
 	 */
 	public function seedGroup(array $seed): array {
 		$group = ['schemaKey' => '', 'rows' => array_values((array)$seed['rows'])];
-		if (is_string($seed['match'] ?? null) === true) {
-			$group['match'] = $seed['match'];
+		$match = (new PackageSeedRules())->matchProperties(match: ($seed['match'] ?? null));
+		if ($match !== []) {
+			$group['match'] = $match;
 		}
 
 		if (is_array($seed['schema']) === false) {

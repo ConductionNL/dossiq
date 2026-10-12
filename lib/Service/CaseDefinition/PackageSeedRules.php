@@ -81,7 +81,54 @@ final class PackageSeedRules {
 	}//end schemaErrors()
 
 	/**
-	 * Check the property a seed file recognises an existing row by.
+	 * The properties a seed file's `match` names, or none when it names none.
+	 *
+	 * `match` is one property name, or a list of them. A row is then
+	 * recognised by all of them together.
+	 *
+	 * @param mixed $match The `match` value.
+	 *
+	 * @return array<int, string> The property names; empty when `match` is not valid.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function matchProperties(mixed $match): array {
+		if (is_string($match) === true) {
+			$match = [$match];
+		}
+
+		if (is_array($match) === false || $match === [] || array_is_list($match) === false) {
+			return [];
+		}
+
+		foreach ($match as $property) {
+			if (is_string($property) === false || preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $property) !== 1) {
+				return [];
+			}
+		}
+
+		return array_values(array_unique($match));
+	}//end matchProperties()
+
+	/**
+	 * Whether a value can recognise a row: a text, a number or a flag.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return bool True when it can.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function isMatchable(mixed $value): bool {
+		if (is_string($value) === true) {
+			return trim($value) !== '';
+		}
+
+		return is_int($value) === true || is_bool($value) === true;
+	}//end isMatchable()
+
+	/**
+	 * Check the properties a seed file recognises an existing row by.
 	 *
 	 * @param mixed             $match The `match` value.
 	 * @param array<int, mixed> $rows  The rows.
@@ -90,20 +137,23 @@ final class PackageSeedRules {
 	 * @return array<int, string> The errors.
 	 */
 	private function matchErrors(mixed $match, array $rows, string $path): array {
-		if (is_string($match) === false || preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $match) !== 1) {
-			return ["{$path}: match must name one property of the rows."];
+		$properties = $this->matchProperties(match: $match);
+		if ($properties === []) {
+			return ["{$path}: match must name one property of the rows, or a list of them."];
 		}
 
 		$errors = [];
 
 		foreach ($rows as $index => $row) {
-			$value = null;
-			if (is_array($row) === true) {
-				$value = ($row[$match] ?? null);
-			}
+			foreach ($properties as $property) {
+				$value = null;
+				if (is_array($row) === true) {
+					$value = ($row[$property] ?? null);
+				}
 
-			if (is_string($value) === false || trim($value) === '') {
-				$errors[] = "{$path} row {$index}: has no '{$match}', the property this file recognises an existing row by.";
+				if ($this->isMatchable(value: $value) === false) {
+					$errors[] = "{$path} row {$index}: has no '{$property}', a property this file recognises an existing row by.";
+				}
 			}
 		}
 

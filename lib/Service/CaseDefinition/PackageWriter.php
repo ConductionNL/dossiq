@@ -256,7 +256,7 @@ class PackageWriter {
 	 *
 	 * A group that names its own `register` and `schema` goes there: that is a
 	 * seed file for another app's schema, resolved by the installer. A group
-	 * that names `match` adopts a row with the same value for that property.
+	 * that names `match` adopts a row with the same value for every property it names.
 	 *
 	 * @throws RuntimeException When the group's schema key resolves to nothing.
 	 */
@@ -282,7 +282,7 @@ class PackageWriter {
 				schemaKey: $group['schemaKey'],
 				row: $row,
 				caseTypes: $run['caseTypes'],
-				match: (string)($group['match'] ?? ''),
+				match: (array)($group['match'] ?? []),
 			);
 			if ($existing !== null && $this->existingId(row: $existing) !== '') {
 				$this->adopt(group: $group, schema: $schema, packageId: $packageId, existing: $existing, run: $run);

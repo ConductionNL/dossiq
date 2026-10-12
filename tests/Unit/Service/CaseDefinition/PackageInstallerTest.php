@@ -1129,6 +1129,164 @@ class PackageInstallerTest extends TestCase {
 	}//end testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn()
 
 	/**
+	 * The shared seed fixture, matching on something else and carrying other rows.
+	 *
+	 * @param mixed                            $match The `match` value.
+	 * @param array<int, array<string, mixed>> $rows  The rows.
+	 *
+	 * @return string The root holding the variant.
+	 */
+	private function sharedSeedMatching(mixed $match, array $rows): string {
+		return $this->copyOf(
+			'fixture-shared-seed',
+			static function (string $dir) use ($match, $rows): void {
+				self::editJson(
+					$dir . '/seed/tables.json',
+					static function (array $seed) use ($match, $rows): array {
+						$seed['match'] = $match;
+						$seed['rows'] = $rows;
+						return $seed;
+					}
+				);
+			}
+		);
+	}//end sharedSeedMatching()
+
+	/**
+	 * REQ-CT-56: a seed file may match on a flag. A row this instance holds
+	 * with the flag set is adopted whatever it is called, so an instance that
+	 * replaced the shipped default under another name gets no second one.
+	 * The flag counts however the store answers it.
+	 *
+	 * @param mixed $held How the existing row holds the flag.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider waysAStoreAnswersASetFlag
+	 */
+	public function testASeedRowIsAdoptedByAFlagWhateverTheExistingRowIsCalled(mixed $held = true): void {
+		$this->register->seed('60', 'made-here', ['key' => 'made.here', 'name' => 'Made here', 'active' => $held]);
+		$root = $this->sharedSeedMatching(
+			match: 'active',
+			rows: [['id' => '0f1c0000-0000-4000-8000-000000000081', 'key' => 'fixture.default', 'name' => 'Fixture default', 'active' => true]],
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(0, $outcome['written']);
+		$this->assertSame(1, $outcome['adopted']);
+		$this->assertSame(['made.here'], array_column($this->register->all('60'), 'key'));
+	}//end testASeedRowIsAdoptedByAFlagWhateverTheExistingRowIsCalled()
+
+	/**
+	 * The ways a store answers a flag that is set.
+	 *
+	 * @return array<string, array{0: mixed}> The cases.
+	 */
+	public static function waysAStoreAnswersASetFlag(): array {
+		return ['a boolean' => [true], 'the number one' => [1], 'the text true' => ['true']];
+	}//end waysAStoreAnswersASetFlag()
+
+	/**
+	 * REQ-CT-56: a row with the flag cleared is not the one, so the package's row is written beside it.
+	 *
+	 * @return void
+	 */
+	public function testASeedRowIsNotAdoptedByARowWithTheFlagCleared(): void {
+		$this->register->seed('60', 'retired-here', ['key' => 'retired.here', 'name' => 'Retired here', 'active' => false]);
+		$root = $this->sharedSeedMatching(
+			match: 'active',
+			rows: [['id' => '0f1c0000-0000-4000-8000-000000000081', 'key' => 'fixture.default', 'name' => 'Fixture default', 'active' => true]],
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(1, $outcome['written']);
+		$this->assertSame(0, $outcome['adopted']);
+		$this->assertSame(['retired.here', 'fixture.default'], array_column($this->register->all('60'), 'key'));
+	}//end testASeedRowIsNotAdoptedByARowWithTheFlagCleared()
+
+	/**
+	 * REQ-CT-56: a seed file may match on several properties together. Only a
+	 * row equal on every one of them is adopted.
+	 *
+	 * @return void
+	 */
+	public function testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual(): void {
+		$this->register->seed('60', 'cell-a1', ['row' => 'A', 'column' => '1', 'name' => 'Edited here']);
+		$this->register->seed('60', 'cell-b2', ['row' => 'B', 'column' => '2', 'name' => 'Other cell']);
+		$root = $this->sharedSeedMatching(
+			match: ['row', 'column'],
+			rows: [
+				['id' => '0f1c0000-0000-4000-8000-000000000091', 'row' => 'A', 'column' => '1', 'name' => 'Shipped A1'],
+				['id' => '0f1c0000-0000-4000-8000-000000000092', 'row' => 'A', 'column' => '2', 'name' => 'Shipped A2'],
+			],
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(1, $outcome['written']);
+		$this->assertSame(1, $outcome['adopted']);
+		$this->assertSame(['Edited here', 'Other cell', 'Shipped A2'], array_column($this->register->all('60'), 'name'));
+	}//end testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual()
+
+	/**
+	 * REQ-CT-56: a row that lacks one of several matched properties makes the package invalid.
+	 *
+	 * @return void
+	 */
+	public function testASeedRowWithoutOneOfSeveralMatchedPropertiesIsInvalid(): void {
+		$root = $this->sharedSeedMatching(
+			match: ['row', 'column'],
+			rows: [['id' => '0f1c0000-0000-4000-8000-000000000091', 'row' => 'A', 'name' => 'Shipped A1']],
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString("row 0: has no 'column'", implode(' ', (array)($outcome['errors'] ?? [])));
+		$this->assertSame(0, $this->register->writes);
+	}//end testASeedRowWithoutOneOfSeveralMatchedPropertiesIsInvalid()
+
+	/**
+	 * REQ-CT-56: a match that names nothing, or something that is not a property name, makes the package invalid.
+	 *
+	 * @param mixed $match The `match` value.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider matchesThatNameNoProperty
+	 */
+	public function testASeedMatchThatNamesNoPropertyIsInvalid(mixed $match): void {
+		$root = $this->sharedSeedMatching(
+			match: $match,
+			rows: [['id' => '0f1c0000-0000-4000-8000-000000000091', 'key' => 'fixture.first', 'name' => 'Fixture first']],
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString('match must name', implode(' ', (array)($outcome['errors'] ?? [])));
+	}//end testASeedMatchThatNamesNoPropertyIsInvalid()
+
+	/**
+	 * The `match` values that name no property.
+	 *
+	 * @return array<string, array{0: mixed}> The cases.
+	 */
+	public static function matchesThatNameNoProperty(): array {
+		return [
+			'an empty list' => [[]],
+			'a list holding a number' => [['key', 7]],
+			'a flag' => [true],
+			'a name with a space' => [['key', 'the name']],
+		];
+	}//end matchesThatNameNoProperty()
+
+	/**
 	 * REQ-CT-55: when a later row fails, the row already written into the other register is taken back from that register.
 	 *
 	 * @return void
