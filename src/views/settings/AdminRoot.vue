@@ -221,6 +221,17 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-dmn"
+			:name="t('dossiq', 'Decision tables (DMN)')"
+			:description="
+				t(
+					'dossiq',
+					'Decision tables live in the decision-tables register of OpenRegister. Dossiq stores its own tables there under keys that start with dossiq. and evaluates them from workflow steps and the enforcement recommendation. Open OpenRegister to read or change a table.',
+				)
+			"
+			:loading="!storesReady" />
+
+		<CnSettingsSection
 			id="section-financial"
 			:name="t('dossiq', 'Financial integration: dwangsom callback')"
 			:description="
