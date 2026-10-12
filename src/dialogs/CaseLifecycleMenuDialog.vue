@@ -177,7 +177,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { showWarning } from '@nextcloud/dialogs'
+import { showSuccess, showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -194,6 +194,7 @@ import {
 } from '../utils/caseAwaitingApproval.js'
 import {
 	buildTransitionPayload,
+	extensionNotice,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
 import { failedActionsWarning } from '../utils/transitionOutcome.js'
@@ -358,6 +359,16 @@ export default {
 						'dossiq',
 						'The term starts now. The case leaves your drafts.',
 					)
+				case 'extend':
+					// Board DqVolgendeStap. Two literal keys, so the extractor
+					// finds both; caseActsMenu picks which one applies.
+					return entry?.explainer
+						=== 'Once, with a reason. The requester gets a message.'
+						? t(
+								'dossiq',
+								'Once, with a reason. The requester gets a message.',
+							)
+						: t('dossiq', 'With a reason. The requester gets a message.')
 				default:
 					return ''
 			}
@@ -568,7 +579,7 @@ export default {
 					// engine answers `partial` naming what failed.
 					this.warnAboutFailedActions(data)
 				} else {
-					await axios.post(
+					const { data } = await axios.post(
 						generateUrl(
 							`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`,
 						),
@@ -579,6 +590,7 @@ export default {
 							days: Number(this.days) || 0,
 						},
 					)
+					this.sayWhetherTheRequesterWasTold(data)
 				}
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
@@ -606,6 +618,29 @@ export default {
 			const warning = failedActionsWarning(data)
 			if (warning !== '') {
 				showWarning(warning)
+			}
+		},
+
+		/**
+		 * After an extension, say whether the requester was told.
+		 *
+		 * The extension stands either way and the dialog closes. A notice that
+		 * did not go out is a warning with its reason, so the handler can tell
+		 * the requester another way. An act that answers no notice says nothing.
+		 *
+		 * @param {object} data The act's response body.
+		 * @return {void}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
+		 */
+		sayWhetherTheRequesterWasTold(data) {
+			const notice = extensionNotice(data, (s) => t('dossiq', s))
+			if (notice === null) {
+				return
+			}
+			if (notice.told) {
+				showSuccess(notice.text)
+			} else {
+				showWarning(notice.text)
 			}
 		},
 	},

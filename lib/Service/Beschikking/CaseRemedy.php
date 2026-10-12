@@ -97,6 +97,19 @@ class CaseRemedy {
 	}//end termDaysFor()
 
 	/**
+	 * The remedy this case's case type declares, normalised.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string} The declaration.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/remedy-lodging/spec.md#requirement-a-remedy-is-lodged-against-a-decided-case-req-rml-001
+	 */
+	public function declarationOf(string $caseId): array {
+		return $this->declaration->declarationFor(caseType: $this->caseTypeOf(caseId: $caseId));
+	}//end declarationOf()
+
+	/**
 	 * Bind the remedy clock, started by the decision going out.
 	 *
 	 * A term instance of its own kind, so the case answers "is this decision

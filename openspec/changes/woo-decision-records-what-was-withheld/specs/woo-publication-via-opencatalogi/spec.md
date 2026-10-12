@@ -6,7 +6,8 @@ After `WooPublicationService::publish()` has created or updated the publication,
 `OCA\OpenCatalogi\Service\Woo\WithheldDocuments::record($publicationId, $entries, 'dossiq')` exactly
 once, with one entry per `niet_openbaar` assessment of the case. Each entry SHALL be
 `{position: int, grounds: list<string>}` and SHALL hold no other key: `position` is the document's
-inventory number as `WooDecisionDrafts::wooDecision()` gives it, and `grounds` the assessment's
+inventory number as the generic withheld list numbers it (REQ-PWL-001: every assessed document of
+the case in `documentRef` order, from 1; `WooDecisionDrafts` does not exist), and `grounds` the assessment's
 `weigeringsgronden`. dossiq SHALL NOT send a `title`, a file, a file id, a hash, a document
 reference or any text. `publish()` SHALL answer the outcome under `withheldRecord` as
 `{status: 'recorded', recorded, refused}`, and SHALL NOT roll back the publication when entries are

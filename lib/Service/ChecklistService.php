@@ -285,7 +285,7 @@ class ChecklistService {
 	 * Only `ja_nee_nvt` carries an intrinsic verdict; every other response type
 	 * records a measurement or a note and conforms by virtue of being answered.
 	 * Range checking for `getal` / `meting` belongs to the submit path in
-	 * `InspectionChecklistService`, which rejects an out-of-range value
+	 * the task run (once `InspectionChecklistService`), which rejects an out-of-range value
 	 * outright, so such a value never reaches this method.
 	 *
 	 * @param array<string, mixed> $item The frozen item definition.

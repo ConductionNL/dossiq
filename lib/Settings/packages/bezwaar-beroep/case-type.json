@@ -118,7 +118,7 @@
   ],
   "statusTypes": [
     {
-      "id": "95f8c7ba-40c6-5295-9560-c26a4ffc2b26",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a01",
       "name": "Ontvangen",
       "description": "Bezwaarschrift is ontvangen",
       "order": 1,
@@ -126,7 +126,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "cf8a4518-daf9-55e2-9837-afc41aafe62e",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a02",
       "name": "Ontvankelijkheidstoets",
       "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)",
       "order": 2,
@@ -134,7 +134,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "45834d81-cb94-596a-8779-c2d87818c53a",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a03",
       "name": "In behandeling",
       "description": "Inhoudelijke behandeling gestart",
       "order": 3,
@@ -142,7 +142,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "b2c116ae-d8cc-5072-93c5-9c07db368764",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a04",
       "name": "Hoorzitting gepland",
       "description": "Hoorzitting is ingepland (Awb art. 7:2)",
       "order": 4,
@@ -150,7 +150,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "7502251b-966a-5d81-9024-37ff263b2587",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a05",
       "name": "Hoorzitting afgerond",
       "description": "Hoorzitting heeft plaatsgevonden",
       "order": 5,
@@ -158,7 +158,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "2ce5e5a2-cc44-53fe-8a0d-d90e2cf9d686",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a06",
       "name": "Advies uitgebracht",
       "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
       "order": 6,
@@ -166,7 +166,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "15f46590-90f3-5a05-8630-fe11a34d71f1",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a07",
       "name": "Beslissing op bezwaar",
       "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)",
       "order": 7,
@@ -174,7 +174,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "20084547-9fd1-5ae0-ab1b-ca6e8090defd",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a08",
       "name": "Afgehandeld",
       "description": "Bezwaarprocedure is volledig afgerond",
       "order": 8,
@@ -182,7 +182,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "c16e08a4-f6e7-56d8-b8d3-22a8e63f3128",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a09",
       "name": "Niet-ontvankelijk",
       "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)",
       "order": 90,
@@ -190,7 +190,7 @@
       "caseType": "b3c1a000-0000-4000-a000-00000000be2a"
     },
     {
-      "id": "a264a645-ba3e-564e-ac09-6bfcb8b5a37d",
+      "id": "b3c1a000-0000-4000-a000-0000000b2a10",
       "name": "Ingetrokken",
       "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)",
       "order": 91,

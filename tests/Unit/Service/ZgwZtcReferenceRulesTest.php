@@ -50,6 +50,7 @@ interface ZtcObjectServiceStub {
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
  */
 class ZgwZtcReferenceRulesTest extends TestCase {
 

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+ * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use OCA\Dossiq\Woo\WooCaseDocuments;
 /**
  * Reads the original and the delivered file of one item of a frozen file set.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+ * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
 class FileSetItemFiles {
 
@@ -77,7 +77,7 @@ class FileSetItemFiles {
 	 *
 	 * @return array<string, array{fileName: string, mimeType: string, readable: bool}>|null
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+	 * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	public function describe(array $set, int $index): ?array {
 		$item = $this->item(set: $set, index: $index);
@@ -107,7 +107,7 @@ class FileSetItemFiles {
 	 *
 	 * @return array{bytes: string, fileName: string, mimeType: string}|null
 	 *
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+	 * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	public function read(array $set, int $index, string $side): ?array {
 		$item = $this->item(set: $set, index: $index);

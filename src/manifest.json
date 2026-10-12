@@ -2499,7 +2499,7 @@
 						"type": "custom",
 						"title": "Case plan",
 						"icon": "Sitemap",
-						"_note": "The adaptive case plan of a caseType with `handlingModel: cmmn` (page slot widget-cmmn-case-plan -> CasePlanPanel). The stages, tasks and milestones are rows OpenRegister holds in its case layer and serves on /api/cases, not a `casePlanState` blob this app decodes. It renders nothing for a BPMN caseType, whose status moves are taken by clicking a stage in the `case-stages` widget above. It fails CLOSED when OpenRegister cannot be reached: an error with a retry, never an empty plan, because an outage and a case with no work left look identical from the browser and only one of them is safe to act on. It sits at the foot of the page and takes the full width, because a plan tree is wide and a right-rail cell would wrap every item name. Deleted the day the manifest vocabulary has a case-plan widget type over /api/cases (retire-cmmn-caseplanstate)."
+						"_note": "The adaptive case plan of a caseType with `handlingModel: cmmn` (page slot widget-cmmn-case-plan -> CasePlanPanel). The stages, tasks and milestones are rows OpenRegister holds in its case layer and serves on /api/cases; dossiq holds no case engine of its own. It renders nothing for a BPMN caseType, whose status moves are taken by clicking a stage in the `case-stages` widget above. It fails CLOSED when OpenRegister cannot be reached: an error with a retry, never an empty plan, because an outage and a case with no work left look identical from the browser and only one of them is safe to act on. It sits at the foot of the page and takes the full width, because a plan tree is wide and a right-rail cell would wrap every item name. Deleted the day the manifest vocabulary has a case-plan widget type over /api/cases (retire-cmmn-caseplanstate)."
 					},
 					{
 						"id": "case-panels",
@@ -2653,7 +2653,8 @@
 											"columns": 2,
 											"include": [
 												"wooPublicationStatus",
-												"wooPublicationUrl"
+												"wooPublicationUrl",
+												"wooWithheldNote"
 											],
 											"hideEmpty": true,
 											"overrides": {
@@ -2661,6 +2662,9 @@
 													"editable": false
 												},
 												"wooPublicationUrl": {
+													"editable": false
+												},
+												"wooWithheldNote": {
 													"editable": false
 												}
 											}
@@ -3963,6 +3967,31 @@
 						}
 					},
 					{
+						"id": "remedy-lodge",
+						"type": "open-modal",
+						"label": "Register an objection",
+						"icon": "ScaleBalance",
+						"target": "RemedyLodgeDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Register an objection",
+							"lodgeUrl": "/apps/dossiq/api/cases/{caseId}/remedy",
+							"channels": [
+								{ "value": "brief", "label": "Letter" },
+								{ "value": "email", "label": "Email" },
+								{ "value": "form", "label": "Web form" },
+								{ "value": "balie", "label": "Desk" }
+							],
+							"openRoute": { "name": "CaseDetail", "idField": "caseId" }
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "woo-search-plan",
 						"type": "open-modal",
 						"label": "Search plan",
@@ -3985,6 +4014,72 @@
 							"all": [
 								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
 								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
+						"id": "document-assess",
+						"type": "open-modal",
+						"label": "Assess documents",
+						"icon": "FileCheckOutline",
+						"target": "DocumentAssessDialog",
+						"props": {
+							"caseId": "@objectId",
+							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+							"assessUrl": "/apps/dossiq/api/cases/{caseId}/woo/assessment",
+							"classifications": [
+								{ "value": "openbaar", "label": "Public" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "needsGrounds": true },
+								{ "value": "niet_openbaar", "label": "Not public", "needsGrounds": true }
+							],
+							"grounds": {
+								"register": "dossiq",
+								"schema": "wooRefusalGround",
+								"valueField": "code",
+								"labelField": "label",
+								"filter": { "status": "active", "citable": true }
+							},
+							"fields": {
+								"document": "documentRef",
+								"classification": "classification",
+								"grounds": "weigeringsgronden"
+							}
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
+						"id": "assessment-decide",
+						"type": "open-modal",
+						"label": "Woo decision",
+						"icon": "Gavel",
+						"target": "AssessmentDecisionDialog",
+						"props": {
+							"caseId": "@objectId",
+							"title": "Woo decision",
+							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+							"decideUrl": "/apps/dossiq/api/cases/{caseId}/woo/decision",
+							"assessments": {
+								"register": "dossiq",
+								"schema": "wooDocumentAssessment",
+								"caseField": "caseRef",
+								"classificationField": "classification"
+							},
+							"classifications": [
+								{ "value": "openbaar", "label": "Public" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part" },
+								{ "value": "niet_openbaar", "label": "Not public" }
+							]
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" },
+								{ "field": "wooPublicationStatus", "op": "empty" }
 							]
 						}
 					},

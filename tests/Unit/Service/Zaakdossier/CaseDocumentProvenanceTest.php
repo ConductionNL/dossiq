@@ -171,4 +171,41 @@ class CaseDocumentProvenanceTest extends TestCase {
 		self::assertSame(['files'], $this->provenance->valuesOf(caseId: self::CASE_ID, field: 'sourceSystem'));
 		self::assertSame([], $this->provenance->valuesOf(caseId: self::CASE_ID, field: 'terms'), 'a field outside the filter fields has no options');
 	}//end testValuesOfAFieldAreDistinctAndSorted()
+
+	/**
+	 * REQ-WRR-003: a mail answers its header fields lower-cased, with the sender's domain.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 */
+	public function testAMailAnswersItsHeaderFields(): void {
+		$this->copied(id: 'mail-1', provenance: ['source' => 'files', 'mail' => ['from' => 'A.Jansen@Gemeente.nl', 'to' => ['b@aannemer.nl'], 'cc' => 'C@gemeente.nl', 'date' => '2026-03-03T10:00:00+01:00', 'messageId' => '<m1@gemeente.nl>']]);
+
+		$mail = $this->provenance->mailOf(caseId: self::CASE_ID, documentId: 'mail-1');
+
+		self::assertTrue($mail['known']);
+		self::assertSame('a.jansen@gemeente.nl', $mail['from']);
+		self::assertSame('gemeente.nl', $mail['senderDomain']);
+		self::assertSame(['b@aannemer.nl'], $mail['to']);
+		self::assertSame(['c@gemeente.nl'], $mail['cc']);
+		self::assertSame('<m1@gemeente.nl>', $mail['messageId']);
+	}//end testAMailAnswersItsHeaderFields()
+
+	/**
+	 * REQ-WRR-003: a document without mail headers answers unknown, never a guessed sender.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 */
+	public function testADocumentWithoutMailHeadersAnswersUnknown(): void {
+		$this->copied(id: 'doc-x', provenance: ['source' => 'files']);
+		$this->copied(id: 'mail-u', provenance: ['mail' => ['unreadable' => true]]);
+
+		$plain = $this->provenance->mailOf(caseId: self::CASE_ID, documentId: 'doc-x');
+		self::assertFalse($plain['known']);
+		self::assertSame('', $plain['senderDomain']);
+		self::assertTrue($this->provenance->mailOf(caseId: self::CASE_ID, documentId: 'mail-u')['unreadable']);
+	}//end testADocumentWithoutMailHeadersAnswersUnknown()
 }//end class

@@ -15,7 +15,7 @@
                 "slug": "stufEndpoint",
                 "title": "StUF Endpoint",
                 "icon": "Connection",
-                "version": "1.0.1",
+                "version": "1.1.0",
                 "searchable": false,
                 "summary": "Configuration profile for a single zaaksysteem StUF connection.",
                 "description": "Stores the connection details (URL, sectormodel, authentication, TLS cert reference) for one legacy zaaksysteem reachable over StUF 0310. Multiple endpoints per gemeente are supported (transition scenarios).",
@@ -83,6 +83,12 @@
                         "title": "Sender organisation",
                         "description": "Sender organisation (gemeente).",
                         "maxLength": 255
+                    },
+                    "integriqSource": {
+                        "type": "string",
+                        "title": "Integriq source",
+                        "description": "The id of the integriq StUF-ZKN source that sends this endpoint's messages and receives its confirmations. Dossiq no longer sends StUF itself; without this value an outbound message is refused.",
+                        "maxLength": 64
                     },
                     "endpointUrl": {
                         "type": "string",

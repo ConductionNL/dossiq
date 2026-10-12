@@ -15,7 +15,7 @@
  * `mountCompare(el, { original, delivered, labels })`, each file
  * `{ fileName, mimeType, url }`, returning `{ unmount() }`; no events.
  *
- * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+ * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

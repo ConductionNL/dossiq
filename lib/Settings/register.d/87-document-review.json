@@ -1,5 +1,5 @@
 {
-  "_note": "woo-review-triage (rows 19.7 to 19.11). Relevance apart from the disclosure verdict, visible triage rules, and batches assigned to named reviewers. No x-openregister-hierarchy: OpenRegister refuses a parent that references another schema. The private authorization block of REQ-WRT-006 comes with section 6, once woo-request-scoped-access sets the grants; declaring it before then would lock the reviewers out.",
+  "_note": "woo-review-triage (rows 19.7 to 19.11). Relevance apart from the disclosure verdict, visible triage rules, and batches assigned to named reviewers. No x-openregister-hierarchy: OpenRegister refuses a parent that references another schema. reviewBatch and triageRule carry the private authorization block of REQ-WRT-006; the woo-verzoek case type lists them under reviewerAccess.records, and their creators reconcile the case in the same request, so CaseReviewerAccess grants the people on the case read on them. documentReview follows once its writers (DocumentRelevance::mark, triage apply) reconcile too: a private schema whose new records nobody reconciles would lock the reviewers out.",
   "components": {
     "registers": {
       "dossiq": {
@@ -116,7 +116,7 @@
       "triageRule": {
         "slug": "triageRule",
         "icon": "Tune",
-        "version": "1.0.2",
+        "version": "1.0.4",
         "searchable": false,
         "title": "Triage rule",
         "description": "A visible rule on a case that marks collected documents in or out of scope without a reviewer opening each one.",
@@ -142,7 +142,52 @@
           "conditions": {
             "type": "object",
             "title": "Conditions",
-            "description": "All of these must hold: custodian, source system, mime type, date range, sender domain, text that is or is not in the document."
+            "description": "All of these must hold. Custodian and source system read the document's provenance on the case, sender domain and the mail date its mail headers (provenance.mail), file type and creation date its record, and the text conditions the text OpenRegister extracted. A document that lacks the fact never matches.",
+            "additionalProperties": false,
+            "properties": {
+              "custodian": {
+                "type": "string",
+                "title": "Custodian",
+                "description": "Whose files or mailbox the document came from, as its provenance names them."
+              },
+              "sourceSystem": {
+                "type": "string",
+                "title": "Source system",
+                "description": "The system the document was collected from, as its provenance names it."
+              },
+              "mimeType": {
+                "type": "string",
+                "title": "File type",
+                "description": "The document's mime type, or a kind such as message/* for every mail."
+              },
+              "dateFrom": {
+                "type": "string",
+                "format": "date",
+                "title": "From",
+                "description": "The document's date (the mail date, else its creation date) is on or after this day."
+              },
+              "dateTo": {
+                "type": "string",
+                "format": "date",
+                "title": "Up to",
+                "description": "The document's date is on or before this day."
+              },
+              "senderDomain": {
+                "type": "string",
+                "title": "Sender domain",
+                "description": "The domain of the mail's sender, or one of its subdomains."
+              },
+              "textContains": {
+                "type": "string",
+                "title": "Text contains",
+                "description": "The extracted text contains this, regardless of case."
+              },
+              "textNotContains": {
+                "type": "string",
+                "title": "Text does not contain",
+                "description": "The extracted text does not contain this; a document without text never matches."
+              }
+            }
           },
           "effect": {
             "type": "string",
@@ -165,12 +210,30 @@
             "description": "Whether the rule runs when the rules are applied.",
             "default": true
           }
+        },
+        "authorization": {
+          "scope": "private",
+          "read": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "dossiq-coordinators"
+          ]
         }
       },
       "reviewBatch": {
         "slug": "reviewBatch",
         "icon": "TrayFull",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "searchable": false,
         "title": "Review batch",
         "description": "A named part of a case's in-scope documents, assigned to one reviewer through a task.",
@@ -228,6 +291,24 @@
             "default": "open",
             "facetable": true
           }
+        },
+        "authorization": {
+          "scope": "private",
+          "read": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "create": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "update": [
+            "dossiq-medewerkers",
+            "dossiq-background-service"
+          ],
+          "delete": [
+            "dossiq-coordinators"
+          ]
         }
       },
       "caseType": {
