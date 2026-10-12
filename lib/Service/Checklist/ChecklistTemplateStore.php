@@ -1,15 +1,16 @@
 <?php
 
 /**
- * Dossiq Inspection Checklist Service
+ * Checklist templates: the catalogue an administrator edits.
  *
- * Admin CRUD on `inspectionChecklistTemplate` objects (the one template
- * schema since inspection-checklists-onto-task 4.1). Runs are OpenRegister
- * tasks since 4.2, written and read by {@see Inspection\InspectionRunService}. Used by the checklist admin UI and the
- * mobiel-inspectie consumer.
+ * Create, read, update and delete on `inspectionChecklistTemplate` objects,
+ * the one template schema. A template belongs to a case type or to none, and
+ * says nothing about the procedure it is used in. A run of a template is an
+ * OpenRegister task, written and read by
+ * {@see \OCA\Dossiq\Service\Inspection\InspectionRunService}.
  *
  * @category Service
- * @package  OCA\Dossiq\Service
+ * @package  OCA\Dossiq\Service\Checklist
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,26 +26,26 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service;
+namespace OCA\Dossiq\Service\Checklist;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Inspection\InspectionTemplateMapper;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
 
 /**
- * Service for managing inspection checklists (admin CRUD + case completion).
+ * Reads and writes checklist templates in the settings editor's flat view.
  *
- * Distinct from the existing ChecklistService (which handles per-item
- * conformity completion during a mobile inspection run). This service
- * manages the template lifecycle: create/read/update/delete of
- * `inspectionChecklist` objects and submission of `inspectionResult` records.
+ * {@see \OCA\Dossiq\Service\ChecklistService} is the other half: it checks
+ * the answers of one run against a template. This class only keeps the
+ * templates.
  *
  * @spec openspec/specs/inspection-checklists/spec.md
  */
-class InspectionChecklistService {
+class ChecklistTemplateStore {
 
 	use SearchesObjects;
 
@@ -84,7 +85,7 @@ class InspectionChecklistService {
 	 *
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
-	public function listChecklists(?string $caseTypeRef = null): array {
+	public function all(?string $caseTypeRef = null): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -105,14 +106,14 @@ class InspectionChecklistService {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Failed to list inspection checklists: ' . $e->getMessage(),
+				'Failed to list checklist templates: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return [];
 		}
 
 		return array_map(fn (array $template): array => $this->mapper->toFlat(template: $template), $templates);
-	}//end listChecklists()
+	}//end all()
 
 	/**
 	 * Create a checklist template from the editor's flat payload.
@@ -125,12 +126,12 @@ class InspectionChecklistService {
 	 *
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
-	public function createChecklist(array $data): array {
+	public function create(array $data): array {
 		$template = $this->mapper->fromFlat(flat: $data);
 		$template['version'] = (int)($data['version'] ?? 1);
 
 		return $this->saveTemplate(template: $template, id: null);
-	}//end createChecklist()
+	}//end create()
 
 	/**
 	 * Update a checklist template, moving its version up by one.
@@ -144,12 +145,12 @@ class InspectionChecklistService {
 	 *
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
-	public function updateChecklist(string $id, array $data): array {
+	public function update(string $id, array $data): array {
 		$template = $this->mapper->fromFlat(flat: $data);
 		$template['version'] = ((int)($data['version'] ?? 1) + 1);
 
 		return $this->saveTemplate(template: $template, id: $id);
-	}//end updateChecklist()
+	}//end update()
 
 	/**
 	 * Delete a checklist template.
@@ -160,7 +161,7 @@ class InspectionChecklistService {
 	 *
 	 * @spec openspec/changes/inspection-checklists-onto-task/specs/inspection-checklists/spec.md#requirement-inspection-checklist-schema
 	 */
-	public function deleteChecklist(string $id): bool {
+	public function delete(string $id): bool {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return false;
@@ -177,12 +178,12 @@ class InspectionChecklistService {
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->warning(
-				'Failed to delete inspection checklist ' . $id . ': ' . $e->getMessage(),
+				'Failed to delete checklist template ' . $id . ': ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
 			return false;
 		}
-	}//end deleteChecklist()
+	}//end delete()
 
 	/**
 	 * Save a template and answer it flat.

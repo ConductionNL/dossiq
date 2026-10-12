@@ -1,7 +1,7 @@
 <?php
 
 /**
- * InspectionChecklistController Unit Tests
+ * TaskChecklistController Unit Tests
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -24,10 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Dossiq\Controller\InspectionChecklistController;
+use OCA\Dossiq\Controller\TaskChecklistController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Inspection\InspectionRunService;
-use OCA\Dossiq\Service\InspectionChecklistService;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Http;
@@ -38,16 +37,11 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Unit tests for InspectionChecklistController.
+ * Unit tests for TaskChecklistController.
  *
- * @covers \OCA\Dossiq\Controller\InspectionChecklistController
+ * @covers \OCA\Dossiq\Controller\TaskChecklistController
  */
-class InspectionChecklistControllerTest extends TestCase {
-
-	/**
-	 * @var InspectionChecklistService|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private InspectionChecklistService $inspectionChecklistService;
+class TaskChecklistControllerTest extends TestCase {
 
 	/**
 	 * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
@@ -75,9 +69,9 @@ class InspectionChecklistControllerTest extends TestCase {
 	private InspectionRunService $runs;
 
 	/**
-	 * @var InspectionChecklistController
+	 * @var TaskChecklistController
 	 */
-	private InspectionChecklistController $controller;
+	private TaskChecklistController $controller;
 
 	/**
 	 * Set up test fixtures.
@@ -85,75 +79,21 @@ class InspectionChecklistControllerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->inspectionChecklistService = $this->createMock(InspectionChecklistService::class);
 		$this->request = $this->createMock(IRequest::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 		$this->runs = $this->createMock(InspectionRunService::class);
 
-		$this->controller = new InspectionChecklistController(
+		$this->controller = new TaskChecklistController(
 			appName: 'dossiq',
 			request: $this->request,
-			checklistService: $this->inspectionChecklistService,
 			userSession: $this->userSession,
 			logger: $this->logger,
 			caseAccessGuard: $this->caseAccessGuard,
 			runs: $this->runs,
 		);
 	}//end setUp()
-
-	/**
-	 * Test that index returns 200 with checklist list.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	public function testIndexReturns200(): void {
-		$this->request->method('getParam')->willReturn(null);
-		$this->inspectionChecklistService
-			->method('listChecklists')
-			->willReturn([['id' => 'uuid-1', 'name' => 'Test Checklist']]);
-
-		$response = $this->controller->index();
-
-		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
-	}//end testIndexReturns200()
-
-	/**
-	 * Test that destroy returns 200 on successful deletion.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	public function testDestroyReturns200OnSuccess(): void {
-		$this->inspectionChecklistService
-			->method('deleteChecklist')
-			->willReturn(true);
-
-		$response = $this->controller->destroy(id: 'uuid-1');
-
-		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
-	}//end testDestroyReturns200OnSuccess()
-
-	/**
-	 * Test that destroy returns 500 when deletion fails.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	public function testDestroyReturns500OnFailure(): void {
-		$this->inspectionChecklistService
-			->method('deleteChecklist')
-			->willReturn(false);
-
-		$response = $this->controller->destroy(id: 'uuid-nonexistent');
-
-		$this->assertSame(expected: Http::STATUS_INTERNAL_SERVER_ERROR, actual: $response->getStatus());
-	}//end testDestroyReturns500OnFailure()
 
 	/**
 	 * Test that getResults returns 200 with a list.
@@ -176,7 +116,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			->method('runsForCase')
 			->willReturn([]);
 
-		$response = $this->controller->getResults(id: 'case-uuid');
+		$response = $this->controller->runs(id: 'case-uuid');
 
 		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 	}//end testGetResultsReturns200()
@@ -197,7 +137,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			->expects($this->never())
 			->method('runsForCase');
 
-		$response = $this->controller->getResults(id: 'someone-elses-case');
+		$response = $this->controller->runs(id: 'someone-elses-case');
 
 		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testGetResultsRefusesACallerWithoutCaseAccess()
@@ -232,7 +172,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			->expects($this->never())
 			->method('submit');
 
-		$response = $this->controller->submitResult(id: 'someone-elses-case');
+		$response = $this->controller->submit(id: 'someone-elses-case');
 
 		$this->assertSame(
 			expected: Http::STATUS_FORBIDDEN,
@@ -267,7 +207,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			->expects($this->never())
 			->method('submit');
 
-		$response = $this->controller->submitResult(id: 'someone-elses-case');
+		$response = $this->controller->submit(id: 'someone-elses-case');
 
 		$this->assertSame(
 			expected: Http::STATUS_FORBIDDEN,
@@ -300,7 +240,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			->method('submit')
 			->willReturn(['id' => 'result-uuid', 'completedBy' => 'inspecteur-a']);
 
-		$response = $this->controller->submitResult(id: 'case-uuid');
+		$response = $this->controller->submit(id: 'case-uuid');
 
 		$this->assertSame(
 			expected: Http::STATUS_CREATED,
@@ -333,7 +273,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			->method('submit')
 			->willReturn(['id' => 'result-uuid']);
 
-		$response = $this->controller->submitResult(id: 'any-case');
+		$response = $this->controller->submit(id: 'any-case');
 
 		$this->assertSame(
 			expected: Http::STATUS_CREATED,
@@ -361,7 +301,7 @@ class InspectionChecklistControllerTest extends TestCase {
 		$this->request->method('getParams')->willReturn([]);
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(false);
 
-		$response = $this->controller->submitResult(id: 'someone-elses-case');
+		$response = $this->controller->submit(id: 'someone-elses-case');
 
 		$this->assertSame(
 			expected: Http::STATUS_FORBIDDEN,
@@ -403,7 +343,7 @@ class InspectionChecklistControllerTest extends TestCase {
 				)
 			);
 
-		$response = $this->controller->submitResult(id: 'case-uuid');
+		$response = $this->controller->submit(id: 'case-uuid');
 
 		$this->assertSame(
 			expected: Http::STATUS_BAD_REQUEST,
@@ -442,7 +382,7 @@ class InspectionChecklistControllerTest extends TestCase {
 				)
 			);
 
-		$response = $this->controller->submitResult(id: 'case-uuid');
+		$response = $this->controller->submit(id: 'case-uuid');
 
 		$this->assertSame(
 			expected: Http::STATUS_BAD_REQUEST,
@@ -475,7 +415,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			->method('submit')
 			->willThrowException(new \TypeError('Argument #1 must be of type string, null given'));
 
-		$response = $this->controller->submitResult(id: 'case-uuid');
+		$response = $this->controller->submit(id: 'case-uuid');
 
 		$this->assertSame(
 			expected: Http::STATUS_INTERNAL_SERVER_ERROR,
@@ -483,85 +423,4 @@ class InspectionChecklistControllerTest extends TestCase {
 			message: 'A code fault is the server\'s fault and must stay a 500.'
 		);
 	}//end testSubmitResultStillAnswersFiveHundredForAGenuineServerFault()
-
-	/**
-	 * The admin CRUD half of this controller carried the identical arm: a
-	 * checklist whose payload the schema refuses came back as a 500, so an
-	 * author who mistyped a field was told the server had broken.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	public function testCreateAnswersFourHundredWhenOpenRegisterRefusesThePayload(): void {
-		$this->request->method('getParams')->willReturn(['name' => '']);
-		$this->inspectionChecklistService
-			->method('createChecklist')
-			->willThrowException(
-				new OpenRegisterValidationException(
-					message: "Property 'caseTypeRef' should match format 'uuid' but 'vth' does not"
-				)
-			);
-
-		$response = $this->controller->create();
-
-		$this->assertSame(
-			expected: Http::STATUS_BAD_REQUEST,
-			actual: $response->getStatus(),
-			message: 'A refused checklist payload is the author\'s fault, not a server fault.'
-		);
-		$this->assertStringContainsString(
-			needle: "Property 'caseTypeRef'",
-			haystack: (string)($response->getData()['message'] ?? ''),
-			message: 'The response must name the property that failed.'
-		);
-	}//end testCreateAnswersFourHundredWhenOpenRegisterRefusesThePayload()
-
-	/**
-	 * The same on update.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	public function testUpdateAnswersFourHundredWhenOpenRegisterRefusesThePayload(): void {
-		$this->request->method('getParams')->willReturn(['name' => '']);
-		$this->inspectionChecklistService
-			->method('updateChecklist')
-			->willThrowException(
-				new OpenRegisterValidationException(
-					message: "Property 'items' should be of type array but string given"
-				)
-			);
-
-		$response = $this->controller->update(id: 'checklist-uuid');
-
-		$this->assertSame(
-			expected: Http::STATUS_BAD_REQUEST,
-			actual: $response->getStatus(),
-			message: 'A refused checklist update is the author\'s fault, not a server fault.'
-		);
-	}//end testUpdateAnswersFourHundredWhenOpenRegisterRefusesThePayload()
-
-	/**
-	 * And the other way on create: a genuine fault stays a 500.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	public function testCreateStillAnswersFiveHundredForAGenuineServerFault(): void {
-		$this->request->method('getParams')->willReturn(['name' => 'VTH']);
-		$this->inspectionChecklistService
-			->method('createChecklist')
-			->willThrowException(new \TypeError('Argument #2 must be of type array, null given'));
-
-		$response = $this->controller->create();
-
-		$this->assertSame(
-			expected: Http::STATUS_INTERNAL_SERVER_ERROR,
-			actual: $response->getStatus(),
-			message: 'A code fault is the server\'s fault and must stay a 500.'
-		);
-	}//end testCreateStillAnswersFiveHundredForAGenuineServerFault()
 }//end class

@@ -699,14 +699,15 @@ $extra = [
         // VTH zaaktype template management (admin only).
     ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
     ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
-        // Inspection checklist CRUD (admin).
-    ['name' => 'inspectionChecklist#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
-    ['name' => 'inspectionChecklist#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
-    ['name' => 'inspectionChecklist#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
-    ['name' => 'inspectionChecklist#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
-        // Per-case inspection result submission and retrieval.
-    ['name' => 'inspectionChecklist#submitResult', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
-    ['name' => 'inspectionChecklist#getResults',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+        // Checklist templates (admin). The URLs keep their first names; the
+        // controllers behind them know no procedure.
+    ['name' => 'checklistTemplate#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
+    ['name' => 'checklistTemplate#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
+    ['name' => 'checklistTemplate#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
+    ['name' => 'checklistTemplate#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
+        // A checklist run on a case: submit one, read them all.
+    ['name' => 'taskChecklist#submit', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
+    ['name' => 'taskChecklist#runs',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
         // What an inspector captured at the site. The metadata validator and
         // the transcription queue both shipped with mobiel-inspectie-offline
         // and had no door, so a photo or a voice memo reached nobody and the
