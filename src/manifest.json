@@ -2113,6 +2113,15 @@
 						}
 					},
 					{
+						"label": "With drafts",
+						"_note": "staff-lists-show-drafts-on-request REQ-CM-79, decision 201. The ONE lens that asks for drafts beside the working set. A reader's own drafts are in every list already; this chip adds the drafts of colleagues the reader may read. A draft is the case itself in the status draft (decision 180), and OpenRegister leaves drafts out of every list, count and search unless the query asks: `_drafts` absent is the work list, `true` is drafts alone and `any` is both, resolved inside the query the way `_archived` is. So no other lens spells the exclusion out, and this chip is the filter that shows them. `any` and not `true`, because the question a handler has is 'what is on its way to my list', and that reads in place among the open cases. It carries no `isDraft` condition: that field is dossiq's older draft marker, which My drafts reads, and a case that carries it is a draft too. The lens widens what the list shows, never what the reader may read: a draft stays with its owner unless the schema lets colleagues see drafts.",
+						"filter": {
+							"isFinalStatus": false,
+							"statusHiddenInLists": false,
+							"_drafts": "any"
+						}
+					},
+					{
 						"label": "Overdue",
 						"filter": {
 							"isFinalStatus": false,

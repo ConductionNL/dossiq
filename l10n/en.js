@@ -9673,6 +9673,7 @@ OC.L10N.register(
         "Window": "Window",
         "With a reason. The requester gets a message.": "With a reason. The requester gets a message.",
         "With an account (DigiD or eHerkenning)": "With an account (DigiD or eHerkenning)",
+        "With drafts": "With drafts",
         "With the case number and an e-mail address": "With the case number and an e-mail address",
         "Withdraw": "Withdraw",
         "Withdraw publication": "Withdraw publication",
