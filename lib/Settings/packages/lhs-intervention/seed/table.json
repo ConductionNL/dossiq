@@ -1,0 +1,196 @@
+{
+  "schema": {
+    "app": "openregister",
+    "register": "decision-tables",
+    "slug": "decision-table"
+  },
+  "match": "key",
+  "rows": [
+    {
+      "id": "922ad0a8-e191-5c05-a4f4-5b6aa00bbd3d",
+      "key": "dossiq.lhs-intervention",
+      "name": "LHS interventie (gedrag x gevolg)",
+      "description": "Landelijke Handhavingsstrategie: the recommended intervention for a behaviour row (A-D) and a consequence column (1-4). Read by LhsLookupService::DECISION_TABLE.",
+      "hitPolicy": "UNIQUE",
+      "inputs": [
+        {
+          "name": "behaviour",
+          "type": "string"
+        },
+        {
+          "name": "consequence",
+          "type": "string"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "interventionStep",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "id": "A:1",
+          "inputEntries": [
+            "A",
+            "1"
+          ],
+          "outputEntries": [
+            "Bestuurlijke waarschuwing"
+          ]
+        },
+        {
+          "id": "A:2",
+          "inputEntries": [
+            "A",
+            "2"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom"
+          ]
+        },
+        {
+          "id": "A:3",
+          "inputEntries": [
+            "A",
+            "3"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom"
+          ]
+        },
+        {
+          "id": "A:4",
+          "inputEntries": [
+            "A",
+            "4"
+          ],
+          "outputEntries": [
+            "Last onder bestuursdwang"
+          ]
+        },
+        {
+          "id": "B:1",
+          "inputEntries": [
+            "B",
+            "1"
+          ],
+          "outputEntries": [
+            "Bestuurlijke waarschuwing + hersteltermijn"
+          ]
+        },
+        {
+          "id": "B:2",
+          "inputEntries": [
+            "B",
+            "2"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom"
+          ]
+        },
+        {
+          "id": "B:3",
+          "inputEntries": [
+            "B",
+            "3"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom + proces-verbaal"
+          ]
+        },
+        {
+          "id": "B:4",
+          "inputEntries": [
+            "B",
+            "4"
+          ],
+          "outputEntries": [
+            "Last onder bestuursdwang + proces-verbaal"
+          ]
+        },
+        {
+          "id": "C:1",
+          "inputEntries": [
+            "C",
+            "1"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom"
+          ]
+        },
+        {
+          "id": "C:2",
+          "inputEntries": [
+            "C",
+            "2"
+          ],
+          "outputEntries": [
+            "Last onder dwangsom + proces-verbaal"
+          ]
+        },
+        {
+          "id": "C:3",
+          "inputEntries": [
+            "C",
+            "3"
+          ],
+          "outputEntries": [
+            "Proces-verbaal + last onder bestuursdwang"
+          ]
+        },
+        {
+          "id": "C:4",
+          "inputEntries": [
+            "C",
+            "4"
+          ],
+          "outputEntries": [
+            "Proces-verbaal + last onder bestuursdwang"
+          ]
+        },
+        {
+          "id": "D:1",
+          "inputEntries": [
+            "D",
+            "1"
+          ],
+          "outputEntries": [
+            "Proces-verbaal + last onder dwangsom"
+          ]
+        },
+        {
+          "id": "D:2",
+          "inputEntries": [
+            "D",
+            "2"
+          ],
+          "outputEntries": [
+            "Proces-verbaal + last onder bestuursdwang"
+          ]
+        },
+        {
+          "id": "D:3",
+          "inputEntries": [
+            "D",
+            "3"
+          ],
+          "outputEntries": [
+            "Proces-verbaal + last onder bestuursdwang"
+          ]
+        },
+        {
+          "id": "D:4",
+          "inputEntries": [
+            "D",
+            "4"
+          ],
+          "outputEntries": [
+            "Proces-verbaal + last onder bestuursdwang + intrekking vergunning"
+          ]
+        }
+      ],
+      "owner": "dossiq"
+    }
+  ]
+}

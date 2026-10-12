@@ -1,0 +1,11 @@
+{
+  "id": "lhs-matrix",
+  "title": "Landelijke Handhavingsstrategie: matrix",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": [
+    "seed"
+  ],
+  "install": "auto",
+  "description": "The default enforcement matrix of the Landelijke Handhavingsstrategie 2024: one active matrix of 48 cells (severity by behaviour by actor type), and the 16 cells of the behaviour by consequence grid the enforcement recommendation reads. Installed on every install and upgrade. An instance that already has an active matrix keeps it, whatever it is called, and gets no second one. A cell the instance already holds for a row and a column is kept as it is."
+}

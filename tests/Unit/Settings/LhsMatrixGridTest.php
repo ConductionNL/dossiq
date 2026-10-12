@@ -13,7 +13,7 @@
  * seed against its own axes.
  *
  * @category Test
- * @package  OCA\Dossiq\Tests\Unit\Repair
+ * @package  OCA\Dossiq\Tests\Unit\Settings
  * @author   Conduction B.V. <info@conduction.nl>
  * @license  EUPL-1.2
  * @link     https://github.com/ConductionNL/dossiq
@@ -21,14 +21,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Repair;
+namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use PHPUnit\Framework\TestCase;
 
 /**
  * Grid invariants for the shipped LHS matrix seed.
  */
-class SeedLhsMatrixGridTest extends TestCase {
+class LhsMatrixGridTest extends TestCase {
 
 	/**
 	 * The seeded matrix, decoded.
@@ -36,7 +36,7 @@ class SeedLhsMatrixGridTest extends TestCase {
 	 * @return array<string, mixed> The matrix.
 	 */
 	private function matrix(): array {
-		$path = (__DIR__ . '/../../../lib/Settings/seed/lhs-matrix-2024.json');
+		$path = (__DIR__ . '/../../../lib/Settings/packages/lhs-matrix/seed/matrix.json');
 		$this->assertFileExists($path);
 		$decoded = json_decode((string)file_get_contents($path), true);
 		$this->assertIsArray($decoded);
