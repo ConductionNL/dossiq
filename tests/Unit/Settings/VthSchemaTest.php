@@ -146,22 +146,4 @@ class VthSchemaTest extends TestCase {
 
 	}//end testExpectedVthTemplateFilesArePresent()
 
-	/**
-	 * Test that the vth_seed_data.json exists and is valid JSON.
-	 *
-	 * @return void
-	 */
-	public function testVthSeedDataFileExistsAndIsValid(): void {
-		$seedPath = __DIR__ . '/../../../lib/Settings/vth_seed_data.json';
-
-		$this->assertFileExists($seedPath, 'vth_seed_data.json must exist');
-
-		$content = file_get_contents($seedPath);
-		$seedData = json_decode($content, true);
-
-		$this->assertSame(JSON_ERROR_NONE, json_last_error(), 'vth_seed_data.json must be valid JSON');
-		$this->assertIsArray($seedData);
-
-	}//end testVthSeedDataFileExistsAndIsValid()
-
 }//end class

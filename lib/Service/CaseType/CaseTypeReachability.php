@@ -40,7 +40,7 @@ namespace OCA\Dossiq\Service\CaseType;
  *    So a `fromStatus` that is empty, `*`, or a status this type does not
  *    declare is a move that is authored, stored, exported and never offered.
  *    Three writers put `*` there on purpose as a wildcard
- *    (`Besluitvorming\WorkflowReferenceResolver`, `Vth\VthWorkflowGraphResolver`,
+ *    (`Besluitvorming\WorkflowReferenceResolver`, the former VTH graph resolver,
  *    `Repair\SeedBezwaarWorkflowDefinition`) and no reader honours it, which is
  *    a capability with no caller: it reads as configured and behaves as absent.
  *

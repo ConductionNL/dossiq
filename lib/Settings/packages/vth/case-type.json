@@ -12,7 +12,23 @@
       "extensionPeriod": "P42D",
       "confidentiality": "openbaar",
       "origin": "aanvragen",
-      "identifier": "omgevingsvergunning-bouwactiviteit"
+      "identifier": "omgevingsvergunning-bouwactiviteit",
+      "x-index": {
+        "columns": [
+          "identifier",
+          "title",
+          "status",
+          "procedureType",
+          "besluitdatum",
+          "deadline"
+        ],
+        "defaultSort": [
+          {
+            "key": "deadline",
+            "order": "asc"
+          }
+        ]
+      }
     },
     {
       "id": "4f6f897c-20c9-5f3e-9242-025df86ca038",
@@ -34,7 +50,22 @@
       "description": "Toezichtzaak voor bouwactiviteiten met meerdere inspectiefases (fundering, ruwbouw, oplevering).",
       "confidentiality": "intern",
       "origin": "ambtshalve",
-      "identifier": "toezichtzaak-bouw"
+      "identifier": "toezichtzaak-bouw",
+      "x-index": {
+        "columns": [
+          "identifier",
+          "title",
+          "status",
+          "assignee",
+          "deadline"
+        ],
+        "defaultSort": [
+          {
+            "key": "deadline",
+            "order": "asc"
+          }
+        ]
+      }
     },
     {
       "id": "9a39817b-9bee-51a8-8f86-c5b4cdebf4fa",
@@ -55,7 +86,22 @@
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
       "identifier": "handhavingszaak",
-      "workflowDefinition": "6f5b5055-b2a5-5008-a177-528e4b2b4a72"
+      "workflowDefinition": "6f5b5055-b2a5-5008-a177-528e4b2b4a72",
+      "x-index": {
+        "columns": [
+          "identifier",
+          "title",
+          "status",
+          "besluitdatum",
+          "deadline"
+        ],
+        "defaultSort": [
+          {
+            "key": "besluitdatum",
+            "order": "desc"
+          }
+        ]
+      }
     },
     {
       "id": "0bb7810f-ca79-52b2-8b6d-0508eabec8d7",

@@ -124,7 +124,6 @@ class SeedWriteIdentityTest extends TestCase {
 		'ProvisionAssignedGroups' => 'creates Nextcloud groups through IGroupManager',
 		'SeedBezwaarWorkflowDefinition' => 'elevates in run(); see the marker assertion',
 		'SeedBesluitvormingTemplates' => 'delegates to BesluitvormingTemplateService, which elevates',
-		'SeedVthWorkflowTemplates' => 'writes through VthSeedLookup::runElevated()',
 		'RetireOriRegister' => 'deletes a register row through the register mapper',
 		'RenameDutchColumns' => 'renames magic-table columns in SQL',
 		'RenameDutchDeadlineColumns' => 'renames magic-table columns in SQL',

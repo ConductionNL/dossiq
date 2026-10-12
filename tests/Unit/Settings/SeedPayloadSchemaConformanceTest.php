@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Asserts every shipped seed payload only writes properties its schema declares.
  *
- * @covers \OCA\Dossiq\Repair\VthSeedDataRepairStep
+ * @covers \OCA\Dossiq\Service\CaseDefinition\PackageInstaller
  * @covers \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder
  * @covers \OCA\Dossiq\Service\SeedDataService
  *
@@ -80,7 +80,7 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 * `id` addresses the object: `ObjectService::extractUuidAndNormalizeObject()`
 	 * reads `@self.id` then `id` and uses it as the target uuid. `slug` is read
 	 * by `SaveObject::setSelfMetadata()` and stored on the entity as `@self.slug`,
-	 * which is where `VthSeedDataRepairStep::existingSlugs()` reads it back from.
+	 * which is where a reader finds it again.
 	 * Neither is a schema property and neither is lost.
 	 *
 	 * `uuid` is deliberately NOT on this list. Nothing reads it: the uuid comes
@@ -118,7 +118,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 	 * @var array<int, string>
 	 */
 	private const SEED_FILES = [
-		'vth_seed_data.json',
 		'case_flow_seed_data.json',
 		'bezwaar_seed_data.json',
 		'templates/bvw-college-besluit.json',
@@ -188,6 +187,21 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 			);
 		}//end foreach
 
+		// Every case definition package's case type file. A package may carry
+		// several case types as a list under `caseType`; walk those as the
+		// `caseTypes` collection so each one is checked.
+		foreach ((array)glob($settingsDir . '/packages/*/case-type.json') as $path) {
+			$data = json_decode((string)file_get_contents((string)$path), true);
+			$relative = substr((string)$path, strlen($settingsDir) + 1);
+			$this->assertIsArray(actual: $data, message: $relative . ' must parse as JSON');
+			if (is_array($data['caseType'] ?? null) === true && array_is_list($data['caseType']) === true) {
+				$data['caseTypes'] = $data['caseType'];
+				unset($data['caseType']);
+			}
+
+			$this->collectFindings(node: $data, pointer: $relative, findings: $findings);
+		}
+
 		$this->assertSame(
 			expected: [],
 			actual: $findings,
@@ -199,6 +213,44 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 		);
 
 	}//end testSeedPayloadsOnlyWriteDeclaredProperties()
+
+	/**
+	 * Every key a package's `seed/` row writes is declared by the schema its file names.
+	 *
+	 * A seed file names its schema by settings key (`<name>_schema`). The rows
+	 * are walked under the collection whose schema slug spells that key, so a
+	 * seed file for a schema this sweep has no collection for fails here
+	 * instead of being skipped.
+	 *
+	 * @return void
+	 */
+	public function testPackageSeedRowsOnlyWriteDeclaredProperties(): void {
+		$settingsDir = __DIR__ . '/../../../lib/Settings';
+		$findings = [];
+
+		foreach ((array)glob($settingsDir . '/packages/*/seed/*.json') as $path) {
+			$data = json_decode((string)file_get_contents((string)$path), true);
+			$relative = substr((string)$path, strlen($settingsDir) + 1);
+			$this->assertIsArray(actual: $data, message: $relative . ' must parse as JSON');
+
+			$collection = null;
+			foreach (self::COLLECTION_SCHEMA as $key => $slug) {
+				$settingsKey = strtolower((string)preg_replace('/(?<!^)[A-Z]/', '_$0', $slug)) . '_schema';
+				if ($settingsKey === (string)($data['schema'] ?? '')) {
+					$collection = $key;
+				}
+			}
+
+			$this->assertNotNull(
+				actual: $collection,
+				message: $relative . ' seeds "' . (string)($data['schema'] ?? '') . '", a schema this sweep cannot judge'
+			);
+
+			$this->collectFindings(node: [$collection => ($data['rows'] ?? [])], pointer: $relative, findings: $findings);
+		}//end foreach
+
+		$this->assertSame(expected: [], actual: $findings, message: implode("\n", $findings));
+	}//end testPackageSeedRowsOnlyWriteDeclaredProperties()
 
 	/**
 	 * Walk a decoded seed tree and record every undeclared payload key.
