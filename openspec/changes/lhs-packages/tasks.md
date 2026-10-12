@@ -8,3 +8,5 @@
   - validated by `tests/Unit/Repair/RepairStepRegistrationTest.php`
 - [x] 4 Newman collections `tests/integration/packages/lhs-matrix.postman_collection.json` and `lhs-intervention.postman_collection.json`, run by the packages workflow on a clean instance.
 - [x] 5 Playwright journeys `tests/e2e/packages/lhs-matrix.spec.ts` and `lhs-intervention.spec.ts`.
+- [x] 6 Generate the intervention table from the 16 shipped grid cells (decision 213), with the cell's explanation as a second output, so a lookup that reads the table answers what the grid answered.
+  - validated by `tests/Unit/Settings/LhsInterventionTableMatchesGridTest.php` (all 16 positions through OpenRegister's evaluator, and three controls: one changed cell, one changed rule, one missing rule) and by the read "the table answers what each grid cell says" in the Newman collection

@@ -52,6 +52,7 @@ test.describe('package lhs-intervention', () => {
 		])
 		expect(table.outputs.map((output: any) => output.name)).toEqual([
 			'interventionStep',
+			'description',
 		])
 
 		const pairs = table.rules.map((rule: any) => rule.inputEntries.join(':'))

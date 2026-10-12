@@ -83,10 +83,46 @@
               "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
               "const table = pm.response.json();",
               "pm.test('16 rules', () => pm.expect(table.rules).to.have.lengthOf(16));",
-              "pm.test('two inputs and one output', () => {",
+              "pm.test('two inputs and two outputs', () => {",
               "    pm.expect(table.inputs.map(i => i.name)).to.eql(['behaviour', 'consequence']);",
-              "    pm.expect(table.outputs.map(o => o.name)).to.eql(['interventionStep']);",
-              "});"
+              "    pm.expect(table.outputs.map(o => o.name)).to.eql(['interventionStep', 'description']);",
+              "});",
+              "pm.collectionVariables.set('lhsTableRules', JSON.stringify(table.rules));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the table answers what each grid cell says (decision 213)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrixCell?_limit=100"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('list reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const rules = JSON.parse(pm.collectionVariables.get('lhsTableRules') || '[]');",
+              "pm.test('16 grid cells to compare with', () => pm.expect(rows).to.have.lengthOf(16));",
+              "const different = [];",
+              "for (const cell of rows) {",
+              "    const hits = rules.filter(r => r.inputEntries[0] === cell.behaviourRow && r.inputEntries[1] === cell.consequenceColumn);",
+              "    const same = hits.length === 1 && hits[0].outputEntries[0] === cell.interventionStep && hits[0].outputEntries[1] === (cell.description || '');",
+              "    if (same === false) { different.push(`${cell.behaviourRow}:${cell.consequenceColumn}`); }",
+              "}",
+              "pm.test('no position where the table and the grid differ', () => pm.expect(different).to.eql([]));"
             ]
           }
         }

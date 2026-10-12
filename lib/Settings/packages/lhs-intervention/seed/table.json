@@ -10,7 +10,7 @@
       "id": "922ad0a8-e191-5c05-a4f4-5b6aa00bbd3d",
       "key": "dossiq.lhs-intervention",
       "name": "LHS interventie (gedrag x gevolg)",
-      "description": "Landelijke Handhavingsstrategie: the recommended intervention for a behaviour row (A-D) and a consequence column (1-4). Read by LhsLookupService::DECISION_TABLE.",
+      "description": "Landelijke Handhavingsstrategie: the recommended intervention and its explanation for a behaviour row (A-D) and a consequence column (1-4). The same 16 answers as the cells of the lhs-matrix package.",
       "hitPolicy": "UNIQUE",
       "inputs": [
         {
@@ -26,6 +26,10 @@
         {
           "name": "interventionStep",
           "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
         }
       ],
       "rules": [
@@ -36,7 +40,8 @@
             "1"
           ],
           "outputEntries": [
-            "Bestuurlijke waarschuwing"
+            "Aanspreken / informeren",
+            "Informeer de overtreder over de regels en geef gelegenheid tot herstel."
           ]
         },
         {
@@ -46,7 +51,8 @@
             "2"
           ],
           "outputEntries": [
-            "Last onder dwangsom"
+            "Waarschuwen",
+            "Stuur een schriftelijke waarschuwing met hersteltermijn."
           ]
         },
         {
@@ -56,7 +62,8 @@
             "3"
           ],
           "outputEntries": [
-            "Last onder dwangsom"
+            "Bestuurlijke waarschuwing",
+            "Formele bestuurlijke waarschuwing; overtreder krijgt hersteltermijn."
           ]
         },
         {
@@ -66,7 +73,8 @@
             "4"
           ],
           "outputEntries": [
-            "Last onder bestuursdwang"
+            "Last onder dwangsom",
+            "Opleggen last onder dwangsom."
           ]
         },
         {
@@ -76,7 +84,8 @@
             "1"
           ],
           "outputEntries": [
-            "Bestuurlijke waarschuwing + hersteltermijn"
+            "Waarschuwen",
+            "Schriftelijke waarschuwing met korte hersteltermijn."
           ]
         },
         {
@@ -86,7 +95,8 @@
             "2"
           ],
           "outputEntries": [
-            "Last onder dwangsom"
+            "Bestuurlijke waarschuwing",
+            "Bestuurlijke waarschuwing met hersteltermijn."
           ]
         },
         {
@@ -96,7 +106,8 @@
             "3"
           ],
           "outputEntries": [
-            "Last onder dwangsom + proces-verbaal"
+            "Last onder dwangsom",
+            "Last onder dwangsom opleggen."
           ]
         },
         {
@@ -106,7 +117,8 @@
             "4"
           ],
           "outputEntries": [
-            "Last onder bestuursdwang + proces-verbaal"
+            "Last onder dwangsom + Proces-verbaal",
+            "Bestuurlijk én strafrechtelijk optreden."
           ]
         },
         {
@@ -116,7 +128,8 @@
             "1"
           ],
           "outputEntries": [
-            "Last onder dwangsom"
+            "Bestuurlijke waarschuwing",
+            "Bestuurlijke waarschuwing."
           ]
         },
         {
@@ -126,7 +139,8 @@
             "2"
           ],
           "outputEntries": [
-            "Last onder dwangsom + proces-verbaal"
+            "Last onder dwangsom",
+            "Last onder dwangsom."
           ]
         },
         {
@@ -136,7 +150,8 @@
             "3"
           ],
           "outputEntries": [
-            "Proces-verbaal + last onder bestuursdwang"
+            "Bestuursdwang + Proces-verbaal",
+            "Bestuursdwang toepassen en aangifte doen bij OM."
           ]
         },
         {
@@ -146,7 +161,8 @@
             "4"
           ],
           "outputEntries": [
-            "Proces-verbaal + last onder bestuursdwang"
+            "Bestuursdwang + Proces-verbaal",
+            "Zwaarste bestuurlijke inzet gecombineerd met strafrechtelijk optreden."
           ]
         },
         {
@@ -156,7 +172,8 @@
             "1"
           ],
           "outputEntries": [
-            "Proces-verbaal + last onder dwangsom"
+            "Last onder dwangsom",
+            "Last onder dwangsom."
           ]
         },
         {
@@ -166,7 +183,8 @@
             "2"
           ],
           "outputEntries": [
-            "Proces-verbaal + last onder bestuursdwang"
+            "Bestuursdwang + Proces-verbaal",
+            "Bestuursdwang en strafrechtelijk optreden."
           ]
         },
         {
@@ -176,7 +194,8 @@
             "3"
           ],
           "outputEntries": [
-            "Proces-verbaal + last onder bestuursdwang"
+            "Bestuursdwang + Proces-verbaal",
+            "Maximale bestuurlijke en strafrechtelijke inzet."
           ]
         },
         {
@@ -186,7 +205,8 @@
             "4"
           ],
           "outputEntries": [
-            "Proces-verbaal + last onder bestuursdwang + intrekking vergunning"
+            "Bestuursdwang + Proces-verbaal",
+            "Maximale inzet bestuur en OM voor crimineel gedrag met onomkeerbare gevolgen."
           ]
         }
       ],
