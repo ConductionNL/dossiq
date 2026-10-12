@@ -57,14 +57,18 @@ class CaseTypeAcknowledgement {
 	 *
 	 * Awb 4:3a is about electronically submitted messages, so these are the
 	 * values of `case.intakeChannel` that owe an acknowledgement by default:
-	 * mail, the portal and an API intake. `manual`, `balie`, `phone`, `post`
-	 * and `other` are not electronic submissions and owe nothing unless a case
-	 * type names them, because mailing somebody about a conversation they just
-	 * had at the desk is worse than not mailing them.
+	 * mail, the portal, a Nextcloud Forms form (decision 236) and an API
+	 * intake. `manual`, `balie`, `phone`, `post` and `other` are not electronic
+	 * submissions and owe nothing unless a case type names them, because
+	 * mailing somebody about a conversation they just had at the desk is worse
+	 * than not mailing them.
+	 *
+	 * A case type switches one off by naming its own `intakeChannels` list
+	 * without it.
 	 *
 	 * @var array<int, string>
 	 */
-	public const ELECTRONIC_CHANNELS = ['email', 'website', 'zgw-api'];
+	public const ELECTRONIC_CHANNELS = ['email', 'website', 'forms', 'zgw-api'];
 
 	/**
 	 * The moment the statutory acknowledgement is declared at.

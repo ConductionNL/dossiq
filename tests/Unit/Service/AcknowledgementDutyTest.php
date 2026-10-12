@@ -300,6 +300,7 @@ class AcknowledgementDutyTest extends TestCase {
 		return [
 			'the portal aanvraag' => ['website'],
 			'the mail intake' => ['email'],
+			'a Nextcloud Forms form' => ['forms'],
 			'the API case creation' => ['zgw-api'],
 		];
 	}//end electronicIntakePaths()
@@ -322,6 +323,91 @@ class AcknowledgementDutyTest extends TestCase {
 		);
 		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
 	}//end testACaseTypedAtTheBalieIsNotMailed()
+
+	/**
+	 * A case type that leaves `forms` out of its channel list sends none for a forms case.
+	 *
+	 * Decision 236: on by default, and the case type can switch it off.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/burger-notifications/spec.md#requirement-the-acknowledgement-of-receipt-has-a-trigger-req-term-020
+	 */
+	public function testACaseTypeSwitchesTheFormsAcknowledgementOff(): void {
+		$caseId = $this->seedCase(overrides: ['intakeChannel' => 'forms']);
+		$this->caseType = ['acknowledgement' => ['intakeChannels' => ['email', 'website', 'zgw-api']]];
+		$sender = $this->createMock(originalClassName: TermNoticeSender::class);
+		$sender->expects(self::never())->method('send');
+
+		$result = $this->service(sender: $sender)->acknowledge(caseId: $caseId);
+
+		self::assertFalse(condition: $result['sent']);
+		self::assertSame(expected: 'not-required', actual: $result['reason']);
+		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
+	}//end testACaseTypeSwitchesTheFormsAcknowledgementOff()
+
+	/**
+	 * A draft is not confirmed and records nothing; the same case, sent, is confirmed once.
+	 *
+	 * The listener queues nothing for a draft. This is the service's own
+	 * refusal, for a job that was queued some other way.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/burger-notifications/spec.md#requirement-the-acknowledgement-of-receipt-has-a-trigger-req-term-020
+	 */
+	public function testADraftIsNotConfirmedUntilItIsSent(): void {
+		$caseId = $this->seedCase(overrides: ['intakeChannel' => 'forms', '@self' => ['status' => 'draft']]);
+		$sender = $this->createMock(originalClassName: TermNoticeSender::class);
+		$sender->expects(self::once())->method('send')
+			->willReturn(['notificationChannel' => 'email', 'sent' => true, 'duplicate' => false]);
+		$service = $this->service(sender: $sender);
+
+		$draft = $service->acknowledge(caseId: $caseId);
+		self::assertFalse(condition: $draft['sent']);
+		self::assertSame(expected: 'draft', actual: $draft['reason']);
+		self::assertArrayNotHasKey(key: 'acknowledgementDuty', array: $this->store->cases[$caseId]);
+		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
+
+		$this->store->cases[$caseId]['@self'] = ['status' => 'active'];
+		self::assertTrue(condition: $service->acknowledge(caseId: $caseId)['sent']);
+		self::assertSame(expected: 'already-met', actual: $service->acknowledge(caseId: $caseId)['reason']);
+	}//end testADraftIsNotConfirmedUntilItIsSent()
+
+	/**
+	 * An address that is not an address gets no mail: the case refuses as one without an address.
+	 *
+	 * A form's answer is typed by the sender. What fails the address check is
+	 * never handed to a transport.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/burger-notifications/spec.md#requirement-the-acknowledgement-of-receipt-has-a-trigger-req-term-020
+	 */
+	public function testAnAddressThatFailsValidationIsNeverMailed(): void {
+		$caseId = $this->seedCase(
+			overrides: [
+				'intakeChannel' => 'forms',
+				'email' => 'jan at example',
+				'initiator' => ['email' => 'jan@'],
+				'initiatorSourceId' => 'jan.example.nl',
+			]
+		);
+		$sender = $this->createMock(originalClassName: TermNoticeSender::class);
+		$sender->expects(self::never())->method('send');
+
+		try {
+			$this->service(sender: $sender)->acknowledge(caseId: $caseId);
+			self::fail(message: 'an address that fails validation must refuse rather than be mailed');
+		} catch (RefusedException $e) {
+			self::assertSame(expected: 'acknowledgement-no-address', actual: $e->getRule());
+		}
+
+		$records = $this->store->cases[$caseId]['outboundCommunications'];
+		self::assertCount(expectedCount: 1, haystack: $records);
+		self::assertSame(expected: 'not-sent', actual: $records[0]['status']);
+		self::assertNotSame(expected: AcknowledgementService::STATUS_MET, actual: ($this->store->cases[$caseId]['acknowledgementDuty']['status'] ?? ''));
+	}//end testAnAddressThatFailsValidationIsNeverMailed()
 
 	/**
 	 * A case with no address refuses, with a status and a sentence.
