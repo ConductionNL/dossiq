@@ -187,7 +187,10 @@ class PackagePartRules {
 	}//end checkRowFiles()
 
 	/**
-	 * Check the `seed/` files: each names the schema key its rows go to.
+	 * Check the `seed/` files: each names the schema its rows go to, by
+	 * settings key for a schema of this app, or by app, register and slug for
+	 * a schema of another app. A file may name the property (`match`) an
+	 * existing row is recognised by; then every row carries it.
 	 *
 	 * @param array<string, string> $files The package files.
 	 *
@@ -205,9 +208,7 @@ class PackagePartRules {
 				continue;
 			}
 
-			if (preg_match('/^[a-z][a-z0-9_]*_schema$/', (string)($seed['schema'] ?? '')) !== 1) {
-				$this->errors[] = "{$path}: schema must name a settings key ending in _schema.";
-			}
+			$this->checkSeedSchema(schema: ($seed['schema'] ?? null), path: $path);
 
 			$rows = ($seed['rows'] ?? null);
 			if (is_array($rows) === false || $rows === [] || array_is_list($rows) === false) {
@@ -216,8 +217,61 @@ class PackagePartRules {
 			}
 
 			$this->checkRows(rows: $rows, where: $path);
+			if (array_key_exists('match', $seed) === true) {
+				$this->checkSeedMatch(match: $seed['match'], rows: $rows, path: $path);
+			}
 		}
 	}//end checkSeed()
+
+	/**
+	 * Check the schema a seed file names.
+	 *
+	 * @param mixed  $schema The `schema` value.
+	 * @param string $path   The seed file, for the message.
+	 *
+	 * @return void
+	 */
+	private function checkSeedSchema(mixed $schema, string $path): void {
+		if (is_array($schema) === true) {
+			$rules = new PackageSettingRules();
+			if ($rules->reference(value: [PackageSettingRules::REFERENCE_KEY => $schema]) === null) {
+				$this->errors[] = "{$path}: schema names another app's schema without an app, a register and a slug; it needs all three.";
+			}
+
+			return;
+		}
+
+		if (is_string($schema) === false || preg_match('/^[a-z][a-z0-9_]*_schema$/', $schema) !== 1) {
+			$this->errors[] = "{$path}: schema must name a settings key ending in _schema, or another app's schema by app, register and slug.";
+		}
+	}//end checkSeedSchema()
+
+	/**
+	 * Check the property a seed file recognises an existing row by.
+	 *
+	 * @param mixed             $match The `match` value.
+	 * @param array<int, mixed> $rows  The rows.
+	 * @param string            $path  The seed file, for the message.
+	 *
+	 * @return void
+	 */
+	private function checkSeedMatch(mixed $match, array $rows, string $path): void {
+		if (is_string($match) === false || preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $match) !== 1) {
+			$this->errors[] = "{$path}: match must name one property of the rows.";
+			return;
+		}
+
+		foreach ($rows as $index => $row) {
+			$value = null;
+			if (is_array($row) === true) {
+				$value = ($row[$match] ?? null);
+			}
+
+			if (is_string($value) === false || trim($value) === '') {
+				$this->errors[] = "{$path} row {$index}: has no '{$match}', the property this file recognises an existing row by.";
+			}
+		}
+	}//end checkSeedMatch()
 
 	/**
 	 * Check `settings.json`: flat keys an app config can hold, scalar values,

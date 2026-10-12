@@ -54,6 +54,20 @@ final class PackageTestRegister extends InMemoryRegister {
 	public array $refuse = [];
 
 	/**
+	 * The register each saved row was written into, by row id.
+	 *
+	 * @var array<string, string>
+	 */
+	public array $savedIn = [];
+
+	/**
+	 * The register each delete named, by row id.
+	 *
+	 * @var array<string, string>
+	 */
+	public array $deletedFrom = [];
+
+	/**
 	 * Save, unless the row is one the test told the store to refuse.
 	 *
 	 * @param array<string, mixed> $object        The row.
@@ -77,8 +91,26 @@ final class PackageTestRegister extends InMemoryRegister {
 			throw new RuntimeException('the store refused the write');
 		}
 
-		return parent::saveObject($object, $register, $schema, $uuid, $_rbac, $_multitenancy);
+		$stored = parent::saveObject($object, $register, $schema, $uuid, $_rbac, $_multitenancy);
+		$this->savedIn[(string)$stored['id']] = (string)$register;
+
+		return $stored;
 	}//end saveObject()
+
+	/**
+	 * The numeric search: register and schema ids sit in `@self`, as OpenRegister reads them.
+	 *
+	 * @param array<string, mixed> $query         The query.
+	 * @param boolean              $_rbac         Unused.
+	 * @param boolean              $_multitenancy Unused.
+	 *
+	 * @return array<int, array<string, mixed>> The matching rows.
+	 */
+	public function searchObjects(array $query, bool $_rbac = true, bool $_multitenancy = true): array {
+		$schema = (string)($query['@self']['schema'] ?? '');
+
+		return $this->searchObjectsBySlug((string)($query['@self']['register'] ?? ''), $schema, $query);
+	}//end searchObjects()
 
 	/**
 	 * Delete by uuid, as OpenRegister's ObjectServiceInterface does.
@@ -90,6 +122,7 @@ final class PackageTestRegister extends InMemoryRegister {
 	 * @return boolean True when a row went.
 	 */
 	public function deleteObject(int|string $uuid = '', int|string $register = '', int|string $schema = ''): bool {
+		$this->deletedFrom[(string)$uuid] = (string)$register;
 		foreach (array_keys($this->rows) as $slug) {
 			if (($schema === '' || $schema === $slug) && isset($this->rows[$slug][(string)$uuid]) === true) {
 				unset($this->rows[$slug][(string)$uuid]);
@@ -178,7 +211,10 @@ final class PackageTestRegisterMapper {
 			throw new RuntimeException('Register not found');
 		}
 
-		return new PackageTestRegisterEntity($this->registers[(string)$id]);
+		return new PackageTestRegisterEntity(
+			$this->registers[(string)$id],
+			900 + (int)array_search((string)$id, array_keys($this->registers), true)
+		);
 	}//end find()
 }//end class
 
@@ -191,9 +227,19 @@ final class PackageTestRegisterEntity {
 	 * Constructor.
 	 *
 	 * @param array<int, int> $schemaIds The schema ids.
+	 * @param int             $id        The register id.
 	 */
-	public function __construct(private readonly array $schemaIds) {
+	public function __construct(private readonly array $schemaIds, private readonly int $id = 900) {
 	}//end __construct()
+
+	/**
+	 * The register id.
+	 *
+	 * @return int The id.
+	 */
+	public function getId(): int {
+		return $this->id;
+	}//end getId()
 
 	/**
 	 * The schema ids.
@@ -987,6 +1033,167 @@ class PackageInstallerTest extends TestCase {
 		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
 		$this->assertStringContainsString("settings.json: 'fixture_source_schema' names a schema without", implode("\n", $outcome['errors']));
 	}//end testAMalformedReferenceMakesThePackageInvalid()
+
+	/**
+	 * A copy of one fixture package, changed for one test.
+	 *
+	 * @param string   $package The fixture package to copy.
+	 * @param callable $change  Receives the copy's directory.
+	 *
+	 * @return string The root holding the copy.
+	 */
+	private function copyOf(string $package, callable $change): string {
+		$root = sys_get_temp_dir() . '/dossiq-packages-' . bin2hex(random_bytes(6));
+		$this->temporary[] = $root;
+		mkdir($root);
+		exec('cp -r ' . escapeshellarg(self::FIXTURES . '/' . $package) . ' ' . escapeshellarg($root . '/' . $package));
+		$change($root . '/' . $package);
+
+		return $root;
+	}//end copyOf()
+
+	/**
+	 * REQ-CT-55: a seed file that names another app's schema by app, register
+	 * and slug has its rows written into that register, and recorded here.
+	 *
+	 * @return void
+	 */
+	public function testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister(): void {
+		$outcome = $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(2, $outcome['written']);
+
+		// Schema 60 is fixture_source, held by register fixture-register (id 900).
+		$rows = $this->register->all('60');
+		$this->assertSame(['fixture.first', 'fixture.second'], array_column($rows, 'key'));
+		$this->assertSame('900', $this->register->savedIn['0f1c0000-0000-4000-8000-000000000071']);
+		$this->assertSame('900', $this->register->savedIn['0f1c0000-0000-4000-8000-000000000072']);
+
+		$ledger = $this->rowLedger();
+		$this->assertCount(2, $ledger);
+		foreach ($ledger as $row) {
+			$this->assertSame('fixture-shared-seed', $row['set']);
+			$this->assertSame('60', (string)$row['targetSchema']);
+		}
+
+		$this->assertSame(PackageInstaller::CURRENT, $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed')['status']);
+	}//end testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister()
+
+	/**
+	 * REQ-CT-55: the other app is not installed, so the package is refused by name and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testASeedForAnAppThatIsNotInstalledRefusesThePackage(): void {
+		$outcome = $this->installer()->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString('fixture-app', $outcome['message']);
+		$this->assertSame(['fixture-app:fixture_source'], $outcome['missing']);
+		$this->assertSame(0, $this->register->writes);
+	}//end testASeedForAnAppThatIsNotInstalledRefusesThePackage()
+
+	/**
+	 * REQ-CT-55: the app is installed but no named register holds the schema, so the package is refused.
+	 *
+	 * @return void
+	 */
+	public function testASeedForASchemaTheRegisterDoesNotHoldRefusesThePackage(): void {
+		$this->schemas->registers = ['fixture-register' => [12]];
+
+		$outcome = $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString('fixture_source', $outcome['message']);
+		$this->assertSame(['fixture-app:fixture_source'], $outcome['missing']);
+		$this->assertSame(0, $this->register->writes);
+	}//end testASeedForASchemaTheRegisterDoesNotHoldRefusesThePackage()
+
+	/**
+	 * REQ-CT-55: a row this instance already holds under another id, with the
+	 * same value for the property the seed file matches on, is adopted.
+	 *
+	 * @return void
+	 */
+	public function testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn(): void {
+		$this->register->seed('60', 'written-by-hand', ['key' => 'fixture.first', 'name' => 'Edited here']);
+
+		$outcome = $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame(1, $outcome['written']);
+		$this->assertSame(1, $outcome['adopted']);
+		$this->assertCount(2, $this->register->all('60'));
+		$this->assertSame('Edited here', $this->register->row('60', 'written-by-hand')['name']);
+	}//end testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn()
+
+	/**
+	 * REQ-CT-55: when a later row fails, the row already written into the other register is taken back from that register.
+	 *
+	 * @return void
+	 */
+	public function testAFailedInstallTakesARowBackFromTheOtherRegister(): void {
+		$this->register->refuse = ['Fixture second'];
+
+		$outcome = $this->installer(installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::FAILED, $outcome['status']);
+		$this->assertSame([], $this->register->all('60'));
+		$this->assertSame('900', $this->register->deletedFrom['0f1c0000-0000-4000-8000-000000000071']);
+		$this->assertSame([], $this->rowLedger());
+	}//end testAFailedInstallTakesARowBackFromTheOtherRegister()
+
+	/**
+	 * REQ-CT-55: a seed file that names a schema without all three of app, register and slug is invalid.
+	 *
+	 * @return void
+	 */
+	public function testASeedNamingAnotherAppsSchemaIncompletelyIsInvalid(): void {
+		$root = $this->copyOf(
+			'fixture-shared-seed',
+			static function (string $dir): void {
+				self::editJson(
+					$dir . '/seed/tables.json',
+					static function (array $seed): array {
+						unset($seed['schema']['register']);
+						return $seed;
+					}
+				);
+			}
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString('an app, a register and a slug', implode(' ', $outcome['errors']));
+		$this->assertSame(0, $this->register->writes);
+	}//end testASeedNamingAnotherAppsSchemaIncompletelyIsInvalid()
+
+	/**
+	 * REQ-CT-55: a row that lacks the property the seed file matches on makes the package invalid.
+	 *
+	 * @return void
+	 */
+	public function testASeedRowWithoutTheMatchPropertyIsInvalid(): void {
+		$root = $this->copyOf(
+			'fixture-shared-seed',
+			static function (string $dir): void {
+				self::editJson(
+					$dir . '/seed/tables.json',
+					static function (array $seed): array {
+						unset($seed['rows'][1]['key']);
+						return $seed;
+					}
+				);
+			}
+		);
+
+		$outcome = $this->installer(root: $root, installedApps: ['fixture-app'])->install(id: 'fixture-shared-seed');
+
+		$this->assertSame(PackageInstaller::REFUSED, $outcome['status']);
+		$this->assertStringContainsString("row 1: has no 'key'", implode(' ', $outcome['errors']));
+	}//end testASeedRowWithoutTheMatchPropertyIsInvalid()
 
 	/**
 	 * A package that writes no rows is still recorded at its version, so a

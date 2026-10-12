@@ -254,7 +254,18 @@ class PackageInstaller {
 			$settings = $resolved['settings'];
 		}
 
-		$result = $this->writer->writePackage(package: $id, groups: $this->groups(parts: $parts, files: $files));
+		$groups = $this->groups(parts: $parts, files: $files);
+		$unreachable = array_values(array_filter($groups, static fn (array $group): bool => isset($group['missing']) === true));
+		if ($unreachable !== []) {
+			return $this->outcome(
+				status: self::REFUSED,
+				id: $id,
+				version: $version,
+				message: "Package '{$id}' needs " . implode('; ', array_column($unreachable, 'reason')) . '.',
+			) + ['missing' => array_values(array_unique(array_column($unreachable, 'missing')))];
+		}
+
+		$result = $this->writer->writePackage(package: $id, groups: $groups);
 		if ($result['status'] !== 'success') {
 			return $this->outcome(status: self::FAILED, id: $id, version: $version, message: $result['message']);
 		}
@@ -315,7 +326,8 @@ class PackageInstaller {
 	 * @param array<int, mixed>     $parts The declared parts.
 	 * @param array<string, string> $files The package files.
 	 *
-	 * @return array<int, array{schemaKey: string, rows: array<int, array<string, mixed>>}> The groups.
+	 * @return array<int, array<string, mixed>> The groups: `schemaKey` and `rows`, and for a seed file
+	 *                                          `match`, `register` and `schema`, or `missing` and `reason`.
 	 */
 	private function groups(array $parts, array $files): array {
 		$groups = [];
@@ -337,12 +349,48 @@ class PackageInstaller {
 
 		if (in_array('seed', $parts, true) === true) {
 			foreach ($this->rowsUnder(files: $files, dir: 'seed/') as $seed) {
-				$groups[] = ['schemaKey' => (string)$seed['schema'], 'rows' => array_values((array)$seed['rows'])];
+				$groups[] = $this->seedGroup(seed: $seed);
 			}
 		}
 
 		return array_values(array_filter($groups, static fn (array $group): bool => $group['rows'] !== []));
 	}//end groups()
+
+	/**
+	 * The group for one seed file.
+	 *
+	 * A file that names its schema by settings key goes to this app's
+	 * register. A file that names another app's schema by app, register and
+	 * slug goes to that register: the address is resolved here, and a group
+	 * whose schema this instance does not hold carries `missing` and the
+	 * reason, so the package is refused before a row is written.
+	 *
+	 * @param array<string, mixed> $seed The decoded seed file.
+	 *
+	 * @return array<string, mixed> The group.
+	 */
+	private function seedGroup(array $seed): array {
+		$group = ['schemaKey' => '', 'rows' => array_values((array)$seed['rows'])];
+		if (is_string($seed['match'] ?? null) === true) {
+			$group['match'] = $seed['match'];
+		}
+
+		if (is_array($seed['schema']) === false) {
+			$group['schemaKey'] = (string)$seed['schema'];
+
+			return $group;
+		}
+
+		$reference = (array)(new PackageSettingRules())->reference(value: [PackageSettingRules::REFERENCE_KEY => $seed['schema']]);
+		$group['schemaKey'] = "{$reference['app']}:{$reference['slug']}";
+
+		$found = $this->references->locate(reference: $reference);
+		if ($found['schema'] === null) {
+			return $group + ['missing' => $group['schemaKey'], 'reason' => $found['reason']];
+		}
+
+		return $group + ['register' => $found['register'], 'schema' => $found['schema']];
+	}//end seedGroup()
 
 	/**
 	 * The decoded .json files under one directory, in name order.

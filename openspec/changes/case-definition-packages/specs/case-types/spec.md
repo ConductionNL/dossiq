@@ -130,3 +130,40 @@ The installer SHALL record every installed package once in the shipped-set ledge
 - **GIVEN** the neutral settings package was installed
 - **WHEN** the installer installs it again
 - **THEN** the outcome SHALL be current and no setting SHALL be applied again
+
+### Requirement: A seed file may write into another app's register (REQ-CT-55)
+
+A package seed file SHALL name the schema its rows go to either by a settings key of this app, or by the owning app, the register slug (or the slugs that register has had, newest first) and the schema slug. For the second form the installer SHALL find the register and schema on this instance and write the rows there, record each row in the shipped-set ledger, and on a failed install take each row back out of the register it went into. When the app is not installed, or no named register holds the schema, the installer SHALL refuse the package, name the app and the schema, and write nothing. A seed file MAY name one property (`match`) by which a row this instance already holds under another id is recognised; such a row SHALL be adopted, not written a second time, and every row of that file SHALL carry the property.
+
+#### Scenario: Seed rows land in the other app's register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister
+
+- **GIVEN** the neutral shared-seed package, whose seed file names `fixture_source` of `fixture-app` in register `fixture-register`
+- **AND** `fixture-app` is installed and the register holds the schema
+- **WHEN** the installer installs the package
+- **THEN** both rows SHALL be written into that register and schema
+- **AND** the ledger SHALL hold one row for each, naming the package
+
+#### Scenario: The other app is missing
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForAnAppThatIsNotInstalledRefusesThePackage
+
+- **GIVEN** `fixture-app` is not installed
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the outcome SHALL be refused, naming `fixture-app:fixture_source`
+- **AND** no row SHALL be written
+
+#### Scenario: A row held under another id is adopted by the match property
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn
+
+- **GIVEN** the other register already holds a row with key `fixture.first` under another id
+- **WHEN** the installer installs the shared-seed package
+- **THEN** that row SHALL be adopted and left as it is
+- **AND** only the second row SHALL be written
+
+#### Scenario: A failed install takes a row back from the other register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallTakesARowBackFromTheOtherRegister
+
+- **GIVEN** the store refuses the second row
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the first row SHALL be deleted from the other app's register
+- **AND** the ledger SHALL hold no row for the package

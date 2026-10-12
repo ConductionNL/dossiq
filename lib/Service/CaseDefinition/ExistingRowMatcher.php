@@ -129,6 +129,52 @@ class ExistingRowMatcher {
 	}//end find()
 
 	/**
+	 * The row this instance holds with the same value for one property.
+	 *
+	 * A seed file may name the property its rows are recognised by (`match`).
+	 * That is how a row outside any case type is adopted: a row a seeder, a
+	 * migration or an administrator wrote under another id.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The schema.
+	 * @param string               $property      The property to match on.
+	 * @param array<string, mixed> $row           The package row.
+	 *
+	 * @return array<string, mixed>|null The row held here, or null.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function findBy(object $objectService, string $register, string $schema, string $property, array $row): ?array {
+		$value = ($row[$property] ?? '');
+		if (is_string($value) === false || trim($value) === '') {
+			return null;
+		}
+
+		$found = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: [$property => $value],
+		);
+
+		// The store may answer a wider match than asked; only an equal value counts.
+		$found = array_values(array_filter($found, static fn (array $existing): bool => ($existing[$property] ?? null) === $value));
+		if ($found === []) {
+			return null;
+		}
+
+		if (count($found) > 1) {
+			$this->logger->warning(
+				'Package install: {count} rows in {schema} have {property} {value}; adopting the first',
+				['count' => count($found), 'schema' => $schema, 'property' => $property, 'value' => $value]
+			);
+		}
+
+		return $found[0];
+	}//end findBy()
+
+	/**
 	 * The case types with the package row's title that carry no identifier.
 	 *
 	 * @param object               $objectService The OpenRegister object service.

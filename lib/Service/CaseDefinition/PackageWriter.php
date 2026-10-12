@@ -159,7 +159,9 @@ class PackageWriter {
 	 * row is never taken back, since this run did not create it.
 	 *
 	 * @param string                                                          $package The package id, for the messages.
-	 * @param array<int, array{schemaKey: string, rows: array<int, array<string, mixed>>}> $groups  The rows, per schema key.
+	 * @param array<int, array<string, mixed>>                                $groups  The rows, per schema key; a group may
+	 *                                                                                  name its own `register` and `schema`,
+	 *                                                                                  and the property it matches on.
 	 *
 	 * @return array{
 	 *     status: string,
@@ -221,7 +223,7 @@ class PackageWriter {
 	 * installer records every row in the shipped-set ledger afterwards, and a
 	 * row it cannot record is a row it has to take back.
 	 *
-	 * @param array<int, array{id: string}> $written The rows {@see self::writePackage()} reported written.
+	 * @param array<int, array<string, mixed>> $written The rows {@see self::writePackage()} reported written.
 	 *
 	 * @return void
 	 *
@@ -234,7 +236,10 @@ class PackageWriter {
 			return;
 		}
 
-		$this->rollBack(objectService: $objectService, register: $register, ids: array_column($written, 'id'));
+		// A seed row may sit in another app's register; each row goes back out of its own.
+		foreach ($written as $row) {
+			$this->rollBack(objectService: $objectService, register: (string)($row['register'] ?? $register), ids: [(string)$row['id']]);
+		}
 	}//end undo()
 
 	/**
@@ -242,7 +247,7 @@ class PackageWriter {
 	 *
 	 * @param object                                                        $objectService The OpenRegister object service.
 	 * @param string                                                        $register      The register.
-	 * @param array{schemaKey: string, rows: array<int, array<string, mixed>>} $group         The group.
+	 * @param array<string, mixed>                                          $group         The group.
 	 * @param array<string, array<mixed>>                                   $run           Collects written, skipped
 	 *                                                                                     and adopted rows, the ids
 	 *                                                                                     adopted and the case types
@@ -250,10 +255,19 @@ class PackageWriter {
 	 *
 	 * @return void
 	 *
+	 * A group that names its own `register` and `schema` goes there: that is a
+	 * seed file for another app's schema, resolved by the installer. A group
+	 * that names `match` adopts a row with the same value for that property.
+	 *
 	 * @throws RuntimeException When the group's schema key resolves to nothing.
 	 */
 	private function writeGroup(object $objectService, string $register, array $group, array &$run): void {
-		$schema = $this->settings->getConfigValue(key: $group['schemaKey']);
+		$schema = (string)($group['schema'] ?? '');
+		$register = (string)($group['register'] ?? $register);
+		if ($schema === '') {
+			$schema = $this->settings->getConfigValue(key: $group['schemaKey']);
+		}
+
 		if ($schema === '') {
 			throw new RuntimeException("No schema is configured for '{$group['schemaKey']}', so its rows cannot be written.");
 		}
@@ -266,14 +280,7 @@ class PackageWriter {
 				continue;
 			}
 
-			$existing = $this->matcher->find(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				schemaKey: $group['schemaKey'],
-				row: $row,
-				caseTypes: $run['caseTypes'],
-			);
+			$existing = $this->existing(objectService: $objectService, register: $register, schema: $schema, group: $group, row: $row, run: $run);
 			if ($existing !== null && $this->existingId(row: $existing) !== '') {
 				$this->adopt(group: $group, schema: $schema, packageId: $packageId, existing: $existing, run: $run);
 				continue;
@@ -287,9 +294,37 @@ class PackageWriter {
 				strategy: self::STRATEGY_SKIP,
 			);
 
-			$run['written'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'id' => $outcome['id'], 'row' => $row];
+			$run['written'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'register' => $register, 'id' => $outcome['id'], 'row' => $row];
 		}//end foreach
 	}//end writeGroup()
+
+	/**
+	 * The row this instance already holds for one package row, under another id.
+	 *
+	 * @param object                      $objectService The OpenRegister object service.
+	 * @param string                      $register      The register the group goes to.
+	 * @param string                      $schema        The schema the group goes to.
+	 * @param array<string, mixed>        $group         The group.
+	 * @param array<string, mixed>        $row           The package row.
+	 * @param array<string, array<mixed>> $run           The run so far.
+	 *
+	 * @return array<string, mixed>|null The row held here, or null.
+	 */
+	private function existing(object $objectService, string $register, string $schema, array $group, array $row, array $run): ?array {
+		$match = (string)($group['match'] ?? '');
+		if ($match !== '') {
+			return $this->matcher->findBy(objectService: $objectService, register: $register, schema: $schema, property: $match, row: $row);
+		}
+
+		return $this->matcher->find(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			schemaKey: $group['schemaKey'],
+			row: $row,
+			caseTypes: $run['caseTypes'],
+		);
+	}//end existing()
 
 	/**
 	 * Take an existing row as the package's, and point later rows at it.

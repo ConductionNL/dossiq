@@ -35,4 +35,12 @@
 - [x] 1.11 Record every installed package at its version, so a package that writes no rows reports current (decision 198).
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingsOnlyPackageIsCurrentOnTheSecondInstall`
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testThePackageVersionRecordIsOneRowUpdatedInPlace`
+- [x] 1.12 A seed file may name another app's schema by app, register and slug; its rows go into that register, and a `match` property adopts a row held under another id (`PackageInstaller::seedGroup`, `ExistingRowMatcher::findBy`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForAnAppThatIsNotInstalledRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForASchemaTheRegisterDoesNotHoldRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallTakesARowBackFromTheOtherRegister`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedNamingAnotherAppsSchemaIncompletelyIsInvalid`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowWithoutTheMatchPropertyIsInvalid`
 - [ ] 2.1 Convert each seeder into a package, one pull request per package, deleting the seeder classes (bezwaar and beroep, VTH, besluitvorming, subsidie, DSO, LHS). Tracked by refactor lane R1 in hydra `procedures-are-configuration` T10.
