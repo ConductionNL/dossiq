@@ -20,6 +20,13 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
   `lib/Service/Assessment/OutstandingDocuments.php`; document-assessment REQ-DAS-001).
   - unit `tests/Unit/Service/Assessment/OutstandingDocumentsTest.php`,
     `tests/Unit/Controller/DocumentAssessmentControllerTest.php`.
+  - The whole list the section shows is built too, generic: `GET /api/cases/{id}/document-assessments`
+    answers every document under review with its title, whether it is outstanding, and the
+    assessment the caller may read (`lib/Service/Assessment/AssessedDocuments.php`,
+    `DocumentAssessmentController::index`; document-assessment REQ-DAS-004). Unit
+    `tests/Unit/Service/Assessment/AssessedDocumentsTest.php`, the controller test above, and
+    `tests/Unit/Review/OutstandingDocumentsTest.php::testUnderReviewIsEveryDocumentThatWasNotSetAside`.
+    What is left of 1.1 is the section on the page (UI waits for its board, decision 162).
 - [x] 1.2 The assess dialog, generic per decision 182: `src/dialogs/DocumentAssessDialog.vue`,
   opened by the header action `document-assess` (open-modal) and configured through its `props`
   for the Woo request case type. It posts `{assessments: [{documentRef, classification,

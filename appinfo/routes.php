@@ -820,6 +820,7 @@ $extra = [
         // ── WOO (Wet open overheid) operations ──────────────────────────
     // Which documents of a case still wait for an assessment, with titles (document-assessment REQ-DAS-001). Generic: any case type.
     ['name' => 'documentAssessment#outstanding', 'url' => '/api/cases/{id}/document-assessments/outstanding', 'verb' => 'GET'],
+    ['name' => 'documentAssessment#index', 'url' => '/api/cases/{id}/document-assessments', 'verb' => 'GET'],
     ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
     ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
     ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
