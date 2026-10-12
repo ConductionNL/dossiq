@@ -76,13 +76,20 @@ class ZgwDrcRulesServiceTest extends TestCase {
 	private array $searchResults = [];
 
 	/**
+	 * Answers a search from its query when set; the query carries its schema under `@schema`.
+	 *
+	 * @var \Closure|null
+	 */
+	private ?\Closure $searchHandler = null;
+
+	/**
 	 * Build the service with an ObjectService answering from a uuid map.
 	 *
 	 * @param array<string, array>|null $objects Objects by uuid, or null for no context
 	 *
 	 * @return ZgwDrcRulesService
 	 */
-	private function buildService(?array $objects): ZgwDrcRulesService {
+	private function buildService(?array $objects, array $mappingConfig=['sourceRegister' => '1', 'sourceSchema' => '2']): ZgwDrcRulesService {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => $key);
 
@@ -100,18 +107,21 @@ class ZgwDrcRulesServiceTest extends TestCase {
 				}
 			);
 			$objectService->method('buildSearchQuery')->willReturnCallback(
-				static fn (array $requestParams, string $register, string $schema): array => $requestParams
+				static fn (array $requestParams, string $register, string $schema): array => ($requestParams + ['@schema' => $schema])
 			);
 			$objectService->method('searchObjectsPaginated')->willReturnCallback(
-				fn (array $query, bool $_rbac=true, bool $_multitenancy=true): array => [
-					'total'   => $this->searchTotal,
-					'results' => $this->searchResults,
-				]
+				function (array $query, bool $_rbac=true, bool $_multitenancy=true): array {
+					if ($this->searchHandler !== null) {
+						return ($this->searchHandler)($query);
+					}
+
+					return [
+						'total'   => $this->searchTotal,
+						'results' => $this->searchResults,
+					];
+				}
 			);
-			$service->setContext(
-				objectService: $objectService,
-				mappingConfig: ['sourceRegister' => '1', 'sourceSchema' => '2']
-			);
+			$service->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
 		}
 
 		return $service;
@@ -321,4 +331,282 @@ class ZgwDrcRulesServiceTest extends TestCase {
 		$this->assertTrue($otherType['valid']);
 
 	}//end testCrossRegisterNeedsAKnownObjectType()
+
+	/**
+	 * The body of an ObjectInformatieObject that links the document to the case.
+	 *
+	 * @return array<string, string>
+	 */
+	private function caseLink(): array {
+		return ['informatieobject' => self::IO_URL, 'object' => self::CASE_URL, 'objectType' => 'case'];
+
+	}//end caseLink()
+
+	/**
+	 * Drc-006: an unlocked document needs no lock, a locked one needs its own lock id, on PUT and on PATCH.
+	 *
+	 * @return void
+	 */
+	public function testLockRules(): void {
+		$service = $this->buildService(objects: null);
+
+		foreach (['rulesEnkelvoudiginformatieobjectenUpdate', 'rulesEnkelvoudiginformatieobjectenPatch'] as $rules) {
+			$new       = $service->$rules(body: ['titel' => 'a']);
+			$unlocked  = $service->$rules(body: ['titel' => 'a'], existingObject: ['locked' => '']);
+			$notLocked = $service->$rules(body: ['titel' => 'a'], existingObject: ['locked' => false]);
+			$missing   = $service->$rules(body: ['titel' => 'a'], existingObject: ['locked' => 'lock-1']);
+			$wrong     = $service->$rules(body: ['lock' => 'lock-2'], existingObject: ['locked' => 'lock-1']);
+			$right     = $service->$rules(body: ['lock' => 'lock-1', 'titel' => 'a'], existingObject: ['locked' => 'lock-1']);
+			$oldField  = $service->$rules(body: ['lock' => 'lock-2'], existingObject: ['lock' => 'lock-1']);
+
+			$this->assertTrue($new['valid'], $rules);
+			$this->assertTrue($unlocked['valid'], $rules);
+			$this->assertTrue($notLocked['valid'], $rules);
+			$this->assertSame(400, $missing['status'], $rules);
+			$this->assertSame('Het document is vergrendeld. Geef een geldig lock ID mee.', $missing['detail'], $rules);
+			$this->assertSame('lock', $missing['invalidParams'][0]['name'], $rules);
+			$this->assertSame('required', $missing['invalidParams'][0]['code'], $rules);
+			$this->assertSame('Het opgegeven lock ID is niet geldig.', $wrong['detail'], $rules);
+			$this->assertSame('incorrect-lock-id', $wrong['invalidParams'][0]['code'], $rules);
+			$this->assertTrue($right['valid'], $rules);
+			$this->assertSame(['lock' => 'lock-1', 'titel' => 'a'], $right['enrichedBody'], $rules);
+			$this->assertSame('incorrect-lock-id', $oldField['invalidParams'][0]['code'], $rules);
+		}
+
+	}//end testLockRules()
+
+	/**
+	 * Drc-007 has nothing to check without a stored document, a context, an id or a register.
+	 *
+	 * @return void
+	 */
+	public function testDestroyWithNothingToCheck(): void {
+		$this->searchResults = [['id' => 'oio-1']];
+
+		$noDocument = $this->buildService(objects: [])->rulesEnkelvoudiginformatieobjectenDestroy(body: []);
+		$noContext  = $this->buildService(objects: null)
+			->rulesEnkelvoudiginformatieobjectenDestroy(body: [], existingObject: ['id' => self::IO_UUID]);
+		$noId       = $this->buildService(objects: [])
+			->rulesEnkelvoudiginformatieobjectenDestroy(body: [], existingObject: ['title' => 'x']);
+		$noRegister = $this->buildService(objects: [], mappingConfig: [])
+			->rulesEnkelvoudiginformatieobjectenDestroy(body: [], existingObject: ['id' => self::IO_UUID]);
+
+		$this->assertTrue($noDocument['valid']);
+		$this->assertTrue($noContext['valid']);
+		$this->assertTrue($noId['valid']);
+		$this->assertTrue($noRegister['valid']);
+
+	}//end testDestroyWithNothingToCheck()
+
+	/**
+	 * Drc-007: a document with a relation is not deleted, whether the relation stores its uuid or its URL.
+	 *
+	 * @return void
+	 */
+	public function testDestroyIsRefusedWhileARelationExists(): void {
+		$queries = [];
+		$this->searchHandler = static function (array $query) use (&$queries): array {
+			$queries[] = $query;
+			return ['results' => [['id' => 'oio-1']]];
+		};
+		$byUuid = $this->buildService(objects: [])
+			->rulesEnkelvoudiginformatieobjectenDestroy(body: [], existingObject: ['@self' => ['id' => self::IO_UUID]]);
+
+		$this->searchHandler = static function (array $query) use (&$queries): array {
+			$queries[] = $query;
+			if ($query['document'] === self::IO_UUID) {
+				return ['results' => []];
+			}
+
+			return ['results' => [new \ArrayObject(), ['@self' => ['id' => 'oio-2']], ['title' => 'no id']]];
+		};
+		$this->searchHandler = $this->serialisable(handler: $this->searchHandler);
+		$byUrl = $this->buildService(objects: [])
+			->rulesEnkelvoudiginformatieobjectenDestroy(body: [], existingObject: ['id' => self::IO_UUID]);
+
+		$this->assertSame(400, $byUuid['status']);
+		$this->assertSame('Het informatieobject kan niet verwijderd worden omdat er nog relaties aan gekoppeld zijn.', $byUuid['detail']);
+		$this->assertSame('nonFieldErrors', $byUuid['invalidParams'][0]['name']);
+		$this->assertSame('pending-relations', $byUuid['invalidParams'][0]['code']);
+		$this->assertSame('pending-relations', $byUrl['invalidParams'][0]['code']);
+		$this->assertSame(
+			[
+				['document' => self::IO_UUID, '_limit' => 100, '@schema' => 'document_link_schema'],
+				['document' => self::IO_UUID, '_limit' => 100, '@schema' => 'document_link_schema'],
+				['document' => '%'.self::IO_UUID.'%', '_limit' => 100, '@schema' => 'document_link_schema'],
+			],
+			$queries
+		);
+
+	}//end testDestroyIsRefusedWhileARelationExists()
+
+	/**
+	 * Swap the non-array hit of a handler's answer for an entity that serialises to a relation.
+	 *
+	 * @param \Closure $handler The search handler
+	 *
+	 * @return \Closure
+	 */
+	private function serialisable(\Closure $handler): \Closure {
+		return static function (array $query) use ($handler): array {
+			$answer = $handler($query);
+			foreach ($answer['results'] as $index => $hit) {
+				if (is_array($hit) === false) {
+					$answer['results'][$index] = new class implements \JsonSerializable {
+						public function jsonSerialize(): array {
+							return ['id' => 'oio-entity'];
+						}//end jsonSerialize()
+					};
+				}
+			}
+
+			return $answer;
+		};
+
+	}//end serialisable()
+
+	/**
+	 * Drc-007: no relation, or a relation search that fails, lets the delete through.
+	 *
+	 * @return void
+	 */
+	public function testDestroyPassesWithoutARelationOrWhenTheSearchFails(): void {
+		$none = $this->buildService(objects: [])
+			->rulesEnkelvoudiginformatieobjectenDestroy(body: ['x' => 1], existingObject: ['id' => self::IO_UUID]);
+
+		$this->searchHandler = static function (array $query): array {
+			throw new \RuntimeException('down');
+		};
+		$failed = $this->buildService(objects: [])
+			->rulesEnkelvoudiginformatieobjectenDestroy(body: [], existingObject: ['id' => self::IO_UUID]);
+
+		$this->assertTrue($none['valid']);
+		$this->assertSame(['x' => 1], $none['enrichedBody']);
+		$this->assertTrue($failed['valid']);
+
+	}//end testDestroyPassesWithoutARelationOrWhenTheSearchFails()
+
+	/**
+	 * Drc-003: a relation stored by uuid, or found only by full text, is a duplicate too.
+	 *
+	 * @return void
+	 */
+	public function testDuplicateIsFoundByUuidAndByFullText(): void {
+		$this->searchHandler = static fn (array $query): array => ['total' => (int)(($query['document'] ?? '') === self::IO_UUID)];
+		$byUuid = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
+		$this->searchHandler = static fn (array $query): array => [
+			'results' => array_fill(0, (int)(($query['_search'] ?? '') === self::IO_UUID.' '.self::CASE_UUID), ['id' => 'oio-1']),
+		];
+		$byText = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
+		$this->assertSame('unique', $byUuid['invalidParams'][0]['code']);
+		$this->assertSame('unique', $byText['invalidParams'][0]['code']);
+
+	}//end testDuplicateIsFoundByUuidAndByFullText()
+
+	/**
+	 * Drc-003a/b: a ZaakInformatieObject or BesluitInformatieObject for the same pair is a duplicate.
+	 *
+	 * @return void
+	 */
+	public function testRelationInZrcOrBrcIsADuplicate(): void {
+		$queries = [];
+		$this->searchHandler = static function (array $query) use (&$queries): array {
+			$queries[] = $query;
+			return ['total' => (int)(in_array($query['@schema'], ['case_document_schema', 'decision_document_schema'], true))];
+		};
+		$decisionUrl = 'https://brc.example.com/besluiten/'.self::CASE_UUID;
+
+		$case     = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+		$decision = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(
+			body: ['informatieobject' => self::IO_URL, 'object' => $decisionUrl, 'objectType' => 'decision']
+		);
+
+		$this->assertSame('unique', $case['invalidParams'][0]['code']);
+		$this->assertSame('unique', $decision['invalidParams'][0]['code']);
+		$this->assertSame(
+			['document' => self::IO_URL, 'object' => self::CASE_URL, '_limit' => 1, '@schema' => 'document_link_schema'],
+			$queries[0]
+		);
+		$this->assertSame(
+			['document' => self::IO_URL, 'case' => self::CASE_URL, '_limit' => 1, '@schema' => 'case_document_schema'],
+			$queries[3]
+		);
+		$this->assertSame(
+			['document' => self::IO_URL, 'decision' => $decisionUrl, '_limit' => 1, '@schema' => 'decision_document_schema'],
+			$queries[7]
+		);
+
+	}//end testRelationInZrcOrBrcIsADuplicate()
+
+	/**
+	 * Drc-003 fails closed: a duplicate search that cannot answer counts as a duplicate.
+	 *
+	 * @return void
+	 */
+	public function testFailedDuplicateSearchCountsAsADuplicate(): void {
+		$this->searchHandler = static function (array $query): array {
+			throw new \RuntimeException('down');
+		};
+
+		$result = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
+		$this->assertSame('unique', $result['invalidParams'][0]['code']);
+
+	}//end testFailedDuplicateSearchCountsAsADuplicate()
+
+	/**
+	 * Drc-004 fails open: a cross-register search that cannot answer lets the relation through.
+	 *
+	 * The cross-register search is the one that names the case before the document.
+	 *
+	 * @return void
+	 */
+	public function testFailedCrossRegisterSearchPasses(): void {
+		$this->searchHandler = static function (array $query): array {
+			if (array_key_first($query) === 'case') {
+				throw new \RuntimeException('down');
+			}
+
+			return ['total' => 0];
+		};
+
+		$result = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
+		$this->assertTrue($result['valid']);
+
+	}//end testFailedCrossRegisterSearchPasses()
+
+	/**
+	 * Drc-003 and drc-004 read the same ZaakInformatieObject: present it is a duplicate, absent it is
+	 * inconsistent. With a context and an objectType no body passes both.
+	 *
+	 * @return void
+	 */
+	public function testAKnownObjectTypeNeverPassesBothRelationRules(): void {
+		$this->searchHandler = static fn (array $query): array => ['total' => (int)($query['@schema'] === 'case_document_schema')];
+		$present = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
+		$this->searchHandler = static fn (array $query): array => ['total' => 0];
+		$absent = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
+		$this->assertSame('unique', $present['invalidParams'][0]['code']);
+		$this->assertSame('inconsistent-relation', $absent['invalidParams'][0]['code']);
+
+	}//end testAKnownObjectTypeNeverPassesBothRelationRules()
+
+	/**
+	 * Without a register the relation rules look nothing up.
+	 *
+	 * @return void
+	 */
+	public function testRelationRulesNeedARegister(): void {
+		$this->searchTotal = 1;
+
+		$result = $this->buildService(objects: [], mappingConfig: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
+		$this->assertTrue($result['valid']);
+
+	}//end testRelationRulesNeedARegister()
 }//end class
