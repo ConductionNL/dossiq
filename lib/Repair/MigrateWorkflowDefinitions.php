@@ -233,7 +233,9 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		// type holding only drafts (a package may ship one for an administrator
 		// to finish) would have no flow a case can follow.
 		$existing = $this->workflowService->listVersions($caseTypeId);
-		if ((string)($row['workflowDefinition'] ?? '') !== '' || $this->holdsMoreThanDrafts(templates: $existing) === true) {
+		$lifecycles = array_map(fn (array $template): string => $this->lifecycle->statusOf(row: $template), $existing);
+		$moreThanDrafts = (array_diff($lifecycles, [WorkflowLifecycleGuard::STATUS_DRAFT]) !== []);
+		if ((string)($row['workflowDefinition'] ?? '') !== '' || $moreThanDrafts === true) {
 			$this->healBackfilled(
 				templates: $existing,
 				caseType: $row,
@@ -289,23 +291,6 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		return self::OUTCOME_MIGRATED;
 	}//end migrateCaseType()
-
-	/**
-	 * Whether any of a case type's definitions is, or once was, published.
-	 *
-	 * @param array<int, array<string, mixed>> $templates The case type's definitions.
-	 *
-	 * @return bool True when one is published or deprecated.
-	 */
-	private function holdsMoreThanDrafts(array $templates): bool {
-		foreach ($templates as $template) {
-			if ($this->lifecycle->statusOf(row: $template) !== WorkflowLifecycleGuard::STATUS_DRAFT) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end holdsMoreThanDrafts()
 
 	/**
 	 * Heal the basis templates this step stored with "Array" labels.
