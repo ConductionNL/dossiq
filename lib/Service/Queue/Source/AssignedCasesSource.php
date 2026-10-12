@@ -28,6 +28,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Queue\QueueItem;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Status\StatusDeclaration;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCP\IL10N;
 use Throwable;
 
@@ -42,6 +43,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 *
 	 * @param SettingsService $settings The register configuration.
 	 * @param IL10N           $l10n     Translations, because the label is on screen.
+	 * @param DayCount        $days     Counts the days between two moments.
 	 *
 	 * @return void
 	 *
@@ -50,6 +52,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	public function __construct(
 		SettingsService $settings,
 		private readonly IL10N $l10n,
+		private readonly DayCount $days = new DayCount(),
 	) {
 		parent::__construct(settings: $settings);
 	}//end __construct()
@@ -205,6 +208,6 @@ class AssignedCasesSource extends RegisterBackedSource {
 			return 0;
 		}
 
-		return (int)$from->setTime(0, 0)->diff($now->setTime(0, 0))->days;
+		return $this->days->between(from: $from->setTime(0, 0), to: $now->setTime(0, 0));
 	}//end daysSince()
 }//end class

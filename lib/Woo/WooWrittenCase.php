@@ -116,7 +116,9 @@ class WooWrittenCase {
 	 */
 	private function numberAndDeadline(array $case): array {
 		$answer = [];
-		foreach (['identifier', 'deadline'] as $key) {
+		// The received moment and the term start ride along (decision 179):
+		// the case is stamped inside its create, so the save result holds them.
+		foreach (['identifier', 'deadline', 'receivedAt', 'termStartsAt'] as $key) {
 			$value = trim((string)($case[$key] ?? ''));
 			if ($value !== '') {
 				$answer[$key] = $value;

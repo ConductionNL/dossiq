@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -71,11 +72,13 @@ class TerugvorderingService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -134,7 +137,7 @@ class TerugvorderingService {
 		}
 
 		$yearFaction = ($yearFaction ?? self::WETTELIJKE_RENTE_FRACTIE);
-		$days = (int)$from->diff($tot)->days;
+		$days = $this->days->between(from: $from, to: $tot);
 		$rente = ($openstaandBedrag * $yearFaction * ($days / 365));
 
 		return round($rente, 2);

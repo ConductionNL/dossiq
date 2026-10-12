@@ -124,9 +124,9 @@ describe('the cases list', () => {
 		expect(lead[0].default).toBe(true)
 	})
 
-	it('keeps every one of the 18 lenses it had (19 before one-follow-control folded Favourites into Following), with the filter it had', () => {
-		expect(before.quickFilters).toHaveLength(18)
-		expect(simple.quickFilters).toHaveLength(19)
+	it('keeps every one of the 19 lenses it had (With drafts joined them with decision 201), with the filter it had', () => {
+		expect(before.quickFilters).toHaveLength(19)
+		expect(simple.quickFilters).toHaveLength(20)
 		for (const lens of before.quickFilters) {
 			const kept = simple.quickFilters.find(
 				(item) => item.label === lens.label,
@@ -663,20 +663,21 @@ describe('the landing page', () => {
 		}
 	})
 
-	it('gives my tasks the slot its custom widget resolves through', () => {
-		expect(widget('simple-my-tasks').type).toBe('custom')
-		expect(simple.slots['widget-simple-my-tasks']).toBe('MyWorkWidget')
-		expect(registrySource).toContain('MyWorkWidget')
-		// The same component, the same content, as on the full My work view,
-		// plus the one opt-in key that turns the table into the board's
-		// checkbox list.
+	it('places my tasks as the library tasks widget in its list variant', () => {
+		expect(widget('simple-my-tasks').type).toBe('tasks')
+		expect(simple.slots).not.toHaveProperty('widget-simple-my-tasks')
+		// The full My work view keeps the app's own tile (a table, with the
+		// substitution toggle); only the simple profile uses the list variant.
 		const onMyWork = pageView(original('MyWorkHome'), 'mine').widgets.find(
 			(item) => item.id === 'my-work',
 		)
-		const { variant, ...rest } = widget('simple-my-tasks').content
-		expect(variant).toBe('list')
-		expect(rest).toEqual(onMyWork.content)
 		expect(onMyWork.content).not.toHaveProperty('variant')
+		expect(widget('simple-my-tasks').content).toMatchObject({
+			scope: 'assigned',
+			variant: 'list',
+			rowRoute: 'TaskDetail',
+			viewAllRoute: { name: 'Tasks' },
+		})
 	})
 
 	it('uses icons the app registers', () => {

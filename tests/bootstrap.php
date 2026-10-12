@@ -666,6 +666,16 @@ foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stub
 	}
 }
 
+// Shillinq's payout commands (inbound-payable-from-another-app, REQ-IPY-001 and
+// REQ-IPY-005): Money\PayoutRequester raises and withdraws a payout through them.
+// Verbatim copies, loaded only when the real classes are absent, shared with
+// psalm and phpstan.
+foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Shillinq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Shillinq/Event/' . $stubEvent . '.php';
+	}
+}
+
 // Filinq's detector refusal (dossiq#3191): FilinqRedactionClient recognises it
 // by name, so only the tests need the class.
 if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === false) {
@@ -676,6 +686,13 @@ if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === 
 // `::class`, which does not autoload, so the registration is silent at runtime
 // without openregister and reads to the analysers as a class that does not
 // exist. Declaration-only, shared with psalm and phpstan.
+// a-request-form-opens-the-case-at-once: the event OpenRegister sends when a
+// draft leaves draft (openregister#4566), so the receipt listeners' tests can
+// drive it.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectActivatedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectActivatedEvent.php';
+}
+
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
 }
@@ -689,6 +706,14 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === fal
 // woo-request-scoped-access 5.2: OpenRegister's vetoable decision event
 // (openregister#4583), so CaseDecisionAccessListenerTest drives handle() with
 // the real getter names. Declaration-only, shared with psalm and phpstan.
+// The two types those events carry. Declaration-only, so the stubs stay as
+// typed as OpenRegister's own and StubApiDriftTest has nothing to report.
+if (class_exists('\\OCA\\OpenRegister\\Db\\Decision') === false) {
+	include_once __DIR__ . '/Stubs/Db/Decision.php';
+}
+if (class_exists('\\OCA\\OpenRegister\\Service\\Decision\\ReviewPolicy') === false) {
+	include_once __DIR__ . '/Stubs/Service/Decision/ReviewPolicy.php';
+}
 if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionChangeRequestedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php';
 }

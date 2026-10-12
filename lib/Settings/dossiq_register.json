@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.37"
+        "version": "0.20.40"
     },
     "x-openregister": {
         "type": "application",
@@ -1762,7 +1762,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.43.0",
+                "version": "1.44.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2803,6 +2803,11 @@
                     "identifier": {
                         "type": "string",
                         "readOnly": true,
+                        "x-openregister": {
+                            "serverSet": true,
+                            "confirmation": true,
+                            "reference": true
+                        },
                         "x-openregister-generated": {
                             "sequence": "case",
                             "format": "{year}-{seq:4}",
@@ -3177,6 +3182,9 @@
                         "type": "string",
                         "format": "date",
                         "readOnly": true,
+                        "x-openregister": {
+                            "confirmation": true
+                        },
                         "description": "Processing deadline. While the case has a statutory term, this is that term's current end date, after pauses, extensions and the Algemene termijnenwet roll, and it moves when the term moves. Only a case without a statutory term falls back to startDate + the case type's processingDeadline (x-openregister-calculations.deadline).",
                         "title": "Deadline",
                         "order": 11
@@ -4098,6 +4106,10 @@
                         "type": "string",
                         "format": "date-time",
                         "title": "Received at",
+                        "x-openregister": {
+                            "serverSet": true,
+                            "confirmation": true
+                        },
                         "description": "The moment the submission arrived. Stored beside the moment the term starts rather than only being the record's creation timestamp, because a handler answering a complaint in March has to be able to say what the citizen was told in January, and a recomputed answer is not that.",
                         "facetable": true
                     },
@@ -4107,6 +4119,10 @@
                         "type": "string",
                         "format": "date-time",
                         "title": "Term starts at",
+                        "x-openregister": {
+                            "serverSet": true,
+                            "confirmation": true
+                        },
                         "description": "The first working moment on or after `receivedAt`, on the same calendar the term counts on. Written once at creation and never recomputed: the calendar can gain a holiday afterwards, and a recomputation would quietly agree with whatever it says today.",
                         "facetable": true
                     },
@@ -4114,8 +4130,41 @@
                         "inputControl": "boolean",
                         "type": "boolean",
                         "title": "Received outside working hours",
+                        "x-openregister": {
+                            "serverSet": true
+                        },
                         "description": "True when the request arrived when the municipality was closed, so the clock started later than the moment the applicant pressed send. Derivable from the two moments and stored anyway, because it is what a report filters on and what the ontvangstbevestiging branches on. Absent, rather than false, on a case the working calendar could not place: an unanswered calendar does not know whether the week was open.",
                         "facetable": true
+                    },
+                    "externalReference": {
+                        "type": "string",
+                        "title": "Earlier reference",
+                        "description": "The reference this request had before it became a case. An old link or receipt still finds the case through it.",
+                        "visible": false,
+                        "facetable": false
+                    },
+                    "contestedCase": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "title": "Contested case",
+                        "description": "The case this request is against, for an objection or a complaint about how a case was handled. It gives no rights on that case.",
+                        "visible": false
+                    },
+                    "contestedDecision": {
+                        "type": "string",
+                        "title": "Contested decision",
+                        "description": "The decision this request is against, when it names one.",
+                        "visible": false
+                    },
+                    "attachments": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Attachments",
+                        "description": "The documents the requester sent with the request.",
+                        "visible": false
                     },
                     "district": {
                         "matchType": "exact",

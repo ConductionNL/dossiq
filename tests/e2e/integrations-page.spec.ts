@@ -63,13 +63,10 @@ const SEEDED_KEYS = [
 /**
  * The one connection nothing calls.
  *
- * BRP and KvK were both listed here with the message "Specified, not built
- * yet", and that sentence was false for both. Each ships a dormant Log adapter,
- * a real HTTP adapter and a DI registrar bound from ExternalRegisterRegistrar.
- * The difference is the caller: ConflictOfInterestService injects the BRP
- * adapter for the belangenconflict check, and nothing injects the KvK one, so
- * configuring KvK changes nothing an admin can see. That, and not "not built",
- * is what Not available means on this row.
+ * Dossiq ships no KvK client and nothing in dossiq looks a company up
+ * (ADR-118): integriq holds the KvK source. So configuring KvK in dossiq
+ * changes nothing an admin can see, and that is what Not available means on
+ * this row.
  */
 const UNAVAILABLE_KEYS = ['kvk']
 

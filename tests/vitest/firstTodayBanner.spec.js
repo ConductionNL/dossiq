@@ -24,7 +24,9 @@ describe('First today and the library banner', () => {
 	const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
 
 	it('imports the banner by name and renders it', () => {
-		expect(source).toMatch(/import\s*\{[^}]*CnBannerWidget[^}]*\}\s*from '@conduction\/nextcloud-vue'/)
+		expect(source).toMatch(
+			/import\s*\{[^}]*CnBannerWidget[^}]*\}\s*from '@conduction\/nextcloud-vue'/,
+		)
 		expect(source).toContain('components: { CnBannerWidget }')
 		expect(source).toContain('<CnBannerWidget')
 	})

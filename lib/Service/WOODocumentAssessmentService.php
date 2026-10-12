@@ -244,6 +244,19 @@ class WOODocumentAssessmentService {
 	}//end getOutstanding()
 
 	/**
+	 * Every document of a case that is under review: on the case and not set aside.
+	 *
+	 * @param string $caseId The case UUID
+	 *
+	 * @return list<string> The document identifiers.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-every-document-with-its-assessment-req-das-004
+	 */
+	public function getDocumentsUnderReview(string $caseId): array {
+		return $this->outstandingDocuments->underReview(caseId: $caseId);
+	}//end getDocumentsUnderReview()
+
+	/**
 	 * Check whether all documents in a case have been assessed.
 	 *
 	 * Used as a stage-advancement guard before "Lakken / Anonimiseren".

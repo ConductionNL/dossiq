@@ -37,7 +37,15 @@
             "type": "string",
             "maxLength": 200,
             "title": "Term note",
-            "description": "One sentence for the requester about the term: standing still, or extended with the reason. Empty while the term runs. Set by dossiq, not by hand.",
+            "description": "One sentence for the applicant about the term: standing still since a day, or extended with the period and the reason. Empty while the term runs unextended. Set by dossiq on every save of the case, for any case type, not by hand.",
+            "visible": false
+          },
+          "legalDecisionDate": {
+            "type": "string",
+            "format": "date",
+            "readOnly": true,
+            "title": "Decision due on",
+            "description": "The day the applicant is told the decision is due: the case deadline, as the term engine keeps it. Empty while the term stands still, because no date is known until it runs again. Set by dossiq on every save of the case, not by hand.",
             "visible": false
           },
           "resultLink": {

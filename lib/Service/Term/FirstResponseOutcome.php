@@ -75,11 +75,13 @@ class FirstResponseOutcome {
 	 * @param SettingsService      $settingsService Register and schema ids, and the object service.
 	 * @param WorkingDayCalculator $workingDays     Counts the overrun in the term's own mode.
 	 * @param LoggerInterface      $logger          Logger.
+	 * @param DayCount             $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -242,7 +244,7 @@ class FirstResponseOutcome {
 	 */
 	private function overrunBetween(DateTimeImmutable $due, DateTimeImmutable $sent, string $countingMode): int {
 		if ($countingMode !== WorkingDayRoll::MODE_WORKING_DAYS) {
-			return (int)$due->diff($sent)->days;
+			return $this->days->between(from: $due, to: $sent);
 		}
 
 		// Counted from the day AFTER the promise. `countWorkingDays()` counts
