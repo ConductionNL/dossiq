@@ -22,9 +22,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCA\Dossiq\Review\PagesSeen;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -71,6 +74,10 @@ interface WOODecisionObjectServiceStub {
  * Unit tests for WOODecisionService.
  *
  * @covers \OCA\Dossiq\Service\WOODecisionService
+ * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
+ * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class WOODecisionServiceTest extends TestCase {
 
@@ -140,6 +147,32 @@ class WOODecisionServiceTest extends TestCase {
 	}//end testAssembleDecisionThrowsWhenDocumentsOutstanding()
 
 	/**
+	 * The decision waits for the last page: page 7 of one in-scope document unseen answers 409 and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheDecisionWaitsForTheLastPage(): void {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+		$pagesSeen = $this->createMock(PagesSeen::class);
+		$pagesSeen->method('unseenInCase')->with('case-001')->willReturn(['doc-7' => [7]]);
+		$pagesSeen->method('assertAllSeen')->with('case-001')->willThrowException(
+			new RefusedException(rule: 'review-pages-unseen', sentence: 'The decision waits until every required page has been seen.', status: 409)
+		);
+		$this->settingsService->expects($this->never())->method('getObjectService');
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, pagesSeen: $pagesSeen);
+
+		$this->assertSame(['doc-7' => [7]], $service->unseenPages(caseId: 'case-001'));
+		$this->assertSame([], $this->service->unseenPages(caseId: 'case-001'));
+		try {
+			$service->assembleDecision(caseId: 'case-001');
+			$this->fail('A decision was assembled with a required page unseen.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-pages-unseen', $e->getRule());
+			$this->assertSame(409, $e->getStatus());
+		}
+	}//end testTheDecisionWaitsForTheLastPage()
+
+	/**
 	 * AssembleDecision throws RuntimeException when OpenRegister is unavailable.
 	 *
 	 * @return void
@@ -203,6 +236,46 @@ class WOODecisionServiceTest extends TestCase {
 		$this->assertSame(1, $result['summary']['niet_openbaar']);
 		$this->assertContains('5.1.5', $result['weigeringsgronden']);
 	}//end testAssembleDecisionSucceedsWhenAllAssessed()
+
+	/**
+	 * The assembled decision answers what the draft of its document did (REQ-CDD-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
+	 */
+	public function testTheDecisionCarriesTheDraftStatus(): void {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+		$objectServiceMock = $this->createMock(WOODecisionObjectServiceStub::class);
+		$objectServiceMock->method('searchObjectsBySlug')->willReturn([]);
+		$objectServiceMock->method('saveObject')->willReturn(
+			new class {
+				public function getUuid(): string {
+					return 'decision-uuid-002';
+				}
+			}
+		);
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', ''],
+		]);
+		$drafted = ['status' => 'failed', 'reason' => 'template not found: woo-besluit', 'informatieobject' => '', 'fileId' => 0];
+		$drafts = $this->createMock(CaseDocumentDrafts::class);
+		$drafts->expects($this->exactly(2))->method('draft')->willReturnCallback(
+			static fn (string $caseId, string $purpose): array => array_merge($drafted, ['reason' => $caseId . '/' . $purpose])
+		);
+		$service = new WOODecisionService($this->settingsService, $this->assessmentService, $this->userSession, $this->logger, $drafts);
+
+		$result = $service->assembleDecision('case-uuid-002');
+
+		$this->assertSame('decision-uuid-002', $result['decisionId'], 'a draft that failed does not undo the decision');
+		$this->assertSame('case-uuid-002/' . WOODecisionService::DRAFT_PURPOSE, $result['draft']['reason']);
+		$this->assertSame('case-uuid-002/' . WOODecisionService::INVENTORY_PURPOSE, $result['inventoryDraft']['reason']);
+		$this->assertSame('failed', $result['draft']['status']);
+	}//end testTheDecisionCarriesTheDraftStatus()
 
 	/**
 	 * An assembled decision makes the case ready to publish, and never unpublishes it.

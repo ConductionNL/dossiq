@@ -13,7 +13,7 @@
  *   - `log`       dormant Log adapter (default) — no external call
  *   - `mock`      offline mock (e.g. ghcr.io/brp-api/personen-mock)
  *   - `test`      hosted test environment (BRP proefomgeving, api.kvk.nl/test)
- *   - `simulator` local auth simulator (DigiD/eHerkenning, capped at beta)
+ *   - `simulator` local simulator tier (no external call, capped at beta)
  *   - `preprod`   official preproductie (certificate-bound, manual/gated)
  *   - `live`      production (customer-side aansluiting — out of scope here)
  *
@@ -69,7 +69,7 @@ final class IntegrationMode {
 	public const TEST = 'test';
 
 	/**
-	 * Local auth-simulator tier (DigiD/eHerkenning; capped at beta).
+	 * Local simulator tier (capped at beta).
 	 */
 	public const SIMULATOR = 'simulator';
 

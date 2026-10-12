@@ -22,55 +22,73 @@ const ROOT = path.resolve(__dirname, '../..')
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8')
 const manifest = JSON.parse(read('src', 'manifest.json'))
 const iconsSource = read('src', 'icons.js')
-const caseSchema = JSON.parse(read('lib', 'Settings', 'dossiq_register.json')).components.schemas.case
+const caseSchema = JSON.parse(read('lib', 'Settings', 'dossiq_register.json'))
+	.components.schemas.case
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const widget = (p, id) => p.config.widgets.find((w) => w.id === id)
 
-describe.each(['ContactDetail', 'OrganisationDetail'])('%s on the relation-page shape', (id) => {
-	const p = page(id)
+describe.each(['ContactDetail', 'OrganisationDetail'])(
+	'%s on the relation-page shape',
+	(id) => {
+		const p = page(id)
 
-	it('stacks the card, the cases and the latest contact moments on Overview', () => {
-		const tabs = widget(p, 'contact-panels').content.tabs
-		expect(tabs[0]).toEqual({ widgetIds: ['contact-card', 'contact-open-cases', 'contact-latest-moments'], label: 'Overview' })
-		for (const wid of tabs[0].widgetIds) {
-			expect(widget(p, wid)).toBeTruthy()
-		}
-	})
+		it('stacks the card, the cases and the latest contact moments on Overview', () => {
+			const tabs = widget(p, 'contact-panels').content.tabs
+			expect(tabs[0]).toEqual({
+				widgetIds: [
+					'contact-card',
+					'contact-open-cases',
+					'contact-latest-moments',
+				],
+				label: 'Overview',
+			})
+			for (const wid of tabs[0].widgetIds) {
+				expect(widget(p, wid)).toBeTruthy()
+			}
+		})
 
-	it('counts open cases on a field the case carries', () => {
-		const pill = p.config.statusPill
-		expect(pill.countFrom.filter).toEqual({ requester: '@objectId', isFinalStatus: false })
-		expect(caseSchema.properties.isFinalStatus.type).toBe('boolean')
-		expect(pill.countLabel.one).toContain('{count}')
-	})
+		it('counts open cases on a field the case carries', () => {
+			const pill = p.config.statusPill
+			expect(pill.countFrom.filter).toEqual({
+				requester: '@objectId',
+				isFinalStatus: false,
+			})
+			expect(caseSchema.properties.isFinalStatus.type).toBe('boolean')
+			expect(pill.countLabel.one).toContain('{count}')
+		})
 
-	it('draws the related lists through record-list', () => {
-		expect(widget(p, 'contact-open-cases').type).toBe('record-list')
-		expect(widget(p, 'contact-latest-moments').type).toBe('record-list')
-	})
+		it('draws the related lists through record-list', () => {
+			expect(widget(p, 'contact-open-cases').type).toBe('record-list')
+			expect(widget(p, 'contact-latest-moments').type).toBe('record-list')
+		})
 
-	it('names only registered icons in the contact moment feed', () => {
-		const icon = widget(p, 'contact-latest-moments').content.icon
-		for (const name of [...Object.values(icon.map), icon.default]) {
-			expect(iconsSource).toMatch(new RegExp(`\\b${name}\\b`))
-		}
-	})
+		it('names only registered icons in the contact moment feed', () => {
+			const icon = widget(p, 'contact-latest-moments').content.icon
+			for (const name of [...Object.values(icon.map), icon.default]) {
+				expect(iconsSource).toMatch(new RegExp(`\\b${name}\\b`))
+			}
+		})
 
-	it('puts the facts in the side column as facts cards', () => {
-		const types = p.config.sideColumn.map((w) => w.type)
-		expect(types).toContain('facts')
-		expect(types).not.toContain('data')
-	})
-})
+		it('puts the facts in the side column as facts cards', () => {
+			const types = p.config.sideColumn.map((w) => w.type)
+			expect(types).toContain('facts')
+			expect(types).not.toContain('data')
+		})
+	},
+)
 
 describe('ContactDetail and the BSN', () => {
 	const p = page('ContactDetail')
 
 	it('masks the BSN in the side card and leaves it out of the overview card', () => {
 		const identity = p.config.sideColumn.find((w) => w.id === 'side-identity')
-		const bsn = identity.content.fields.find((f) => f.path === 'citizenServiceNumber')
+		const bsn = identity.content.fields.find(
+			(f) => f.path === 'citizenServiceNumber',
+		)
 		expect(bsn.format).toBe('masked')
-		expect(widget(p, 'contact-card').content.include).not.toContain('citizenServiceNumber')
+		expect(widget(p, 'contact-card').content.include).not.toContain(
+			'citizenServiceNumber',
+		)
 	})
 })

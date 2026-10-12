@@ -31,7 +31,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseCustodyChainTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -92,7 +92,7 @@ class CaseCustodyChainTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testATransferClosesOneHoldingAndOpensTheNext(): void {
 		$chain = $this->chain();
@@ -139,7 +139,7 @@ class CaseCustodyChainTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testExactlyOneHoldingIsOpenAfterAMove(): void {
 		$chain = $this->chain();
@@ -181,7 +181,7 @@ class CaseCustodyChainTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheHoldingsAreNumberedInOrderFromOne(): void {
 		$chain = $this->chain();
@@ -213,7 +213,7 @@ class CaseCustodyChainTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testBeginningTwiceDoesNotDuplicateTheFirstHolding(): void {
 		$chain = $this->chain();
@@ -245,7 +245,7 @@ class CaseCustodyChainTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testAnEmptyChainAnswersNothingRatherThanGuessing(): void {
 		$chain = $this->chain();

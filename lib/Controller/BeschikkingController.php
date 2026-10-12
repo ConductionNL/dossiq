@@ -38,9 +38,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\JsonRequestBody;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -49,6 +51,7 @@ use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * Controller for beschikking lifecycle endpoints.
@@ -66,6 +69,7 @@ class BeschikkingController extends Controller {
 	 * @param BeschikkingService $decisionService The beschikking service.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseAccessGuard $accessGuard Per-case mutation access, for issuing a successor.
 	 */
 	public function __construct(
 		string $appName,
@@ -73,6 +77,7 @@ class BeschikkingController extends Controller {
 		private readonly BeschikkingService $decisionService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $accessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -92,7 +97,7 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = (new JsonRequestBody())->read(request: $this->request);
 		$caseId = (string)($body['caseId'] ?? '');
 		$templateId = null;
 		if (isset($body['templateId']) === true) {
@@ -120,6 +125,10 @@ class BeschikkingController extends Controller {
 		try {
 			$result = $this->decisionService->compose($caseId, $templateId, $merged);
 			return new JSONResponse($result, Http::STATUS_CREATED);
+		} catch (RefusedException $e) {
+			// No number could be reserved (decision 167): a 503 the client may
+			// retry, not the 500 the catch-all below would answer.
+			return $this->refused(op: 'compose', e: $e);
 		} catch (\Throwable $e) {
 			return $this->fail(op: 'compose', e: $e);
 		}
@@ -169,8 +178,10 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$updates = $this->readJsonBody();
-		unset($updates['id'], $updates['currentStatus']);
+		$updates = (new JsonRequestBody())->read(request: $this->request);
+		// The number and both chain pointers are written by compose() and
+		// issueSuccessor() only (REQ-BES-012), never by a field edit.
+		unset($updates['id'], $updates['currentStatus'], $updates['reference'], $updates['supersedes'], $updates['supersededBy']);
 
 		try {
 			$result = $this->decisionService->updateFields($id, $updates);
@@ -230,7 +241,7 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$body = $this->readJsonBody();
+		$body = (new JsonRequestBody())->read(request: $this->request);
 		$tspProvider = (string)($body['tspProvider'] ?? '');
 		if ($tspProvider === '') {
 			return new JSONResponse(['error' => 'tspProvider is required'], Http::STATUS_BAD_REQUEST);
@@ -324,6 +335,63 @@ class BeschikkingController extends Controller {
 	// ------------------------------------------------------------------
 
 	/**
+	 * Issue a successor to the beschikking `{id}`.
+	 *
+	 * Body: `decisionType` (`amendment` or `withdrawal`), and optionally
+	 * `rationale`, `decision`, `addressee` and `templateId`.
+	 *
+	 * @param string $id The beschikking being corrected or withdrawn.
+	 *
+	 * @return JSONResponse 201 with the successor; 401, 403, 404, 409 or 422 otherwise.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function successor(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$original = $this->decisionService->find($id);
+		if ($original === null) {
+			return new JSONResponse(['error' => 'Beschikking not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$caseId = (string)($original['caseId'] ?? '');
+		if ($caseId === '' || $this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'You may not change this case'], Http::STATUS_FORBIDDEN);
+		}
+
+		$body   = $this->request->getParams();
+		$reader = new JsonRequestBody();
+
+		try {
+			$successor = $this->decisionService->issueSuccessor(
+				originalId: $id,
+				kind: (string)($body['decisionType'] ?? ''),
+				// The successor's content as the handler sent it, and nothing
+				// else: the number, the pointers and the status are never read
+				// from the body. A blank template keeps the original's.
+				overrides: $reader->only(body: $body, fields: ['rationale', 'decision', 'addressee']),
+				templateId: $reader->textOrNull(body: $body, field: 'templateId'),
+			);
+
+			return new JSONResponse($successor, Http::STATUS_CREATED);
+		} catch (RefusedException $refusal) {
+			return $this->refused(op: 'successor', e: $refusal);
+		} catch (Throwable $failure) {
+			$this->logger->error(
+				'BeschikkingController: successor failed',
+				['exception' => $failure->getMessage(), 'beschikkingId' => $id],
+			);
+
+			return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end successor()
+
+	/**
 	 * Resolve the current user UID or null.
 	 *
 	 * @return string|null
@@ -393,41 +461,4 @@ class BeschikkingController extends Controller {
 		);
 		return new JSONResponse(['error' => 'Could not complete the request'], Http::STATUS_INTERNAL_SERVER_ERROR);
 	}//end fail()
-
-	/**
-	 * Read and decode the JSON request body.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function readJsonBody(): array {
-		// Prefer the request object's getContent() when reachable — test
-		// stubs expose a public getContent() so unit tests can drive
-		// controllers without faking php://input.
-		$content = '';
-		if (method_exists($this->request, 'getContent') === true) {
-			try {
-				$raw = $this->request->getContent();
-				if (is_string($raw) === true) {
-					$content = $raw;
-				}
-			} catch (\Throwable $e) {
-				$content = '';
-			}
-		}
-
-		if ($content === '') {
-			$content = (string)file_get_contents('php://input');
-		}
-
-		if ($content === '') {
-			return [];
-		}
-
-		$decoded = json_decode($content, true);
-		if (is_array($decoded) === true) {
-			return $decoded;
-		}
-
-		return [];
-	}//end readJsonBody()
 }//end class

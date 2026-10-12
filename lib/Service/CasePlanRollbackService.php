@@ -205,8 +205,12 @@ class CasePlanRollbackService {
 			return $refused('case_layer_unavailable');
 		}
 
+		if (method_exists($plans, 'getPlanAsSystem') === false) {
+			return $refused('case_layer_lacks_system_verbs');
+		}
+
 		try {
-			$plan = $plans->getPlan(objectUuid: $caseId, uid: null);
+			$plan = $plans->getPlanAsSystem(objectUuid: $caseId, app: CasePlanProjectionService::SYSTEM_APP);
 		} catch (Throwable $e) {
 			return $refused('no_plan_in_openregister');
 		}

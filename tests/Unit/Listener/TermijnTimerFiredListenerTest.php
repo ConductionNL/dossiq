@@ -35,7 +35,6 @@ use OCA\Dossiq\Listener\TermijnTimerFiredListener;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
-use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
@@ -50,7 +49,6 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\TermijnTimerFiredListener
  *
  * @uses \OCA\Dossiq\Service\DeadlineEscalationService
- * @uses \OCA\Dossiq\Service\DwangsomCalculationService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
@@ -104,12 +102,6 @@ class TermijnTimerFiredListenerTest extends TestCase {
 				),
 				logger: $logger
 			),
-			new DwangsomCalculationService(
-				settingsService: $settings,
-				logger: $logger,
-				dates: $this->dates,
-			),
-			$settings,
 			$logger,
 			$account
 		);
@@ -247,35 +239,27 @@ class TermijnTimerFiredListenerTest extends TestCase {
 	}
 
 	/**
-	 * Every handled fire syncs the dwangsom accrual derivation for the
-	 * instance's running berekeningen.
+	 * A fire leaves the penalty calculation alone: its day count and amount
+	 * are stored calculations OpenRegister keeps current, so the listener no
+	 * longer writes them (ADR-118 C16).
 	 *
 	 * @return void
 	 */
-	public function testFireSyncsRunningPenaltyCalculations(): void {
+	public function testFireLeavesThePenaltyCalculationToOpenRegister(): void {
 		$id = $this->seedInstance(['status' => 'exceeded']);
-		// The accrual counts from the administered zone's today, so the start
-		// date has to be built from the same clock. Built from PHP's `today`
-		// it was one day further back for the two hours a night between 22:00
-		// UTC and midnight in Amsterdam, and currentDag read 6 instead of 5.
-		$start = $this->dates->today()->modify('-5 days');
-		$this->objects->seed('penaltyPaymentCalculation', [
+		$row = [
 			'id' => 'b-l1',
 			'deadlineInstance' => $id,
-			'startDate' => $start->format('Y-m-d'),
-			'currentDag' => 0,
-			'cumulativeAmount' => 0,
+			'startDate' => $this->dates->today()->modify('-5 days')->format('Y-m-d'),
 			'plafondCalculated' => 144200,
-			'plafondBereikt' => false,
 			'status' => 'lopend',
 			'regime' => 'awb-default',
-		]);
+		];
+		$this->objects->seed('penaltyPaymentCalculation', $row);
 
 		$this->listener->handle($this->rungFire($id, 'slaBreached:0'));
 
-		$calc = $this->objects->store['penaltyPaymentCalculation']['b-l1'];
-		self::assertSame(5, $calc['currentDag']);
-		self::assertSame(5 * 2300, $calc['cumulativeAmount']);
+		self::assertSame($row, $this->objects->store['penaltyPaymentCalculation']['b-l1']);
 	}
 
 	/**

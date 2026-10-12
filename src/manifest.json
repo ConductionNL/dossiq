@@ -2519,6 +2519,10 @@
 									"label": "Files"
 								},
 								{
+									"widgetId": "case-document-review",
+									"label": "Review"
+								},
+								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes"
 								},
@@ -3356,6 +3360,14 @@
 						"_note": "Archived, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
 					},
 					{
+						"id": "case-document-review",
+						"type": "document-review",
+						"title": "Review",
+						"icon": "FileCheckOutline",
+						"_note": "document-review (woo-review-triage and woo-review-recall-and-stopping, generic per decision 182), board DqWooReview: relevance apart from the verdict, the stopping rule and recall samples, batches and reviewers, and what is still open. A tab beside Files because review is work on the case's documents. On a case whose case type does not set documentReview.enabled it says so in one sentence.",
+						"content": {}
+					},
+					{
 						"id": "family-plan",
 						"type": "family-plan",
 						"title": "Family plan",
@@ -3586,6 +3598,13 @@
 							"icon": "TimerSandFull",
 							"_note": "phase-terms-and-the-internal-target REQ-TERM-060 to REQ-TERM-068: the four clocks on this case, each apart. A gemeente runs the statutory term the applicant was told about, the planned end the team steers on, the internal target a teamleider steers on, and the phase term inside the case term. Collapsing them into one field made a case that is on time for the citizen and six weeks late for the team read green. A `component:` tab and not a `widgets[]` one, for the reason the Access tab gives: a sidebar tab renders either a registered component or a CnObjectSidebar built-in (data, metadata, audit / audit-trail, object-table), and none of the four can read /api/cases/{id}/terms. The progress figure and the days-left count are the SERVER'S, computed at read time and stored nowhere, so the list column reads the same computation when the library carries a column type for it.",
 							"component": "CaseTermsTab"
+						},
+						{
+							"id": "assistant",
+							"label": "Assistant",
+							"icon": "RobotOutline",
+							"_note": "ai-features-on-the-case-consume-hermiq REQ-AIC-02 to REQ-AIC-04, board DqZaakAssistent: the AI features this case type switched on, where each runs as hermiq answers it, a run on a case document with a refusal shown in words, and the report group with its near-duplicates. A `component:` tab and not a `widgets[]` one for the reason the Terms tab gives. An undeclared case type makes no call to hermiq: the panel reads the case type's declaration first.",
+							"component": "CaseAiFeaturesPanel"
 						},
 						{
 							"id": "access",
@@ -8629,6 +8648,192 @@
 			"schemaSlug": "caseType",
 			"urlTemplate": "/apps/dossiq/settings/case-types/{uuid}",
 			"displayName": "Case type"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "aanvullingsverzoek",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Request for more information"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "adviceRequest",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Advice request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "advisoryReport",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Advisory report"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "appealDecision",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Appeal decision"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "beschikking",
+			"urlTemplate": "/apps/dossiq/cases/{caseId}",
+			"displayName": "Decision letter"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "case-location",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case location"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseDocument",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Document on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseIncident",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Incident on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseObject",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case object"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "caseProperty",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case property"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "consultation",
+			"urlTemplate": "/apps/dossiq/cases/{parentCase}",
+			"displayName": "Consultation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "contactmoment",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Contact moment"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "customerContact",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Customer contact"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "deadlineInstance",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Term on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "decision",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Decision"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "handhavingsactie",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Enforcement action"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "hearingSession",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Hearing session"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "inspectieRapport",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Inspection report"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "inspectionChecklistRun",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Inspection checklist"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "inspectionResult",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Inspection result"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "objection",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Objection"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "obligation",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Obligation"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "plannedAction",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Planned action"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "result",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Case result"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "role",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Role on a case"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "samenwerkverzoek",
+			"urlTemplate": "/apps/dossiq/cases/{caseId}",
+			"displayName": "Collaboration request"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "subsidieAanvraag",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Subsidy application"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "supplierContract",
+			"urlTemplate": "/apps/dossiq/cases/{caseRef}",
+			"displayName": "Supplier contract"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "supplierTender",
+			"urlTemplate": "/apps/dossiq/cases/{caseRef}",
+			"displayName": "Supplier tender"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "wooDocumentAssessment",
+			"urlTemplate": "/apps/dossiq/cases/{caseRef}",
+			"displayName": "Woo document assessment"
+		},
+		{
+			"registerSlug": "dossiq",
+			"schemaSlug": "zaakinformatieobject",
+			"urlTemplate": "/apps/dossiq/cases/{case}",
+			"displayName": "Document on a case"
 		}
 	]
 }

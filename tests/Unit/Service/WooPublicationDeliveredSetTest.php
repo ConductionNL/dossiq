@@ -47,6 +47,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Publication\PublicationSources
+ * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  */
 class WooPublicationDeliveredSetTest extends TestCase {
 

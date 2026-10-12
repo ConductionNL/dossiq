@@ -1053,6 +1053,11 @@
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
 									"overflow": true
+								},
+								{
+									"widgetId": "case-document-review",
+									"label": "Review",
+									"overflow": true
 								}
 							],
 							"variant": "segmented"

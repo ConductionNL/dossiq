@@ -316,6 +316,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-data-panel',
 			'case-files',
+			'case-document-review',
 			'case-notes-panel',
 			'case-timeline-panel',
 			'case-people-panel',
