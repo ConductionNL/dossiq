@@ -121,6 +121,13 @@ class CaseRecordImportTest extends TestCase {
 	private bool $engine = true;
 
 	/**
+	 * The days each recorded extension was said to add.
+	 *
+	 * @var array<int, int|null>
+	 */
+	private array $extensionDays = [];
+
+	/**
 	 * The fixture rows seeded into the opencatalogi register.
 	 *
 	 * @return void
@@ -269,6 +276,12 @@ class CaseRecordImportTest extends TestCase {
 				return $this->instances[$caseId];
 			}
 		);
+		$terms->method('recordEvent')->willReturnCallback(
+			function (string $termInstanceId, string $type, string $basis = '', string $rationale = '', ?int $daysImpact = null): array {
+				$this->extensionDays[] = $daysImpact;
+				return [];
+			}
+		);
 		$terms->method('markTermijnCompleted')->willReturnCallback(
 			function (string $termInstanceId): array {
 				$caseId = substr($termInstanceId, strlen('term-'));
@@ -376,6 +389,9 @@ class CaseRecordImportTest extends TestCase {
 		$term = $this->instances[$caseId];
 		self::assertSame('2026-11-23', $term['endDateCurrent']);
 		self::assertSame(1, $term['countExtensions']);
+		// The extension is recorded with what the case type says one is worth:
+		// its `extensionPeriod` of P14D, counted as 14 days.
+		self::assertSame([14], $this->extensionDays);
 		self::assertSame('paused', $term['status']);
 		self::assertSame(['term-' . $caseId . '@2026-11-23'], $this->armed);
 		self::assertSame(['term-' . $caseId], $this->cancelled, 'the fresh P28D timer is cancelled');
