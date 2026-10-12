@@ -7,6 +7,6 @@
   "phpstan.inlineIgnores": 4,
   "phpunit.skips": 6,
   "psalm.blanketHandlers": 17,
-  "psalm.inlineSuppressions": 266,
+  "psalm.inlineSuppressions": 259,
   "psalm.referencedClasses": 78
 }
