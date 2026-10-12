@@ -274,13 +274,13 @@ final class CasePlanRollbackServiceTest extends TestCase {
 			/**
 			 * Refuse, the way OpenRegister refuses an object with no plan.
 			 *
-			 * @param string      $objectUuid The anchoring object.
-			 * @param string|null $uid        The reading identity.
+			 * @param string $objectUuid The anchoring object.
+			 * @param string $app        The acting app id.
 			 *
 			 * @return array<string, mixed> Never; it throws.
 			 */
-			public function getPlan(string $objectUuid, ?string $uid): array {
-				throw new \RuntimeException('no plan for ' . $objectUuid . ' as ' . (string)$uid);
+			public function getPlanAsSystem(string $objectUuid, string $app): array {
+				throw new \RuntimeException('no plan for ' . $objectUuid . ' as ' . $app);
 			}
 		};
 
@@ -293,6 +293,33 @@ final class CasePlanRollbackServiceTest extends TestCase {
 		$this->assertFalse($result['written']);
 		$this->assertSame('no_plan_in_openregister', $result['reason']);
 	}//end testACaseWithNoPlanInOpenRegisterIsReported()
+
+	/**
+	 * An OpenRegister without the system read is named, not asked with no identity.
+	 *
+	 * @return void
+	 */
+	public function testACaseLayerWithoutTheSystemReadIsReportedByName(): void {
+		$layer = new class {
+			/**
+			 * The old, identity-bound read: OpenRegister refuses it with no uid.
+			 *
+			 * @return array<string, mixed> Never.
+			 */
+			public function getPlan(): array {
+				throw new \LogicException('the rollback must not read a plan without an identity');
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn($layer);
+		$rollback = new CasePlanRollbackService($settings, $this->createMock(LoggerInterface::class));
+
+		$result = $rollback->rollbackCase(caseId: 'case-1');
+
+		$this->assertFalse($result['written']);
+		$this->assertSame('case_layer_lacks_system_verbs', $result['reason']);
+	}//end testACaseLayerWithoutTheSystemReadIsReportedByName()
 
 	/**
 	 * A stand-in for OpenRegister's case layer, answering the fixture plan.
@@ -314,13 +341,16 @@ final class CasePlanRollbackServiceTest extends TestCase {
 			/**
 			 * Answer the plan, whoever asks.
 			 *
-			 * @param string      $objectUuid The anchoring object.
-			 * @param string|null $uid        The reading identity.
+			 * @param string $objectUuid The anchoring object.
+			 * @param string $app        The acting app id.
 			 *
 			 * @return array<string, mixed> The plan.
 			 */
-			public function getPlan(string $objectUuid, ?string $uid): array {
-				unset($objectUuid, $uid);
+			public function getPlanAsSystem(string $objectUuid, string $app): array {
+				unset($objectUuid);
+				if ($app !== 'dossiq') {
+					throw new \LogicException('the rollback must read as dossiq, not ' . $app);
+				}
 
 				return $this->plan;
 			}

@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseDefinitionExportService;
+use OCA\Dossiq\Service\CaseDefinition\ExistingRowMatcher;
 use OCA\Dossiq\Service\CaseDefinition\PackageIds;
 use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
@@ -225,7 +226,7 @@ class CaseDefinitionPortabilityTest extends TestCase {
 		// did not move when the writer was split out: only the wiring line did.
 		return new CaseDefinitionImportService(
 			new NullLogger(),
-			new PackageWriter(new NullLogger(), $settings),
+			new PackageWriter(new NullLogger(), $settings, new ExistingRowMatcher(new NullLogger())),
 			new WorkflowDeployer(new NullLogger(), $settings),
 			new PackageValidator(new NullLogger(), new PackageIds()),
 		);

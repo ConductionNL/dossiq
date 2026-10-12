@@ -9,9 +9,9 @@ Tier: V1. Kind: config. Rows: 9.1, 9.12. Delivered half: openregister
 
 ## 2. Case-owned records
 
-- [ ] 2.1 (partly: definitions read, no seeded object read; see Findings) For every schema with a `case`, `caseId`, `caseRef` or `parentCase` property and no detail page, read one seeded or live object and record whether the field holds a bare case uuid (design D2). Write the result as a table in this file under "Findings".
-- [ ] 2.2 (blocked: openregister's search formatter fills no object property, see Findings) `src/manifest.json` `deepLinks`: `/apps/dossiq/cases/{<field>}` for each schema that passed 2.1, `displayName` naming the record kind ("Document on a case", "Contact moment").
-- [x] 2.3 `searchable: false` on each schema that failed 2.1, and on the logs in design D3.
+- [ ] 2.1 (34 of 47 decided from the code on 2026-10-10; 13 wait on a read of a seeded or live object, live pass, decision 139) For every schema with a `case`, `caseId`, `caseRef` or `parentCase` property and no detail page, read one seeded or live object and record whether the field holds a bare case uuid (design D2). Write the result as a table in this file under "Findings".
+- [x] 2.2 `src/manifest.json` `deepLinks`: `/apps/dossiq/cases/{<field>}` for the 31 schemas that passed 2.1, `displayName` naming the record kind ("Document on a case", "Term on a case"), English source with Dutch in `l10n/nl.json`. Needs openregister#4555 (the search formatter hands the registry the object's own properties); before it lands, these hits open with a literal `{case}`. Guard: `tests/vitest/searchableSchemas.spec.js` (every `{field}` a property of its schema, every template a manifest route).
+- [x] 2.3 `searchable: false` on each schema that failed 2.1, and on the logs in design D3. 2026-10-10: `gezinsplan` (1.2.1), `indicatiestelling` (1.2.1) and `reIntegratieTraject` (1.1.1) in `lib/Settings/register.d/50-sociaal-domein.json`; register 0.20.24, digests recorded.
 
 ## 3. Everything else
 
@@ -30,34 +30,34 @@ Tier: V1. Kind: config. Rows: 9.1, 9.12. Delivered half: openregister
 
 ## Findings
 
-Read on 2026-10-09 from the property definitions (type, format, `$ref`,
-description), not from a seeded or live object: no instance was available to
-this build. Tasks 2.1 and 2.2 stay open for that reason and for the one below.
+Updated 2026-10-10. The blocker is built: openregister#4555 makes
+`ObjectSearchResultFormatter` hand the deep-link registry the object's own
+scalar properties (URL-encoded, under `@self` and the ids), and falls back to
+OpenRegister's page when a placeholder stays unfilled. Decided from the
+property definitions and from the code that writes the field; no instance was
+used (decision 139).
 
-**The blocker.** OpenRegister's unified search builds a hit's link in
-`ObjectSearchResultFormatter::format()` from `@self` plus uuid, register and
-schema. `DeepLinkRegistration::resolveUrl()` would replace any top-level key,
-but it is never handed the object's own properties, so
-`/apps/dossiq/cases/{case}` would open literally. Design D1's claim that no
-openregister change is needed does not hold. Asked of openregister in
-`for-ruben/dossiq-sibling-asks.md`. Until it lands, the 47 schemas below stay
-searchable and open OpenRegister's own page, as before; the guard lists them as
-`PENDING_CASE_LINK`.
-
-| schema | field | definition | verdict |
+| schema | field | evidence | verdict |
 | --- | --- | --- | --- |
-| adviceRequest, advisoryReport, appealDecision, case-location, caseDocument, caseIncident, caseObject, caseProperty, contactmoment, customerContact, decision, handhavingsactie, hearingSession, inspectieRapport, inspectionResult, objection, obligation, plannedAction, result, role, subsidieAanvraag | case | uuid, `$ref: case` | bare uuid: pending the openregister ask |
-| inspectionChecklistRun | case | uuid | bare uuid: pending |
-| consultation | parentCase | uuid, `$ref: case` | bare uuid: pending |
-| samenwerkverzoek | caseId | uuid, `$ref: case` | bare uuid: pending |
-| supplierContract, supplierTender | caseRef | uuid, `$ref: case` | bare uuid: pending |
-| wooDocumentAssessment | caseRef | uuid | bare uuid: pending |
-| caseFederatedActivity, caseFederatedShare, caseShare | caseId | "UUID of the case" | bare uuid: pending |
-| deadlineInstance, portaalBericht | case / caseId | "case id" | bare uuid: pending |
-| zaakinformatieobject | case | string; `PortalCaseDocuments` compares it to the case uuid | bare uuid: pending |
-| aanvullingsverzoek, beschikking, caseBerichtenboxMessage, caseCustody, caseTakeover, dispatch, fieldInspection, gezinsplan, indicatiestelling, mailIntakeEntry, mandateEscalation, milestoneRecord, reIntegratieTraject, toestemming | case / caseId / caseRef | string, "a reference to the case" | not established without a seeded object: pending |
-| supplierMessage, caseSupplierInvoice | caseRef | "the case OR CONTRACT" | not always a case: `searchable: false` |
-| aiAuditEntry, sociaalDomeinAuditLog, mandateUsage, zaaksysteemMapping, stateMachineLog | caseId | logs (design D3) | `searchable: false` |
+| adviceRequest, advisoryReport, appealDecision, case-location, caseDocument, caseIncident, caseObject, caseProperty, contactmoment, customerContact, decision, handhavingsactie, hearingSession, inspectieRapport, inspectionResult, objection, obligation, plannedAction, result, role, subsidieAanvraag, inspectionChecklistRun | case | `format: uuid` (most with `$ref: case`); OpenRegister refuses a value that is not a uuid | linked |
+| consultation | parentCase | `format: uuid`, `$ref: case` | linked |
+| samenwerkverzoek | caseId | `format: uuid`, `$ref: case` | linked |
+| supplierContract, supplierTender, wooDocumentAssessment | caseRef | `format: uuid` | linked |
+| aanvullingsverzoek | case | `AanvullingsverzoekService` writes its `$caseId`, documented "The case UUID" | linked |
+| beschikking | caseId | `BeschikkingGenerationService::generateBeschikking()` writes `$caseId`, "The UUID of the zaak" | linked |
+| deadlineInstance | case | `TermijnService::createTermijnInstance()` writes the case id it is armed for | linked |
+| zaakinformatieobject | case | `LoadDefaultZgwMappings`: `{{ zaak \| zgw_extract_uuid }}` | linked |
+| gezinsplan, indicatiestelling, reIntegratieTraject | caseId | "A reference to the youth act / social support act / participation act case": a social-domain case schema (opted out itself), not a dossiq `case` | `searchable: false` |
+| caseBerichtenboxMessage, caseCustody, caseFederatedActivity, caseFederatedShare, caseShare, caseTakeover, dispatch, fieldInspection, mailIntakeEntry, mandateEscalation, milestoneRecord, portaalBericht, toestemming | case / caseId / caseRef | plain string; no writer in dossiq's PHP shows the value | pending a seeded or live read (guard: `PENDING_CASE_LINK`) |
+| supplierMessage, caseSupplierInvoice | caseRef | "the case OR CONTRACT" | `searchable: false` (earlier) |
+| aiAuditEntry, sociaalDomeinAuditLog, mandateUsage, zaaksysteemMapping, stateMachineLog | caseId | logs (design D3) | `searchable: false` (earlier) |
+
+Live recipe for the 13 pending (task 2.1) and 5.2: on an instance with
+openregister#4555, for each pending schema read one object
+(`GET /index.php/apps/openregister/api/objects/dossiq/<schema>?_limit=1`) and
+check the field against a case uuid; then search a seeded `caseDocument` title,
+a `contactmoment` summary and a `decisionType` title in the Nextcloud header.
+The first two open `/apps/dossiq/cases/<uuid>`; the third is not a hit.
 
 **Opted out under task 3.1 (99 schemas, the review point of design Risks).**
 Types and configuration, queues, tenant and supplier records, logs, and every

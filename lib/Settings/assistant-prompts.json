@@ -1,0 +1,30 @@
+{
+    "_note": "ai-features-on-the-case-consume-hermiq REQ-AIC-06: the INITIAL prompt library dossiq ships into hermiq on upgrade (lib/Repair/ShipAssistantPrompts.php). hermiq holds the prompts from then on: a prompt an administrator edited, reordered, scoped or disabled is never restored from this file. dossiq reads the offered prompts back from hermiq (GET /api/assistant/prompts), never from here. Labels from board DqZaakAssistent.",
+    "usageScope": "dossiq-case",
+    "prompts": [
+        {
+            "label": "Welke documenten moeten nog beoordeeld?",
+            "prompt": "Noem de documenten op deze zaak die nog niet beoordeeld zijn. Zeg per document wat er nog moet gebeuren en of het persoonsgegevens bevat.",
+            "order": 10,
+            "enabled": true
+        },
+        {
+            "label": "Concepttekst ontvangstbevestiging",
+            "prompt": "Schrijf een korte ontvangstbevestiging voor de aanvrager van deze zaak. Noem het zaaknummer, de datum van ontvangst en de termijn waarbinnen een besluit volgt. Gebruik eenvoudige taal.",
+            "order": 20,
+            "enabled": true
+        },
+        {
+            "label": "Samenvatting van de mails",
+            "prompt": "Vat de mails op deze zaak samen in maximaal vijf punten. Noem bij elk punt van wie de mail kwam en wanneer.",
+            "order": 30,
+            "enabled": true
+        },
+        {
+            "label": "Wat is de volgende stap?",
+            "prompt": "Wat is de volgende stap op deze zaak, gezien de status, de open taken en de termijn? Geef een voorstel en zeg waarom.",
+            "order": 40,
+            "enabled": true
+        }
+    ]
+}

@@ -25,6 +25,9 @@
 //   this app's Vue 2.7 build) was removed by workflow-editor-integration.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The AI features a case type switched on, and the report group the case is in
+// (ai-features-on-the-case-consume-hermiq, board DqZaakAssistent).
+import CaseAiFeaturesPanel from './components/case/CaseAiFeaturesPanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
@@ -41,7 +44,7 @@ import CaseBannerStack from './components/case/CaseBannerStack.vue'
 // @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 // Who has held this case, and who is asking for it
 // (custody-and-handover-of-a-case, rows 2.37 and 2.38).
-// @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+// @spec openspec/specs/case-management/spec.md
 import CaseCustodyPanel from './components/case/CaseCustodyPanel.vue'
 // Follow a case you do not own, and see who else does (case-followers,
 // row 13.18), over OpenRegister's own subscription (`object-watchers`).
@@ -82,6 +85,7 @@ import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // Collectives page, on the case itself.
 // @spec openspec/specs/case-knowledge-base/spec.md
 import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel.vue'
+import DocumentReviewPanel from './components/case/DocumentReviewPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/specs/archief-edepot-handover/spec.md
 import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
@@ -706,7 +710,7 @@ const registry = {
 	// nothing else. A page `slots` map never reaches a widget inside a tab, and
 	// a widget that shipped as `type: "custom"` would draw an empty panel with
 	// no warning at all.
-	// @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	// @spec openspec/specs/case-management/spec.md
 	'case-custody-pane': {
 		// @custom-widget-ratchet exclude the panel joins TWO surfaces that no declarative widget spans: the chain of holdings, whose rows are only meaningful as a JOIN between one holding's end and the next one's start, and the takeover requests beside it, whose answer is a POST carrying a required reason. A data widget builds its fields from one schema's properties and would draw each holding as a row of values with no way to show the join. Deleted the day the manifest vocabulary has a chain widget over a dated record
 		kind: 'widget',
@@ -1172,6 +1176,15 @@ const registry = {
 		_note: "CaseDetail, Jeugdwet: the family plan, its goals and the interventions under them. NOT the adaptive case plan beside it: CasePlanPanel renders OpenRegister's case layer, the stages and milestones of any case, and this is what this household agreed to work on, who is doing what about it and by when. Two things called a plan. Every line carries something a review can decide about: a goal says what would count as met, an intervention says who carries it out and by when, so it can be late. The register held both as plain strings until the-social-domain-plan-and-its-grounds, which is why this panel exists at all. It derives no verdict: overdue and dueForReview come from the server, so the panel and the plan endpoint cannot disagree about which household is being worked to a stale plan. Interventions that name no goal are shown separately rather than hidden, because activity nobody can connect to a goal is what a reviewer should be looking at.",
 	},
 
+	// @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
+	'document-review': {
+		// @custom-widget-ratchet exclude document review reads five schemas together (documentReview, reviewBatch, stoppingRule, recallSample and the case type's documentReview block) through dossiq's review routes, which compute the outstanding list, the unseen required pages and the recall estimate on the server. No declarative widget joins them or computes those. Deleted the day a widget type can render a server-computed summary with child collections and actions
+		kind: 'widget',
+		component: DocumentReviewPanel,
+		...PANEL_WIDGET_META,
+		_note: 'CaseDetail, Review tab (board DqWooReview): relevance apart from the verdict, the stopping rule and the recall samples, the batches and their reviewers, and what is still open. Generic per decision 182: any case type that sets documentReview.enabled gets it; on any other case it says in one sentence that this case type does not review its documents. It derives no verdict: counts, unseen pages and estimates come from the server.',
+	},
+
 	'case-unread': {
 		// @custom-widget-ratchet exclude the per-user read state is not a field of the case and no declarative widget reads it: `@self.unreadCounts` is attached on the render path, the count per panel comes from OpenRegister's read-state endpoint, and the gesture that clears one is a PUT carrying a sub-resource. Deleted the day CnTabsWidget takes a badge per tab and emits its tab change, which is where this belongs (nextcloud-vue, clusters 58 and 15)
 		kind: 'widget',
@@ -1286,6 +1299,16 @@ const registry = {
 		kind: 'page',
 		component: CaseTermsTab,
 		_note: "The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server's: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.",
+	},
+	// --- AI features on the case (ai-features-on-the-case-consume-hermiq). ---
+	// A `component:` tab for the same reason CaseTermsTab is: no CnObjectSidebar
+	// built-in can read the case type's declaration, ask hermiq where a feature
+	// runs, run one on a document, or read the report group.
+	// @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md
+	CaseAiFeaturesPanel: {
+		kind: 'page',
+		component: CaseAiFeaturesPanel,
+		_note: "Board DqZaakAssistent, the assistant panel. The AI features the case type places on the case surface, each with the provider and residency hermiq answers (unavailable, never local, when hermiq does not offer it); a run on a chosen case document in the handler's own session through caseAiFeatureGateway, a refusal shown naming the feature, the reason and hermiq's gate; and the report group the case was placed in on creation, read and never placed again, with the count and the near-duplicates hermiq was unsure about.",
 	},
 	CaseSharingTab: {
 		kind: 'page',

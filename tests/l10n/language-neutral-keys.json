@@ -74,6 +74,7 @@
         "{from} – (no end)",
         "{minutes} min",
         "{percent}%",
+        "Relevant",
         "{title}"
     ]
 }

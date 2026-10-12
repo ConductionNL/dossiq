@@ -118,6 +118,9 @@ class NoDarkCapabilityTest extends TestCase {
 		// landed an instance can resolve an address id for free, with no
 		// Kadaster key. One field is the whole gap.
 		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. BLOCKED on the change `dossiq/case-location-surface`, which should add that field; it is the only thing missing.',
+		'DecisionDocumentLifecycle' => 'C03 (decision-document, ADR-118): the one lifecycle every kind of decision document will use. BLOCKED on the R5 PRs that move BeschikkingService, Subsidie\\BeschikkingService, WOODecisionService and Bezwaar\\DecisionService onto it, after L10, L4, L6 and L1 land; nothing moves in the PR that adds it, so inventing a caller here would ship their decisions inside a class nobody designed.',
+		'FrozenRecordSuccessor' => 'C04 (frozen-record, ADR-118): the numbered successor of a sealed record of any kind. BLOCKED on the later R5 PRs that move BeschikkingImmutabilityListener, BewijsstukImmutabilityListener and the Woo delivered set guard onto the generic freeze, after the build lanes\' open PRs on them land; nothing moves in the PR that adds it.',
+		'SessionService' => 'C12 (case-session-with-parties-and-minutes, ADR-118, decision 191): plans, waives, records attendance at and closes the sessions `caseType.sessions[]` declares. BLOCKED on the bezwaar package (dossiq#3669) and R1\'s installer (dossiq#3654): the hearing moves then make `BezwaarHearingController` and the session flow event call it and delete `Bezwaar\\HearingService`, the planner and the minutes recorder. A caller before then would be a second hearing path beside the one it replaces.',
 	];
 
 	/**

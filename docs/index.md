@@ -2,90 +2,42 @@
 id: intro
 title: Introduction
 sidebar_position: 1
-description: Get started with Dossiq, case management and BPMN workflows on Nextcloud. VTH-grade compliance with typed registers and a full audit trail.
+description: Dossiq is the case management system for Nextcloud. It follows the ZGW APIs and CMMN, runs flows per case type and archives inside the workspace.
 ---
 
-# Dossiq Documentation
+# Dossiq documentation
 
-Dossiq is a case management (zaakgericht werken) application for Nextcloud, designed for Dutch government organizations. It provides a complete case management solution built on top of OpenRegister.
+Dossiq is the case management system for Nextcloud. You handle a case from request to decision to archive, in the workspace your staff already use.
 
-## Screenshots
+We built it with Nextcloud, for the municipality of Baarn and the Open Webconcept municipalities.
 
-| Feature | Screenshot |
-|---------|------------|
-| Dashboard | ![Dashboard](/screenshots/dashboard.png) |
-| My Work | ![My Work](/screenshots/my-work.png) |
-| Cases | ![Cases](/screenshots/case-management.png) |
-| Tasks | ![Tasks](/screenshots/task-management.png) |
-| Case Types | ![Case Types](/screenshots/case-types.png) |
-| Admin Settings | ![Settings](/screenshots/admin-settings.png) |
-| ZGW Configuration | ![ZGW Config](/screenshots/zaaktype-configuratie.png) |
+## Start here
 
-## Feature Documentation
+| You want to | Read |
+|---|---|
+| Know what Dossiq can do | [What Dossiq can do](./capabilities.md) |
+| See what it looks like | [Screens](./screens.md) |
+| Know how it archives | [Archiving](./archiving.md) |
+| Install it | [Installation](./installation.md) |
+| Read one feature in depth | [Feature documentation](./Features/README.md) |
 
-### Core Features (with screenshots)
+![The Dossiq dashboard](/img/screens/DqDashboard.webp)
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| [Dashboard](Features/dashboard.md) | Overview with case statistics, status chart, and personal work queue | Implemented |
-| [Case Management](Features/case-management.md) | List, filter, and manage cases in table or card view | Implemented |
-| [Case Dashboard View](Features/case-dashboard-view.md) | Individual case detail page with status, tasks, and documents | In development |
-| [My Work](Features/my-work.md) | Personal work queue showing assigned cases and tasks | Implemented |
-| [Task Management](Features/task-management.md) | List, create, and manage tasks associated with cases | Implemented |
-| [Case Types](Features/case-types.md) | Configure case type definitions with ZGW-compliant properties | Implemented |
-| [Admin Settings](Features/admin-settings.md) | Application configuration, schema mapping, and version info | Implemented |
-| [Zaaktype Configuratie](Features/zaaktype-configuratie.md) | ZGW API field mapping between OpenRegister and Dutch ZGW standard | Implemented |
+## What sets it apart
 
-### Case Processing Features (text-only)
-
-| Feature | Description | Status |
-|---------|-------------|--------|
-| [Werkvoorraad](Features/werkvoorraad.md) | Team work queue for unassigned cases | Planned |
-| [Roles and Decisions](Features/roles-decisions.md) | Role assignment and formal decision recording | Partial |
-| [Zaak Intake Flow](Features/zaak-intake-flow.md) | Case registration and intake process | Planned |
-| [Complaint Management](Features/complaint-management.md) | Citizen complaint handling (klachtafhandeling) | Planned |
-| [Consultation Management](Features/consultation-management.md) | Public participation and consultation processes | Planned |
-| [Milestone Tracking](Features/milestone-tracking.md) | Case lifecycle checkpoint monitoring | Planned |
-| [Case Email Integration](Features/case-email-integration.md) | Email-to-case and case correspondence | Planned |
-| [WOO Case Type](Features/woo-case-type.md) | Open Government Act disclosure requests | Planned |
-| [VTH Module](Features/vth-module.md) | Permits, supervision, and enforcement | Planned |
-| [Case Sharing](Features/case-sharing-collaboration.md) | Multi-user and cross-org case collaboration | In development |
-| [AI-Assisted Processing](Features/ai-assisted-processing.md) | LLM-powered case analysis and document processing | In development |
-
-### Administrative Features (text-only)
-
-| Feature | Description | Status |
-|---------|-------------|--------|
-| [Appointment Scheduling](Features/appointment-scheduling.md) | Meeting and hearing scheduling | Planned |
-| [B&W Parafering](Features/bw-parafering.md) | Executive approval workflow | Planned |
-| [Legesberekening](Features/legesberekening.md) | Municipal fee calculation | Planned |
-| [Mobiel Inspectie](Features/mobiel-inspectie.md) | Mobile field inspection interface | Planned |
-
-### Integration Features (text-only)
-
-| Feature | Description | Status |
-|---------|-------------|--------|
-| [OpenRegister Integration](Features/openregister-integration.md) | Core data layer via OpenRegister | Implemented |
-| [MijnOverheid Integration](Features/mijn-overheid-integration.md) | National citizen portal integration | Planned |
-| [StUF Support](Features/stuf-support.md) | Legacy Dutch government data exchange | Planned |
-
-### Platform Features (text-only)
-
-| Feature | Description | Status |
-|---------|-------------|--------|
-| [Prometheus Metrics](Features/prometheus-metrics.md) | Production monitoring and alerting | Planned |
-| [Register i18n](Features/register-i18n.md) | Multilingual support (nl/en) | Partial |
-| [Base Register Seed Data](Features/base-register-seed-data.md) | Pre-configured case types and definitions | Implemented |
-| [Multi-Tenant SaaS](Features/multi-tenant-saas.md) | Multi-organization support | Planned |
-| [Case Definition Portability](Features/case-definition-portability.md) | Export/import case type configurations | Planned |
+- **Dutch and European standards.** Cases follow the ZGW APIs. A case type can also run as a CMMN case plan.
+- **Flows per case type.** You set phases, tasks, rules and decision tables per case type. A new procedure is configuration, not custom code.
+- **Inside Nextcloud.** Documents are Nextcloud files, mail is Nextcloud Mail, rights are Nextcloud groups. Dossiq fits a sovereign workspace that runs on Nextcloud, such as Mijn Bureau.
+- **Built on Nextcloud Tables.** We build Dossiq on Nextcloud Tables. Together with Nextcloud we bring Tables in line with the principle of data at the source.
+- **Fit for the archive.** Retention, destruction and transfer to the e-Depot belong to the case.
 
 ## Architecture
 
-Dossiq is built as a Nextcloud app with the following architecture:
+- **Frontend**: a Vue.js app inside the Nextcloud framework.
+- **Backend**: PHP, as a Nextcloud app with controllers and services.
+- **Data layer**: OpenRegister, with typed schemas, an audit trail and retention. OpenRegister serves a table from Nextcloud Tables as a register, without copying it.
+- **API**: ZGW-compatible REST API through configurable field mapping.
+- **AI**: Nextcloud ExApps, such as Ollama and Presidio.
+- **Theming**: NL Design System tokens.
 
-- **Frontend**: Vue.js single-page application within the Nextcloud framework.
-- **Backend**: PHP (Nextcloud app structure with controllers, services, and mappers).
-- **Data Layer**: OpenRegister (flexible register/schema/object model).
-- **API**: ZGW-compatible REST API via configurable field mapping.
-- **AI**: Integration with Nextcloud ExApps (Ollama, Presidio, etc.).
-- **Theming**: NL Design System tokens via the nldesign Nextcloud app.
+Read the [architecture](./Technical/architecture.md) for the detail.
