@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
  * A bound form opens a clocked case; anything else opens nothing.
  *
  * @covers \OCA\Dossiq\Service\FormsIntakeService
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\SettingsService
  */
 class FormsIntakeServiceTest extends TestCase {
