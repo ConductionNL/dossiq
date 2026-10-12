@@ -80,6 +80,7 @@ class CaseLifecycleController extends Controller {
 		'case_not_found' => Http::STATUS_NOT_FOUND,
 		'suspension_not_allowed' => Http::STATUS_CONFLICT,
 		'extension_not_allowed' => Http::STATUS_CONFLICT,
+		'extension_limit_reached' => Http::STATUS_CONFLICT,
 		'already_suspended' => Http::STATUS_CONFLICT,
 		'not_suspended' => Http::STATUS_CONFLICT,
 		'case_not_closed' => Http::STATUS_CONFLICT,

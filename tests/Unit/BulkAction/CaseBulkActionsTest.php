@@ -220,6 +220,31 @@ class CaseBulkActionsTest extends TestCase {
 	}//end testALifecycleGestureTheCaseTypeForbidsIsSkipped()
 
 	/**
+	 * A case that used every extension its case type allows is skipped with
+	 * its own code, not with "this case type allows none".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+	 */
+	public function testAnExtensionPastTheLimitIsSkippedWithItsOwnCode(): void {
+		$lifecycle = $this->createMock(originalClassName: CaseLifecycleService::class);
+		$lifecycle->method('state')->willReturn(
+			['canExtend' => false, 'suspended' => false, 'isFinalStatus' => false, 'extensionCount' => 1, 'maxExtensions' => 1]
+		);
+		$lifecycle->expects($this->never())->method('extend');
+
+		$result = (new LifecycleCasesAction(lifecycle: $lifecycle, l10n: $this->l10n()))->apply(
+			object: $this->caseObject(uuid: 'case-1'),
+			parameters: ['gesture' => 'extend', 'reason' => 'Zienswijzen van derden'],
+			commit: true,
+		);
+
+		$this->assertSame(expected: BulkJobMember::OUTCOME_SKIPPED, actual: $result->getOutcome());
+		$this->assertSame(expected: 'extension_limit_reached', actual: $result->getReason());
+	}//end testAnExtensionPastTheLimitIsSkippedWithItsOwnCode()
+
+	/**
 	 * A permitted gesture writes, carrying the reason onto the case.
 	 *
 	 * @return void

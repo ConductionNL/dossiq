@@ -244,7 +244,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 28 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 31 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -258,12 +258,12 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(28)
+		expect(placed).toHaveLength(31)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(16)
-		expect(count('Publication')).toBe(3)
-		expect(count('Dossier')).toBe(3)
+		expect(count('Case')).toBe(17)
+		expect(count('Publication')).toBe(4)
+		expect(count('Dossier')).toBe(4)
 		expect(count('admin')).toBe(2)
 	})
 
@@ -482,12 +482,21 @@ describe('the tabs', () => {
 			// Taller where the cell would scroll inside: the tabs card (Overview
 			// measured 784px over its 720), the flow runs and hours booked.
 			const taller = { 5: 19, 7: 7, 6: 3 }
-			expect(entry.gridHeight, entry.id).toBe(taller[entry.id] ?? was.gridHeight)
+			expect(entry.gridHeight, entry.id).toBe(
+				taller[entry.id] ?? was.gridHeight,
+			)
 		}
 		const order = [...simple.layout]
 			.sort((a, b) => a.gridY - b.gridY)
 			.map((entry) => entry.id)
-		expect(order.slice(0, 6)).toEqual(['presence-strip', '5', '12', '11', '7', '6'])
+		expect(order.slice(0, 6)).toEqual([
+			'presence-strip',
+			'5',
+			'12',
+			'11',
+			'7',
+			'6',
+		])
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {

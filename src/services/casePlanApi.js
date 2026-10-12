@@ -4,10 +4,9 @@
  *
  * The adaptive case plan, read from OpenRegister's case layer.
  *
- * This is the replacement for `cmmnApi.js`, which talks to dossiq's own CMMN
- * engine on `/apps/dossiq/api/case/{id}/cmmn-plan*`. That engine retires in
- * group 3 of retire-cmmn-caseplanstate; until the drain report is clean, both
- * clients ship and `decidePlanSource()` picks between them.
+ * This is the only client of a case plan. dossiq's own CMMN engine and its
+ * routes are gone (retire-cmmn-caseplanstate, group 3); OpenRegister's case
+ * layer decides every lifecycle, sentry and cascade.
  *
  * OpenRegister answers a plan as a FLAT list of items with `parentItemId`
  * pointing at another item's numeric `id`. Everything the panel shows as a
@@ -120,7 +119,7 @@ export async function attachAdHocItem(objectUuid, item) {
  *
  * An empty `items` list is NOT the same as a plan: it is a case OpenRegister
  * holds nothing for. The panel must never render that as "this case has no
- * work", because the local engine may still hold the real plan in its blob.
+ * work": the panel shows its own "no adaptive plan" line for it instead.
  *
  * @param {object|null} plan A plan response, or null.
  * @return {boolean} True when OpenRegister holds at least one row.

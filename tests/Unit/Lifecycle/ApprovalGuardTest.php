@@ -47,7 +47,7 @@ use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\GuardResult;
-use OCA\Dossiq\Service\Transitions\MandaatGuard;
+use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
@@ -306,7 +306,7 @@ class ApprovalGuardTest extends TestCase {
 			requiredField: $this->createMock(originalClassName: RequiredFieldGuard::class),
 			requiredDocument: $this->createMock(originalClassName: RequiredDocumentGuard::class),
 			roleGuard: $this->createMock(originalClassName: RoleGuard::class),
-			mandateGuard: $this->createMock(originalClassName: MandaatGuard::class),
+			authority: $this->createMock(originalClassName: DelegatedAuthorityGuard::class),
 			statusChecklist: $checklist,
 			// `status-capacity-limit` (#2932) landed beside this change and made
 			// the capacity guard a constructor argument. A double that PASSES
