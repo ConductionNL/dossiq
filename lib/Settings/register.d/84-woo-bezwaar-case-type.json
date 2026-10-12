@@ -47,7 +47,8 @@
         "description": "Bezwaarschrift is ontvangen",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 1,
-        "isFinal": false
+        "isFinal": false,
+        "role": "intake"
       },
       {
         "@self": {
@@ -75,7 +76,8 @@
         "description": "Inhoudelijke behandeling gestart",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 3,
-        "isFinal": false
+        "isFinal": false,
+        "role": "in-progress"
       },
       {
         "@self": {
@@ -145,7 +147,8 @@
         "description": "Bezwaarprocedure is volledig afgerond",
         "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
         "order": 8,
-        "isFinal": true
+        "isFinal": true,
+        "role": "closed"
       },
       {
         "@self": {
