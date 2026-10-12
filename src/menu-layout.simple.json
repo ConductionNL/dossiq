@@ -194,7 +194,7 @@
 			"config": {
 				"widgets": [],
 				"layout": [],
-				"description": "Your work today, then the team",
+				"description": "",
 				"greeting": "first",
 				"showActionsMenu": false,
 				"viewLinks": [
@@ -1638,6 +1638,23 @@
 				"folderSidebar": null,
 				"showTitle": true,
 				"countSubtitle": "{total} case types",
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "New case type",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
 				"columns": [
 					{
 						"key": "title",
@@ -1651,11 +1668,25 @@
 					},
 					{
 						"key": "processingDeadline",
-						"label": "Processing time"
+						"label": "Processing time",
+						"formatter": "isoDuration"
 					},
 					{
 						"key": "version",
-						"label": "Version"
+						"label": "Version",
+						"formatter": "versionLabel"
+					},
+					{
+						"key": "isDraft",
+						"label": "Status",
+						"formatter": "draftState",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"false": "success",
+								"true": "warning"
+							}
+						}
 					}
 				],
 				"quickFilters": [
