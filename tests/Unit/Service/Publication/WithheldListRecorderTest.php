@@ -94,11 +94,11 @@ class WithheldListRecorderTest extends TestCase {
 	}//end testAThrowingDoorIsReportedNotRaised()
 
 	/**
-	 * A container that cannot build the door counts as no door.
+	 * A door that exists and will not resolve is a failure, not an old opencatalogi.
 	 *
 	 * @return void
 	 */
-	public function testAnUnresolvableDoorCountsAsTooOld(): void {
+	public function testAnUnresolvableDoorIsReportedAsAFailure(): void {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willThrowException(new \RuntimeException('no service'));
 		$recorder = new WithheldListRecorder(
@@ -108,8 +108,8 @@ class WithheldListRecorderTest extends TestCase {
 			recordClass: FakeWithheldDocuments::class,
 		);
 
-		self::assertSame(['status' => 'not-recorded', 'reason' => 'opencatalogi-too-old'], $recorder->record('pub-1', []));
-	}//end testAnUnresolvableDoorCountsAsTooOld()
+		self::assertSame(['status' => 'not-recorded', 'reason' => 'record-failed'], $recorder->record('pub-1', []));
+	}//end testAnUnresolvableDoorIsReportedAsAFailure()
 	/**
 	 * A refused entry is named in one sentence with its number, code and reason.
 	 *

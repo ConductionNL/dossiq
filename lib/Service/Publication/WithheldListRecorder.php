@@ -93,12 +93,18 @@ class WithheldListRecorder {
 	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
 	 */
 	public function record(string $publicationId, array $entries): array {
-		$door = $this->door();
-		if ($door === null) {
+		if (class_exists($this->recordClass) === false) {
 			return ['status' => 'not-recorded', 'reason' => self::REASON_TOO_OLD];
 		}
 
 		try {
+			// A door that exists and will not resolve is a failure, not an old
+			// opencatalogi: it is reported as one rather than swallowed.
+			$door = $this->container->get($this->recordClass);
+			if (is_object($door) === false || method_exists($door, 'record') === false) {
+				return ['status' => 'not-recorded', 'reason' => self::REASON_TOO_OLD];
+			}
+
 			$answer = $door->record($publicationId, $entries, self::SOURCE);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -159,32 +165,4 @@ class WithheldListRecorder {
 
 		return $this->l10n->t(text: 'Opencatalogi did not record these withheld documents: %s.', parameters: [implode('; ', $parts)]);
 	}//end describe()
-
-
-	/**
-	 * The record door, or null when this opencatalogi has none.
-	 *
-	 * @return object|null
-	 */
-	private function door(): ?object {
-		if (class_exists($this->recordClass) === false) {
-			return null;
-		}
-
-		try {
-			$door = $this->container->get($this->recordClass);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Opencatalogi\'s withheld record door did not resolve',
-				['app' => Application::APP_ID, 'error' => $e->getMessage()],
-			);
-			return null;
-		}
-
-		if (is_object($door) === false || method_exists($door, 'record') === false) {
-			return null;
-		}
-
-		return $door;
-	}//end door()
 }//end class
