@@ -56,7 +56,7 @@ const manifest = readJson('src', 'manifest.json')
 const menuLayout = readJson('src', 'menu-layout.json')
 const iconsSource = read('src', 'icons.js')
 const mainSource = read('src', 'main.js')
-const registerSource = read('src', 'components', 'case', 'registerCaseSections.js')
+const registerSource = read('src', 'components', 'case', 'registerNavCardGrid.js')
 
 /** OpenRegister's schema list for the dossiq register. One target, two doors. */
 const TARGET = '/apps/openregister/#/registers/dossiq'

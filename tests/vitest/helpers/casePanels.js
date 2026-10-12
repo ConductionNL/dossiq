@@ -7,7 +7,7 @@
  * Every spec that checks the case page used to find its widget with
  * `config.widgets.find((w) => w.id === …)`, because every panel was a tab and
  * every tab named a top-level widget. Six tabs means ten of those panels are
- * SECTIONS inside a `case-sections` group instead, and `find` on the top-level
+ * SECTIONS inside a `sections` group instead, and `find` on the top-level
  * array returns `undefined` for them. That reads as "the widget was deleted",
  * which is exactly the regression these specs exist to catch, so the lookup
  * has to know about both shapes rather than each spec guessing.
@@ -35,14 +35,14 @@ function pageConfig(id = 'CaseDetail') {
 
 /**
  * Every widget the CaseDetail page renders, top-level ones and the sections
- * of every `case-sections` group, flattened.
+ * of every `sections` group, flattened.
  *
  * @return {object[]} The widget definitions.
  */
 function allCaseWidgets() {
 	const top = pageConfig().widgets
 	const nested = top.flatMap((entry) =>
-		entry.type === 'case-sections'
+		entry.type === 'sections'
 			? (entry.content?.sections ?? []).map((section) => section.widget)
 			: [],
 	)
@@ -72,7 +72,7 @@ function caseTabOf(id) {
 	for (const tab of strip.content.tabs) {
 		if (tab.widgetId === id) return { tab: tab.label, label: null }
 		const group = cfg.widgets.find((entry) => entry.id === tab.widgetId)
-		if (group?.type !== 'case-sections') continue
+		if (group?.type !== 'sections') continue
 		const section = (group.content?.sections ?? []).find(
 			(entry) => entry.widget.id === id,
 		)

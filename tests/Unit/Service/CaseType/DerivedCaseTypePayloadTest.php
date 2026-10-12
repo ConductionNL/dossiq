@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for DerivedCaseTypePayload.
  *
  * @covers \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class DerivedCaseTypePayloadTest extends TestCase {
 

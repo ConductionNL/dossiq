@@ -62,6 +62,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Intake\IntakeTermStart
  *
  * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class IntakeTermStartListenerTest extends TestCase {
 

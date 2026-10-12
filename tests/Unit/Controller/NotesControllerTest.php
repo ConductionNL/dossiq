@@ -26,7 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\NotesController;
 use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\External\Zgw\NotePush;
+use OCA\Dossiq\Service\Notes\NotePush;
 use OCA\Dossiq\Service\MentionNotificationService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;

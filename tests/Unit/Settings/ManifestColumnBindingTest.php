@@ -49,6 +49,20 @@ class ManifestColumnBindingTest extends TestCase {
 	private const ROOT = __DIR__ . '/../../..';
 
 	/**
+	 * The register this app ships, and the one a computed column defaults to.
+	 *
+	 * @var string
+	 */
+	private const OWN_REGISTER = 'dossiq';
+
+	/**
+	 * Every computed column the last sweep met.
+	 *
+	 * @var array<int, array{where: string, op: string, register: string, schema: string}>
+	 */
+	private array $aggregates = [];
+
+	/**
 	 * Keys that are legitimately not schema properties.
 	 *
 	 * `@self.*` is OpenRegister's metadata envelope (created, updated, owner);
@@ -199,8 +213,104 @@ class ManifestColumnBindingTest extends TestCase {
 				continue;
 			}
 
+			// A COMPUTED column. `aggregate` makes CnDataTable count the rows of
+			// ANOTHER schema per row (`loadAggregates`), and the cell reads that
+			// count instead of a property of the row, so the column key is only
+			// a cache slot and names nothing in the page's schema. What it does
+			// bind is the other schema: every `where` field is sent to
+			// OpenRegister as a filter on it, and every `@self.<path>` value is
+			// read off the row. Those are checked instead of the key, so a count
+			// over a field that does not exist fails here rather than reading 0
+			// in every row.
+			if (is_array($entry) === true && is_array($entry['aggregate'] ?? null) === true) {
+				$this->collectAggregate(
+					bindings: $bindings,
+					where: $where . '[' . $key . '].aggregate',
+					rowSchema: $schema,
+					aggregate: $entry['aggregate'],
+				);
+				continue;
+			}
+
 			$bindings[] = ['where' => $where, 'schema' => $schema, 'key' => $key];
 		}
+	}
+
+	/**
+	 * Turn one computed column into the bindings it really makes.
+	 *
+	 * @param array<int, array{where: string, schema: string, key: string}> $bindings  Accumulator, by reference.
+	 * @param string                                                       $where     Human-readable manifest path.
+	 * @param string                                                       $rowSchema Schema slug of the row the column sits on.
+	 * @param array<string, mixed>                                         $aggregate The column's `aggregate` block.
+	 *
+	 * @return void
+	 */
+	private function collectAggregate(array &$bindings, string $where, string $rowSchema, array $aggregate): void {
+		$counted = (string)($aggregate['schema'] ?? '');
+		$this->aggregates[] = [
+			'where'    => $where,
+			'op'       => (string)($aggregate['op'] ?? ''),
+			'register' => (string)($aggregate['register'] ?? self::OWN_REGISTER),
+			'schema'   => $counted,
+		];
+
+		foreach ((array)($aggregate['where'] ?? []) as $field => $value) {
+			$bindings[] = ['where' => $where . '.where', 'schema' => $counted, 'key' => (string)$field];
+
+			if (is_string($value) === true && str_starts_with($value, '@self.') === true) {
+				$bindings[] = [
+					'where'  => $where . '.where.' . (string)$field,
+					'schema' => $rowSchema,
+					'key'    => substr($value, strlen('@self.')),
+				];
+			}
+		}
+	}
+
+	/**
+	 * Every computed column asks for a count the table runs, over a schema that ships.
+	 *
+	 * CnDataTable resolves `op: "count"` and nothing else: any other `op` is
+	 * filtered out before a request is made and the cell stays a dash. A
+	 * count over a schema this register does not ship fails per row and
+	 * degrades to the same dash. Both are the silent blank column this file
+	 * exists to catch, reached through the computed door.
+	 *
+	 * @return void
+	 */
+	public function testEveryComputedColumnCountsASchemaThatShips(): void {
+		$schemas = $this->shippedSchemaProperties();
+		$this->aggregates = [];
+		$this->manifestBindings();
+
+		$this->assertGreaterThan(
+			0,
+			count($this->aggregates),
+			'The sweep found no computed column, while the Organisations list ships one'
+		);
+
+		$offenders = [];
+		foreach ($this->aggregates as $aggregate) {
+			if ($aggregate['op'] !== 'count') {
+				$offenders[] = sprintf('%s has op "%s"; the table only runs "count"', $aggregate['where'], $aggregate['op']);
+			}
+
+			if ($aggregate['register'] === self::OWN_REGISTER && isset($schemas[$aggregate['schema']]) === false) {
+				$offenders[] = sprintf(
+					'%s counts schema "%s", which this register does not ship',
+					$aggregate['where'],
+					$aggregate['schema']
+				);
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$offenders,
+			"A computed column that cannot be counted renders a dash in every row, silently:\n"
+			. implode("\n", $offenders)
+		);
 	}
 
 	/**

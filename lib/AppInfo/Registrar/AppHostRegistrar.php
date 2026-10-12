@@ -121,10 +121,5 @@ class AppHostRegistrar {
 				'dashboardWidgets' => (new DashboardWidgetList())->classes(),
 			]
 		);
-
-		// ADR-063: the classes OpenRegister scans for dossiq's curated
-		// #[McpTool] methods, under the alias it resolves in THIS app's own
-		// container (openregister#390: the shared container does not see it).
-		$context->registerServiceAlias(DossiqScannableServices::ALIAS, DossiqScannableServices::class);
 	}//end register()
 }//end class

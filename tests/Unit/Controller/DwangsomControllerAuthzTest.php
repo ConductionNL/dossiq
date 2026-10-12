@@ -48,7 +48,7 @@ use JsonSerializable;
 use OCA\Dossiq\Controller\DwangsomController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\DwangsomBezwaarService;
-use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\Money\AccruingAmountSettler;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Http;
@@ -130,7 +130,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 	 *
 	 * @param OwningCaseResolver $owningCase The owning-case resolver.
 	 * @param CaseAccessGuard $caseAccess The per-case guard.
-	 * @param DwangsomCalculationService $calc The calculation service.
+	 * @param AccruingAmountSettler $calc The accrual settler.
 	 * @param DwangsomBezwaarService $objection The bezwaar service.
 	 * @param mixed $found What ObjectService::find() returns.
 	 *
@@ -139,7 +139,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 	private function makeController(
 		OwningCaseResolver $owningCase,
 		CaseAccessGuard $caseAccess,
-		DwangsomCalculationService $calc,
+		AccruingAmountSettler $calc,
 		DwangsomBezwaarService $objection,
 		mixed $found = null,
 	): DwangsomController {
@@ -186,8 +186,8 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$caseAccess->method('hasCaseReadAccess')->willReturn(false);
 		$caseAccess->method('hasCaseMutationAccess')->willReturn(false);
 
-		$calc = $this->createMock(DwangsomCalculationService::class);
-		$calc->expects($this->never())->method('stopForBeschikking');
+		$calc = $this->createMock(AccruingAmountSettler::class);
+		$calc->expects($this->never())->method('settle');
 
 		$objection = $this->createMock(DwangsomBezwaarService::class);
 		$objection->expects($this->never())->method('registerBezwaar');
@@ -226,7 +226,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$controller = $this->makeController(
 			$owningCase,
 			$caseAccess,
-			$this->createMock(DwangsomCalculationService::class),
+			$this->createMock(AccruingAmountSettler::class),
 			$this->createMock(DwangsomBezwaarService::class),
 			new DwangsomBerekeningEntityDouble(['id' => self::BEREKENING_ID])
 		);
@@ -259,7 +259,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$controller = $this->makeController(
 			$owningCase,
 			$caseAccess,
-			$this->createMock(DwangsomCalculationService::class),
+			$this->createMock(AccruingAmountSettler::class),
 			$this->createMock(DwangsomBezwaarService::class),
 			new DwangsomBerekeningEntityDouble($payload)
 		);
@@ -286,7 +286,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$controller = $this->makeController(
 			$owningCase,
 			$caseAccess,
-			$this->createMock(DwangsomCalculationService::class),
+			$this->createMock(AccruingAmountSettler::class),
 			$this->createMock(DwangsomBezwaarService::class),
 			null
 		);
@@ -312,7 +312,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$controller = $this->makeController(
 			$owningCase,
 			$caseAccess,
-			$this->createMock(DwangsomCalculationService::class),
+			$this->createMock(AccruingAmountSettler::class),
 			$this->createMock(DwangsomBezwaarService::class),
 			new DwangsomBerekeningEntityDouble(['id' => self::BEREKENING_ID])
 		);

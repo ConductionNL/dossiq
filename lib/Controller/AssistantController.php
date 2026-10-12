@@ -50,6 +50,13 @@ use Psr\Log\LoggerInterface;
  */
 class AssistantController extends Controller {
 	/**
+	 * The usage scope dossiq's case prompts carry in hermiq's library.
+	 *
+	 * @var string
+	 */
+	public const CASE_PROMPT_SCOPE = 'dossiq-case';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The application name.
@@ -184,6 +191,53 @@ class AssistantController extends Controller {
 
 		return new JSONResponse(['features' => $features]);
 	}//end aiFeatures()
+
+	/**
+	 * The prompts the assistant offers on a case, as hermiq holds them.
+	 *
+	 * 🔴 DOSSIQ HOLDS NO PROMPT TEXT FOR THE CASE SURFACE (REQ-AIC-06). The
+	 * prompts are hermiq's administered objects, read in the administrator's
+	 * order; dossiq only ships an initial library into hermiq on upgrade
+	 * (ShipAssistantPrompts). An absent hermiq answers an empty list.
+	 *
+	 * @return JSONResponse `{prompts: [{id, label, prompt}]}`.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @no-admin-idor-exempt There is no object to scope to: the prompt library
+	 * is one global list per record type, the same for every caller, and no
+	 * case, document or party is read.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#scenario-the-prompts-offered-on-a-case-come-from-hermiq
+	 */
+	public function prompts(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(
+				['error' => $this->l10n->t('Authentication required')],
+				Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		if ($this->aiFeatureClient === null) {
+			return new JSONResponse(['prompts' => []]);
+		}
+
+		$prompts = [];
+		foreach ($this->aiFeatureClient->prompts(scope: self::CASE_PROMPT_SCOPE) as $row) {
+			$text = trim((string)($row['prompt'] ?? ''));
+			if ($text === '') {
+				continue;
+			}
+
+			$prompts[] = [
+				'id' => (string)($row['id'] ?? ''),
+				'label' => (string)($row['label'] ?? $text),
+				'prompt' => $text,
+			];
+		}
+
+		return new JSONResponse(['prompts' => $prompts]);
+	}//end prompts()
 
 	/**
 	 * Run one conversational turn against a case.

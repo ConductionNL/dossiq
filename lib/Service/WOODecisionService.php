@@ -29,7 +29,10 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
+use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
+use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
+use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -44,8 +47,6 @@ use RuntimeException;
  */
 class WOODecisionService {
 
-	use SearchesObjects;
-
 	/**
 	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
 	 * which the Woo request case type lists in its `decisionTypes`.
@@ -59,6 +60,30 @@ class WOODecisionService {
 	 */
 	public const DECISION_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000d001';
 
+	/**
+	 * The `documentDrafts` purpose the decision document is drafted under.
+	 */
+	public const DRAFT_PURPOSE = 'decision';
+
+	/**
+	 * The `documentDrafts` purpose the inventory is drafted under.
+	 */
+	public const INVENTORY_PURPOSE = 'inventory';
+
+
+	/**
+	 * Composes the case's title and the assessment tally for the decision record.
+	 *
+	 * @var DecisionRecordComposer
+	 */
+	private readonly DecisionRecordComposer $composer;
+
+	/**
+	 * Marks the case ready to publish once the decision is assembled.
+	 *
+	 * @var PublicationReadiness
+	 */
+	private readonly PublicationReadiness $readiness;
 
 	/**
 	 * Constructor.
@@ -67,19 +92,28 @@ class WOODecisionService {
 	 * @param WOODocumentAssessmentService $assessmentService Document assessment service
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
+	 * @param CaseDocumentDrafts|null $drafts Drafts the decision document from the case type's
+	 *        `documentDrafts.decision` template through filinq (case-document-drafts).
+	 * @param PagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly WOODocumentAssessmentService $assessmentService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseDocumentDrafts $drafts = null,
+		private readonly ?PagesSeen $pagesSeen = null,
 	) {
+		$this->composer  = new DecisionRecordComposer(settingsService: $settingsService, logger: $logger);
+		$this->readiness = new PublicationReadiness(settingsService: $settingsService, logger: $logger);
 	}//end __construct()
 
 	/**
 	 * Assemble the formal WOO besluit for a case.
 	 *
-	 * Validates that all documents are assessed, then writes a decision object
+	 * Validates that all documents are assessed and every required page of an
+	 * in-scope document was seen (refused with 409 otherwise, woo-review-triage),
+	 * then writes a decision object
 	 * linked to the case referencing all assessments and weigeringsgronden.
 	 *
 	 * @param string $caseId The case UUID
@@ -91,10 +125,15 @@ class WOODecisionService {
 	 * @throws \InvalidArgumentException If any document has not been assessed
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
 	public function assembleDecision(string $caseId, array $decisionData = []): array {
 		// Guard: all documents must be assessed before a besluit can be created.
 		$this->assertAllDocumentsAssessed(caseId: $caseId);
+
+		// Guard: every required page of every in-scope document has been seen (REQ-WRT-005).
+		$this->pagesSeen?->assertAllSeen(caseId: $caseId);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -103,24 +142,15 @@ class WOODecisionService {
 
 		$register = $this->settingsService->getConfigValue('register');
 		$decisionSchema = $this->settingsService->getConfigValue('decision_schema');
-		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 
 		if (empty($register) === true || empty($decisionSchema) === true) {
 			throw new RuntimeException('Decision schema not configured');
 		}
 
-		// Collect all assessments for the case.
-		$assessments = $this->collectAssessments(
-			objectService: $objectService,
-			register: $register,
-			assessmentSchema: $assessmentSchema,
-			caseId: $caseId,
-		);
-
-		// Summarise assessments by classification.
-		$summarised = $this->summariseAssessments(assessments: $assessments);
-		$summary = $summarised['summary'];
-		$weigeringsgronden = $summarised['weigeringsgronden'];
+		// The case's title and its assessments, tallied by classification.
+		$record = $this->composer->compose(objectService: $objectService, register: $register, caseId: $caseId);
+		$summary = $record['summary'];
+		$weigeringsgronden = $record['weigeringsgronden'];
 
 		$userId = $this->resolveDecidedBy();
 
@@ -129,13 +159,11 @@ class WOODecisionService {
 				'case' => $caseId,
 				'decisionType' => self::DECISION_TYPE_ID,
 				'decisionDate' => date('Y-m-d'),
-				'description' => self::publicationSummary(
-					caseTitle: $this->readCaseTitle(objectService: $objectService, register: $register, caseId: $caseId),
-				),
+				'description' => self::publicationSummary(caseTitle: $record['caseTitle']),
 				'wooSummary' => $summary,
 				'weigeringsgronden' => $weigeringsgronden,
 				'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
-				'assessmentCount' => count($assessments),
+				'assessmentCount' => $record['assessmentCount'],
 				'decidedBy' => $userId,
 			],
 			$decisionData,
@@ -143,7 +171,7 @@ class WOODecisionService {
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
-		$this->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
+		$this->readiness->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
 
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
@@ -155,7 +183,9 @@ class WOODecisionService {
 			'caseId' => $caseId,
 			'summary' => $summary,
 			'weigeringsgronden' => $weigeringsgronden,
-			'assessmentCount' => count($assessments),
+			'assessmentCount' => $record['assessmentCount'],
+			'draft' => $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE),
+			'inventoryDraft' => $this->drafts?->draft(caseId: $caseId, purpose: self::INVENTORY_PURPOSE),
 		];
 	}//end assembleDecision()
 
@@ -184,87 +214,17 @@ class WOODecisionService {
 	}//end publicationSummary()
 
 	/**
-	 * The title of the case, or '' when it cannot be read.
+	 * The in-scope documents of a case whose required pages are not all seen, with those pages.
 	 *
-	 * A case that cannot be read costs the summary its title, not the decision.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The dossiq register.
 	 * @param string $caseId The case UUID.
 	 *
-	 * @return string The title.
+	 * @return array<string, list<int>> The unseen pages by document; empty without the review.
 	 *
-	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
 	 */
-	private function readCaseTitle(object $objectService, string $register, string $caseId): string {
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		if ($caseSchema === '') {
-			return '';
-		}
-
-		try {
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $caseSchema,
-				id: $caseId,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'WOODecisionService: the case title could not be read for the decision summary',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
-			);
-			return '';
-		}
-
-		$title = $case['title'] ?? '';
-		if (is_string($title) === false) {
-			return '';
-		}
-
-		return $title;
-	}//end readCaseTitle()
-
-	/**
-	 * The case can now be published: it reads `wooPublicationStatus: ready`
-	 * (woo-publish-decision-from-the-case design D-2), which is what shows the
-	 * Publish (Woo) header action. A decision that was published before keeps
-	 * the case's `published` state; re-assembling does not unpublish.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param string $register The dossiq register.
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
-	 */
-	private function markCaseReady(object $objectService, string $register, string $caseId): void {
-		try {
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->settingsService->getConfigValue('case_schema'),
-				id: $caseId,
-			);
-			if ($case === null || ($case['wooPublicationStatus'] ?? '') === 'published') {
-				return;
-			}
-
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->settingsService->getConfigValue('case_schema'),
-				id: $caseId,
-				changes: ['wooPublicationStatus' => 'ready'],
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'WOODecisionService: the case could not show that its decision is ready to publish',
-				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
-			);
-		}
-	}//end markCaseReady()
+	public function unseenPages(string $caseId): array {
+		return ($this->pagesSeen?->unseenInCase(caseId: $caseId) ?? []);
+	}//end unseenPages()
 
 	/**
 	 * Guard that every document of a case carries an assessment.
@@ -284,66 +244,6 @@ class WOODecisionService {
 			);
 		}
 	}//end assertAllDocumentsAssessed()
-
-	/**
-	 * Fetch all assessment objects belonging to a case.
-	 *
-	 * @param object $objectService OpenRegister object service
-	 * @param mixed $register Configured register identifier
-	 * @param mixed $assessmentSchema Configured assessment schema identifier
-	 * @param string $caseId The case UUID
-	 *
-	 * @return array<int, array<string, mixed>> Assessment rows, empty when the schema is not configured
-	 */
-	private function collectAssessments(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
-		if (empty($assessmentSchema) === true) {
-			return [];
-		}
-
-		// The is_array() guard the inline version carried here is dead code:
-		// searchObjectsAsArrays() is declared `: array`. Dropped rather than
-		// inverted, because phpstan rejects it in either direction.
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $assessmentSchema,
-			filters: ['caseRef' => $caseId, '_limit' => 500],
-		);
-	}//end collectAssessments()
-
-	/**
-	 * Tally assessments by classification and collect the distinct weigeringsgronden.
-	 *
-	 * @param array<int, array<string, mixed>> $assessments Assessment rows
-	 *
-	 * @return array{summary: array<string, int>, weigeringsgronden: array<int, mixed>} Counts per classification plus distinct grounds
-	 */
-	private function summariseAssessments(array $assessments): array {
-		$summary = [
-			'openbaar' => 0,
-			'deels_openbaar' => 0,
-			'niet_openbaar' => 0,
-		];
-
-		$weigeringsgronden = [];
-		foreach ($assessments as $assessment) {
-			$classification = $assessment['classification'] ?? null;
-			if ($classification !== null && isset($summary[$classification]) === true) {
-				$summary[$classification]++;
-			}
-
-			foreach (($assessment['weigeringsgronden'] ?? []) as $code) {
-				if (in_array($code, $weigeringsgronden, true) === false) {
-					$weigeringsgronden[] = $code;
-				}
-			}
-		}
-
-		return [
-			'summary' => $summary,
-			'weigeringsgronden' => $weigeringsgronden,
-		];
-	}//end summariseAssessments()
 
 	/**
 	 * Resolve the user id credited with the besluit.

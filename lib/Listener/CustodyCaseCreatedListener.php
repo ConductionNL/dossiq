@@ -28,7 +28,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
 /**
  * A new case starts its chain of custody where it was registered.
  *
- * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  *
  * @template-implements IEventListener<Event>
  */
@@ -66,7 +66,7 @@ class CustodyCaseCreatedListener implements IEventListener {
 	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface          $logger       Records a chain that could not be started.
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly CaseCustodyChain $custody,
@@ -82,7 +82,7 @@ class CustodyCaseCreatedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 * @spec openspec/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof ObjectCreatedEvent) === false) {

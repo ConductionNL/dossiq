@@ -1,7 +1,8 @@
 <?php
 
 /**
- * How a term instance is classified as met, missed, running or suspended.
+ * How a term instance is classified as met, missed, running or suspended, and
+ * the share of decided terms that were met.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Service\Termijn
@@ -46,4 +47,19 @@ class TermOutcomeTest extends TestCase {
 	public function testClassify(array $row, string $expected): void {
 		self::assertSame($expected, (new TermOutcome())->classify(row: $row));
 	}
+
+	/**
+	 * The share counts decided terms only, and nothing decided is no figure.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-the-term-behaves-as-opencatalogis-did-proven-on-its-fixtures-req-wto-003
+	 */
+	public function testTheShareIsOverDecidedTermsOnly(): void {
+		$outcome = new TermOutcome();
+
+		self::assertSame(75.0, $outcome->shareMet(met: 3, missed: 1));
+		self::assertSame(0.0, $outcome->shareMet(met: 0, missed: 2));
+		self::assertNull($outcome->shareMet(met: 0, missed: 0));
+	}//end testTheShareIsOverDecidedTermsOnly()
 }

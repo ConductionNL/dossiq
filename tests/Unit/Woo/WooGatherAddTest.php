@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentDefaults;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
+use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
@@ -57,12 +58,15 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentDefaults
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Woo\WooCollection
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans
+ * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses \OCA\Dossiq\Review\OutstandingDocuments
  */
 class WooGatherAddTest extends TestCase {
 
@@ -265,6 +269,7 @@ class WooGatherAddTest extends TestCase {
 			store: $store,
 			assessments: new WOODocumentAssessmentService(settingsService: $this->settings, userSession: $session, logger: $this->createMock(LoggerInterface::class), caseDocuments: $caseDocuments),
 			plans: new WooSearchPlans(settingsService: $this->settings),
+			provenance: new CaseDocumentProvenance(store: $store, caseDocuments: $caseDocuments),
 		);
 
 		return new WooGatherAdd(
