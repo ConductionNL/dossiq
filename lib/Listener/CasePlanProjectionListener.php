@@ -74,7 +74,7 @@ class CasePlanProjectionListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		// A draft has no plan; the plan is projected when the draft is sent.
-		$payload = $this->receipt->receivedObject(event: $event);
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null || $this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
 			return;
 		}

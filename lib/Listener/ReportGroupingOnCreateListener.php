@@ -73,7 +73,7 @@ class ReportGroupingOnCreateListener implements IEventListener {
 	 */
 	public function handle(Event $event): void {
 		// A draft is not a report yet; it is grouped when it is sent.
-		$payload = $this->receipt->receivedObject(event: $event);
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null || $this->slugResolver->resolveFromPayload(payload: $payload) !== 'case') {
 			return;
 		}

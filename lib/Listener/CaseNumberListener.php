@@ -69,7 +69,7 @@ class CaseNumberListener implements IEventListener {
 	public function handle(Event $event): void {
 		// A draft is not a case yet and gets no number; the moment it is sent
 		// is when it is received, and numbered (decision 201).
-		$payload = $this->receipt->receivedObject(event: $event);
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null) {
 			return;
 		}

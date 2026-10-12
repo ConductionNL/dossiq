@@ -17,7 +17,10 @@
 
 - [x] 1.5 `CaseNumberListener`, `ReportGroupingOnCreateListener` and `CasePlanProjectionListener` skip a draft and run when it is sent (decisions 180 and 201), through `ReceiptMoment::receivedObject`; each is registered on OpenRegister's `ObjectActivatedEvent` next to its create registration
   - Test: tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php (from both registrars to the effect, for a draft create, a received create and a sent draft)
-  - Open for openregister: the case flow starts on the flow trigger `object.created`, also for a draft, and the schema's `startDate` and `deadline` calculations run on a draft (Q-dossiq-d179-3)
+  - Answered by decision 227 (Q-dossiq-d179-3): OpenRegister holds creation side effects for a draft and announces a sent draft as created, then activated. That change is built and not on development yet
+- [x] 1.6 A sent draft does its creation work once on OpenRegister with and without decision 227. `ReceiptMoment::receivedObject` remembers the first receipt of an object per listener, so the second event of the pair answers null. The five listeners on both events ask it: `CaseNumberListener`, `ReportGroupingOnCreateListener`, `CasePlanProjectionListener`, `AcknowledgementOnCreateListener`, `DeadlineCaseCreatedListener`
+  - Test: tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php `testASentDraftDoesItsCreationWorkOnceUnderBothEventModels` (the list of listeners on both events is read from the registrars, so a sixth cannot be added without the test), tests/Unit/Service/Intake/ReceiptMomentTest.php
+  - To delete once every instance runs OpenRegister with decision 227: the five `DRAFT_SENT_EVENT` registrations in `WorkflowListenerRegistrar` and `IntakeListenerRegistrar`, the activation and draft branches of `ReceiptMoment::receivedObject`, and `ReceiptMoment::firstReceipt` with its `$for` argument. The listeners then read `ObjectCreatedEvent` alone
 
 ## 2. Intake requirement D-5 (intake-says-when-the-term-starts task 2.1)
 

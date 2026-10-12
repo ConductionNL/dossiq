@@ -119,7 +119,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	public function handle(Event $event): void {
 		// The create of a case that is not a draft, or the moment a draft is
 		// sent. A draft binds no statutory term (decision 180).
-		$payload = $this->receipt->receivedObject(event: $event);
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null) {
 			return;
 		}

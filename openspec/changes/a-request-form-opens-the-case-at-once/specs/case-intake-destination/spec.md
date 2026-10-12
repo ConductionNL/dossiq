@@ -33,6 +33,8 @@
 
 A case in OpenRegister status `draft` SHALL NOT get a case number, SHALL NOT be placed in a group of similar reports and SHALL NOT get a case plan. Each SHALL happen once, when the draft is sent, on the event OpenRegister sends for it (decisions 180 and 201). A case created outside `draft` SHALL get all three on its create, as before.
 
+OpenRegister announces a sent draft in one of two ways, and both SHALL give the same result. On OpenRegister without decision 227 a draft's create is a created event for a draft and sending it is an activated event. On OpenRegister with decision 227 a draft's create reaches no created listener, and sending it is a created event followed by an activated event for the same object. A listener that sits on both events SHALL do its creation work once per case under either: the case number, the grouping, the case plan, the acknowledgement of receipt and the term binding.
+
 #### Scenario: A draft has no case number until it is sent
 @e2e exclude a draft is saved and sent through the portal, which the dossiq e2e rig does not run; covered by `tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php::testADraftIsNumberedWhenItIsSent`
 
@@ -41,6 +43,16 @@ A case in OpenRegister status `draft` SHALL NOT get a case number, SHALL NOT be 
 - **THEN** no case number is assigned, no grouping job is queued and no case plan is projected
 - **WHEN** the resident sends it
 - **THEN** the case gets its number, is queued for grouping once and gets its plan
+
+#### Scenario: A sent draft is announced twice and handled once
+@e2e exclude the two events come from OpenRegister inside one save and need an OpenRegister with decision 227, which is not on development; covered by `tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php::testASentDraftDoesItsCreationWorkOnceUnderBothEventModels`
+
+- **GIVEN** an OpenRegister that announces a sent draft as created and then as activated
+- **WHEN** a resident sends a draft case
+- **THEN** the case gets one case number, one grouping job, one case plan, one queued acknowledgement and one term
+- **GIVEN** an OpenRegister that announces a sent draft as activated only
+- **WHEN** a resident sends a draft case
+- **THEN** the result is the same
 
 ### Requirement: The confirmation fields MUST be marked on the case schema
 

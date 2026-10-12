@@ -27,14 +27,19 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar;
+use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
 use OCA\Dossiq\BackgroundJob\ReportGroupingJob;
+use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
+use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Service\CaseNumberService;
 use OCA\Dossiq\Service\CasePlanProjectionService;
+use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectActivatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
@@ -49,8 +54,10 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
  * @covers \OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\AcknowledgementOnCreateListener
  * @covers \OCA\Dossiq\Listener\CaseNumberListener
  * @covers \OCA\Dossiq\Listener\CasePlanProjectionListener
+ * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
  * @covers \OCA\Dossiq\Listener\ReportGroupingOnCreateListener
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\AppInfo\Registrar\TaskListenerRegistrar
@@ -190,4 +197,150 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 				->handle(self::moments()[$moment]);
 		}
 	}//end testADraftIsPlannedWhenItIsSent()
+
+	/**
+	 * Every listener both registrars put on the created event and on the draft sent event.
+	 *
+	 * @return array<int, string> The listener classes, sorted.
+	 */
+	private function listenersOnBothEvents(): array {
+		$registered = [];
+		$context = $this->createMock(originalClassName: IRegistrationContext::class);
+		$context->method('registerEventListener')->willReturnCallback(
+			static function (string $event, string $listener, int $priority = 0) use (&$registered): void {
+				$registered[$event][$listener] = true;
+			}
+		);
+
+		(new WorkflowListenerRegistrar())->register(context: $context);
+		(new IntakeListenerRegistrar())->register(context: $context);
+
+		$both = array_keys(
+			array_intersect_key(
+				($registered[ObjectCreatedEvent::class] ?? []),
+				($registered[ObjectActivatedEvent::class] ?? [])
+			)
+		);
+		sort($both);
+
+		return $both;
+	}//end listenersOnBothEvents()
+
+	/**
+	 * How often each listener on both events did its creation work, per way a case can arrive.
+	 *
+	 * One listener instance takes the whole sequence, as the container hands
+	 * one instance to both registrations.
+	 *
+	 * @param array<int, Event> $sequence The events of one arrival, in order.
+	 *
+	 * @return array<string, int> Listener class => times its work ran.
+	 */
+	private function workDoneOver(array $sequence): array {
+		$count = [];
+		$counter = static function (string $listener) use (&$count): callable {
+			$count[$listener] = 0;
+
+			return static function () use (&$count, $listener): void {
+				$count[$listener]++;
+			};
+		};
+
+		$numbers = $this->createMock(CaseNumberService::class);
+		$count[CaseNumberListener::class] = 0;
+		$numbers->method('assign')->willReturnCallback(
+			static function () use (&$count): string {
+				$count[CaseNumberListener::class]++;
+
+				return 'Z-2026-000001';
+			}
+		);
+
+		$groupingJobs = $this->createMock(IJobList::class);
+		$groupingJobs->method('add')->willReturnCallback($counter(ReportGroupingOnCreateListener::class));
+
+		$projection = $this->createMock(CasePlanProjectionService::class);
+		$count[CasePlanProjectionListener::class] = 0;
+		$projection->method('projectForCase')->willReturnCallback(
+			static function () use (&$count): array {
+				$count[CasePlanProjectionListener::class]++;
+
+				return ['projected' => true, 'reason' => ''];
+			}
+		);
+
+		$acknowledgementJobs = $this->createMock(IJobList::class);
+		$acknowledgementJobs->method('add')->with(AcknowledgementDispatchJob::class, self::anything())
+			->willReturnCallback($counter(AcknowledgementOnCreateListener::class));
+
+		$terms = $this->createMock(TermijnService::class);
+		$count[DeadlineCaseCreatedListener::class] = 0;
+		$terms->method('createTermijnInstance')->willReturnCallback(
+			static function () use (&$count): array {
+				$count[DeadlineCaseCreatedListener::class]++;
+
+				return ['id' => 'term-1'];
+			}
+		);
+		$caseTypes = $this->createMock(CaseTypeSlugResolver::class);
+		$caseTypes->method('toSlug')->willReturn('verhuizing');
+
+		$logger = $this->createMock(LoggerInterface::class);
+		// One ReceiptMoment for all of them: the container shares it too, and
+		// one listener's receipt must not use up another's.
+		$receipt = new ReceiptMoment();
+		$listeners = [
+			new CaseNumberListener($numbers, $this->caseResolver(), $receipt),
+			new ReportGroupingOnCreateListener($groupingJobs, $this->caseResolver(), $receipt),
+			new CasePlanProjectionListener($projection, $this->caseResolver(), $logger, $receipt),
+			new AcknowledgementOnCreateListener($acknowledgementJobs, $this->caseResolver(), $logger, $receipt),
+			new DeadlineCaseCreatedListener($terms, $this->caseResolver(), $caseTypes, $logger, null, null, null, $receipt),
+		];
+
+		foreach ($sequence as $event) {
+			foreach ($listeners as $listener) {
+				$listener->handle($event);
+			}
+		}
+
+		ksort($count);
+
+		return $count;
+	}//end workDoneOver()
+
+	/**
+	 * A sent draft does its creation work once, whichever way OpenRegister announces it.
+	 *
+	 * OpenRegister on development today: the draft's create is an
+	 * `ObjectCreatedEvent` for a draft, sending it is an `ObjectActivatedEvent`.
+	 * OpenRegister with decision 227: the draft's create reaches no listener
+	 * here, sending it is an `ObjectCreatedEvent` and then an
+	 * `ObjectActivatedEvent` for the same object.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-draft-case-must-not-be-treated-as-received
+	 */
+	public function testASentDraftDoesItsCreationWorkOnceUnderBothEventModels(): void {
+		$onBoth = $this->listenersOnBothEvents();
+		self::assertSame(
+			[
+				AcknowledgementOnCreateListener::class,
+				CaseNumberListener::class,
+				CasePlanProjectionListener::class,
+				DeadlineCaseCreatedListener::class,
+				ReportGroupingOnCreateListener::class,
+			],
+			$onBoth,
+			'A listener on both the created and the draft sent event must be in this test: it runs twice for a sent draft unless it asks ReceiptMoment.'
+		);
+		$once = array_fill_keys($onBoth, 1);
+		$never = array_fill_keys($onBoth, 0);
+		$moments = self::moments();
+
+		self::assertSame($never, $this->workDoneOver([$moments['draft']]), 'A draft that is never sent.');
+		self::assertSame($once, $this->workDoneOver([$moments['received']]), 'A case created outright.');
+		self::assertSame($once, $this->workDoneOver([$moments['draft'], $moments['sent']]), 'A sent draft on OpenRegister today.');
+		self::assertSame($once, $this->workDoneOver([$moments['received'], $moments['sent']]), 'A sent draft on OpenRegister with decision 227.');
+	}//end testASentDraftDoesItsCreationWorkOnceUnderBothEventModels()
 }//end class
