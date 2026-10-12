@@ -401,3 +401,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         filled. Behaviour kept, not fixed here.
         Own tests: `tests/Unit/Service/Zgw/BrcImmutabilityRulesTest` (8) and
         `BrcDocumentLinkRulesTest` (5), the second with every lookup keyed on its own schema.
+  - [x] 8c `ZgwDrcRulesService` (1: ExcessiveClassComplexity 87 against 50). It keeps the rules of
+        the document itself (drc-001, 005, 006, 007, 008; complexity 40). The create rules of an
+        objectinformatieobject are `Zgw/DrcObjectLinkRules` (drc-002 and drc-004; 30), and what
+        both sides read from the stored relations is `Zgw/DrcDocumentRelations` (the relations of
+        a document for drc-007, the duplicate check for drc-003; 22). The service builds one
+        relations object and hands it to the link rules; `setContext()` goes service to link
+        rules to relations, and removing either forward makes seven tests fail (checked).
+        Characterisation, green on the single class first: 10 tests added to
+        `ZgwDrcRulesServiceTest` (20 in all), because the lock rules, the delete rule, the uuid
+        and full-text duplicate searches and both failure modes had none. They pin that drc-003
+        fails closed (a search that cannot answer is a duplicate) while drc-004 and drc-007 fail
+        open. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Zgw/DrcDocumentRelationsTest` (8, every query asserted
+        with its schema) and `DrcObjectLinkRulesTest` (7). One branch is unreachable and was
+        moved as it stood: "De object URL bevat geen geldig UUID", because `isValidUrl()` already
+        refuses a URL whose path does not end in a uuid.
