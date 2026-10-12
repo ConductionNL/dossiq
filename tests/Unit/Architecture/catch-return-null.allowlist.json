@@ -745,7 +745,7 @@
       "method": "caseFor",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`caseFor()` creates the case through OpenRegister's saveObject. The catch logs at error naming the form and answers null, and the caller reports the intake as not filed rather than telling a citizen their form was received. Converting it to a throw is the right end state and belongs with the intake change that owns the refusal vocabulary, not with a build fix."
+      "reason": "`caseFor()` creates the case through OpenRegister's form submit, or saveObject without it. The catch logs at error naming the form and answers null, and the caller reports the intake as not filed rather than telling a citizen their form was received. Converting it to a throw is the right end state and belongs with the intake change that owns the refusal vocabulary, not with a build fix."
     },
     {
       "file": "lib/Service/FormsIntakeService.php",

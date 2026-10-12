@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.39"
+        "version": "0.20.40"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.20.0",
+                "version": "1.21.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -852,6 +852,50 @@
                         "title": "Intake form",
                         "description": "The hash of the Nextcloud Forms form that opens a case of this type. Leave it empty and nothing listens. A submission of a bound form starts the case with this type’s first status and the clock running from the day it came in.",
                         "visible": true
+                    },
+                    "intakeFormMapping": {
+                        "type": "object",
+                        "title": "Intake form mapping",
+                        "description": "Which answer of the intake form fills which case field, and the values every case from this form gets. It is checked against the case schema when the case type is saved, and a form that would open a case the schema refuses is not saved.",
+                        "visible": true,
+                        "properties": {
+                            "fields": {
+                                "type": "array",
+                                "title": "Answers",
+                                "description": "One entry per question: the question it reads, the case field it fills and the kind of answer the question gives.",
+                                "items": {
+                                    "type": "object",
+                                    "required": ["field", "property"],
+                                    "properties": {
+                                        "field": {
+                                            "type": "string",
+                                            "title": "Question",
+                                            "description": "The question in the form, by its text or its id."
+                                        },
+                                        "property": {
+                                            "type": "string",
+                                            "title": "Case field",
+                                            "description": "The case field this answer fills."
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "title": "Kind of answer",
+                                            "description": "The kind of answer the question gives, such as text, date or number."
+                                        },
+                                        "maxLength": {
+                                            "type": "integer",
+                                            "title": "Longest answer",
+                                            "description": "The longest answer the question accepts, in characters. A case field with a maximum length asks for it."
+                                        }
+                                    }
+                                }
+                            },
+                            "fixed": {
+                                "type": "object",
+                                "title": "Fixed values",
+                                "description": "Case fields that get the same value for every case this form opens, such as the confidentiality or how the applicant is reached."
+                            }
+                        }
                     }
                 }
             },

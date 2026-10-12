@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\WooStartFromListener;
+use OCA\Dossiq\Listener\IntakeFormBindingListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
@@ -124,6 +125,18 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: IntakeRequirementsListener::class
+		);
+
+		// A case type's intake form is judged against the case schema when the
+		// case type is saved, before it is stored: a binding that would open a
+		// case the schema refuses is refused here (decision 181).
+		$context->registerEventListener(
+			event: ObjectCreatingEvent::class,
+			listener: IntakeFormBindingListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: IntakeFormBindingListener::class
 		);
 
 		// The receipt and start dates are SET BEFORE THE CASE IS STORED, above

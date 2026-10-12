@@ -39,6 +39,26 @@
 - **WHEN** it is validated against the case schema
 - **THEN** the validator returns zero findings
 
+### Requirement: A case type's intake form MUST be checked against the case schema when it is bound
+
+A case type MAY carry `intakeFormMapping` next to `intakeFormRef`: `fields`, one entry per answer with the question (`field`), the case property it fills (`property`) and the kind of answer (`type`), and `fixed`, the values every case of this form gets. Saving a case type that has `intakeFormRef` set SHALL validate that mapping against the case schema with OpenRegister's form destination validator, before the case type is stored. The mapping judged SHALL include what the binding itself writes: `caseType`, `intakeChannel` `forms`, the case type's first status, and a title when no answer fills it. A save with findings SHALL be refused and SHALL return the findings (decision 181). A submission of the bound form SHALL be written through OpenRegister's form submit with that same mapping. Where OpenRegister has no validator the case type SHALL be saved and the missing check SHALL be logged.
+
+#### Scenario: An answer into a property the case does not have is refused at the save
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php::testANewCaseTypeWithAWrongBindingIsRefused`
+
+- **GIVEN** a case type with `intakeFormRef` set and a mapping whose answer "Onderwerp" fills `onderwerp`
+- **WHEN** the case type is saved
+- **THEN** the save is refused with finding `property-unknown` on `onderwerp`
+- **AND** the case type is not stored
+
+#### Scenario: A binding without a mapping keeps working
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/Service/Intake/IntakeFormBindingTest.php::testABindingWithoutAnswersKeepsWhatItDid`
+
+- **GIVEN** a case type with `intakeFormRef` set and no `intakeFormMapping`
+- **WHEN** the bound form is submitted
+- **THEN** the case is named after the first answer and its description lists every answer
+- **AND** the case type saves without findings
+
 ### Requirement: Publishing a case type MUST re-check the forms bound to it
 
 Publishing a case type SHALL validate every form bound to it against the case schema plus that type's `intakeRequirements.requiredBeforeCreation`. A finding SHALL block the publish or unpublish the form, per the `formDestinationBreak` setting.

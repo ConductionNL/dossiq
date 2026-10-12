@@ -31,7 +31,12 @@
 ## 4. Other intake paths
 
 - [x] 4.1 `WooRequestIntake::writeCase` returns `receivedAt` and `termStartsAt` with the identifier and deadline; the confirmation template gains the term start
-- [ ] 4.2 `FormsIntakeService`: binding maps answers to typed properties, checked at bind time through OpenRegister's validator (decision 181)
+- [x] 4.2 `FormsIntakeService`: binding maps answers to typed properties, checked at bind time through OpenRegister's validator (decision 181)
+  - `caseType.intakeFormMapping` (`fields`, `fixed`; caseType 1.21.0). `IntakeFormBinding` turns the binding into the mapping, `IntakeFormBindingCheck` hands it to OpenRegister's `FormDestinationValidator` with the live case schema, `IntakeFormBindingListener` refuses the case type save on findings (pre-persist, registered in `IntakeListenerRegistrar`). The submit goes through `FormSubmitService::submit` with the same mapping; without it the object service saves the same object
+  - The service no longer writes `startDate`: the receipt listener sets it by the one rule (decision 218). REQ-LEAF-103 amended in this change
+  - Files: lib/Service/Intake/IntakeFormBinding.php, lib/Service/Intake/IntakeFormBindingCheck.php, lib/Listener/IntakeFormBindingListener.php, lib/Service/FormsIntakeService.php
+  - Test: tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php (from the registrar to the refusal), tests/Unit/Service/Intake/IntakeFormBindingTest.php, tests/Unit/Service/Intake/IntakeFormBindingCheckTest.php, tests/Unit/Service/FormsIntakeServiceTest.php
+  - Open: a multiple-choice question arrives as several answers under one question and `FormSubmittedListener` keeps the last one. dossiq does not answer OpenRegister's `FormDestinationDependentsEvent` for these bindings yet, so a case schema change does not re-check them
   - [x] 4.2a The case schema lists `forms` as an intake channel (case 1.45.0, and the case type's acknowledgement channel list, caseType 1.20.0). The service wrote that value from the start, as `leaf-integrations` asks, and the schema refused it
     - Test: tests/Unit/Service/FormsIntakeServiceTest.php, `testTheRealCaseSchemaAcceptsTheCaseAsWritten` (the written payload against the real case schema)
 - [ ] 4.3 Case-type publish re-checks bound forms (`caseType.intakeFormRef` and portaliq bindings), including `requiredBeforeCreation`
