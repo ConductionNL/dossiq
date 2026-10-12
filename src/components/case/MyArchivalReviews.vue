@@ -22,8 +22,6 @@
 -->
 <template>
 	<div class="archival-reviews" data-testid="archival-reviews">
-		<h3>{{ t('dossiq', 'My archival reviews') }}</h3>
-
 		<NcLoadingIcon v-if="loading" :size="24" />
 
 		<NcEmptyContent
