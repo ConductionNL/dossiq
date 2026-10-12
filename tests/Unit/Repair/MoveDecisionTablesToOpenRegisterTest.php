@@ -104,6 +104,7 @@ class MoveDecisionTablesToOpenRegisterTest extends TestCase {
 		$saved = $objects->saved[0];
 		self::assertSame(['decision-tables', 'decision-table'], [$saved['register'], $saved['schema']]);
 		self::assertSame('dossiq.subsidie-hoogte', $saved['object']['key']);
+		self::assertTrue($saved['asSystem'], 'an upgrade has no session: the write must run under the system identity');
 		self::assertTrue(StoredDecisionTablesTest::validAgainstOpenRegister($saved['object']), 'the moved row must fit OpenRegister\'s schema');
 	}//end testTablesMoveOnceAndDisabledOnesStay()
 

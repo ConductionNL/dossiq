@@ -60,7 +60,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 				: ''
 		);
 
-		$tables = $this->createMock(StoredDecisionTables::class);
+		$tables = $this->getMockBuilder(StoredDecisionTables::class)->disableOriginalConstructor()->onlyMethods(['find'])->getMock();
 		if ($table === null) {
 			$tables->method('find')->willThrowException(new \UnexpectedValueException('No decision table has the key or id "dossiq.weg".'));
 		} else {

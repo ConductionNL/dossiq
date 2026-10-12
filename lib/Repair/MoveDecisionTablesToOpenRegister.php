@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -50,6 +51,7 @@ use Throwable;
  * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
  */
 class MoveDecisionTablesToOpenRegister implements IRepairStep {
+	use RunsUnderSystemIdentity;
 	use SearchesObjects;
 
 	/**
@@ -87,6 +89,24 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 	 * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
 	 */
 	public function run(IOutput $output): void {
+		// An upgrade has no session: without a system identity OpenRegister
+		// refuses every write as Anonymous and the upgrade still reads fine.
+		$this->withSystemIdentity(
+			objectService: $this->settingsService->getObjectService(),
+			work: function () use ($output): void {
+				$this->move(output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The move itself, once an identity is in place.
+	 *
+	 * @param IOutput $output The upgrade output.
+	 *
+	 * @return void
+	 */
+	private function move(IOutput $output): void {
 		$rows = $this->oldRows();
 		if ($rows === []) {
 			$output->info('MoveDecisionTablesToOpenRegister: no dossiq decision tables to move.');
@@ -123,7 +143,7 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 		if ($counts['failed'] > 0) {
 			$output->warning('MoveDecisionTablesToOpenRegister: ' . $counts['failed'] . ' table(s) were refused (see the log); they stay in dossiq.');
 		}
-	}//end run()
+	}//end move()
 
 	/**
 	 * Move one table.
@@ -137,7 +157,7 @@ class MoveDecisionTablesToOpenRegister implements IRepairStep {
 			return 'disabled';
 		}
 
-		$key = $this->tables->keyFor((string)($row['key'] ?? ''));
+		$key = $this->tables->keyFor(key: (string)($row['key'] ?? ''));
 		if ($key === '') {
 			$this->logger->warning('MoveDecisionTablesToOpenRegister: a table without a key cannot be named; left in dossiq.', ['name' => $row['name'] ?? '']);
 			return 'failed';

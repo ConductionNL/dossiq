@@ -96,7 +96,7 @@ class LhsDecisionTableLookup {
 			$version = '1';
 		}
 
-		return $this->tables->keyFor(self::KEY_STEM . $version);
+		return $this->tables->keyFor(key: self::KEY_STEM . $version);
 	}//end referenceFor()
 
 	/**

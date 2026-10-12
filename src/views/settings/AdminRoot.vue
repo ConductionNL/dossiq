@@ -221,18 +221,6 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			id="section-dmn"
-			:name="t('dossiq', 'Decision tables (DMN)')"
-			:description="
-				t(
-					'dossiq',
-					'Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.',
-				)
-			"
-			:loading="!storesReady">
-		</CnSettingsSection>
-
-		<CnSettingsSection
 			id="section-financial"
 			:name="t('dossiq', 'Financial integration: dwangsom callback')"
 			:description="

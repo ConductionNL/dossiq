@@ -401,7 +401,7 @@ class LhsMatrixDecisionTableMigrator {
 
 		return [
 			'name' => (string)($matrix['name'] ?? 'LHS'),
-			'key' => $this->tables->keyFor(LhsDecisionTableLookup::KEY_STEM . $version),
+			'key' => $this->tables->keyFor(key: LhsDecisionTableLookup::KEY_STEM . $version),
 			'owner' => Application::APP_ID,
 			'description' => sprintf(
 				'Projected from the LHS matrix "%s" (version %s). %s This table IS the enforcement '

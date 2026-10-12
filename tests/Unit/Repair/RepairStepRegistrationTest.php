@@ -74,6 +74,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateArchivalToOpenRegister' => 'one-way migration of existing archival rows',
 		'MoveDocumentsIntoCaseFolders' => 'moves existing document files into their case folders; a fresh install has none',
 		'BackfillPortalParty' => 'fills portalParty on existing portal cases; a fresh install has none',
+		'MoveDecisionTablesToOpenRegister' => 'copies existing dossiq decision tables into OpenRegister; a fresh install has none',
 		'ReportCommunicationChannelValues' => 'names existing cases whose channel is not a slug; a fresh install has none',
 		'CopyMessageAttachmentsIntoMessageFolders' => 'copies existing portal message attachments into the message folder; a fresh install has none',
 		'MigratePartnersToOrganisations' => 'moves existing ketenpartner rows onto Organisation',

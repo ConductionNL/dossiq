@@ -54,6 +54,23 @@ class StoredDecisionTablesTest extends TestCase {
 			public function __construct(public array $rows) {
 			}
 
+			/** @var bool Whether a system identity is in place right now. */
+			public bool $asSystem = false;
+
+			/**
+			 * @param callable $work The work.
+			 *
+			 * @return mixed
+			 */
+			public function runAsSystem(callable $work): mixed {
+				$this->asSystem = true;
+				try {
+					return $work();
+				} finally {
+					$this->asSystem = false;
+				}
+			}
+
 			/**
 			 * @param string $register Register slug.
 			 * @param string $schema Schema slug.
@@ -93,7 +110,7 @@ class StoredDecisionTablesTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
-				$this->saved[] = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid];
+				$this->saved[] = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid, 'asSystem' => $this->asSystem];
 				return $object + ['id' => ($uuid ?? 'new-' . count($this->saved))];
 			}
 		};

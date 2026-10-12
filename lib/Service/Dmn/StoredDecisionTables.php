@@ -209,7 +209,7 @@ class StoredDecisionTables {
 	 */
 	public function save(array $table): array {
 		$row = [
-			'key' => $this->keyFor((string)($table['key'] ?? '')),
+			'key' => $this->keyFor(key: (string)($table['key'] ?? '')),
 			'name' => (string)($table['name'] ?? ''),
 			'description' => (string)($table['description'] ?? ''),
 			'hitPolicy' => strtoupper((string)($table['hitPolicy'] ?? 'UNIQUE')),

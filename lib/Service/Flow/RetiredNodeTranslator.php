@@ -421,7 +421,7 @@ class RetiredNodeTranslator {
 			throw new UnmappableStep(message: 'the decision table "' . $key . '" could not be looked up');
 		}
 
-		$storedKey = $tables->keyFor($key);
+		$storedKey = $tables->keyFor(key: $key);
 		try {
 			$table = $tables->find(reference: $storedKey);
 		} catch (Throwable $e) {
