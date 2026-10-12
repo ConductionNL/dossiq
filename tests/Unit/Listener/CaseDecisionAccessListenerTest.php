@@ -24,13 +24,14 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\CaseDecisionAccessListener;
 use OCA\Dossiq\Service\Access\CaseDecisionAccess;
+use OCA\OpenRegister\Db\Decision;
 use OCA\OpenRegister\Event\DecisionChangeRequestedEvent;
 use OCA\OpenRegister\Event\DecisionVisibilityRequestedEvent;
+use OCA\OpenRegister\Service\Decision\ReviewPolicy;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
-use stdClass;
 
 /**
  * REQ-CRA-006 and REQ-CRA-007.
@@ -71,7 +72,7 @@ class CaseDecisionAccessListenerTest extends TestCase {
 	public function testASubjectWithoutAnObjectIsNotAsked(): void {
 		$access = $this->createMock(CaseDecisionAccess::class);
 		$access->expects(self::never())->method('mayChange');
-		$event = new DecisionChangeRequestedEvent(new stdClass(), 'p.bakker', new stdClass(), ['objectUuid' => ''], true);
+		$event = new DecisionChangeRequestedEvent(new Decision(), 'p.bakker', new ReviewPolicy(), ['objectUuid' => ''], true);
 
 		(new CaseDecisionAccessListener(access: $access, logger: new NullLogger()))->handle($event);
 
@@ -137,16 +138,16 @@ class CaseDecisionAccessListenerTest extends TestCase {
 
 		$unasked = $this->createMock(CaseDecisionAccess::class);
 		$unasked->expects(self::never())->method('maySee');
-		$event = new DecisionVisibilityRequestedEvent(null, 'coordinator', new stdClass(), ['objectUuid' => '']);
+		$event = new DecisionVisibilityRequestedEvent(null, 'coordinator', new ReviewPolicy(), ['objectUuid' => '']);
 		(new CaseDecisionAccessListener(access: $unasked, logger: new NullLogger()))->handle($event);
 		self::assertFalse($event->isAllowed(), 'no object');
 	}//end testAnyoneElseOrAFailedReadLeavesItHidden()
 
 	private function visibilityEvent(string $actorId): DecisionVisibilityRequestedEvent {
 		return new DecisionVisibilityRequestedEvent(
-			new stdClass(),
+			new Decision(),
 			$actorId,
-			new stdClass(),
+			new ReviewPolicy(),
 			['subjectType' => 'entity-relation', 'subjectId' => '12', 'objectUuid' => self::DOCUMENT]
 		);
 	}//end visibilityEvent()
@@ -160,9 +161,9 @@ class CaseDecisionAccessListenerTest extends TestCase {
 
 	private function event(bool $allowed): DecisionChangeRequestedEvent {
 		return new DecisionChangeRequestedEvent(
-			new stdClass(),
+			new Decision(),
 			'p.bakker',
-			new stdClass(),
+			new ReviewPolicy(),
 			['subjectType' => 'entity-relation', 'subjectId' => '12', 'objectUuid' => self::DOCUMENT],
 			$allowed
 		);

@@ -423,10 +423,11 @@
 							},
 							{
 								"id": "simple-my-tasks",
-								"type": "custom",
+								"type": "tasks",
 								"title": "My tasks",
-								"_note": "`variant: list` is the opt-in checkbox list of the DqDashboard board (a box, the task, its case on a muted second line, the due date on the right). Ticking a box completes the task through useEngineTaskStore.invoke(uuid, 'complete'), the task page's own path. Without the key MyWorkWidget draws the table, which is what the full profile and the My work page keep.",
+								"_note": "The library's `tasks` widget with `variant: list` is the board's My tasks card (a box, the task, its case on a muted second line, the due date on the right); ticking a box completes the task through the engine. It replaced the app's own MyWorkWidget here, which keeps the table, the substitution toggle and the full profile's My work page. The header link is the placement's `headerLink`.",
 								"content": {
+									"scope": "assigned",
 									"variant": "list",
 									"limit": 10,
 									"rowRoute": "TaskDetail",
@@ -681,8 +682,7 @@
 				}
 			},
 			"slots": {
-				"widget-simple-first-today": "FirstTodayWidget",
-				"widget-simple-my-tasks": "MyWorkWidget"
+				"widget-simple-first-today": "FirstTodayWidget"
 			}
 		},
 		{
@@ -1693,23 +1693,32 @@
 					{
 						"label": "All",
 						"filter": {
-							"supersededBy": "IS NULL"
+							"supersededBy": {
+								"isnull": true
+							}
 						},
-						"default": true
+						"default": true,
+						"showCount": true
 					},
 					{
 						"label": "Published",
 						"filter": {
-							"supersededBy": "IS NULL",
+							"supersededBy": {
+								"isnull": true
+							},
 							"isDraft": false
-						}
+						},
+						"showCount": true
 					},
 					{
 						"label": "Draft",
 						"filter": {
-							"supersededBy": "IS NULL",
+							"supersededBy": {
+								"isnull": true
+							},
 							"isDraft": true
-						}
+						},
+						"showCount": true
 					}
 				]
 			}

@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service\Recycle;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -69,10 +70,12 @@ class DeletionWindowReader {
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface $logger Structured logger.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -150,7 +153,7 @@ class DeletionWindowReader {
 		$today = new DateTimeImmutable('today');
 		$remaining = 0;
 		if ($ends > $today) {
-			$remaining = (int)$today->diff($ends)->days;
+			$remaining = $this->days->between(from: $today, to: $ends);
 		}
 
 		$retention = ($marker['retentionPeriod'] ?? null);

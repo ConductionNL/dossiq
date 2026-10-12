@@ -64,6 +64,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Intake\IntakeRequirements
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Intake\DuplicatePolicy
+ * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  */
 class IntakeRequirementsListenerTest extends TestCase {
 
@@ -365,4 +366,41 @@ class IntakeRequirementsListenerTest extends TestCase {
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testACaseWithNoCaseTypeIsLeftAlone()
+
+	/**
+	 * A draft may miss what a case type requires before creation (decision 180).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function testADraftMissingTheChannelIsNotStopped(): void {
+		$entity = $this->entity(payload: ['caseType' => 'ct-1', 'confidentiality' => 'openbaar']);
+		$entity->setStatus('draft');
+		$event = new ObjectCreatingEvent($entity);
+
+		$this->listener->handle($event);
+
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testADraftMissingTheChannelIsNotStopped()
+
+	/**
+	 * Sending a draft is the receipt, so the requirement is checked then.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function testSendingADraftMissingTheChannelIsStopped(): void {
+		$before = $this->entity(payload: ['caseType' => 'ct-1', 'confidentiality' => 'openbaar']);
+		$before->setStatus('draft');
+		$after = $this->entity(payload: ['caseType' => 'ct-1', 'confidentiality' => 'openbaar']);
+		$after->setStatus('active');
+		$event = new ObjectUpdatingEvent($after, $before);
+
+		$this->listener->handle($event);
+
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertStringContainsString('communicationChannel', (string)$event->getErrors()['message']);
+	}//end testSendingADraftMissingTheChannelIsStopped()
 }//end class

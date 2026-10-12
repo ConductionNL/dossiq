@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.85.0",
+	"version": "2.89.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -803,6 +803,16 @@
 			"pattern": "^@answer\\.[A-Za-z][A-Za-z0-9_]*$",
 			"description": "form-live-values: another answer in the same form (@answer.<field>), read by a form field's assign rule and resolved client-side by CnFormPage / CnFormDialog. Mirrors SENTINEL_TOKEN_PATTERNS.answer."
 		},
+		"sentinelRowToken": {
+			"type": "string",
+			"pattern": "^@row\\.[A-Za-z][A-Za-z0-9_.@]*$",
+			"description": "Row context: a field of the row a row action runs on (@row.<field>, dot path allowed), read by the field-list widget's rowActions request url and payload (payload values resolve at any depth). Mirrors SENTINEL_TOKEN_PATTERNS.row."
+		},
+		"sentinelSubjectToken": {
+			"type": "string",
+			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
+			"description": "Subject context: a field of the record an attention card names (the first row of its ordered `visibleWhen` source query), read by the banner widget's action route params and query (@subject.<field>, dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.subject."
+		},
 		"sentinelTokenAny": {
 			"$comment": "Union of every canonical context plus the deprecated-during-window overlay. Single source the shared resolver + gate import.",
 			"anyOf": [
@@ -814,6 +824,8 @@
 				{ "$ref": "#/$defs/sentinelDeclarativeToken" },
 				{ "$ref": "#/$defs/sentinelVisibleWhenToken" },
 				{ "$ref": "#/$defs/sentinelAnswerToken" },
+				{ "$ref": "#/$defs/sentinelRowToken" },
+				{ "$ref": "#/$defs/sentinelSubjectToken" },
 				{ "$ref": "#/$defs/sentinelDeprecatedToken" }
 			]
 		},
@@ -1691,7 +1703,7 @@
 				"sizeToContent": {
 					"type": ["boolean", "integer"],
 					"minimum": 1,
-					"description": "Opt-in: hand this placement's height to whatever it renders, so a widget that decides AT RUNTIME it has nothing to show costs no row. `true` sizes purely to content; an integer is a row minimum. It makes gridHeight advisory for this widget — right for anything whose height is whatever it turned out to be (a banner whose condition is false, a list that came back empty), wrong for anything with a deliberate size. Maps to CnDashboardGrid's per-item `sizeToContent`."
+					"description": "Opt-in: hand this placement's height to whatever it renders, so a widget that decides AT RUNTIME it has nothing to show costs no row. `true` sizes purely to content; an integer sizes to content too but caps the height at that many rows (GridStack's maximum, NOT a minimum: content shorter than N rows is as short as it is, content taller is clipped at N). It makes gridHeight advisory for this widget — right for anything whose height is whatever it turned out to be (a banner whose condition is false, a list that came back empty), wrong for anything with a deliberate size. Maps to CnDashboardGrid's per-item `sizeToContent`."
 				},
 				"props": {
 					"type": "object",
@@ -1898,11 +1910,16 @@
 												"properties": {
 													"register": { "type": "string" },
 													"schema": { "type": "string" },
-													"filter": { "type": "object", "additionalProperties": true }
+													"filter": { "type": "object", "additionalProperties": true },
+													"order": {
+														"type": "object",
+														"additionalProperties": { "type": "string", "enum": ["asc", "desc"] },
+														"description": "Order of the query (`{ field: \"asc\" | \"desc\" }`), so the first result is the first of an ordered list. With it an attention card names that row: `{subject.<field>}` in its title, reason and kicker and `@subject.<field>` in an action route read it (screens-start-here-banner, 2.89.0)."
+													}
 												}
 											},
 											"field": { "type": "string", "description": "Dot-path into the response ('@total' or omitted = collection total for a source)." },
-											"op": { "type": "string", "enum": ["eq", "neq", "gt", "gte", "lt", "lte"], "default": "eq", "description": "Comparison operator." },
+											"op": { "type": "string", "enum": ["eq", "neq", "gt", "gte", "lt", "lte", "empty", "notEmpty"], "default": "eq", "description": "Comparison operator. `notEmpty` on `id` is the \"there is a first row\" test of a card that names one." },
 											"value": { "description": "Literal right-hand side of the comparison." }
 										}
 									},
@@ -1918,6 +1935,11 @@
 										"enum": ["banner", "attention"],
 										"default": "banner",
 										"description": "How the banner renders. `banner` (default) is the note card. `attention` is a card with a severity edge, a kicker, a title, a reason line and up to two actions."
+									},
+									"stacked": {
+										"type": "boolean",
+										"default": false,
+										"description": "Attention card: put the actions under the text instead of beside it, with a 16px title (PqMijnWerk \"Begin hier\"; screens-start-here-banner, 2.89.0)."
 									},
 									"kicker": {
 										"type": "string",
@@ -2184,9 +2206,27 @@
 											},
 											"style": {
 												"type": "string",
-												"enum": ["radio", "select"],
+												"enum": ["radio", "select", "chips", "toggle"],
 												"default": "radio",
-												"description": "Choice style: 'radio' (default) list or 'select' dropdown."
+												"description": "Choice style: 'radio' (default) list, 'select' dropdown, 'chips' (one compact segmented group with a count after each label; screens-page-lenses, 2.87.0) or 'toggle' (a switch writing `onValue` / `offValue`; screens-page-controls, 2.88.0)."
+											},
+											"layout": {
+												"type": "string",
+												"enum": ["start", "bar"],
+												"description": "'start' draws the start card; 'bar' draws `controls` side by side in one row (screens-page-controls, 2.88.0)."
+											},
+											"controls": {
+												"type": "array",
+												"items": { "type": "object", "additionalProperties": true },
+												"description": "With `layout: \"bar\"`: the bar's controls, each a workspace-filter content (chips, a toggle, a select) with its own `writes`. `align: \"end\"` pushes a control to the right edge (2.88.0)."
+											},
+											"onValue": { "description": "style 'toggle': the value written while the switch is on. Default true (2.88.0)." },
+											"offValue": { "description": "style 'toggle': the value written while the switch is off. Default false (2.88.0)." },
+											"align": { "type": "string", "enum": ["start", "end"], "description": "In a bar: 'end' pushes this control to the right edge (2.88.0)." },
+											"urlKey": {
+												"type": "string",
+												"minLength": 1,
+												"description": "Keep the choice in the address as `?<urlKey>=<value>` (replacing the history entry, keeping other query keys). The address wins over `default` on load, so a chip is linkable (screens-page-lenses, 2.87.0)."
 											},
 											"allLabel": {
 												"type": "string",
@@ -2199,7 +2239,7 @@
 											},
 											"options": {
 												"type": "array",
-												"description": "Static options — each { value, label, count? } (or { id, name } / bare strings, normalised).",
+												"description": "Static options — each { value, label, count?, countFrom? } (or { id, name } / bare strings, normalised). `countFrom` is `{ register, schema, filter? }`, or a list of those that are added up; the option shows that list's total (one list request each; none when it fails). screens-page-lenses, 2.87.0.",
 												"items": { "type": ["object", "string", "number"] }
 											},
 											"source": {
@@ -2925,15 +2965,20 @@
 						"filter": { "type": "object", "additionalProperties": true }
 					}
 				},
+				"workspace": {
+					"type": "string",
+					"minLength": 1,
+					"description": "WORKSPACE mode (screens-page-lenses, 2.87.0): the key of the page workspace context to compare, read at once with no request. A page control (a `workspace-filter` with `writes`) sets the key, and a dashboard widget carrying this condition appears and disappears as it changes. Honoured on a dashboard widget or KPI-row tile only, and as a top-level condition (not inside `all` / `any`)."
+				},
 				"field": {
 					"type": "string",
 					"description": "Dot-path to the compared value — into the endpoint body, the source's first result, or (LOCAL mode) the caller's object context."
 				},
 				"op": {
 					"type": "string",
-					"enum": ["eq", "neq", "gt", "gte", "lt", "lte", "empty", "notEmpty"],
+					"enum": ["eq", "neq", "gt", "gte", "lt", "lte", "empty", "notEmpty", "in"],
 					"default": "eq",
-					"description": "Comparison operator (default eq). eq/neq compare loosely-normalised primitives; ordering operators coerce both sides to Number. `empty` / `notEmpty` take no `value` and treat undefined, null, '' and an empty array alike — the one question eq cannot ask, because an unset field arrives in a shape that depends on the store and String(null) is the word 'null' rather than blank."
+					"description": "Comparison operator (default eq). eq/neq compare loosely-normalised primitives; ordering operators coerce both sides to Number. `in` holds when the value is one of the listed `value` array (2.87.0). `empty` / `notEmpty` take no `value` and treat undefined, null, '' and an empty array alike — the one question eq cannot ask, because an unset field arrives in a shape that depends on the store and String(null) is the word 'null' rather than blank."
 				},
 				"value": {
 					"description": "The right-hand side of the comparison, resolved through the shared @-token grammar so `@me` names the signed-in reader rather than a literal only the server knows. Omitted for `empty` / `notEmpty`."
@@ -2985,6 +3030,45 @@
 					"type": "array",
 					"items": { "type": "string" },
 					"description": "OpenRegister `_extend[]` values forwarded on the fetch (e.g. [\"calculations\"]) so read-time virtual/derived fields are hydrated and available as columns. Each entry is passed through verbatim."
+				},
+				"pageControls": { "$ref": "#/$defs/pageControls" }
+			}
+		},
+		"pageControls": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "screens-page-controls (2.88.0): which page controls a list widget (`record-list`, `object-table`) listens to, and what they mean for it. A page control is a `workspace-filter` select or switch that writes a workspace key. `sort` picks the list's sort from the key's value; `toggle` drops filter keys while the key is on. Without it the list ignores the page's controls.",
+			"properties": {
+				"sort": {
+					"type": "object",
+					"required": ["key", "map"],
+					"additionalProperties": false,
+					"description": "The workspace key a sort select writes, and what each of its values sorts by. A value with no entry leaves the list's own sort.",
+					"properties": {
+						"key": { "type": "string", "minLength": 1 },
+						"map": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "object",
+								"required": ["field"],
+								"additionalProperties": false,
+								"properties": {
+									"field": { "type": "string", "minLength": 1 },
+									"dir": { "type": "string", "enum": ["asc", "desc"], "default": "asc" }
+								}
+							}
+						}
+					}
+				},
+				"toggle": {
+					"type": "object",
+					"required": ["key", "removes"],
+					"additionalProperties": false,
+					"description": "The workspace key a switch writes. While it is on (true, 1, \"1\", \"true\") the filter keys in `removes` are dropped, so a list that hides finished work shows it.",
+					"properties": {
+						"key": { "type": "string", "minLength": 1 },
+						"removes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+					}
 				}
 			}
 		},

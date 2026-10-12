@@ -24,6 +24,7 @@ const manifest = JSON.parse(
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const CASE_ID = '11111111-1111-4111-8111-111111111111'
+const TEMPLATE = '77777777-7777-4777-8777-777777777777'
 
 vi.mock('@nextcloud/axios', () => ({
 	default: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
@@ -56,7 +57,36 @@ async function mountDialog(plan = null) {
 		}
 		if (String(url).endsWith('/woo/plan')) {
 			return Promise.resolve({
-				data: { plan, recorded: Boolean(plan?.recordedAt) },
+				data: {
+					plan,
+					recorded: Boolean(plan?.recordedAt),
+					templateSchema: '42',
+				},
+			})
+		}
+		if (String(url).endsWith('/api/record-templates')) {
+			return Promise.resolve({
+				data: {
+					results: [
+						{
+							uuid: TEMPLATE,
+							name: 'Ruimtelijke verzoeken',
+							schema: '42',
+							values: {
+								custodians: [
+									{
+										name: 'Wethouder Ruimte',
+										function: 'College',
+									},
+								],
+								systems: ['files'],
+								terms: 'Stationsweg',
+								triageRules: ['kept by the server'],
+							},
+						},
+					],
+					total: 1,
+				},
 			})
 		}
 		if (String(url).includes('/audit-trails')) {
@@ -110,6 +140,12 @@ async function mountDialog(plan = null) {
 					emits: ['update:modelValue'],
 					template:
 						'<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
+				},
+				NcSelect: {
+					props: ['options'],
+					emits: ['update:modelValue'],
+					template:
+						'<div data-testid="record-template-select"><button v-for="option in options" :key="option.uuid" class="template" @click="$emit(\'update:modelValue\', option)">{{ option.name }}</button></div>',
 				},
 				NcCheckboxRadioSwitch: {
 					props: ['modelValue'],
@@ -182,6 +218,56 @@ describe('WooSearchPlanDialog', () => {
 		expect(wrapper.find('[data-testid="woo-plan-recorded"]').text()).toBe(
 			'Recorded by pjansen on 2026-10-10',
 		)
+	})
+
+	it('testANewRequestStartsFromANamedTemplate', async () => {
+		const { wrapper, axios } = await mountDialog()
+
+		expect(axios.get).toHaveBeenCalledWith(
+			expect.stringContaining('/apps/openregister/api/record-templates'),
+			{ params: { schema: '42' } },
+		)
+		await wrapper.find('.template').trigger('click')
+
+		expect(
+			wrapper.find('[data-testid="woo-plan-custodian-name-0"]').element.value,
+		).toBe('Wethouder Ruimte')
+		expect(
+			wrapper.find('[data-testid="woo-plan-system-files"] input').element
+				.checked,
+		).toBe(true)
+		expect(wrapper.find('[data-testid="woo-plan-terms"]').element.value).toBe(
+			'Stationsweg',
+		)
+		expect(
+			wrapper.find('[data-testid="woo-plan-from"]').element.value,
+			'a template never carries the period',
+		).toBe('')
+		expect(
+			wrapper.find('[data-testid="woo-plan-save"]').attributes('disabled'),
+			'the handler still completes the plan',
+		).toBeDefined()
+
+		await wrapper.find('[data-testid="woo-plan-from"]').setValue('2026-01-01')
+		await wrapper.find('[data-testid="woo-plan-to"]').setValue('2026-06-30')
+		await wrapper.find('[data-testid="woo-plan-save"]').trigger('click')
+		await flushPromises()
+
+		expect(axios.put).toHaveBeenCalledWith(
+			expect.stringContaining(`/apps/dossiq/api/cases/${CASE_ID}/woo/plan`),
+			{
+				custodians: [{ name: 'Wethouder Ruimte', function: 'College' }],
+				systems: ['files'],
+				periodFrom: '2026-01-01',
+				periodTo: '2026-06-30',
+				terms: 'Stationsweg',
+				startedFrom: TEMPLATE,
+			},
+		)
+		expect(
+			wrapper.find('[data-testid="record-template-select"]').exists(),
+			'a recorded plan no longer offers a template',
+		).toBe(false)
 	})
 
 	it('shows a recorded plan and its history from the audit trail', async () => {

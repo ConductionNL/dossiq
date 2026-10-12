@@ -118,6 +118,9 @@ const SILENT = [
 	// REQ-WDS-002, REQ-WDS-003): a sentence and a link the portal shows, never a filter.
 	'termNote',
 	'resultLink',
+	// The documents a requester sent with a request (decision 179): a list of
+	// file references the case page shows, never typed into a search box.
+	'attachments',
 ]
 
 /**

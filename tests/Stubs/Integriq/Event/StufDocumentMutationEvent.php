@@ -2,7 +2,7 @@
 
 /**
  * Integriq StufDocumentMutationEvent test stub: a verbatim copy of integriq's lib/Event/StufDocumentMutationEvent.php
- * (change stuf-provider-receiver, decision 199), loaded by tests/bootstrap.php only
+ * (changes stuf-provider-receiver and stuf-provider-writes, decisions 199 and 206), loaded by tests/bootstrap.php only
  * when the real class is absent.
  *
  * Integriq StUF Document Mutation Event.
@@ -43,12 +43,14 @@ class StufDocumentMutationEvent extends StufProviderQueryEvent {
 	 * @param string                $referentienummer The request's referentienummer.
 	 * @param string                $mutatiesoort     The StUF mutatiesoort (T, W, V, E), '' when absent.
 	 * @param array<string, string> $fields           StUF element name to value, from the object.
+	 * @param array<string, mixed>  $operation        The generic document operation the message maps to.
 	 */
 	public function __construct(
 		string $sourceId,
 		string $referentienummer,
 		private readonly string $mutatiesoort,
 		private readonly array $fields,
+		private readonly array $operation = [],
 	) {
 		parent::__construct(sourceId: $sourceId, referentienummer: $referentienummer);
 
@@ -77,6 +79,21 @@ class StufDocumentMutationEvent extends StufProviderQueryEvent {
 		return $this->fields;
 
 	}//end getFields()
+
+	/**
+	 * The generic document operation this message maps to (decision 206).
+	 *
+	 * The owning app carries this out and never reads the StUF names:
+	 * {@see \OCA\Integriq\Service\StufZkn\StufProviderOperationMapper} lists the keys.
+	 *
+	 * @return array<string, mixed> The operation, `action` always set when mapped.
+	 *
+	 * @spec openspec/changes/stuf-writes-through-integriq/specs/stuf-integration/spec.md#requirement-a-write-over-stuf-arrives-through-integriq-only
+	 */
+	public function getOperation(): array {
+		return $this->operation;
+
+	}//end getOperation()
 
 	/**
 	 * Accept the kennisgeving.

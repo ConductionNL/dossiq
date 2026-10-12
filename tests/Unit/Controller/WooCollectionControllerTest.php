@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\WooCollectionController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
@@ -90,6 +91,37 @@ class WooCollectionControllerTest extends TestCase {
 	private bool $mayChange = true;
 
 	/**
+	 * The named templates OpenRegister would answer the caller, by uuid.
+	 *
+	 * @var array<string, array{uuid: string, name: string, values: array<string, mixed>}>
+	 */
+	private array $named = [];
+
+	/**
+	 * The schema ids the reader was asked for.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $askedSchemas = [];
+
+	/**
+	 * A reader over `$this->named`.
+	 *
+	 * @return RecordTemplateReader The reader.
+	 */
+	private function templates(): RecordTemplateReader {
+		$reader = $this->createMock(RecordTemplateReader::class);
+		$reader->method('find')->willReturnCallback(
+			function (string $uuid, string $schema): ?array {
+				$this->askedSchemas[] = $schema;
+				return ($this->named[$uuid] ?? null);
+			}
+		);
+
+		return $reader;
+	}//end templates()
+
+	/**
 	 * The files a user's search finds, by user.
 	 *
 	 * @var array<string, array<int, File>>
@@ -131,7 +163,7 @@ class WooCollectionControllerTest extends TestCase {
 		);
 		$caseDocuments = new WooCaseDocuments(settingsService: $settings, rootFolder: $root, logger: $logger);
 		$access = $this->caseReviewerAccessOver($settings);
-		$plans = new WooSearchPlans(settingsService: $settings, access: $access);
+		$plans = new WooSearchPlans(settingsService: $settings, templates: $this->templates(), access: $access);
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(fn (string $key, mixed $default = null): mixed => ($this->params[$key] ?? $default));
@@ -178,6 +210,41 @@ class WooCollectionControllerTest extends TestCase {
 		self::assertSame(Http::STATUS_BAD_REQUEST, $refused->getStatus());
 		self::assertSame('Enter what to search for.', $refused->getData()['message']);
 	}//end testAPlanIsRecordedAndReadBack()
+
+	/**
+	 * REQ-RTS-002: the dialog learns which schema's templates to list from the plan route.
+	 *
+	 * @return void
+	 */
+	public function testThePlanRouteNamesTheSchemaWhoseTemplatesApply(): void {
+		self::assertSame('wooRequestConfiguration', $this->controller()->plan(id: self::CASE_ID)->getData()['templateSchema']);
+	}//end testThePlanRouteNamesTheSchemaWhoseTemplatesApply()
+
+	/**
+	 * REQ-WRC-005: the origin a plan claims travels through the route, and a false one is refused.
+	 *
+	 * @return void
+	 */
+	public function testAPlanFilledFromATemplateIsRecordedWithItsOrigin(): void {
+		$template = '77777777-7777-4777-8777-777777777777';
+		$this->params = [
+			'custodians' => [['name' => 'Wethouder Ruimte']],
+			'systems' => ['files'],
+			'periodFrom' => '2025-01-01',
+			'periodTo' => '2025-12-31',
+			'terms' => 'Stationsweg',
+			'startedFrom' => $template,
+		];
+
+		$refused = $this->controller()->recordPlan(id: self::CASE_ID);
+		self::assertSame(Http::STATUS_BAD_REQUEST, $refused->getStatus());
+		self::assertSame('template_not_found', $refused->getData()['error']);
+		self::assertStringStartsWith('This template is gone', $refused->getData()['message']);
+
+		$this->named[$template] = ['uuid' => $template, 'name' => 'Ruimtelijke verzoeken', 'values' => ['terms' => 'x']];
+		self::assertSame(Http::STATUS_OK, $this->controller()->recordPlan(id: self::CASE_ID)->getStatus());
+		self::assertSame($template, $this->register->all('wooRequestConfiguration')[0]['copiedFrom']);
+	}//end testAPlanFilledFromATemplateIsRecordedWithItsOrigin()
 
 	public function testTheReportRefusesAUserWithoutCaseAccess(): void {
 		$this->mayRead = false;

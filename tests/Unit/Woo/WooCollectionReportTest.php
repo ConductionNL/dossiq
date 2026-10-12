@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
+use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance;
@@ -93,7 +94,7 @@ class WooCollectionReportTest extends TestCase {
 			caseDocuments: $caseDocuments,
 			store: new DocumentRecordStore(settingsService: $settings),
 			assessments: new WOODocumentAssessmentService(settingsService: $settings, userSession: $this->createMock(IUserSession::class), logger: $logger, caseDocuments: $caseDocuments),
-			plans: new WooSearchPlans(settingsService: $settings, access: $access),
+			plans: new WooSearchPlans(settingsService: $settings, templates: $this->createMock(RecordTemplateReader::class), access: $access),
 			provenance: new CaseDocumentProvenance(store: new DocumentRecordStore(settingsService: $settings), caseDocuments: $caseDocuments),
 			access: $access,
 		);

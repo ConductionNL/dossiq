@@ -471,4 +471,23 @@ class AanvullingsverzoekServiceTest extends TestCase {
 		$service->write(request: ['state' => 'answered', 'answeredBy' => 'handler1'], id: 'avr-1');
 		self::assertSame([['task-1', 'The aanvullingsverzoek is answered in dossiq.', 'dossiq.aanvullingsverzoek']], $closed);
 	}//end testAWriteThatLeavesOpenClosesThePortalTask()
+
+	/**
+	 * How long a request has been open is counted in whole days, never negative.
+	 *
+	 * @return void
+	 */
+	public function testDaysOpenCountsWholeDaysSinceTheRequest(): void {
+		$service = $this->service();
+		$now = new \DateTimeImmutable('2026-03-20T12:00:00+01:00');
+
+		$this->assertSame(14, $service->daysOpen(request: ['requestedAt' => '2026-03-06T09:00:00+01:00'], now: $now));
+		// One hour short of a whole day is no day yet.
+		$this->assertSame(0, $service->daysOpen(request: ['requestedAt' => '2026-03-19T13:00:00+01:00'], now: $now));
+		$this->assertSame(1, $service->daysOpen(request: ['requestedAt' => '2026-03-19T12:00:00+01:00'], now: $now));
+		// A request dated after now reads as its distance: the count has no sign.
+		$this->assertSame(2, $service->daysOpen(request: ['requestedAt' => '2026-03-22T12:00:00+01:00'], now: $now));
+		$this->assertSame(0, $service->daysOpen(request: [], now: $now));
+		$this->assertSame(0, $service->daysOpen(request: ['requestedAt' => 'not a date'], now: $now));
+	}//end testDaysOpenCountsWholeDaysSinceTheRequest()
 }//end class

@@ -112,6 +112,41 @@ class OutstandingDocuments {
 	}//end forCase()
 
 	/**
+	 * Every document of a case that is under review: on the case and not set aside.
+	 *
+	 * The same two reads {@see self::forCase()} starts from, without the
+	 * assessments, for a caller that lists every document and not only the
+	 * outstanding ones.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return list<string> The document identifiers.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-every-document-with-its-assessment-req-das-004
+	 */
+	public function underReview(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		if ($objectService === null || empty($register) === true) {
+			return [];
+		}
+
+		$allDocs = $this->collectCaseDocumentIds(
+			objectService: $objectService,
+			register: $register,
+			docSchema: $this->settingsService->getConfigValue('document_schema'),
+			caseId: $caseId,
+		);
+		if ($allDocs === []) {
+			return [];
+		}
+
+		$excluded = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+
+		return array_map('strval', array_keys(array_diff_key($allDocs, $excluded)));
+	}//end underReview()
+
+	/**
 	 * The documents that still hold up the decision.
 	 *
 	 * With relevance recorded (woo-review-triage), an out-of-scope document

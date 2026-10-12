@@ -137,5 +137,16 @@ class IntakeListenerRegistrar {
 			listener: IntakeTermStartListener::class,
 			priority: self::RECEIPT_DATES_PRIORITY
 		);
+
+		// A case saved as a draft is not received yet (decision 180). The save
+		// that moves it out of `draft` is its receipt, so the same listener
+		// sets the stamp and the dates in that save, again above the
+		// calculations: the deadline is then counted from the start date
+		// written here, and the submit answer carries both.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: IntakeTermStartListener::class,
+			priority: self::RECEIPT_DATES_PRIORITY
+		);
 	}//end register()
 }//end class
