@@ -71,9 +71,14 @@ export default {
 	},
 
 	watch: {
-		/** @spec openspec/changes/woo-request-corpus-collection/specs/record-template-start/spec.md#requirement-a-form-offers-the-named-templates-of-its-schema-req-rts-002 */
 		schema: {
 			immediate: true,
+			/**
+			 * List again when the form names another schema.
+			 *
+			 * @return {void}
+			 * @spec openspec/changes/woo-request-corpus-collection/specs/record-template-start/spec.md#requirement-a-form-offers-the-named-templates-of-its-schema-req-rts-002
+			 */
 			handler() {
 				this.load()
 			},
