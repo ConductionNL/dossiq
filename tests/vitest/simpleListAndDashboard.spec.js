@@ -731,6 +731,17 @@ describe('the case type list', () => {
 		}
 	})
 
+	it('has an Actions menu with the import dialog the case type page already owns', () => {
+		expect(list.config.headerActions).toEqual([
+			expect.objectContaining({
+				id: 'case-type-import',
+				type: 'open-modal',
+				target: 'CaseTypeImportDialog',
+			}),
+		])
+		expect(registrySource).toContain('CaseTypeImportDialog')
+	})
+
 	it('shows the term in words, the version as Version n and a status pill', () => {
 		const column = (key) => list.config.columns.find((c) => c.key === key)
 		expect(column('processingDeadline').formatter).toBe('isoDuration')
