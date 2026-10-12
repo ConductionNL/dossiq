@@ -106,7 +106,7 @@ class ReviewBatches {
 	 */
 	public function taken(string $caseId, array $documents): array {
 		$open = [];
-		foreach ($this->rows(caseId: $caseId) as $batch) {
+		foreach ($this->everyRow(caseId: $caseId) as $batch) {
 			if (($batch['status'] ?? 'open') === 'open' && isset($batch['filter']['recallSample']) === false) {
 				foreach ((array)($batch['documents'] ?? []) as $ref) {
 					$open[(string)$ref] = (string)($batch['name'] ?? '');
@@ -323,6 +323,32 @@ class ReviewBatches {
 	}//end handTask()
 
 	/**
+	 * Refuse a reviewer no grant can reach, before anything is written for them.
+	 *
+	 * The review records follow the closed register, so somebody outside the
+	 * staff group would get the task and read nothing (case-reviewer-access
+	 * REQ-CRA-009). A recall sample asks this too, before it stores the sample.
+	 *
+	 * @param string $assignee The reviewer.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException (422 `review-batch-assignee-no-access`) When the register does not admit them.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function assertReviewerAdmitted(string $assignee): void {
+		if ($this->reviewerAccess->isAdmittedReader(userId: $assignee) === true) {
+			return;
+		}
+
+		throw $this->refusal(
+			rule: 'review-batch-assignee-no-access',
+			sentence: 'This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.',
+		);
+	}//end assertReviewerAdmitted()
+
+	/**
 	 * Refuse an incomplete batch before anything is written.
 	 *
 	 * @param string $caseId The case UUID.
@@ -346,6 +372,8 @@ class ReviewBatches {
 		if ($assignee === '' || $this->userManager->userExists($assignee) === false) {
 			throw $this->refusal(rule: 'review-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
 		}
+
+		$this->assertReviewerAdmitted(assignee: $assignee);
 
 		if ($documents === []) {
 			throw $this->refusal(rule: 'review-batch-empty', sentence: 'Put at least one document in the batch.');
@@ -375,7 +403,7 @@ class ReviewBatches {
 	}//end isAvailable()
 
 	/**
-	 * Every batch of a case, as stored.
+	 * The batches of a case the caller may read, as stored: what a listing shows.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
@@ -395,6 +423,32 @@ class ReviewBatches {
 			)
 		);
 	}//end rows()
+
+	/**
+	 * Every batch of a case, read regardless of the caller's own grants.
+	 *
+	 * A document sits in one open batch whoever asks, so the rule never reads
+	 * the caller's slice of the batches (a batch is private to the case
+	 * assignee and its own reviewer, case-reviewer-access REQ-CRA-008).
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return list<array<string, mixed>> The batches.
+	 */
+	private function everyRow(string $caseId): array {
+		if ($this->isAvailable() === false || $caseId === '') {
+			return [];
+		}
+
+		return array_values(
+			$this->searchObjectsAsArraysUnscoped(
+				objectService: $this->settingsService->getObjectService(),
+				register: $this->settingsService->getConfigValue('register'),
+				schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
+				filters: ['case' => $caseId, '_limit' => 500],
+			)
+		);
+	}//end everyRow()
 
 	/**
 	 * Save a batch, creating or replacing it.

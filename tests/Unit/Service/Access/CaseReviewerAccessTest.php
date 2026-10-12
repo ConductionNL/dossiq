@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Access\CaseReviewerAccess
  * @uses   \OCA\Dossiq\Exception\RefusedException
  * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
@@ -71,6 +72,7 @@ class CaseReviewerAccessTest extends TestCase {
 				'case_schema' => 'case',
 				'assessment_schema_key' => 'assessment',
 				'batch_schema_key' => 'batch',
+				'review_schema_key' => 'review',
 			][$key] ?? $default
 		);
 
@@ -92,7 +94,10 @@ class CaseReviewerAccessTest extends TestCase {
 
 		$groups = $this->createMock(IGroupManager::class);
 		$groups->method('isAdmin')->willReturnCallback(static fn (string $uid): bool => $uid === 'admin');
-		$groups->method('isInGroup')->willReturnCallback(static fn (string $uid, string $group): bool => $uid === 'coordinator' && $group === 'dossiq-coordinators');
+		$groups->method('isInGroup')->willReturnCallback(
+			static fn (string $uid, string $group): bool => ($uid === 'coordinator' && $group === 'dossiq-coordinators')
+				|| (in_array($uid, ['handler', 'reviewer1'], true) === true && $group === 'dossiq-medewerkers')
+		);
 
 		$this->access = new CaseReviewerAccess(
 			settingsService: $settings,
@@ -149,6 +154,66 @@ class CaseReviewerAccessTest extends TestCase {
 		self::assertSame(['handler'], $this->calls[1]['readers']);
 	}//end testHidingLeavesOnlyTheAssigneeAsReader()
 
+	public function testARecordSharedWithTheAssigneeOnlyReachesNoReviewer(): void {
+		$this->declare();
+		$this->caseType['reviewerAccess']['records'] = [
+			['schemaKey' => 'assessment_schema_key', 'caseField' => 'caseRef', 'readers' => 'assignee'],
+		];
+
+		$this->access->reconcile(caseId: self::CASE_ID);
+
+		self::assertSame([['handler'], ['handler']], array_column($this->calls, 'readers'));
+	}//end testARecordSharedWithTheAssigneeOnlyReachesNoReviewer()
+
+	public function testAReviewerReadsOnlyTheRecordThatNamesThem(): void {
+		$this->declare();
+		$this->caseType['reviewerAccess']['records'] = [
+			['schemaKey' => 'batch_schema_key', 'caseField' => 'case', 'readers' => 'own', 'userField' => 'assignee'],
+		];
+
+		$this->access->reconcile(caseId: self::CASE_ID);
+
+		self::assertSame(
+			['b-1' => ['handler', 'reviewer1'], 'b-2' => ['handler', 'reviewer2']],
+			array_column($this->calls, 'readers', 'uuid'),
+			'the reviewer of one batch is no reader of the other'
+		);
+	}//end testAReviewerReadsOnlyTheRecordThatNamesThem()
+
+	public function testARecordOfABatchIsReadByThatBatchsReviewer(): void {
+		$this->declare();
+		$this->register->seed('review', 'r-1', ['case' => self::CASE_ID, 'batch' => 'b-2']);
+		$this->register->seed('review', 'r-2', ['case' => self::CASE_ID, 'batch' => '']);
+		$this->caseType['reviewerAccess']['records'] = [
+			['schemaKey' => 'review_schema_key', 'caseField' => 'case', 'readers' => 'own', 'reviewerRowField' => 'batch'],
+		];
+
+		$this->access->reconcile(caseId: self::CASE_ID);
+
+		self::assertSame(
+			['r-1' => ['handler', 'reviewer2'], 'r-2' => ['handler']],
+			array_column($this->calls, 'readers', 'uuid'),
+			'a record in no batch is read by the assignee alone'
+		);
+	}//end testARecordOfABatchIsReadByThatBatchsReviewer()
+
+	public function testOnlyStaffAndAdministratorsCanBeNamedAsReaders(): void {
+		self::assertTrue($this->access->isAdmittedReader(userId: 'reviewer1'), 'a member of the staff group');
+		self::assertTrue($this->access->isAdmittedReader(userId: 'admin'));
+		self::assertFalse($this->access->isAdmittedReader(userId: 'reviewer2'), 'the register is closed to everybody else');
+		self::assertFalse($this->access->isAdmittedReader(userId: 'coordinator'), 'a supervisor outside the staff group reads nothing else of the case');
+		self::assertFalse($this->access->isAdmittedReader(userId: ''));
+	}//end testOnlyStaffAndAdministratorsCanBeNamedAsReaders()
+
+	public function testEveryRecordOfTheCaseIsReadWhoeverAsks(): void {
+		$this->register->hiddenFromCaller = ['batch'];
+
+		$rows = $this->access->recordsOf(schemaKey: 'batch_schema_key', caseField: 'case', caseId: self::CASE_ID);
+
+		self::assertSame(['reviewer1', 'reviewer2'], array_column($rows, 'assignee'));
+		self::assertSame([], $this->access->recordsOf(schemaKey: 'unknown_key', caseField: 'case', caseId: self::CASE_ID));
+	}//end testEveryRecordOfTheCaseIsReadWhoeverAsks()
+
 	public function testACaseTypeThatDeclaresNothingIsLeftAlone(): void {
 		$answer = $this->access->reconcile(caseId: self::CASE_ID);
 
@@ -194,7 +259,10 @@ class CaseReviewerAccessTest extends TestCase {
 	public function testTheDeclarationIsNormalised(): void {
 		$declaration = $this->access->declarationFor(caseType: ['reviewerAccess' => ['records' => [['schemaKey' => ' k '], ['schemaKey' => '']], 'supervisorGroup' => 'woo-leads']]);
 
-		self::assertSame([['schemaKey' => 'k', 'caseField' => 'case']], $declaration['records']);
+		self::assertSame(
+			[['schemaKey' => 'k', 'caseField' => 'case', 'readers' => 'all', 'userField' => '', 'reviewerRowField' => '']],
+			$declaration['records']
+		);
 		self::assertSame('woo-leads', $declaration['supervisorGroup']);
 		self::assertFalse($declaration['hideOthers']);
 	}//end testTheDeclarationIsNormalised()

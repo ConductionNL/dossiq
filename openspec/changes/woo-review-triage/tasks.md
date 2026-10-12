@@ -212,6 +212,27 @@ record. OpenRegister refuses a parent that references another schema
     before (every authenticated user) but wider than the table; (b) update grants (reconcile grants read only);
     (c) reconcile from the gather add, the search plan save, the query record, the exclusion route and
     `DocumentRelevance::mark`, then list those four records too (see 6.1).
+  - Round 6: (a) is built, generic. `lib/Service/Access/CaseRecordReaders.php` reads `readers`
+    (`all` | `assignee` | `own`, with `userField` or `reviewerRowField`) per `reviewerAccess.records` entry
+    (case-reviewer-access REQ-CRA-008, declared in `89-case-reviewer-access.json`) and
+    `CaseReviewerAccess::reconcile()` asks it per record. The woo-verzoek case type (1.4.4, register 0.20.38)
+    sets `reviewBatch` to `own` by `assignee` and `triageRule` to `assignee`, the read column of the table.
+    Tests: `CaseRecordReadersTest`; `CaseReviewerAccessTest::testAReviewerReadsOnlyTheRecordThatNamesThem`,
+    `testARecordSharedWithTheAssigneeOnlyReachesNoReviewer`, `testARecordOfABatchIsReadByThatBatchsReviewer`
+    (red against the old class, `dq-l8-logs/r6/red-readers.log`). An administrator runs
+    `POST /api/cases/reviewer-access/reconcile` once after the upgrade: it revokes the wider grants existing
+    batches and rules carry. Still open: (b) and (c).
+    Two rules hold for the case whoever asks, so they no longer read the caller's slice of the private
+    records: a document sits in one open batch (`ReviewBatches::taken()`), and applying the rules applies every
+    rule of the case (`TriageRules::apply()` through `CaseReviewerAccess::recordsOf()`). Listings stay under the
+    caller's access. `ReviewBatchesTest::testABatchTheCallerCannotReadStillHoldsItsDocuments`,
+    `TriageRulesTest::testApplyRunsRulesTheCallerCannotRead` (red first, `dq-l8-logs/r6/red-unscoped.log`).
+  - Round 6, the group choice: train 3 moved `reviewBatch` and `triageRule` from `authenticated` to the staff
+    groups, which is the register's own rule (REQ-ACC-11). The schema is the ceiling of a grant, so a batch
+    reviewer outside `dossiq-medewerkers` would get a task and read nothing. `ReviewBatches::create()` now
+    refuses such a reviewer (`review-batch-assignee-no-access`) through `CaseReviewerAccess::isAdmittedReader()`
+    (REQ-CRA-009); `ReviewBatchesTest::testAReviewerOutsideTheStaffGroupIsRefused`. Q-dossiq-L8-2 asks whether
+    naming a reviewer should add them to the staff group instead.
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
