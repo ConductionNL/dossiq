@@ -312,13 +312,11 @@ describe('the surfaces that read in exactly one chrome', () => {
 })
 
 describe('the container type this change depends on', () => {
-	it('is the library\'s `sections` container, registered in the SHARED catalog', () => {
+	it("is the library's `sections` container, registered in the SHARED catalog", () => {
 		// nextcloud-vue registers `sections` itself (CnSectionsWidget) with
 		// container: true, the flag CnDetailWidgetHost reads to hand a widget
 		// the schema, integration context and registry its children need.
-		const source = read(
-			path.join(LIB, 'components/CnSectionsWidget/index.js'),
-		)
+		const source = read(path.join(LIB, 'components/CnSectionsWidget/index.js'))
 		expect(source).toContain("registerDashboardWidget('sections'")
 		expect(source).toContain('container: true')
 		// The app no longer carries its own copy of the container.
