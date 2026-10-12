@@ -8439,6 +8439,7 @@
         "This question is required": "Deze vraag is verplicht",
         "This read cannot be recorded, so the report is not shown.": "Deze inzage kan niet worden vastgelegd, dus de rapportage wordt niet getoond.",
         "This relation already exists.": "Deze relatie bestaat al.",
+        "This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.": "Deze beoordelaar zit nog niet in de medewerkersgroep. Vraag een beheerder om toevoeging aan dossiq-medewerkers.",
         "This sample is not one of this case.": "Deze steekproef hoort niet bij deze zaak.",
         "This search is not stored on this case.": "Deze zoekopdracht is niet bij deze zaak bewaard.",
         "This server does not keep track of which cases you open.": "Deze server houdt niet bij welke zaken je opent.",

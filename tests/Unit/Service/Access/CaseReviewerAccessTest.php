@@ -94,7 +94,10 @@ class CaseReviewerAccessTest extends TestCase {
 
 		$groups = $this->createMock(IGroupManager::class);
 		$groups->method('isAdmin')->willReturnCallback(static fn (string $uid): bool => $uid === 'admin');
-		$groups->method('isInGroup')->willReturnCallback(static fn (string $uid, string $group): bool => $uid === 'coordinator' && $group === 'dossiq-coordinators');
+		$groups->method('isInGroup')->willReturnCallback(
+			static fn (string $uid, string $group): bool => ($uid === 'coordinator' && $group === 'dossiq-coordinators')
+				|| (in_array($uid, ['handler', 'reviewer1'], true) === true && $group === 'dossiq-medewerkers')
+		);
 
 		$this->access = new CaseReviewerAccess(
 			settingsService: $settings,
@@ -193,6 +196,14 @@ class CaseReviewerAccessTest extends TestCase {
 			'a record in no batch is read by the assignee alone'
 		);
 	}//end testARecordOfABatchIsReadByThatBatchsReviewer()
+
+	public function testOnlyStaffAndAdministratorsCanBeNamedAsReaders(): void {
+		self::assertTrue($this->access->admitsReader(userId: 'reviewer1'), 'a member of the staff group');
+		self::assertTrue($this->access->admitsReader(userId: 'admin'));
+		self::assertFalse($this->access->admitsReader(userId: 'reviewer2'), 'the register is closed to everybody else');
+		self::assertFalse($this->access->admitsReader(userId: 'coordinator'), 'a supervisor outside the staff group reads nothing else of the case');
+		self::assertFalse($this->access->admitsReader(userId: ''));
+	}//end testOnlyStaffAndAdministratorsCanBeNamedAsReaders()
 
 	public function testACaseTypeThatDeclaresNothingIsLeftAlone(): void {
 		$answer = $this->access->reconcile(caseId: self::CASE_ID);

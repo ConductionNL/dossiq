@@ -222,6 +222,12 @@ record. OpenRegister refuses a parent that references another schema
     (red against the old class, `dq-l8-logs/r6/red-readers.log`). An administrator runs
     `POST /api/cases/reviewer-access/reconcile` once after the upgrade: it revokes the wider grants existing
     batches and rules carry. Still open: (b) and (c).
+  - Round 6, the group choice: train 3 moved `reviewBatch` and `triageRule` from `authenticated` to the staff
+    groups, which is the register's own rule (REQ-ACC-11). The schema is the ceiling of a grant, so a batch
+    reviewer outside `dossiq-medewerkers` would get a task and read nothing. `ReviewBatches::create()` now
+    refuses such a reviewer (`review-batch-assignee-no-access`) through `CaseReviewerAccess::admitsReader()`
+    (REQ-CRA-009); `ReviewBatchesTest::testAReviewerOutsideTheStaffGroupIsRefused`. Q-dossiq-L8-2 asks whether
+    naming a reviewer should add them to the staff group instead.
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.

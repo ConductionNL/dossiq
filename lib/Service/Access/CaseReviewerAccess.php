@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Access;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Repair\SeedStaffGroup;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -391,6 +392,31 @@ class CaseReviewerAccess {
 
 		return $this->groupManager->isAdmin($userId) === true || $this->groupManager->isInGroup($userId, $group) === true;
 	}//end isSupervisor()
+
+	/**
+	 * Whether a grant can reach this user at all.
+	 *
+	 * OpenRegister keeps a record's schema as the ceiling of a grant, and the
+	 * dossiq register is closed to everybody outside the staff group
+	 * (case-access-control REQ-ACC-11). A person outside it who is named as a
+	 * reviewer gets the grant and still reads nothing; an administrator reads
+	 * everything regardless. Asked before somebody is named, so the refusal
+	 * comes with a sentence instead of an empty screen.
+	 *
+	 * @param string $userId The user about to be named as a reader.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reader-is-somebody-the-register-admits-req-cra-009
+	 */
+	public function admitsReader(string $userId): bool {
+		if ($userId === '') {
+			return false;
+		}
+
+		return $this->groupManager->isAdmin($userId) === true
+			|| $this->groupManager->isInGroup($userId, SeedStaffGroup::STAFF_GROUP) === true;
+	}//end admitsReader()
 
 	/**
 	 * The reviewers named on the case, by the id of the row that names them.

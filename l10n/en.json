@@ -8439,6 +8439,7 @@
         "This question is required": "This question is required",
         "This read cannot be recorded, so the report is not shown.": "This read cannot be recorded, so the report is not shown.",
         "This relation already exists.": "This relation already exists.",
+        "This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.": "This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.",
         "This sample is not one of this case.": "This sample is not one of this case.",
         "This search is not stored on this case.": "This search is not stored on this case.",
         "This server does not keep track of which cases you open.": "This server does not keep track of which cases you open.",

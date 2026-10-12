@@ -113,6 +113,7 @@ class ReviewBatchesTest extends TestCase {
 
 		$this->access = $this->createMock(CaseReviewerAccess::class);
 		$this->access->method('reconcile')->willReturn(['status' => 'reconciled', 'granted' => 1, 'revoked' => 0, 'refused' => 0]);
+		$this->access->method('admitsReader')->willReturnCallback(static fn (string $userId): bool => $userId !== 'reviewer-outside');
 
 		$this->tasks = $this->createMock(EngineTaskGateway::class);
 		$this->tasks->method('mirrorImport')->willReturnCallback(
@@ -317,6 +318,7 @@ class ReviewBatchesTest extends TestCase {
 	public function testASampleBatchReconcilesAndAFailedReconcileKeepsTheBatch(): void {
 		$this->access = $this->createMock(CaseReviewerAccess::class);
 		$this->access->expects($this->exactly(2))->method('reconcile')->with('case-x')->willThrowException(new \RuntimeException('sharing down'));
+		$this->access->method('admitsReader')->willReturn(true);
 		$batches = $this->batches();
 
 		$sample = $batches->createSampleBatch(caseId: 'case-x', sampleId: 'sample-1', assignee: 'reviewer-a', documents: ['doc-1', 'doc-2'], userId: 'handler-h');
@@ -353,6 +355,28 @@ class ReviewBatchesTest extends TestCase {
 		$this->assertSame([], $this->store->all('reviewBatch'));
 		$this->assertSame([], $this->handed);
 	}//end testABatchNeedsANameAReviewerAndDocumentsOfTheCase()
+
+	/**
+	 * A reviewer the register does not admit would get a task and read nothing: refused before anything is written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function testAReviewerOutsideTheStaffGroupIsRefused(): void {
+		$batches = $this->batches(users: ['reviewer-a', 'reviewer-outside']);
+
+		try {
+			$batches->create(caseId: 'case-x', name: 'Mail', assignee: 'reviewer-outside', documents: ['doc-1'], userId: 'handler-h');
+			$this->fail('A reviewer outside the staff group must be refused.');
+		} catch (RefusedException $refusal) {
+			$this->assertSame('review-batch-assignee-no-access', $refusal->getRule());
+			$this->assertSame(422, $refusal->getStatus());
+		}
+
+		$this->assertSame([], $this->handed, 'no task is handed out');
+		$this->assertSame([], $batches->forCase(caseId: 'case-x', assessed: []), 'no batch is stored');
+	}//end testAReviewerOutsideTheStaffGroupIsRefused()
 
 	/**
 	 * When the engine does not take the task, the batch still stands and says so.

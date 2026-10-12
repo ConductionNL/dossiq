@@ -347,6 +347,13 @@ class ReviewBatches {
 			throw $this->refusal(rule: 'review-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
 		}
 
+		if ($this->reviewerAccess->admitsReader(userId: $assignee) === false) {
+			throw $this->refusal(
+				rule: 'review-batch-assignee-no-access',
+				sentence: 'This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.',
+			);
+		}
+
 		if ($documents === []) {
 			throw $this->refusal(rule: 'review-batch-empty', sentence: 'Put at least one document in the batch.');
 		}
