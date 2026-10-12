@@ -431,6 +431,7 @@ export default {
 					schema: 'case',
 					id: '@object.objectUuid',
 				},
+
 				fields: [
 					{
 						key: 'case-title',
