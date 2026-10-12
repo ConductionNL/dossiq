@@ -490,7 +490,9 @@ describe('the tabs', () => {
 			// Taller where the cell would scroll inside: the tabs card (Overview
 			// measured 784px over its 720), the flow runs and hours booked.
 			const taller = { 5: 19, 7: 7, 6: 3 }
-			expect(entry.gridHeight, entry.id).toBe(taller[entry.id] ?? was.gridHeight)
+			expect(entry.gridHeight, entry.id).toBe(
+				taller[entry.id] ?? was.gridHeight,
+			)
 		}
 		const order = [...simple.layout]
 			.sort((a, b) => a.gridY - b.gridY)
