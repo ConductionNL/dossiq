@@ -74,7 +74,7 @@
                     "fromStatusName": "Vergadering", "toStatusName": "Besluit genomen", "label": "Mandaatbesluit vastleggen",
                     "guards": [
                         { "type": "requiredField", "field": "stemuitslag" },
-                        { "type": "mandaatGuard" }
+                        { "type": "delegatedAuthorityGuard", "actField": "mandaatCategorie" }
                     ]
                 },
                 {

@@ -55,7 +55,7 @@
 						<td>{{ row.gemiddeldeDoorlooptijdDagen || 0 }}</td>
 						<td>{{ row.verlengingen || 0 }}</td>
 						<td>{{ row.ingebrekestellingen || 0 }}</td>
-						<td>{{ euro(row.dwangsomTotal || 0) }}</td>
+						<td>{{ euroFromCents(row.dwangsomTotalCents) }}</td>
 					</tr>
 				</tbody>
 			</table>
@@ -82,7 +82,7 @@ const CSV_HEADERS = [
 	'gemDoorlooptijd',
 	'verlengingen',
 	'ingebrekestellingen',
-	'dwangsomTotal',
+	'dwangsomTotalEur',
 ]
 
 export default {
@@ -132,12 +132,12 @@ export default {
 					[
 						k,
 						row.totaal || 0,
-						row.binnenTermijnPercent || 0,
+						row.binnenTermijnPct || 0,
 						row.overschrijdingen || 0,
-						row.gemiddeldeDoorlooptijd || 0,
+						row.gemiddeldeDoorlooptijdDagen || 0,
 						row.verlengingen || 0,
 						row.ingebrekestellingen || 0,
-						row.dwangsomTotal || 0,
+						((Number(row.dwangsomTotalCents) || 0) / 100).toFixed(2),
 					].join(','),
 				)
 			}

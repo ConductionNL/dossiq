@@ -59,6 +59,7 @@ describe('the Woo publication on the case page', () => {
 		expect(section.widget.content.include).toEqual([
 			'wooPublicationStatus',
 			'wooPublicationUrl',
+			'wooWithheldNote',
 		])
 		expect(section.widget.content.hideEmpty).toBe(true)
 	})

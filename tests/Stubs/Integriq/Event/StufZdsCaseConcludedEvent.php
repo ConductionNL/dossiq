@@ -25,7 +25,7 @@
  *
  * @link https://www.Integriq.nl
  *
- * @spec openspec/changes/stuf-zds-case-client/specs/stuf-zds-case-client/spec.md#requirement-case-messages-are-a-cross-app-command
+ * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\EventDispatcher\Event;
 /**
  * The terminal outcome of one StUF-ZDS case kennisgeving.
  *
- * @spec openspec/changes/stuf-zds-case-client/specs/stuf-zds-case-client/spec.md#requirement-case-messages-are-a-cross-app-command
+ * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
  */
 class StufZdsCaseConcludedEvent extends Event {
 
@@ -65,7 +65,7 @@ class StufZdsCaseConcludedEvent extends Event {
 	 *
 	 * @return string The app id.
 	 *
-	 * @spec openspec/changes/stuf-zds-case-client/specs/stuf-zds-case-client/spec.md#requirement-case-messages-are-a-cross-app-command
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
 	 */
 	public function getSourceApp(): string {
 		return $this->sourceApp;
@@ -76,7 +76,7 @@ class StufZdsCaseConcludedEvent extends Event {
 	 *
 	 * @return string The correlation id.
 	 *
-	 * @spec openspec/changes/stuf-zds-case-client/specs/stuf-zds-case-client/spec.md#requirement-case-messages-are-a-cross-app-command
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
 	 */
 	public function getCorrelationId(): string {
 		return $this->correlationId;
@@ -87,7 +87,7 @@ class StufZdsCaseConcludedEvent extends Event {
 	 *
 	 * @return string The operation.
 	 *
-	 * @spec openspec/changes/stuf-zds-case-client/specs/stuf-zds-case-client/spec.md#requirement-case-messages-are-a-cross-app-command
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
 	 */
 	public function getOperation(): string {
 		return $this->operation;
@@ -98,7 +98,7 @@ class StufZdsCaseConcludedEvent extends Event {
 	 *
 	 * @return int The attempts.
 	 *
-	 * @spec openspec/changes/stuf-zds-case-client/specs/stuf-zds-case-client/spec.md#requirement-case-messages-are-a-cross-app-command
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
 	 */
 	public function getAttempts(): int {
 		return $this->attempts;
@@ -109,7 +109,7 @@ class StufZdsCaseConcludedEvent extends Event {
 	 *
 	 * @return array<string, mixed> success, referentienummer, messageId, caseIdentification, fout.
 	 *
-	 * @spec openspec/changes/stuf-zds-case-client/specs/stuf-zds-case-client/spec.md#requirement-case-messages-are-a-cross-app-command
+	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
 	 */
 	public function getResult(): array {
 		return $this->result;

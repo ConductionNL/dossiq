@@ -22,7 +22,7 @@
  *
  * @link https://www.Integriq.nl
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Integriq\Event;
 /**
  * A person query (npsLv01).
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 class StufPersonQueryEvent extends StufProviderQueryEvent {
 
@@ -57,7 +57,7 @@ class StufPersonQueryEvent extends StufProviderQueryEvent {
 	 *
 	 * @return string The BSN.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getBsn(): string {
 		return $this->bsn;
@@ -72,7 +72,7 @@ class StufPersonQueryEvent extends StufProviderQueryEvent {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-each-query-reaches-the-owning-app-as-a-typed-event
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function answerPersons(string $appId, array $persons): void {
 		$this->setAnswer(appId: $appId, payload: ['persons' => array_values($persons)]);

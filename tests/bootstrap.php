@@ -335,7 +335,7 @@ require_once __DIR__ . '/Unit/Fixtures/SchemaAwareStufRegister.php';
 
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
-// (PublicationService, MandaatValidationService) cannot be mocked without these.
+// (PublicationService and others) cannot be mocked without these.
 // Guarded by interface_exists() so they no-op under a real Nextcloud runtime.
 require_once __DIR__ . '/Stubs/HttpClientStubs.php';
 
@@ -684,6 +684,18 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
 // so OrganisationStatusChangeListenerTest can drive handle() with the real shape.
 if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php';
+}
+
+// woo-request-scoped-access 5.2: OpenRegister's vetoable decision event
+// (openregister#4583), so CaseDecisionAccessListenerTest drives handle() with
+// the real getter names. Declaration-only, shared with psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionChangeRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php';
+}
+// reviewer-owns-their-decisions REQ-DEC-003 (openregister#4592): the visibility
+// question CaseDecisionAccessListener answers for a case-type supervisor.
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionVisibilityRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so

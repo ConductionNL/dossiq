@@ -26,7 +26,7 @@
  *
  * @link https://www.Integriq.nl
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\EventDispatcher\Event;
 /**
  * A provider request a sibling app received, for integriq to answer.
  *
- * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+ * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
  */
 class StufProviderRequestReceivedEvent extends Event {
 
@@ -78,7 +78,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return string The app id.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function getSourceApp(): string {
 		return $this->sourceApp;
@@ -89,7 +89,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return string The envelope.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function getRawXml(): string {
 		return $this->rawXml;
@@ -100,7 +100,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return string The source id.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function getSourceId(): string {
 		return $this->sourceId;
@@ -111,7 +111,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return string `cases` or `persons`.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function getService(): string {
 		return $this->service;
@@ -125,7 +125,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function answer(int $statusCode, string $body): void {
 		$this->statusCode = $statusCode;
@@ -137,7 +137,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return bool True once answered.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function isHandled(): bool {
 		return $this->statusCode !== null;
@@ -148,7 +148,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return int|null The status, null while unhandled.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function getStatusCode(): ?int {
 		return $this->statusCode;
@@ -159,7 +159,7 @@ class StufProviderRequestReceivedEvent extends Event {
 	 *
 	 * @return string The SOAP body, '' while unhandled.
 	 *
-	 * @spec openspec/changes/stuf-provider-receiver/specs/stuf-provider-receiver/spec.md#requirement-a-sibling-app-forwards-its-wire-contract-urls-for-one-release
+	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
 	 */
 	public function getBody(): string {
 		return $this->body;

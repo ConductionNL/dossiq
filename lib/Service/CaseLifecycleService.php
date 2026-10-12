@@ -45,6 +45,7 @@ namespace OCA\Dossiq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
+use OCA\Dossiq\Service\Lifecycle\TermExtensionRule;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use Psr\Log\LoggerInterface;
@@ -56,6 +57,8 @@ use RuntimeException;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class CaseLifecycleService {
+
+	use TermExtensionRule;
 
 	/**
 	 * The journal key on the case that carries the lifecycle events.
@@ -99,8 +102,8 @@ class CaseLifecycleService {
 	 *
 	 * @return array{suspended: bool, canSuspend: bool, canResume: bool,
 	 *               canExtend: bool, canReopen: bool, isFinalStatus: bool,
-	 *               extensionCount: int, deadline: string, statusName: string,
-	 *               caseType: string}
+	 *               extensionCount: int, maxExtensions: int|null, deadline: string,
+	 *               statusName: string, caseType: string}
 	 *
 	 * @throws RuntimeException When the case cannot be read
 	 *
@@ -118,10 +121,12 @@ class CaseLifecycleService {
 			'suspended' => $suspended,
 			'canSuspend' => ($caseType['suspensionAllowed'] === true && $suspended === false && $isFinal === false),
 			'canResume' => $suspended,
-			'canExtend' => ($caseType['extensionAllowed'] === true && $isFinal === false),
+			'canExtend' => ($caseType['extensionAllowed'] === true && $isFinal === false
+				&& $this->extensionsUsedUp(case: $case, caseType: $caseType) === false),
 			'canReopen' => $isFinal,
 			'isFinalStatus' => $isFinal,
 			'extensionCount' => (int)($case['extensionCount'] ?? 0),
+			'maxExtensions' => ($caseType['maxExtensions'] ?? null),
 			'deadline' => (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? '')),
 			'statusName' => $this->store->lookupStatusName(statusTypeId: (string)($case['status'] ?? '')),
 			'caseType' => (string)($case['caseType'] ?? ''),
@@ -243,6 +248,10 @@ class CaseLifecycleService {
 			throw new RuntimeException('extension_not_allowed');
 		}
 
+		if ($this->extensionsUsedUp(case: $case, caseType: $caseType) === true) {
+			throw new RuntimeException('extension_limit_reached');
+		}
+
 		$current = (string)($case['plannedEndDate'] ?? ($case['deadline'] ?? ''));
 		$newEnd = $this->resolveNewEndDate(
 			current: $current,
@@ -250,7 +259,7 @@ class CaseLifecycleService {
 			period: (string)$caseType['extensionPeriod'],
 		);
 
-		$this->onTermInstance(
+		$extended = $this->onTermInstance(
 			caseId: $caseId,
 			gesture: 'extend',
 			apply: fn (string $instanceId): array => $this->extensionService->requestExtension(
@@ -269,7 +278,7 @@ class CaseLifecycleService {
 			entry: ['type' => 'extend', 'reason' => $reason, 'newEndDate' => $newEnd]
 		);
 
-		return $this->state(caseId: $caseId);
+		return $this->state(caseId: $caseId) + ['notice' => $this->extensionNoticeOf(extended: $extended)];
 	}//end extend()
 
 	/**
@@ -465,11 +474,11 @@ class CaseLifecycleService {
 	 * @param string $gesture The gesture name, for the log line
 	 * @param callable(string): array<string, mixed> $apply What to do with the instance id
 	 *
-	 * @return void
+	 * @return array<string, mixed>|null What the gesture answered, or null when the case has no instance.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function onTermInstance(string $caseId, string $gesture, callable $apply): void {
+	private function onTermInstance(string $caseId, string $gesture, callable $apply): ?array {
 		$instance = $this->termService->getTermijnInstanceForZaak(caseId: $caseId);
 		$instanceId = (string)($instance['id'] ?? ($instance['@self']['id'] ?? ''));
 		if ($instanceId === '') {
@@ -477,10 +486,10 @@ class CaseLifecycleService {
 				'CaseLifecycleService: no TermijnInstance for case, statutory clock untouched',
 				['caseId' => $caseId, 'gesture' => $gesture],
 			);
-			return;
+			return null;
 		}
 
-		$apply($instanceId);
+		return $apply($instanceId);
 	}//end onTermInstance()
 
 	/**

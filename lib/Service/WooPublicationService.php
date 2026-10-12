@@ -198,7 +198,7 @@ class WooPublicationService {
 	 * @return array{documents: array<int, array<string, mixed>>, items: array<int, array<string, mixed>>}
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
+	 * @spec openspec/specs/woo-delivered-set/spec.md#requirement-every-delivery-writes-a-set-with-its-own-identity-and-manifest-req-wds-001
 	 */
 	public function collectDelivery(array $assessments, callable $documentLoader): array {
 		return $this->sources->collectDelivery(assessments: $assessments, documentLoader: $documentLoader);
@@ -332,9 +332,14 @@ class WooPublicationService {
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 
+		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: $delivery['assessments']);
 		$this->caseLedger->writeCaseState(
 			caseId: $caseId,
-			changes: ['wooPublicationStatus' => self::STATUS_PUBLISHED, 'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl)],
+			changes: [
+				'wooPublicationStatus' => self::STATUS_PUBLISHED,
+				'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl),
+				'wooWithheldNote' => $withheld['note'],
+			],
 		);
 
 		$this->dossierReturn?->append(case: $case, publicationId: $publicationId, title: (string)$payload['title']);
@@ -346,6 +351,7 @@ class WooPublicationService {
 			'publicationId' => $publicationId,
 			'publicationUrl' => $publicationUrl,
 			'deliveredSet' => $delivered['setId'],
+			'withheldRecord' => $withheld['record'],
 		];
 	}//end publish()
 
@@ -417,12 +423,14 @@ class WooPublicationService {
 
 		$objectService->saveObject(object: $decision, register: $register, schema: $decisionSchema, uuid: $decisionId);
 
+		// A withdrawn publication withholds nothing any more: its list is cleared.
+		$withheld = $this->caseLedger->recordWithheld(publicationId: $publicationId, assessments: []);
 		$this->caseLedger->writeCaseState(
 			caseId: (string)($decision['case'] ?? $caseId),
-			changes: ['wooPublicationStatus' => self::STATUS_WITHDRAWN],
+			changes: ['wooPublicationStatus' => self::STATUS_WITHDRAWN, 'wooWithheldNote' => $withheld['note']],
 		);
 
-		return ['available' => true];
+		return ['available' => true, 'withheldRecord' => $withheld['record']];
 	}//end withdraw()
 
 	/**

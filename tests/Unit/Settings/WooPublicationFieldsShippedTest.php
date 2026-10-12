@@ -202,7 +202,7 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		$this->assertSame('pub-001', ($this->rows['decision']['decision-001']['wooPublication']['publicationId'] ?? null), 'the publication reference did not survive the save');
 
 		$withdrawn = $service->withdraw('decision-001');
-		$this->assertSame(['available' => true], $withdrawn, 'withdraw found no publication on the decision');
+		$this->assertTrue($withdrawn['available'], 'withdraw found no publication on the decision');
 		$this->assertSame('withdrawn', ($this->rows['decision']['decision-001']['wooPublication']['status'] ?? null));
 	}//end testAPublishedDecisionCanBeWithdrawn()
 

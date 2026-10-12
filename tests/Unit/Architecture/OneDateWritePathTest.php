@@ -121,6 +121,8 @@ class OneDateWritePathTest extends TestCase {
 			'Service/QuickActionService.php',
 			'Service/ContactMomentService.php',
 			'Service/Kcc/ContactMomentService.php',
+			// The timestamps moved here in method-decomposition slice 8a.
+			'Service/Kcc/ContactMomentPayload.php',
 		],
 		'DwangsomController' => [
 			'Controller/DwangsomController.php',
