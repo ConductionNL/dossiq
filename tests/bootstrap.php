@@ -686,6 +686,18 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\OrganisationUpdatedEvent') === fal
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/OrganisationUpdatedEvent.php';
 }
 
+// woo-request-scoped-access 5.2: OpenRegister's vetoable decision event
+// (openregister#4583), so CaseDecisionAccessListenerTest drives handle() with
+// the real getter names. Declaration-only, shared with psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionChangeRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionChangeRequestedEvent.php';
+}
+// reviewer-owns-their-decisions REQ-DEC-003 (openregister#4592): the visibility
+// question CaseDecisionAccessListener answers for a case-type supervisor.
+if (class_exists('\\OCA\\OpenRegister\\Event\\DecisionVisibilityRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/DecisionVisibilityRequestedEvent.php';
+}
+
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
