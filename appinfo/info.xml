@@ -398,8 +398,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 that makes a real zero hard to notice.
             -->
             <step>OCA\Dossiq\Repair\MigrateSubsidieRegelingToCaseType</step>
-            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
-            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <!--
                 VthSeedDataRepairStep SEEDS THE CASE TYPES SeedVthWorkflowTemplates
                 RESOLVES, SO IT HAS TO GO FIRST. It shipped the other way round,
@@ -994,8 +992,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Dossiq\Repair\SeedBesluitvormingTemplates</step>
-            <step>OCA\Dossiq\Repair\SeedLhsMatrix</step>
-            <step>OCA\Dossiq\Repair\SeedVthMatrixCells</step>
             <!-- SEEDS THE CASE TYPES THE TEMPLATE STEP RESOLVES; see the
                  post-migration block for what the wrong order cost. -->
             <step>OCA\Dossiq\Repair\VthSeedDataRepairStep</step>

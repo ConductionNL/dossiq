@@ -159,7 +159,8 @@ class PackageWriter {
 	 * row is never taken back, since this run did not create it.
 	 *
 	 * @param string                                                          $package The package id, for the messages.
-	 * @param array<int, array{schemaKey: string, rows: array<int, array<string, mixed>>}> $groups  The rows, per schema key.
+	 * @param array<int, array<string, mixed>> $groups  The rows, per schema key; a group may name its own
+	 *                                                  `register` and `schema`, and the property it matches on.
 	 *
 	 * @return array{
 	 *     status: string,
@@ -221,7 +222,7 @@ class PackageWriter {
 	 * installer records every row in the shipped-set ledger afterwards, and a
 	 * row it cannot record is a row it has to take back.
 	 *
-	 * @param array<int, array{id: string}> $written The rows {@see self::writePackage()} reported written.
+	 * @param array<int, array<string, mixed>> $written The rows {@see self::writePackage()} reported written.
 	 *
 	 * @return void
 	 *
@@ -234,7 +235,10 @@ class PackageWriter {
 			return;
 		}
 
-		$this->rollBack(objectService: $objectService, register: $register, ids: array_column($written, 'id'));
+		// A seed row may sit in another app's register; each row goes back out of its own.
+		foreach ($written as $row) {
+			$this->rollBack(objectService: $objectService, register: (string)($row['register'] ?? $register), ids: [(string)$row['id']]);
+		}
 	}//end undo()
 
 	/**
@@ -242,7 +246,7 @@ class PackageWriter {
 	 *
 	 * @param object                                                        $objectService The OpenRegister object service.
 	 * @param string                                                        $register      The register.
-	 * @param array{schemaKey: string, rows: array<int, array<string, mixed>>} $group         The group.
+	 * @param array<string, mixed>                                          $group         The group.
 	 * @param array<string, array<mixed>>                                   $run           Collects written, skipped
 	 *                                                                                     and adopted rows, the ids
 	 *                                                                                     adopted and the case types
@@ -250,10 +254,15 @@ class PackageWriter {
 	 *
 	 * @return void
 	 *
+	 * A group that names its own `register` and `schema` goes there: that is a
+	 * seed file for another app's schema, resolved by the installer. A group
+	 * that names `match` adopts a row with the same value for every property it names.
+	 *
 	 * @throws RuntimeException When the group's schema key resolves to nothing.
 	 */
 	private function writeGroup(object $objectService, string $register, array $group, array &$run): void {
-		$schema = $this->settings->getConfigValue(key: $group['schemaKey']);
+		$register = (string)($group['register'] ?? $register);
+		$schema = (string)($group['schema'] ?? $this->settings->getConfigValue(key: $group['schemaKey']));
 		if ($schema === '') {
 			throw new RuntimeException("No schema is configured for '{$group['schemaKey']}', so its rows cannot be written.");
 		}
@@ -273,6 +282,7 @@ class PackageWriter {
 				schemaKey: $group['schemaKey'],
 				row: $row,
 				caseTypes: $run['caseTypes'],
+				match: (array)($group['match'] ?? []),
 			);
 			if ($existing !== null && $this->existingId(row: $existing) !== '') {
 				$this->adopt(group: $group, schema: $schema, packageId: $packageId, existing: $existing, run: $run);
@@ -287,7 +297,7 @@ class PackageWriter {
 				strategy: self::STRATEGY_SKIP,
 			);
 
-			$run['written'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'id' => $outcome['id'], 'row' => $row];
+			$run['written'][] = ['schemaKey' => $group['schemaKey'], 'schema' => $schema, 'register' => $register, 'id' => $outcome['id'], 'row' => $row];
 		}//end foreach
 	}//end writeGroup()
 

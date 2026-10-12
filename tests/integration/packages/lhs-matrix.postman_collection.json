@@ -1,0 +1,269 @@
+{
+  "info": {
+    "name": "dossiq package: lhs-matrix",
+    "description": "Reads the default LHS matrix and its 16 grid cells back through the OpenRegister objects API, after the packages workflow installed the lhs-matrix package on a clean instance (hydra ADR-118). Ids are the fixed ids in lib/Settings/packages/lhs-matrix/.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{adminUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{adminPass}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUser",
+      "value": "admin"
+    },
+    {
+      "key": "adminPass",
+      "value": "admin"
+    }
+  ],
+  "item": [
+    {
+      "name": "the matrix",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrix/4bd17257-3e48-55e0-9e17-47326ead2e1c"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Landelijke Handhavingsstrategie 2024\"));",
+              "pm.test('version as shipped', () => pm.expect(row.version).to.eql(1));",
+              "pm.test('active as shipped', () => pm.expect(row.active).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the matrix has its 48 cells",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrix/4bd17257-3e48-55e0-9e17-47326ead2e1c"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "pm.test('48 cells', () => pm.expect(pm.response.json().cells).to.have.lengthOf(48));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "one active matrix",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrix?_limit=100"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('list reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "pm.test('exactly one matrix is active', () => pm.expect(rows.filter(r => r.active === true)).to.have.lengthOf(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cell A1",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrixCell/99c4c9d3-5f1f-52a3-bc27-63bc4f19f19b"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('behaviourRow as shipped', () => pm.expect(row.behaviourRow).to.eql(\"A\"));",
+              "pm.test('consequenceColumn as shipped', () => pm.expect(row.consequenceColumn).to.eql(\"1\"));",
+              "pm.test('interventionStep as shipped', () => pm.expect(row.interventionStep).to.eql(\"Aanspreken / informeren\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "cell D4",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrixCell/ceddcbf2-6986-58aa-9c5d-52a87b3d7057"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('behaviourRow as shipped', () => pm.expect(row.behaviourRow).to.eql(\"D\"));",
+              "pm.test('consequenceColumn as shipped', () => pm.expect(row.consequenceColumn).to.eql(\"4\"));",
+              "pm.test('interventionStep as shipped', () => pm.expect(row.interventionStep).to.eql(\"Bestuursdwang + Proces-verbaal\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the grid has one cell per row and column",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrixCell?_limit=100"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('list reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const keys = rows.map(r => `${r.behaviourRow}:${r.consequenceColumn}`);",
+              "pm.test('16 cells', () => pm.expect(rows).to.have.lengthOf(16));",
+              "pm.test('no row and column twice', () => pm.expect(new Set(keys).size).to.eql(16));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the enforcement lookup answers for A and 1",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/vth/lhs/lookup?behaviour=A&gevolg=1"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the lookup answers (200)', () => pm.response.to.have.status(200));",
+              "const cell = pm.response.json();",
+              "pm.test('it names an intervention for A and 1', () => {",
+              "    pm.expect(cell.behaviourRow).to.eql('A');",
+              "    pm.expect(cell.consequenceColumn).to.eql('1');",
+              "    pm.expect(cell.interventionStep).to.be.a('string').and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ledger records the package version",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/shippedOrigin?targetSchema=package&targetObject=lhs-matrix&_limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('list reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const records = rows.filter(r => r.targetSchema === 'package' && r.targetObject === 'lhs-matrix');",
+              "pm.test('one version record names the package at 1.0.0', () => {",
+              "    pm.expect(records).to.have.lengthOf(1);",
+              "    pm.expect(records[0].set).to.eql('lhs-matrix');",
+              "    pm.expect(records[0].setVersion).to.eql('1.0.0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
