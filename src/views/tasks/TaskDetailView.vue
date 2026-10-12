@@ -206,7 +206,15 @@
 					<CnFactsWidget :content="taskFacts" :objectData="task" />
 				</section>
 
-				<TaskCaseCard :objectId="taskId" :objectData="task" />
+				<section
+					v-if="caseId"
+					class="task-detail-page__card task-detail-page__facts-card"
+					data-testid="task-case-card">
+					<h3 class="task-detail-page__section-title">
+						{{ t('dossiq', 'Case') }}
+					</h3>
+					<CnFactsWidget :content="caseFacts" :objectData="task" />
+				</section>
 				<TaskWaitingCaseSection />
 			</aside>
 		</div>
@@ -223,11 +231,11 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import TaskWaitingCaseSection from '../../components/flow/TaskWaitingCaseSection.vue'
 import TaskAuditLeaf from '../../components/tasks/TaskAuditLeaf.vue'
-import TaskCaseCard from '../../components/tasks/TaskCaseCard.vue'
 import TaskEventsLeaf from '../../components/tasks/TaskEventsLeaf.vue'
 import TaskNotesLeaf from '../../components/tasks/TaskNotesLeaf.vue'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
+import { caseIdFrom, taskCaseRef } from '../../utils/flowTaskHelpers.js'
 
 export default {
 	name: 'TaskDetailView',
@@ -241,7 +249,6 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcEmptyContent,
 		TaskAuditLeaf,
-		TaskCaseCard,
 		TaskEventsLeaf,
 		TaskNotesLeaf,
 		TaskWaitingCaseSection,
@@ -394,6 +401,60 @@ export default {
 						format: 'date',
 					},
 				],
+			}
+		},
+
+		/**
+		 * The case this task is on, or null. A task with no case draws no card.
+		 *
+		 * @return {string|null} The case id.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		caseId() {
+			return caseIdFrom(taskCaseRef(this.task))
+		},
+
+		/**
+		 * The case card for the library's facts widget: the title as the way
+		 * back, the number and case type, the handler and the case's own
+		 * deadline, and the status. The case type and the status are references
+		 * the case holds as ids; `resolve` shows their names and never the id.
+		 *
+		 * @return {object} The `content` for CnFactsWidget.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		caseFacts() {
+			const caseRoute = { name: 'CaseDetail', params: { id: '@source.id' } }
+			return {
+				source: { register: 'dossiq', schema: 'case', id: '@object.objectUuid' },
+				fields: [
+					{ key: 'case-title', as: 'title', path: 'title', route: caseRoute },
+					{
+						key: 'case-meta',
+						as: 'line',
+						parts: [
+							'identifier',
+							{ path: 'caseType', resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' } },
+						],
+					},
+					{
+						key: 'case-owner',
+						as: 'line',
+						parts: [
+							{ path: 'assignee', label: t('dossiq', 'Handler') },
+							{ path: 'deadline', label: t('dossiq', 'Case deadline'), format: 'date' },
+						],
+					},
+					{
+						key: 'case-status',
+						label: t('dossiq', 'Status'),
+						path: 'status',
+						resolve: { register: 'dossiq', schema: 'statusType', labelField: 'name' },
+					},
+				],
+
+				link: { label: t('dossiq', 'Open the case'), route: caseRoute },
+				emptyText: '',
 			}
 		},
 
