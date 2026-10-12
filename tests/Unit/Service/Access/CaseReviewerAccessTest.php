@@ -198,12 +198,21 @@ class CaseReviewerAccessTest extends TestCase {
 	}//end testARecordOfABatchIsReadByThatBatchsReviewer()
 
 	public function testOnlyStaffAndAdministratorsCanBeNamedAsReaders(): void {
-		self::assertTrue($this->access->admitsReader(userId: 'reviewer1'), 'a member of the staff group');
-		self::assertTrue($this->access->admitsReader(userId: 'admin'));
-		self::assertFalse($this->access->admitsReader(userId: 'reviewer2'), 'the register is closed to everybody else');
-		self::assertFalse($this->access->admitsReader(userId: 'coordinator'), 'a supervisor outside the staff group reads nothing else of the case');
-		self::assertFalse($this->access->admitsReader(userId: ''));
+		self::assertTrue($this->access->isAdmittedReader(userId: 'reviewer1'), 'a member of the staff group');
+		self::assertTrue($this->access->isAdmittedReader(userId: 'admin'));
+		self::assertFalse($this->access->isAdmittedReader(userId: 'reviewer2'), 'the register is closed to everybody else');
+		self::assertFalse($this->access->isAdmittedReader(userId: 'coordinator'), 'a supervisor outside the staff group reads nothing else of the case');
+		self::assertFalse($this->access->isAdmittedReader(userId: ''));
 	}//end testOnlyStaffAndAdministratorsCanBeNamedAsReaders()
+
+	public function testEveryRecordOfTheCaseIsReadWhoeverAsks(): void {
+		$this->register->hiddenFromCaller = ['batch'];
+
+		$rows = $this->access->recordsOf(schemaKey: 'batch_schema_key', caseField: 'case', caseId: self::CASE_ID);
+
+		self::assertSame(['reviewer1', 'reviewer2'], array_column($rows, 'assignee'));
+		self::assertSame([], $this->access->recordsOf(schemaKey: 'unknown_key', caseField: 'case', caseId: self::CASE_ID));
+	}//end testEveryRecordOfTheCaseIsReadWhoeverAsks()
 
 	public function testACaseTypeThatDeclaresNothingIsLeftAlone(): void {
 		$answer = $this->access->reconcile(caseId: self::CASE_ID);

@@ -113,7 +113,7 @@ class ReviewBatchesTest extends TestCase {
 
 		$this->access = $this->createMock(CaseReviewerAccess::class);
 		$this->access->method('reconcile')->willReturn(['status' => 'reconciled', 'granted' => 1, 'revoked' => 0, 'refused' => 0]);
-		$this->access->method('admitsReader')->willReturnCallback(static fn (string $userId): bool => $userId !== 'reviewer-outside');
+		$this->access->method('isAdmittedReader')->willReturnCallback(static fn (string $userId): bool => $userId !== 'reviewer-outside');
 
 		$this->tasks = $this->createMock(EngineTaskGateway::class);
 		$this->tasks->method('mirrorImport')->willReturnCallback(
@@ -242,6 +242,22 @@ class ReviewBatchesTest extends TestCase {
 	}//end testADocumentCannotBeInTwoOpenBatches()
 
 	/**
+	 * A batch the caller holds no grant on still holds its documents: the rule is the case's, not the caller's view.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function testABatchTheCallerCannotReadStillHoldsItsDocuments(): void {
+		$batches = $this->batches();
+		$batches->create(caseId: 'case-x', name: 'Mail 2025', assignee: 'reviewer-a', documents: ['doc-3'], userId: 'handler-h');
+		$this->store->hiddenFromCaller = ['reviewBatch'];
+
+		$this->assertSame([], $batches->forCase(caseId: 'case-x', assessed: []), 'the listing is what the caller may read');
+		$this->assertSame(['doc-3' => 'Mail 2025'], $batches->taken(caseId: 'case-x', documents: ['doc-3']));
+	}//end testABatchTheCallerCannotReadStillHoldsItsDocuments()
+
+	/**
 	 * A closed batch lets its documents go into a new one.
 	 *
 	 * @return void
@@ -318,7 +334,7 @@ class ReviewBatchesTest extends TestCase {
 	public function testASampleBatchReconcilesAndAFailedReconcileKeepsTheBatch(): void {
 		$this->access = $this->createMock(CaseReviewerAccess::class);
 		$this->access->expects($this->exactly(2))->method('reconcile')->with('case-x')->willThrowException(new \RuntimeException('sharing down'));
-		$this->access->method('admitsReader')->willReturn(true);
+		$this->access->method('isAdmittedReader')->willReturn(true);
 		$batches = $this->batches();
 
 		$sample = $batches->createSampleBatch(caseId: 'case-x', sampleId: 'sample-1', assignee: 'reviewer-a', documents: ['doc-1', 'doc-2'], userId: 'handler-h');

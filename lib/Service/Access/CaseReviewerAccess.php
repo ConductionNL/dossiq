@@ -409,14 +409,33 @@ class CaseReviewerAccess {
 	 *
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reader-is-somebody-the-register-admits-req-cra-009
 	 */
-	public function admitsReader(string $userId): bool {
+	public function isAdmittedReader(string $userId): bool {
 		if ($userId === '') {
 			return false;
 		}
 
 		return $this->groupManager->isAdmin($userId) === true
 			|| $this->groupManager->isInGroup($userId, SeedStaffGroup::STAFF_GROUP) === true;
-	}//end admitsReader()
+	}//end isAdmittedReader()
+
+	/**
+	 * Every record of one kind on a case, read regardless of the caller's own grants.
+	 *
+	 * For a rule that holds for the case whoever asks (a document sits in one
+	 * batch, every rule of the case applies). A listing shown to a person
+	 * reads under that person's access instead and never calls this.
+	 *
+	 * @param string $schemaKey The app setting that names the record's schema.
+	 * @param string $caseField The field on the record that holds the case.
+	 * @param string $caseId    The case uuid.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-reads-it-req-cra-008
+	 */
+	public function recordsOf(string $schemaKey, string $caseField, string $caseId): array {
+		return $this->lookup->rowsOf(schema: $this->settingsService->getConfigValue($schemaKey), field: $caseField, caseId: $caseId);
+	}//end recordsOf()
 
 	/**
 	 * The reviewers named on the case, by the id of the row that names them.

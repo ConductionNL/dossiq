@@ -80,14 +80,14 @@ SHALL ask it per record, so narrowing a rule and reconciling revokes the grants 
 
 OpenRegister keeps a record's schema as the ceiling of a grant, and the dossiq register is closed to
 everybody outside `dossiq-medewerkers` (case-access-control REQ-ACC-11). So a grant to a person
-outside that group changes nothing: they still read no record. `CaseReviewerAccess::admitsReader(userId)`
+outside that group changes nothing: they still read no record. `CaseReviewerAccess::isAdmittedReader(userId)`
 SHALL answer true only for a member of the staff group or an administrator, and a writer that names
 a person as a reviewer SHALL ask it first and refuse with a sentence that names the group.
 
 #### Scenario: A supervisor outside the staff group
 @e2e exclude A group membership answer, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testOnlyStaffAndAdministratorsCanBeNamedAsReaders.
 - **GIVEN** a member of `dossiq-coordinators` who is no member of `dossiq-medewerkers` and no administrator
-- **WHEN** `admitsReader` is asked about them
+- **WHEN** `isAdmittedReader` is asked about them
 - **THEN** the answer SHALL be false
 
 ### Requirement: A reviewer changes only the records they made (REQ-CRA-003)
