@@ -71,7 +71,7 @@
             "value": "application/json"
           }
         ],
-        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/95f8c7ba-40c6-5295-9560-c26a4ffc2b26"
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/b3c1a000-0000-4000-a000-0000000b2a01"
       },
       "event": [
         {
@@ -98,7 +98,7 @@
             "value": "application/json"
           }
         ],
-        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/20084547-9fd1-5ae0-ab1b-ca6e8090defd"
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/statusType/b3c1a000-0000-4000-a000-0000000b2a08"
       },
       "event": [
         {
@@ -187,7 +187,7 @@
               "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
               "const row = pm.response.json();",
               "pm.test('belongs to the case type and is live', () => { pm.expect(row.caseType).to.eql('b3c1a000-0000-4000-a000-00000000be2a'); pm.expect(row.isActive).to.eql(true); pm.expect(row.lifecycleStatus).to.eql('published'); });",
-              "const statuses = [\"15f46590-90f3-5a05-8630-fe11a34d71f1\", \"20084547-9fd1-5ae0-ab1b-ca6e8090defd\", \"2ce5e5a2-cc44-53fe-8a0d-d90e2cf9d686\", \"45834d81-cb94-596a-8779-c2d87818c53a\", \"7502251b-966a-5d81-9024-37ff263b2587\", \"95f8c7ba-40c6-5295-9560-c26a4ffc2b26\", \"a264a645-ba3e-564e-ac09-6bfcb8b5a37d\", \"b2c116ae-d8cc-5072-93c5-9c07db368764\", \"c16e08a4-f6e7-56d8-b8d3-22a8e63f3128\", \"cf8a4518-daf9-55e2-9837-afc41aafe62e\"];",
+              "const statuses = [\"b3c1a000-0000-4000-a000-0000000b2a07\", \"b3c1a000-0000-4000-a000-0000000b2a08\", \"b3c1a000-0000-4000-a000-0000000b2a06\", \"b3c1a000-0000-4000-a000-0000000b2a03\", \"b3c1a000-0000-4000-a000-0000000b2a05\", \"b3c1a000-0000-4000-a000-0000000b2a01\", \"b3c1a000-0000-4000-a000-0000000b2a10\", \"b3c1a000-0000-4000-a000-0000000b2a04\", \"b3c1a000-0000-4000-a000-0000000b2a09\", \"b3c1a000-0000-4000-a000-0000000b2a02\"];",
               "const transitions = typeof row.transitions === 'string' ? JSON.parse(row.transitions) : row.transitions;",
               "pm.test('17 transitions, each between two statuses of this case type', () => {",
               "    pm.expect(transitions.length).to.eql(17);",

@@ -41,8 +41,13 @@ document, mark the first match with its effect, set `relevanceSource` `rule` and
 the count per rule. A rule SHALL NOT change a document a reviewer marked. A reviewer MAY change a
 rule's marking; the review SHALL then hold `relevanceSource` `reviewer` and `overturnedRule`. The case
 page SHALL list the rules with their conditions and the number of documents each decided. The
-conditions `custodian` and `sourceSystem` read the document's provenance on the case document link;
-until those fields exist a rule that names them SHALL be refused, not silently ignored.
+conditions `custodian` and `sourceSystem` read the document's provenance on the case
+(`document-provenance`, REQ-DPV-001); `senderDomain` and the mail date read `provenance.mail`
+(REQ-WRR-003); `mimeType` and the creation date read the document record; the text conditions read
+the text OpenRegister already extracted. A document that lacks the fact a condition reads SHALL NOT
+match that condition, and a condition on a field outside this list SHALL be refused when the rule is
+saved, not silently ignored. Creating a rule SHALL reconcile the case's reviewer access in the same
+request (`case-reviewer-access`, REQ-CRA-002).
 
 #### Scenario: A rule sets aside newsletters
 - **GIVEN** a rule "Nieuwsbrieven" with `senderDomain` "nieuwsbrief.example.nl" and effect `out-of-scope`, and 5 unmarked mails from that domain
@@ -55,13 +60,21 @@ until those fields exist a rule that names them SHALL be refused, not silently i
 - **THEN** it SHALL be `in-scope` with `relevanceSource` `reviewer` and `overturnedRule` "Nieuwsbrieven"
 - **AND** applying the rules again SHALL leave it in scope
 
+#### Scenario: A rule takes a custodian from the provenance
+- **GIVEN** a rule "Mail van de projectleider" with `custodian` "A. de Wit" and `textContains` "fietspad", effect `in-scope`
+- **AND** two unmarked documents whose provenance names custodian "A. de Wit", one whose extracted text mentions the fietspad and one without extracted text
+- **WHEN** the handler applies the rules
+- **THEN** only the first SHALL be `in-scope` with `rule` "Mail van de projectleider"
+
 ### Requirement: Batches are assigned to named reviewers before any verdict (REQ-WRT-003)
 
 POST `/api/cases/{id}/review/batches` SHALL create a `reviewBatch` with `name`, `documents` (a list,
-or a filter), and `assignee` (a Nextcloud user). The filter takes `rule`; `custodian` and
-`sourceSystem` SHALL be refused with `review-batch-filter-unknown` until the case document link
-carries them. It SHALL write the batch on each listed review, and SHALL create a dossiq task on the
-case assigned to that reviewer, naming the batch. A document SHALL be in at most one open batch; a
+or a filter), and `assignee` (a Nextcloud user). The filter takes `rule` from the review and
+`custodian`, `sourceSystem` and `source` from the document's provenance on the case (REQ-DPV-002);
+every field of the filter SHALL hold, and a field outside these SHALL be refused with
+`review-batch-filter-unknown`. It SHALL write the batch on each listed review, SHALL create a dossiq
+task on the case assigned to that reviewer, naming the batch, and SHALL then reconcile the case's
+reviewer access in the same request (REQ-CRA-002), a recall sample batch included. A document SHALL be in at most one open batch; a
 recall sample batch (REQ-WRS-002) does not count. The batch, its assignee and its progress (with a
 verdict, of total) SHALL be visible on the case before any verdict is made, through GET
 `/api/cases/{id}/review/batches`.
@@ -75,6 +88,12 @@ verdict, of total) SHALL be visible on the case before any verdict is made, thro
 - **GIVEN** a document in batch "Mail 2025"
 - **WHEN** the handler adds it to another batch
 - **THEN** the add SHALL be refused, naming the batch it is in
+
+#### Scenario: A batch by custodian
+- **GIVEN** three collected documents, two whose provenance names custodian "A. de Wit" and one "B. Smit"
+- **WHEN** the handler creates a batch with filter `custodian` "A. de Wit" for reviewer A
+- **THEN** the batch SHALL hold the two documents of A. de Wit and record the filter
+- **AND** the case's reviewer access SHALL be reconciled before the answer
 
 ### Requirement: Review depth is set per document type on the case type, and recorded (REQ-WRT-004)
 

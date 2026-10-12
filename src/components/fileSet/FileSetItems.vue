@@ -14,7 +14,7 @@
   The Woo case type's delivered set configures it on WooDeliveredSetDetail.
   It reads the set from the detail page (`objectData`); it writes nothing.
 
-  @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+  @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 -->
 <template>
 	<div class="file-set-items" data-testid="file-set-items">
@@ -135,7 +135,7 @@ export default {
 		 * type configured where the pair is read.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+		 * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 		 */
 		rows() {
 			const labels = this.content.classificationLabels || {}
@@ -166,7 +166,7 @@ export default {
 		 *
 		 * @param {number} index The item.
 		 * @return {string} The URL.
-		 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+		 * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 		 */
 		filesUrlFor(index) {
 			return generateUrl(this.content.filesUrl, {

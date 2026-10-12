@@ -9,7 +9,10 @@
  * the package's ids are absent while its case types are present. Matching by
  * id alone would write every case type a second time (decision 190).
  *
- * A case type is matched by its identifier. Any other row is matched only
+ * A case type is matched by its identifier. A case type a seeder wrote
+ * without an identifier (the VTH seeder keyed them by slug) is matched by its
+ * title, and only among rows that carry no identifier, so a case type that
+ * names itself otherwise is never taken. Any other row is matched only
  * inside a case type that was matched this run, by the first of identifier,
  * name, title or key it carries, so two case types that both name a status
  * "Received" never adopt each other's rows.
@@ -107,6 +110,10 @@ class ExistingRowMatcher {
 			schema: $schema,
 			filters: $filters,
 		);
+		if ($found === [] && $schemaKey === self::CASE_TYPE_KEY) {
+			$found = $this->withoutIdentifier(objectService: $objectService, register: $register, schema: $schema, row: $row);
+		}
+
 		if ($found === []) {
 			return null;
 		}
@@ -120,6 +127,37 @@ class ExistingRowMatcher {
 
 		return $found[0];
 	}//end find()
+
+	/**
+	 * The case types with the package row's title that carry no identifier.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param string               $register      The register.
+	 * @param string               $schema        The case type schema.
+	 * @param array<string, mixed> $row           The package case type.
+	 *
+	 * @return array<int, array<string, mixed>> The matching rows.
+	 */
+	private function withoutIdentifier(object $objectService, string $register, string $schema, array $row): array {
+		$title = trim((string)($row['title'] ?? ''));
+		if ($title === '') {
+			return [];
+		}
+
+		$found = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['title' => $title],
+		);
+
+		return array_values(
+			array_filter(
+				$found,
+				static fn (array $existing): bool => trim((string)($existing['identifier'] ?? '')) === ''
+			)
+		);
+	}//end withoutIdentifier()
 
 	/**
 	 * The equality filters that identify the row, or none when it cannot be matched.

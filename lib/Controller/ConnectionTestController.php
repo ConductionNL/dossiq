@@ -28,7 +28,6 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\Starter\ConnectionTestService;
 use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
-use OCA\Dossiq\Service\Stuf\StufServices;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,14 +56,14 @@ class ConnectionTestController extends Controller {
 	 * @param string                $appName The app name.
 	 * @param IRequest              $request The HTTP request.
 	 * @param ConnectionTestService $probe   The live probe.
-	 * @param StufServices          $stuf    Access to the configured StUF endpoints.
+	 * @param StufRegisterAccess    $stufRegister The configured StUF endpoints.
 	 * @param LoggerInterface       $logger  Logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly ConnectionTestService $probe,
-		private readonly StufServices $stuf,
+		private readonly StufRegisterAccess $stufRegister,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -83,7 +82,7 @@ class ConnectionTestController extends Controller {
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function testStufEndpoint(string $endpointId): JSONResponse {
 		try {
-			$endpoints = $this->stuf->register->findAll(
+			$endpoints = $this->stufRegister->findAll(
 				schema: StufRegisterAccess::SCHEMA_ENDPOINT,
 				filters: ['id' => $endpointId],
 				limit: 1

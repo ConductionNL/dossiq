@@ -214,7 +214,7 @@ class AdvisoryBodyServiceTest extends TestCase {
 	 * because the fake had been written to match the caller rather than
 	 * OpenRegister.
 	 *
-	 * The same defect shipped in four other services. InspectionChecklistService
+	 * The same defect shipped in four other services. ChecklistTemplateStore (then InspectionChecklistService)
 	 * carries a docblock describing it, found the same way and never swept.
 	 *
 	 * @return void

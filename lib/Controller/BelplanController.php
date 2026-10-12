@@ -143,7 +143,7 @@ class BelplanController extends Controller {
 		try {
 			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
 		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
-			// The same shape InspectionChecklistController carried: a payload
+			// The same shape TaskChecklistController carries: a payload
 			// OpenRegister's schema refuses came back as a 500, so an admin who
 			// typed a bad routing step was told the server had broken. The
 			// exception's message already names the offending property, and

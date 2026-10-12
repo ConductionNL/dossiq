@@ -1,0 +1,222 @@
+{
+  "_note": "woo-case-screens-and-objections REQ-WCS-006 (decision 182: the procedure is configuration). The Bezwaar case type, seeded with the Woo request case type so an objection against a Woo decision has a case type to open: the Woo case type's remedy declaration (81-woo-verzoek.json) names it, and RemedyLodging opens it. Its roles and its flow, and the Beroep case type, ship in the package lib/Settings/packages/bezwaar-beroep (installed on request), which names this case type and these statuses by the same uuids. Term P6W, one extension of P6W (Awb art. 7:10 lid 1 and 3).",
+  "components": {
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseType",
+          "version": "1.0.1",
+          "slug": "bezwaar"
+        },
+        "id": "b3c1a000-0000-4000-a000-00000000be2a",
+        "uuid": "b3c1a000-0000-4000-a000-00000000be2a",
+        "identifier": "bezwaar",
+        "title": "Bezwaar",
+        "description": "Bezwaarprocedure conform Awb hoofdstuk 6 en 7",
+        "category": "Bezwaar en beroep",
+        "purpose": "Behandeling van bezwaarschriften tegen besluiten",
+        "trigger": "Bezwaarschrift van belanghebbende",
+        "subject": "Bezwaar tegen besluit",
+        "processingDeadline": "P6W",
+        "extensionAllowed": true,
+        "extensionPeriod": "P6W",
+        "suspensionAllowed": true,
+        "internalOrExternal": "extern",
+        "publicationRequired": false,
+        "isDraft": false,
+        "confidentiality": "zaakvertrouwelijk",
+        "initialStatus": "b3c1a000-0000-4000-a000-0000000b2a01",
+        "legalBasis": "public_task",
+        "remedy": {
+          "enabled": true,
+          "kind": "beroep",
+          "termDays": 42,
+          "body": "de rechtbank"
+        }
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-ontvangen"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a01",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a01",
+        "name": "Ontvangen",
+        "description": "Bezwaarschrift is ontvangen",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-ontvankelijkheidstoets"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a02",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a02",
+        "name": "Ontvankelijkheidstoets",
+        "description": "Toetsing op ontvankelijkheid (termijn, belanghebbendheid, besluit-karakter)",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-in-behandeling"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a03",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a03",
+        "name": "In behandeling",
+        "description": "Inhoudelijke behandeling gestart",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 3,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-hoorzitting-gepland"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a04",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a04",
+        "name": "Hoorzitting gepland",
+        "description": "Hoorzitting is ingepland (Awb art. 7:2)",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 4,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-hoorzitting-afgerond"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a05",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a05",
+        "name": "Hoorzitting afgerond",
+        "description": "Hoorzitting heeft plaatsgevonden",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 5,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-advies-uitgebracht"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a06",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a06",
+        "name": "Advies uitgebracht",
+        "description": "Bezwaarschriftencommissie heeft advies uitgebracht (Awb art. 7:13)",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 6,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-beslissing-op-bezwaar"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a07",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a07",
+        "name": "Beslissing op bezwaar",
+        "description": "Besluit op bezwaar is genomen (Awb art. 7:11, 7:12)",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 7,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-afgehandeld"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a08",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a08",
+        "name": "Afgehandeld",
+        "description": "Bezwaarprocedure is volledig afgerond",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 8,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-niet-ontvankelijk"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a09",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a09",
+        "name": "Niet-ontvankelijk",
+        "description": "Bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6)",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 90,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "bezwaar-ingetrokken"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000b2a10",
+        "uuid": "b3c1a000-0000-4000-a000-0000000b2a10",
+        "name": "Ingetrokken",
+        "description": "Bezwaar is ingetrokken door indiener (Awb art. 6:21)",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "order": 91,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "bezwaar-gegrond"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000c2a01",
+        "uuid": "b3c1a000-0000-4000-a000-0000000c2a01",
+        "name": "Gegrond",
+        "description": "Het bezwaar is gegrond verklaard en het besluit herroepen of gewijzigd (Awb art. 7:11).",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "bezwaar-ongegrond"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000c2a02",
+        "uuid": "b3c1a000-0000-4000-a000-0000000c2a02",
+        "name": "Ongegrond",
+        "description": "Het bezwaar is ongegrond verklaard; het besluit blijft in stand.",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "bezwaar-niet-ontvankelijk"
+        },
+        "id": "b3c1a000-0000-4000-a000-0000000c2a03",
+        "uuid": "b3c1a000-0000-4000-a000-0000000c2a03",
+        "name": "Niet-ontvankelijk",
+        "description": "Het bezwaar is niet-ontvankelijk verklaard (Awb art. 6:6).",
+        "caseType": "b3c1a000-0000-4000-a000-00000000be2a",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P10Y"
+      }
+    ]
+  }
+}

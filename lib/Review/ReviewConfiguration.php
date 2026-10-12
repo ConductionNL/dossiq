@@ -93,6 +93,24 @@ class ReviewConfiguration {
 	}//end reviewDepth()
 
 	/**
+	 * The depth that applies to one document and the pages it requires, as a review records them.
+	 *
+	 * @param array<string, mixed> $reviewDepth The case's depth by document type, as reviewDepth() answers it.
+	 * @param array<string, mixed> $document    The document record, for its type.
+	 * @param int|null             $pageCount   The page count when the viewer reported it.
+	 *
+	 * @return array{depth: array<string, mixed>, pagesRequired: list<int>}
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-review-depth-is-set-per-document-type-on-the-case-type-and-recorded-req-wrt-004
+	 */
+	public function depthOfDocument(array $reviewDepth, array $document, ?int $pageCount): array {
+		$depth = new ReviewDepth();
+		$applied = $depth->depthFor(reviewDepth: $reviewDepth, type: $depth->typeOf(document: $document));
+
+		return ['depth' => $applied, 'pagesRequired' => $depth->pagesRequired(depth: $applied, pageCount: $pageCount)];
+	}//end depthOfDocument()
+
+	/**
 	 * One row of a configured schema, or empty.
 	 *
 	 * @param string $schemaKey The app config key of the schema.
