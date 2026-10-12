@@ -45,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * Wire-contract tests for BeschikkingController::auditPakket().
  *
  * @covers \OCA\Dossiq\Controller\BeschikkingController
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class BeschikkingControllerContractTest extends TestCase {
 
