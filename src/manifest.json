@@ -3970,6 +3970,41 @@
 						}
 					},
 					{
+						"id": "document-assess",
+						"type": "open-modal",
+						"label": "Assess documents",
+						"icon": "FileCheckOutline",
+						"target": "DocumentAssessDialog",
+						"props": {
+							"caseId": "@objectId",
+							"outstandingUrl": "/apps/dossiq/api/cases/{caseId}/document-assessments/outstanding",
+							"assessUrl": "/apps/dossiq/api/cases/{caseId}/woo/assessment",
+							"classifications": [
+								{ "value": "openbaar", "label": "Public" },
+								{ "value": "deels_openbaar", "label": "Disclosed in part", "needsGrounds": true },
+								{ "value": "niet_openbaar", "label": "Not public", "needsGrounds": true }
+							],
+							"grounds": {
+								"register": "dossiq",
+								"schema": "wooRefusalGround",
+								"valueField": "code",
+								"labelField": "label",
+								"filter": { "status": "active", "citable": true }
+							},
+							"fields": {
+								"document": "documentRef",
+								"classification": "classification",
+								"grounds": "weigeringsgronden"
+							}
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "cross-domain-lookup",
 						"type": "open-modal",
 						"label": "Known in another domain",

@@ -13,23 +13,27 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
 
 ## 1. Assess from the case page
 
-- [ ] 1.1 Add the `Woo assessment` section to the CaseDetail page in `src/manifest.json`, shown only
-  when `caseType` is the Woo request case type (`WooRequestIntake::CASE_TYPE_ID`). It lists the
-  case's documents with their assessment from `wooDocumentAssessment` (by `caseRef`) and marks the
-  ones without one as outstanding (REQ-WCS-001).
-  - `npm run check:manifest` exits 0.
-  - vitest `src/dialogs/__tests__/WooAssessDialog.spec.js` (see 1.2).
-- [ ] 1.2 Add `src/dialogs/WooAssessDialog.vue` and the header action `woo-assess` (open-modal). It
-  posts `{assessments: [{documentRef, classification, weigeringsgronden}]}` once for the selection,
-  and shows the server's `error` on a non-2xx. The ground picker reads
-  `WooRefusalGrounds` through dossiq's API when `woo-refusal-grounds-list` is merged, and otherwise
-  the values `validate()` accepts, with a line saying so (REQ-WCS-001).
-  - vitest: `testItPostsOneRequestForTheSelection`, `testARefusalKeepsTheDocumentsOutstanding`.
+- [ ] 1.1 The `Woo assessment` section on the CaseDetail page, listing every document with its
+  assessment. NOT built: no board draws it (decision 162, UI waits for its board). Its data half
+  is built generic: `GET /api/cases/{id}/document-assessments/outstanding` answers
+  `{count, documents: [{id, title}]}` (`lib/Controller/DocumentAssessmentController.php`,
+  `lib/Service/Assessment/OutstandingDocuments.php`; document-assessment REQ-DAS-001).
+  - unit `tests/Unit/Service/Assessment/OutstandingDocumentsTest.php`,
+    `tests/Unit/Controller/DocumentAssessmentControllerTest.php`.
+- [x] 1.2 The assess dialog, generic per decision 182: `src/dialogs/DocumentAssessDialog.vue`,
+  opened by the header action `document-assess` (open-modal) and configured through its `props`
+  for the Woo request case type. It posts `{assessments: [{documentRef, classification,
+  weigeringsgronden}]}` once for the selection, and shows the server's sentence on a non-2xx. The
+  grounds are read from the `wooRefusalGround` objects in OpenRegister (active and citable); dossiq
+  has no grounds route (document-assessment REQ-DAS-002, REQ-WCS-001). Built to the "Wat nog
+  openstaat" table of board DqWooReview.
+  - vitest `tests/vitest/documentAssessDialog.spec.js`: `testItPostsOneRequestForTheSelection`,
+    `testARefusalKeepsTheDocumentsOutstanding`.
   - Through the caller: the controller already exists, so the proof is the e2e in 3.2.
-- [ ] 1.3 Hide the section and the action on other case types (REQ-WCS-001).
-  - `tests/Unit/Manifest/WooScreensManifestTest.php` `testWooActionsAreScopedToTheWooCaseType`,
-    reading the real `src/manifest.json` and asserting every `woo-*` action and the section carry a
-    `visibleWhen` on the Woo case type.
+- [x] 1.3 The action is hidden on other case types and on an archived case (REQ-WCS-001).
+  - vitest `tests/vitest/documentAssessDialog.spec.js` `testTheActionIsScopedToItsCaseType`, reading
+    the real `src/manifest.json`. The PHP `WooScreensManifestTest` over every `woo-*` action is not
+    written: the action is no longer named after the procedure.
 
 ## 2. Extend and decide from the case page
 
