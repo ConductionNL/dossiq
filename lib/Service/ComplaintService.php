@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Term\TermResolution;
+use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -103,6 +104,7 @@ class ComplaintService {
 	 * @param TermResolution|null $resolution The case type's own first-response
 	 *                                        term, which wins over the Awb
 	 *                                        default when one is declared.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -110,6 +112,7 @@ class ComplaintService {
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermResolution $resolution = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -422,7 +425,7 @@ class ComplaintService {
 				continue;
 			}
 
-			$diff = (int)$today->diff($deadlineDate)->days;
+			$diff = $this->days->between(from: $today, to: $deadlineDate);
 			$isPast = $today > $deadlineDate;
 
 			if ($isPast === true) {

@@ -187,7 +187,18 @@
       documented fallback while OpenRegister is an optional runtime dependency. It computes no
       threshold itself (it calls `PauseChaseService::sweep()`), and it cannot go before the engine
       becomes a required dependency, so the list stops at one, not empty, until that phase lands.
-      The `->diff(` sweep of `lib/` outside the calculation classes is not done.
+      The `->diff(` sweep, part 1 of 4 (12 Oct, lane L7, REQ-TOT-007): `lib/Service/Termijn/DayCount.php`
+      is the one place that counts the days between two dates (`between()` for a span, `signed()`
+      for days left or overdue), and `WorkingDayRoll::daysBetween()` uses it for calendar mode.
+      Read off development first: 31 `->diff(` sites in 27 files, all under `lib/Service`. Moved in
+      this part, the deadline countdowns outside the calculation classes: `ComplaintService`
+      (alert window), `Doorlooptijd/CaseEnricher` (days left, throughput) and
+      `Milestone/StalledCaseDetector` (days overdue), each pinned by a characterisation test that
+      was green on the old code first. `tests/Unit/Architecture/DayCountIsTheOnlyDiffTest.php`
+      refuses a new site; `day-count.allowlist.json` lists the 23 files still to move, each with
+      its part: timer arm mappings (4), term calculations (7), reporting and age (11), and
+      `WOODeadlineService`, whose countdown has no caller since 2.1 and goes with the refactor
+      programme. This task closes when the list holds only that last entry or none.
 
 ## Verify
 

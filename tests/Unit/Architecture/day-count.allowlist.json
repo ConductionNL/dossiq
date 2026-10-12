@@ -1,0 +1,121 @@
+{
+  "about": "Files under lib/ that still call DateTimeInterface::diff() themselves instead of asking Service/Termijn/DayCount. An entry names the open change that takes the file and says why it is not taken yet. DayCountIsTheOnlyDiffTest fails on a file that is not listed, on an entry without a change or a reason, and on an entry whose file no longer calls diff(), so the list can only shrink.",
+  "measured": "2026-10-12",
+  "entries": [
+    {
+      "file": "lib/Service/AanvullingsverzoekService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Advice/AdviceTimer.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Beschikking/BezwaarArchiveTimer.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
+    },
+    {
+      "file": "lib/Service/CaseTermsService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Cases/IncidentRecord.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/ComplaintAnalyticsService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/DeadlineExtensionService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+    },
+    {
+      "file": "lib/Service/DeadlinePauseService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+    },
+    {
+      "file": "lib/Service/DeadlineReportingService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Dso/DsoDeadlineTimer.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Import/CaseRecordImport.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/KpiAggregationService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Lifecycle/SilenceCloseService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Milestone/MilestoneStallTimer.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Arms an engine timer and counts the days from its anchor to its end as the SLA. Moves to DayCount with the other timer arm mappings, in the timers part of task 4.2."
+    },
+    {
+      "file": "lib/Service/OpenWorkloadAgeService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/PhaseTermService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Queue/Source/AssignedCasesSource.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Recycle/DeletionWindowReader.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts the days left before a removed case is deleted for good, a retention window and not a term. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Subsidie/TerugvorderingService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    },
+    {
+      "file": "lib/Service/Term/FirstResponseOutcome.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+    },
+    {
+      "file": "lib/Service/TermijnTimerService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Term arithmetic on a case (span, days left, pause or extension impact). Moves to DayCount with the other term calculations, in the term calculation part of task 4.2."
+    },
+    {
+      "file": "lib/Service/WOODeadlineService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "signedDaysUntil() serves only checkAndWarn(), which has had no caller since task 2.1 retired the daily check job. The refactor programme (decision 184) deletes the method; routing it first would only collide with that deletion."
+    },
+    {
+      "file": "lib/Service/WorkQueueService.php",
+      "change": "termijnbewaking-op-engine-timers",
+      "reason": "Counts elapsed days for an age, an idle period or a report, not days to a deadline. Moves to DayCount in the reporting and age part of task 4.2."
+    }
+  ]
+}
