@@ -703,12 +703,10 @@ const registry = {
 	},
 
 	// --- The adaptive case plan, over OpenRegister's case layer
-	//     (retire-cmmn-caseplanstate, group 1). ---
+	//     (retire-cmmn-caseplanstate). ---
 	//
-	// Same widget slot as the retiring CMMN panel, new data source: the plan is
-	// rows in `openregister_case_items` read over /api/cases, not a blob this
-	// app decodes. The local engine and its `casePlanState` are untouched here;
-	// they retire in groups 3 to 5, gated on a clean drain report.
+	// The plan is rows in `openregister_case_items` read over /api/cases.
+	// OpenRegister is the only runtime; dossiq holds no case engine.
 	// @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 	CasePlanPanel: {
 		// @custom-widget-ratchet exclude the adaptive plan is a TREE of plan items with a six-state lifecycle and per-item transition actions, living in OpenRegister's case layer rather than in the case object; no declarative widget reads /api/cases, and an object-list over the case would render neither the nesting nor the transitions. Deleted the day the manifest vocabulary has a case-plan widget type
