@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use RuntimeException;
 
 /**
  * Reads a case, its case type and its rows, unscoped.
@@ -43,6 +44,16 @@ use OCA\Dossiq\Service\Support\SearchesObjects;
 class CaseRecordLookup {
 
 	use SearchesObjects;
+
+	/**
+	 * Rows per page.
+	 */
+	private const PAGE = 1000;
+
+	/**
+	 * The most pages one value is read over.
+	 */
+	private const MAX_PAGES = 100;
 
 	/**
 	 * Constructor.
@@ -63,32 +74,70 @@ class CaseRecordLookup {
 	/**
 	 * The rows of a schema whose field holds the value, read regardless of the caller.
 	 *
+	 * Every row, read a page at a time: a rule or a reconcile that saw only the
+	 * first page of a large case would answer for a slice and say nothing.
+	 *
 	 * @param string $schema The schema slug; '' answers none.
 	 * @param string $field  The field.
 	 * @param string $caseId The value.
 	 *
 	 * @return list<array<string, mixed>>
 	 *
+	 * @throws RuntimeException When the value holds more rows than this reads; nothing is answered then.
+	 *
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
 	 */
 	public function rowsOf(string $schema, string $field, string $caseId): array {
+		$rows = [];
+		for ($page = 0; $page < self::MAX_PAGES; $page++) {
+			$read = $this->page(schema: $schema, field: $field, value: $caseId, offset: ($page * self::PAGE), limit: self::PAGE);
+			$rows = array_merge($rows, $read['rows']);
+			if ($read['read'] < self::PAGE) {
+				return $rows;
+			}
+		}
+
+		throw new RuntimeException(
+			'Dossiq case record lookup: more than '.(self::MAX_PAGES * self::PAGE).' rows of '.$schema.' name '.$caseId.'; not read in part'
+		);
+	}//end rowsOf()
+
+	/**
+	 * One page of the rows of a schema whose field holds the value, read regardless of the caller.
+	 *
+	 * @param string $schema The schema slug; '' answers none.
+	 * @param string $field  The field.
+	 * @param string $value  The value.
+	 * @param int    $offset How many rows to skip.
+	 * @param int    $limit  The page size.
+	 *
+	 * @return array{rows: list<array<string, mixed>>, read: int} The rows that name the value exactly, and how
+	 *                                                            many rows the store answered: fewer than the
+	 *                                                            limit means this was the last page.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-existing-records-are-reconciled-on-upgrade-req-cra-012
+	 */
+	public function page(string $schema, string $field, string $value, int $offset, int $limit): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
-		if ($objectService === null || $register === '' || $schema === '' || $caseId === '') {
-			return [];
+		if ($objectService === null || $register === '' || $schema === '' || $value === '') {
+			return ['rows' => [], 'read' => 0];
 		}
 
 		$rows = $this->searchObjectsAsArraysUnscoped(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: [$field => $caseId, '_limit' => 1000]
+			filters: [$field => $value, '_limit' => $limit, '_offset' => $offset]
 		);
 
-		return array_values(
-			array_filter($rows, fn (array $row): bool => $this->caseTypes->referenceId(value: ($row[$field] ?? '')) === $caseId)
-		);
-	}//end rowsOf()
+		return [
+			'rows' => array_values(
+				array_filter($rows, fn (array $row): bool => $this->caseTypes->referenceId(value: ($row[$field] ?? '')) === $value)
+			),
+			'read' => count($rows),
+		];
+	}//end page()
 
 	/**
 	 * The case row, or [].

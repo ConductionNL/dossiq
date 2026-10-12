@@ -203,43 +203,6 @@ class CaseReviewerAccess {
 	}//end reconcile()
 
 	/**
-	 * Reconcile every case of every case type that declares reviewer access.
-	 *
-	 * @return array{status: string, cases: int, granted: int, revoked: int, refused: int, failed: list<string>}
-	 *
-	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-existing-records-are-reconciled-by-an-administrator-req-cra-004
-	 */
-	public function reconcileAll(): array {
-		$answer = ['status' => 'reconciled', 'cases' => 0, 'granted' => 0, 'revoked' => 0, 'refused' => 0, 'failed' => []];
-		if ($this->grants->available() === false) {
-			$answer['status'] = 'unavailable';
-			return $answer;
-		}
-
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		foreach ($this->caseTypes->everyCaseType() as $caseType) {
-			$caseTypeId = $this->caseTypes->rowId(row: $caseType);
-			if ($caseTypeId === '' || $this->declarationFor(caseType: $this->resolver->effectiveCaseType(caseTypeId: $caseTypeId))['records'] === []) {
-				continue;
-			}
-
-			foreach ($this->lookup->rowsOf(schema: $caseSchema, field: 'caseType', caseId: $caseTypeId) as $case) {
-				$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-				$result = $this->reconcile(caseId: $caseId);
-				$answer['cases']++;
-				$answer['granted'] += $result['granted'];
-				$answer['revoked'] += $result['revoked'];
-				$answer['refused'] += $result['refused'];
-				if ($result['refused'] > 0) {
-					$answer['failed'][] = $caseId;
-				}
-			}
-		}
-
-		return $answer;
-	}//end reconcileAll()
-
-	/**
 	 * Whether the user may change this record of the case: its author, a supervisor or an administrator.
 	 *
 	 * A case type that keeps nothing private leaves every record changeable as before.

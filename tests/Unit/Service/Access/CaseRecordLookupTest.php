@@ -57,6 +57,54 @@ class CaseRecordLookupTest extends TestCase {
 		self::assertSame([], $this->lookup->rowsOf(schema: 'assessment', field: 'caseRef', caseId: ''), 'no case, no rows');
 	}//end testTheRowsOfACaseAreOnlyThatCasesRows()
 
+	public function testACaseWithMoreRowsThanOnePageIsReadWhole(): void {
+		$this->register->pages = true;
+		for ($n = 0; $n < 2300; $n++) {
+			$this->register->seed('review', 'r-' . $n, ['case' => 'c-1']);
+		}
+
+		self::assertCount(2300, $this->lookup->rowsOf(schema: 'review', field: 'case', caseId: 'c-1'));
+	}//end testACaseWithMoreRowsThanOnePageIsReadWhole()
+
+	public function testOnePageSaysHowManyRowsTheStoreAnswered(): void {
+		$this->register->pages = true;
+		for ($n = 0; $n < 5; $n++) {
+			$this->register->seed('case', 'p-' . $n, ['caseType' => 'ct-9']);
+		}
+
+		$first = $this->lookup->page(schema: 'case', field: 'caseType', value: 'ct-9', offset: 0, limit: 3);
+		$last = $this->lookup->page(schema: 'case', field: 'caseType', value: 'ct-9', offset: 3, limit: 3);
+
+		self::assertSame(['p-0', 'p-1', 'p-2'], array_column($first['rows'], 'id'));
+		self::assertSame(3, $first['read']);
+		self::assertSame(['p-3', 'p-4'], array_column($last['rows'], 'id'));
+		self::assertSame(2, $last['read'], 'fewer than the limit: the last page');
+		self::assertSame(['rows' => [], 'read' => 0], $this->lookup->page(schema: '', field: 'caseType', value: 'ct-9', offset: 0, limit: 3));
+	}//end testOnePageSaysHowManyRowsTheStoreAnswered()
+
+	public function testAValueWithMoreRowsThanItReadsIsRefusedNotReadInPart(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(
+			new class {
+
+				/**
+				 * @param array<string, mixed> $filters The filters.
+				 *
+				 * @return list<array<string, mixed>>
+				 */
+				public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+					return array_fill(0, (int)$filters['_limit'], ['id' => 'x', 'case' => 'c-1']);
+				}//end searchObjectsBySlug()
+			}
+		);
+		$settings->method('getConfigValue')->willReturn('dossiq');
+		$lookup = new CaseRecordLookup(settingsService: $settings, caseTypes: new CaseTypeStore($settings), resolver: $this->createMock(CaseTypeResolver::class));
+
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('not read in part');
+		$lookup->rowsOf(schema: 'review', field: 'case', caseId: 'c-1');
+	}//end testAValueWithMoreRowsThanItReadsIsRefusedNotReadInPart()
+
 	public function testTheCaseAndItsCaseType(): void {
 		$case = $this->lookup->caseRow(caseId: 'c-1');
 

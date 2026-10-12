@@ -27,7 +27,11 @@ use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
+use OCP\IGroup;
 use OCP\IGroupManager;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -37,14 +41,32 @@ use Psr\Log\LoggerInterface;
  * Three real parts and one model. Real: the merged register the importer
  * reads (a case type's `reviewerAccess` and each record schema's
  * authorization block), CaseReviewerAccess, and CaseRecordReaders under it.
- * Model: admits() decides as OpenRegister's
+ * Model: privateVerdict() decides as OpenRegister's
  * `PermissionHandler::privateScopeVerdict()` does on a private object (owner,
- * administrator, owning group, or a grant that carries the action), with the
- * schema's group list as the ceiling of a grant. The model is a reading of
- * OpenRegister, not OpenRegister: the refusal on a running instance is the
- * live check of the change that uses this.
+ * administrator, owning group, or a grant that carries the action), and
+ * admits() puts the schema's group list under it as the ceiling of a grant.
+ * PrivateScopeVerdictDriftTest holds privateVerdict() to OpenRegister's own
+ * method: it runs the real class over the same inputs. The group list rule
+ * in admits() is still a reading of OpenRegister's rule chain, and the
+ * refusal on a running instance is the live check of the change that uses
+ * this.
  */
 class ShippedPrivateRecords {
+
+	/**
+	 * The private scope admits the caller whatever the schema's rule says.
+	 */
+	public const ADMIT = 'admit';
+
+	/**
+	 * The private scope refuses the caller.
+	 */
+	public const DENY = 'deny';
+
+	/**
+	 * The private scope does not decide; the schema's rule does.
+	 */
+	public const NOT_PRIVATE = 'not-private';
 
 	/**
 	 * The merged register.
@@ -80,6 +102,34 @@ class ShippedPrivateRecords {
 	 * @var array<string, list<string>>
 	 */
 	public array $groups = [];
+
+	/**
+	 * Who is signed in; '' is nobody, as during an upgrade.
+	 *
+	 * @var string
+	 */
+	public string $signedIn = '';
+
+	/**
+	 * Every user the session was switched to, in order; '' is back to nobody.
+	 *
+	 * @var list<string>
+	 */
+	public array $sessions = [];
+
+	/**
+	 * Users whose account is disabled.
+	 *
+	 * @var list<string>
+	 */
+	public array $disabled = [];
+
+	/**
+	 * Whether a grant is refused unless an administrator is signed in, as OpenRegister refuses it.
+	 *
+	 * @var bool
+	 */
+	public bool $grantsNeedAdministrator = false;
 
 	/**
 	 * Read the register as the importer does.
@@ -119,6 +169,119 @@ class ShippedPrivateRecords {
 	 * @return array{status: string, granted: int, revoked: int, refused: int}
 	 */
 	public function reconcile(string $caseTypeSlug, string $caseId): array {
+		return $this->access(caseTypeSlug: $caseTypeSlug)->reconcile(caseId: $caseId);
+	}//end reconcile()
+
+	/**
+	 * The real CaseReviewerAccess over the shipped case type and this fixture's rows and grants.
+	 *
+	 * @param string $caseTypeSlug The case type slug.
+	 *
+	 * @return CaseReviewerAccess
+	 */
+	public function access(string $caseTypeSlug): CaseReviewerAccess {
+		[$settings, $caseTypes, $resolver, $groupManager] = $this->parts(caseTypeSlug: $caseTypeSlug);
+
+		$grants = $this->mock(ObjectReadGrants::class);
+		$grants->method('available')->willReturn(true);
+		$grants->method('reconcile')->willReturnCallback(
+			function (string $schema, string $uuid, array $readers, string $group): array {
+				// OpenRegister writes a grant only for a signed-in owner, owning group member or administrator.
+				if ($this->grantsNeedAdministrator === true && in_array('admin', ($this->groups[$this->signedIn] ?? []), true) === false) {
+					return ['granted' => 0, 'revoked' => 0, 'refused' => 1];
+				}
+
+				$held = ($this->grants[$uuid] ?? []);
+				$this->grants[$uuid] = [];
+				$granted = 0;
+				foreach ($readers as $user => $permissions) {
+					$this->grants[$uuid][(string)$user] = $permissions;
+					if (($held[(string)$user] ?? 0) !== $permissions) {
+						$granted++;
+					}
+				}
+
+				$this->ownerGroups[$uuid] = $group;
+				return ['granted' => $granted, 'revoked' => count(array_diff_key($held, $readers)), 'refused' => 0];
+			}
+		);
+
+		return new CaseReviewerAccess(
+			settingsService: $settings,
+			caseTypes: $caseTypes,
+			resolver: $resolver,
+			grants: $grants,
+			groupManager: $groupManager,
+			logger: $this->mock(LoggerInterface::class),
+		);
+	}//end access()
+
+	/**
+	 * The real backfill over the shipped case type, with a session that starts with nobody signed in.
+	 *
+	 * The session follows `signedIn`, and the administrators are the users this
+	 * fixture puts in the `admin` group.
+	 *
+	 * @param string          $caseTypeSlug The case type slug.
+	 * @param LoggerInterface $logger       The logger.
+	 *
+	 * @return CaseRecordGrantsBackfill
+	 */
+	public function backfill(string $caseTypeSlug, LoggerInterface $logger): CaseRecordGrantsBackfill {
+		[$settings, $caseTypes, $resolver, $groupManager] = $this->parts(caseTypeSlug: $caseTypeSlug);
+
+		$session = $this->mock(IUserSession::class);
+		$session->method('getUser')->willReturnCallback(fn (): ?IUser => $this->signedIn === '' ? null : $this->user(uid: $this->signedIn));
+		$session->method('setVolatileActiveUser')->willReturnCallback(
+			function (?IUser $user): void {
+				$this->signedIn = (string)$user?->getUID();
+				$this->sessions[] = $this->signedIn;
+			}
+		);
+
+		$admins = $this->mock(IGroup::class);
+		$admins->method('getUsers')->willReturnCallback(
+			fn (): array => array_map(
+				fn (string $uid): IUser => $this->user(uid: $uid),
+				array_keys(array_filter($this->groups, static fn (array $groups): bool => in_array('admin', $groups, true)))
+			)
+		);
+		$groupManager->method('get')->willReturnCallback(static fn (string $gid): ?IGroup => $gid === 'admin' ? $admins : null);
+
+		return new CaseRecordGrantsBackfill(
+			settingsService: $settings,
+			caseTypes: $caseTypes,
+			resolver: $resolver,
+			access: $this->access(caseTypeSlug: $caseTypeSlug),
+			groupManager: $groupManager,
+			userSession: $session,
+			logger: $logger,
+		);
+	}//end backfill()
+
+	/**
+	 * A user of this fixture; disabled when listed in `disabled`.
+	 *
+	 * @param string $uid The user id.
+	 *
+	 * @return IUser
+	 */
+	private function user(string $uid): IUser {
+		$user = $this->mock(IUser::class);
+		$user->method('getUID')->willReturn($uid);
+		$user->method('isEnabled')->willReturn(in_array($uid, $this->disabled, true) === false);
+
+		return $user;
+	}//end user()
+
+	/**
+	 * The settings, case type store, resolver and group manager every service here is built on.
+	 *
+	 * @param string $caseTypeSlug The case type slug.
+	 *
+	 * @return array{0: SettingsService, 1: CaseTypeStore, 2: CaseTypeResolver, 3: IGroupManager}
+	 */
+	private function parts(string $caseTypeSlug): array {
 		$caseType = $this->caseType(slug: $caseTypeSlug);
 		// Each schema setting answers its own slug, so a row is seeded under the slug the register ships.
 		$config = (['register' => 'dossiq'] + array_flip(SchemaSlugMap::SLUG_TO_CONFIG_KEY));
@@ -128,37 +291,20 @@ class ShippedPrivateRecords {
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => (string)($config[$key] ?? $default));
 
 		$resolver = $this->mock(CaseTypeResolver::class);
-		$resolver->method('effectiveCaseType')->willReturn($caseType);
-
-		$grants = $this->mock(ObjectReadGrants::class);
-		$grants->method('available')->willReturn(true);
-		$grants->method('reconcile')->willReturnCallback(
-			function (string $schema, string $uuid, array $readers, string $group): array {
-				$this->grants[$uuid] = [];
-				foreach ($readers as $user => $permissions) {
-					$this->grants[$uuid][(string)$user] = $permissions;
-				}
-
-				$this->ownerGroups[$uuid] = $group;
-				return ['granted' => count($readers), 'revoked' => 0, 'refused' => 0];
-			}
+		$resolver->method('effectiveCaseType')->willReturnCallback(
+			static fn (string $caseTypeId): array => $caseTypeId === (string)($caseType['id'] ?? '') ? $caseType : []
 		);
+
+		$caseTypes = (fn (): object => $this->getMockBuilder(CaseTypeStore::class)->setConstructorArgs([$settings])->onlyMethods(['everyCaseType'])->getMock())
+			->call($this->test);
+		$caseTypes->method('everyCaseType')->willReturn([$caseType, ['id' => 'a-case-type-that-keeps-nothing-private']]);
 
 		$groupManager = $this->mock(IGroupManager::class);
 		$groupManager->method('isAdmin')->willReturnCallback(fn (string $uid): bool => in_array('admin', ($this->groups[$uid] ?? []), true));
 		$groupManager->method('isInGroup')->willReturnCallback(fn (string $uid, string $group): bool => in_array($group, ($this->groups[$uid] ?? []), true));
 
-		$access = new CaseReviewerAccess(
-			settingsService: $settings,
-			caseTypes: new CaseTypeStore($settings),
-			resolver: $resolver,
-			grants: $grants,
-			groupManager: $groupManager,
-			logger: $this->mock(LoggerInterface::class),
-		);
-
-		return $access->reconcile(caseId: $caseId);
-	}//end reconcile()
+		return [$settings, $caseTypes, $resolver, $groupManager];
+	}//end parts()
 
 	/**
 	 * Whether OpenRegister admits this user on this record, as the model reads its rule.
@@ -172,27 +318,71 @@ class ShippedPrivateRecords {
 	 */
 	public function admits(string $schema, string $uuid, string $user, string $action): bool {
 		$groups = ($this->groups[$user] ?? []);
-		if (in_array('admin', $groups, true) === true) {
-			return true;
-		}
-
 		$authorization = (array)($this->merged['components']['schemas'][$schema]['authorization'] ?? []);
-		$ceiling = (array_intersect($groups, (array)($authorization[$action] ?? [])) !== []);
-		if (($authorization['scope'] ?? '') !== 'private') {
-			return $ceiling;
+		$ownerGroup = ($this->ownerGroups[$uuid] ?? '');
+		$verdict = self::privateVerdict(
+			authorization: $authorization,
+			record: [
+				'owner' => (string)(($this->rows->row(schema: $schema, uuid: $uuid)['@self'] ?? [])['owner'] ?? ''),
+				'authorization' => ($ownerGroup === '' ? null : ['ownerGroup' => $ownerGroup]),
+			],
+			user: $user,
+			userGroups: $groups,
+			granted: ($this->grants[$uuid][$user] ?? 0),
+			action: $action
+		);
+		if ($verdict !== self::NOT_PRIVATE) {
+			return $verdict === self::ADMIT;
 		}
 
-		$owner = (string)(($this->rows->row(schema: $schema, uuid: $uuid)['@self'] ?? [])['owner'] ?? '');
-		if ($owner === $user || in_array(($this->ownerGroups[$uuid] ?? ''), $groups, true) === true) {
-			return true;
-		}
-
-		$bit = ['read' => 1, 'update' => 2][$action];
-		$granted = ((($this->grants[$uuid][$user] ?? 0) & $bit) === $bit);
-
-		// A grant re-opens the record within the schema's own rule, never beyond it.
-		return $granted === true && $ceiling === true;
+		// Not private, or re-opened by a grant: the schema's own rule decides, so it is the
+		// ceiling of a grant. An administrator passes that rule whatever it lists.
+		return in_array('admin', $groups, true) === true || array_intersect($groups, (array)($authorization[$action] ?? [])) !== [];
 	}//end admits()
+
+	/**
+	 * The model of OpenRegister's `PermissionHandler::privateScopeVerdict()`.
+	 *
+	 * Kept equal to the real method by PrivateScopeVerdictDriftTest, which runs
+	 * OpenRegister's own class over the same inputs and fails on any difference.
+	 * `not-private` means OpenRegister declines to decide here and its ordinary
+	 * rule chain runs: for a record with no private scope, for a create, and
+	 * for a caller whose grant carries the action.
+	 *
+	 * @param array<string, mixed>|null                                        $authorization The cascaded block: the schema's, unless the record overrides it.
+	 * @param array{owner: ?string, authorization: ?array<string, mixed>}|null $record        The record's owner and own block; null when no record is asked about.
+	 * @param string                                                           $user          The caller.
+	 * @param list<string>                                                     $userGroups    The caller's groups.
+	 * @param int                                                              $granted       Core permission bits the caller holds on the record through a grant.
+	 * @param string                                                           $action        The action.
+	 *
+	 * @return string `admit`, `deny` or `not-private`.
+	 */
+	public static function privateVerdict(?array $authorization, ?array $record, string $user, array $userGroups, int $granted, string $action): string {
+		if ($record === null || $action === 'create') {
+			return self::NOT_PRIVATE;
+		}
+
+		$scope = ($authorization['scope'] ?? null);
+		if ($scope === null || $scope === '' || $scope === 'organisation') {
+			return self::NOT_PRIVATE;
+		}
+
+		$ownerGroup = ($record['authorization']['ownerGroup'] ?? null);
+		if (in_array('admin', $userGroups, true) === true
+			|| (is_string($ownerGroup) === true && $ownerGroup !== '' && in_array($ownerGroup, $userGroups, true) === true)
+			|| ($record['owner'] !== null && $record['owner'] === $user)
+		) {
+			return self::ADMIT;
+		}
+
+		$bit = (['read' => 1, 'update' => 2, 'create' => 4, 'delete' => 8, 'share' => 16][$action] ?? null);
+		if ($bit !== null && ($granted & $bit) === $bit) {
+			return self::NOT_PRIVATE;
+		}
+
+		return self::DENY;
+	}//end privateVerdict()
 
 	/**
 	 * A mock from the test that owns this fixture.

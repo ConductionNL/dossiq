@@ -174,11 +174,53 @@ existing record without RBAC so a record the caller cannot see is never created 
 
 `POST /api/cases/reviewer-access/reconcile`, administrator only (fails closed), SHALL reconcile every
 case of every case type that declares reviewer access and answer the summed counts and the cases
-with a refusal; 503 with `unavailable` when OpenRegister has no per-object sharing.
+with a refusal; 503 with `unavailable` when OpenRegister has no per-object sharing. It runs the
+walk the upgrade runs (REQ-CRA-012), so it is the fallback for an upgrade that said it did not
+finish. Its `status` SHALL be `incomplete`, never `reconciled`, when a case is in `failed` or a
+case type in `unfinished`.
 
 #### Scenario: A non-administrator
 - **WHEN** a coordinator who is no administrator posts to the route
 - **THEN** the answer SHALL be 403 and nothing SHALL be reconciled
+
+### Requirement: Existing records are reconciled on upgrade (REQ-CRA-012)
+
+A record made before its schema became private, or before its case type changed who reads it,
+carries no grant or the wrong one, and the people on its case are refused it. An upgrade SHALL
+therefore reconcile every case of every case type that declares reviewer access, in the repair
+step `ReconcileCaseRecordGrants`, registered last in `post-migration`. No instance SHALL depend on
+an administrator calling a route after the upgrade.
+
+The walk (`CaseRecordGrantsBackfill::run()`) SHALL ask `CaseReviewerAccess::reconcile()` per case,
+SHALL read the cases a page at a time, and SHALL read every record of a case, however many. It
+SHALL be safe to run again: a record that already carries the right grants is left alone.
+
+OpenRegister writes a grant only for a signed-in owner, owning group member or administrator, and
+an upgrade has nobody signed in. The walk SHALL run as the signed-in administrator when there is
+one, and otherwise as the first enabled account of the `admin` group in order of user id, SHALL
+put the session back when it ends, and SHALL name that account in its answer.
+
+The step SHALL never throw and SHALL never report more than it did. A case that threw, a record
+OpenRegister refused, a case type with more cases than one run walks (50,000), no enabled
+administrator and no per-object sharing SHALL each be said as a warning in the upgrade output and
+as an error in the log, with the counts, up to twenty case ids and the route of REQ-CRA-004.
+
+#### Scenario: A review made by an earlier upgrade
+@e2e exclude Upgrade step over the shipped register with a sharing double, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testTheRegisteredStepGivesAnExistingReviewItsGrantsWithNobodySignedIn; the upgrade on a running instance is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with assignee `j.devries`, a batch of `p.bakker` and a review in that batch with no owner and no grant
+- **WHEN** the instance is upgraded with nobody signed in
+- **THEN** `j.devries` and `p.bakker` SHALL read and update the review, and the output SHALL say the counts and the administrator account it ran as
+
+#### Scenario: The upgrade runs twice
+@e2e exclude Idempotency over a sharing double, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testRunningTheRegisteredStepTwiceChangesNothingTheSecondTime.
+- **WHEN** the step runs a second time
+- **THEN** it SHALL add and revoke no grant
+
+#### Scenario: A case that could not be reconciled
+@e2e exclude Failure path over a reconcile double, covered by tests/Unit/Service/Access/CaseRecordGrantsBackfillTest.php testACaseThatThrowsIsNamedAndTheWalkGoesOn and tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testAnUnfinishedRunIsAWarningAndAnErrorNeverASuccess.
+- **GIVEN** a case whose reconcile throws
+- **WHEN** the step runs
+- **THEN** the other cases SHALL still be reconciled, and the output SHALL be a warning that names the case, never a success
 
 ### Requirement: A case with private records changes hands only through a supervisor (REQ-CRA-005)
 

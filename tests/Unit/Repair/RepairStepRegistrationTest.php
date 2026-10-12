@@ -97,6 +97,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
 		'MapWooRefusalGroundCodes' => 'rewrites refusal ground codes on existing Woo assessments and decisions; a fresh install has none',
 		'CreateDocumentReviews' => 'marks existing assessed Woo documents in scope; a fresh install has no assessments',
+		'ReconcileCaseRecordGrants' => 'grants the people on existing cases their private records; a fresh install has none',
 		'BackfillWooPublicationState' => 'shows the publication state on existing Woo cases; a fresh install has none',
 		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
@@ -226,6 +227,14 @@ class RepairStepRegistrationTest extends TestCase {
 				'VthSeedDataRepairStep',
 				'SeedVthWorkflowTemplates',
 				'CaseFlowSeedDataRepairStep',
+			],
+			// It reads the imported register, the installed case types and the reviews an upgrade makes.
+			'ReconcileCaseRecordGrants' => [
+				'InitializeSettings',
+				'SeedStaffGroup',
+				'InstallShippedPackages',
+				'PublishSeededCaseTypes',
+				'CreateDocumentReviews',
 			],
 		];
 

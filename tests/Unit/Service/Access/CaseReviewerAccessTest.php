@@ -281,7 +281,6 @@ class CaseReviewerAccessTest extends TestCase {
 		$this->available = false;
 
 		self::assertSame('unavailable', $this->access->reconcile(caseId: self::CASE_ID)['status']);
-		self::assertSame('unavailable', $this->access->reconcileAll()['status']);
 		self::assertSame([], $this->calls);
 	}//end testWithoutSharingItIsUnavailableAndWritesNothing()
 
@@ -299,17 +298,6 @@ class CaseReviewerAccessTest extends TestCase {
 	public function testAnUndeclaredCaseTypeKeepsEveryRecordChangeable(): void {
 		self::assertTrue($this->access->mayChange(caseId: self::CASE_ID, record: $this->register->row('assessment', 'a-1'), userId: 'reviewer2'));
 	}//end testAnUndeclaredCaseTypeKeepsEveryRecordChangeable()
-
-	public function testReconcileAllRunsEveryCaseOfADeclaringCaseType(): void {
-		$this->declare();
-		$this->caseTypes->method('everyCaseType')->willReturn([['id' => self::CASE_TYPE], ['id' => 'undeclared-type']]);
-
-		$answer = $this->access->reconcileAll();
-
-		self::assertSame(1, $answer['cases']);
-		self::assertSame(6, $answer['granted']);
-		self::assertSame([], $answer['failed']);
-	}//end testReconcileAllRunsEveryCaseOfADeclaringCaseType()
 
 	public function testTheDeclarationIsNormalised(): void {
 		$declaration = $this->access->declarationFor(caseType: ['reviewerAccess' => ['records' => [['schemaKey' => ' k '], ['schemaKey' => '']], 'supervisorGroup' => 'woo-leads']]);
