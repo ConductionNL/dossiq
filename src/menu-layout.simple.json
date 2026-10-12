@@ -510,37 +510,26 @@
 							},
 							{
 								"id": "followed-cases",
-								"type": "object-table",
+								"type": "record-list",
 								"title": "Cases you follow",
+								"_note": "DqMijnWerk draws the cases you follow as rows: the title, the case number under it and the status as a pill. That is the library's record-list over the same `_watching` lens the full profile's table reads, with the status read through _extend so the pill says its name and never its id. The link to all of them is the placement's `headerLink`, where the board has it.",
 								"content": {
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"filter": {
-											"_watching": true
-										},
-										"limit": 5
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"_watching": true
 									},
-									"columns": [
-										{
-											"key": "identifier",
-											"cellClass": "cn-cell--muted"
-										},
-										{
-											"key": "title",
-											"cellClass": "cn-cell--strong"
-										}
+									"extend": [
+										"status"
 									],
-									"rowRoute": "CaseDetail",
-									"viewAllRoute": {
-										"name": "Cases",
-										"query": {
-											"_watching": "true"
-										}
+									"limit": 5,
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": "{identifier}",
+									"pill": {
+										"field": "status.name"
 									},
-									"viewAllLabel": "View all",
-									"hideHeader": true,
-									"borderless": true,
+									"rowRoute": "CaseDetail",
 									"emptyText": "Follow a case to keep an eye on it here"
 								}
 							},
@@ -666,7 +655,14 @@
 								"gridY": 16,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"headerLink": {
+									"label": "View all",
+									"route": "Cases",
+									"query": {
+										"_watching": "true"
+									}
+								}
 							},
 							{
 								"id": "s12",

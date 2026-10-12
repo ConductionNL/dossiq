@@ -418,14 +418,47 @@ describe('the landing page', () => {
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
 
-	it('keeps the two My work widgets the design has no stand-in for, as the manifest declares them', () => {
+	it('keeps My archival reviews, which the design has no stand-in for, as the manifest declares it', () => {
 		const base = pageView(original('MyWorkHome'), 'mine').widgets
-		for (const id of ['followed-cases', 'archival-reviews']) {
-			expect(widget(id), id).toEqual(
-				withoutNotes(base.find((w) => w.id === id)),
-			)
-		}
+		expect(widget('archival-reviews')).toEqual(
+			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
+		)
 		expect(simple.slots['widget-archival-reviews']).toBe('MyArchivalReviews')
+	})
+
+	it('draws the cases you follow as rows, and loses nothing the table had', () => {
+		// DqMijnWerk: the title, the case number under it, the status as a
+		// pill, "Alles bekijken" in the card header. Everything the full
+		// profile's table does is still here: the same lens, the same two
+		// fields, a row that opens the case, the link to the whole list and
+		// the same empty text.
+		const base = pageView(original('MyWorkHome'), 'mine').widgets.find(
+			(w) => w.id === 'followed-cases',
+		).content
+		const rows = widget('followed-cases')
+		expect(rows.type).toBe('record-list')
+		expect(rows.content).toMatchObject({
+			register: base.source.register,
+			schema: base.source.schema,
+			filter: base.source.filter,
+			limit: base.source.limit,
+			rowRoute: base.rowRoute,
+			emptyText: base.emptyText,
+		})
+		expect(base.columns.map((column) => column.key).sort()).toEqual([
+			'identifier',
+			'title',
+		])
+		expect(rows.content.title).toBe('{title}')
+		expect(rows.content.meta).toBe('{identifier}')
+		// The pill reads the status NAME through _extend, never the uuid.
+		expect(rows.content.extend).toEqual(['status'])
+		expect(rows.content.pill.field).toBe('status.name')
+		expect(entry('followed-cases').headerLink).toEqual({
+			label: base.viewAllLabel,
+			route: base.viewAllRoute.name,
+			query: base.viewAllRoute.query,
+		})
 	})
 
 	it('draws First today without a card around it, no widget menus and stacked counts', () => {
