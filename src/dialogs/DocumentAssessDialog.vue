@@ -323,7 +323,13 @@ export default {
 	},
 
 	watch: {
-		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002 */
+		/**
+		 * Read the grounds the first time a classification asks for one.
+		 *
+		 * @param {boolean} needed Whether the picked classification needs a ground.
+		 * @return {void}
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-handler-assesses-several-documents-in-one-dialog-req-das-002
+		 */
 		needsGrounds(needed) {
 			if (needed === true && this.groundsLoaded === false) {
 				this.loadGrounds()
