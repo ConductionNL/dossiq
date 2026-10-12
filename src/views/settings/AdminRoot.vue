@@ -230,7 +230,6 @@
 				)
 			"
 			:loading="!storesReady">
-			<DecisionTablesTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
@@ -325,7 +324,6 @@ import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
-import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
@@ -368,7 +366,6 @@ export default {
 		FinancialIntegrationTab,
 		EmailSettings,
 		KccIntegrationSettings,
-		DecisionTablesTab,
 		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
