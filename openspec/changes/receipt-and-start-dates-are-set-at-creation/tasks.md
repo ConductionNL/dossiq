@@ -20,3 +20,9 @@
   and from `tests/e2e/case-create-form.spec.ts`'s expected fields.
 - [x] 3.3 Design system: drop Startdatum and Ontvangen op from the
   DqNieuweZaak board. Done in ConductionNL/design-system#209.
+- [x] 4.1 `IntakeTermStartListener` sets the stamp and the dates on
+  `ObjectCreatingEvent`, registered above OpenRegister's calculations
+  (D-7). `tests/Unit/Listener/IntakeTermStartListenerTest.php`,
+  `tests/Unit/AppInfo/ReceiptDatesRegistrationTest.php`.
+- [x] 4.2 The created-event fallback writes only the fields it adds, through
+  the partial write (D-7).

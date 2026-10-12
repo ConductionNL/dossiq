@@ -3571,7 +3571,7 @@
 					"tabs": [
 						{
 							"id": "audit",
-							"label": "History",
+							"label": "Audit trail",
 							"icon": "History",
 							"_note": "Placement row A05: ONE history of the case. This tab is the case timeline, CnAuditTrailTab over OpenRegister's audit trail for this object, newest first, with the actor and the action on every row. The `version-history` tab that sat beside it is GONE from THIS page: it read the same audit rows as a field diff, which is what made the case show its history twice and neither of them well. The other 13 detail pages keep theirs, and the `VersionHistoryLeafTab` registry entry stays because they resolve it; row A05 scores the case page only. Three things this tab still cannot do, each a need rather than a defect: it cannot OPEN on writes, because `actionFilter` is internal state on CnAuditTrailTab and this widget declares only `register`, `schema`, `objectId`, `title` and `maxDisplay`; it cannot EXPORT, because the tab has no export action; and it cannot carry document, note and mail events beside the audit rows, because a merged per-object feed is the OpenRegister `activity` leaf, which does not exist. Until each lands the tab opens unfiltered over writes and reads, with the Action and User filters it already renders. There is deliberately NO body tab over the same log: the tab strip carries no Timeline entry, because one log in two places is the duplication this row retires. The `case-stages` widget on the grid is not that log: it is where the case is in its process and where a handler moves it, not what has happened to it.",
 							"widgets": [
@@ -5159,10 +5159,8 @@
 			"type": "custom",
 			"title": "Workflow board",
 			"component": "WorkflowBoardView",
-			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
-			"config": {
-				"register": "dossiq"
-			}
+			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title. The config names no `register` and no `schema`: the board reads three schemas (statusType, caseType, case) through the object types initializeStores() registers before it fetches, so one register/schema pair names nothing it loads. `register` alone made CnPageRenderer warn on every visit that the page declares only one of the pair, and register nothing. The note lives here and not in `config`, because every config key reaches the board as a fallthrough attribute on its root element.",
+			"config": {}
 		},
 		{
 			"id": "WmsLayers",
@@ -7391,9 +7389,19 @@
 						"sortable": false
 					},
 					{
-						"key": "description",
-						"label": "Description",
-						"sortable": false
+						"key": "openCases",
+						"label": "Open cases",
+						"sortable": false,
+						"aggregate": {
+							"register": "dossiq",
+							"schema": "case",
+							"op": "count",
+							"where": {
+								"requester": "@self.id",
+								"isFinalStatus": false
+							}
+						},
+						"widget": "badge"
 					}
 				],
 				"actions": [
@@ -7456,13 +7464,13 @@
 							"confidentiality": {
 								"enumLabels": {
 									"openbaar": "Public",
-										"beperkt_openbaar": "Restricted public",
-										"intern": "Internal",
-										"zaakvertrouwelijk": "Case confidential",
-										"vertrouwelijk": "Confidential",
-										"confidentieel": "Classified confidential",
-										"geheim": "Secret",
-										"zeer_geheim": "Top secret"
+									"beperkt_openbaar": "Restricted public",
+									"intern": "Internal",
+									"zaakvertrouwelijk": "Case confidential",
+									"vertrouwelijk": "Confidential",
+									"confidentieel": "Classified confidential",
+									"geheim": "Secret",
+									"zeer_geheim": "Top secret"
 								}
 							}
 						},
@@ -7510,12 +7518,93 @@
 							"editable": false,
 							"include": [
 								"displayName",
-								"citizenServiceNumber",
-								"name",
-								"birth",
-								"residence",
 								"description"
-							]
+							],
+							"overrides": {
+								"displayName": {
+									"order": 1
+								},
+								"description": {
+									"order": 2
+								}
+							}
+						},
+						"_note": "The board's Contact card. The BSN is not in it: it shows masked in the side Identity card, so the overview does not undo the mask. Name parts, birth date and address are nested objects, which the data widget does not render; the side cards show them through facts paths instead."
+					},
+					{
+						"id": "contact-open-cases",
+						"type": "record-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"extend": [
+								"caseType",
+								"status"
+							],
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier} · {caseType.title}",
+							"pill": {
+								"field": "status.name",
+								"variant": "purple"
+							},
+							"trailing": [
+								"Done {endDate|date}",
+								"Term {deadline|date}"
+							],
+							"rowRoute": "CaseDetail",
+							"headerLink": {
+								"label": "View all {total} cases",
+								"route": "Cases",
+								"query": {
+									"requester": "@objectId"
+								}
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-latest-moments",
+						"type": "record-list",
+						"title": "Latest contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 3,
+							"presentation": "feed",
+							"icon": {
+								"field": "notificationChannel",
+								"map": {
+									"phone": "PhoneInTalk",
+									"email": "EmailOutline",
+									"balie": "AccountOutline",
+									"chat": "MessageTextOutline",
+									"webformulier": "Earth"
+								},
+								"default": "EmailOutline"
+							},
+							"meta": "{startTime|datetime}",
+							"text": "{summary}",
+							"headerNote": "{total} in total",
+							"emptyText": "No contact moments yet"
 						}
 					},
 					{
@@ -7668,12 +7757,16 @@
 						"type": "tabs",
 						"title": "Panels",
 						"icon": "ViewDashboard",
-						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn. The counts use `countFrom` (nextcloud-vue #1468, the release after 2.79.0): the shape is the library's `source` form of a tab predicate and must be checked against the release when it lands; older libraries ignore the key.",
+						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. Overview is a stack (`widgetIds`): the record's card, its cases and its latest contact moments, as the canonical relation page (nextcloud-vue screens-relation-pages). The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn.",
 						"content": {
 							"ariaLabel": "Details",
 							"tabs": [
 								{
-									"widgetId": "contact-card",
+									"widgetIds": [
+										"contact-card",
+										"contact-open-cases",
+										"contact-latest-moments"
+									],
 									"label": "Overview"
 								},
 								{
@@ -7717,32 +7810,84 @@
 				],
 				"sideColumn": [
 					{
+						"id": "side-reach",
+						"type": "facts",
+						"title": "Reachable via",
+						"content": {
+							"fields": [
+								{
+									"as": "line",
+									"text": "Phone and email are not in the base registration."
+								}
+							],
+							"action": {
+								"label": "Log contact",
+								"icon": "PhoneLogOutline",
+								"type": "open-form",
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"props": {
+									"contact": "@objectId"
+								}
+							}
+						}
+					},
+					{
 						"id": "side-identity",
-						"type": "data",
+						"type": "facts",
 						"title": "Identity",
 						"content": {
-							"title": "Identity",
-							"columns": 1,
-							"include": [
-								"citizenServiceNumber",
-								"birth"
-							],
-							"hideEmpty": true,
-							"editable": false
+							"fields": [
+								{
+									"label": "BSN",
+									"path": "citizenServiceNumber",
+									"format": "masked",
+									"reveal": true
+								},
+								{
+									"label": "Data protection",
+									"path": "indicatieGeheim",
+									"map": {
+										"true": "Yes",
+										"false": "No"
+									}
+								},
+								{
+									"label": "Date of birth",
+									"path": "birth.date",
+									"format": "date-long"
+								},
+								{
+									"as": "line",
+									"text": "Source: Basisregistratie personen"
+								}
+							]
 						}
 					},
 					{
 						"id": "side-address",
-						"type": "data",
-						"title": "Address",
+						"type": "facts",
+						"title": "Home address",
 						"content": {
-							"title": "Address",
-							"columns": 1,
-							"include": [
-								"residence"
+							"fields": [
+								{
+									"as": "text",
+									"parts": [
+										"residence.street",
+										"residence.houseNumber"
+									],
+									"separator": " "
+								},
+								{
+									"as": "text",
+									"parts": [
+										"residence.postcode",
+										"residence.city"
+									],
+									"separator": " "
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"emptyText": "No address on file"
 						}
 					}
 				],
@@ -7753,7 +7898,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 12,
+						"gridHeight": 18,
 						"showTitle": false
 					}
 				],
@@ -7772,7 +7917,27 @@
 							]
 						}
 					]
-				}
+				},
+				"statusPill": {
+					"countFrom": {
+						"register": "dossiq",
+						"schema": "case",
+						"filter": {
+							"requester": "@objectId",
+							"isFinalStatus": false
+						}
+					},
+					"countLabel": {
+						"one": "{count} open case",
+						"other": "{count} open cases"
+					},
+					"variant": "purple"
+				},
+				"typePill": {
+					"text": "Resident",
+					"variant": "info"
+				},
+				"headerMeta": "{residence.street} {residence.houseNumber}, {residence.city}"
 			},
 			"_note": "One person, what they have with us, and the two things you do next. The card is read only: `brpPerson` is read from its source and editing it here would write a fourth version of a citizen's data. The cases list filters `case.requester` on this row's uuid exactly, so a case whose requester is a Nextcloud contact rather than a register row does not appear — the gap requester-on-the-case D1 accepts. No menu entry: a detail page spends no navigation budget."
 		},
@@ -7818,13 +7983,13 @@
 							"confidentiality": {
 								"enumLabels": {
 									"openbaar": "Public",
-										"beperkt_openbaar": "Restricted public",
-										"intern": "Internal",
-										"zaakvertrouwelijk": "Case confidential",
-										"vertrouwelijk": "Confidential",
-										"confidentieel": "Classified confidential",
-										"geheim": "Secret",
-										"zeer_geheim": "Top secret"
+									"beperkt_openbaar": "Restricted public",
+									"intern": "Internal",
+									"zaakvertrouwelijk": "Case confidential",
+									"vertrouwelijk": "Confidential",
+									"confidentieel": "Classified confidential",
+									"geheim": "Secret",
+									"zeer_geheim": "Top secret"
 								}
 							}
 						},
@@ -7874,9 +8039,98 @@
 								"tradeName",
 								"kvkNumber",
 								"legalForm",
-								"address",
 								"description"
-							]
+							],
+							"overrides": {
+								"tradeName": {
+									"order": 1
+								},
+								"kvkNumber": {
+									"order": 2
+								},
+								"legalForm": {
+									"order": 3
+								},
+								"description": {
+									"order": 4
+								}
+							}
+						}
+					},
+					{
+						"id": "contact-open-cases",
+						"type": "record-list",
+						"title": "Cases",
+						"icon": "FolderAccountOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId"
+							},
+							"extend": [
+								"caseType",
+								"status"
+							],
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 3,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier} · {caseType.title}",
+							"pill": {
+								"field": "status.name",
+								"variant": "purple"
+							},
+							"trailing": [
+								"Done {endDate|date}",
+								"Term {deadline|date}"
+							],
+							"rowRoute": "CaseDetail",
+							"headerLink": {
+								"label": "View all {total} cases",
+								"route": "Cases",
+								"query": {
+									"requester": "@objectId"
+								}
+							},
+							"emptyText": "No cases for this contact yet"
+						}
+					},
+					{
+						"id": "contact-latest-moments",
+						"type": "record-list",
+						"title": "Latest contact moments",
+						"icon": "PhoneLogOutline",
+						"content": {
+							"register": "dossiq",
+							"schema": "contactmoment",
+							"filter": {
+								"contact": "@objectId"
+							},
+							"sort": {
+								"field": "startTime",
+								"dir": "desc"
+							},
+							"limit": 3,
+							"presentation": "feed",
+							"icon": {
+								"field": "notificationChannel",
+								"map": {
+									"phone": "PhoneInTalk",
+									"email": "EmailOutline",
+									"balie": "AccountOutline",
+									"chat": "MessageTextOutline",
+									"webformulier": "Earth"
+								},
+								"default": "EmailOutline"
+							},
+							"meta": "{startTime|datetime}",
+							"text": "{summary}",
+							"headerNote": "{total} in total",
+							"emptyText": "No contact moments yet"
 						}
 					},
 					{
@@ -8029,12 +8283,16 @@
 						"type": "tabs",
 						"title": "Panels",
 						"icon": "ViewDashboard",
-						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn. The counts use `countFrom` (nextcloud-vue #1468, the release after 2.79.0): the shape is the library's `source` form of a tab predicate and must be checked against the release when it lands; older libraries ignore the key.",
+						"_note": "The board's tab strip (DqContact, DqOrganisatie): Overview, Cases, Contact moments, Files. Overview is a stack (`widgetIds`): the record's card, its cases and its latest contact moments, as the canonical relation page (nextcloud-vue screens-relation-pages). The history is the sidebar's own tab, which the board draws as a fifth tab; the board's Tickets tab has no data behind it in dossiq (no ticket schema), so it is not drawn.",
 						"content": {
 							"ariaLabel": "Details",
 							"tabs": [
 								{
-									"widgetId": "contact-card",
+									"widgetIds": [
+										"contact-card",
+										"contact-open-cases",
+										"contact-latest-moments"
+									],
 									"label": "Overview"
 								},
 								{
@@ -8078,32 +8336,86 @@
 				],
 				"sideColumn": [
 					{
-						"id": "side-identity",
-						"type": "data",
-						"title": "Identity",
+						"id": "side-kvk",
+						"type": "facts",
+						"title": "KvK and address",
 						"content": {
-							"title": "Identity",
-							"columns": 1,
-							"include": [
-								"kvkNumber",
-								"legalForm"
+							"fields": [
+								{
+									"as": "lead",
+									"icon": "OfficeBuildingOutline",
+									"title": [
+										{
+											"path": "kvkNumber",
+											"label": "KvK"
+										}
+									],
+									"subtitle": [
+										"legalForm",
+										{
+											"text": "Trade register"
+										}
+									]
+								},
+								{
+									"as": "text",
+									"parts": [
+										"address.streetName",
+										"address.houseNumber"
+									],
+									"separator": " "
+								},
+								{
+									"as": "text",
+									"parts": [
+										"address.postcode",
+										"address.place"
+									],
+									"separator": " "
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"action": {
+								"label": "Log contact",
+								"icon": "PhoneLogOutline",
+								"type": "open-form",
+								"register": "dossiq",
+								"schema": "contactmoment",
+								"props": {
+									"contact": "@objectId"
+								}
+							}
 						}
 					},
 					{
-						"id": "side-address",
-						"type": "data",
-						"title": "Address",
+						"id": "side-open-case",
+						"type": "record-list",
+						"title": "Open cases",
 						"content": {
-							"title": "Address",
-							"columns": 1,
-							"include": [
-								"address"
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"requester": "@objectId",
+								"isFinalStatus": false
+							},
+							"extend": [
+								"caseType",
+								"status"
 							],
-							"hideEmpty": true,
-							"editable": false
+							"sort": {
+								"field": "deadline",
+								"dir": "asc"
+							},
+							"limit": 1,
+							"presentation": "rows",
+							"title": "{title}",
+							"meta": "{identifier} · {caseType.title}",
+							"pill": {
+								"field": "status.name",
+								"variant": "purple"
+							},
+							"trailing": "Term {deadline|date}",
+							"rowRoute": "CaseDetail",
+							"emptyText": "No open cases"
 						}
 					}
 				],
@@ -8114,7 +8426,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 12,
+						"gridHeight": 18,
 						"showTitle": false
 					}
 				],
@@ -8133,6 +8445,25 @@
 							]
 						}
 					]
+				},
+				"statusPill": {
+					"countFrom": {
+						"register": "dossiq",
+						"schema": "case",
+						"filter": {
+							"requester": "@objectId",
+							"isFinalStatus": false
+						}
+					},
+					"countLabel": {
+						"one": "{count} open case",
+						"other": "{count} open cases"
+					},
+					"variant": "purple"
+				},
+				"typePill": {
+					"field": "legalForm",
+					"variant": "teal"
 				}
 			},
 			"_note": "The same anatomy as ContactDetail over `kvkCompany`, because a detail page takes one schema and an organisation is not a person. Reached from a case's initiator card, not from the Contacts index: the index lists people until a folder can swap the index's schema (the Contacts page's own note has the measurement). Widget ids repeat ContactDetail's on purpose; they are page-scoped, and `npm run check:manifest` is what says so."

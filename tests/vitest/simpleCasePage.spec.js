@@ -394,11 +394,11 @@ describe('the tabs', () => {
 		// reads, holds all of them. The simple page reads that collection.
 		expect('stagesEndpoint' in find(simple, 'case-stages').content).toBe(false)
 
+		// The deadline tile only loses its own label in the side column, where
+		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline']
 		const others = (config) =>
-			config.widgets.filter(
-				(widget) =>
-					widget.id !== 'case-panels' && widget.id !== 'case-stages',
-			)
+			config.widgets.filter((widget) => !patched.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})

@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUser;
@@ -77,11 +78,13 @@ class WorkflowTemplateFlowMigrator {
 	 * @param SettingsService    $settingsService Bridge to OpenRegister.
 	 * @param ContainerInterface $container       Service container, for by-name resolution.
 	 * @param LoggerInterface    $logger          Logger.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -425,7 +428,7 @@ class WorkflowTemplateFlowMigrator {
 		$names = [];
 		foreach ($rows as $row) {
 			$uuid = trim((string)($row['id'] ?? ''));
-			$name = trim((string)($row['name'] ?? ''));
+			$name = $this->text->textOf(value: ($row['name'] ?? null));
 			if ($uuid !== '' && $name !== '') {
 				$names[$uuid] = $name;
 			}

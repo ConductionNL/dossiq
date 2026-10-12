@@ -42,9 +42,10 @@ the Woo answer, so the term never used what the handler typed.
 
 ## Out of scope
 
-- A per case type rule for the start date. No case type field states one
-  today; the start date is the receipt date until a case type can say
-  otherwise.
+- A per case type rule for the start date. Ruben decided on 11 October 2026
+  that the start date is always the receipt date, for every case type, with
+  no per case type rule. No case type field states one, and none is to be
+  added.
 - Hiding a case type's own question from the create form. The
   `x-openregister-extends-form` declaration renders every definition of the
   chosen type, and nextcloud-vue offers no way to keep one off the form.

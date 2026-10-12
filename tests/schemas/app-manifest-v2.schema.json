@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.79.0",
+	"version": "2.85.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -760,8 +760,8 @@
 		},
 		"sentinelFilterToken": {
 			"type": "string",
-			"pattern": "^@(?:me(?:\\.(?:displayName|email))?|myGroups|now|today|monthStart|quarterStart|yearStart)$|^@today[+-][0-9]+d$",
-			"description": "Filter-value context: relative fetch-time tokens resolved by resolveFilterTokens (@me, @me.displayName, @me.email, @myGroups (the current user's group ids, an IN list), @now, @today, @today±Nd, @monthStart, @quarterStart, @yearStart). Mirrors SENTINEL_TOKEN_PATTERNS.filter in src/utils/sentinelTokens.js (byte-equality enforced by a unit test)."
+			"pattern": "^@(?:me(?:\\.(?:displayName|email))?|myGroups|now|today|monthStart|monthEnd|nextMonthStart|quarterStart|yearStart)$|^@today[+-][0-9]+d$",
+			"description": "Filter-value context: relative fetch-time tokens resolved by resolveFilterTokens (@me, @me.displayName, @me.email, @myGroups (the current user's group ids, an IN list), @now, @today, @today±Nd, @monthStart, @monthEnd, @nextMonthStart, @quarterStart, @yearStart). Mirrors SENTINEL_TOKEN_PATTERNS.filter in src/utils/sentinelTokens.js (byte-equality enforced by a unit test)."
 		},
 		"sentinelConfigToken": {
 			"type": "string",
@@ -1132,13 +1132,42 @@
 		"headerPill": {
 			"type": "object",
 			"additionalProperties": false,
-			"required": ["field"],
-			"description": "A pill in a detail page header, rendered through CnStatusBadge from one field of the record. Nothing renders while the field is empty.",
+			"anyOf": [
+				{ "required": ["field"] },
+				{ "required": ["text"] },
+				{ "required": ["countFrom"] }
+			],
+			"description": "A pill in a detail page header, rendered through CnStatusBadge: from one field of the record (`field`; nothing renders while it is empty), a constant (`text`), or a count of a related list (`countFrom` with `countLabel`; nothing renders at 0, while counting or after a failed count). screens-relation-pages, 2.85.0.",
 			"properties": {
 				"field": {
 					"type": "string",
 					"minLength": 1,
 					"description": "Dot-path to the value on the record."
+				},
+				"text": {
+					"type": "string",
+					"minLength": 1,
+					"description": "A constant label (an i18n key), such as \"Inwoner\" or \"Klant\". Used when `field` is not set."
+				},
+				"countFrom": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["register", "schema"],
+					"description": "The list the pill counts with one list request (`_limit=1`, the response's `total`). `filter` values take the `@objectId` and `@object.<field>` tokens. Used when `field` is not set.",
+					"properties": {
+						"register": { "type": "string", "minLength": 1 },
+						"schema": { "type": "string", "minLength": 1 },
+						"filter": { "type": "object", "additionalProperties": true }
+					}
+				},
+				"countLabel": {
+					"type": "object",
+					"additionalProperties": false,
+					"description": "The count pill's label for one and for more, i18n keys with `{count}`: `{ \"one\": \"{count} lopende zaak\", \"other\": \"{count} lopende zaken\" }`.",
+					"properties": {
+						"one": { "type": "string", "minLength": 1 },
+						"other": { "type": "string", "minLength": 1 }
+					}
 				},
 				"colorMap": {
 					"type": "object",
@@ -2581,6 +2610,14 @@
 				"formTitle": {
 					"type": "string",
 					"description": "open-form: overrides the create dialog's heading. Defaults to 'Create {schema title}'."
+				},
+				"formEyebrow": {
+					"type": "string",
+					"description": "open-form: the context line above the create dialog's heading (board look), e.g. the list the record joins. Through the host translate. Absent: no line."
+				},
+				"formSubtitle": {
+					"type": "string",
+					"description": "open-form: the sentence under the create dialog's heading (board look), e.g. which fields are required and what happens on save. Through the host translate. Absent: no sentence."
 				},
 				"size": {
 					"type": "string",
@@ -4072,6 +4109,36 @@
 							"minLength": 1,
 							"description": "type='index', board look: free text after the footer's count, e.g. \"click a column header to sort\" (screens-index-list-parity). Maps to CnIndexPage `footerNote`."
 						},
+						"queryPresets": {
+							"type": "array",
+							"minItems": 1,
+							"description": "type='index': per-query overlays of this page (screens-index-query-presets). A menu entry that deep-links here with a query (`menu[].query`, e.g. { caseType: '<uuid>' }, the shape hydra gate-68 asks for instead of a second page) gets its own lenses, columns and copy: the first preset whose every `match` pair is in the route query replaces those keys of this config. Only the listed keys can be replaced; register, schema and permissions stay the page's. Switching preset remounts the list.",
+							"items": {
+								"type": "object",
+								"required": ["match"],
+								"additionalProperties": false,
+								"properties": {
+									"id": { "type": "string", "minLength": 1, "description": "A name for the preset, for people reading the manifest." },
+									"match": { "type": "object", "minProperties": 1, "additionalProperties": { "type": ["string", "number", "boolean"] }, "description": "Route query pairs that must ALL be present, e.g. { \"caseType\": \"<uuid>\" }. A repeated parameter matches when it holds the value." },
+									"title": { "type": "string", "minLength": 1, "description": "The page title while the preset applies." },
+									"quickFilters": { "type": "array", "description": "The lenses while the preset applies; same shape as config.quickFilters." },
+									"columns": { "type": "array", "description": "The columns while the preset applies; same shape as config.columns." },
+									"cardFields": { "type": "array", "items": { "type": "string" }, "description": "The card facts while the preset applies." },
+									"countText": { "type": "string", "minLength": 1, "description": "The count line while the preset applies." },
+									"searchPlaceholder": { "type": "string", "minLength": 1, "description": "The search placeholder while the preset applies." },
+									"footerNote": { "type": "string", "minLength": 1, "description": "The footer note while the preset applies." },
+									"defaultSort": { "type": "array", "description": "The default sort while the preset applies; same shape as config.defaultSort." },
+									"viewSwitch": { "type": "array", "items": { "type": "string", "enum": ["table", "cards", "board", "map"] }, "description": "The drawn view segments while the preset applies." }
+								}
+							}
+						},
+						"viewSwitch": {
+							"type": "array",
+							"minItems": 1,
+							"uniqueItems": true,
+							"items": { "type": "string", "enum": ["table", "cards", "board", "map"] },
+							"description": "type='index', board look: the segments the view switch draws, e.g. [\"table\", \"cards\", \"board\", \"map\"] as the boards do. A listed mode the page can open is an ordinary segment; one it cannot (no board columns, no map) is drawn disabled and named \"<mode>: not available on this list\". Order is always table, cards, board, map. Ignored without the board look (screens-view-switch-parity). Maps to CnIndexPage `viewSwitch`."
+						},
 						"searchPlaceholder": {
 							"type": "string",
 							"minLength": 1,
@@ -4086,6 +4153,38 @@
 							"type": "array",
 							"description": "type='index': the property keys the cards view shows as the facts list of each card, in order; defaults to the first four list columns under the board look (screens-card-parity). Maps to CnIndexPage `cardFields`.",
 							"items": { "type": "string", "minLength": 1 }
+						},
+						"statRow": {
+							"type": "array",
+							"default": [],
+							"description": "type='index': KPI tiles above the list, between the header and the toolbar, in an auto-fit row (each at least 200px). Each entry is a widget definition, usually `type: \"stat\"`; the type resolves through the app's widget registry, then the dashboard catalog (screens-index-stat-row). Maps to CnIndexPage `statRow`.",
+							"items": {
+								"type": "object",
+								"required": ["id", "type"],
+								"properties": {
+									"id": { "type": "string", "minLength": 1 },
+									"type": { "type": "string", "minLength": 1 },
+									"title": { "type": "string" },
+									"content": { "type": "object" },
+									"headerLink": { "type": "object" }
+								}
+							}
+						},
+						"sidePanel": {
+							"type": "array",
+							"default": [],
+							"description": "type='index': titled cards in a 300px column right of the toolbar and the list (above them below 1024px). Each entry is a widget definition with an optional `title` (i18n key) and `headerLink`; the type resolves as for `statRow` (screens-index-stat-row). Maps to CnIndexPage `sidePanel`.",
+							"items": {
+								"type": "object",
+								"required": ["id", "type"],
+								"properties": {
+									"id": { "type": "string", "minLength": 1 },
+									"type": { "type": "string", "minLength": 1 },
+									"title": { "type": "string" },
+									"content": { "type": "object" },
+									"headerLink": { "type": "object" }
+								}
+							}
 						},
 						"headerButtons": {
 							"type": "array",
