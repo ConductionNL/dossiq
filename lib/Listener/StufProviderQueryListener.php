@@ -13,10 +13,9 @@
  * - npsLv01: the person as dossiq knows them, as the initiator of a case
  *   (initiatorType person, initiatorSourceId = BSN). Dossiq is not a BRP; a
  *   BSN no case names is an empty answer, because dossiq looked.
- * - zakLk01, edcLk01: refused. Dossiq takes case and document changes through
- *   its own API and forms, not over an unauthenticated-user StUF write path.
- *   A refusal is a StUF Fo01 to the case system, where the old stub answered
- *   a Bv01 for a change it never made.
+ * - zakLk01, edcLk01: not this listener's. {@see StufProviderWriteListener}
+ *   carries them out (decision 206). One that reaches this listener anyway is
+ *   refused.
  *
  * Replaces StufZknMessageResponder, whose four handlers were stubs.
  *
@@ -70,7 +69,7 @@ class StufProviderQueryListener implements IEventListener {
 	 *
 	 * @param StufRegisterAccess $register  The stufEndpoint rows.
 	 * @param SettingsService    $settings  The register and case schema.
-	 * @param CaseObjectReader   $caseTypes Reads a case type for its slug.
+	 * @param CaseObjectReader   $caseTypes Reads a case type for its catalogue identifier.
 	 * @param LoggerInterface    $logger    The logger.
 	 */
 	public function __construct(
@@ -272,7 +271,7 @@ class StufProviderQueryListener implements IEventListener {
 	 * The zaaksysteem's zaaktype for a case type, from the endpoint's mapping.
 	 *
 	 * @param string                $caseTypeId The case's caseType uuid.
-	 * @param array<string, string> $mappings   Case type slug (or uuid) to zaaktype omschrijving.
+	 * @param array<string, string> $mappings   Case type catalogue identifier (or uuid) to the zaaksysteem's name for it.
 	 *
 	 * @return string The zaaktype, '' when unmapped.
 	 */
@@ -285,8 +284,12 @@ class StufProviderQueryListener implements IEventListener {
 			return (string)$mappings[$caseTypeId];
 		}
 
-		$slug = (string)($this->caseTypes->loadCaseType(caseTypeId: $caseTypeId)['slug'] ?? '');
-		return (string)($mappings[$slug] ?? '');
+		$identifier = trim((string)($this->caseTypes->loadCaseType(caseTypeId: $caseTypeId)['identifier'] ?? ''));
+		if ($identifier === '') {
+			return '';
+		}
+
+		return (string)($mappings[$identifier] ?? '');
 	}//end zaaktype()
 
 	/**

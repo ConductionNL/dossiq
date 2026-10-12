@@ -31,6 +31,7 @@ use OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob;
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\OpenRegister\Db\ObjectEntity;
+use OCA\OpenRegister\Event\ObjectActivatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\BackgroundJob\IJobList;
 use PHPUnit\Framework\TestCase;
@@ -40,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * A created case queues its acknowledgement, and nothing else does.
  *
  * @covers \OCA\Dossiq\Listener\AcknowledgementOnCreateListener
+ * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  */
 class AcknowledgementOnCreateListenerTest extends TestCase {
 
@@ -144,4 +146,31 @@ class AcknowledgementOnCreateListenerTest extends TestCase {
 
 		$this->listener(slug: 'case', jobList: $jobList)->handle(new ObjectCreatedEvent($entity));
 	}//end testACaseWithoutAnIdQueuesNothing()
+
+	/**
+	 * A draft create queues no acknowledgement; sending the draft queues exactly one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
+	 */
+	public function testADraftIsAcknowledgedWhenItIsSentNotWhenItIsSaved(): void {
+		$jobList = $this->createMock(originalClassName: IJobList::class);
+		$jobList->expects($this->once())
+			->method('add')
+			->with(AcknowledgementDispatchJob::class, ['caseId' => 'case-d', 'attempt' => 1]);
+		$listener = $this->listener(slug: 'case', jobList: $jobList);
+
+		$draft = new ObjectEntity();
+		$draft->setUuid('case-d');
+		$draft->setObject(['id' => 'case-d']);
+		$draft->setStatus('draft');
+		$listener->handle(new ObjectCreatedEvent($draft));
+
+		$sent = new ObjectEntity();
+		$sent->setUuid('case-d');
+		$sent->setObject(['id' => 'case-d']);
+		$sent->setStatus('active');
+		$listener->handle(new ObjectActivatedEvent($sent, new \DateTimeImmutable('2026-10-11T21:40:00+02:00')));
+	}//end testADraftIsAcknowledgedWhenItIsSentNotWhenItIsSaved()
 }//end class

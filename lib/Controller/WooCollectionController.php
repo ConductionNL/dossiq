@@ -80,7 +80,7 @@ class WooCollectionController extends Controller {
 	 *
 	 * @param string $id The case uuid.
 	 *
-	 * @return JSONResponse `{plan, recorded}`.
+	 * @return JSONResponse `{plan, recorded, templateSchema}`.
 	 *
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
 	 */
@@ -88,7 +88,13 @@ class WooCollectionController extends Controller {
 	public function plan(string $id): JSONResponse {
 		return $this->run(caseId: $id, change: false, step: function () use ($id): JSONResponse {
 			$plan = $this->plans->planOf(caseId: $id);
-			return new JSONResponse(['plan' => $plan, 'recorded' => ($this->plans->recorded(caseId: $id) !== null)]);
+			return new JSONResponse(
+				[
+					'plan' => $plan,
+					'recorded' => ($this->plans->recorded(caseId: $id) !== null),
+					'templateSchema' => $this->plans->templateSchema(),
+				]
+			);
 		});
 	}//end plan()
 
@@ -109,7 +115,14 @@ class WooCollectionController extends Controller {
 				$input[$key] = $this->request->getParam($key);
 			}
 
-			return new JSONResponse(['plan' => $this->plans->record(caseId: $id, input: $input, userId: $user->getUID())]);
+			$plan = $this->plans->record(
+				caseId: $id,
+				input: $input,
+				userId: $user->getUID(),
+				startedFrom: (string)$this->request->getParam('startedFrom', '')
+			);
+
+			return new JSONResponse(['plan' => $plan]);
 		});
 	}//end recordPlan()
 
@@ -262,6 +275,7 @@ class WooCollectionController extends Controller {
 			'document_excluded' => $this->l10n->t('This document is already set aside.'),
 			'document_not_on_case' => $this->l10n->t('This document is not on the case.'),
 			'unknown_reason' => $this->l10n->t('Pick why the document is set aside.'),
+			'template_not_found' => $this->l10n->t('This template is gone, or you may not use it. Pick another one or fill in the plan yourself.'),
 			'query_not_found' => $this->l10n->t('This search is not stored on this case.'),
 			'unknown_source' => $this->l10n->t('This source is not known.'),
 			default => $this->l10n->t('This could not be done.'),

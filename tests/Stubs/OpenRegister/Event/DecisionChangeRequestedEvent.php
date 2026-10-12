@@ -38,6 +38,8 @@ declare(strict_types=1);
 
 namespace OCA\OpenRegister\Event;
 
+use OCA\OpenRegister\Db\Decision;
+use OCA\OpenRegister\Service\Decision\ReviewPolicy;
 use OCP\EventDispatcher\Event;
 
 /**
@@ -55,16 +57,16 @@ class DecisionChangeRequestedEvent extends Event {
 	/**
 	 * Constructor.
 	 *
-	 * @param object               $decision The current decision.
+	 * @param Decision               $decision The current decision.
 	 * @param string               $actorId  The user who wants to change it.
-	 * @param object               $policy   The review policy that applies.
+	 * @param ReviewPolicy           $policy   The review policy that applies.
 	 * @param array<string, mixed> $subject  subjectType, subjectId, fileId, objectId, register, schema, objectUuid.
 	 * @param bool                 $allowed  The answer before any listener: a supervisor of the policy.
 	 */
 	public function __construct(
-		private readonly object $decision,
+		private readonly Decision $decision,
 		private readonly string $actorId,
-		private readonly object $policy,
+		private readonly ReviewPolicy $policy,
 		private readonly array $subject,
 		private bool $allowed,
 	) {
@@ -76,7 +78,7 @@ class DecisionChangeRequestedEvent extends Event {
 	 *
 	 * @return object
 	 */
-	public function getDecision(): object {
+	public function getDecision(): Decision {
 		return $this->decision;
 	}//end getDecision()
 
@@ -94,7 +96,7 @@ class DecisionChangeRequestedEvent extends Event {
 	 *
 	 * @return object
 	 */
-	public function getPolicy(): object {
+	public function getPolicy(): ReviewPolicy {
 		return $this->policy;
 	}//end getPolicy()
 

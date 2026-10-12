@@ -99,12 +99,28 @@ first and seen red. Build every OpenRegister double from the real class signatur
   - **fails today**: `tests/Unit/Woo/WooRequestConfigurationTest.php`
     `testANewRequestCopiesTheLastConfigurationWithoutThePeriod`, `testEveryPresentKeyIsCopied`.
   - done: `case.wooStartFrom` and `lib/Listener/WooStartFromListener.php` on OpenRegister's case creation (the path the case page and `WooRequestIntake` share); `tests/Unit/Woo/WooSearchPlansTest.php` `testANewRequestCopiesTheLastConfigurationWithoutThePeriod`, `testEveryPresentKeyIsCopied`; `tests/Unit/Listener/WooStartFromListenerTest.php`; `WooRequestIntakeTest::testARequestThatStartsFromAnEarlierOneNamesIt`.
-- [ ] 5.2 Named templates: if openregister's `records-saved-templates` is merged on `development`,
+- [x] 5.2 Named templates: if openregister's `records-saved-templates` is merged on `development`,
   offer the `wooRequestConfiguration` templates in the start dialog and test
   `testANewRequestStartsFromANamedTemplate`. If it is not merged, do not build a dossiq template
   store; leave this box open and say so in the PR body (REQ-WRC-005).
   - not done: openregister `records-saved-templates` is not built on development. Per decision 156 its build is queued in lane L9's STATE as the dependency to build next; this box stays open until it lands.
   - dependency built (11 Oct): ConductionNL/openregister#4579 (`/api/record-templates`, tasks 1.1 and 1.2). Once it is on development, the start dialog lists `GET /api/record-templates?schema=<wooRequestConfiguration schema id>` and applies the chosen template's values; test `testANewRequestStartsFromANamedTemplate`.
+  - done (12 Oct, openregister#4579 on development since train #4595): built generic (decision 182).
+    `lib/Service/RecordTemplate/RecordTemplateReader.php` (REQ-RTS-001, `tests/Unit/Service/RecordTemplate/RecordTemplateReaderTest.php`)
+    and `src/components/RecordTemplateSelect.vue` (REQ-RTS-002, `tests/vitest/recordTemplateSelect.spec.js`)
+    serve any schema. The search plan uses them: `WooSearchPlans::startFrom()` takes a template uuid,
+    `record()` takes `startedFrom`, GET `/woo/plan` answers `templateSchema`, and the dialog offers the
+    templates until the plan is recorded. Tests: `WooSearchPlansTest::testANewRequestStartsFromANamedTemplate`,
+    `testAPlanFilledFromATemplateNamesItAndKeepsItsOtherKeys`, `testAPlanNamingATemplateTheCallerCannotUseIsRefused`;
+    `WooCollectionControllerTest::testAPlanFilledFromATemplateIsRecordedWithItsOrigin`;
+    `wooSearchPlanDialog.spec.js` `testANewRequestStartsFromANamedTemplate`.
+  - bound to the real answer, read on openregister development c021ddb06: `{results: [{id, uuid, name,
+    description, register, schema, values, owner, isPublic, sharedWith, @self.access, created, updated}],
+    total}`. There is no "start dialog": a request starts as any case does, so the offer sits in the
+    search plan dialog, where the handler meets the draft plan.
+  - owed (live pass, decision 139): save one template for the configuration schema, open the dialog on a
+    new request and pick it. OpenRegister matches `schema` as text, so check that the id dossiq holds in
+    `woo_request_configuration_schema` is the one the template was saved under.
 
 ## 6. End to end and live
 

@@ -272,7 +272,7 @@ class SetupControllerStatusTest extends TestCase {
 	 * With the payout integration configured and no signing secret, the step
 	 * is outstanding.
 	 *
-	 * DwangsomPaymentCallbackController cannot verify a callback's origin
+	 * PayoutCallbackController cannot verify a callback's origin
 	 * without it, so this is the state the warning exists to catch.
 	 *
 	 * @return void

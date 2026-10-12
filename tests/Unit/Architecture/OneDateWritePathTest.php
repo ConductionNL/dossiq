@@ -70,7 +70,7 @@ class OneDateWritePathTest extends TestCase {
 	 */
 	private const RETIRED_NORMALISERS = [
 		'Service/Doorlooptijd/CaseEnricher.php' => 'normaliseDate',
-		'Controller/DwangsomPaymentCallbackController.php' => 'parseDate',
+		'Controller/PayoutCallbackController.php' => 'parseDate',
 		'Service/WOODeadlineService.php' => 'parseIsoDate',
 		'Service/WorkQueueService.php' => 'parseDateOnly',
 		'Service/TermijnTimerService.php' => 'dateOrNull',
@@ -128,9 +128,9 @@ class OneDateWritePathTest extends TestCase {
 			'Controller/DwangsomController.php',
 			'Service/Money/AccruingAmountSettler.php',
 		],
-		'DwangsomPaymentCallbackController' => [
-			'Controller/DwangsomPaymentCallbackController.php',
-			'Service/DwangsomUitbetalingService.php',
+		'PayoutCallbackController' => [
+			'Controller/PayoutCallbackController.php',
+			'Service/Money/PayoutService.php',
 		],
 	];
 
