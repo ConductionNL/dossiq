@@ -234,6 +234,21 @@ class StufProviderQueryListener implements IEventListener {
 			return null;
 		}
 
+		return self::rows(found: $found);
+	}//end findCases()
+
+	/**
+	 * OpenRegister's result as plain case arrays.
+	 *
+	 * @param mixed $found What findAll returned.
+	 *
+	 * @return array<int, array<string, mixed>>|null The cases, null when the result is unreadable.
+	 */
+	private static function rows(mixed $found): ?array {
+		if (is_array($found) === false) {
+			return null;
+		}
+
 		$rows = ($found['results'] ?? $found);
 		if (is_array($rows) === false) {
 			return null;
@@ -251,7 +266,7 @@ class StufProviderQueryListener implements IEventListener {
 		}
 
 		return $cases;
-	}//end findCases()
+	}//end rows()
 
 	/**
 	 * The zaaksysteem's zaaktype for a case type, from the endpoint's mapping.

@@ -160,7 +160,7 @@ class CrossAppListenerRegistrar {
 		// npsLv01, edcLk01) and asks the owning app through these typed events.
 		// By name, as above; one generic listener answers all four.
 		foreach (['StufCaseQueryEvent', 'StufCaseMutationEvent', 'StufPersonQueryEvent', 'StufDocumentMutationEvent'] as $providerEvent) {
-			$context->registerEventListener('OCA\Integriq\Event\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderQueryListener');
+			$context->registerEventListener('OCA\Integriq\Event\\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderQueryListener');
 		}
 
 		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
