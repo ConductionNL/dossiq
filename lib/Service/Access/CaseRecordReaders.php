@@ -62,11 +62,31 @@ class CaseRecordReaders {
 	public const OWN = 'own';
 
 	/**
+	 * Somebody reads the record and changes nothing on it.
+	 */
+	public const MAY_READ = 'read';
+
+	/**
+	 * Somebody reads the record and may update it.
+	 */
+	public const MAY_UPDATE = 'update';
+
+	/**
+	 * Core's read permission bit.
+	 */
+	public const READ = 1;
+
+	/**
+	 * Core's update permission bit.
+	 */
+	public const UPDATE = 2;
+
+	/**
 	 * One declared record's reader rule, normalised.
 	 *
 	 * @param array<string, mixed> $declared The `reviewerAccess.records` entry.
 	 *
-	 * @return array{readers: string, userField: string, reviewerRowField: string}
+	 * @return array{readers: string, userField: string, reviewerRowField: string, assigneeMay: string, reviewersMay: string}
 	 *
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-reads-it-req-cra-008
 	 */
@@ -84,8 +104,25 @@ class CaseRecordReaders {
 			'readers' => $readers,
 			'userField' => trim((string)($declared['userField'] ?? '')),
 			'reviewerRowField' => trim((string)($declared['reviewerRowField'] ?? '')),
+			'assigneeMay' => $this->mayOf(declared: ($declared['assigneeMay'] ?? '')),
+			'reviewersMay' => $this->mayOf(declared: ($declared['reviewersMay'] ?? '')),
 		];
 	}//end ruleOf()
+
+	/**
+	 * What a reader may do with the record: `update` only when the entry says so in full.
+	 *
+	 * @param mixed $declared The declared value.
+	 *
+	 * @return string `read` or `update`; anything else is `read`, the narrow side.
+	 */
+	private function mayOf(mixed $declared): string {
+		if (is_string($declared) === true && trim($declared) === self::MAY_UPDATE) {
+			return self::MAY_UPDATE;
+		}
+
+		return self::MAY_READ;
+	}//end mayOf()
 
 	/**
 	 * The user ids that must read one record.
@@ -101,19 +138,93 @@ class CaseRecordReaders {
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-reads-it-req-cra-008
 	 */
 	public function readersFor(array $rule, array $record, string $assignee, array $reviewers, bool $hideOthers): array {
-		$readers = [$assignee];
+		$readers = array_merge([$assignee], $this->reviewersReading(rule: $rule, record: $record, reviewers: $reviewers, hideOthers: $hideOthers));
+
+		return $this->cleaned(users: $readers);
+	}//end readersFor()
+
+	/**
+	 * What each reader of one record is granted: core's permission bits per user id.
+	 *
+	 * Everybody readersFor() names gets the read bit. The assignee also gets
+	 * the update bit when the entry says `assigneeMay: update`, and the
+	 * reviewers who read the record when it says `reviewersMay: update`. An
+	 * assignee who is also such a reviewer gets the wider of the two. Delete
+	 * and share are never granted.
+	 *
+	 * @param array<string, string>       $rule       The record's rule, as ruleOf() answers it.
+	 * @param array<string, mixed>        $record     The record row.
+	 * @param string                      $assignee   The case assignee, '' when none.
+	 * @param array<string, list<string>> $reviewers  The reviewers of the case, by the id of the row that names them.
+	 * @param bool                        $hideOthers Whether reviewers are hidden from each other.
+	 *
+	 * @return array<string, int> Permission bits by user id; a numeric user id comes back as an integer key.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-may-update-it-req-cra-010
+	 */
+	public function grantsFor(array $rule, array $record, string $assignee, array $reviewers, bool $hideOthers): array {
+		$grants = [];
+		$reading = $this->cleaned(users: $this->reviewersReading(rule: $rule, record: $record, reviewers: $reviewers, hideOthers: $hideOthers));
+		foreach ($this->cleaned(users: [$assignee]) as $user) {
+			$grants[$user] = $this->bitsOf(may: ($rule['assigneeMay'] ?? self::MAY_READ));
+		}
+
+		foreach ($reading as $user) {
+			$grants[$user] = (($grants[$user] ?? 0) | $this->bitsOf(may: ($rule['reviewersMay'] ?? self::MAY_READ)));
+		}
+
+		return $grants;
+	}//end grantsFor()
+
+	/**
+	 * The permission bits of `read` or `update`.
+	 *
+	 * @param string $may `read` or `update`.
+	 *
+	 * @return int
+	 */
+	private function bitsOf(string $may): int {
+		if ($may === self::MAY_UPDATE) {
+			return (self::READ | self::UPDATE);
+		}
+
+		return self::READ;
+	}//end bitsOf()
+
+	/**
+	 * The reviewers who read one record under its rule, before the assignee is added.
+	 *
+	 * @param array<string, string>       $rule       The record's rule.
+	 * @param array<string, mixed>        $record     The record row.
+	 * @param array<string, list<string>> $reviewers  The reviewers of the case, by row id.
+	 * @param bool                        $hideOthers Whether reviewers are hidden from each other.
+	 *
+	 * @return list<mixed>
+	 */
+	private function reviewersReading(array $rule, array $record, array $reviewers, bool $hideOthers): array {
 		if ($rule['readers'] === self::ALL && $hideOthers === false) {
-			$readers = array_merge($readers, ...array_values($reviewers));
+			return array_merge([], ...array_values($reviewers));
 		}
 
 		if ($rule['readers'] === self::OWN) {
-			$readers = array_merge($readers, $this->namedOn(rule: $rule, record: $record, reviewers: $reviewers));
+			return $this->namedOn(rule: $rule, record: $record, reviewers: $reviewers);
 		}
 
-		$readers = array_map(static fn (mixed $user): string => trim((string)$user), $readers);
+		return [];
+	}//end reviewersReading()
 
-		return array_values(array_unique(array_filter($readers, static fn (string $user): bool => $user !== '')));
-	}//end readersFor()
+	/**
+	 * User ids trimmed, without blanks and doubles.
+	 *
+	 * @param list<mixed> $users The user ids.
+	 *
+	 * @return list<string>
+	 */
+	private function cleaned(array $users): array {
+		$users = array_map(static fn (mixed $user): string => trim((string)$user), $users);
+
+		return array_values(array_unique(array_filter($users, static fn (string $user): bool => $user !== '')));
+	}//end cleaned()
 
 	/**
 	 * The reviewers one record names, directly or through a reviewer row.

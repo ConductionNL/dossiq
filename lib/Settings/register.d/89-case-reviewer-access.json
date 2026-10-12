@@ -52,6 +52,26 @@
                       "title": "Reviewer record field",
                       "description": "Used with own. The field on the record that points at a record naming its reviewers.",
                       "maxLength": 64
+                    },
+                    "assigneeMay": {
+                      "type": "string",
+                      "title": "What the assignee may do",
+                      "description": "Read: the case assignee reads the record. Update: the assignee also changes it.",
+                      "enum": [
+                        "read",
+                        "update"
+                      ],
+                      "default": "read"
+                    },
+                    "reviewersMay": {
+                      "type": "string",
+                      "title": "What reviewers may do",
+                      "description": "Read: the reviewers who read the record only read it. Update: they also change it.",
+                      "enum": [
+                        "read",
+                        "update"
+                      ],
+                      "default": "read"
                     }
                   }
                 }

@@ -29,7 +29,7 @@ behave as before: nothing reconciled, every record changeable as before.
 supervising group and readable by the case `assignee` and every reviewer the `reviewers` sources
 name, except where `hideOthers` withholds the reviewers or the record's own `readers` rule
 (REQ-CRA-008) narrows it. Through `ObjectReadGrants` it SHALL grant
-only core's read bit, never grant the record's owner, revoke every non-inherited user grant it did
+only core's read bit, unless the record's entry says a reader may update it (REQ-CRA-010), never grant the record's owner, revoke every non-inherited user grant it did
 not compute, leave group and inherited grants alone, and answer `{status: reconciled | not-declared
 | unavailable, granted, revoked, refused}`. A refusal by OpenRegister SHALL be counted, never
 reported as success. Without OpenRegister's sharing services it SHALL answer `unavailable` and
@@ -75,6 +75,37 @@ SHALL ask it per record, so narrowing a rule and reconciling revokes the grants 
 - **GIVEN** a record declared `readers: own`, `reviewerRowField: batch`, one row naming batch 2 and one naming no batch
 - **WHEN** the case is reconciled
 - **THEN** the first SHALL be read by `j.devries` and `a.smit`, the second by `j.devries` alone
+
+### Requirement: A case type says per record who on the case may update it (REQ-CRA-010)
+
+Each entry of `reviewerAccess.records` MAY carry `assigneeMay` and `reviewersMay`, each `read` (the
+default) or `update`. With `assigneeMay: update` the case assignee SHALL be granted core's read and
+update bits on the record. With `reviewersMay: update` the reviewers who read the record under its
+`readers` rule (REQ-CRA-008) SHALL be granted both bits; a reviewer who does not read the record
+SHALL gain nothing. An assignee who is also such a reviewer SHALL get the wider of the two. Any
+other value SHALL be read as `read`, the narrow side. Delete and share SHALL never be granted.
+`CaseRecordReaders::grantsFor()` computes the bits per reader and `ObjectReadGrants::reconcile()`
+SHALL make the record's user grants equal them: a grant that carries other permissions than its
+reader is due SHALL be revoked and granted again, so widening or narrowing an entry and reconciling
+reaches the records that already exist. A second run SHALL grant and revoke nothing.
+
+#### Scenario: A reviewer updates the records of their own batch
+@e2e exclude Grant computation over a declaration, covered by tests/Unit/Service/Access/CaseReviewerAccessTest.php testAReviewerMayUpdateTheRecordsOfTheirOwnBatch; the live update is task 6.4 of woo-review-triage (live pass, decision 139).
+- **GIVEN** a case with assignee `j.devries`, batch 2 naming reviewer `a.smit`, and a record declared `readers: own`, `reviewerRowField: batch`, `reviewersMay: update`
+- **WHEN** the case is reconciled
+- **THEN** `a.smit` SHALL hold read and update on the record of batch 2, `j.devries` read only, and nobody delete or share
+
+#### Scenario: A grant that is too narrow is replaced
+@e2e exclude Grant reconciliation against a sharing double, covered by tests/Unit/Service/Access/ObjectReadGrantsTest.php testAGrantWithOtherPermissionsThanDueIsGrantedAgain.
+- **GIVEN** a record on which `a.smit` holds a read grant and the entry now says `reviewersMay: update`
+- **WHEN** the case is reconciled
+- **THEN** the read grant SHALL be revoked and `a.smit` SHALL be granted read and update
+
+#### Scenario: An unknown value grants read only
+@e2e exclude Normalisation of a declaration, covered by tests/Unit/Service/Access/CaseRecordReadersTest.php testAnythingButUpdateInFullIsRead.
+- **GIVEN** an entry with `assigneeMay: write`
+- **WHEN** the case is reconciled
+- **THEN** the assignee SHALL hold a read grant only
 
 ### Requirement: A reader is somebody the register admits (REQ-CRA-009)
 

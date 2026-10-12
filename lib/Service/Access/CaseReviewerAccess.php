@@ -98,7 +98,10 @@ class CaseReviewerAccess {
 	 * @param array<string, mixed> $caseType The effective case type row.
 	 *
 	 * @return array{
-	 *     records: list<array{schemaKey: string, caseField: string, readers: string, userField: string, reviewerRowField: string}>,
+	 *     records: list<array{
+	 *         schemaKey: string, caseField: string, readers: string, userField: string, reviewerRowField: string,
+	 *         assigneeMay: string, reviewersMay: string
+	 *     }>,
 	 *     reviewers: list<array{schemaKey: string, caseField: string, userField: string}>,
 	 *     supervisorGroup: string,
 	 *     hideOthers: bool
@@ -177,7 +180,7 @@ class CaseReviewerAccess {
 				$result = $this->grants->reconcile(
 					schema: $schema,
 					uuid: (string)($row['id'] ?? ($row['uuid'] ?? '')),
-					readers: $this->recordReaders->readersFor(
+					readers: $this->recordReaders->grantsFor(
 						rule: $declared,
 						record: $row,
 						assignee: $assignee,

@@ -72,6 +72,11 @@ class ObjectReadGrants {
 	public const READ = 1;
 
 	/**
+	 * Core's update permission bit: granted only where a case type says a reader may update.
+	 */
+	public const UPDATE = 2;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService    $settingsService The object service and the register.
@@ -101,19 +106,23 @@ class ObjectReadGrants {
 	}//end available()
 
 	/**
-	 * Make one record's user read grants equal the readers, and its owning group the group.
+	 * Make one record's user grants equal the readers, and its owning group the group.
 	 *
 	 * The record's owner is never granted: the private scope already admits
-	 * them. A user grant on the record that is not a reader is revoked.
+	 * them. A user grant on the record that is not a reader is revoked, and so
+	 * is one that carries other permissions than the reader is due: it is
+	 * granted again with the right ones. Only core's read and update bits are
+	 * ever granted, read always.
 	 *
-	 * @param string       $schema  The record's schema slug.
-	 * @param string       $uuid    The record's uuid.
-	 * @param list<string> $readers The user ids that must read it.
-	 * @param string       $group   The owning group.
+	 * @param string             $schema  The record's schema slug.
+	 * @param string             $uuid    The record's uuid.
+	 * @param array<string, int> $readers Core permission bits by user id, as CaseRecordReaders::grantsFor() answers them.
+	 * @param string             $group   The owning group.
 	 *
 	 * @return array{granted: int, revoked: int, refused: int}
 	 *
 	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-case-type-says-per-record-who-on-the-case-may-update-it-req-cra-010
 	 */
 	public function reconcile(string $schema, string $uuid, array $readers, string $group): array {
 		$answer = ['granted' => 0, 'revoked' => 0, 'refused' => 0];
@@ -126,12 +135,15 @@ class ObjectReadGrants {
 
 		try {
 			$this->ownGroup(schema: $schema, object: $object, group: $group);
-			$owner = (string)$object->getOwner();
-			$wanted = array_values(array_diff(array_unique(array_filter($readers)), [$owner]));
+			$wanted = $this->wanted(readers: $readers, owner: (string)$object->getOwner());
 			$held = $this->revokeOthers(sharing: $sharing, object: $object, wanted: $wanted);
 			$answer['revoked'] = $held['revoked'];
-			foreach (array_diff($wanted, $held['kept']) as $user) {
-				$sharing->grant($object, 'user', $user, self::READ);
+			foreach ($wanted as $user => $permissions) {
+				if (in_array((string)$user, $held['kept'], true) === true) {
+					continue;
+				}
+
+				$sharing->grant($object, 'user', (string)$user, $permissions);
 				$answer['granted']++;
 			}
 		} catch (Throwable $e) {
@@ -146,11 +158,33 @@ class ObjectReadGrants {
 	}//end reconcile()
 
 	/**
-	 * Revoke every own user grant that is not wanted; keep one per wanted user.
+	 * The grants the record must carry: read, or read and update, per user, never for its owner.
 	 *
-	 * @param object       $sharing The sharing service.
-	 * @param object       $object  The record entity.
-	 * @param list<string> $wanted  The user ids that must read it.
+	 * @param array<string, int> $readers Permission bits by user id.
+	 * @param string             $owner   The record's owner.
+	 *
+	 * @return array<string, int>
+	 */
+	private function wanted(array $readers, string $owner): array {
+		$wanted = [];
+		foreach ($readers as $user => $permissions) {
+			$user = trim((string)$user);
+			if ($user === '' || $user === $owner) {
+				continue;
+			}
+
+			$wanted[$user] = (self::READ | ((int)$permissions & self::UPDATE));
+		}
+
+		return $wanted;
+	}//end wanted()
+
+	/**
+	 * Revoke every own user grant that is not wanted as it stands; keep one per wanted user.
+	 *
+	 * @param object             $sharing The sharing service.
+	 * @param object             $object  The record entity.
+	 * @param array<string, int> $wanted  The permission bits each reader is due.
 	 *
 	 * @return array{kept: list<string>, revoked: int}
 	 */
@@ -163,7 +197,8 @@ class ObjectReadGrants {
 			}
 
 			$user = (string)($grant['sharedWith'] ?? '');
-			if (in_array($user, $wanted, true) === true && in_array($user, $kept, true) === false) {
+			$bits = ((int)($grant['permissions'] ?? self::READ) & (self::READ | self::UPDATE));
+			if (($wanted[$user] ?? 0) === $bits && in_array($user, $kept, true) === false) {
 				$kept[] = $user;
 				continue;
 			}

@@ -53,7 +53,7 @@ class CaseReviewerAccessTest extends TestCase {
 	/** @var array<string, mixed> */
 	private array $caseType = [];
 
-	/** @var list<array{schema: string, uuid: string, readers: list<string>, group: string}> */
+	/** @var list<array{schema: string, uuid: string, readers: list<string>, grants: array<string, int>, group: string}> */
 	private array $calls = [];
 
 	private bool $available = true;
@@ -87,7 +87,7 @@ class CaseReviewerAccessTest extends TestCase {
 		$grants->method('available')->willReturnCallback(fn (): bool => $this->available);
 		$grants->method('reconcile')->willReturnCallback(
 			function (string $schema, string $uuid, array $readers, string $group): array {
-				$this->calls[] = ['schema' => $schema, 'uuid' => $uuid, 'readers' => $readers, 'group' => $group];
+				$this->calls[] = ['schema' => $schema, 'uuid' => $uuid, 'readers' => array_map('strval', array_keys($readers)), 'grants' => $readers, 'group' => $group];
 				return ['granted' => count($readers), 'revoked' => 0, 'refused' => 0];
 			}
 		);
@@ -197,6 +197,37 @@ class CaseReviewerAccessTest extends TestCase {
 		);
 	}//end testARecordOfABatchIsReadByThatBatchsReviewer()
 
+	public function testAReviewerMayUpdateTheRecordsOfTheirOwnBatch(): void {
+		$this->declare();
+		$this->register->seed('review', 'r-1', ['case' => self::CASE_ID, 'batch' => 'b-2']);
+		$this->register->seed('review', 'r-2', ['case' => self::CASE_ID, 'batch' => 'b-1']);
+		$this->caseType['reviewerAccess']['records'] = [
+			['schemaKey' => 'review_schema_key', 'caseField' => 'case', 'readers' => 'own', 'reviewerRowField' => 'batch', 'reviewersMay' => 'update'],
+		];
+
+		$this->access->reconcile(caseId: self::CASE_ID);
+
+		self::assertSame(
+			['r-1' => ['handler' => 1, 'reviewer2' => 3], 'r-2' => ['handler' => 1, 'reviewer1' => 3]],
+			array_column($this->calls, 'grants', 'uuid'),
+			'read and update for the reviewer of the batch, read for the assignee, nothing for the other reviewer'
+		);
+	}//end testAReviewerMayUpdateTheRecordsOfTheirOwnBatch()
+
+	public function testTheAssigneeMayUpdateARecordWhenItsEntrySaysSo(): void {
+		$this->declare();
+		$this->caseType['reviewerAccess']['records'] = [
+			['schemaKey' => 'batch_schema_key', 'caseField' => 'case', 'readers' => 'own', 'userField' => 'assignee', 'assigneeMay' => 'update'],
+		];
+
+		$this->access->reconcile(caseId: self::CASE_ID);
+
+		self::assertSame(
+			['b-1' => ['handler' => 3, 'reviewer1' => 1], 'b-2' => ['handler' => 3, 'reviewer2' => 1]],
+			array_column($this->calls, 'grants', 'uuid'),
+		);
+	}//end testTheAssigneeMayUpdateARecordWhenItsEntrySaysSo()
+
 	public function testOnlyStaffAndAdministratorsCanBeNamedAsReaders(): void {
 		self::assertTrue($this->access->isAdmittedReader(userId: 'reviewer1'), 'a member of the staff group');
 		self::assertTrue($this->access->isAdmittedReader(userId: 'admin'));
@@ -260,7 +291,7 @@ class CaseReviewerAccessTest extends TestCase {
 		$declaration = $this->access->declarationFor(caseType: ['reviewerAccess' => ['records' => [['schemaKey' => ' k '], ['schemaKey' => '']], 'supervisorGroup' => 'woo-leads']]);
 
 		self::assertSame(
-			[['schemaKey' => 'k', 'caseField' => 'case', 'readers' => 'all', 'userField' => '', 'reviewerRowField' => '']],
+			[['schemaKey' => 'k', 'caseField' => 'case', 'readers' => 'all', 'userField' => '', 'reviewerRowField' => '', 'assigneeMay' => 'read', 'reviewersMay' => 'read']],
 			$declaration['records']
 		);
 		self::assertSame('woo-leads', $declaration['supervisorGroup']);
