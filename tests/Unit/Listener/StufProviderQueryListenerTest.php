@@ -38,6 +38,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Listener\StufProviderQueryListener
+ * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
  */
 class StufProviderQueryListenerTest extends TestCase {
 

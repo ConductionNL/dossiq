@@ -50,6 +50,8 @@ interface BrcObjectServiceStub {
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules
+ * @uses \OCA\Dossiq\Service\Zgw\BrcImmutabilityRules
  */
 class ZgwBrcRulesServiceTest extends TestCase {
 

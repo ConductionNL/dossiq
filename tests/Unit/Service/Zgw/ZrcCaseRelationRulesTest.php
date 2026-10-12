@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\ZgwRulesBase
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\FieldValidator
  */
 class ZrcCaseRelationRulesTest extends TestCase {
 	use MakesZrcRuleGroup;

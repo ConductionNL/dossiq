@@ -45,7 +45,10 @@ const store = {
 }
 
 vi.mock('@conduction/nextcloud-vue', () => ({
-	CnStatsBlock: { name: 'CnStatsBlock', template: '<div class="stat"><slot name="value" /></div>' },
+	CnStatsBlock: {
+		name: 'CnStatsBlock',
+		template: '<div class="stat"><slot name="value" /></div>',
+	},
 	CnKpiGrid: { name: 'CnKpiGrid', template: '<div><slot /></div>' },
 }))
 
@@ -57,11 +60,10 @@ vi.mock('../../src/store/modules/termijnDashboard.js', () => ({
 const TdQuarterlyWidget = (
 	await import('../../src/views/termijn/TdQuarterlyWidget.vue')
 ).default
-const TdKpiWidget = (await import('../../src/views/termijn/TdKpiWidget.vue'))
-	.default
+const TdKpiWidget = (await import('../../src/views/termijn/TdKpiWidget.vue')).default
 
-function euro (n) {
-  return n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
+function euro(n) {
+	return n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
 }
 
 describe('term widgets', () => {

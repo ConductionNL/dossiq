@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\FieldValidator
  */
 class ZrcCaseTypeDefaultsTest extends TestCase {
 	use MakesZrcRuleGroup;

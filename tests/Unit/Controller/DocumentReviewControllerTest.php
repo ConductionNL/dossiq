@@ -58,6 +58,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
+ * @uses \OCA\Dossiq\Review\BatchSelection
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  */
 class DocumentReviewControllerTest extends TestCase {
 

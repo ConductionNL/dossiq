@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Review\TriageConditions
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class TriageConditionsTest extends TestCase {
 

@@ -52,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-rules-mark-documents-without-opening-them-visibly-req-wrt-002
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class TriageRuleControllerTest extends TestCase {
 

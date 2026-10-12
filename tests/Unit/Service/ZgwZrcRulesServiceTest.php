@@ -57,6 +57,9 @@ interface ObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Zgw\ZrcCaseFieldRules
+ * @uses \OCA\Dossiq\Service\Zgw\ZrcCaseRelationRules
+ * @uses \OCA\Dossiq\Service\Zgw\ZrcCaseTypeDefaults
  */
 class ZgwZrcRulesServiceTest extends TestCase {
 

@@ -44,6 +44,9 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard
+ * @uses \OCA\Dossiq\Service\Transitions\GuardRegistry
+ * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class DelegatedAuthorityGuardTest extends TestCase {
 
