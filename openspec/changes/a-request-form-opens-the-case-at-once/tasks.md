@@ -19,6 +19,9 @@
 
 - [x] 2.1 Amend D-5 in `intake-says-when-the-term-starts/design.md` (done in this change's pull request)
 - [ ] 2.2 Close task 2.1 of `intake-says-when-the-term-starts` once portaliq's `submit-creates-the-case-directly` renders the four fields from the response; run its e2e scenario "the citizen is told on screen"
+  - [x] 2.2a Checked on portaliq development (7b7ae1fd, its task 2.4): the confirmation page shows the case number and, from the submit response, the received moment, the term start and the deadline (`src/site/components/forms/confirmation.js` `momentLines`; the mail in `lib/Service/Intake/FormConfirmationMailer.php`). Task 2.1 of `intake-says-when-the-term-starts` is updated with this
+  - [ ] 2.2b The sentence about the first working day is not on that screen. The scenario asks for it, the response does not carry `receivedOutsideWorkingHours` (it is not a confirmation field), and `momentLines` has no line for it. Either portaliq derives it (the term starts on a later day than the request came in) or the case schema marks the field as a confirmation field; question Q-dossiq-d179-2
+  - [ ] 2.2c (live pass, decision 139) Run `tests/e2e/intake-says-when-the-term-starts.spec.ts`, scenario "the citizen is told on screen"
 
 ## 3. Bezwaar and klacht
 
