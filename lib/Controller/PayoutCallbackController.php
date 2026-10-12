@@ -48,7 +48,6 @@ use RuntimeException;
 /**
  * Public webhook endpoint for payout callbacks.
  *
- * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
  */
@@ -141,6 +140,8 @@ class PayoutCallbackController extends Controller {
 	 * payload is read from php://input. Protected so a test can supply it.
 	 *
 	 * @return string The raw body.
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-003
 	 */
 	protected function rawBody(): string {
 		return (string)file_get_contents('php://input');

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+ * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,7 +32,7 @@ use OCP\EventDispatcher\Event;
 /**
  * The cancel command, answered in place.
  *
- * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+ * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
  */
 final class PayableCancelRequestedEvent extends Event {
 
@@ -76,7 +76,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return string The app id.
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function getSourceApp(): string {
 		return trim($this->sourceApp);
@@ -87,7 +87,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return string The reference.
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function getReference(): string {
 		return trim($this->reference);
@@ -98,7 +98,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return string The reason.
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function getReason(): string {
 		return trim($this->reason);
@@ -112,7 +112,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function accept(string $payableId, string $state): void {
 		$this->error = null;
@@ -130,7 +130,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function refuse(string $error): void {
 		$this->result = null;
@@ -142,7 +142,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return bool True when accepted.
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function isHandled(): bool {
 		return $this->result !== null;
@@ -153,7 +153,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return array<string, mixed>|null The answer, or null when not accepted.
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function getResult(): ?array {
 		return $this->result;
@@ -164,7 +164,7 @@ final class PayableCancelRequestedEvent extends Event {
 	 *
 	 * @return string|null The reason, or null when not refused.
 	 *
-	 * @spec openspec/changes/inbound-payable-from-another-app/specs/inbound-payables/spec.md (REQ-IPY-005)
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-002
 	 */
 	public function getError(): ?string {
 		return $this->error;

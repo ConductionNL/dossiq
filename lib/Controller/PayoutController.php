@@ -40,7 +40,6 @@ use Throwable;
 /**
  * REST surface that prepares a payout.
  *
- * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
  */
@@ -116,6 +115,8 @@ class PayoutController extends Controller {
 	 * payload is read from php://input. Protected so a test can supply it.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-001
 	 */
 	protected function jsonBody(): array {
 		$body = json_decode((string)file_get_contents('php://input'), true);
