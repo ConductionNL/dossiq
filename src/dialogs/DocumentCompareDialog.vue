@@ -15,7 +15,7 @@
   Without filinq the dialog says the compare view needs filinq and offers the
   two files as links. It never draws something that looks like a comparison.
 
-  @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+  @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 -->
 <template>
 	<NcDialog
@@ -120,7 +120,7 @@ export default {
 		 * Both sides, the original first, with the URL that answers its bytes.
 		 *
 		 * @return {Array<object>} `{ key, label, fileName, mimeType, url }`.
-		 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+		 * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 		 */
 		sides() {
 			const labels = {
@@ -141,7 +141,7 @@ export default {
 	 * Read the item, then mount filinq's view when it is there.
 	 *
 	 * @return {Promise<void>} Nothing.
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+	 * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	async mounted() {
 		try {
@@ -185,7 +185,7 @@ export default {
 	 * Remove filinq's view with the dialog.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
+	 * @spec openspec/specs/document-compare/spec.md#requirement-an-original-and-the-file-that-went-out-are-compared-side-by-side-req-dcp-001
 	 */
 	beforeUnmount() {
 		this.handle?.unmount()

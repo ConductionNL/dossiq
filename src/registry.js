@@ -107,7 +107,7 @@ import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslatio
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // The items of a frozen file set with a per-item document compare, configured per case type (decision 182).
-// @spec openspec/changes/woo-delivered-set-is-a-record/specs/document-compare/spec.md
+// @spec openspec/specs/document-compare/spec.md
 import FileSetItems from './components/fileSet/FileSetItems.vue'
 // Initiator (indiener) selection + display — brp-kvk-register-sets.
 // @spec openspec/specs/initiator-selection/spec.md

@@ -87,14 +87,14 @@ first and seen red.
 
 ## 6. Verify and deliver
 
-- [ ] 6.1 `TMPDIR` set to a sibling directory beside the clone.
-- [ ] 6.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on
+- [x] 6.1 (done: TMPDIR beside the clone in every L10 round) `TMPDIR` set to a sibling directory beside the clone.
+- [x] 6.2 (done: targeted runs per round, see #3578, #3598, #3631) While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on
   the touched classes and `npx vitest run` on the touched specs. Judge PHPUnit by the `Tests:` line.
-- [ ] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 6.3 (done once per PR: check:strict and hydra gates in the bodies of #3578, #3598, #3631; all reds inherited) Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
-- [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
+- [x] 6.4 (not measured: no coverage driver; every new class has its own unit test per the coverage guard, listed in #3578 and #3631) Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
+- [x] 6.5 (done: #3578, #3598, #3631 merged on development 11 Oct; deps openregister#4549, filinq#1412, portaliq#1477) One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 19.15 and 19.16 then read `yes` (build); 19.16 only with filinq
   installed. `production` only with a store release.
