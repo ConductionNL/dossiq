@@ -194,6 +194,15 @@ class CaseReviewerAccessTest extends TestCase {
 		);
 	}//end testARecordOfABatchIsReadByThatBatchsReviewer()
 
+	public function testEveryRecordOfTheCaseIsReadWhoeverAsks(): void {
+		$this->register->hiddenFromCaller = ['batch'];
+
+		$rows = $this->access->recordsOf(schemaKey: 'batch_schema_key', caseField: 'case', caseId: self::CASE_ID);
+
+		self::assertSame(['reviewer1', 'reviewer2'], array_column($rows, 'assignee'));
+		self::assertSame([], $this->access->recordsOf(schemaKey: 'unknown_key', caseField: 'case', caseId: self::CASE_ID));
+	}//end testEveryRecordOfTheCaseIsReadWhoeverAsks()
+
 	public function testACaseTypeThatDeclaresNothingIsLeftAlone(): void {
 		$answer = $this->access->reconcile(caseId: self::CASE_ID);
 

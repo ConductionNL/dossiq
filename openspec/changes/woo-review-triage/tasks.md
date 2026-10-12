@@ -222,6 +222,11 @@ record. OpenRegister refuses a parent that references another schema
     (red against the old class, `dq-l8-logs/r6/red-readers.log`). An administrator runs
     `POST /api/cases/reviewer-access/reconcile` once after the upgrade: it revokes the wider grants existing
     batches and rules carry. Still open: (b) and (c).
+    Two rules hold for the case whoever asks, so they no longer read the caller's slice of the private
+    records: a document sits in one open batch (`ReviewBatches::taken()`), and applying the rules applies every
+    rule of the case (`TriageRules::apply()` through `CaseReviewerAccess::recordsOf()`). Listings stay under the
+    caller's access. `ReviewBatchesTest::testABatchTheCallerCannotReadStillHoldsItsDocuments`,
+    `TriageRulesTest::testApplyRunsRulesTheCallerCannotRead` (red first, `dq-l8-logs/r6/red-unscoped.log`).
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.

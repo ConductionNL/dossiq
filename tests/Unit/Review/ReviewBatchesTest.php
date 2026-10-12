@@ -241,6 +241,22 @@ class ReviewBatchesTest extends TestCase {
 	}//end testADocumentCannotBeInTwoOpenBatches()
 
 	/**
+	 * A batch the caller holds no grant on still holds its documents: the rule is the case's, not the caller's view.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function testABatchTheCallerCannotReadStillHoldsItsDocuments(): void {
+		$batches = $this->batches();
+		$batches->create(caseId: 'case-x', name: 'Mail 2025', assignee: 'reviewer-a', documents: ['doc-3'], userId: 'handler-h');
+		$this->store->hiddenFromCaller = ['reviewBatch'];
+
+		$this->assertSame([], $batches->forCase(caseId: 'case-x', assessed: []), 'the listing is what the caller may read');
+		$this->assertSame(['doc-3' => 'Mail 2025'], $batches->taken(caseId: 'case-x', documents: ['doc-3']));
+	}//end testABatchTheCallerCannotReadStillHoldsItsDocuments()
+
+	/**
 	 * A closed batch lets its documents go into a new one.
 	 *
 	 * @return void

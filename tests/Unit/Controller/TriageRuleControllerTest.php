@@ -102,6 +102,14 @@ class TriageRuleControllerTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
+		// Every record of the case regardless of the caller, as CaseRecordLookup reads it.
+		$access = $this->createMock(CaseReviewerAccess::class);
+		$access->method('recordsOf')->willReturnCallback(
+			fn (string $schemaKey, string $caseField, string $caseId): array => array_values(
+				array_filter($this->store->all(schema: 'triageRule'), static fn (array $row): bool => ($row[$caseField] ?? '') === $caseId)
+			)
+		);
+
 		return new TriageRuleController(
 			request: $request,
 			rules: new TriageRules(
@@ -115,7 +123,7 @@ class TriageRuleControllerTest extends TestCase {
 					logger: $logger,
 				),
 				conditions: new TriageConditions(),
-				reviewerAccess: $this->createMock(CaseReviewerAccess::class),
+				reviewerAccess: $access,
 				logger: $logger,
 			),
 			caseAccessGuard: $guard,
