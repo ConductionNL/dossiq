@@ -255,10 +255,23 @@ record. OpenRegister refuses a parent that references another schema
     `TriageRulesTest::testApplySharesTheReviewsItCreates` and `testApplyHonoursReviewsTheCallerCannotRead`,
     `DocumentReviewControllerTest::testAReviewTheCallerCannotReadIsNotMadeTwiceAndStillCounts`, and over the
     shipped register `tests/Unit/Settings/CaseTypePrivateRecordAccessTest.php` (a colleague off the case is
-    refused, the assignee still reads and updates; red controls in `dq-l8-logs/r7/`). An administrator runs
-    `POST /api/cases/reviewer-access/reconcile` once after the upgrade: until then the reviews the repair step
-    made have no owner and no grants, so only an administrator reads or changes them. Still open of (c):
+    refused, the assignee still reads and updates; red controls in `dq-l8-logs/r7/`). The reviews the repair
+    step made have no owner and no grants; since round 8 the upgrade itself reconciles them (see below), and
+    `POST /api/cases/reviewer-access/reconcile` is the fallback. Still open of (c):
     the gather add, the search plan save, the query record and the exclusion route, with their three schemas.
+  - Round 8, the reconcile runs on upgrade (case-reviewer-access REQ-CRA-012). The repair step
+    `lib/Repair/ReconcileCaseRecordGrants.php`, last in `post-migration`, runs
+    `lib/Service/Access/CaseRecordGrantsBackfill.php`: every case of every declaring case type, a page at a
+    time, as an administrator account (OpenRegister writes a grant only for a signed-in owner, owning group
+    member or administrator). The administrator route runs the same walk and is now the fallback.
+    `CaseRecordLookup::rowsOf()` reads every page of a case's records instead of the first thousand. What the
+    step could not do is a warning in the upgrade output and an error in the log. Tests:
+    `ReconcileCaseRecordGrantsTest` (the step is built from the name in `appinfo/info.xml` and run with nobody
+    signed in over the shipped register), `CaseRecordGrantsBackfillTest`, `CaseRecordLookupTest`.
+    The private scope rule the access tests decide with is held to OpenRegister's own:
+    `tests/Unit/Support/PrivateScopeVerdictDriftTest.php` runs the real `PermissionHandler::privateScopeVerdict()`
+    from the sibling checkout over 5,184 cases and fails on the first one `ShippedPrivateRecords::privateVerdict()`
+    answers differently.
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
