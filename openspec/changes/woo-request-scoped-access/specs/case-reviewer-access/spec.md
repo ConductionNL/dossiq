@@ -195,10 +195,20 @@ The walk (`CaseRecordGrantsBackfill::run()`) SHALL ask `CaseReviewerAccess::reco
 SHALL read the cases a page at a time, and SHALL read every record of a case, however many. It
 SHALL be safe to run again: a record that already carries the right grants is left alone.
 
+The walk SHALL read the case types itself, a page at a time and regardless of the caller, and
+SHALL NOT use the shared case type listing: that listing answers one page and answers nothing
+when its read fails, and a walk over nothing would report every case reconciled. A case type read
+that fails SHALL stop the run as an error, said like every other unfinished run.
+
 OpenRegister writes a grant only for a signed-in owner, owning group member or administrator, and
 an upgrade has nobody signed in. The walk SHALL run as the signed-in administrator when there is
 one, and otherwise as the first enabled account of the `admin` group in order of user id, SHALL
 put the session back when it ends, and SHALL name that account in its answer.
+
+Decision 222 (12 Oct) replaces that administrator account with dossiq's background service
+account. It is not built: OpenRegister has no right that lets an account that is neither owner
+nor administrator write a grant (Q-dossiq-L8-4). Until OpenRegister has one, this paragraph
+describes what runs.
 
 The step SHALL never throw and SHALL never report more than it did. A case that threw, a record
 OpenRegister refused, a case type with more cases than one run walks (50,000), no enabled
@@ -221,6 +231,12 @@ as an error in the log, with the counts, up to twenty case ids and the route of 
 - **GIVEN** a case whose reconcile throws
 - **WHEN** the step runs
 - **THEN** the other cases SHALL still be reconciled, and the output SHALL be a warning that names the case, never a success
+
+#### Scenario: The case types could not be read
+@e2e exclude Failure path over a store double, covered by tests/Unit/Service/Access/CaseRecordGrantsBackfillTest.php testACaseTypeReadThatFailsIsNotARunOverNoCases and testACaseTypeBeyondTheFirstPageOfCaseTypesIsStillWalked.
+- **GIVEN** a store that fails the read of the case types
+- **WHEN** the step runs
+- **THEN** the output SHALL be a warning that the reconcile did not finish, never "0 cases reconciled", and the session SHALL be put back
 
 ### Requirement: A case with private records changes hands only through a supervisor (REQ-CRA-005)
 

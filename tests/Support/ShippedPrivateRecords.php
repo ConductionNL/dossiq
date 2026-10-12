@@ -298,6 +298,11 @@ class ShippedPrivateRecords {
 		$caseTypes = (fn (): object => $this->getMockBuilder(CaseTypeStore::class)->setConstructorArgs([$settings])->onlyMethods(['everyCaseType'])->getMock())
 			->call($this->test);
 		$caseTypes->method('everyCaseType')->willReturn([$caseType, ['id' => 'a-case-type-that-keeps-nothing-private']]);
+		// The upgrade's walk reads the case types from the store itself, not from that listing.
+		if (($config['case_type_schema'] ?? '') !== '' && (string)($caseType['id'] ?? '') !== '') {
+			$this->rows->seed($config['case_type_schema'], (string)$caseType['id'], $caseType);
+			$this->rows->seed($config['case_type_schema'], 'a-case-type-that-keeps-nothing-private', []);
+		}
 
 		$groupManager = $this->mock(IGroupManager::class);
 		$groupManager->method('isAdmin')->willReturnCallback(fn (string $uid): bool => in_array('admin', ($this->groups[$uid] ?? []), true));

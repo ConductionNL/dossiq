@@ -85,11 +85,13 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturnCallback(fn (): object => $this->objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? $default
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case', 'case_type_schema' => 'caseType'][$key] ?? $default
 		);
 
+		// The real store, and its shared listing must not be what the walk reads:
+		// that listing answers one page and answers nothing when its read fails.
 		$caseTypes = $this->getMockBuilder(CaseTypeStore::class)->setConstructorArgs([$settings])->onlyMethods(['everyCaseType'])->getMock();
-		$caseTypes->method('everyCaseType')->willReturn([['id' => 'type-b'], ['id' => 'type-open'], ['id' => 'type-a'], ['name' => 'a row without an id']]);
+		$caseTypes->expects(self::never())->method('everyCaseType');
 		$resolver = $this->createMock(CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturnCallback(static fn (string $id): array => ['id' => $id]);
 
@@ -133,6 +135,9 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 			logger: $this->logger,
 		);
 
+		$this->register->seed('caseType', 'type-b', ['title' => 'b']);
+		$this->register->seed('caseType', 'type-open', ['title' => 'keeps nothing private']);
+		$this->register->seed('caseType', 'type-a', ['title' => 'a']);
 		$this->register->seed('case', 'a-1', ['caseType' => 'type-a']);
 		$this->register->seed('case', 'b-1', ['caseType' => 'type-b']);
 		$this->register->seed('case', 'open-1', ['caseType' => 'type-open']);
@@ -231,6 +236,44 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 		self::assertSame('', $this->signedIn);
 	}//end testWithoutSharingItStopsAtOnceAndIsNotASuccess()
 
+	public function testACaseTypeBeyondTheFirstPageOfCaseTypesIsStillWalked(): void {
+		for ($n = 0; $n < 1200; $n++) {
+			$this->register->seed('caseType', 'filler-' . $n, ['title' => 'a case type with no cases']);
+		}
+
+		$this->register->seed('caseType', 'type-z', ['title' => 'the last one read']);
+		$this->register->seed('case', 'z-1', ['caseType' => 'type-z']);
+
+		$answer = $this->backfill->run();
+
+		self::assertContains('z-1', array_column($this->asked, 'case'), 'a case type on the second page of case types is not skipped');
+		self::assertSame('reconciled', $answer['status']);
+	}//end testACaseTypeBeyondTheFirstPageOfCaseTypesIsStillWalked()
+
+	public function testACaseTypeReadThatFailsIsNotARunOverNoCases(): void {
+		$this->objectService = new class {
+
+			/**
+			 * @param array<string, mixed> $filters The filters.
+			 *
+			 * @return never
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): never {
+				throw new RuntimeException('the store is down');
+			}//end searchObjectsBySlug()
+		};
+
+		try {
+			$this->backfill->run();
+			self::fail('a run that could not read the case types answered as if it had none');
+		} catch (RuntimeException $e) {
+			self::assertSame('the store is down', $e->getMessage());
+		}
+
+		self::assertSame([], $this->asked);
+		self::assertSame('', $this->signedIn, 'the session is put back');
+	}//end testACaseTypeReadThatFailsIsNotARunOverNoCases()
+
 	public function testACaseTypeWithMoreCasesThanOneRunWalksIsNamedUnfinished(): void {
 		// A store that always answers a full page: the walk can never see the end.
 		$this->objectService = new class {
@@ -241,6 +284,10 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 			 * @return list<array<string, mixed>>
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				if ($schema === 'caseType') {
+					return [['id' => 'type-b'], ['id' => 'type-open'], ['id' => 'type-a']];
+				}
+
 				return array_fill(0, (int)$filters['_limit'], ['id' => 'case-of-' . $filters['caseType'], 'caseType' => $filters['caseType']]);
 			}//end searchObjectsBySlug()
 		};
