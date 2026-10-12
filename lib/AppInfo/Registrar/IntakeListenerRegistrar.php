@@ -30,12 +30,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\WooStartFromListener;
+use OCA\Dossiq\Listener\CaseTypeBoundFormsListener;
 use OCA\Dossiq\Listener\IntakeFormBindingListener;
+use OCA\Dossiq\Listener\IntakeFormDependentsListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
+use OCA\Dossiq\Service\Intake\BoundFormsCheck;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -152,6 +155,23 @@ class IntakeListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectUpdatingEvent::class,
 			listener: IntakeFormBindingListener::class
+		);
+
+		// The published forms of other apps that open a case of this type are
+		// judged on the same saves: refused before the save where the owning
+		// app asks for that, unpublished after it otherwise.
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $caseTypeSave) {
+			$context->registerEventListener(
+				event: $caseTypeSave,
+				listener: CaseTypeBoundFormsListener::class
+			);
+		}
+
+		// OpenRegister asks which forms write into a schema before it changes;
+		// dossiq answers for its own Forms bindings on the case schema.
+		$context->registerEventListener(
+			event: BoundFormsCheck::DEPENDENTS_EVENT,
+			listener: IntakeFormDependentsListener::class
 		);
 
 		// The receipt and start dates are SET BEFORE THE CASE IS STORED, above

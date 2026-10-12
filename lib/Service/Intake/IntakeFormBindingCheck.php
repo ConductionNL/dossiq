@@ -137,6 +137,54 @@ class IntakeFormBindingCheck {
 	}//end findingsFor()
 
 	/**
+	 * Every problem with a mapping that opens a case of this type, whichever app owns the form.
+	 *
+	 * The mapping is judged against the case schema with OpenRegister's
+	 * validator, and against what the case type asks for before a case
+	 * exists. Without a validator or a readable case schema only the second
+	 * is judged, and the first is logged as not done.
+	 *
+	 * @param array<string, mixed> $caseType The case type as it is being saved.
+	 * @param array<string, mixed> $mapping  The form's mapping: `fields` and `fixed`.
+	 * @param string|null          $audience `public` or `authenticated` for a form that is not internal.
+	 *
+	 * @return array<int, array<string, mixed>> The findings: `property`, `code`, `message` and, for an answer, `field`.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
+	 */
+	public function findingsOfMapping(array $caseType, array $mapping, ?string $audience = null): array {
+		$mapping = [
+			'fields' => array_values(array_filter((array)($mapping['fields'] ?? []), 'is_array')),
+			'fixed' => (array)($mapping['fixed'] ?? []),
+		];
+
+		$found = [];
+		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
+		$schema = $this->caseSchema();
+		if ($validator === null || $schema === null || method_exists($validator, 'validate') === false) {
+			$this->logger->warning(
+				'Dossiq intake: a form bound to a case type was judged against the intake requirements only, '
+					. 'because the case schema or OpenRegister\'s validator could not be read'
+			);
+		} else {
+			$options = [];
+			if ($audience !== null) {
+				$options['audience'] = $audience;
+			}
+
+			$found = $validator->validate(mapping: $mapping, schema: $schema, options: $options);
+			if (is_array($found) === false) {
+				$found = [];
+			}
+		}
+
+		return array_merge(
+			array_values(array_filter($found, 'is_array')),
+			$this->unmetRequirements(caseType: $caseType, mapping: $mapping)
+		);
+	}//end findingsOfMapping()
+
+	/**
 	 * What a published case type asks for before a case exists and the form does not fill.
 	 *
 	 * The case schema does not know this list: it is the case type's own
@@ -206,8 +254,10 @@ class IntakeFormBindingCheck {
 	 * The live case schema, as OpenRegister holds it.
 	 *
 	 * @return object|null The schema, or null when it cannot be read.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
 	 */
-	private function caseSchema(): ?object {
+	public function caseSchema(): ?object {
 		$schemaId = $this->settingsService->getConfigValue('case_schema');
 		$mapper = $this->settingsService->getOpenRegisterClass(self::SCHEMA_MAPPER);
 		if ($schemaId === '' || $mapper === null || method_exists($mapper, 'find') === false) {
