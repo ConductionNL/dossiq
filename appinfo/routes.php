@@ -913,7 +913,6 @@ $extra = [
         // and became unreachable the moment it went, which is the dead-endpoint
         // shape this programme already retired once on the AVG page.
     ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
-    ['name' => 'mandaat#mandaatCheck',            'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
         // GIS map-layer CRUD removed (issue #112): base-layer config is now
         // declarative on OpenRegister's maps-overview surface (PDOK WMTS default,
