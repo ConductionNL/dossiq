@@ -11,7 +11,7 @@ and seen red; put the failing line in the PR body.
 
 ## 1. The entries
 
-- [ ] 1.1 Add `lib/Woo/WithheldEntries.php` with `build(string $caseId): array`: one
+- [x] 1.1 (done, generic per decision 182: `lib/Service/Publication/WithheldEntries.php` `fromAssessments()`, the Woo classification and grounds field passed by WooPublicationService; position = documentRef order, from 1, because `WooDecisionDrafts` does not exist (REQ-PWL-001); tests `tests/Unit/Service/Publication/WithheldEntriesTest.php`, all four named plus `testGroundsAreReducedToNonEmptyCodes`) Add `lib/Woo/WithheldEntries.php` with `build(string $caseId): array`: one
   `{position, grounds}` per `niet_openbaar` assessment, `position` from `WooDecisionDrafts::wooDecision()`
   (REQ-WRW-001).
   - unit `tests/Unit/Woo/WithheldEntriesTest.php`: `testOnlyWithheldDocumentsAreListed`,
@@ -20,7 +20,7 @@ and seen red; put the failing line in the PR body.
 
 ## 2. The call
 
-- [ ] 2.1 Call `record()` from `WooPublicationService::publish()` after the publication is created or
+- [x] 2.1 (done: `Service/Publication/WithheldListRecorder` resolves the door only when the class exists and the container builds it; tests in `WooPublicationServiceTest` red on development first (dq-l10-logs/r4/red-withheld.log, 5 red), `WOOAssessmentControllerTest::testPublishDecisionAnswersTheWithheldRecord`) Call `record()` from `WooPublicationService::publish()` after the publication is created or
   updated, resolving `WithheldDocuments` from the container only when opencatalogi is enabled and
   the class exists; answer `withheldRecord`; never roll back the publication (REQ-WRW-001,
   REQ-WRW-002).
@@ -31,9 +31,9 @@ and seen red; put the failing line in the PR body.
   - App absent: `testWithoutOpencatalogiRecordIsNeverCalled`.
   - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
     `testPublishDecisionAnswersTheWithheldRecord`.
-- [ ] 2.2 Call `record($publicationId, [], 'dossiq')` from `withdraw()` (REQ-WRW-001).
+- [x] 2.2 (done: `withdraw()` records `[]`; `testWithdrawClearsTheWithheldList` red first) Call `record($publicationId, [], 'dossiq')` from `withdraw()` (REQ-WRW-001).
   - **fails today**: `WooPublicationServiceTest::testWithdrawClearsTheWithheldList`.
-- [ ] 2.3 Contract test `tests/Unit/Woo/WithheldDocumentsContractTest.php`
+- [x] 2.3 (done: `tests/Unit/Service/Publication/WithheldDocumentsContractTest.php`, literals from opencatalogi development @9063e7ea6 with their lines) Contract test `tests/Unit/Woo/WithheldDocumentsContractTest.php`
   `testTheCallMatchesOpencatalogisSignature`: the method name, the three parameters, the entry keys
   and the answer keys as literals copied from opencatalogi's class with its source line, built on the
   real class when it is autoloadable and on that signature otherwise (REQ-WRW-001). Name
@@ -41,7 +41,7 @@ and seen red; put the failing line in the PR body.
 
 ## 3. The handler sees the outcome
 
-- [ ] 3.1 The case's Woo publication section shows a `withheldRecord` refusal or `not-recorded` in one
+- [x] 3.1 (done: the outcome is the case field `wooWithheldNote` (fragment 82), one sentence from `WithheldListRecorder::describe()`, shown in the Woo publication section of the Data tab; the two named tests are PHP, `WithheldListRecorderTest::testARefusedWithheldRecordIsShown` and `::testNotRecordedSaysWhy`, because the section is the generic data widget and the sentence is written server-side) The case's Woo publication section shows a `withheldRecord` refusal or `not-recorded` in one
   sentence, with the positions and codes refused (REQ-WRW-001, REQ-WRW-002).
   - vitest on that component: `testARefusedWithheldRecordIsShown`, `testNotRecordedSaysWhy`.
 
@@ -54,8 +54,8 @@ and seen red; put the failing line in the PR body.
 
 ## 5. Verify and deliver
 
-- [ ] 5.1 `TMPDIR` set to a sibling directory beside the clone, never inside it.
-- [ ] 5.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
+- [x] 5.1 (done) `TMPDIR` set to a sibling directory beside the clone, never inside it.
+- [x] 5.2 (done, see the PR body) While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
   touched classes and `npx vitest run` on the touched specs. Judge PHPUnit by the `Tests:` line.
 - [ ] 5.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
