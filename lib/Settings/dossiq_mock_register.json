@@ -11228,10 +11228,14 @@
               "properties": {
                 "upTo": {
                   "type": "integer",
+                  "title": "Up to day",
+                  "description": "Last day of the accrual this band covers; leave it out on the final band.",
                   "minimum": 1
                 },
                 "rate": {
                   "type": "integer",
+                  "title": "Daily rate",
+                  "description": "Amount added per day inside this band, in EUR cents.",
                   "minimum": 0
                 }
               },
