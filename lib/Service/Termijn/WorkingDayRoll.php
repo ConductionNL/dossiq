@@ -65,6 +65,7 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -160,10 +161,12 @@ class WorkingDayRoll {
 	 *
 	 * @param SettingsService      $settings The by-name lookup into OpenRegister.
 	 * @param LoggerInterface|null $logger   Where an unavailable calendar is noted.
+	 * @param DayCount $days Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settings,
 		private readonly ?LoggerInterface $logger = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 
 	}//end __construct()
@@ -367,7 +370,7 @@ class WorkingDayRoll {
 	 */
 	public function daysBetween(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
 		if ($mode !== self::MODE_WORKING_DAYS) {
-			return (int)$from->diff($to)->days;
+			return $this->days->between(from: $from, to: $to);
 		}
 
 		if ($this->isAvailable() === false) {

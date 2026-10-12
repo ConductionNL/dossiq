@@ -39,6 +39,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Term\TermCarryOver;
 use OCP\App\IAppManager;
 use Throwable;
@@ -65,6 +66,7 @@ class CaseRecordImport {
 	 * @param RecordCaseMapping $mapping         One record onto a case payload.
 	 * @param TermCarryOver     $term            The term carried onto the written case.
 	 * @param RecordImportStore $store           Reads the sources and cases, writes the case and the stamp.
+	 * @param DayCount          $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -72,6 +74,7 @@ class CaseRecordImport {
 		private readonly RecordCaseMapping $mapping,
 		private readonly TermCarryOver $term,
 		private readonly RecordImportStore $store,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -314,7 +317,7 @@ class CaseRecordImport {
 
 		try {
 			$from = new DateTimeImmutable('2000-01-01');
-			return (int)$from->diff($from->add(new DateInterval($period)))->days;
+			return $this->days->between(from: $from, to: $from->add(new DateInterval($period)));
 		} catch (Throwable) {
 			return 0;
 		}

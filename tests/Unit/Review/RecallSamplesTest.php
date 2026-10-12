@@ -230,6 +230,29 @@ class RecallSamplesTest extends TestCase {
 	}//end testTheLastJudgementEstimatesAtTheRulesConfidence()
 
 	/**
+	 * A sample for a reviewer the register does not admit is refused before the sample is stored.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function testASampleForAReviewerOutsideTheStaffGroupStoresNothing(): void {
+		$refusal = new RefusedException(rule: 'review-batch-assignee-no-access', sentence: 'Not in the staff group.', status: 422);
+		$samples = $this->samples();
+		$this->batches->method('assertReviewerAdmitted')->with('reviewer-outside')->willThrowException($refusal);
+		$this->batches->expects($this->never())->method('createSampleBatch');
+
+		try {
+			$samples->draw(caseId: 'case-x', size: 1, assignee: 'reviewer-outside', userId: 'handler-h');
+			$this->fail('The sample must be refused.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-batch-assignee-no-access', $e->getRule());
+		}
+
+		$this->assertSame([], $this->store->all(schema: 'recallSample'), 'no sample is stored');
+	}//end testASampleForAReviewerOutsideTheStaffGroupStoresNothing()
+
+	/**
 	 * Refusals: a size larger than the null set, a document not in the sample, a closed sample, an unknown sample.
 	 *
 	 * @return void

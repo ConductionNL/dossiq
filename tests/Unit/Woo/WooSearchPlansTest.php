@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
+use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
@@ -43,10 +44,42 @@ class WooSearchPlansTest extends TestCase {
 
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
 	private const EARLIER = '55555555-5555-4555-8555-555555555555';
+	private const TEMPLATE = '77777777-7777-4777-8777-777777777777';
 
 	private InMemoryRegister $register;
 
 	private WooSearchPlans $plans;
+
+	/**
+	 * The named templates OpenRegister would answer the caller, by uuid.
+	 *
+	 * @var array<string, array{uuid: string, name: string, values: array<string, mixed>}>
+	 */
+	private array $named = [];
+
+	/**
+	 * The schema ids the reader was asked for.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $askedSchemas = [];
+
+	/**
+	 * A reader over `$this->named`.
+	 *
+	 * @return RecordTemplateReader The reader.
+	 */
+	private function templates(): RecordTemplateReader {
+		$reader = $this->createMock(RecordTemplateReader::class);
+		$reader->method('find')->willReturnCallback(
+			function (string $uuid, string $schema): ?array {
+				$this->askedSchemas[] = $schema;
+				return ($this->named[$uuid] ?? null);
+			}
+		);
+
+		return $reader;
+	}//end templates()
 
 	protected function setUp(): void {
 		$this->register = new InMemoryRegister();
@@ -59,7 +92,7 @@ class WooSearchPlansTest extends TestCase {
 				'woo_request_configuration_schema' => 'wooRequestConfiguration',
 			][$key] ?? $default
 		);
-		$this->plans = new WooSearchPlans(settingsService: $settings);
+		$this->plans = new WooSearchPlans(settingsService: $settings, templates: $this->templates());
 	}//end setUp()
 
 	/**
@@ -173,4 +206,66 @@ class WooSearchPlansTest extends TestCase {
 		self::assertSame(self::EARLIER, $copy['copiedFrom']);
 		self::assertNull($this->plans->startFrom(caseId: self::CASE_ID, from: 'no-such-case'));
 	}//end testEveryPresentKeyIsCopied()
+
+	/**
+	 * REQ-WRC-005 "Start from a named template".
+	 *
+	 * @return void
+	 */
+	public function testANewRequestStartsFromANamedTemplate(): void {
+		$this->named[self::TEMPLATE] = [
+			'uuid' => self::TEMPLATE,
+			'name' => 'Ruimtelijke verzoeken',
+			'values' => ['custodians' => [['name' => 'Wethouder Ruimte']], 'systems' => ['files'], 'terms' => 'Stationsweg', 'case' => 'not-this-one'],
+		];
+
+		$configuration = $this->plans->startFrom(caseId: self::CASE_ID, from: self::TEMPLATE);
+
+		self::assertSame(['wooRequestConfiguration'], $this->askedSchemas, 'only a template of the configuration schema is asked for');
+		self::assertSame(self::TEMPLATE, $configuration['copiedFrom']);
+		self::assertSame(self::CASE_ID, $configuration['case'], 'a case named inside the template is not copied');
+		$draft = $this->plans->planOf(caseId: self::CASE_ID);
+		self::assertSame(['Wethouder Ruimte'], $this->plans->custodianNames(plan: $draft));
+		self::assertSame(['files'], $draft['systems']);
+		self::assertSame('Stationsweg', $draft['terms']);
+		self::assertArrayNotHasKey('periodFrom', $draft);
+		self::assertNull($this->plans->recorded(caseId: self::CASE_ID), 'the copy is a draft the handler completes and records');
+
+		$real = new RealSchemaValidator();
+		self::assertSame([], $real->errors(slug: 'wooRequestConfiguration', payload: $this->register->all('wooRequestConfiguration')[0]));
+		self::assertSame([], $real->errors(slug: 'wooSearchPlan', payload: $draft));
+	}//end testANewRequestStartsFromANamedTemplate()
+
+	/**
+	 * REQ-WRC-005 "A plan filled from a template names it".
+	 *
+	 * @return void
+	 */
+	public function testAPlanFilledFromATemplateNamesItAndKeepsItsOtherKeys(): void {
+		$this->named[self::TEMPLATE] = [
+			'uuid' => self::TEMPLATE,
+			'name' => 'Ruimtelijke verzoeken',
+			'values' => ['terms' => 'the template term', 'triageRules' => ['a key another change adds']],
+		];
+
+		$this->plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen', startedFrom: self::TEMPLATE);
+
+		$configuration = $this->register->all('wooRequestConfiguration')[0];
+		self::assertSame(self::TEMPLATE, $configuration['copiedFrom']);
+		self::assertSame(['a key another change adds'], $configuration['triageRules'], 'every key present is copied');
+		self::assertSame('Stationsweg', $configuration['terms'], 'what the handler recorded wins over the template');
+	}//end testAPlanFilledFromATemplateNamesItAndKeepsItsOtherKeys()
+
+	public function testAPlanNamingATemplateTheCallerCannotUseIsRefused(): void {
+		try {
+			$this->plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen', startedFrom: self::TEMPLATE);
+			self::fail('a plan cannot claim a template nobody can read');
+		} catch (WooCorpusRefused $refused) {
+			self::assertSame(400, $refused->getStatus());
+			self::assertSame('template_not_found', $refused->getMessage());
+		}
+
+		self::assertSame([], $this->register->all('wooSearchPlan'), 'nothing is recorded under a false origin');
+		self::assertSame([], $this->register->all('wooRequestConfiguration'));
+	}//end testAPlanNamingATemplateTheCallerCannotUseIsRefused()
 }//end class

@@ -269,6 +269,9 @@ class DocumentReviewController extends Controller {
 			),
 			'review-batch-name-required' => $this->l10n->t('Give the batch a name.'),
 			'review-batch-assignee-unknown' => $this->l10n->t('Choose the reviewer of the batch.'),
+			'review-batch-assignee-no-access' => $this->l10n->t(
+				'This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.'
+			),
 			'review-batch-empty' => $this->l10n->t('Put at least one document in the batch.'),
 			'review-batch-document-unknown' => $this->l10n->t('A batch only holds documents of this case.'),
 			'review-batch-document-taken' => $this->l10n->t('A document is already in another open batch.'),

@@ -287,7 +287,12 @@ class TriageRules {
 	 * @return list<array<string, mixed>>
 	 */
 	private function activeRules(string $caseId): array {
-		return $this->conditions->runnable(rules: $this->rows(caseId: $caseId), effects: self::EFFECTS);
+		return $this->conditions->runnable(
+			// Whoever applies the rules applies every rule of the case. A rule is private to the
+			// case assignee (REQ-CRA-008), so the caller's own read could answer none of them.
+			rules: $this->reviewerAccess->recordsOf(schemaKey: self::SCHEMA_KEY, caseField: 'case', caseId: $caseId),
+			effects: self::EFFECTS
+		);
 	}//end activeRules()
 
 	/**
@@ -384,7 +389,7 @@ class TriageRules {
 	}//end isAvailable()
 
 	/**
-	 * Every rule of a case, as stored.
+	 * Every rule of a case the caller may read, as stored: what a listing shows and a change starts from.
 	 *
 	 * @param string $caseId The case UUID.
 	 *

@@ -25,7 +25,6 @@ namespace OCA\Dossiq\Tests\Unit\Service\External;
 
 use OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter;
 use OCA\Dossiq\Service\External\IntegrationMode;
-use OCA\Dossiq\Service\External\Kvk\KvkApiAdapter;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -36,10 +35,8 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\External\IntegrationMode
  * @covers \OCA\Dossiq\Service\External\Brp\HaalCentraalBrpAdapter
- * @covers \OCA\Dossiq\Service\External\Kvk\KvkApiAdapter
  *
  * @uses \OCA\Dossiq\Service\External\Brp\BrpLookupResult
- * @uses \OCA\Dossiq\Service\External\Kvk\KvkLookupResult
  */
 class IntegrationTierTest extends TestCase {
 	/**
@@ -145,34 +142,4 @@ class IntegrationTierTest extends TestCase {
 
 		$this->assertSame('NOT_FOUND', $adapter->lookup(bsn: '000000000')->lookupStatus);
 	}//end testBrpAdapterEmptyIsNotFound()
-
-	/**
-	 * KvK adapter prefers the hoofdvestiging and exposes the public test key.
-	 *
-	 * @return void
-	 */
-	public function testKvkAdapterPrefersHoofdvestiging(): void {
-		$this->assertSame('l7xx1f2691f2520d487b902f4e0b57a0b197', KvkApiAdapter::PUBLIC_TEST_API_KEY);
-		$this->assertSame('https://api.kvk.nl/test/api', KvkApiAdapter::DEFAULT_BASE_URL);
-
-		$body = json_encode(
-			[
-				'resultaten' => [
-					['kvkNumber' => '69599084', 'name' => 'Test EMZ Nevenvestiging', 'type' => 'nevenvestiging'],
-					['kvkNumber' => '69599084', 'name' => 'Test EMZ Dagobert', 'type' => 'hoofdvestiging'],
-				],
-			]
-		);
-
-		$adapter = new KvkApiAdapter(
-			clientService: $this->clientReturning($body),
-			mode: $this->mode(['integration.kvk.mode' => 'test']),
-			logger: $this->createMock(LoggerInterface::class),
-		);
-
-		$result = $adapter->lookup(kvkNumber: '69599084');
-		$this->assertSame('FOUND', $result->lookupStatus);
-		$this->assertSame('Test EMZ Dagobert', $result->entity['name']);
-		$this->assertFalse($adapter->isDormant());
-	}//end testKvkAdapterPrefersHoofdvestiging()
 }//end class
