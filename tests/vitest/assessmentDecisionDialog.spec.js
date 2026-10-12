@@ -23,7 +23,7 @@ const manifest = JSON.parse(
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const decisionService = fs.readFileSync(
-	path.join(ROOT, 'lib', 'Service', 'WOODecisionService.php'),
+	path.join(ROOT, 'lib', 'Service', 'DecisionDocument', 'PublicationReadiness.php'),
 	'utf8',
 )
 const CASE_ID = '11111111-1111-4111-8111-111111111111'
