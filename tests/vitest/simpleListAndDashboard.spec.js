@@ -708,3 +708,34 @@ describe('the built simple manifest', () => {
 		expect(run.status).toBe(0)
 	}, 120_000)
 })
+
+describe('the case type list', () => {
+	// DqZaaktypen: Downloaden, Acties and the primary button in the header, and
+	// a Status pill beside the version. The lenses draw NO counts: the count
+	// request reads the `supersededBy: IS NULL` filter as no match and answered
+	// 0 on every lens (measured live), and a wrong count is worse than none.
+	const list = page(builtSimple, 'CaseTypes')
+
+	it('draws the header buttons and no lens count', () => {
+		expect(list.config.headerButtons.map((b) => b.action)).toEqual([
+			'export',
+			'actions-menu',
+			'add',
+		])
+		expect(list.config.headerButtons[2].variant).toBe('primary')
+		for (const lens of list.config.quickFilters) {
+			expect(lens.showCount, lens.label).toBeUndefined()
+		}
+	})
+
+	it('shows the term in words, the version as Version n and a status pill', () => {
+		const column = (key) => list.config.columns.find((c) => c.key === key)
+		expect(column('processingDeadline').formatter).toBe('isoDuration')
+		expect(column('version').formatter).toBe('versionLabel')
+		expect(column('isDraft')).toMatchObject({
+			label: 'Status',
+			formatter: 'draftState',
+			widget: 'badge',
+		})
+	})
+})
