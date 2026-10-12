@@ -133,7 +133,7 @@ class RecallControllerTest extends TestCase {
 			tasks: $tasks,
 			userManager: $userManager,
 			l10n: $l10n,
-			reviewerAccess: $this->createMock(\OCA\Dossiq\Service\Access\CaseReviewerAccess::class),
+			reviewerAccess: $this->createConfiguredMock(\OCA\Dossiq\Service\Access\CaseReviewerAccess::class, ['admitsReader' => true]),
 			logger: $logger,
 		);
 

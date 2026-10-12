@@ -270,6 +270,9 @@ class RecallController extends Controller {
 			'review-stopping-rule-locked' => $this->l10n->t('A stopping rule is declared before review. Once a document is marked, it cannot change.'),
 			'review-stopping-rule-unavailable' => $this->l10n->t('The stopping rule cannot be stored, so nothing was declared.'),
 			'review-recall-assignee-unknown' => $this->l10n->t('Choose the reviewer of the sample.'),
+			'review-batch-assignee-no-access' => $this->l10n->t(
+				'This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.'
+			),
 			'review-recall-size' => $this->l10n->t('Choose a sample size between 1 and the number of documents set aside or not yet marked.'),
 			'review-recall-document-unknown' => $this->l10n->t('Only a sampled document can be judged in the sample.'),
 			'review-recall-sample-closed' => $this->l10n->t('Every document of this sample is judged and its estimate is recorded.'),

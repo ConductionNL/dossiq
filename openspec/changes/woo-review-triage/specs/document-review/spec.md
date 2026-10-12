@@ -78,7 +78,8 @@ reviewer access in the same request (REQ-CRA-002), a recall sample batch include
 recall sample batch (REQ-WRS-002) does not count. The batch, its assignee and its progress (with a
 verdict, of total) SHALL be visible on the case before any verdict is made, through GET
 `/api/cases/{id}/review/batches`. A reviewer the register does not admit (REQ-CRA-009) SHALL be
-refused with `review-batch-assignee-no-access` (422) before anything is written: no batch, no task.
+refused with `review-batch-assignee-no-access` (422) before anything is written: no batch, no task,
+and for a recall sample no sample.
 
 #### Scenario: A reviewer outside the staff group is refused
 @e2e exclude A refusal before any write, covered by tests/Unit/Review/ReviewBatchesTest.php testAReviewerOutsideTheStaffGroupIsRefused; the live half is task 6.4 (live pass, decision 139).

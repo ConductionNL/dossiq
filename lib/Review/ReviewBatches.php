@@ -323,6 +323,32 @@ class ReviewBatches {
 	}//end handTask()
 
 	/**
+	 * Refuse a reviewer no grant can reach, before anything is written for them.
+	 *
+	 * The review records follow the closed register, so somebody outside the
+	 * staff group would get the task and read nothing (case-reviewer-access
+	 * REQ-CRA-009). A recall sample asks this too, before it stores the sample.
+	 *
+	 * @param string $assignee The reviewer.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException (422 `review-batch-assignee-no-access`) When the register does not admit them.
+	 *
+	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 */
+	public function assertReviewerAdmitted(string $assignee): void {
+		if ($this->reviewerAccess->admitsReader(userId: $assignee) === true) {
+			return;
+		}
+
+		throw $this->refusal(
+			rule: 'review-batch-assignee-no-access',
+			sentence: 'This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.',
+		);
+	}//end assertReviewerAdmitted()
+
+	/**
 	 * Refuse an incomplete batch before anything is written.
 	 *
 	 * @param string $caseId The case UUID.
@@ -347,12 +373,7 @@ class ReviewBatches {
 			throw $this->refusal(rule: 'review-batch-assignee-unknown', sentence: 'Choose the reviewer of the batch.');
 		}
 
-		if ($this->reviewerAccess->admitsReader(userId: $assignee) === false) {
-			throw $this->refusal(
-				rule: 'review-batch-assignee-no-access',
-				sentence: 'This reviewer is not in the staff group yet. Ask an administrator to add them to dossiq-medewerkers.',
-			);
-		}
+		$this->assertReviewerAdmitted(assignee: $assignee);
 
 		if ($documents === []) {
 			throw $this->refusal(rule: 'review-batch-empty', sentence: 'Put at least one document in the batch.');
