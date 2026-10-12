@@ -194,7 +194,7 @@
 			"config": {
 				"widgets": [],
 				"layout": [],
-				"description": "Your work today, then the team",
+				"description": "",
 				"greeting": "first",
 				"showActionsMenu": false,
 				"viewLinks": [
