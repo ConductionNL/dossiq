@@ -56,7 +56,8 @@
       "order": 1,
       "isFinal": false,
       "description": "Ambtenaar stelt het collegeadvies op",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "role": "intake"
     },
     {
       "id": "a25d2a57-34e5-53eb-ac90-a8dd8635d835",
@@ -64,7 +65,8 @@
       "order": 2,
       "isFinal": false,
       "description": "Inhoudelijk advies door beleidsadviseur",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "role": "in-progress"
     },
     {
       "id": "4e78b56b-70d5-5314-b959-d9f0d9279636",
@@ -120,7 +122,8 @@
       "order": 9,
       "isFinal": true,
       "description": "Dossier gearchiveerd conform selectielijst",
-      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd"
+      "caseType": "b77b9918-c244-5f7e-9de2-6ea34e931fcd",
+      "role": "closed"
     },
     {
       "id": "5903b223-f0fe-580f-8c48-f9986b7583f8",
@@ -128,7 +131,8 @@
       "order": 1,
       "isFinal": false,
       "description": "Steller stelt het raadsvoorstel op",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "role": "intake"
     },
     {
       "id": "d741a40f-1077-5601-8159-6d8013c341c8",
@@ -136,7 +140,8 @@
       "order": 2,
       "isFinal": false,
       "description": "Inhoudelijk advies door beleidsadviseur",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "role": "in-progress"
     },
     {
       "id": "6c4b7ed5-86b3-50e9-a2f7-5f3b3e8e0821",
@@ -192,7 +197,8 @@
       "order": 9,
       "isFinal": true,
       "description": "Dossier gearchiveerd conform selectielijst",
-      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83"
+      "caseType": "3aae59f4-4264-520f-966a-1b1e28796b83",
+      "role": "closed"
     },
     {
       "id": "44ed85f7-efc6-5b89-81ec-84ffaa0924f2",
@@ -200,7 +206,8 @@
       "order": 1,
       "isFinal": false,
       "description": "Steller stelt het DT-advies op",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "role": "intake"
     },
     {
       "id": "707d6728-d489-51f0-bcd8-eab639874655",
@@ -208,7 +215,8 @@
       "order": 2,
       "isFinal": false,
       "description": "Inhoudelijk advies",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "role": "in-progress"
     },
     {
       "id": "23463e09-831a-5ec7-8703-ac1d1541ada9",
@@ -256,7 +264,8 @@
       "order": 8,
       "isFinal": true,
       "description": "Dossier gearchiveerd conform selectielijst",
-      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f"
+      "caseType": "73f00a88-b0eb-5717-8312-c128166b4a7f",
+      "role": "closed"
     }
   ],
   "roleTypes": [
