@@ -23,7 +23,9 @@ describe('First today and the library banner', () => {
 	const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
 
 	it('takes the banner from the widget registry, not from a named import', () => {
-		expect(source).not.toMatch(/import\s*\{[^}]*CnBannerWidget[^}]*\}\s*from '@conduction\/nextcloud-vue'/)
+		expect(source).not.toMatch(
+			/import\s*\{[^}]*CnBannerWidget[^}]*\}\s*from '@conduction\/nextcloud-vue'/,
+		)
 		expect(source).toContain("getWidgetTypeEntry('banner')")
 		expect(source).toMatch(/:is="banner"/)
 	})
@@ -35,8 +37,15 @@ describe('First today and the library banner', () => {
 	it('relies on what the installed library actually provides', () => {
 		const index = read(...LIB, 'index.js')
 		expect(index).toMatch(/getWidgetTypeEntry/)
-		const registrar = read(...LIB, 'components', 'CnWidgetGrid', 'registerDashboardWidgets.js')
+		const registrar = read(
+			...LIB,
+			'components',
+			'CnWidgetGrid',
+			'registerDashboardWidgets.js',
+		)
 		expect(registrar).toContain("import '../CnBannerWidget/index.js'")
-		expect(read(...LIB, 'components', 'CnBannerWidget', 'index.js')).toContain("registerDashboardWidget('banner'")
+		expect(read(...LIB, 'components', 'CnBannerWidget', 'index.js')).toContain(
+			"registerDashboardWidget('banner'",
+		)
 	})
 })

@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
+use OCA\Dossiq\Service\Workflow\BackfilledTemplateShape;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -56,6 +57,13 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	private const OUTCOME_NONE = 'none';
 
 	/**
+	 * Builds the steps and transitions of a basis template from the ordered status types.
+	 *
+	 * @var BackfilledTemplateShape
+	 */
+	private readonly BackfilledTemplateShape $shape;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service
@@ -68,9 +76,10 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		private SettingsService $settingsService,
 		private WorkflowDefinitionService $workflowService,
 		private LoggerInterface $logger,
-		private readonly LanguageMapText $text = new LanguageMapText(),
+		LanguageMapText $text = new LanguageMapText(),
 		private readonly BackfilledTemplateLabels $labels = new BackfilledTemplateLabels(),
 	) {
+		$this->shape = new BackfilledTemplateShape(text: $text);
 	}//end __construct()
 
 	/**
@@ -204,7 +213,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		string $templateSchema,
 		string $caseSchema,
 	): string {
-		$row = $this->normalize(row: $caseType);
+		$row = $this->objectToArrayOrNull(value: $caseType);
 		if ($row === null) {
 			return self::OUTCOME_NONE;
 		}
@@ -256,7 +265,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			return self::OUTCOME_NONE;
 		}
 
-		$createdNormalized = $this->normalize(row: $created);
+		$createdNormalized = $this->objectToArrayOrNull(value: $created);
 		$newId = (string)($createdNormalized['id'] ?? '');
 
 		// Pin the caseType to the new template.
@@ -365,7 +374,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		$byId = [];
 		foreach ($rows as $raw) {
-			$row = $this->normalize(row: $raw);
+			$row = $this->objectToArrayOrNull(value: $raw);
 			$id = (string)(($row ?? [])['id'] ?? '');
 			if ($row !== null && $id !== '') {
 				$byId[$id] = $row;
@@ -471,7 +480,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		$statuses = [];
 		foreach ($statusRows as $raw) {
-			$row = $this->normalize(row: $raw);
+			$row = $this->objectToArrayOrNull(value: $raw);
 			if ($row !== null && (string)($row['id'] ?? '') !== '') {
 				$statuses[] = $row;
 			}
@@ -488,8 +497,8 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			},
 		);
 
-		$steps = $this->buildSteps(statuses: $statuses);
-		$transitions = $this->buildTransitions(statuses: $statuses);
+		$steps = $this->shape->steps(statuses: $statuses);
+		$transitions = $this->shape->transitions(statuses: $statuses);
 
 		return [
 			'title' => $this->labels->titleFor(caseTypeTitle: ($caseType['title'] ?? null)),
@@ -504,64 +513,6 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 			'nodePositions' => '',
 		];
 	}//end buildTemplateFor()
-
-	/**
-	 * Build the embedded step list from ordered statusType rows.
-	 *
-	 * @param array<int, array<string, mixed>> $statuses Ordered statusType rows
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function buildSteps(array $statuses): array {
-		$steps = [];
-		foreach ($statuses as $status) {
-			if ((bool)($status['isFinal'] ?? false) === true) {
-				continue;
-			}
-
-			$steps[] = [
-				'id' => $this->uuid(),
-				'title' => $this->text->textOr(value: ($status['name'] ?? null), fallback: 'Stap'),
-				'description' => $this->text->textOf(value: ($status['description'] ?? null)),
-				'status' => (string)($status['id'] ?? ''),
-				'order' => (int)($status['order'] ?? 0),
-				'assigneeRole' => '',
-				'isRequired' => false,
-				'checklist' => [],
-				'automaticActions' => [],
-			];
-		}
-
-		return $steps;
-	}//end buildSteps()
-
-	/**
-	 * Build the embedded transition list from ordered statusType rows.
-	 *
-	 * @param array<int, array<string, mixed>> $statuses Ordered statusType rows
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function buildTransitions(array $statuses): array {
-		$transitions = [];
-		$count = count($statuses);
-		for ($i = 0; $i < ($count - 1); $i++) {
-			$from = $statuses[$i];
-			$to = $statuses[($i + 1)];
-
-			$transitions[] = [
-				'id' => $this->uuid(),
-				'fromStatus' => (string)($from['id'] ?? ''),
-				'toStatus' => (string)($to['id'] ?? ''),
-				'label' => $this->text->textOr(value: ($to['name'] ?? null), fallback: 'Door'),
-				'guards' => [],
-				'automaticActions' => [],
-				'allowedRoles' => [],
-			];
-		}
-
-		return $transitions;
-	}//end buildTransitions()
 
 	/**
 	 * Pin every open case of a caseType to workflowVersion 1 and bind it
@@ -598,7 +549,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 		}
 
 		foreach ($cases as $row) {
-			$case = $this->normalize(row: $row);
+			$case = $this->objectToArrayOrNull(value: $row);
 			if ($case === null) {
 				continue;
 			}
@@ -651,44 +602,4 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 
 		return array_merge($row, $pin);
 	}//end withPin()
-
-	/**
-	 * Coerce an OpenRegister result row to an associative array.
-	 *
-	 * @param mixed $row Result row from ObjectService
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalize(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$serialized = $row->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end normalize()
-
-	/**
-	 * Generate a UUID v4 for embedded step / transition identifiers.
-	 *
-	 * @return string
-	 */
-	private function uuid(): string {
-		$bytes = random_bytes(16);
-		$bytes[6] = chr((ord($bytes[6]) & 0x0F) | 0x40);
-		$bytes[8] = chr((ord($bytes[8]) & 0x3F) | 0x80);
-
-		$hex = bin2hex($bytes);
-		return substr($hex, 0, 8) . '-'
-			. substr($hex, 8, 4) . '-'
-			. substr($hex, 12, 4) . '-'
-			. substr($hex, 16, 4) . '-'
-			. substr($hex, 20, 12);
-	}//end uuid()
 }//end class

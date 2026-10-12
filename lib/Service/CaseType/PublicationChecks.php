@@ -58,6 +58,13 @@ use Throwable;
 class PublicationChecks {
 
 	/**
+	 * Reads a translatable title or name as one string.
+	 *
+	 * @var LanguageMapText
+	 */
+	private readonly LanguageMapText $text;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseTypeResolver        $caseTypeResolver The effective blueprint.
@@ -69,7 +76,6 @@ class PublicationChecks {
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
 	 * @param SenderIdentity          $senders          Whether the mail account this type names exists.
-	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypeResolver,
@@ -81,8 +87,8 @@ class PublicationChecks {
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseTypeReachability $reachability,
 		private readonly SenderIdentity $senders,
-		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
+		$this->text = new LanguageMapText();
 	}//end __construct()
 
 	/**
