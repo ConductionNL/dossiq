@@ -30,8 +30,10 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueCaseFacts;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\Queue\UrgencyProfile;
+use OCA\Dossiq\Service\Queue\UrgencyScorer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
@@ -43,6 +45,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService
+ * @covers \OCA\Dossiq\Service\Queue\UrgencyScorer
+ * @covers \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
@@ -122,9 +127,9 @@ class WorkQueueServiceTest extends TestCase {
 			settingsService: $settings,
 			engineTasks: $engineTasks,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			dates: $this->caseDates(),
 			urgencySettings: new QueueUrgencySettings(settings: $settings),
-			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $this->createMock(originalClassName: LoggerInterface::class)),
+			caseFacts: new QueueCaseFacts(settingsService: $settings, journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)), dates: $this->caseDates(), logger: $this->createMock(originalClassName: LoggerInterface::class)),
 		);
 	}//end setUp()
 
@@ -225,10 +230,9 @@ class WorkQueueServiceTest extends TestCase {
 			settingsService: $settings,
 			engineTasks: $this->createMock(EngineTaskInbox::class),
 			logger: $this->createMock(LoggerInterface::class),
-			dates: $this->caseDates(),
 			urgencySettings: new QueueUrgencySettings(settings: $settings),
-			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
-			calendar: $calendar,
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class), calendar: $calendar),
+			caseFacts: new QueueCaseFacts(settingsService: $settings, journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)), dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class)),
 		);
 
 		$result = $service->scoreItem('2026-04-27', 'normal', null, new DateTimeImmutable('2026-04-24'));
@@ -766,10 +770,9 @@ class WorkQueueServiceTest extends TestCase {
 			settingsService: $settings,
 			engineTasks: $engineTasks,
 			logger: $logger,
-			dates: $this->caseDates(),
 			urgencySettings: new QueueUrgencySettings(settings: $settings),
-			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
-			calendar: $calendar,
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $logger, calendar: $calendar),
+			caseFacts: new QueueCaseFacts(settingsService: $settings, journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)), dates: $this->caseDates(), logger: $logger),
 		);
 	}//end serviceOver()
 

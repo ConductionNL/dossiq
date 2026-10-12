@@ -436,3 +436,23 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         active. Behaviour kept, not changed here.
         Own tests: `tests/Unit/Service/Zgw/ZtcConceptRulesTest` (6), `ZtcTypeReferencesTest` (4,
         every search asserted with its schema) and `ZtcPublishAndDeleteChecksTest` (6).
+  - [x] 8e `WorkQueueService` (1: ExcessiveClassComplexity 93 against 50). Its suppression said a
+        split would fragment one responsibility; it held three. `Queue/UrgencyScorer` scores one
+        item and reads no store (the tier, the working days on the administered calendar with
+        the Monday to Friday walk behind it, the priority and idle parts; 21).
+        `Queue/QueueCaseFacts` reads what a case needs before it is scored (its nearest open
+        term or own deadline, its last activity, the profile of its case type; 33). The service
+        reads the cases and tasks, ranks them and counts the open work (42).
+        The two are injected, not built inside: building them inside pushed the service's
+        coupling to 14 against 13. So the constructor changed, from the date normaliser, the
+        journal and the calendar to the scorer and the facts. Nothing registers the service by
+        hand, the container wires it; four test files build it and got the new arguments, no
+        assertion changed. `scoreItem()` stays on the service for `Queue/QueueOrdering`.
+        Characterisation, green on the single class first: 9 tests added to
+        `WorkQueueServiceTest` (41 in all) for the whole answer of a score and of a task item,
+        the walk in both directions, the calendar that does not answer, the nearest of several
+        terms, and every failed read. They pin one thing worth knowing: a deadline on the
+        weekend just past counts zero working days from Monday, so it reads critical, not
+        overdue. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Queue/UrgencyScorerTest` (5) and `QueueCaseFactsTest` (6).
+        The date-arithmetic audit row moved with the arithmetic to `UrgencyScorer`.

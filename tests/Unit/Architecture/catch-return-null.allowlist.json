@@ -1637,7 +1637,7 @@
       "reason": "`computeWorkload()` answers `return []` when the read fails; the catch logs at warning (\"WorkQueue: workload case search failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/WorkQueueService.php",
+      "file": "lib/Service/Queue/QueueCaseFacts.php",
       "method": "nearestActiveTermDeadline",
       "occurrence": 1,
       "class": "read-miss",
