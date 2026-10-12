@@ -1007,7 +1007,9 @@
               "const row = pm.response.json();",
               "pm.test('title as shipped', () => pm.expect(row.title).to.eql(\"Handhavingszaak\"));",
               "pm.test('identifier as shipped', () => pm.expect(row.identifier).to.eql(\"handhavingszaak\"));",
-              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"zaakvertrouwelijk\"));"
+              "pm.test('confidentiality as shipped', () => pm.expect(row.confidentiality).to.eql(\"zaakvertrouwelijk\"));",
+              "pm.test('list layout as shipped', () => pm.expect(row['x-index'].columns).to.eql([\"identifier\", \"title\", \"status\", \"besluitdatum\", \"deadline\"]));",
+              "pm.test('default flow as shipped', () => pm.expect(row.workflowDefinition).to.eql(\"6f5b5055-b2a5-5008-a177-528e4b2b4a72\"));"
             ]
           }
         }
@@ -1441,6 +1443,90 @@
               "const row = pm.response.json();",
               "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"bronHandhavingszaak\"));",
               "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"0bb7810f-ca79-52b2-8b6d-0508eabec8d7\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 1 - Fundering",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/inspectionChecklistTemplate/3015a8a5-2eda-5fc6-bb3b-d3753f30512d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Bouwtoezicht fase 1 - Fundering\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('status as shipped', () => pm.expect(row.status).to.eql(\"active\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 2 - Ruwbouw",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/inspectionChecklistTemplate/c407ee36-fac4-52b5-afe2-cc1b7cbb871a"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Bouwtoezicht fase 2 - Ruwbouw\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('status as shipped', () => pm.expect(row.status).to.eql(\"active\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "toezichtzaak-bouw: checklist Bouwtoezicht fase 3 - Oplevering",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/inspectionChecklistTemplate/348402f0-99a8-5c1f-a16f-13b9f31ce316"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"Bouwtoezicht fase 3 - Oplevering\"));",
+              "pm.test('caseType as shipped', () => pm.expect(row.caseType).to.eql(\"fd452b2a-0f6c-5dee-9f52-339e836567bd\"));",
+              "pm.test('status as shipped', () => pm.expect(row.status).to.eql(\"active\"));"
             ]
           }
         }
