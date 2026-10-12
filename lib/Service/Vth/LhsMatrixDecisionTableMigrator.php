@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Vth;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUser;
@@ -74,12 +75,14 @@ class LhsMatrixDecisionTableMigrator {
 	 *
 	 * @param SettingsService $settingsService Register/schema configuration.
 	 * @param LoggerInterface $logger          The logger.
+	 * @param StoredDecisionTables $tables     Names the projected table in OpenRegister's register.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly StoredDecisionTables $tables,
 	) {
 
 	}//end __construct()
@@ -139,7 +142,6 @@ class LhsMatrixDecisionTableMigrator {
 	 */
 	private function migrateAll(object $objectService, bool $dryRun): array {
 		$register = (string)$this->settingsService->getConfigValue('register');
-		$tableSchema = (string)$this->settingsService->getConfigValue('decision_table_schema');
 		$matrices = $this->fetchMatrices(objectService: $objectService, register: $register);
 
 		$counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0];
@@ -149,8 +151,8 @@ class LhsMatrixDecisionTableMigrator {
 			$row = $this->migrateOne(
 				matrix: $matrix,
 				objectService: $objectService,
-				register: $register,
-				tableSchema: $tableSchema,
+				register: StoredDecisionTables::REGISTER,
+				tableSchema: StoredDecisionTables::SCHEMA,
 				dryRun: $dryRun,
 			);
 
@@ -265,11 +267,11 @@ class LhsMatrixDecisionTableMigrator {
 	 */
 	private function existingTable(object $objectService, string $register, string $tableSchema, string $marker): ?array {
 		try {
-			$rows = $this->searchObjectsAsArrays(
+			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
 				schema: $tableSchema,
-				filters: ['_limit' => 200],
+				filters: ['owner' => Application::APP_ID, '_limit' => 200],
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -399,7 +401,8 @@ class LhsMatrixDecisionTableMigrator {
 
 		return [
 			'name' => (string)($matrix['name'] ?? 'LHS'),
-			'key' => ('lhs-matrix-' . $version),
+			'key' => $this->tables->keyFor(key: LhsDecisionTableLookup::KEY_STEM . $version),
+			'owner' => Application::APP_ID,
 			'description' => sprintf(
 				'Projected from the LHS matrix "%s" (version %s). %s This table IS the enforcement '
 				. 'lookup: LhsRecommendationService evaluates it and only falls back to the matrix '
@@ -421,13 +424,6 @@ class LhsMatrixDecisionTableMigrator {
 			],
 			'outputs' => [['name' => 'intervention', 'type' => 'string']],
 			'rules' => $rules,
-			// ENABLED. Phase 1 shipped these disabled because the matrix was
-			// still the lookup and a second answering table would have been a
-			// second source of truth. That is no longer the shape: the
-			// evaluator IS the lookup, and a disabled table means the matrix
-			// answers instead. Shipping it disabled would make the projection
-			// a no-op that reports success.
-			'enabled' => true,
 		];
 
 	}//end tableFor()

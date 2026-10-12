@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Termijn\TermCaseTypeResolver;
 use OCA\Dossiq\Service\Termijn\TermOutcome;
 use RuntimeException;
@@ -75,10 +76,12 @@ class DeadlineReportingService {
 	 *
 	 * @param SettingsService           $settingsService Settings.
 	 * @param TermCaseTypeResolver|null $caseTypes       The case-type resolver; built from the settings when absent.
+	 * @param DayCount                  $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		?TermCaseTypeResolver $caseTypes = null,
+		private readonly DayCount $days = new DayCount(),
 	) {
 		$this->caseTypes = ($caseTypes ?? new TermCaseTypeResolver(settingsService: $settingsService));
 		$this->outcomes = new TermOutcome();
@@ -199,7 +202,7 @@ class DeadlineReportingService {
 		if ($start !== '' && $end !== '') {
 			$startD = new DateTimeImmutable(substr($start, 0, 10));
 			$endD = new DateTimeImmutable($end);
-			$bucket['doorlooptijdenDagen'][] = (int)$startD->diff($endD)->days;
+			$bucket['doorlooptijdenDagen'][] = $this->days->between(from: $startD, to: $endD);
 		}
 	}//end accumulateRow()
 
@@ -384,7 +387,7 @@ class DeadlineReportingService {
 			$start = (string)($row['startDate'] ?? '');
 			$end = (string)($row['endDateCurrent'] ?? '');
 			if ($start !== '' && $end !== '') {
-				$durations[] = (int)(new DateTimeImmutable(substr($start, 0, 10)))->diff(new DateTimeImmutable($end))->days;
+				$durations[] = $this->days->between(from: new DateTimeImmutable(substr($start, 0, 10)), to: new DateTimeImmutable($end));
 			}
 		}//end foreach
 

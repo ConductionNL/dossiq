@@ -93,8 +93,10 @@ class OutstandingDocuments {
 	 * @param string $documentId The document uuid.
 	 *
 	 * @return string The title, the file name when there is no title, or ''.
+	 *
+	 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-answers-which-documents-still-wait-for-an-assessment-req-das-001
 	 */
-	private function titleOf(string $documentId): string {
+	public function titleOf(string $documentId): string {
 		$row = $this->records->findRecord(recordId: $documentId);
 		if ($row === null) {
 			$row = $this->earlierDocument(documentId: $documentId);

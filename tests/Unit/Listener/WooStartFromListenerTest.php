@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\WooStartFromListener;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
@@ -73,7 +74,7 @@ class WooStartFromListenerTest extends TestCase {
 		$slugs = $this->createMock(ObjectSchemaSlugResolver::class);
 		$slugs->method('resolveFromPayload')->willReturnCallback(fn (): string => $this->slug);
 
-		return new WooStartFromListener(plans: new WooSearchPlans(settingsService: $settings, access: $this->caseReviewerAccessOver($settings)), slugResolver: $slugs, logger: $this->createMock(LoggerInterface::class));
+		return new WooStartFromListener(plans: new WooSearchPlans(settingsService: $settings, templates: $this->createMock(RecordTemplateReader::class), access: $this->caseReviewerAccessOver($settings)), slugResolver: $slugs, logger: $this->createMock(LoggerInterface::class));
 	}//end listener()
 
 	/**

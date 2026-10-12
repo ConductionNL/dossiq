@@ -845,6 +845,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\ShipAssistantPrompts</step>
             <!--
+                Copies dossiq's own decisionTable rows into OpenRegister's
+                decision-tables register (openregister#4572), keyed dossiq.<key>.
+                A copy: refused or disabled tables stay in dossiq, a table already
+                under its key is kept. Not on install: a fresh install has none.
+            -->
+            <step>OCA\Dossiq\Repair\MoveDecisionTablesToOpenRegister</step>
+            <!--
                 case-reviewer-access REQ-CRA-012: gives the people on each case
                 their grants on the records its case type keeps private. A
                 record made before its schema became private, or before the case
@@ -905,6 +912,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               CopyMessageAttachmentsIntoMessageFolders  copies existing message attachments into the message folder; a fresh install has none
               BackfillPortalParty               fills portalParty on existing portal cases; a fresh install has none
+              MoveDecisionTablesToOpenRegister  copies existing dossiq decision tables into OpenRegister; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made
@@ -1133,6 +1141,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <command>OCA\Dossiq\Command\MigrateCasePlansCommand</command>
         <command>OCA\Dossiq\Command\SeedBezwaarBeroepCommand</command>
         <command>OCA\Dossiq\Command\SeedDemoCaseloadCommand</command>
+        <command>OCA\Dossiq\Command\DrainIntakeObjectsCommand</command>
     </commands>
 
     <settings>

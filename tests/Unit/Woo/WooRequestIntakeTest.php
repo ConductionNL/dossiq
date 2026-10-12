@@ -266,7 +266,9 @@ class WooRequestIntakeTest extends TestCase {
 		self::assertSame('Alle stukken over het parkeerbeleid.', $case['description']);
 		self::assertSame('status-ontvangst', $case['status']);
 		self::assertSame('website', $case['intakeChannel']);
-		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $case['startDate']);
+		// No startDate from the intake: the term-start listener gives a
+		// submit-opened case the date its term starts (decision 181, Q11).
+		self::assertArrayNotHasKey('startDate', $case);
 		self::assertSame(
 			[
 				'onderwerp' => 'Parkeerbeleid centrum',
@@ -420,6 +422,9 @@ class WooRequestIntakeTest extends TestCase {
 
 				$saved['identifier'] = '2026-0003';
 				$saved['deadline'] = '2026-10-30';
+				// The term-start listener stamps these inside the create.
+				$saved['receivedAt'] = '2026-10-11T21:40:00+02:00';
+				$saved['termStartsAt'] = '2026-10-12T08:30:00+02:00';
 				return $saved;
 			}
 		};
@@ -429,6 +434,9 @@ class WooRequestIntakeTest extends TestCase {
 
 		self::assertSame('2026-0003', $answer['identifier']);
 		self::assertSame('2026-10-30', $answer['deadline']);
+		// Decision 179: the answer carries the received moment and the term start too.
+		self::assertSame('2026-10-11T21:40:00+02:00', $answer['receivedAt']);
+		self::assertSame('2026-10-12T08:30:00+02:00', $answer['termStartsAt']);
 	}//end testTheAnswerNamesTheCaseNumberAndTheDeadline()
 
 	/**

@@ -16,7 +16,7 @@ REQ-POR-008: When a decision is issued, the citizen SHALL be able to file a form
 - **WHEN** the citizen opens the case detail
 - **THEN** the "Mogelijke acties" section shows a button: "Bezwaar indienen"
 - **AND** when clicked, a BezwaarForm opens with:
-  - Pre-filled: `tegenZaakId`, decision title, decision date
+  - Pre-filled: `contestedCase`, decision title, decision date
   - Fields: Motiveringveld (text area), file upload area for supporting documents
   - A checkbox: "Ik ben het ermee eens dat mijn gegevens voor deze procedure worden gebruikt"
 
@@ -24,7 +24,7 @@ REQ-POR-008: When a decision is issued, the citizen SHALL be able to file a form
 - **GIVEN** case Z/2026/09128 has a decision issued on 2026-04-02 with a bezwaar term until 2026-05-14
 - **AND** the citizen fills in the motivering and attaches one document on 2026-04-12
 - **WHEN** the citizen sends the bezwaar
-- **THEN** a bezwaar case exists before the response returns, with `tegenZaak` Z/2026/09128 and the attachment as a case document
+- **THEN** a bezwaar case exists before the response returns, with `contestedCase` Z/2026/09128 and the attachment as a case document
 - **AND** the confirmation names the bezwaar case number, the received moment, the term start and the deadline
 - **AND** the case detail shows "Bezwaar ingediend op 12 april 2026" with the bezwaar case number
 

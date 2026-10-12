@@ -124,6 +124,34 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	}//end testTheDigitalPostStatusListenerIsRegisteredByName()
 
 	/**
+	 * Integriq's two StUF write events reach the write listener, and its two questions the query listener.
+	 *
+	 * Decision 206: a write over StUF is carried out only through integriq's
+	 * events. A write event bound to no listener would be answered by integriq
+	 * as "nobody answered" on every instance, with every unit test green.
+	 *
+	 * @return void
+	 */
+	public function testTheStufWriteEventsReachTheWriteListener(): void {
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		foreach (['StufCaseMutationEvent', 'StufDocumentMutationEvent'] as $event) {
+			$this->assertSame(
+				expected: [\OCA\Dossiq\Listener\StufProviderWriteListener::class],
+				actual: ($registered['OCA\\Integriq\\Event\\' . $event] ?? []),
+				message: $event . ' is carried out by the write listener and by nothing else',
+			);
+		}
+
+		foreach (['StufCaseQueryEvent', 'StufPersonQueryEvent'] as $event) {
+			$this->assertSame(
+				expected: [\OCA\Dossiq\Listener\StufProviderQueryListener::class],
+				actual: ($registered['OCA\\Integriq\\Event\\' . $event] ?? []),
+			);
+		}
+	}//end testTheStufWriteEventsReachTheWriteListener()
+
+	/**
 	 * The integriq channel intake is answered when integriq is installed.
 	 *
 	 * integriq dispatches this and reads the result slot back. Registered by

@@ -17,6 +17,11 @@
  * answer, when the case does not already carry them: the create form no
  * longer asks either (receipt-and-start-dates-are-set-at-creation).
  *
+ * A DRAFT IS NOT RECEIVED YET (decision 180). A case saved in OpenRegister
+ * status `draft` is a resident's half-filled form: it gets no stamp and no
+ * dates. The save that moves it out of `draft` is the receipt, and that save
+ * carries them, counted from the moment it was sent.
+ *
  * @category Listener
  * @package  OCA\Dossiq\Listener
  *
@@ -32,6 +37,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
  */
 
 declare(strict_types=1);
@@ -40,12 +46,12 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Intake\CaseReceiptDates;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -70,9 +76,12 @@ class IntakeTermStartListener implements IEventListener {
 	 * @param SettingsService          $settingsService Bridge to OpenRegister.
 	 * @param LoggerInterface          $logger          Records a case that went unstamped.
 	 * @param CaseReceiptDates         $receiptDates    The receipt and start dates a case is missing.
+	 * @param ReceiptMoment            $receipt         Tells a receipt from a draft save.
+	 * @param ITimeFactory             $time            The moment a draft is sent.
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
 	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function __construct(
 		private readonly IntakeTermStart $intake,
@@ -80,11 +89,13 @@ class IntakeTermStartListener implements IEventListener {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly CaseReceiptDates $receiptDates,
+		private readonly ReceiptMoment $receipt,
+		private readonly ITimeFactory $time,
 	) {
 	}//end __construct()
 
 	/**
-	 * Handle a case-creating or case-created event.
+	 * Handle a case-creating or case-created event, or the save that sends a draft.
 	 *
 	 * BEFORE THE CASE IS STORED (ObjectCreatingEvent) is where the fields are
 	 * set. Two defects found live on 11 October 2026 came from writing them
@@ -107,6 +118,12 @@ class IntakeTermStartListener implements IEventListener {
 	 * without the creating event (the bulk save). It writes only the fields
 	 * it adds, through the partial write.
 	 *
+	 * A DRAFT IS SKIPPED on both create events (decision 180), and the update
+	 * that moves a case out of `draft` is handled as the receipt: the fields
+	 * are set on the case in that save, so the submit answer carries them.
+	 * Any other update is left alone, which is what keeps the stamp written
+	 * once.
+	 *
 	 * @param Event $event The event.
 	 *
 	 * @return void
@@ -122,18 +139,24 @@ class IntakeTermStartListener implements IEventListener {
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent) {
-			$this->setBeforeStore(entity: $event->getObject());
+		$entity = $this->receipt->objectBeingReceived(event: $event);
+		if ($entity !== null) {
+			$sentAt = '';
+			if ($this->receipt->sendsDraft(event: $event) === true) {
+				$sentAt = $this->time->now()->format('c');
+			}
+
+			$this->setBeforeStore(entity: $entity, sentAt: $sentAt);
 			return;
 		}
 
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->extractObject(event: $event);
+		// The created event, for a path that stored the case without the
+		// creating event. A draft's own create is not a receipt there either,
+		// and any other event answers null.
+		$payload = $this->receipt->receivedObject(event: $event);
 		if ($payload === null) {
 			return;
 		}
@@ -143,7 +166,7 @@ class IntakeTermStartListener implements IEventListener {
 			return;
 		}
 
-		$changes = $this->changesFor(case: $payload);
+		$changes = $this->changesFor(case: $payload, sentAt: '');
 		if ($changes === []) {
 			return;
 		}
@@ -154,13 +177,15 @@ class IntakeTermStartListener implements IEventListener {
 	/**
 	 * Set the stamp and the dates on a case that is about to be stored.
 	 *
-	 * @param ObjectEntity $entity The case being created.
+	 * @param ObjectEntity $entity The case being saved.
+	 * @param string       $sentAt The moment a draft was sent, ISO 8601; '' on a create.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
-	private function setBeforeStore(ObjectEntity $entity): void {
+	private function setBeforeStore(ObjectEntity $entity, string $sentAt): void {
 		try {
 			$payload = $entity->jsonSerialize();
 		} catch (Throwable $e) {
@@ -171,7 +196,7 @@ class IntakeTermStartListener implements IEventListener {
 			return;
 		}
 
-		$changes = $this->changesFor(case: $payload);
+		$changes = $this->changesFor(case: $payload, sentAt: $sentAt);
 		if ($changes === []) {
 			return;
 		}
@@ -189,13 +214,24 @@ class IntakeTermStartListener implements IEventListener {
 	 * either way. Each is written only when the case does not carry it, so an
 	 * import keeps its own and a replay writes nothing.
 	 *
-	 * @param array<string, mixed> $case The case.
+	 * A DRAFT THAT IS SENT names its own receipt: the moment it was sent, read
+	 * first by {@see IntakeTermStart::arrivalOf()} as the case's `receivedAt`
+	 * unless the draft already carries one. Its start date is written again:
+	 * the one it carries is the day it was begun, filled in by the schema's
+	 * own calculation, not a date anyone gave.
+	 *
+	 * @param array<string, mixed> $case   The case.
+	 * @param string               $sentAt The moment a draft was sent, ISO 8601; '' for a create.
 	 *
 	 * @return array<string, mixed> The fields to set.
 	 */
-	private function changesFor(array $case): array {
+	private function changesFor(array $case, string $sentAt): array {
 		if ($this->slugResolver->resolveFromPayload(payload: $case) !== 'case') {
 			return [];
+		}
+
+		if ($sentAt !== '' && trim((string)($case[IntakeTermStart::RECEIVED_AT] ?? '')) === '') {
+			$case[IntakeTermStart::RECEIVED_AT] = $sentAt;
 		}
 
 		$changes = [];
@@ -203,7 +239,16 @@ class IntakeTermStartListener implements IEventListener {
 			$changes = $this->intake->stampForCase(case: $case);
 		}
 
-		return array_merge($changes, $this->receiptDates->changesFor(case: $case));
+		// The start date follows the term start this case was just given, or
+		// the one it already carries (decision 181, Q11).
+		$termStartsAt = trim((string)($changes[IntakeTermStart::TERM_STARTS_AT] ?? ($case[IntakeTermStart::TERM_STARTS_AT] ?? '')));
+
+		$changes = array_merge($changes, $this->receiptDates->changesFor(case: $case, termStartsAt: $termStartsAt));
+		if ($sentAt !== '') {
+			$changes[CaseReceiptDates::START_DATE] = $this->receiptDates->startDateFor(case: $case, termStartsAt: $termStartsAt);
+		}
+
+		return $changes;
 	}//end changesFor()
 
 	/**
@@ -242,31 +287,4 @@ class IntakeTermStartListener implements IEventListener {
 			);
 		}
 	}//end write()
-
-	/**
-	 * The created object as an array, however the event carries it.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return array<string, mixed>|null The payload.
-	 */
-	private function extractObject(Event $event): ?array {
-		if (method_exists($event, 'getObject') === false) {
-			return null;
-		}
-
-		$object = $event->getObject();
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end extractObject()
 }//end class
