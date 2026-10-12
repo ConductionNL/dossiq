@@ -28,18 +28,21 @@ section and the action SHALL NOT appear on any other case type.
 
 ### Requirement: The Woo term is extended from the case page (REQ-WCS-002)
 
-A Woo case with a running term and no extension yet SHALL offer an `Extend Woo term` header action.
-Its dialog SHALL require a reason and SHALL post `{reason}` to POST
-`/api/cases/{id}/woo/extend-deadline`. On success it SHALL show the new deadline and whether the
-requester was told (`noticeStatus`, and `noticeReason` when not sent). A 409 SHALL be shown with
-the server's sentence. The action SHALL be hidden once the term has been extended.
+Amended per decision 182: extending a term is the generic Extend term act of the Next step dialog
+(board DqVolgendeStap), and its limit and its notice live in `specs/term-extension-limit/spec.md`
+(REQ-TEL-001, REQ-TEL-002). There is no Woo-specific dialog and no `woo-extend` action. This
+requirement is the configuration that makes the generic act serve the Wet open overheid (Woo).
+
+The Woo request case type SHALL state `extensionAllowed` true, `extensionPeriod` P14D and
+`maxExtensions` 1 (Woo art. 4.4 lid 2: one extension of two weeks, told to the requester with
+reasons).
 
 #### Scenario: Extend once, see the requester was not told
 - **GIVEN** a Woo case with `deadline` 2026-11-02, no extension, and a requester with no reachable channel
 - **WHEN** the handler extends with the reason "Zienswijzen van derden"
-- **THEN** the dialog SHALL show the new deadline 2026-11-16
-- **AND** it SHALL say that the requester was not told, with the reason
-- **AND** the `Extend Woo term` action SHALL no longer be offered on the case
+- **THEN** the term SHALL end on 2026-11-16
+- **AND** the dialog SHALL say that the requester was not told, with the reason
+- **AND** Extend term SHALL be greyed out on the case from then on
 
 ### Requirement: The Woo decision is made from the case page (REQ-WCS-003)
 

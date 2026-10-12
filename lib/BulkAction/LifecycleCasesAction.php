@@ -271,6 +271,14 @@ class LifecycleCasesAction implements BulkActionInterface {
 			return 'already_suspended';
 		}
 
+		// The case type allows an extension and this case used all of them:
+		// that is its own refusal, not "this case type allows none".
+		if ($gesture === 'extend' && is_int($state['maxExtensions'] ?? null) === true
+			&& (int)($state['extensionCount'] ?? 0) >= $state['maxExtensions']
+		) {
+			return 'extension_limit_reached';
+		}
+
 		return match ($gesture) {
 			'suspend' => 'suspension_not_allowed',
 			'resume' => 'not_suspended',

@@ -100,7 +100,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.1.0",
+          "version": "1.3.0",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -113,6 +113,7 @@
         "isDraft": false,
         "extensionAllowed": true,
         "extensionPeriod": "P14D",
+        "maxExtensions": 1,
         "publicationRequired": true,
         "internalOrExternal": "extern",
         "handlerAction": "Beoordelen en beslissen op WOO-verzoek",
