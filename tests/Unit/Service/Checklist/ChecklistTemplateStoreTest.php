@@ -1,10 +1,10 @@
 <?php
 
 /**
- * InspectionChecklistService Unit Tests
+ * ChecklistTemplateStore Unit Tests
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service
+ * @package  OCA\Dossiq\Tests\Unit\Service\Checklist
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,21 +22,21 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service;
+namespace OCA\Dossiq\Tests\Unit\Service\Checklist;
 
-use OCA\Dossiq\Service\InspectionChecklistService;
+use OCA\Dossiq\Service\Checklist\ChecklistTemplateStore;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Unit tests for InspectionChecklistService.
+ * Unit tests for ChecklistTemplateStore.
  *
- * @covers \OCA\Dossiq\Service\InspectionChecklistService
+ * @covers \OCA\Dossiq\Service\Checklist\ChecklistTemplateStore
  * @uses \OCA\Dossiq\Service\Inspection\InspectionTemplateMapper
  */
-class InspectionChecklistServiceTest extends TestCase {
+class ChecklistTemplateStoreTest extends TestCase {
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -49,9 +49,9 @@ class InspectionChecklistServiceTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
-	 * @var InspectionChecklistService
+	 * @var ChecklistTemplateStore
 	 */
-	private InspectionChecklistService $service;
+	private ChecklistTemplateStore $service;
 
 	/**
 	 * Set up test fixtures.
@@ -62,14 +62,14 @@ class InspectionChecklistServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
-		$this->service = new InspectionChecklistService(
+		$this->service = new ChecklistTemplateStore(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 		);
 	}//end setUp()
 
 	/**
-	 * Test that listChecklists returns empty array when OpenRegister unavailable.
+	 * Test that all returns empty array when OpenRegister unavailable.
 	 *
 	 * @return void
 	 *
@@ -78,13 +78,13 @@ class InspectionChecklistServiceTest extends TestCase {
 	public function testListChecklistsReturnsEmptyWhenNoOpenRegister(): void {
 		$this->settingsService->method('getObjectService')->willReturn(null);
 
-		$result = $this->service->listChecklists();
+		$result = $this->service->all();
 
 		$this->assertSame(expected: [], actual: $result);
 	}//end testListChecklistsReturnsEmptyWhenNoOpenRegister()
 
 	/**
-	 * Test that createChecklist throws when OpenRegister unavailable.
+	 * Test that create throws when OpenRegister unavailable.
 	 *
 	 * @return void
 	 *
@@ -96,11 +96,11 @@ class InspectionChecklistServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('OpenRegister is not available');
 
-		$this->service->createChecklist(data: ['name' => 'Test', 'caseTypeRef' => 'abc']);
+		$this->service->create(data: ['name' => 'Test', 'caseTypeRef' => 'abc']);
 	}//end testCreateChecklistThrowsWhenNoOpenRegister()
 
 	/**
-	 * Test that deleteChecklist returns false when OpenRegister unavailable.
+	 * Test that delete returns false when OpenRegister unavailable.
 	 *
 	 * @return void
 	 *
@@ -109,7 +109,7 @@ class InspectionChecklistServiceTest extends TestCase {
 	public function testDeleteChecklistReturnsFalseWhenNoOpenRegister(): void {
 		$this->settingsService->method('getObjectService')->willReturn(null);
 
-		$result = $this->service->deleteChecklist(id: 'some-uuid');
+		$result = $this->service->delete(id: 'some-uuid');
 
 		$this->assertFalse(condition: $result);
 	}//end testDeleteChecklistReturnsFalseWhenNoOpenRegister()
@@ -147,7 +147,7 @@ class InspectionChecklistServiceTest extends TestCase {
 		$this->settingsService->method('getObjectService')->willReturn($store);
 		$this->settingsService->method('getConfigValue')->willReturn('7');
 
-		$result = $this->service->listChecklists(caseTypeRef: 'ct-1');
+		$result = $this->service->all(caseTypeRef: 'ct-1');
 
 		$this->assertSame('inspectionChecklistTemplate', $store->asked[1]);
 		$this->assertSame('ct-1', $store->asked[2]['caseType']);
@@ -191,7 +191,7 @@ class InspectionChecklistServiceTest extends TestCase {
 		$this->settingsService->method('getObjectService')->willReturn($store);
 		$this->settingsService->method('getConfigValue')->willReturn('7');
 
-		$result = $this->service->createChecklist(data: ['name' => 'Fundering', 'caseTypeRef' => 'ct-1', 'items' => [['question' => 'Wapening', 'type' => 'boolean']]]);
+		$result = $this->service->create(data: ['name' => 'Fundering', 'caseTypeRef' => 'ct-1', 'items' => [['question' => 'Wapening', 'type' => 'boolean']]]);
 
 		$this->assertSame('inspectionChecklistTemplate', $store->saved[1]);
 		$this->assertNull($store->saved[2]);

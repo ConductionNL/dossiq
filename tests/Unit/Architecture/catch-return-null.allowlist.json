@@ -326,6 +326,13 @@
       "reason": "`getCaseIdForShare()` answers `return null` when the read fails; the catch logs at debug (\"CaseSharingService: getCaseIdForShare failed\"), so a failed read and an absent record are the same answer."
     },
     {
+      "file": "lib/Service/Checklist/ChecklistTemplateStore.php",
+      "method": "all",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`all()` answers `return []` when the read fails; the catch logs at warning (\"Failed to list checklist templates\"), so a failed read and an absent record are the same answer."
+    },
+    {
       "file": "lib/Service/Transfer/FederatedIdempotency.php",
       "method": "findByKey",
       "occurrence": 1,
@@ -758,13 +765,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`caseTypeBoundTo()` looks up the case type a form hash is bound to. No binding and an unanswerable search are the same answer to the caller, which offers the ordinary case-type picker instead of a pre-selected one."
-    },
-    {
-      "file": "lib/Service/InspectionChecklistService.php",
-      "method": "listChecklists",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`listChecklists()` answers `return []` when the read fails; the catch logs at warning (\"Failed to list inspection checklists\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Intake/AdmissibilityJudgement.php",

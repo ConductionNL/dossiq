@@ -1,10 +1,14 @@
 <?php
 
 /**
- * Dossiq Inspection Checklist Controller
+ * A checklist run on a case, as a task
  *
- * REST endpoints for admin CRUD on inspection checklists and per-case
- * inspection result submission.
+ * Submits one filled-in checklist for a case and reads the runs a case has.
+ * A run is an OpenRegister task (see
+ * {@see \OCA\Dossiq\Service\Inspection\InspectionRunService}). The URLs keep
+ * their first names (`/api/vth/cases/{id}/inspection-result`), because the
+ * case panel, the offline client and the end-to-end tests call them; the code
+ * behind them knows no procedure.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller
@@ -25,16 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Inspection\InspectionRunService;
-use OCA\Dossiq\Service\InspectionChecklistService;
-use OCA\Dossiq\Settings\AdminSettings;
 use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -45,45 +45,31 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Controller for inspection checklist CRUD and inspection result submission.
- *
- * @psalm-suppress UnusedClass
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen declared types, and
- * the rule asks for twelve. This was already failing before the 4xx arm below
- * was written, so it is not the exceptions: it is five injected collaborators,
- * the framework's Controller / IRequest / JSONResponse / Http, the OCS
- * forbidden exception, and the two error types the catch arms name. Reducing
- * it means splitting admin checklist CRUD from per-case result submission into
- * two controllers, which is a routing change and a different PR. Same
- * suppression and same reasoning as ZrcController, DrcController,
- * StufController and SubsidieController carry.
+ * Submits and reads the checklist runs of one case.
  *
  * @spec openspec/specs/inspection-checklists/spec.md
  */
-class InspectionChecklistController extends Controller {
+class TaskChecklistController extends Controller {
 	/**
 	 * Constructor.
 	 *
+	 * `IGroupManager` is deliberately NOT injected (#799). The only thing it
+	 * did here was the admin bypass in front of a guard that could never
+	 * refuse, and `CaseAccessGuard` performs that same bypass itself, in one
+	 * place, next to the per-case check it belongs to.
+	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The request
-	 * @param InspectionChecklistService $checklistService Checklist service
 	 * @param IUserSession $userSession User session
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
-	 * @param InspectionRunService $runs Inspection runs as OpenRegister tasks
-	 *
-	 * `IGroupManager` is deliberately NOT injected any more (#799). The only
-	 * thing it did here was the admin bypass in front of a guard that could
-	 * never refuse, and `CaseAccessGuard` performs that same bypass itself, in
-	 * one place, next to the per-case check it belongs to.
+	 * @param InspectionRunService $runs Checklist runs as OpenRegister tasks
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly InspectionChecklistService $checklistService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
@@ -93,134 +79,7 @@ class InspectionChecklistController extends Controller {
 	}//end __construct()
 
 	/**
-	 * List all inspection checklists.
-	 *
-	 * @return JSONResponse List of inspectionChecklist objects
-	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
-	public function index(): JSONResponse {
-		$caseTypeRef = $this->request->getParam(key: 'caseTypeRef');
-		$checklists = $this->checklistService->listChecklists(caseTypeRef: $caseTypeRef);
-		return new JSONResponse(data: $checklists, statusCode: Http::STATUS_OK);
-	}//end index()
-
-	/**
-	 * Create a new inspection checklist.
-	 *
-	 * @return JSONResponse Created inspectionChecklist object
-	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
-	public function create(): JSONResponse {
-		$data = $this->request->getParams();
-		// Identity stripped on a CREATE too. `saveObject()` resolves its target
-		// from the payload (`@self.id` first, then `id`), so a create carrying
-		// either would replace an existing checklist rather than add one.
-		unset($data['_route'], $data['id'], $data['uuid'], $data['@self']);
-
-		try {
-			$result = $this->checklistService->createChecklist(data: $data);
-			return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
-		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
-			// Same narrow arm as submitResult() below, for the same reason: a
-			// checklist OpenRegister refuses is the author's payload, not a
-			// server fault, and its message already names the property.
-			$this->logger->info(
-				'Rejected inspection checklist create: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Failed to create inspection checklist: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => 'Failed to create checklist: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}
-	}//end create()
-
-	/**
-	 * Update an existing inspection checklist.
-	 *
-	 * @param string $id UUID of the checklist to update
-	 *
-	 * @return JSONResponse Updated inspectionChecklist object
-	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
-	public function update(string $id): JSONResponse {
-		$data = $this->request->getParams();
-		unset($data['_route'], $data['id'], $data['uuid'], $data['@self']);
-
-		try {
-			$result = $this->checklistService->updateChecklist(id: $id, data: $data);
-			return new JSONResponse(data: $result, statusCode: Http::STATUS_OK);
-		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
-			// Same narrow arm as submitResult() below, for the same reason: a
-			// checklist OpenRegister refuses is the author's payload, not a
-			// server fault, and its message already names the property.
-			$this->logger->info(
-				'Rejected inspection checklist update for ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Failed to update inspection checklist ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return new JSONResponse(
-				['message' => 'Failed to update checklist: ' . $e->getMessage()],
-				Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}
-	}//end update()
-
-	/**
-	 * Delete an inspection checklist.
-	 *
-	 * @param string $id UUID of the checklist to delete
-	 *
-	 * @return JSONResponse Success or error
-	 *
-	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
-	 *
-	 * @spec openspec/specs/inspection-checklists/spec.md
-	 */
-	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
-	public function destroy(string $id): JSONResponse {
-		$success = $this->checklistService->deleteChecklist(id: $id);
-		if ($success === true) {
-			return new JSONResponse(data: ['message' => 'Deleted'], statusCode: Http::STATUS_OK);
-		}
-
-		return new JSONResponse(
-			['message' => 'Failed to delete checklist'],
-			Http::STATUS_INTERNAL_SERVER_ERROR
-		);
-	}//end destroy()
-
-	/**
-	 * Submit an inspection result for a case.
+	 * Submit one filled-in checklist for a case.
 	 *
 	 * Per-object guard: `CaseAccessGuard::hasCaseMutationAccess()`.
 	 *
@@ -250,7 +109,7 @@ class InspectionChecklistController extends Controller {
 	 * absent OpenRegister and an unresolvable case, because
 	 * `CaseAccessGuard` fails closed at every branch.
 	 *
-	 * MUTATION access, not read access, and the asymmetry with `getResults()`
+	 * MUTATION access, not read access, and the asymmetry with `runs()`
 	 * below is deliberate: submitting an inspection result writes an
 	 * enforcement finding against a named address onto the case, so the
 	 * narrower predicate (`assignee`) is the defensible one. Reading the
@@ -258,14 +117,14 @@ class InspectionChecklistController extends Controller {
 	 *
 	 * @param string $id UUID of the case
 	 *
-	 * @return JSONResponse Saved inspectionResult object
+	 * @return JSONResponse The run
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[NoAdminRequired]
-	public function submitResult(string $id): JSONResponse {
+	public function submit(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Not authenticated');
@@ -322,8 +181,8 @@ class InspectionChecklistController extends Controller {
 			// genuine fault must still be a 500 and must still be logged as an
 			// error, and it is, immediately below.
 			$this->logger->info(
-				'Rejected inspection result for case ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				'Rejected checklist run for case ' . $id . ': ' . $e->getMessage(),
+				['app' => $this->appName]
 			);
 			return new JSONResponse(
 				['message' => $e->getMessage()],
@@ -336,18 +195,18 @@ class InspectionChecklistController extends Controller {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'Failed to submit inspection result for case ' . $id . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID]
+				'Failed to submit a checklist run for case ' . $id . ': ' . $e->getMessage(),
+				['app' => $this->appName]
 			);
 			return new JSONResponse(
 				['message' => 'Submission failed: ' . $e->getMessage()],
 				Http::STATUS_INTERNAL_SERVER_ERROR
 			);
 		}//end try
-	}//end submitResult()
+	}//end submit()
 
 	/**
-	 * Get all inspection results for a case.
+	 * Every checklist run of a case.
 	 *
 	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
 	 *
@@ -355,19 +214,19 @@ class InspectionChecklistController extends Controller {
 	 * and `$id` is the CASE uuid, so the case-membership predicate applies
 	 * directly. Inspection results carry enforcement findings against a named
 	 * address, so this is a per-case read of supervision data and not a
-	 * catalogue lookup like the checklist DEFINITIONS above (which are admin
-	 * CRUD and guarded as such).
+	 * catalogue lookup like the checklist templates (which are admin CRUD and
+	 * guarded as such, in ChecklistTemplateController).
 	 *
 	 * @param string $id UUID of the case
 	 *
-	 * @return JSONResponse List of inspectionResult objects
+	 * @return JSONResponse The runs
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	#[NoAdminRequired]
-	public function getResults(string $id): JSONResponse {
+	public function runs(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Not authenticated');
@@ -379,5 +238,5 @@ class InspectionChecklistController extends Controller {
 
 		$results = $this->runs->runsForCase(caseId: $id, actor: $user->getUID());
 		return new JSONResponse(data: $results, statusCode: Http::STATUS_OK);
-	}//end getResults()
+	}//end runs()
 }//end class
