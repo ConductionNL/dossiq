@@ -35,7 +35,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\CaseTermsService
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
- * @uses \OCA\Dossiq\Service\Termijn\DayCount
+ * @uses \OCA\Dossiq\Service\Term\DayCount
  */
 class PlannedTermTest extends TestCase {
 	use BindsTermFixtures;

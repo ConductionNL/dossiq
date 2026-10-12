@@ -52,7 +52,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\ResidentQuestionTask;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Termijn\DayCount;
+use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use Psr\Log\LoggerInterface;
 use Throwable;

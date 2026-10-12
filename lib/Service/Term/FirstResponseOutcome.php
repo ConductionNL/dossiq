@@ -41,7 +41,6 @@ namespace OCA\Dossiq\Service\Term;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Termijn\DayCount;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use Psr\Log\LoggerInterface;
