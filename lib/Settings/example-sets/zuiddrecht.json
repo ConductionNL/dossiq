@@ -227,6 +227,9 @@
 					}
 				}
 			},
+			"jsonFields": [
+				"statusHistory"
+			],
 			"data": {
 				"title": "Bewonersvergunning Kerkplein",
 				"description": "Meneer Bakker belde het KCC voor een parkeervergunning voor zijn auto bij zijn huis aan het Kerkplein. Het KCC heeft de aanvraag voor hem ingevoerd.",
@@ -246,7 +249,20 @@
 				"endDate": "{{date:-27}}",
 				"receivedAt": "{{datetime:-34 10:19}}",
 				"currentStatusEnteredAt": "{{datetime:-27 14:10}}",
-				"statusHistory": "[{\"status\":\"{{lookup:ontvangen}}\",\"enteredAt\":\"{{datetime:-34 10:19}}\"},{\"status\":\"{{lookup:bezig}}\",\"enteredAt\":\"{{datetime:-33 09:05}}\"},{\"status\":\"{{lookup:status}}\",\"enteredAt\":\"{{datetime:-27 14:10}}\"}]",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-34 10:19}}"
+					},
+					{
+						"status": "{{lookup:bezig}}",
+						"enteredAt": "{{datetime:-33 09:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-27 14:10}}"
+					}
+				],
 				"tags": [
 					"parkeren",
 					"kerkplein"
@@ -319,6 +335,9 @@
 					}
 				}
 			},
+			"jsonFields": [
+				"statusHistory"
+			],
 			"data": {
 				"title": "Nieuw kenteken op de bewonersvergunning Kerkplein",
 				"description": "Linda Bakker vraagt namens haar vader Henk Bakker het kenteken van zijn nieuwe auto op zijn bewonersvergunning te zetten.",
@@ -336,7 +355,12 @@
 				"startDate": "{{date:-3}}",
 				"receivedAt": "{{datetime:-3 20:41}}",
 				"currentStatusEnteredAt": "{{datetime:-3 20:41}}",
-				"statusHistory": "[{\"status\":\"{{lookup:status}}\",\"enteredAt\":\"{{datetime:-3 20:41}}\"}]",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-3 20:41}}"
+					}
+				],
 				"tags": [
 					"parkeren",
 					"gemachtigde"
@@ -390,6 +414,9 @@
 					}
 				}
 			},
+			"jsonFields": [
+				"statusHistory"
+			],
 			"data": {
 				"title": "Kapotte bank en zwerfafval bij de speeltuin Havenstraat",
 				"description": "Mevrouw El-Amrani belde over een kapotte bank en veel afval bij de speeltuin aan de Havenstraat. Zij komt naar de balie om foto's te laten zien.",
@@ -407,7 +434,16 @@
 				"startDate": "{{date:-5}}",
 				"receivedAt": "{{datetime:-5 11:32}}",
 				"currentStatusEnteredAt": "{{datetime:-4 08:50}}",
-				"statusHistory": "[{\"status\":\"{{lookup:ontvangen}}\",\"enteredAt\":\"{{datetime:-5 11:32}}\"},{\"status\":\"{{lookup:status}}\",\"enteredAt\":\"{{datetime:-4 08:50}}\"}]",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-5 11:32}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-4 08:50}}"
+					}
+				],
 				"tags": [
 					"havenstraat",
 					"speeltuin"
@@ -472,6 +508,9 @@
 					}
 				}
 			},
+			"jsonFields": [
+				"statusHistory"
+			],
 			"data": {
 				"title": "Terrasoverkapping Dorpsstraat 39",
 				"description": "Slagerij Van der Berg wil een vaste overkapping boven het terras voor de winkel, voor de broodjes en soep die zij aan tafels verkoopt. Aangevraagd met eHerkenning.",
@@ -491,7 +530,16 @@
 				"startDate": "{{date:-9}}",
 				"receivedAt": "{{datetime:-9 07:58}}",
 				"currentStatusEnteredAt": "{{datetime:-6 13:15}}",
-				"statusHistory": "[{\"status\":\"{{lookup:ontvangen}}\",\"enteredAt\":\"{{datetime:-9 07:58}}\"},{\"status\":\"{{lookup:status}}\",\"enteredAt\":\"{{datetime:-6 13:15}}\"}]",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-9 07:58}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-6 13:15}}"
+					}
+				],
 				"tags": [
 					"dorpsstraat",
 					"terras",
@@ -539,6 +587,9 @@
 					}
 				}
 			},
+			"jsonFields": [
+				"statusHistory"
+			],
 			"data": {
 				"title": "Aanbesteding van het zaaksysteem",
 				"description": "CloudGemeente B.V. vraagt de stukken over de aanbesteding van het zaaksysteem van de gemeente: de leidraad, de opening van de inschrijvingen, het gunningsadvies en de inschrijvingen van de andere partijen.",
@@ -559,7 +610,24 @@
 				"endDate": "{{date:-18}}",
 				"receivedAt": "{{datetime:-52 15:02}}",
 				"currentStatusEnteredAt": "{{datetime:-18 10:00}}",
-				"statusHistory": "[{\"status\":\"{{lookup:ontvangst}}\",\"enteredAt\":\"{{datetime:-52 15:02}}\"},{\"status\":\"{{lookup:besluit}}\",\"enteredAt\":\"{{datetime:-22 09:30}}\"},{\"status\":\"{{lookup:publicatie}}\",\"enteredAt\":\"{{datetime:-20 16:45}}\"},{\"status\":\"{{lookup:status}}\",\"enteredAt\":\"{{datetime:-18 10:00}}\"}]",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangst}}",
+						"enteredAt": "{{datetime:-52 15:02}}"
+					},
+					{
+						"status": "{{lookup:besluit}}",
+						"enteredAt": "{{datetime:-22 09:30}}"
+					},
+					{
+						"status": "{{lookup:publicatie}}",
+						"enteredAt": "{{datetime:-20 16:45}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-18 10:00}}"
+					}
+				],
 				"wooRequest": {
 					"onderwerp": "Aanbesteding zaaksysteem",
 					"omschrijving": "Alle documenten over de aanbesteding van het nieuwe zaaksysteem: de leidraad, het proces-verbaal van de opening, het gunningsadvies, de inschrijvingen en de interne e-mail daarover.",
