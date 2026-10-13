@@ -10029,6 +10029,7 @@ OC.L10N.register(
         "{source} could not be read, so this list is incomplete.": "{source} could not be read, so this list is incomplete.",
         "{succeeded} of {total} cases were transitioned.": "{succeeded} of {total} cases were transitioned.",
         "{tasksDueToday} due today": "{tasksDueToday} due today",
+        "{time}, +{extension}": "{time}, +{extension}",
         "{title}": "{title}",
         "{title}, version {version}": "{title}, version {version}",
         "{total} case types": "{total} case types",
