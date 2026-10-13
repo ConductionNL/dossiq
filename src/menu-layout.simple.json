@@ -1675,7 +1675,7 @@
 					{
 						"key": "processingDeadline",
 						"label": "Processing time",
-						"formatter": "isoDuration"
+						"formatter": "processingTime"
 					},
 					{
 						"key": "version",

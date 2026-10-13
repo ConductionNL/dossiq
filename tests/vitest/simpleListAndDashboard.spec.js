@@ -785,7 +785,7 @@ describe('the case type list', () => {
 
 	it('shows the term in words, the version as Version n and a status pill', () => {
 		const column = (key) => list.config.columns.find((c) => c.key === key)
-		expect(column('processingDeadline').formatter).toBe('isoDuration')
+		expect(column('processingDeadline').formatter).toBe('processingTime')
 		expect(column('version').formatter).toBe('versionLabel')
 		expect(column('isDraft')).toMatchObject({
 			label: 'Status',
