@@ -375,7 +375,7 @@ export default {
 					},
 					{
 						key: 'due',
-						label: t('dossiq', 'Due'),
+						label: t('dossiq', 'Due by'),
 						path: 'dueAt',
 						format: 'date',
 					},

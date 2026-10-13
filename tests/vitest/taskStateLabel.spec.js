@@ -26,7 +26,7 @@ describe('taskStateLabel', () => {
 		).toEqual([
 			'Waiting',
 			'Ready to start',
-			'In progress',
+			'In execution',
 			'Done',
 			'Stopped',
 			'Skipped',
