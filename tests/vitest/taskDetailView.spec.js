@@ -146,7 +146,7 @@ describe('TaskDetailView', () => {
 			'Check the application',
 		)
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
-			'In progress',
+			'In execution',
 		)
 		expect(wrapper.find('[data-testid="cn-fact-assignee"] dd').text()).toBe(
 			'hbakker',
@@ -190,6 +190,7 @@ describe('TaskDetailView', () => {
 			urgent: 'Urgent',
 		})
 		expect(task.find((f) => f.key === 'assignee').label).toBe('Handler')
+		expect(task.find((f) => f.key === 'due').label).toBe('Due by')
 		expect(facts.at(1).props('content').link.label).toBe('To the case')
 	})
 
@@ -298,7 +299,7 @@ describe('TaskDetailView', () => {
 		expect(showSuccess).not.toHaveBeenCalled()
 		// The task is still on screen, still active, still actionable.
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
-			'In progress',
+			'In execution',
 		)
 		expect(
 			wrapper.find('[data-testid="task-detail-verb-complete"]').exists(),

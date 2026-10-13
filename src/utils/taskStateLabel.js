@@ -12,6 +12,9 @@ import { translate as t } from '@nextcloud/l10n'
  * words for a reader. The case plan and the task page both use it, so the two
  * cannot name the same state differently.
  *
+ * The words are DqTaak's: an active task is "In uitvoering" ("In execution"),
+ * which keeps it apart from a case "In behandeling".
+ *
  * A switch of literal `t()` calls, so the l10n extractor sees every key. A
  * state nobody wrote a word for is shown as the engine wrote it.
  *
@@ -28,7 +31,7 @@ export function taskStateLabel(state) {
 		case 'enabled':
 			return t('dossiq', 'Ready to start')
 		case 'active':
-			return t('dossiq', 'In progress')
+			return t('dossiq', 'In execution')
 		case 'completed':
 			return t('dossiq', 'Done')
 		case 'terminated':

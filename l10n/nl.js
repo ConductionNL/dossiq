@@ -2380,6 +2380,7 @@ OC.L10N.register(
         "Dubbel betaald": "Dubbel betaald",
         "Due": "Uiterlijk",
         "Due between": "Uiterlijk tussen",
+        "Due by": "Deadline",
         "Due date": "Vervaldatum",
         "Due for review": "Toe aan herbeoordeling",
         "Due soon": "Bijna verlopen",
