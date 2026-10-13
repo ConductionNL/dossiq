@@ -8550,6 +8550,7 @@ OC.L10N.register(
         "To Queue": "Naar wachtrij",
         "To Status": "Naar status",
         "To the board": "Naar werkbord",
+        "To the case": "Naar de zaak",
         "To the day close": "Naar dagafsluiting",
         "To:": "Aan:",
         "To: {email}": "Aan: {email}",

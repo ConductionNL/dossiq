@@ -236,6 +236,8 @@ import TaskNotesLeaf from '../../components/tasks/TaskNotesLeaf.vue'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import { caseIdFrom, taskCaseRef } from '../../utils/flowTaskHelpers.js'
+import { PRIORITY_VALUES, priorityLabel } from '../../utils/priorityValues.js'
+import { taskStateLabel } from '../../utils/taskStateLabel.js'
 
 export default {
 	name: 'TaskDetailView',
@@ -319,18 +321,17 @@ export default {
 		},
 
 		/**
-		 * The state, for the badge beside the heading.
+		 * The state, for the badge beside the heading, in the reader's words
+		 * (DqTaak draws "In uitvoering", never "active").
 		 *
-		 * The engine's own vocabulary, untranslated into a second one. The
-		 * store's header says why: `Task::STATES` is the same CMMN vocabulary
-		 * `caseTask` used, and a mapping table here would diverge the two the
-		 * first time either side gained a value.
+		 * The engine keeps its own vocabulary; only the label is worded, and by
+		 * the one helper the case plan uses too, so the two cannot diverge.
 		 *
-		 * @return {string} The state, or ''.
+		 * @return {string} The label, or ''.
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		stateLabel() {
-			return String(this.task?.state ?? '').trim()
+			return taskStateLabel(this.task?.state)
 		},
 
 		/**
@@ -363,7 +364,7 @@ export default {
 				fields: [
 					{
 						key: 'assignee',
-						label: t('dossiq', 'Assignee'),
+						label: t('dossiq', 'Handler'),
 						path: 'assignee',
 					},
 					{
@@ -388,6 +389,14 @@ export default {
 						key: 'priority',
 						label: t('dossiq', 'Priority'),
 						path: 'priority',
+						// The engine's value worded as the case priority is
+						// (low/normal/high/urgent), never the raw "normal".
+						map: Object.fromEntries(
+							PRIORITY_VALUES.map((value) => [
+								value,
+								priorityLabel(value),
+							]),
+						),
 					},
 					{
 						key: 'requester',
@@ -478,7 +487,7 @@ export default {
 					},
 				],
 
-				link: { label: t('dossiq', 'Open the case'), route: caseRoute },
+				link: { label: t('dossiq', 'To the case'), route: caseRoute },
 				emptyText: '',
 			}
 		},
