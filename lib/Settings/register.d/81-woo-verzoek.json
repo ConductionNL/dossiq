@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.5",
+          "version": "1.4.6",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -121,6 +121,9 @@
         "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
         "subject": "Openbaarmaking van overheidsinformatie",
         "processingDeadline": "P28D",
+        "handling": {
+          "defaultGroup": "behandelaars"
+        },
         "remedy": {
           "enabled": true,
           "kind": "bezwaar",
