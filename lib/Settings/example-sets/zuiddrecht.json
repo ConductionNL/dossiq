@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication.",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, and links the two finished cases to their results once those exist.",
 	"after": [
 		"opencatalogi"
 	],
@@ -49,6 +49,26 @@
 			"members": [
 				"noor"
 			]
+		}
+	],
+	"serviceAccounts": [
+		{
+			"key": "background",
+			"uid": "dossiq-background",
+			"displayName": "Dossiq achtergrondtaken",
+			"groups": [
+				"dossiq-background-service"
+			]
+		}
+	],
+	"appConfig": [
+		{
+			"key": "background_service_account",
+			"value": "{{account:background.uid}}"
+		},
+		{
+			"key": "woo_publication_catalog_slug",
+			"value": "zuiddrecht"
 		}
 	],
 	"objects": [
@@ -732,6 +752,26 @@
 					"category": "infocat014",
 					"publishedAt": "{{datetime:-18 10:00}}"
 				}
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "parkeren-henk-uitkomst",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "parkeren-henk",
+			"set": {
+				"result": "{{object:parkeren-henk-resultaat.id}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-uitkomst",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "woo-zaaksysteem",
+			"set": {
+				"result": "{{object:woo-zaaksysteem-resultaat.id}}"
 			}
 		}
 	]

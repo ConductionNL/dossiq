@@ -39,3 +39,14 @@ The handled Woo request SHALL be at its final status with result Deels openbaar 
 - **THEN** the decision's `wooPublication.publicationId` SHALL be that publication's id
 
 @e2e exclude Cross-app ordering is the loader's (REQ-EXS-001, REQ-EXS-004 in openregister#4603); checked statically by resolving the lookup against opencatalogi's fragment.
+
+### Requirement: The set makes dossiq ready to run its background jobs (REQ-ZES-004)
+
+The fragment SHALL declare the service account `dossiq-background` in group `dossiq-background-service`, and SHALL set dossiq's app config `background_service_account` to that account through `{{account:background.uid}}`. It SHALL set `woo_publication_catalog_slug` to `zuiddrecht`. After its objects, it SHALL link the granted parking permit and the handled Woo request to their results through changes on those cases.
+
+#### Scenario: Background jobs have an account after install
+- **GIVEN** a fresh instance
+- **WHEN** the set is installed
+- **THEN** `dossiq background_service_account` SHALL name an enabled account in `dossiq-background-service`, and both finished cases SHALL point at their result
+
+@e2e exclude Accounts, app config and changes are written, recorded and proven by the loader (REQ-EXS-014, REQ-EXS-015, REQ-EXS-018 in openregister#4603); dossiq adds no code here.

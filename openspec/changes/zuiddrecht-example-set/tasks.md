@@ -15,9 +15,9 @@ Kind: data. No PHP changes. Depends on openregister#4603 (the loader) and dossiq
 - [x] 2.1 Static check: every placeholder resolves, every lookup finds a shipped row, every object validates against the merged register schema, no undeclared key. A control file with seven planted faults is refused on all of them.
 - [ ] 2.2 After openregister#4603 merges: `occ openregister:example-set:install zuiddrecht --check` exits 0 on an instance with dossiq#3865, then the install exits 0.
 
-## 3. Requests on the loader (openregister#4603)
+## 3. Loader features used (openregister#4603)
 
-- [ ] 3.1 Service accounts: dossiq's background jobs need an enabled account in `dossiq-background-service`, named in app config `dossiq background_service_account`. The loader can neither create an account outside the cast nor set app config.
-- [ ] 3.2 App config: `dossiq woo_publication_catalog_slug` should be `zuiddrecht` so new Woo publications land in the Zuiddrecht catalog.
-- [ ] 3.3 The instance base URL: the case's `wooPublicationUrl` is an absolute URI, and the loader has no placeholder for the instance URL.
-- [ ] 3.4 Updating an earlier object: the case's `result` points at the result row, which is written after the case. The loader writes each object once, so the case keeps no `result` link.
+- [x] 3.1 Service account `dossiq-background` in `dossiq-background-service` (REQ-EXS-014).
+- [x] 3.2 App config `background_service_account: {{account:background.uid}}` and `woo_publication_catalog_slug: zuiddrecht` (REQ-EXS-015).
+- [x] 3.3 `wooPublicationUrl` needs nothing: dossiq computes it.
+- [x] 3.4 Changes `parkeren-henk-uitkomst` and `woo-zaaksysteem-uitkomst` set each case's `result` once the result exists (REQ-EXS-018).

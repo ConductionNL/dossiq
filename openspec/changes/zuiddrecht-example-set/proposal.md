@@ -35,6 +35,9 @@ OpenRegister#4603 adds one loader for a story across apps. Each app ships `lib/S
   - CloudGemeente B.V.: a Woo request about the case system tender, handled, partly disclosed and published.
 - The published Woo request carries its result and its Woo decision. The decision names the opencatalogi publication through a lookup on its title. So the fragment runs `after: ["opencatalogi"]`.
 - Rows for the requesters in dossiq's `brpPerson` and `kvkCompany`, filled from the cast.
+- The background service account `dossiq-background` in `dossiq-background-service`, named in app config `background_service_account` (REQ-EXS-014, REQ-EXS-015).
+- App config `woo_publication_catalog_slug: zuiddrecht`, so new Woo publications land in the Zuiddrecht catalog.
+- Two changes that link the parking permit and the Woo request to their results, written after the cases (REQ-EXS-018).
 
 ## Rules this data follows
 
@@ -45,7 +48,6 @@ OpenRegister#4603 adds one loader for a story across apps. Each app ships `lib/S
 
 ## Not in this change
 
-- The background service account. The loader cannot create a service account or set `dossiq background_service_account` yet. That is a request on the loader, listed in tasks.
-- The absolute `wooPublicationUrl` on the published case. It needs the instance's base URL, which the loader cannot fill yet.
+- `wooPublicationUrl` on the published case. Dossiq computes it, so the set does not store it.
 - A terrace permit case type. Dossiq ships none, so the Slagerij's case is a permit for a canopy over the terrace, which is a building activity.
 - Citizen appointments. Dossiq has no appointment object. Fatima's appointment is a planned action on her case.
