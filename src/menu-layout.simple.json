@@ -1183,7 +1183,7 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
@@ -1192,7 +1192,7 @@
 						"gridX": 4,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
@@ -1201,7 +1201,7 @@
 						"gridX": 8,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					}
 				]
@@ -1634,6 +1634,7 @@
 				"folderSidebar": null,
 				"showTitle": true,
 				"countSubtitle": "{total} case types",
+				"searchPlaceholder": "Search in this list",
 				"headerActions": [
 					{
 						"id": "case-type-import",

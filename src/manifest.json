@@ -7150,7 +7150,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 8,
-						"gridHeight": 6,
+						"gridHeight": 7,
 						"showTitle": false
 					},
 					{
@@ -7159,14 +7159,14 @@
 						"gridX": 8,
 						"gridY": 0,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 7,
 						"showTitle": true
 					},
 					{
 						"id": "3",
 						"widgetId": "case-type-terms",
 						"gridX": 0,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 8,
 						"gridHeight": 4,
 						"showTitle": false
@@ -7175,7 +7175,7 @@
 						"id": "4",
 						"widgetId": "case-type-privacy",
 						"gridX": 8,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7184,7 +7184,7 @@
 						"id": "5",
 						"widgetId": "case-type-chain",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 11,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7193,7 +7193,7 @@
 						"id": "6",
 						"widgetId": "case-type-versions",
 						"gridX": 0,
-						"gridY": 14,
+						"gridY": 15,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7202,16 +7202,16 @@
 						"id": "7",
 						"widgetId": "case-type-translations",
 						"gridX": 0,
-						"gridY": 18,
+						"gridY": 19,
 						"gridWidth": 12,
-						"gridHeight": 5,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
 						"id": "8",
 						"widgetId": "case-type-list-layout",
 						"gridX": 0,
-						"gridY": 23,
+						"gridY": 25,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7220,16 +7220,16 @@
 						"id": "9",
 						"widgetId": "case-type-portal",
 						"gridX": 0,
-						"gridY": 27,
+						"gridY": 29,
 						"gridWidth": 12,
-						"gridHeight": 7,
+						"gridHeight": 12,
 						"showTitle": true
 					},
 					{
 						"id": "10",
 						"widgetId": "case-type-party-kinds",
 						"gridX": 0,
-						"gridY": 34,
+						"gridY": 41,
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true
