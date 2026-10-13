@@ -8551,6 +8551,7 @@ OC.L10N.register(
         "To Queue": "To Queue",
         "To Status": "To Status",
         "To the board": "To the board",
+        "To the case": "To the case",
         "To the day close": "To the day close",
         "To:": "To:",
         "To: {email}": "To: {email}",
