@@ -139,14 +139,14 @@ beforeEach(() => {
 })
 
 describe('TaskDetailView', () => {
-	it('renders the task the engine answered with, in the engine vocabulary', async () => {
+	it('renders the task the engine answered with, its state in the words of the reader', async () => {
 		const wrapper = await mountPage(TASK)
 
 		expect(wrapper.find('[data-testid="task-detail-title"]').text()).toBe(
 			'Check the application',
 		)
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
-			'active',
+			'In progress',
 		)
 		expect(wrapper.find('[data-testid="cn-fact-assignee"] dd').text()).toBe(
 			'hbakker',
@@ -175,6 +175,22 @@ describe('TaskDetailView', () => {
 			schema: 'statusType',
 			labelField: 'name',
 		})
+	})
+
+	it('names the priority in words, the handler as Handler, and the way back as To the case', async () => {
+		// DqTaak: "Prioriteit Hoog", "Behandelaar", "Naar de zaak". The engine
+		// value "high" stays the value; only the label is worded.
+		const wrapper = await mountPage(TASK)
+		const facts = wrapper.findAllComponents({ name: 'CnFactsWidget' })
+		const task = facts.at(0).props('content').fields
+		expect(task.find((f) => f.key === 'priority').map).toEqual({
+			low: 'Low',
+			normal: 'Normal',
+			high: 'High',
+			urgent: 'Urgent',
+		})
+		expect(task.find((f) => f.key === 'assignee').label).toBe('Handler')
+		expect(facts.at(1).props('content').link.label).toBe('To the case')
 	})
 
 	it('draws no case card for a task with no case', async () => {
@@ -282,7 +298,7 @@ describe('TaskDetailView', () => {
 		expect(showSuccess).not.toHaveBeenCalled()
 		// The task is still on screen, still active, still actionable.
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
-			'active',
+			'In progress',
 		)
 		expect(
 			wrapper.find('[data-testid="task-detail-verb-complete"]').exists(),

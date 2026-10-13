@@ -1,0 +1,41 @@
+// SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+// SPDX-License-Identifier: EUPL-1.2
+
+import { translate as t } from '@nextcloud/l10n'
+
+/**
+ * The reader's word for an engine task state.
+ *
+ * The engine keeps its own vocabulary (`Task::STATES` in openregister:
+ * available, enabled, active, completed, terminated, disabled), and so does
+ * every store and filter here. This is the ONE place that turns a state into
+ * words for a reader. The case plan and the task page both use it, so the two
+ * cannot name the same state differently.
+ *
+ * A switch of literal `t()` calls, so the l10n extractor sees every key. A
+ * state nobody wrote a word for is shown as the engine wrote it.
+ *
+ * @param {string|null|undefined} state The engine state.
+ * @return {string} The label, or '' for no state.
+ * @spec openspec/specs/task-management/spec.md
+ */
+export function taskStateLabel(state) {
+	switch (String(state ?? '').trim()) {
+		case '':
+			return ''
+		case 'available':
+			return t('dossiq', 'Waiting')
+		case 'enabled':
+			return t('dossiq', 'Ready to start')
+		case 'active':
+			return t('dossiq', 'In progress')
+		case 'completed':
+			return t('dossiq', 'Done')
+		case 'terminated':
+			return t('dossiq', 'Stopped')
+		case 'disabled':
+			return t('dossiq', 'Skipped')
+		default:
+			return String(state).trim()
+	}
+}
