@@ -98,3 +98,26 @@ export function priorityLabel(priority) {
 			return String(priority ?? '')
 	}
 }
+
+/**
+ * The badge tone of a priority that asks for attention, or '' for one that
+ * does not.
+ *
+ * DqTaak draws a "Hoog" pill beside the state of a high-priority task. Low and
+ * normal draw no pill: every task has a priority, and a pill on all of them
+ * says nothing. The full priority stays in the task card either way.
+ *
+ * @param {unknown} priority The stored priority.
+ * @return {string} 'warning' for high, 'error' for urgent, else ''.
+ * @spec openspec/specs/case-priority/spec.md
+ */
+export function priorityPillTone(priority) {
+	switch (String(priority ?? '')) {
+		case 'high':
+			return 'warning'
+		case 'urgent':
+			return 'error'
+		default:
+			return ''
+	}
+}
