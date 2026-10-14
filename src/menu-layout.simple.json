@@ -471,76 +471,65 @@
 							},
 							{
 								"id": "simple-continue",
-								"type": "object-table",
+								"type": "record-list",
 								"title": "Continue working",
+								"_note": "DqMijnWerk's Verder werken: a row per case the reader opened last. The title, under it the case number and the case type, then the status pill and when the reader opened it. The library's record-list over OpenRegister's `_recent` lens, which carries its own order (last view first), so no `sort` here. Status and case type are read through _extend, so the pill and the meta line say names and never ids. The meta line is a list of parts (nextcloud-vue 2.82.0), so a case without a case type still shows its number. The time is `@self.viewedAt`, the moment the lens adds per object, not the case's own last change. When the lens reports itself unavailable, `lensReasonTexts` says why instead of `emptyText` (nextcloud-vue 2.82.0, #1555); the texts are the ones the full profile's Recently opened tile uses. The board draws no link to all of them, so there is none.",
 								"content": {
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"filter": {
-											"_recent": true
-										},
-										"limit": 3
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"_recent": true
 									},
-									"columns": [
-										{
-											"key": "title",
-											"cellClass": "cn-cell--strong",
-											"secondary": "identifier"
-										},
-										{
-											"key": "status",
-											"label": "Status",
-											"formatter": "statusTypeName",
-											"widget": "statusBadge"
-										}
+									"limit": 3,
+									"extend": [
+										"status",
+										"caseType"
+									],
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}"
+										]
+									},
+									"pill": {
+										"field": "status.name"
+									},
+									"trailing": [
+										"{@self.viewedAt|relativetime}"
 									],
 									"rowRoute": "CaseDetail",
-									"viewAllRoute": {
-										"name": "Cases",
-										"query": {
-											"_recent": "true"
-										}
-									},
-									"viewAllLabel": "View all",
-									"hideHeader": true,
-									"borderless": true,
-									"emptyText": "Cases you open show up here"
+									"emptyText": "Cases you open show up here",
+									"lensReasonTexts": {
+										"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",
+										"recent.anonymous": "Sign in to see the cases you opened recently.",
+										"recent.read-history-unavailable": "Your recent cases are not available right now."
+									}
 								}
 							},
 							{
 								"id": "followed-cases",
-								"type": "object-table",
+								"type": "record-list",
 								"title": "Cases you follow",
+								"_note": "DqMijnWerk draws the cases you follow as rows: the title, the case number under it and the status as a pill. That is the library's record-list over the same `_watching` lens the full profile's table reads, with the status read through _extend so the pill says its name and never its id. The link to all of them is the placement's `headerLink`, where the board has it.",
 								"content": {
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"filter": {
-											"_watching": true
-										},
-										"limit": 5
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"_watching": true
 									},
-									"columns": [
-										{
-											"key": "identifier",
-											"cellClass": "cn-cell--muted"
-										},
-										{
-											"key": "title",
-											"cellClass": "cn-cell--strong"
-										}
+									"extend": [
+										"status"
 									],
-									"rowRoute": "CaseDetail",
-									"viewAllRoute": {
-										"name": "Cases",
-										"query": {
-											"_watching": "true"
-										}
+									"limit": 5,
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": "{identifier}",
+									"pill": {
+										"field": "status.name"
 									},
-									"viewAllLabel": "View all",
-									"hideHeader": true,
-									"borderless": true,
+									"rowRoute": "CaseDetail",
 									"emptyText": "Follow a case to keep an eye on it here"
 								}
 							},
@@ -666,7 +655,14 @@
 								"gridY": 16,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"headerLink": {
+									"label": "View all",
+									"route": "Cases",
+									"query": {
+										"_watching": "true"
+									}
+								}
 							},
 							{
 								"id": "s12",
@@ -1088,59 +1084,59 @@
 						"gridX": 0,
 						"gridY": 1,
 						"gridWidth": 12,
-						"gridHeight": 19
+						"gridHeight": 20
 					},
 					"12": {
 						"gridX": 0,
-						"gridY": 20,
+						"gridY": 21,
 						"gridWidth": 12,
 						"gridHeight": 6
 					},
 					"11": {
 						"gridX": 0,
-						"gridY": 26,
+						"gridY": 27,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
 					"7": {
 						"gridX": 0,
-						"gridY": 29,
+						"gridY": 30,
 						"gridWidth": 12,
 						"gridHeight": 7
 					},
 					"6": {
 						"gridX": 0,
-						"gridY": 36,
+						"gridY": 37,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
 					"money-payments": {
 						"gridX": 0,
-						"gridY": 39,
+						"gridY": 40,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"money-contract": {
 						"gridX": 6,
-						"gridY": 39,
+						"gridY": 40,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"family-plan-panel": {
 						"gridX": 0,
-						"gridY": 47,
+						"gridY": 48,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"work-projects": {
 						"gridX": 6,
-						"gridY": 47,
+						"gridY": 48,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"documents-merge-to-pdf": {
 						"gridX": 0,
-						"gridY": 55,
+						"gridY": 56,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
@@ -1187,7 +1183,7 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
@@ -1196,7 +1192,7 @@
 						"gridX": 4,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
@@ -1205,7 +1201,7 @@
 						"gridX": 8,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					}
 				]
@@ -1638,6 +1634,16 @@
 				"folderSidebar": null,
 				"showTitle": true,
 				"countSubtitle": "{total} case types",
+				"searchPlaceholder": "Search in this list",
+				"headerActions": [
+					{
+						"id": "case-type-import",
+						"type": "open-modal",
+						"label": "Import case type from a file",
+						"icon": "TrayArrowUp",
+						"target": "CaseTypeImportDialog"
+					}
+				],
 				"headerButtons": [
 					{
 						"action": "export",
@@ -1669,7 +1675,7 @@
 					{
 						"key": "processingDeadline",
 						"label": "Processing time",
-						"formatter": "isoDuration"
+						"formatter": "processingTime"
 					},
 					{
 						"key": "version",

@@ -52,7 +52,7 @@ function readJson(...parts) {
 }
 
 const manifest = readJson('src', 'manifest.json')
-const vthSeed = readJson('lib', 'Settings', 'vth_seed_data.json')
+const vthPackage = readJson('lib', 'Settings', 'packages', 'vth', 'case-type.json')
 
 /** The page whose columns a case type selects from. */
 const casesPage = manifest.pages.find((page) => page.id === 'Cases')
@@ -81,7 +81,7 @@ function keyOf(column) {
 describe('row 11.9: a case type layout survives the library that reads it', () => {
 	const pageColumns = casesPage.config.columns
 
-	const seeded = vthSeed.caseTypes.filter((caseType) => caseType['x-index'])
+	const seeded = vthPackage.caseType.filter((caseType) => caseType['x-index'])
 
 	it('has at least one seeded case type to check', () => {
 		expect(seeded.length).toBeGreaterThan(0)

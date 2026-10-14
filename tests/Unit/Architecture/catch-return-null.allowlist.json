@@ -1,8 +1,9 @@
 {
-  "ceiling": 259,
+  "ceiling": 256,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-10-12, openspec/changes/brp-client-retired: the conflict-of-interest check reads relations through integriq, and `ConflictOfInterestService::lookupRelationViaBrp` left with dossiq's BRP client. A read that gives no answer now blocks instead of answering null. The ceiling went 259 to 258 (263 to 262 before development was merged in).",
     "2026-10-12, openspec/changes/retire-cmmn-caseplanstate task 3.1: the local CMMN runtime retired, taking `Cmmn/CaseModelLoader::getActiveModel` with it. The ceiling went 264 to 263.",
     "2026-10-11, openspec/changes/decision-tables-live-in-openregister: the decision tables moved into OpenRegister's register. DecisionTableService::getTable went with the service; LhsDecisionTableLookup evaluates through Dmn\\StoredDecisionTables and lost evaluator, intervention and tableFor. The ceiling went 257 to 253.",
     "2026-10-10, openspec/changes/remove-casetask task 7.1: onboarding steps moved onto the engine. OnboardingSteps reads through EngineInboxQuery and resolves its services inside each verb's own try block, so it adds no site; TenantOnboardingService::markStepComplete went, legacyRows (the one-off carry of the old rows) arrived. The ceiling stays 257.",
@@ -33,7 +34,9 @@
     "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation: the active tenant became OpenRegister's active organisation. TenantSessionService::activeTenantId became activeTenant (same site, same answer), and TenantOrganisationResolver::readActiveOrganisation arrived. The ceiling went 263 to 264 here; the TenantService sites that leave later in the same change bring it down.",
     "2026-10-08, openspec/changes/tenancy-onto-openregister-organisation-active-organisation task 3.2: TenantService keeps only isPlatformAdmin(). Its five sites (findOrganisationsByUserId, getOrganisationMapper, getTenantByGroupId, getTenantLifecycleService, getTenantStatus) left with the methods TenantController and TenantMiddleware called. The ceiling went 264 to 259.",
     "2026-10-10, openspec/changes/ai-features-on-the-case-consume-hermiq (REQ-AIC-04): ONE site arrived with ReportGroupingConsumer::readCase, the caller's read of the case whose report group is asked for or placed. It is a read miss: a case the caller cannot read answers null exactly like one that does not exist, the catch logs at info naming the case, and the controller turns null into 404 so the endpoint cannot be used to probe for a case. The ceiling went 259 to 260 for that one site and nothing else.",
-    "2026-10-10, openspec/changes/migrate-committees-to-decidiq (task 3): ONE site arrived with GovernanceBodyReader::ask, the read of a committee back from decidiq over its event seam. It is a degradation: when decidiq's listener throws, the catch logs at warning naming the committee and the reader keeps the local row, because a live committee must not read as gone. The ceiling went up by one for that site and nothing else."
+    "2026-10-10, openspec/changes/migrate-committees-to-decidiq (task 3): ONE site arrived with GovernanceBodyReader::ask, the read of a committee back from decidiq over its event seam. It is a degradation: when decidiq's listener throws, the catch logs at warning naming the committee and the reader keeps the local row, because a live committee must not read as gone. The ceiling went up by one for that site and nothing else.",
+    "2026-10-10, openspec/changes/bezwaar-beroep-package: SeedDataService was deleted with the bezwaar seed, which became the bezwaar-beroep package. Its createObject site left with it. The ceiling went down by one for that site and nothing else.",
+    "2026-10-11, openspec/changes/besluitvorming-package: TemplateBundleSeeder was deleted with the besluitvorming bundles, which became the on-request besluitvorming package (decision 190). Its createObject site left with it. The ceiling went down by one for that site and nothing else."
   ],
   "classes": {
     "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -159,13 +162,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`resolveTmloService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/Besluitvorming/TemplateBundleSeeder.php",
-      "method": "createObject",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`createObject()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: besluitvorming seed object create failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Bezwaar/AdvisoryCommitteeService.php",
@@ -446,13 +442,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`rows()` answers `return []` when OpenRegister cannot be searched for the incidents on a case; the catch logs at warning naming the read. The empty list is \"could not look\", and the incidents tab draws nothing rather than claiming a case has no reports."
-    },
-    {
-      "file": "lib/Service/ConflictOfInterestService.php",
-      "method": "lookupRelationViaBrp",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`lookupRelationViaBrp()` answers `return null` when the read fails; the catch logs at warning (\"BRP relationship lookup failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/ConflictOfInterestService.php",
@@ -1006,13 +995,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`readSatelliteRows()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: orphan scan could not read a satellite schema\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/SeedDataService.php",
-      "method": "createObject",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`createObject()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: Failed to create seed object\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Settings/SchemaKeyReconciler.php",
@@ -1610,7 +1592,7 @@
       "reason": "`computeWorkload()` answers `return []` when the read fails; the catch logs at warning (\"WorkQueue: workload case search failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/WorkQueueService.php",
+      "file": "lib/Service/Queue/QueueCaseFacts.php",
       "method": "nearestActiveTermDeadline",
       "occurrence": 1,
       "class": "read-miss",
@@ -1708,7 +1690,7 @@
       "reason": "`contentFor()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwDrcRulesService.php",
+      "file": "lib/Service/Zgw/DrcDocumentRelations.php",
       "method": "findOioRelationsForDocument",
       "occurrence": 1,
       "class": "read-miss",
@@ -1722,21 +1704,21 @@
       "reason": "`fetchExternalUrl()` answers `return null` when the read fails; the catch logs at warning (\"Failed to fetch external URL\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findAllObjectsByField",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findAllObjectsByField()` answers `return []` when the read fails; the catch logs at warning (\"Reference resolution failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findBySchemaKey",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`findBySchemaKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwRulesBase.php",
+      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
       "method": "findObjectByField",
       "occurrence": 1,
       "class": "read-miss",
@@ -1757,14 +1739,14 @@
       "reason": "`caseTypeDefaultAssignee()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwZtcRulesService.php",
+      "file": "lib/Service/Zgw/ZtcPublishAndDeleteChecks.php",
       "method": "loadCaseTypeRow",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`loadCaseTypeRow()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/ZgwZtcRulesService.php",
+      "file": "lib/Service/Zgw/ZtcPublishAndDeleteChecks.php",
       "method": "loadFinalStatusSlugs",
       "occurrence": 1,
       "class": "read-miss",

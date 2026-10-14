@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service;
 use GuzzleHttp\Client;
 use OCA\Dossiq\Service\Outbound\OutboundUrlGuard;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -38,8 +40,6 @@ use Psr\Log\LoggerInterface;
  *
  * Provides shared utilities: UUID extraction, URL validation,
  * external URL fetching, OpenRegister lookups, error builders.
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
@@ -81,6 +81,23 @@ abstract class ZgwRulesBase {
 	protected ?array $mappingConfig = null;
 
 	/**
+	 * Builds the answers of a rule: valid, refused, and the field a refusal names.
+	 *
+	 * @var ZgwRuleResults
+	 */
+	protected readonly ZgwRuleResults $results;
+
+	/**
+	 * Reads the store for the rules, in the request's context.
+	 *
+	 * A rules class hands this same object to a collaborator it builds, so the
+	 * collaborator reads in the same context without being told it again.
+	 *
+	 * @var ZgwRuleLookups
+	 */
+	protected readonly ZgwRuleLookups $lookups;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger
@@ -94,6 +111,8 @@ abstract class ZgwRulesBase {
 		protected readonly SettingsService $settingsService,
 		protected readonly FieldValidator $fieldValidator,
 	) {
+		$this->results = new ZgwRuleResults();
+		$this->lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -109,6 +128,7 @@ abstract class ZgwRulesBase {
 	public function setContext(?object $objectService, ?array $mappingConfig): void {
 		$this->objectService = $objectService;
 		$this->mappingConfig = $mappingConfig;
+		$this->lookups->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
 	}//end setContext()
 
 	/**
@@ -121,12 +141,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function isValid(array $body): array {
-		return [
-			'valid' => true,
-			'status' => 200,
-			'detail' => '',
-			'enrichedBody' => $body,
-		];
+		return $this->results->isValid(body: $body);
 	}//end isValid()
 
 	/**
@@ -147,18 +162,7 @@ abstract class ZgwRulesBase {
 		array $invalidParams = [],
 		string $code = '',
 	): array {
-		$result = [
-			'valid' => false,
-			'status' => $status,
-			'detail' => $detail,
-			'invalidParams' => $invalidParams,
-			'enrichedBody' => [],
-		];
-		if ($code !== '') {
-			$result['code'] = $code;
-		}
-
-		return $result;
+		return $this->results->error(status: $status, detail: $detail, invalidParams: $invalidParams, code: $code);
 	}//end error()
 
 	/**
@@ -173,11 +177,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fieldError(string $fieldName, string $code, string $reason): array {
-		return [
-			'name' => $fieldName,
-			'code' => $code,
-			'reason' => $reason,
-		];
+		return $this->results->fieldError(fieldName: $fieldName, code: $code, reason: $reason);
 	}//end fieldError()
 
 	/**
@@ -190,18 +190,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fieldImmutableError(string $fieldName): array {
-		$detail = "Het veld {$fieldName} mag niet gewijzigd worden.";
-		return $this->error(
-			status: 400,
-			detail: $detail,
-			invalidParams: [
-				$this->fieldError(
-					fieldName: $fieldName,
-					code: 'wijzigen-niet-toegelaten',
-					reason: $detail
-				),
-			]
-		);
+		return $this->results->fieldImmutableError(fieldName: $fieldName);
 	}//end fieldImmutableError()
 
 	/**
@@ -562,33 +551,7 @@ abstract class ZgwRulesBase {
 		string $field,
 		string $value,
 	): ?string {
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$results = $result['results'] ?? [];
-			if (empty($results) === true) {
-				return null;
-			}
-
-			$obj = $results[0];
-			$data = $obj;
-			if (is_array($obj) === false) {
-				$data = $obj->jsonSerialize();
-			}
-
-			return $data['id'] ?? ($data['@self']['id'] ?? null);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return null;
-		}//end try
+		return $this->lookups->findObjectByField(register: $register, schema: $schema, field: $field, value: $value);
 	}//end findObjectByField()
 
 	/**
@@ -609,35 +572,7 @@ abstract class ZgwRulesBase {
 		string $field,
 		string $value,
 	): array {
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 100],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$ids = [];
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$id = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($id !== null) {
-					$ids[] = $id;
-				}
-			}
-
-			return $ids;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return [];
-		}//end try
+		return $this->lookups->findAllObjectsByField(register: $register, schema: $schema, field: $field, value: $value);
 	}//end findAllObjectsByField()
 
 	/**
@@ -651,31 +586,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function findBySchemaKey(string $uuid, string $schemaKey): ?array {
-		if ($this->objectService === null) {
-			return null;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			$obj = $this->objectService->find(
-				id: $uuid,
-				register: $register,
-				schema: $schema
-			);
-			if (is_array($obj) === true) {
-				return $obj;
-			}
-
-			return $obj->jsonSerialize();
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return $this->lookups->findBySchemaKey(uuid: $uuid, schemaKey: $schemaKey);
 	}//end findBySchemaKey()
 
 	/**
@@ -698,96 +609,26 @@ abstract class ZgwRulesBase {
 		string $field2Search,
 		string $errorField,
 	): ?array {
-		if ($field1Value === '' || $this->objectService === null) {
+		$taken = $this->lookups->fieldPairExists(
+			field1Value: $field1Value,
+			field1Search: $field1Search,
+			field2Value: $field2Value,
+			field2Search: $field2Search
+		);
+		if ($taken === false) {
 			return null;
 		}
 
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->mappingConfig['sourceSchema'] ?? '';
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			// Build query directly to avoid buildSearchQuery's underscore-splitting
-			// which breaks camelCase field names like sourceOrganisation.
-			// Search only by field1 (identifier) because OpenRegister may store
-			// numeric strings (e.g. "000000000") as integers, which breaks
-			// exact-match search for field2 (sourceOrganisation).
-			$query = [
-				'@self' => [
-					'register' => (int)$register,
-					'schema' => (int)$schema,
-				],
-				$field1Search => $field1Value,
-			];
-
-			$result = $this->objectService->searchObjectsPaginated(
-				query: $query,
-				_rbac: false,
-				_multitenancy: false
-			);
-
-			// Post-filter results by field2 value in memory, comparing both
-			// string and numeric forms to handle integer coercion by OpenRegister.
-			// OpenRegister may store numeric-looking strings (e.g. "000000000")
-			// as integer 0, which the magic mapper may serialize to empty string.
-			// When the stored value is empty but field2 was provided, we still
-			// count it as a match (conservative: assume coercion happened).
-			$matchCount = 0;
-			foreach (($result['results'] ?? []) as $obj) {
-				if ($this->storedValueMatches(row: $obj, field: $field2Search, value: $field2Value) === true) {
-					$matchCount++;
-				}
-			}
-
-			if ($matchCount > 0) {
-				return $this->error(
-					status: 400,
-					detail: 'De combinatie is niet uniek.',
-					invalidParams: [
-						$this->fieldError(
-							fieldName: $errorField,
-							code: 'identificatie-niet-uniek',
-							reason: 'De combinatie bestaat al.'
-						),
-					]
-				);
-			}
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Uniqueness check failed: ' . $e->getMessage()
-			);
-		}//end try
-
-		return null;
+		return $this->error(
+			status: 400,
+			detail: 'De combinatie is niet uniek.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: $errorField,
+					code: 'identificatie-niet-uniek',
+					reason: 'De combinatie bestaat al.'
+				),
+			]
+		);
 	}//end checkFieldUniqueness()
-
-	/**
-	 * Whether one hit carries the same second-field value (uniqueness check).
-	 *
-	 * OpenRegister may store numeric-looking strings (e.g. "000000000") as
-	 * integer 0, which the magic mapper may serialise to an empty string. So
-	 * an empty or "0" stored value counts as a match (conservative: assume
-	 * coercion happened), and no second value matches every hit.
-	 *
-	 * @param mixed $row The hit, an array or an entity.
-	 * @param string $field The OpenRegister field of the second value.
-	 * @param string $value The second value.
-	 *
-	 * @return bool
-	 */
-	private function storedValueMatches(mixed $row, string $field, string $value): bool {
-		$data = $row;
-		if (is_array($row) === false) {
-			$data = $row->jsonSerialize();
-		}
-
-		$storedStr = (string)($data[$field] ?? null);
-
-		return ($value === '')
-			|| ($storedStr === $value)
-			|| ($storedStr === '')
-			|| ($storedStr === '0' && preg_match('/^0+$/', $value) === 1);
-	}//end storedValueMatches()
 }//end class

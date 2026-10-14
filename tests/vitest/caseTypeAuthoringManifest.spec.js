@@ -229,6 +229,29 @@ describe('the CaseTypeDetail page', () => {
 		}
 	})
 
+	it('gives the cells that scrolled inside their height, and overlaps none', () => {
+		// Measured on a live case type (12 Oct 2026): the blueprint, the
+		// translations and the portal card were taller than their cell and drew
+		// a scrollbar of their own. A cell is the budget, so the budget grows.
+		const layout = page('CaseTypeDetail').config.layout
+		const height = (id) => cells(id)[0].gridHeight
+		expect(height('case-type-blueprint')).toBeGreaterThanOrEqual(7)
+		expect(height('case-type-translations')).toBeGreaterThanOrEqual(6)
+		expect(height('case-type-portal')).toBeGreaterThanOrEqual(12)
+		const taken = new Map()
+		for (const cell of layout) {
+			for (let x = cell.gridX; x < cell.gridX + cell.gridWidth; x++) {
+				for (let y = cell.gridY; y < cell.gridY + cell.gridHeight; y++) {
+					expect(
+						taken.get(`${x}:${y}`),
+						`${cell.widgetId} at ${x}:${y}`,
+					).toBe(undefined)
+					taken.set(`${x}:${y}`, cell.widgetId)
+				}
+			}
+		}
+	})
+
 	it('places no cell that names a widget the page does not declare', () => {
 		const declared = page('CaseTypeDetail').config.widgets.map((w) => w.id)
 		for (const cell of page('CaseTypeDetail').config.layout) {

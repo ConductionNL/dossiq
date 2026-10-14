@@ -342,10 +342,46 @@ class PortalContributionProviderTest extends TestCase {
 			$this->assertSame(['retentionDays' => 30], $action['draft'], $id . ': within portaliq\'s 1 to 90 days');
 			$this->assertSame('Wij hebben uw Woo-verzoek ontvangen', $action['confirmation']['title']);
 			$this->assertStringContainsString('{identifier}', $action['confirmation']['body']);
-			$this->assertStringContainsString('{deadline}', $action['confirmation']['body']);
+			// The dates as a resident reads them, never the stored moment
+			// (portal-woo-request-form-takes-dutch-input REQ-WDI-003).
+			$this->assertStringContainsString('{deadlineDay}', $action['confirmation']['body']);
+			$this->assertStringContainsString('{termStartsDay}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{deadline}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{termStartsAt}', $action['confirmation']['body']);
 			$this->assertNotSame('', trim($action['confirmation']['next']));
 		}
 	}//end testTheWooRequestSavesHalfwayAndNamesTheCaseWhenItIsIn()
+
+	/**
+	 * The period is asked as dates and the requester as a choice whose
+	 * Dutch words map to the values the route keeps, on both doors.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/portal-contribution/spec.md#requirement-the-woo-request-form-asks-dates-as-dates-and-the-requester-as-a-choice-req-wdi-004
+	 */
+	public function testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			foreach (['periodeVan', 'periodeTot'] as $field) {
+				$this->assertSame('date', ($action['fieldConfigs'][$field]['input'] ?? null), $id . ': ' . $field . ' is a date');
+			}
+
+			$this->assertSame('choices', $action['fieldConfigs']['verzoekerType']['widget']);
+			$options = $action['optionsProviders']['verzoekerType']['options'];
+			$this->assertSame(
+				['burger' => 'Inwoner', 'journalist' => 'Journalist', 'organisatie' => 'Organisatie'],
+				array_column($options, 'label', 'value'),
+				$id . ': Dutch words over the stored values'
+			);
+			$this->assertSame(
+				\OCA\Dossiq\Woo\WooRequestForm::REQUESTER_KINDS,
+				array_column($options, 'value'),
+				$id . ': every choice is a value the route keeps'
+			);
+		}
+	}//end testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice()
 
 	/**
 	 * Two doors, one route: only the dossier variant is attached to a
@@ -576,9 +612,9 @@ class PortalContributionProviderTest extends TestCase {
 	public function testTheResidentPagesShareOneGroupAndDoNotRepeatTheSiteSections(string $audience): void {
 		$contribution = $this->provider->getContribution(['audience' => $audience]);
 
-		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken'], array_column($contribution['pages'], 'id'));
+		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken', 'startWooVerzoekAlgemeen'], array_column($contribution['pages'], 'id'));
 		$this->assertSame(
-			['Overzicht', 'Uw zaak', 'Berichten', 'Mijn verzoeken'],
+			['Overzicht', 'Uw zaak', 'Berichten', 'Mijn verzoeken', 'Informatie opvragen (Woo-verzoek)'],
 			array_column($contribution['pages'], 'label')
 		);
 		foreach ($contribution['pages'] as $page) {
@@ -620,15 +656,26 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertSame('tasks', $pages[0]['blocks'][1]['type']);
 		$this->assertSame(['type' => 'greeting', 'showDate' => false], $pages[0]['blocks'][0]);
 		$this->assertSame('Wat u nog moet doen', $pages[0]['blocks'][1]['label']);
+		// What the resident can arrange comes next: a tile to the page of the
+		// one start point, not its form (resident-start-points-have-a-page).
+		$this->assertSame(
+			['type' => 'cta', 'page' => 'startWooVerzoekAlgemeen', 'label' => 'Informatie opvragen (Woo-verzoek)'],
+			$pages[0]['blocks'][2]
+		);
 		$this->assertSame(
 			['Lopende zaken', 'Nieuwe berichten'],
-			[$pages[0]['blocks'][2]['label'], $pages[0]['blocks'][3]['label']]
+			[$pages[0]['blocks'][3]['label'], $pages[0]['blocks'][4]['label']]
 		);
-		$this->assertSame(['cases', 'inbox'], [$pages[0]['blocks'][2]['type'], $pages[0]['blocks'][3]['type']]);
+		$this->assertSame(['cases', 'inbox'], [$pages[0]['blocks'][3]['type'], $pages[0]['blocks'][4]['type']]);
 		// Bezwaar and klacht act on one case: they left the overview for the
-		// case page (case-actions-on-the-case-page).
-		$this->assertCount(4, $pages[0]['blocks']);
-		$this->assertNotContains('cta', array_column($pages[0]['blocks'], 'type'));
+		// case page (case-actions-on-the-case-page). The only cta left there
+		// opens a page, never an action.
+		$this->assertCount(5, $pages[0]['blocks']);
+		foreach ($pages[0]['blocks'] as $block) {
+			if ($block['type'] === 'cta') {
+				$this->assertArrayNotHasKey('action', $block);
+			}
+		}
 		$this->assertSame(
 			['collection' => 'mijnZaken', 'titleFields' => ['title'], 'heading' => 'record', 'under' => 'cases'],
 			$pages[1]['record']
@@ -708,8 +755,13 @@ class PortalContributionProviderTest extends TestCase {
 			$this->assertNotSame('', $page['group']);
 			$this->assertNotSame('', $page['label']);
 			foreach ($page['blocks'] as $block) {
-				// A cta names an action here; portaliq also allows a page or
-				// a route (REQ-SMO-024), which no dossiq tile needs.
+				// A cta names an action or, as the overview's start tiles do,
+				// a page of the same contribution (REQ-SMO-024).
+				if ($block['type'] === 'cta' && isset($block['page']) === true) {
+					$this->assertContains($block['page'], array_column($contribution['pages'], 'id'));
+					continue;
+				}
+
 				if ($block['type'] === 'action' || $block['type'] === 'cta') {
 					$this->assertContains($block['action'], $actions);
 					continue;
