@@ -121,8 +121,8 @@ trait TranslatesRefusals {
 	/**
 	 * The translator for this request: the controller's own, else the app's.
 	 *
-	 * A controller that injects `IL10N` as `$l10n` is asked first, which is
-	 * also how a test hands one in. The app's translator from the factory
+	 * A controller that has its own translator overrides {@see self::refusalL10n()},
+	 * which is also how a test hands one in. The app's translator from the factory
 	 * follows the signed-in user's language. Null when neither is available,
 	 * and then the sentence goes out as written.
 	 *
@@ -134,8 +134,8 @@ trait TranslatesRefusals {
 	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
 	 */
 	private function refusalTranslator(): ?IL10N {
-		$own = (property_exists($this, 'l10n') === true) ? $this->l10n : null;
-		if ($own instanceof IL10N) {
+		$own = $this->refusalL10n();
+		if ($own !== null) {
 			return $own;
 		}
 
@@ -145,4 +145,19 @@ trait TranslatesRefusals {
 			return null;
 		}
 	}//end refusalTranslator()
+
+	/**
+	 * The controller's own translator, when it injects one.
+	 *
+	 * Null here. A controller that takes `IL10N` overrides this method; a
+	 * method in the class wins over the trait's, so no controller has to
+	 * declare a property the trait reads blind.
+	 *
+	 * @return IL10N|null The translator, or null to use the app's.
+	 *
+	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 */
+	protected function refusalL10n(): ?IL10N {
+		return null;
+	}//end refusalL10n()
 }//end trait
