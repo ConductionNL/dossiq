@@ -37,9 +37,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
+use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -61,12 +61,12 @@ class SigningConcludedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param BeschikkingService $decisions Records the conclusion on the decision.
+	 * @param SigningConclusionRecorder $recorder Records the conclusion on the decision.
 	 * @param BackgroundServiceAccount $serviceAccount The identity a conclusion from a background job writes as.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly BeschikkingService $decisions,
+		private readonly SigningConclusionRecorder $recorder,
 		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly LoggerInterface $logger,
 	) {
@@ -95,7 +95,7 @@ class SigningConcludedListener implements IEventListener {
 
 		try {
 			$taken = $this->serviceAccount->runAsWhenNobodyIsSignedIn(
-				operation: fn (): bool => $this->decisions->concludeSigning(
+				operation: fn (): bool => $this->recorder->record(
 					decisionId: $decisionId,
 					requestId: $requestId,
 					status: $event->getStatus(),

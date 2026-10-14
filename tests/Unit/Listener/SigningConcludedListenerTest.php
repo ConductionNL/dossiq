@@ -25,8 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\SigningConcludedListener;
-use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
 use OCA\Filinq\Event\SigningConcludedEvent;
 use OCA\Filinq\Event\SigningProvenance;
 use OCP\EventDispatcher\Event;
@@ -39,11 +39,11 @@ use Psr\Log\NullLogger;
  */
 final class SigningConcludedListenerTest extends TestCase {
 	/**
-	 * The decision service double.
+	 * The recorder double.
 	 *
-	 * @var BeschikkingService&MockObject
+	 * @var SigningConclusionRecorder&MockObject
 	 */
-	private BeschikkingService&MockObject $decisions;
+	private SigningConclusionRecorder&MockObject $decisions;
 
 	/**
 	 * The listener, with a service account that runs the operation as given.
@@ -51,7 +51,7 @@ final class SigningConcludedListenerTest extends TestCase {
 	 * @return SigningConcludedListener
 	 */
 	private function listener(): SigningConcludedListener {
-		$this->decisions = $this->createMock(BeschikkingService::class);
+		$this->decisions = $this->createMock(SigningConclusionRecorder::class);
 		$account = $this->createMock(BackgroundServiceAccount::class);
 		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 
@@ -85,7 +85,7 @@ final class SigningConcludedListenerTest extends TestCase {
 	public function testAConclusionOfDossiqsRequestReachesTheDecision(): void {
 		foreach (['signed', 'expired', 'declined', 'cancelled'] as $status) {
 			$listener = $this->listener();
-			$this->decisions->expects($this->once())->method('concludeSigning')->with(
+			$this->decisions->expects($this->once())->method('record')->with(
 				'decision-1',
 				'sr-1',
 				$status,
@@ -104,7 +104,7 @@ final class SigningConcludedListenerTest extends TestCase {
 	 */
 	public function testAnotherAppsConclusionIsIgnored(): void {
 		$listener = $this->listener();
-		$this->decisions->expects($this->never())->method('concludeSigning');
+		$this->decisions->expects($this->never())->method('record');
 
 		$listener->handle(self::concluded(sourceApp: 'shillinq', status: 'signed'));
 		$listener->handle(new Event());
