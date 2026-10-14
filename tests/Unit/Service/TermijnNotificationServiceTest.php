@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Service\Termijn\CaseNumberReader;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
 use OCA\Dossiq\Service\SettingsService;
@@ -182,6 +183,118 @@ class TermijnNotificationServiceTest extends TestCase {
 			self::assertArrayNotHasKey('sentAt', $delivery);
 		}
 	}//end testANoticeWithNoChannelIsNotSentAndCarriesItsResult()
+
+	/**
+	 * A letter handed the case UUID names the case by its number.
+	 *
+	 * The information request and the pause reminder pass the case UUID as
+	 * `case`, so a requester read "zaak 7849aeec-..." for case 2026-0018
+	 * (Zuiddrecht live round 3).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 */
+	public function testALetterHandedTheCaseUuidNamesTheCaseNumber(): void {
+		$uuid = '7849aeec-d7da-474e-8211-6215e9c6230f';
+		$service = $this->serviceReadingCases(cases: [$uuid => ['id' => $uuid, 'identifier' => '2026-0018']]);
+
+		$payload = $service->sendTermijnNotification(
+			'hersteltermijn-request',
+			'ti-1',
+			'burger-1@example.nl',
+			['items' => ['Een bouwtekening'], 'pauseDeadline' => '2026-11-01', 'case' => $uuid]
+		);
+
+		self::assertSame(expected: 'Wij hebben nog iets nodig voor zaak 2026-0018', actual: $payload['subject']);
+		self::assertStringContainsString(needle: 'zaak 2026-0018', haystack: $payload['body']);
+		self::assertStringNotContainsString(needle: $uuid, haystack: $payload['body']);
+	}//end testALetterHandedTheCaseUuidNamesTheCaseNumber()
+
+	/**
+	 * A reference that is already a number is used as written, and nothing is read.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 */
+	public function testACaseNumberIsLeftAsWritten(): void {
+		$service = $this->serviceReadingCases(cases: []);
+
+		$payload = $service->sendTermijnNotification('ontvangstbevestiging', 'ti-1', 'burger-1@example.nl', ['case' => '2026-0117']);
+
+		self::assertSame(expected: 'Ontvangstbevestiging zaak 2026-0117', actual: $payload['subject']);
+	}//end testACaseNumberIsLeftAsWritten()
+
+	/**
+	 * A case that cannot be read keeps the reference the letter was handed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 */
+	public function testAnUnreadableCaseKeepsTheReference(): void {
+		$uuid = '0b3c5a3e-1111-4222-8333-944455556666';
+		$service = $this->serviceReadingCases(cases: []);
+
+		$payload = $service->sendTermijnNotification('hersteltermijn-reminder', 'ti-1', 'burger-1@example.nl', ['case' => $uuid]);
+
+		self::assertSame(expected: 'Herinnering over zaak ' . $uuid, actual: $payload['subject']);
+	}//end testAnUnreadableCaseKeepsTheReference()
+
+	/**
+	 * The service with a real CaseNumberReader over an object service holding these cases.
+	 *
+	 * @param array<string, array<string, mixed>> $cases The case rows by UUID.
+	 *
+	 * @return TermijnNotificationService The service.
+	 */
+	private function serviceReadingCases(array $cases): TermijnNotificationService {
+		$objects = new class($cases) {
+			/**
+			 * @param array<string, array<string, mixed>> $cases The case rows by UUID.
+			 */
+			public function __construct(private array $cases) {
+			}
+
+			/**
+			 * @param string $id       The case UUID.
+			 * @param string $register The register.
+			 * @param string $schema   The schema.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(string $id, string $register, string $schema): array {
+				if (isset($this->cases[$id]) === false) {
+					throw new \OCP\AppFramework\Db\DoesNotExistException('no case ' . $id);
+				}
+
+				return $this->cases[$id];
+			}
+		};
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				default => '',
+			}
+		);
+
+		$terms = $this->createMock(originalClassName: TermijnService::class);
+		$terms->method('getTermijnInstance')->willReturn(['id' => 'ti-1', 'endDateCurrent' => '2026-11-01']);
+
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+
+		return new TermijnNotificationService(
+			termService: $terms,
+			sender: $this->sender(),
+			logger: $logger,
+			caseNumbers: new CaseNumberReader(settings: $settings, logger: $logger),
+		);
+	}//end serviceReadingCases()
 
 	private function sender(): TermNoticeSender {
 		$sender = $this->createMock(TermNoticeSender::class);

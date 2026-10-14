@@ -145,7 +145,7 @@ class ApplicantMessage {
 				$template,
 				(string)($term['id'] ?? ($term['uuid'] ?? '')),
 				$recipient,
-				array_merge(['case' => (string)($case['identification'] ?? $caseId)], $context),
+				array_merge(['case' => (string)($case['identifier'] ?? $caseId)], $context),
 				// The case row, so the sender also offers the portal inbox and
 				// digital post, and records the result on the case (REQ-WRN-002).
 				$case,
