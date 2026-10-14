@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.6",
+          "version": "1.4.7",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -447,6 +447,7 @@
         "identifier": "woo-verzoek",
         "category": "Transparantie",
         "initialStatus": "3c0f5a00-0000-4000-a000-00000000b001",
+        "workflowDefinition": "cb967581-3962-5b61-8106-9f75248ffd82",
         "verwerkingsactiviteit": "behandelen-woo-verzoek",
         "legalBasis": "legal_obligation",
         "portalAmendmentWindow": {
