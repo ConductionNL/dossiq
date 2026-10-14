@@ -35,4 +35,18 @@
 - [x] 1.11 Record every installed package at its version, so a package that writes no rows reports current (decision 198).
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingsOnlyPackageIsCurrentOnTheSecondInstall`
   - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testThePackageVersionRecordIsOneRowUpdatedInPlace`
+- [x] 1.12 A seed file may name another app's schema by app, register and slug; its rows go into that register, and a `match` property adopts a row held under another id (`PackageSchemaReferences::seedGroup`, `PackageSeedRules`, `ExistingRowMatcher::find`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForAnAppThatIsNotInstalledRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForASchemaTheRegisterDoesNotHoldRefusesThePackage`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallTakesARowBackFromTheOtherRegister`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedNamingAnotherAppsSchemaIncompletelyIsInvalid`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowWithoutTheMatchPropertyIsInvalid`
+- [x] 1.13 A seed file's `match` may be a flag, or several properties together (decision 204: an active default is adopted by being active, not by name) (`PackageSeedRules::matchProperties`, `ExistingRowMatcher::findBy`).
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByAFlagWhateverTheExistingRowIsCalled`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsNotAdoptedByARowWithTheFlagCleared`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowWithoutOneOfSeveralMatchedPropertiesIsInvalid`
+  - `tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedMatchThatNamesNoPropertyIsInvalid`
 - [ ] 2.1 Convert each seeder into a package, one pull request per package, deleting the seeder classes (bezwaar and beroep, VTH, besluitvorming, subsidie, DSO, LHS). Tracked by refactor lane R1 in hydra `procedures-are-configuration` T10.

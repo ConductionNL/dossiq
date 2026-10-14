@@ -144,7 +144,7 @@ class PortalCasePageTest extends TestCase {
 	public function testEveryCollectionKeepsThePagePortaliqGaveIt(string $audience): void {
 		$pages = $this->pagesById(audience: $audience);
 
-		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken'], array_keys($pages));
+		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken', 'startWooVerzoekAlgemeen'], array_keys($pages));
 		$this->assertSame('Berichten', $pages['berichten']['label']);
 		$this->assertSame(
 			[
@@ -185,8 +185,14 @@ class PortalCasePageTest extends TestCase {
 
 		foreach ($contribution['pages'] as $page) {
 			foreach ($page['blocks'] as $block) {
-				// A cta names an action, a page or a route; the ones here all
-				// name an action (site-resident-portal-design D4).
+				// A cta names an action, a page or a route; the overview's
+				// start tiles name a page (resident-start-points-have-a-page),
+				// the rest an action (site-resident-portal-design D4).
+				if ($block['type'] === 'cta' && isset($block['page']) === true) {
+					$this->assertContains($block['page'], array_column($contribution['pages'], 'id'));
+					continue;
+				}
+
 				if ($block['type'] === 'action' || $block['type'] === 'cta') {
 					$this->assertContains($block['action'], $actionIds);
 					continue;

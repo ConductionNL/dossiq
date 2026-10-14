@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * Dossiq document assessment guard evaluator.
+ *
+ * Guard config shape: `{type: 'documentAssessment', require: 'gathered'}` or
+ * `{type: 'documentAssessment', require: 'assessed'}`. Reads the documents
+ * under review on the case and the ones still waiting for an assessment, the
+ * same answer `/api/cases/{id}/document-assessments/outstanding` gives.
+ *
+ * @category Service
+ * @package  OCA\Dossiq\Service\Transitions
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Service\Transitions;
+
+use OCA\Dossiq\Service\Assessment\DocumentSearchOutcome;
+use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Guard: the case's documents are gathered, or gathered and every one assessed.
+ *
+ * Generic: any case type that reviews documents per document (its
+ * `documentReview`) can put it on a move. Two requirements:
+ *
+ * - `gathered`: at least one document is under review on the case.
+ * - `assessed`: at least one document is under review and none waits for an
+ *   assessment. A case with nothing gathered is not "all assessed", because
+ *   an empty set passes every "all" and that is how a case reached its
+ *   decision with no documents at all (13 October, Woo request).
+ *
+ * 🔴 FAILS CLOSED. A register that cannot be read is a refusal naming that,
+ * never a pass: the move it guards is the one that says the work is done.
+ *
+ * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
+ */
+class DocumentAssessmentGuard implements GuardEvaluatorInterface {
+	/**
+	 * The requirement: at least one document under review.
+	 */
+	public const REQUIRE_GATHERED = 'gathered';
+
+	/**
+	 * The requirement: documents under review and none outstanding.
+	 */
+	public const REQUIRE_ASSESSED = 'assessed';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param WOODocumentAssessmentService $assessments The documents under review and the outstanding ones.
+	 * @param LoggerInterface              $logger      Where an unreadable register is reported.
+	 * @param DocumentSearchOutcome        $searchOutcome Whether the case records that its search found nothing.
+	 */
+	public function __construct(
+		private readonly WOODocumentAssessmentService $assessments,
+		private readonly LoggerInterface $logger,
+		private readonly DocumentSearchOutcome $searchOutcome = new DocumentSearchOutcome(),
+	) {
+	}//end __construct()
+
+	/**
+	 * Evaluate the document assessment guard.
+	 *
+	 * @param array<string, mixed> $guardConfig Guard configuration
+	 * @param array<string, mixed> $case        Case object
+	 * @param string               $userId      Current user UID (unused)
+	 *
+	 * @return GuardResult
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $userId is part of GuardEvaluatorInterface;
+	 *   whether documents are assessed does not depend on who asks.
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
+	 */
+	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
+		$require = (string)($guardConfig['require'] ?? self::REQUIRE_ASSESSED);
+		if (in_array($require, [self::REQUIRE_GATHERED, self::REQUIRE_ASSESSED], true) === false) {
+			return new GuardResult(
+				passed: false,
+				failureMessage: 'Documentbeoordelingsguard met onbekende eis: ' . $require,
+				details: ['require' => $require],
+			);
+		}
+
+		// D1: a recorded "nothing found", with its note, is the answer for a
+		// case whose search found no documents. It counts for both requirements.
+		if ($this->searchOutcome->recordsNothingFound(case: $case) === true) {
+			return new GuardResult(passed: true, details: ['require' => $require, 'nothingFound' => true]);
+		}
+
+		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
+		if ($caseId === '') {
+			return new GuardResult(passed: false, failureMessage: 'Zaak niet herkend voor de documentcontrole');
+		}
+
+		try {
+			$underReview = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
+			$outstanding = ['count' => 0];
+			if ($require === self::REQUIRE_ASSESSED) {
+				$outstanding = $this->assessments->getOutstanding(caseId: $caseId);
+			}
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the document assessment guard could not read the documents of a case',
+				['caseId' => $caseId, 'exception' => $e->getMessage()]
+			);
+
+			return new GuardResult(
+				passed: false,
+				failureMessage: 'De documenten van deze zaak konden niet worden gelezen',
+				details: ['require' => $require, 'unreadable' => true],
+			);
+		}
+
+		if ($underReview === []) {
+			return new GuardResult(
+				passed: false,
+				failureMessage: 'Er zijn nog geen documenten verzameld. Niets gevonden? Leg dat vast met een toelichting',
+				details: ['require' => $require, 'documents' => 0],
+			);
+		}
+
+		$waiting = (int)($outstanding['count'] ?? 0);
+		if ($waiting > 0) {
+			return new GuardResult(
+				passed: false,
+				failureMessage: sprintf('%d van %d documenten wachten nog op een beoordeling', $waiting, count($underReview)),
+				details: ['require' => $require, 'documents' => count($underReview), 'outstanding' => $waiting],
+			);
+		}
+
+		return new GuardResult(
+			passed: true,
+			details: ['require' => $require, 'documents' => count($underReview)],
+		);
+	}//end evaluate()
+}//end class

@@ -6,7 +6,7 @@
  * Backs the abstract CnSetupWizard: reports per-step completion
  * (`GET /api/setup/status`), persists config values from `choice` / `config-fields`
  * steps (`POST /api/setup/config`), and runs privileged server-side actions —
- * notably the bezwaar/beroep seed — from `run-action` steps
+ * notably installing the on-request case definition package — from `run-action` steps
  * (`POST /api/setup/action/{actionId}`). The wizard NEVER writes OpenRegister
  * objects from the browser; seeding runs here, in an admin request context, so
  * OpenRegister's RBAC create-check is satisfied.
@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\DemoDataService;
-use OCA\Dossiq\Service\SeedDataService;
 use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -50,6 +50,16 @@ use OCP\IRequest;
  * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
  */
 class SetupController extends Controller {
+
+	/**
+	 * The case definition package the `seed` action installs.
+	 *
+	 * It ships with `install: on-request`, so no upgrade writes it; this
+	 * action and `occ dossiq:package:install bezwaar-beroep` are the two ways in.
+	 *
+	 * @var string
+	 */
+	private const SEED_PACKAGE = 'bezwaar-beroep';
 	/**
 	 * Setup contract version; matches manifest.setup.version.
 	 *
@@ -99,7 +109,7 @@ class SetupController extends Controller {
 	 * @param IAppConfig $appConfig App-config reader/writer.
 	 * @param DemoDataService $demoDataService Demo dataset import (ADR-111 rule 4).
 	 * @param SettingsService $settingsService OpenRegister availability + config import.
-	 * @param SeedDataService $seedDataService Bezwaar/beroep seeder.
+	 * @param PackageInstaller $packages Installs the case definition package the `seed` action asks for.
 	 * @param FirstRunReadiness $readiness The minimum an instance needs, read live.
 	 */
 	public function __construct(
@@ -108,7 +118,7 @@ class SetupController extends Controller {
 		private readonly IAppConfig $appConfig,
 		private readonly DemoDataService $demoDataService,
 		private readonly SettingsService $settingsService,
-		private readonly SeedDataService $seedDataService,
+		private readonly PackageInstaller $packages,
 		private readonly FirstRunReadiness $readiness,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -354,60 +364,7 @@ class SetupController extends Controller {
 		}
 
 		if ($actionId === 'seed') {
-			$result = $this->seedDataService->seedBezwaarBeroepData();
-			if (($result['success'] ?? false) === false) {
-				return new DataResponse(
-					['success' => false, 'message' => ($result['message'] ?? 'Seed failed')],
-					Http::STATUS_UNPROCESSABLE_ENTITY,
-				);
-			}
-
-			// A seeder that touched NOTHING has not done the step. It used to
-			// be marked done regardless, which made the affordance one-shot and
-			// silently useless: `seedBezwaarBeroepData()` returns
-			// `success: true` with every counter at zero when its payload is
-			// absent — which is exactly the state it is in, its case types
-			// having been parked under `_caseTypes_disabled` in favour of a
-			// register.d fragment. So one click reported "Seeded 0 case types,
-			// 0 status types, 0 role types (0 skipped)" as a success, recorded
-			// the step as complete, and the wizard never offered it again.
-			//
-			// 🔴 THE WIZARD NO LONGER OFFERS THIS ACTION AT ALL. Reporting the
-			// dead end honestly still left a step whose every click was a 422,
-			// and CnSetupWizard renders `manifest.setup.steps[]` verbatim with
-			// no way to hide one at runtime — so the step went, not the answer.
-			// The action stays reachable here on purpose: it is the API path
-			// for an operator who un-parks the Dutch profile, and it is what
-			// makes re-adding the manifest step a one-line change on that day.
-			// See lib/Settings/bezwaar_seed_data.json for why it is parked.
-			$touched = (int)($result['caseTypes'] ?? 0)
-				+ (int)($result['statusTypes'] ?? 0)
-				+ (int)($result['roleTypes'] ?? 0)
-				+ (int)($result['workflows'] ?? 0)
-				+ (int)($result['skipped'] ?? 0);
-
-			$message = sprintf(
-				'Seeded %d case types, %d status types, %d role types (%d skipped).',
-				($result['caseTypes'] ?? 0),
-				($result['statusTypes'] ?? 0),
-				($result['roleTypes'] ?? 0),
-				($result['skipped'] ?? 0),
-			);
-
-			if ($touched === 0) {
-				return new DataResponse(
-					[
-						'success' => false,
-						'message' => 'Nothing to seed: the sample-data set is empty. '
-							. 'See lib/Settings/bezwaar_seed_data.json.',
-						'detail'  => $result,
-					],
-					Http::STATUS_UNPROCESSABLE_ENTITY,
-				);
-			}
-
-			$this->appConfig->setValueString('dossiq', 'setup_seed_done', '1');
-			return new DataResponse(['success' => true, 'message' => $message, 'detail' => $result]);
+			return $this->installSeedPackage();
 		}
 
 		return new DataResponse(
@@ -415,6 +372,31 @@ class SetupController extends Controller {
 			Http::STATUS_NOT_FOUND,
 		);
 	}//end runAction()
+
+	/**
+	 * Install the package the `seed` action stands for, through the installer.
+	 *
+	 * Installed and already-current both complete the step: either way the
+	 * case types are on this instance. A refusal or a failed write answers 422
+	 * with the installer's own message and leaves the step open.
+	 *
+	 * @return DataResponse `{ success, message, detail }`, where detail is the installer's outcome.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	private function installSeedPackage(): DataResponse {
+		$outcome = $this->packages->install(id: self::SEED_PACKAGE);
+		$done = in_array($outcome['status'], [PackageInstaller::INSTALLED, PackageInstaller::CURRENT], true);
+		if ($done === false) {
+			return new DataResponse(
+				['success' => false, 'message' => $outcome['message'], 'detail' => $outcome],
+				Http::STATUS_UNPROCESSABLE_ENTITY,
+			);
+		}
+
+		$this->appConfig->setValueString('dossiq', 'setup_seed_done', '1');
+		return new DataResponse(['success' => true, 'message' => $outcome['message'], 'detail' => $outcome]);
+	}//end installSeedPackage()
 
 	/**
 	 * Import the dataset a card's Load button posted as `dataset`, or the

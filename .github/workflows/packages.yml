@@ -123,6 +123,15 @@ jobs:
           fi
           cat /tmp/settings-run.txt
           grep -q 'refused\..*fixture-app' /tmp/settings-run.txt
+          # A seed file naming the schema of an app this instance lacks refuses
+          # the package the same way, before a row is written.
+          if php occ dossiq:package:install --root apps/dossiq/tests/fixtures/packages fixture-shared-seed > /tmp/seed-run.txt; then
+            cat /tmp/seed-run.txt
+            echo "::error::fixture-shared-seed installed although fixture-app is not installed."
+            exit 1
+          fi
+          cat /tmp/seed-run.txt
+          grep -q 'refused\..*fixture-app' /tmp/seed-run.txt
 
       - name: Start PHP built-in server
         run: |

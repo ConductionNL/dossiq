@@ -45,6 +45,8 @@ interface CaseFieldObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ZgwZrcRulesService
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling

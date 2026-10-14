@@ -241,20 +241,26 @@ class PackageInstaller {
 		$parts = (array)($manifest['parts'] ?? []);
 		$settings = [];
 		if (in_array('settings', $parts, true) === true) {
-			$resolved = $this->references->resolve(settings: (array)json_decode($files['settings.json'], true));
-			if ($resolved['missing'] !== []) {
-				return $this->outcome(
-					status: self::REFUSED,
-					id: $id,
-					version: $version,
-					message: "Package '{$id}' needs " . implode('; ', $resolved['reasons']) . '.',
-				) + ['missing' => $resolved['missing']];
-			}
-
-			$settings = $resolved['settings'];
+			$settings = (array)json_decode($files['settings.json'], true);
 		}
 
-		$result = $this->writer->writePackage(package: $id, groups: $this->groups(parts: $parts, files: $files));
+		// Every address the package names, in a setting or a seed file, is
+		// found on this instance before a row is written.
+		$resolved = $this->references->resolve(settings: $settings);
+		$groups = $this->groups(parts: $parts, files: $files);
+		$missing = array_merge($resolved['missing'], array_column($groups, 'missing'));
+		if ($missing !== []) {
+			return $this->outcome(
+				status: self::REFUSED,
+				id: $id,
+				version: $version,
+				message: "Package '{$id}' needs " . implode('; ', array_merge($resolved['reasons'], array_column($groups, 'reason'))) . '.',
+			) + ['missing' => array_values(array_unique($missing))];
+		}
+
+		$settings = $resolved['settings'];
+
+		$result = $this->writer->writePackage(package: $id, groups: $groups);
 		if ($result['status'] !== 'success') {
 			return $this->outcome(status: self::FAILED, id: $id, version: $version, message: $result['message']);
 		}
@@ -315,7 +321,8 @@ class PackageInstaller {
 	 * @param array<int, mixed>     $parts The declared parts.
 	 * @param array<string, string> $files The package files.
 	 *
-	 * @return array<int, array{schemaKey: string, rows: array<int, array<string, mixed>>}> The groups.
+	 * @return array<int, array<string, mixed>> The groups: `schemaKey` and `rows`, and for a seed file
+	 *                                          `match`, `register` and `schema`, or `missing` and `reason`.
 	 */
 	private function groups(array $parts, array $files): array {
 		$groups = [];
@@ -337,7 +344,7 @@ class PackageInstaller {
 
 		if (in_array('seed', $parts, true) === true) {
 			foreach ($this->rowsUnder(files: $files, dir: 'seed/') as $seed) {
-				$groups[] = ['schemaKey' => (string)$seed['schema'], 'rows' => array_values((array)$seed['rows'])];
+				$groups[] = $this->references->seedGroup(seed: $seed);
 			}
 		}
 
