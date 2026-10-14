@@ -61,6 +61,7 @@
 				"id": "dossiq:getting-started",
 				"title": "Getting started",
 				"trigger": "first-visit",
+				"startOn": ["Dashboard"],
 				"minAppVersion": "0.2.17",
 				"steps": [
 					{
