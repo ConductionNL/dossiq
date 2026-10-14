@@ -4817,6 +4817,7 @@ OC.L10N.register(
         "Nothing extra is needed.": "Nothing extra is needed.",
         "Nothing found in this source.": "Nothing found in this source.",
         "Nothing has been delivered for publication from this case yet": "Nothing has been delivered for publication from this case yet",
+        "Nothing has been delivered for publication from this case yet. Publish (Woo) under More writes the delivered set.": "Nothing has been delivered for publication from this case yet. Publish (Woo) under More writes the delivered set.",
         "Nothing has been seeded yet.": "Nothing has been seeded yet.",
         "Nothing has been written yet. This is what would happen to {total} cases.": "Nothing has been written yet. This is what would happen to {total} cases.",
         "Nothing has happened to this task yet": "Nothing has happened to this task yet",
