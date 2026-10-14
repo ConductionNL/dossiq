@@ -45,6 +45,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\L10N\IFactory;
 use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -104,6 +105,7 @@ class PortalWooRequestController extends Controller {
 	 * @param WooRequestIntake        $intake    The one Woo request creation path.
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
+	 * @param IFactory|null           $l10n      Gives the translator a refusal is worded in.
 	 */
 	public function __construct(
 		string $appName,
@@ -112,6 +114,7 @@ class PortalWooRequestController extends Controller {
 		private readonly WooRequestIntake $intake,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
+		private readonly ?IFactory $l10n = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -158,11 +161,57 @@ class PortalWooRequestController extends Controller {
 			return new JSONResponse($this->intake->start($request), Http::STATUS_CREATED);
 		} catch (WooRequestRefused $refused) {
 			return new JSONResponse(
-				['error' => $refused->getReason(), 'message' => $refused->getDetail()],
+				$this->refusalBody(refused: $refused),
 				(self::STATUS[$refused->getReason()] ?? Http::STATUS_BAD_REQUEST)
 			);
 		}
 	}//end start()
+
+	/**
+	 * The answer to a refused request: the reason as a code, the sentence in
+	 * the resident's language, and that sentence under the field it is about.
+	 *
+	 * Portaliq puts an `errors` entry on the field of that name and lists it
+	 * in the form's error summary (site-action-forms), so the resident reads
+	 * which answer to change instead of "Niet alles is goed ingevuld".
+	 *
+	 * @param WooRequestRefused $refused The refusal.
+	 *
+	 * @return array<string, mixed> The body.
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 */
+	private function refusalBody(WooRequestRefused $refused): array {
+		$sentence = $refused->getDetail();
+		if ($sentence !== '' && $this->l10n !== null) {
+			$sentence = (string)$this->l10n->get($this->appName, $this->readerLanguage())->t($sentence);
+		}
+
+		$body = ['error' => $refused->getReason(), 'message' => $sentence];
+		if ($refused->getField() !== '') {
+			$body['errors'] = [$refused->getField() => $sentence];
+		}
+
+		return $body;
+	}//end refusalBody()
+
+	/**
+	 * The language a refusal is worded in.
+	 *
+	 * The route has no signed-in user, so there is no user language to
+	 * follow. English when the forwarded request asks for it first, Dutch
+	 * otherwise: the portal a resident files through speaks Dutch.
+	 *
+	 * @return string The language code.
+	 */
+	private function readerLanguage(): string {
+		$asked = strtolower(trim((string)$this->request->getHeader('Accept-Language')));
+		if (str_starts_with($asked, 'en') === true) {
+			return 'en';
+		}
+
+		return 'nl';
+	}//end readerLanguage()
 
 	/**
 	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.

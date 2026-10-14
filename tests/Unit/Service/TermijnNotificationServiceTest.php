@@ -93,7 +93,7 @@ class TermijnNotificationServiceTest extends TestCase {
 	public function testOntvangstbevestigingRendersZaakAndDeadline(): void {
 		$payload = $this->service->sendTermijnNotification('ontvangstbevestiging', 'ti-1', 'burger-1@example.nl');
 		self::assertSame('Ontvangstbevestiging zaak Z/2026/300', $payload['subject']);
-		self::assertStringContainsString('2026-07-27', $payload['body']);
+		self::assertStringContainsString('27 juli 2026', $payload['body']);
 		self::assertSame('burger-1@example.nl', $payload['recipient']);
 		self::assertSame('ti-1', $payload['deadlineInstance']);
 	}
@@ -108,7 +108,7 @@ class TermijnNotificationServiceTest extends TestCase {
 			'burger-1@example.nl',
 			['newEinddatum' => '2026-08-31']
 		);
-		self::assertStringContainsString('2026-08-31', $payload['body']);
+		self::assertStringContainsString('31 augustus 2026', $payload['body']);
 	}
 
 	/**
@@ -121,7 +121,7 @@ class TermijnNotificationServiceTest extends TestCase {
 			'burger-1@example.nl',
 			['graceEnd' => '2026-08-12']
 		);
-		self::assertStringContainsString('2026-08-12', $payload['body']);
+		self::assertStringContainsString('12 augustus 2026', $payload['body']);
 		self::assertStringContainsString('AWB 4:17', $payload['body']);
 	}
 

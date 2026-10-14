@@ -142,8 +142,11 @@ class CitizenManifest {
 	private const WOO_FIELD_CONFIGS = [
 		'onderwerp' => ['label' => 'Waar gaat uw verzoek over?'],
 		'omschrijving' => ['label' => 'Welke informatie wilt u hebben?', 'size' => 'large'],
-		'periodeVan' => ['label' => 'Vanaf welke datum zoekt u informatie?'],
-		'periodeTot' => ['label' => 'Tot en met welke datum?'],
+		// DATES ARE ASKED AS DATES: portaliq renders `input: date` as day,
+		// month and year (REQ-SMF-003) and sends `jjjj-mm-dd`. As free text a
+		// resident wrote "01-01-2026", which the route refused.
+		'periodeVan' => ['label' => 'Vanaf welke datum zoekt u informatie?', 'input' => 'date'],
+		'periodeTot' => ['label' => 'Tot en met welke datum?', 'input' => 'date'],
 		// The answer cards, not a dropdown: `widget: choices` with the options
 		// in `optionsProviders` below. Portaliq reads the options from there
 		// and nowhere else, so a `choices` list written inline here is dropped
@@ -218,14 +221,15 @@ class CitizenManifest {
 
 	/**
 	 * What the resident reads once the request is in. `{identifier}`,
-	 * `{termStartsAt}` and `{deadline}` come from the answer the route gives
-	 * (decision 179: the case is stamped inside its create), and a sentence whose
+	 * `{termStartsDay}` and `{deadlineDay}` come from the answer the route
+	 * gives (decision 179: the case is stamped inside its create), the dates as
+	 * a letter writes them ("14 oktober 2026", WrittenCase). A sentence whose
 	 * placeholder has no value is left out, so a case whose deadline is not
 	 * computed yet promises no date.
 	 */
 	private const WOO_CONFIRMATION = [
 		'title' => 'Wij hebben uw Woo-verzoek ontvangen',
-		'body' => 'Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsAt}. U krijgt uiterlijk {deadline} antwoord.',
+		'body' => 'Uw zaaknummer is {identifier}. Wij tellen de termijn vanaf {termStartsDay}. U krijgt uiterlijk op {deadlineDay} antwoord.',
 		'next' => 'U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten.',
 	];
 	/**

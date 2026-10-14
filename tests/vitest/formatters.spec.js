@@ -101,6 +101,26 @@ describe('the connection formatters the Integrations page reads', () => {
 })
 
 describe('the case type list formatters', () => {
+	it('processingTime adds the extension a case type allows, and only then', () => {
+		const time = formatters.isoDuration('P56D')
+		const extension = formatters.isoDuration('P42D')
+		expect(
+			formatters.processingTime('P56D', {
+				extensionAllowed: true,
+				extensionPeriod: 'P42D',
+			}),
+		).toBe(`${time}, +${extension}`)
+		expect(
+			formatters.processingTime('P56D', {
+				extensionAllowed: false,
+				extensionPeriod: 'P42D',
+			}),
+		).toBe(time)
+		expect(formatters.processingTime('P56D', {})).toBe(time)
+		expect(formatters.processingTime('P56D')).toBe(time)
+		expect(formatters.processingTime('', { extensionPeriod: 'P14D' })).toBe('')
+	})
+
 	it('isoDuration puts a statutory term in words and leaves other text alone', () => {
 		expect(formatters.isoDuration('P56D')).not.toBe('P56D')
 		expect(formatters.isoDuration('Termijn van de rechtbank')).toBe(

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+import { flushPromises, mount } from '@vue/test-utils'
 /**
  * A reviewer's own pending archival decisions, in My Work.
  *
@@ -14,7 +15,7 @@
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
-import { flushPromises, mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 
@@ -128,6 +129,23 @@ describe('MyArchivalReviews', () => {
 		expect(
 			wrapper.find('[data-testid="archival-review-record-9"]').exists(),
 		).toBe(true)
+	})
+
+	it('leaves the title to the card around it, so it is not drawn twice', async () => {
+		// Both placements on My work set `showTitle: true`: the card header
+		// says "My archival reviews". A second heading inside repeated it.
+		pendingAnswer = vi.fn().mockResolvedValue([])
+
+		const wrapper = await mountSection()
+
+		expect(wrapper.text()).not.toContain('My archival reviews')
+		for (const file of ['src/manifest.json', 'src/menu-layout.simple.json']) {
+			const placements = readFileSync(file, 'utf8').match(
+				/"widgetId": "archival-reviews",[^}]*\}/g,
+			)
+			expect(placements, file).toHaveLength(1)
+			expect(placements[0], file).toContain('"showTitle": true')
+		}
 	})
 
 	it('says there is nothing to sign off on an empty list', async () => {

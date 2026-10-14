@@ -56,18 +56,34 @@ class SystemCaseStore {
 	private readonly UnscopedObjectReader $reader;
 
 	/**
+	 * Fills the opening fields a staff create form would have filled.
+	 *
+	 * @var CaseOpeningDefaults
+	 */
+	private readonly CaseOpeningDefaults $openingDefaults;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService           $settingsService The configured case and case type schemas.
-	 * @param LoggerInterface           $logger          Logger.
-	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
+	 * @param SettingsService             $settingsService The configured case and case type schemas.
+	 * @param LoggerInterface             $logger          Logger.
+	 * @param UnscopedObjectReader|null   $reader          Reads unscoped; a fresh one when null.
+	 * @param CaseCreationAnnouncer|null  $announcer       Announces the written case; null where
+	 *                                                     no event dispatcher is at hand, and then
+	 *                                                     the case is written unannounced and that
+	 *                                                     is logged.
+	 * @param CaseOpeningDefaults|null    $openingDefaults The case type's opening fields; a fresh
+	 *                                                     one when null.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		?UnscopedObjectReader $reader = null,
+		private readonly ?CaseCreationAnnouncer $announcer = null,
+		?CaseOpeningDefaults $openingDefaults = null,
 	) {
-		$this->reader = ($reader ?? new UnscopedObjectReader());
+		$this->reader          = ($reader ?? new UnscopedObjectReader());
+		$this->openingDefaults = ($openingDefaults ?? new CaseOpeningDefaults());
 	}//end __construct()
 
 	/**
@@ -127,15 +143,34 @@ class SystemCaseStore {
 	/**
 	 * Write a case, and read its uuid, number and deadline from what was written.
 	 *
-	 * @param object               $objectService The OpenRegister ObjectService.
-	 * @param string               $register      The dossiq register.
-	 * @param array<string, mixed> $case          The case to write.
+	 * A NEW CASE OPENS AS A STAFF-CREATED ONE DOES. Before the write the case
+	 * takes the opening fields it lacks from its case type (handler, handling
+	 * group, confidentiality, first status and the moment it entered it).
+	 * After it, the created event OpenRegister withholds for a system write is
+	 * sent, so every listener that answers a new case runs: the
+	 * acknowledgement of receipt above all.
+	 *
+	 * @param object                    $objectService The OpenRegister ObjectService.
+	 * @param string                    $register      The dossiq register.
+	 * @param array<string, mixed>      $case          The case to write.
+	 * @param array<string, mixed>|null $caseType      Its case type when the caller already read it;
+	 *                                                 read from `caseType` when null.
 	 *
 	 * @return array{id: string, answer: array<string, string>}|null The written case, or null when the write failed.
 	 *
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
+	 * @spec openspec/changes/a-portal-filed-case-opens-like-a-staff-created-one/specs/woo-request-intake/spec.md#requirement-a-case-the-system-writes-opens-as-a-staff-created-case-does-req-wri-005
 	 */
-	public function write(object $objectService, string $register, array $case): ?array {
+	public function write(object $objectService, string $register, array $case, ?array $caseType = null): ?array {
+		$caseTypeId = trim((string)($case['caseType'] ?? ''));
+		if ($caseType === null && $caseTypeId !== '') {
+			$caseType = $this->caseType(objectService: $objectService, register: $register, caseTypeId: $caseTypeId);
+		}
+
+		if ($caseType !== null) {
+			$case = $this->openingDefaults->apply(case: $case, caseType: $caseType);
+		}
+
 		$saved  = null;
 		$failed = false;
 		try {
@@ -158,6 +193,33 @@ class SystemCaseStore {
 			return null;
 		}
 
+		$this->announce(objectService: $objectService, saved: $saved);
+
 		return (new WrittenCase())->read(saved: $saved);
 	}//end write()
+
+	/**
+	 * Send the created event OpenRegister withheld, when it withheld one.
+	 *
+	 * Without `runAsSystem()` the write ran as an ordinary save, which
+	 * announced itself; sending the event again would answer the case twice.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param mixed  $saved         What the write returned.
+	 *
+	 * @return void
+	 */
+	private function announce(object $objectService, mixed $saved): void {
+		if (method_exists($objectService, 'runAsSystem') === false) {
+			return;
+		}
+
+		if ($this->announcer === null) {
+			$this->logger->warning('SystemCaseStore: no announcer, so the new case was written unannounced');
+
+			return;
+		}
+
+		$this->announcer->announce(objectService: $objectService, saved: $saved);
+	}//end announce()
 }//end class

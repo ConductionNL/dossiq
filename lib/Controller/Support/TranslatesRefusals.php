@@ -16,8 +16,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller\Support;
 
+use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
+use OCP\L10N\IFactory;
+use Throwable;
 
 /**
  * Turning a refusal into the response ADR-050 describes.
@@ -75,11 +79,85 @@ trait TranslatesRefusals {
 	private function refusalResponse(RefusedException $e): JSONResponse {
 		return new JSONResponse(
 			[
-				'message' => $e->getSentence(),
+				'message' => $this->refusalSentence(e: $e),
 				'error' => $e->getRule(),
 				'code' => $e->getMessage(),
 			],
 			$e->getStatus(),
 		);
 	}//end refusalResponse()
+
+	/**
+	 * The refusal's sentence in the reader's language.
+	 *
+	 * The sentence is authored in English, the catalogue key, and a handler
+	 * reads it in their own language. Before this the English sentence went
+	 * out as `message`, and only the lifecycle dialog mapped `code` back to a
+	 * Dutch string, so every other surface showed a Dutch handler English.
+	 * A sentence the catalogue does not know comes back unchanged.
+	 *
+	 * @param RefusedException $e The refusal.
+	 *
+	 * @return string The translated sentence, or the sentence as written.
+	 *
+	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 */
+	private function refusalSentence(RefusedException $e): string {
+		$sentence = $e->getSentence();
+		$l10n = $this->refusalTranslator();
+		if ($sentence === '' || $l10n === null) {
+			return $sentence;
+		}
+
+		try {
+			return (string)$l10n->t($sentence);
+		} catch (Throwable) {
+			// A sentence with a stray `%` cannot be formatted; the English
+			// sentence is still a sentence, a 500 is not.
+			return $sentence;
+		}
+	}//end refusalSentence()
+
+	/**
+	 * The translator for this request: the controller's own, else the app's.
+	 *
+	 * A controller that has its own translator overrides {@see self::refusalL10n()},
+	 * which is also how a test hands one in. The app's translator from the factory
+	 * follows the signed-in user's language. Null when neither is available,
+	 * and then the sentence goes out as written.
+	 *
+	 * @return IL10N|null The translator.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `\OCP\Server::get()` is the public
+	 *     service locator, used only where no constructor injection reaches.
+	 *
+	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 */
+	private function refusalTranslator(): ?IL10N {
+		$own = $this->refusalL10n();
+		if ($own !== null) {
+			return $own;
+		}
+
+		try {
+			return \OCP\Server::get(IFactory::class)->get(Application::APP_ID);
+		} catch (Throwable) {
+			return null;
+		}
+	}//end refusalTranslator()
+
+	/**
+	 * The controller's own translator, when it injects one.
+	 *
+	 * Null here. A controller that takes `IL10N` overrides this method; a
+	 * method in the class wins over the trait's, so no controller has to
+	 * declare a property the trait reads blind.
+	 *
+	 * @return IL10N|null The translator, or null to use the app's.
+	 *
+	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 */
+	protected function refusalL10n(): ?IL10N {
+		return null;
+	}//end refusalL10n()
 }//end trait

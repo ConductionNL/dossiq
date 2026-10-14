@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * The fixture is a neutral case: nothing in it belongs to one procedure.
  *
  * @covers \OCA\Dossiq\Service\Intake\WrittenCase
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
  */
@@ -52,7 +53,7 @@ class WrittenCaseTest extends TestCase {
 	}//end row()
 
 	/**
-	 * An array answer gives the id and the four values the confirmation names.
+	 * An array answer gives the id, the four values the confirmation names and the dates as days.
 	 *
 	 * @return void
 	 */
@@ -66,6 +67,9 @@ class WrittenCaseTest extends TestCase {
 				'deadline' => '2026-11-09',
 				'receivedAt' => '2026-10-12T09:00:00+00:00',
 				'termStartsAt' => '2026-10-13',
+				'deadlineDay' => '9 november 2026',
+				'receivedDay' => '12 oktober 2026',
+				'termStartsDay' => '13 oktober 2026',
 			],
 			$read['answer']
 		);
@@ -167,7 +171,7 @@ class WrittenCaseTest extends TestCase {
 	public function testABlankOrMissingValueIsLeftOut(): void {
 		$read = (new WrittenCase())->read(saved: ['id' => 'case-2', 'identifier' => '  ', 'deadline' => '2026-11-09']);
 
-		self::assertSame(['deadline' => '2026-11-09'], $read['answer']);
+		self::assertSame(['deadline' => '2026-11-09', 'deadlineDay' => '9 november 2026'], $read['answer']);
 	}//end testABlankOrMissingValueIsLeftOut()
 
 	/**

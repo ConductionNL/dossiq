@@ -56,14 +56,33 @@ class WooRequestRefused extends RuntimeException {
 	 * Constructor.
 	 *
 	 * @param string $reason One of the constants above; also the exception message.
-	 * @param string $detail What was wrong, for the log and the 400 answer.
+	 * @param string $detail What was wrong, for the log and the 400 answer. It
+	 *                       is the English catalogue sentence; the portal route
+	 *                       translates it for the resident.
+	 * @param string $field  The form field the refusal is about, or '' when it
+	 *                       is about the request as a whole. A portal shows the
+	 *                       sentence on that field.
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	public function __construct(
 		private readonly string $reason,
 		private readonly string $detail = '',
+		private readonly string $field = '',
 	) {
 		parent::__construct(message: $reason);
 	}//end __construct()
+
+	/**
+	 * The form field the refusal is about, or '' for the request as a whole.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 */
+	public function getField(): string {
+		return $this->field;
+	}//end getField()
 
 	/**
 	 * The reason code.

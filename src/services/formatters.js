@@ -139,6 +139,29 @@ export default {
 	isoDuration: (value) => formatDuration(value),
 
 	/**
+	 * A case type's processing time with the extension it allows, as
+	 * DqZaaktypen draws it ("8 weeks, +6 weeks"). The extension shows only
+	 * when the case type allows one and names its length; otherwise this is
+	 * `isoDuration`.
+	 *
+	 * @param {string} value The ISO processing deadline.
+	 * @param {object} [row] The case type row.
+	 * @return {string} The words, or the value unchanged.
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	processingTime: (value, row) => {
+		const base = formatDuration(value)
+		const extension = row?.extensionAllowed === false ? '' : row?.extensionPeriod
+		if (!base || !extension) {
+			return base
+		}
+		return t('dossiq', '{time}, +{extension}', {
+			time: base,
+			extension: formatDuration(extension),
+		})
+	},
+
+	/**
 	 * A version number as words ("1" reads "Version 1"). A manifest cannot
 	 * carry the phrase itself: the library's conditionalPhrase takes it
 	 * pre-translated, and a manifest string is not translated.
