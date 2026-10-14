@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Flow;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
+use OCA\Dossiq\Tests\Unit\Settings\ShippedPackageCaseTypes;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -1185,7 +1186,7 @@ class CaseFlowDeclarationTest extends TestCase {
 		}
 
 		// The nested shape.
-		foreach (['case_flow_seed_data.json', 'vth_seed_data.json'] as $file) {
+		foreach (['case_flow_seed_data.json'] as $file) {
 			$seed = json_decode(
 				(string)file_get_contents(__DIR__ . '/../../../lib/Settings/' . $file),
 				true
@@ -1196,6 +1197,14 @@ class CaseFlowDeclarationTest extends TestCase {
 				if ($statuses !== []) {
 					$out[$file . ':' . (string)($caseType['slug'] ?? '?')] = $statuses;
 				}
+			}
+		}
+
+		// The case definition packages, read in the same nested shape.
+		foreach (ShippedPackageCaseTypes::nested() as $caseType) {
+			$statuses = ($caseType['statusTypes'] ?? []);
+			if ($statuses !== []) {
+				$out['package:' . (string)($caseType['slug'] ?? '?')] = $statuses;
 			}
 		}
 

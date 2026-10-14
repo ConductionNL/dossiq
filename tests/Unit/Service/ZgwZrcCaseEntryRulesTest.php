@@ -47,6 +47,8 @@ interface CaseEntryObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Zgw\ZrcCaseRelationRules
  * @uses \OCA\Dossiq\Service\Zgw\ZrcSubResourceRules
  * @uses \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\FieldValidator
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  *

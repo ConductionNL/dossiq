@@ -198,6 +198,18 @@ function newerSchemaAccepts(instancePath, property) {
 		def = schema.$defs.visibleWhen
 	}
 
+	// A walkthrough tour is declared inline, not under $defs. Resolved by
+	// its path like the others (the-getting-started-tour-starts-on-the-
+	// dashboard, `startOn` in schema 2.94.0).
+	if (
+		def === null
+		&& segments.length === 3
+		&& segments[0] === 'walkthrough'
+		&& segments[1] === 'tours'
+	) {
+		def = schema.properties?.walkthrough?.properties?.tours?.items ?? null
+	}
+
 	if (!def || !def.properties) {
 		return false
 	}
