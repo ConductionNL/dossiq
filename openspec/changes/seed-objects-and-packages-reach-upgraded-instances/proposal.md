@@ -28,7 +28,7 @@ names was never looked at.
 
 ## What changes
 
-- `CaseTypeStore::templateFor()` answers the flow a case type names in
+- `CaseTypeStore::activeTemplate()` takes an optional named flow and answers the flow a case type names in
   `workflowDefinition`, else its active one. The withdrawal listener judges a
   save by the flow the incoming payload names.
 - InstallShippedPackages imports the register configuration again, unforced,

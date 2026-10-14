@@ -385,7 +385,7 @@
       "method": "readRow",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`readRow()` (behind `readCaseType()` and `templateFor()`) answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`readRow()` (behind `readCaseType()` and `activeTemplate()`) answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/CaseTypeStore.php",

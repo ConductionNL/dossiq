@@ -119,7 +119,7 @@ class CaseTypeStore {
 	}//end rowsOfType()
 
 	/**
-	 * The case type's active workflow template.
+	 * The case type's workflow template: the one it names, else its active one.
 	 *
 	 * Here rather than on a caller because two of them ask: publishing writes
 	 * the template out, and the publication checks walk its moves to find what
@@ -130,13 +130,30 @@ class CaseTypeStore {
 	 * A type with templates but none marked active answers the first one, which
 	 * is what an unmarked set has always meant here.
 	 *
-	 * @param string $caseTypeId CaseType UUID.
+	 * `$named` is the `workflowDefinition` of the case type being judged. A
+	 * check made while a case type is SAVED passes the incoming payload's value:
+	 * an upgraded instance can hold an older active flow (a basis template
+	 * written before the app shipped one), and judging by that refused the
+	 * shipped case type on every upgrade (Zuiddrecht, 14 Oct). A name that does
+	 * not resolve to a stored template falls back to the active one.
+	 *
+	 * @param string            $caseTypeId CaseType UUID.
+	 * @param string|array|null $named      The flow the case type names: a uuid, an expanded row, or null.
 	 *
 	 * @return array<string, mixed> The template, or an empty array when there is none.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
 	 */
-	public function activeTemplate(string $caseTypeId): array {
+	public function activeTemplate(string $caseTypeId, string|array|null $named=null): array {
+		$namedId = $this->referenceId(value: $named);
+		if ($namedId !== '') {
+			$template = $this->readRow(schemaKey: 'workflow_template_schema', id: $namedId);
+			if ($template !== []) {
+				return $template;
+			}
+		}
+
 		$rows = $this->rowsOfType(schemaKey: 'workflow_template_schema', caseTypeId: $caseTypeId);
 
 		$fallback = [];
@@ -152,38 +169,6 @@ class CaseTypeStore {
 
 		return $fallback;
 	}//end activeTemplate()
-
-	/**
-	 * The flow a case type follows: the one it names, else its active one.
-	 *
-	 * A case type names its flow in `workflowDefinition`. A check made while a
-	 * case type is being SAVED must judge the flow the incoming payload names,
-	 * not whichever template of the type happens to be active: an upgraded
-	 * instance can hold an older active flow (a basis template written before
-	 * the app shipped one), and judging by that refused the shipped case type
-	 * on every upgrade (Zuiddrecht, 14 Oct).
-	 *
-	 * A name that does not resolve to a stored template falls back to the
-	 * active one, so a dangling reference is judged as before.
-	 *
-	 * @param string $caseTypeId CaseType UUID.
-	 * @param mixed  $named      The `workflowDefinition` value: a uuid, an expanded row, or empty.
-	 *
-	 * @return array<string, mixed> The template, or an empty array when there is none.
-	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
-	 */
-	public function templateFor(string $caseTypeId, mixed $named): array {
-		$namedId = $this->referenceId(value: $named);
-		if ($namedId !== '') {
-			$template = $this->readRow(schemaKey: 'workflow_template_schema', id: $namedId);
-			if ($template !== []) {
-				return $template;
-			}
-		}
-
-		return $this->activeTemplate(caseTypeId: $caseTypeId);
-	}//end templateFor()
 
 	/**
 	 * Every case type sharing one identifier: the version chain.
