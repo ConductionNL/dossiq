@@ -40,11 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob;
 use OCA\Dossiq\Service\Intake\CollectionCaseLinks;
+use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\Intake\SystemCaseStore;
 use OCA\Dossiq\Service\SettingsService;
-use OCP\BackgroundJob\IJobList;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 
@@ -121,8 +120,8 @@ class WooRequestIntake {
 	 * @param SystemCaseStore|null $cases Writes the case as the system and announces it; the
 	 *                                    container hands it the announcer. A store that cannot
 	 *                                    announce when null.
-	 * @param IJobList|null $jobList Links a dossier to its case after the case is answered
-	 *                               (REQ-PSM-002); linked inline when null.
+	 * @param CollectionLinkQueue|null $linkQueue Links a dossier to its case after the case is
+	 *                                            answered (REQ-PSM-002); linked inline when null.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -131,7 +130,7 @@ class WooRequestIntake {
 		private readonly ?WooReceivedTerm $receivedTerm = null,
 		private readonly ?WooReceivedAnswers $receivedAnswers = null,
 		?SystemCaseStore $cases = null,
-		private readonly ?IJobList $jobList = null,
+		private readonly ?CollectionLinkQueue $linkQueue = null,
 	) {
 		$this->cases       = ($cases ?? new SystemCaseStore(settingsService: $settingsService, logger: $logger));
 		$this->collections = new CollectionCaseLinks(settingsService: $settingsService, urlGenerator: $urlGenerator, logger: $logger);
@@ -229,20 +228,12 @@ class WooRequestIntake {
 	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
 	 */
 	private function linkLater(object $objectService, string $register, string $caseId, array $collection, string $subjectRef): void {
-		if ($this->jobList === null) {
+		if ($this->linkQueue === null) {
 			$this->collections->link(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
 			return;
 		}
 
-		$this->jobList->add(
-			LinkCollectionToCaseJob::class,
-			[
-				'register' => $register,
-				'caseId' => $caseId,
-				'collectionId' => (string)$collection['id'],
-				'subjectRef' => $subjectRef,
-			]
-		);
+		$this->linkQueue->queue(register: $register, caseId: $caseId, collectionId: (string)$collection['id'], subjectRef: $subjectRef);
 	}//end linkLater()
 
 	/**

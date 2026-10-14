@@ -25,6 +25,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use OCA\Dossiq\Woo\WooRequestRefused;
 use OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob;
+use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -132,7 +133,7 @@ class WooRequestIntakeTest extends TestCase {
 			settingsService: $this->settingsOn(store: $store),
 			urlGenerator: $this->urls(),
 			logger: $this->createMock(LoggerInterface::class),
-			jobList: $jobList,
+			linkQueue: $jobList === null ? null : new CollectionLinkQueue(jobList: $jobList),
 		);
 	}//end intakeOn()
 
