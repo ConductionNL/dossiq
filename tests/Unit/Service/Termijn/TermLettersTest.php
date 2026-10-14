@@ -36,7 +36,7 @@ class TermLettersTest extends TestCase {
 			context: ['reason' => 'Veel documenten van derden, zienswijzen nodig.', 'newEinddatum' => '2026-11-16'],
 		);
 
-		self::assertStringContainsString('2026-11-16', $letter['body']);
+		self::assertStringContainsString('De nieuwe deadline is 16 november 2026.', $letter['body']);
 		self::assertStringContainsString('De reden: Veel documenten van derden, zienswijzen nodig.', $letter['body']);
 		self::assertStringNotContainsString('nodig..', $letter['body']);
 	}//end testTheExtensionLetterCarriesItsReason()
@@ -50,6 +50,42 @@ class TermLettersTest extends TestCase {
 		$letter = (new TermLetters())->render(type: 'extension', instance: ['case' => 'Z-1'], context: ['newEinddatum' => '2026-11-16']);
 
 		self::assertStringNotContainsString('De reden', $letter['body']);
-		self::assertStringContainsString('2026-11-16', $letter['body']);
+		self::assertStringContainsString('16 november 2026', $letter['body']);
 	}//end testAnExtensionWithoutAReasonPrintsNoReasonLine()
+
+	/**
+	 * Every date a letter prints reads as the boards write it ("10 augustus 2026"), whatever the store holds;
+	 * a placeholder stays a placeholder (letters-print-every-date-the-same-way).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 */
+	public function testEveryDateInALetterReadsTheSameWay(): void {
+		$letters = new TermLetters();
+		$receipt = $letters->render(
+			type: 'ontvangstbevestiging',
+			instance: ['case' => '2026-0099', 'endDateCurrent' => '2026-08-10'],
+			context: ['receivedAt' => '2026-06-15T09:12:00+02:00', 'termStartsAt' => '2026-06-15T09:12:00+02:00', 'subject' => 'Subsidie buurtfeest'],
+		);
+		self::assertStringContainsString('ontvangen op 15 juni 2026 en de beslistermijn start op 15 juni 2026', $receipt['body']);
+		self::assertStringContainsString('uiterlijk op 10 augustus 2026', $receipt['body']);
+
+		$grace = $letters->render(type: 'ingebrekestelling-receipt', instance: ['case' => 'Z-1'], context: ['graceEnd' => '2026-09-01']);
+		self::assertStringContainsString('eindigt op 1 september 2026', $grace['body']);
+
+		$request = $letters->render(type: 'hersteltermijn-request', instance: ['case' => 'Z-1'], context: ['items' => ['Bouwtekening'], 'pauseDeadline' => '2026-10-20']);
+		self::assertStringContainsString('20 oktober 2026', $request['body']);
+		$reminder = $letters->render(type: 'hersteltermijn-reminder', instance: ['case' => 'Z-1'], context: ['pauseDeadline' => '2026-10-20']);
+		self::assertStringContainsString('20 oktober 2026', $reminder['body']);
+		$english = $letters->render(type: 'hersteltermijn-reminder', instance: ['case' => 'Z-1'], context: ['locale' => 'en', 'pauseDeadline' => '2026-10-20']);
+		self::assertStringContainsString('20 October 2026', $english['body'], 'an English letter names the month in English');
+
+		foreach ([$receipt, $grace, $request, $reminder] as $letter) {
+			self::assertDoesNotMatchRegularExpression('/\b\d{4}-\d{2}-\d{2}\b/', $letter['body']);
+		}
+
+		$noTerm = $letters->render(type: 'ingebrekestelling-receipt', instance: ['case' => 'Z-1'], context: []);
+		self::assertStringContainsString('eindigt op –.', $noTerm['body'], 'a placeholder stays a placeholder');
+	}//end testEveryDateInALetterReadsTheSameWay()
 }//end class
