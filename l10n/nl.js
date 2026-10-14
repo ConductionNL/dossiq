@@ -4817,6 +4817,7 @@ OC.L10N.register(
         "Nothing extra is needed.": "Er is niets extra nodig.",
         "Nothing found in this source.": "Niets gevonden in deze bron.",
         "Nothing has been delivered for publication from this case yet": "Vanuit deze zaak is nog niets aangeleverd voor publicatie",
+        "Nothing has been delivered for publication from this case yet. Publish (Woo) under More writes the delivered set.": "Vanuit deze zaak is nog niets aangeleverd voor publicatie. Publiceren (Woo) onder Meer maakt de aangeleverde set.",
         "Nothing has been seeded yet.": "Er is nog niets geplaatst.",
         "Nothing has been written yet. This is what would happen to {total} cases.": "Er is nog niets weggeschreven. Dit zou er met {total} zaken gebeuren.",
         "Nothing has happened to this task yet": "Er is nog niets met deze taak gebeurd",
