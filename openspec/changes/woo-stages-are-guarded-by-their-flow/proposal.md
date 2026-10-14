@@ -33,18 +33,21 @@ Procedures are case types, flows and configuration (decision 182). So the Woo st
    "Decision made" and "published" use the existing `requiresSettled` vocabulary (`fieldPresent`, `fieldEquals`), which `execute()` re-checks on the server. No new field guard was needed.
 3. **The case type names the flow** as its default route (`workflowDefinition`), version 1.4.7. A fresh install never gets the guard-less basis flow, because the backfill skips a case type that is pinned.
 
-## Decisions needed (not guessed)
+## Decided: every exit records a reason (Ruben, 14 October)
 
-These paths are not in the flow. A case on them now needs an administrator's free-form move.
+- **D1, nothing found.** Three generic case fields (`lib/Settings/register.d/89-search-outcome-and-admissibility.json`): `documentSearchOutcome` (`documents_found` | `nothing_found`), `documentSearchNote` and `inadmissibilityReason`. A case that records `nothing_found` with a note counts as assessed for `documentAssessment` (`lib/Service/Assessment/DocumentSearchOutcome.php`). An outcome without a note is no record.
+- **D2, nothing that can be made public.** `WooPublicationService::publish()` publishes the decision alone when the case records that nothing is disclosable: a recorded "nothing found", or every document under review assessed and every assessment `niet_openbaar`. opencatalogi's publication schema requires only a title, so a publication without attachments is valid; the delivered set is written with no items. Anything else that leaves the disclosable set empty, such as a partly public document whose redaction is not finished, still refuses `no_publishable_documents`.
+- **D3, not admissible.** A move "Niet ontvankelijk" from Beoordeling ontvankelijkheid to Afgehandeld, withheld until `inadmissibilityReason` is filled in.
+- **Withdrawal.** The handler's "Ingetrokken door de verzoeker" moves now wait for `withdrawalReason`, as the bezwaar flow's do. The resident's own withdrawal is a status write by portaliq and is not affected.
 
-- **D1. Nothing found.** A request where the search finds no documents cannot pass "Documenten beoordelen". Options: (a) a move Zoeken documenten to Besluit, guarded by nothing but a required reason; (b) a `documentAssessment` option that accepts a recorded "no documents found"; (c) keep it admin-only. Recommended: (b), so the empty case is a recorded fact and not a bypass.
-- **D2. Nothing disclosable.** When every document is withheld, publishing refuses `no_publishable_documents`, so the case cannot reach `published`. The Woo still requires the decision itself to be made public. Options: (a) let the publish step publish the decision alone and set `published`; (b) a move Publicatie to Afgehandeld withheld until `wooPublicationStatus` is `ready` with a result "Niet openbaar gemaakt"; (c) admin-only. Recommended: (a).
-- **D3. Not admissible.** There is no move from Beoordeling ontvankelijkheid to Afgehandeld for a request that is not admissible. Recommended: add it, withheld until a reason field is filled.
+## Existing cases
+
+- **The pin reaches existing instances.** OpenRegister's import overwrites a seeded object when the seed's `@self.version` is higher than the stored one (`ImportHandler`, object branch). On :8080 the Woo case type is stored at version 0.0.9 with no `workflowDefinition`; the seed is 1.4.7, so the upgrade writes the pin. A case with no binding then follows the shipped flow.
+- **Cases bound to the basis flow are rebound.** A new repair step, `RebindCasesOffTheBasisFlow`, runs after the backfill and the package install. For every case type whose `workflowDefinition` names a flow that is not a backfilled basis, each open case still bound to that case type's basis flow (recognised by the backfill's description marker) is bound to the named flow. Closed cases, cases on a flow an administrator built and unbound cases are left alone. A second run changes nothing.
 
 ## Not changed
 
-- Existing cases bound to the backfilled "Woo-verzoek (basis)" flow keep it: a case keeps the flow it was bound to. They need a rebind (Move to another version) or a one-off repair, which is a data decision for the instance owner.
-- Whether the register.d import overwrites `workflowDefinition` on an instance where the backfill already pinned the basis flow is not verified here.
+- The basis flow itself stays stored and active; nothing is bound to it once the repair has run. Retiring it is an administrator's choice.
 
 ## Rollback
 

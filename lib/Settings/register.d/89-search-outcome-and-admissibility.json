@@ -1,0 +1,37 @@
+{
+  "_note": "woo-stages-are-guarded-by-their-flow, decisions D1 and D3 (Ruben, 14 October). Generic case fields a flow can ask for, named by what they record, not by a procedure. documentSearchOutcome and documentSearchNote: the handler records that a search for documents found nothing, and why; the documentAssessment guard then counts the case as assessed, and a decision-only publication is allowed (D2). inadmissibilityReason: why a request is not admissible, which a flow waits for before it closes the case from its admissibility check. No defaults: a case that never records them carries none, so the Data tab section stays hidden.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "documentSearchOutcome": {
+            "type": "string",
+            "enum": [
+              "documents_found",
+              "nothing_found"
+            ],
+            "title": "Search outcome",
+            "description": "Whether the search for the documents this case is about found any. Recorded by the handler.",
+            "facetable": true,
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "documentSearchNote": {
+            "type": "string",
+            "title": "Search note",
+            "description": "Where was searched and why nothing was found. Needed before a case with nothing found moves on.",
+            "maxLength": 4000,
+            "inputControl": "textarea"
+          },
+          "inadmissibilityReason": {
+            "type": "string",
+            "title": "Reason not admissible",
+            "description": "Why the request is not admissible. Needed before the case closes from its admissibility check.",
+            "maxLength": 4000,
+            "inputControl": "textarea"
+          }
+        }
+      }
+    }
+  }
+}

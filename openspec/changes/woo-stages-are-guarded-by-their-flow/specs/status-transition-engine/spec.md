@@ -35,3 +35,40 @@ The Woo request case type SHALL name a shipped flow as its default route. In tha
 - **GIVEN** a Woo request in Besluit whose documents are all assessed
 - **AND** no decision is made
 - **THEN** "Naar publicatie" is withheld, naming "het besluit (stel het besluit op)"
+
+### Requirement: A recorded search outcome MUST count as assessed
+
+When a case records `documentSearchOutcome: nothing_found` with a non-empty `documentSearchNote`, the `documentAssessment` guard SHALL pass for both requirements. An outcome without a note SHALL count for nothing.
+
+#### Scenario: Nothing found, with a note
+
+- **GIVEN** a Woo request in Zoeken documenten with no documents
+- **AND** the coordinator records "nothing found" and where was searched
+- **THEN** the moves through Beoordelen documenten, Lakken / Anonimiseren and Besluit are allowed
+
+#### Scenario: Nothing found, without a note
+
+- **GIVEN** the same request with the outcome but no note
+- **THEN** "Documenten beoordelen" stays disabled
+
+### Requirement: Every Woo exit without a decision MUST wait for a recorded reason
+
+A move that closes a Woo request without a published decision SHALL be withheld until its reason is recorded on the case: `inadmissibilityReason` for "Niet ontvankelijk", `withdrawalReason` for the withdrawal.
+
+#### Scenario: A request that is not admissible
+
+- **GIVEN** a Woo request in Beoordeling ontvankelijkheid
+- **WHEN** no `inadmissibilityReason` is recorded
+- **THEN** "Niet ontvankelijk" is withheld, naming "de reden waarom het verzoek niet ontvankelijk is"
+- **AND** once the reason is recorded, the move is offered
+
+### Requirement: Open cases on a backfilled basis flow MUST move to the flow their case type names
+
+An upgrade SHALL bind every open case that is still on a backfilled basis flow of its case type to the flow the case type names as `workflowDefinition`, when that flow is not itself a basis. Closed cases, cases on another flow and unbound cases SHALL be left alone. Running it again SHALL change nothing.
+
+#### Scenario: An open Woo request on the basis flow
+
+- **GIVEN** an open Woo request bound to "Woo-verzoek (basis)"
+- **AND** the Woo case type names the shipped flow
+- **WHEN** dossiq upgrades
+- **THEN** the request is bound to the shipped flow, and a closed request on the basis flow is not

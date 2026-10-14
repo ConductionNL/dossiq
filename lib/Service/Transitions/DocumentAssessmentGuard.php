@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\Assessment\DocumentSearchOutcome;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -92,6 +93,12 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 			);
 		}
 
+		// D1: a recorded "nothing found", with its note, is the answer for a
+		// case whose search found no documents. It counts for both requirements.
+		if (DocumentSearchOutcome::recordsNothingFound(case: $case) === true) {
+			return new GuardResult(passed: true, details: ['require' => $require, 'nothingFound' => true]);
+		}
+
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
 		if ($caseId === '') {
 			return new GuardResult(passed: false, failureMessage: 'Zaak niet herkend voor de documentcontrole');
@@ -116,7 +123,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 		if ($underReview === []) {
 			return new GuardResult(
 				passed: false,
-				failureMessage: 'Er zijn nog geen documenten verzameld',
+				failureMessage: 'Er zijn nog geen documenten verzameld. Niets gevonden? Leg dat vast met een toelichting',
 				details: ['require' => $require, 'documents' => 0],
 			);
 		}

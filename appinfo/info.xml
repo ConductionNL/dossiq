@@ -434,6 +434,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 are all new.
             -->
             <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
+            <!--
+                After the backfill and the package install: a case type that now
+                names a shipped flow gets its open cases moved off the "(basis)"
+                flow the backfill bound them to (woo-stages-are-guarded-by-their-flow).
+            -->
+            <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
             <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
@@ -976,6 +982,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  every case type the steps above just created. See the
                  post-migration block for what its old position cost. -->
             <step>OCA\Dossiq\Repair\MigrateWorkflowDefinitions</step>
+            <!--
+                After the backfill and the package install: a case type that now
+                names a shipped flow gets its open cases moved off the "(basis)"
+                flow the backfill bound them to (woo-stages-are-guarded-by-their-flow).
+            -->
+            <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>

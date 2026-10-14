@@ -16,7 +16,20 @@
 - [x] 2.2 The flow sweeps accept a package flow for a case type register.d seeds
   - Files: tests/Unit/Settings/ShippedPackageCaseTypes.php, tests/Unit/Settings/PackageDraftFlowsTest.php, tests/Unit/Settings/PackageFlowStatusReferencesTest.php
 
-## 3. Open
+## 3. Every exit records a reason (decided 14 October)
 
-- [ ] 3.1 D1, D2, D3 in the proposal: decide, then add the moves
-- [ ] 3.2 Rebind or repair open Woo cases bound to the backfilled basis flow (instance owner)
+- [x] 3.1 D1: generic case fields `documentSearchOutcome`, `documentSearchNote`, `inadmissibilityReason`; a recorded "nothing found" with a note counts as assessed
+  - Files: lib/Settings/register.d/89-search-outcome-and-admissibility.json, lib/Service/Assessment/DocumentSearchOutcome.php, lib/Service/Transitions/DocumentAssessmentGuard.php, l10n
+  - Test: tests/Unit/Settings/WooFlowGuardsTest.php (`testARecordedNothingFoundCountsAsAssessed`)
+- [x] 3.2 D2: a decision-only publication when the case records that nothing is disclosable
+  - Spec ref: specs/woo-publication-via-opencatalogi/spec.md
+  - Files: lib/Service/WooPublicationService.php
+  - Test: tests/Unit/Service/WooPublicationServiceTest.php (five cases: all withheld, nothing found, nothing found without a note, a redaction still missing, an assessment outstanding)
+- [x] 3.3 D3: "Niet ontvankelijk" from Beoordeling ontvankelijkheid to Afgehandeld, withheld until `inadmissibilityReason`; the withdrawal moves wait for `withdrawalReason`
+  - Test: tests/Unit/Settings/WooFlowGuardsTest.php (`testAnInadmissibleRequestClosesWithItsReason`, `testTheWithdrawalStaysReachableAndWaitsForItsReason`, `testEveryExitWithoutADecisionWaitsForAReason`)
+
+## 4. Existing cases
+
+- [x] 4.1 Repair step `RebindCasesOffTheBasisFlow`, registered after `MigrateWorkflowDefinitions` in post-migration and install
+  - Files: lib/Repair/RebindCasesOffTheBasisFlow.php, appinfo/info.xml
+  - Test: tests/Unit/Repair/RebindCasesOffTheBasisFlowTest.php

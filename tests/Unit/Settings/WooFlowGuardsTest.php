@@ -226,6 +226,42 @@ class WooFlowGuardsTest extends TestCase {
 	}//end withheldTo()
 
 	/**
+	 * The offered move with this label, or null.
+	 *
+	 * @param array<string, mixed> $answer The answer.
+	 * @param string               $label  The move's label.
+	 *
+	 * @return array<string, mixed>|null The move.
+	 */
+	private function offeredNamed(array $answer, string $label): ?array {
+		foreach ($answer['transitions'] as $move) {
+			if ($move['label'] === $label) {
+				return $move;
+			}
+		}
+
+		return null;
+	}//end offeredNamed()
+
+	/**
+	 * The withheld move with this label, or null.
+	 *
+	 * @param array<string, mixed> $answer The answer.
+	 * @param string               $label  The move's label.
+	 *
+	 * @return array<string, mixed>|null The withheld entry.
+	 */
+	private function withheldNamed(array $answer, string $label): ?array {
+		foreach ($answer['withheld'] as $entry) {
+			if ($entry['label'] === $label) {
+				return $entry;
+			}
+		}
+
+		return null;
+	}//end withheldNamed()
+
+	/**
 	 * Every status but the last leads on, and only the shipped statuses are named.
 	 *
 	 * @return void
@@ -271,7 +307,7 @@ class WooFlowGuardsTest extends TestCase {
 		$move = $this->moveTo(answer: $this->answerIn(order: 3), to: 4);
 		$this->assertNotNull($move);
 		$this->assertFalse(condition: $move['guardsPassed']);
-		$this->assertSame(expected: 'Er zijn nog geen documenten verzameld', actual: $move['failedGuards'][0]['failureMessage']);
+		$this->assertSame(expected: 'Er zijn nog geen documenten verzameld. Niets gevonden? Leg dat vast met een toelichting', actual: $move['failedGuards'][0]['failureMessage']);
 
 		$this->underReview = ['doc-1', 'doc-2'];
 		$this->assertTrue(condition: $this->moveTo(answer: $this->answerIn(order: 3), to: 4)['guardsPassed']);
@@ -347,15 +383,70 @@ class WooFlowGuardsTest extends TestCase {
 	}//end testAnUnreadableRegisterRefuses()
 
 	/**
-	 * The resident's withdrawal has a direct move from every status it is open in.
+	 * The withdrawal has a direct move from every status it is open in, and waits for its reason.
 	 *
 	 * @return void
 	 */
-	public function testTheWithdrawalStaysReachable(): void {
+	public function testTheWithdrawalStaysReachableAndWaitsForItsReason(): void {
 		foreach ([1, 2] as $order) {
-			$move = $this->moveTo(answer: $this->answerIn(order: $order), to: 8);
+			$bare = $this->answerIn(order: $order);
+			$this->assertNull(actual: $this->offeredNamed(answer: $bare, label: 'Ingetrokken door de verzoeker'));
+			$this->assertSame(
+				expected: ['de reden van de intrekking'],
+				actual: $this->withheldNamed(answer: $bare, label: 'Ingetrokken door de verzoeker')['reasons'],
+			);
+
+			$given = $this->answerIn(order: $order, fields: ['withdrawalReason' => 'Ik heb de stukken al gekregen.']);
+			$move = $this->offeredNamed(answer: $given, label: 'Ingetrokken door de verzoeker');
 			$this->assertNotNull(actual: $move, message: 'withdrawal from status ' . $order);
-			$this->assertTrue(condition: $move['guardsPassed']);
+			$this->assertSame(expected: $this->statusId(order: 8), actual: $move['toStatus']);
 		}
-	}//end testTheWithdrawalStaysReachable()
+	}//end testTheWithdrawalStaysReachableAndWaitsForItsReason()
+
+	/**
+	 * D1: a recorded "nothing found" with its note walks the document stages.
+	 *
+	 * @return void
+	 */
+	public function testARecordedNothingFoundCountsAsAssessed(): void {
+		$recorded = ['documentSearchOutcome' => 'nothing_found', 'documentSearchNote' => 'Gezocht in mail, zaaksysteem en archief 2025-2026.'];
+		foreach ([[3, 4], [4, 5], [5, 6]] as [$from, $to]) {
+			$move = $this->moveTo(answer: $this->answerIn(order: $from, fields: $recorded), to: $to);
+			$this->assertTrue(condition: $move['guardsPassed'], message: $from . ' to ' . $to);
+		}
+
+		$noNote = $this->moveTo(answer: $this->answerIn(order: 3, fields: ['documentSearchOutcome' => 'nothing_found']), to: 4);
+		$this->assertFalse(condition: $noNote['guardsPassed'], message: 'an outcome without a note is no record');
+	}//end testARecordedNothingFoundCountsAsAssessed()
+
+	/**
+	 * D3: an inadmissible request closes from its admissibility check once the reason is recorded.
+	 *
+	 * @return void
+	 */
+	public function testAnInadmissibleRequestClosesWithItsReason(): void {
+		$bare = $this->answerIn(order: 2);
+		$this->assertNull(actual: $this->offeredNamed(answer: $bare, label: 'Niet ontvankelijk'));
+		$withheld = $this->withheldNamed(answer: $bare, label: 'Niet ontvankelijk');
+		$this->assertSame(expected: $this->statusId(order: 8), actual: $withheld['toStatus']);
+		$this->assertSame(expected: ['de reden waarom het verzoek niet ontvankelijk is'], actual: $withheld['reasons']);
+
+		$given = $this->answerIn(order: 2, fields: ['inadmissibilityReason' => 'Het verzoek gaat niet over documenten van de gemeente.']);
+		$this->assertNotNull(actual: $this->offeredNamed(answer: $given, label: 'Niet ontvankelijk'));
+	}//end testAnInadmissibleRequestClosesWithItsReason()
+
+	/**
+	 * Every way out of the flow that skips the decision waits for a recorded reason.
+	 *
+	 * @return void
+	 */
+	public function testEveryExitWithoutADecisionWaitsForAReason(): void {
+		foreach ($this->shippedTransitions() as $move) {
+			if ($move['toStatus'] !== $this->statusId(order: 8) || $move['fromStatus'] === $this->statusId(order: 7)) {
+				continue;
+			}
+
+			$this->assertNotEmpty($move['requiresSettled'] ?? [], $move['label'] . ' closes the case without a reason');
+		}
+	}//end testEveryExitWithoutADecisionWaitsForAReason()
 }//end class
