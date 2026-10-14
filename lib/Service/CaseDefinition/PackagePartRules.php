@@ -187,7 +187,10 @@ class PackagePartRules {
 	}//end checkRowFiles()
 
 	/**
-	 * Check the `seed/` files: each names the schema key its rows go to.
+	 * Check the `seed/` files: each names the schema its rows go to, by
+	 * settings key for a schema of this app, or by app, register and slug for
+	 * a schema of another app. A file may name the property (`match`) an
+	 * existing row is recognised by; then every row carries it.
 	 *
 	 * @param array<string, string> $files The package files.
 	 *
@@ -205,9 +208,7 @@ class PackagePartRules {
 				continue;
 			}
 
-			if (preg_match('/^[a-z][a-z0-9_]*_schema$/', (string)($seed['schema'] ?? '')) !== 1) {
-				$this->errors[] = "{$path}: schema must name a settings key ending in _schema.";
-			}
+			array_push($this->errors, ...(new PackageSeedRules())->errors(seed: $seed, path: $path));
 
 			$rows = ($seed['rows'] ?? null);
 			if (is_array($rows) === false || $rows === [] || array_is_list($rows) === false) {

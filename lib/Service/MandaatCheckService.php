@@ -77,12 +77,14 @@ class MandaatCheckService {
 	 * @param array<string, mixed> $caseProperties Case properties for condition matching.
 	 * @param DateTimeImmutable|null $decisionDate Optional override (defaults to now).
 	 *
-	 * @return array{authorized:bool, mandaatId?:string, reden?:string|null, conflictReason?:string, failedConditions?:array<int,string>}
+	 * @return array{authorized:bool, mandaatId?:string, reden?:string|null, conflictReason?:string, failedConditions?:array<int,string>,
+	 *               relationCheck?:string, relationCheckReason?:string}
 	 *
 	 * @throws RefusedException When the mandate register could not be read at all.
 	 *
 	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
 	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
 	public function isAuthorized(
 		string $userId,
@@ -119,9 +121,14 @@ class MandaatCheckService {
 			];
 		}
 
+		// Whether the family relation step ran travels with every verdict
+		// below, so a decision made without it does not read like one made
+		// with it.
+		$relation = array_intersect_key($conflict, ['relationCheck' => true, 'relationCheckReason' => true]);
+
 		$role = $this->resolveUserRole(userId: $userId, date: $decisionDate);
 		if ($role === null) {
-			return ['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD];
+			return (['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD] + $relation);
 		}
 
 		$caseType = (string)($caseProperties['caseType'] ?? '');
@@ -135,7 +142,7 @@ class MandaatCheckService {
 		);
 
 		if (count($relevant) === 0) {
-			return ['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD];
+			return (['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD] + $relation);
 		}
 
 		// Pick the first mandaat whose voorwaarden pass; surface the most-specific
@@ -144,11 +151,11 @@ class MandaatCheckService {
 		foreach ($relevant as $m) {
 			$eval = $this->evaluateConditions(mandate: $m, caseProperties: $caseProperties);
 			if ($eval['passed'] === true) {
-				return [
+				return ([
 					'authorized' => true,
 					'mandaatId' => (string)($m['id'] ?? ''),
 					'reason' => null,
-				];
+				] + $relation);
 			}
 
 			$lastFailure = [
@@ -157,11 +164,11 @@ class MandaatCheckService {
 			];
 		}
 
-		return [
+		return ([
 			'authorized' => false,
 			'reason' => $lastFailure['reason'],
 			'failedConditions' => $lastFailure['failedConditions'],
-		];
+		] + $relation);
 	}//end isAuthorized()
 
 	/**

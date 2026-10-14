@@ -418,14 +418,47 @@ describe('the landing page', () => {
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
 
-	it('keeps the two My work widgets the design has no stand-in for, as the manifest declares them', () => {
+	it('keeps My archival reviews, which the design has no stand-in for, as the manifest declares it', () => {
 		const base = pageView(original('MyWorkHome'), 'mine').widgets
-		for (const id of ['followed-cases', 'archival-reviews']) {
-			expect(widget(id), id).toEqual(
-				withoutNotes(base.find((w) => w.id === id)),
-			)
-		}
+		expect(widget('archival-reviews')).toEqual(
+			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
+		)
 		expect(simple.slots['widget-archival-reviews']).toBe('MyArchivalReviews')
+	})
+
+	it('draws the cases you follow as rows, and loses nothing the table had', () => {
+		// DqMijnWerk: the title, the case number under it, the status as a
+		// pill, "Alles bekijken" in the card header. Everything the full
+		// profile's table does is still here: the same lens, the same two
+		// fields, a row that opens the case, the link to the whole list and
+		// the same empty text.
+		const base = pageView(original('MyWorkHome'), 'mine').widgets.find(
+			(w) => w.id === 'followed-cases',
+		).content
+		const rows = widget('followed-cases')
+		expect(rows.type).toBe('record-list')
+		expect(rows.content).toMatchObject({
+			register: base.source.register,
+			schema: base.source.schema,
+			filter: base.source.filter,
+			limit: base.source.limit,
+			rowRoute: base.rowRoute,
+			emptyText: base.emptyText,
+		})
+		expect(base.columns.map((column) => column.key).sort()).toEqual([
+			'identifier',
+			'title',
+		])
+		expect(rows.content.title).toBe('{title}')
+		expect(rows.content.meta).toBe('{identifier}')
+		// The pill reads the status NAME through _extend, never the uuid.
+		expect(rows.content.extend).toEqual(['status'])
+		expect(rows.content.pill.field).toBe('status.name')
+		expect(entry('followed-cases').headerLink).toEqual({
+			label: base.viewAllLabel,
+			route: base.viewAllRoute.name,
+			query: base.viewAllRoute.query,
+		})
 	})
 
 	it('draws First today without a card around it, no widget menus and stacked counts', () => {
@@ -514,18 +547,31 @@ describe('the landing page', () => {
 			(item) => item.id === 'recent-cases',
 		)
 		const cont = widget('simple-continue')
-		expect(cont.type).toBe('object-table')
-		expect(cont.content.source).toEqual({ ...recent.content.source, limit: 3 })
-		expect(cont.content.rowRoute).toBe('CaseDetail')
-		expect(cont.content.viewAllRoute).toEqual(recent.content.viewAllRoute)
-		// The case number sits under the title, as on the design, not in a
-		// column of its own (nextcloud-vue 2.64.0 `columns[].secondary`).
-		expect(cont.content.columns.map((column) => column.key)).toEqual([
-			'title',
-			'status',
-		])
-		expect(cont.content.columns[0].secondary).toBe('identifier')
+		expect(cont.type).toBe('record-list')
+		expect(cont.content).toMatchObject({
+			register: recent.content.source.register,
+			schema: recent.content.source.schema,
+			filter: recent.content.source.filter,
+			limit: 3,
+			rowRoute: 'CaseDetail',
+			title: '{title}',
+		})
+		expect(cont.content.sort).toBeUndefined()
+		// The pill and the meta line read NAMES through _extend, never uuids.
+		expect(cont.content.extend).toEqual(['status', 'caseType'])
+		expect(cont.content.pill.field).toBe('status.name')
+		// A meta line of parts (nextcloud-vue 2.82.0): a case without a case
+		// type still shows its number, as "2026-0082" rather than nothing.
+		expect(cont.content.meta).toEqual({
+			parts: ['{identifier}', '{caseType.title}'],
+		})
 		expect(caseFields.has('identifier')).toBe(true)
+		expect(caseFields.has('caseType')).toBe(true)
+		// When the reader opened it, from the lens, not the case's own change.
+		expect(cont.content.trailing).toEqual(['{@self.viewedAt|relativetime}'])
+		// An unavailable lens says why, in the same words as the full tile.
+		expect(cont.content.lensReasonTexts).toEqual(recent.content.lensReasonTexts)
+		expect(Object.keys(cont.content.lensReasonTexts).length).toBeGreaterThan(0)
 	})
 
 	it('gives the week, the steps and the tasks a link of their own', () => {
@@ -707,7 +753,9 @@ describe('the built simple manifest', () => {
 				encoding: 'utf8',
 			},
 		)
-		expect(run.stdout + run.stderr).toContain('PASS (0 errors)')
+		// A lag of the installed library is not a defect here (validate-manifest.js
+		// tells them apart); an error of this app's own still fails.
+		expect(run.stdout + run.stderr).toMatch(/PASS \(0 errors(\)| of this app's own)/)
 		expect(run.status).toBe(0)
 	}, 120_000)
 })
@@ -731,9 +779,28 @@ describe('the case type list', () => {
 		}
 	})
 
+	it('says the count line and the search placeholder in Dutch', () => {
+		// A Dutch reader saw "38 case types": the key was in the manifest and
+		// in no catalogue, so the library drew it as written.
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		expect(nl[list.config.countSubtitle]).toBe('{total} zaaktypen')
+		expect(nl[list.config.searchPlaceholder]).toBe('Zoeken in deze lijst')
+	})
+
+	it('has an Actions menu with the import dialog the case type page already owns', () => {
+		expect(list.config.headerActions).toEqual([
+			expect.objectContaining({
+				id: 'case-type-import',
+				type: 'open-modal',
+				target: 'CaseTypeImportDialog',
+			}),
+		])
+		expect(registrySource).toContain('CaseTypeImportDialog')
+	})
+
 	it('shows the term in words, the version as Version n and a status pill', () => {
 		const column = (key) => list.config.columns.find((c) => c.key === key)
-		expect(column('processingDeadline').formatter).toBe('isoDuration')
+		expect(column('processingDeadline').formatter).toBe('processingTime')
 		expect(column('version').formatter).toBe('versionLabel')
 		expect(column('isDraft')).toMatchObject({
 			label: 'Status',

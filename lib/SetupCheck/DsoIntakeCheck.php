@@ -26,7 +26,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\SetupCheck;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Repair\DefaultDsoIntakeSchema;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -40,6 +39,16 @@ use OCP\SetupCheck\SetupResult;
  * @spec openspec/specs/vth-dso-integration/spec.md
  */
 class DsoIntakeCheck implements ISetupCheck {
+
+	/**
+	 * The app config key that names the schema DSO intake reads.
+	 *
+	 * The dso-intake package fills it on install; an administrator may change
+	 * or empty it.
+	 *
+	 * @var string
+	 */
+	public const KEY = 'dso_vergunningaanvraag_schema';
 
 	/**
 	 * Constructor.
@@ -89,7 +98,7 @@ class DsoIntakeCheck implements ISetupCheck {
 	public function run(): SetupResult {
 		$schema = $this->appConfig->getValueString(
 			app: Application::APP_ID,
-			key: DefaultDsoIntakeSchema::KEY,
+			key: self::KEY,
 			default: ''
 		);
 

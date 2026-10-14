@@ -116,6 +116,9 @@ class WooRequestIntake {
 	 * @param WooReceivedAnswers|null $receivedAnswers Maps the received answers, and reads when the
 	 *                                                 requester sent it. Null only where receive()
 	 *                                                 is never called.
+	 * @param SystemCaseStore|null $cases Writes the case as the system and announces it; the
+	 *                                    container hands it the announcer. A store that cannot
+	 *                                    announce when null.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -123,8 +126,9 @@ class WooRequestIntake {
 		private readonly LoggerInterface $logger,
 		private readonly ?WooReceivedTerm $receivedTerm = null,
 		private readonly ?WooReceivedAnswers $receivedAnswers = null,
+		?SystemCaseStore $cases = null,
 	) {
-		$this->cases       = new SystemCaseStore(settingsService: $settingsService, logger: $logger);
+		$this->cases       = ($cases ?? new SystemCaseStore(settingsService: $settingsService, logger: $logger));
 		$this->collections = new CollectionCaseLinks(settingsService: $settingsService, urlGenerator: $urlGenerator, logger: $logger);
 	}//end __construct()
 
@@ -388,7 +392,7 @@ class WooRequestIntake {
 			$case['status'] = $initial;
 		}
 
-		$written = $this->cases->write(objectService: $objectService, register: $register, case: $case);
+		$written = $this->cases->write(objectService: $objectService, register: $register, case: $case, caseType: $caseType);
 		if ($written === null) {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The case could not be written.');
 		}

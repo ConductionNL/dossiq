@@ -110,7 +110,12 @@ class SystemCaseStoreTest extends TestCase {
 
 		self::assertNotNull($written);
 		self::assertSame('generated-1', $written['id']);
-		self::assertSame(['identifier' => 'Z-2026-1', 'deadline' => '2026-11-08'], $written['answer']);
+		// The stored deadline, and the same day as the confirmation names it
+		// (portal-woo-request-form-takes-dutch-input REQ-WDI-003).
+		self::assertSame(
+			['identifier' => 'Z-2026-1', 'deadline' => '2026-11-08', 'deadlineDay' => '8 november 2026'],
+			$written['answer']
+		);
 		self::assertSame('A case', $register->row(schema: 'case', uuid: 'generated-1')['title']);
 	}//end testAWrittenCaseAnswersItsIdNumberAndDeadline()
 

@@ -81,21 +81,32 @@ class WooBezwaarCaseTypeSeedTest extends TestCase {
 	}//end testTheBezwaarCaseTypeIsSeededWithTheWooCaseType()
 
 	/**
-	 * Beroep and Subsidie stay parked. The parked Bezwaar entry stays too: it
-	 * carries the workflow template of the Dutch profile, under the uuid of the
-	 * seeded case type, so un-parking updates that one and adds no second.
+	 * Beroep is not seeded on install: it ships in the bezwaar-beroep package,
+	 * installed on request. That package ships Bezwaar too, with its roles and
+	 * its flow, under the uuid of the seeded case type and the uuids of the
+	 * seeded statuses, so installing it completes that one and adds no second.
 	 *
 	 * @return void
 	 */
-	public function testBeroepAndSubsidieStayParked(): void {
-		$seed = json_decode((string)file_get_contents(dirname(__DIR__, 3) . '/lib/Settings/bezwaar_seed_data.json'), true);
-		$parked = array_column((array)$seed['_caseTypes_disabled'], 'identifier');
+	public function testThePackageCompletesTheSeededBezwaarAndBeroepStaysOnRequest(): void {
+		$dir = dirname(__DIR__, 3) . '/lib/Settings/packages/bezwaar-beroep';
+		$manifest = json_decode((string)file_get_contents($dir . '/package.json'), true);
+		$package = json_decode((string)file_get_contents($dir . '/case-type.json'), true);
 
-		self::assertSame(['bezwaar', 'beroep', 'subsidie'], $parked);
-		self::assertSame(self::BEZWAAR, $seed['_caseTypes_disabled'][0]['uuid']);
-		self::assertArrayNotHasKey('caseTypes', $seed);
+		self::assertSame('on-request', $manifest['install']);
+		self::assertSame(['bezwaar', 'beroep'], array_column((array)$package['caseType'], 'identifier'));
+		self::assertSame(self::BEZWAAR, $package['caseType'][0]['id']);
 		self::assertSame([], $this->caseType('b3c1a000-0000-4000-a000-00000000be30'));
-	}//end testBeroepAndSubsidieStayParked()
+
+		$ofBezwaar = static fn (array $s): bool => ($s['caseType'] ?? '') === self::BEZWAAR;
+		$seeded = array_column(array_filter($this->seeded('statusType'), $ofBezwaar), 'name', 'uuid');
+		$packaged = array_column(array_filter((array)$package['statusTypes'], $ofBezwaar), 'name', 'id');
+		ksort($seeded);
+		ksort($packaged);
+
+		self::assertNotSame([], $packaged);
+		self::assertSame($seeded, $packaged);
+	}//end testThePackageCompletesTheSeededBezwaarAndBeroepStaysOnRequest()
 
 	/**
 	 * Six weeks, one extension of six weeks.

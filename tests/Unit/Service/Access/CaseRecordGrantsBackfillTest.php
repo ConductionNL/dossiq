@@ -20,15 +20,22 @@ use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
+use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
+use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
@@ -36,6 +43,9 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses   \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses   \OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException
  */
 class CaseRecordGrantsBackfillTest extends TestCase {
 
@@ -65,11 +75,40 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 	private string $signedIn = '';
 
 	/**
-	 * The administrators, with whether each account is enabled.
+	 * The accounts that exist, with whether each is enabled.
 	 *
 	 * @var array<string, bool>
 	 */
-	private array $admins = ['zoe' => true, 'admin' => true, 'aaron' => false];
+	private array $accounts = ['svc' => true, 'admin' => true, 'handler' => true];
+
+	/**
+	 * The uid the app config names as the background service account.
+	 */
+	private string $configured = 'svc';
+
+	/**
+	 * The members of the background service group.
+	 *
+	 * @var list<string>
+	 */
+	private array $serviceMembers = ['svc'];
+
+	/**
+	 * What OpenRegister's special rights were asked to give, or the error it throws.
+	 *
+	 * @var list<array<string, mixed>>
+	 */
+	private array $given = [];
+
+	/**
+	 * Whether OpenRegister has special rights at all.
+	 */
+	private bool $hasSpecialRights = true;
+
+	/**
+	 * Notices the administrators got.
+	 */
+	private int $adminNotices = 0;
 
 	/**
 	 * The object service the settings answer; the in-memory register unless a test replaces it.
@@ -85,7 +124,7 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturnCallback(fn (): object => $this->objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case', 'case_type_schema' => 'caseType'][$key] ?? $default
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case', 'case_type_schema' => 'caseType', 'k' => 'privateNote', 'k2' => 'reviewBatch'][$key] ?? $default
 		);
 
 		// The real store, and its shared listing must not be what the walk reads:
@@ -97,7 +136,11 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 
 		$this->access = $this->createMock(CaseReviewerAccess::class);
 		$this->access->method('declarationFor')->willReturnCallback(
-			static fn (array $caseType): array => ['records' => ($caseType['id'] === 'type-open' ? [] : [['schemaKey' => 'k']])]
+			static fn (array $caseType): array => ['records' => match ($caseType['id']) {
+				'type-open' => [],
+				'type-b' => [['schemaKey' => 'k2'], ['schemaKey' => 'k']],
+				default => [['schemaKey' => 'k']],
+			}]
 		);
 		$this->access->method('reconcile')->willReturnCallback(
 			function (string $caseId): array {
@@ -118,11 +161,54 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 				$this->signedIn = (string)$user?->getUID();
 			}
 		);
-		$group = $this->createMock(IGroup::class);
-		$group->method('getUsers')->willReturnCallback(fn (): array => array_map(fn (string $uid): IUser => $this->user(uid: $uid), array_keys($this->admins)));
 		$groups = $this->createMock(IGroupManager::class);
-		$groups->method('get')->willReturnCallback(static fn (string $gid): ?IGroup => $gid === 'admin' ? $group : null);
-		$groups->method('isAdmin')->willReturnCallback(fn (string $uid): bool => isset($this->admins[$uid]));
+		$groups->method('isInGroup')->willReturnCallback(
+			fn (string $uid, string $gid): bool => $gid === BackgroundServiceAccount::GROUP && in_array($uid, $this->serviceMembers, true)
+		);
+		$groups->method('isAdmin')->willReturnCallback(static fn (string $uid): bool => $uid === 'admin');
+		$adminGroup = $this->createMock(IGroup::class);
+		$adminGroup->method('getUsers')->willReturnCallback(fn (): array => [$this->user(uid: 'admin')]);
+		$groups->method('get')->willReturnCallback(static fn (string $gid): ?IGroup => $gid === 'admin' ? $adminGroup : null);
+		$users = $this->createMock(IUserManager::class);
+		$users->method('get')->willReturnCallback(fn (string $uid): ?IUser => isset($this->accounts[$uid]) ? $this->user(uid: $uid) : null);
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = ''): string => $key === BackgroundServiceAccount::CONFIG_KEY ? $this->configured : $default
+		);
+		$notifications = $this->createMock(INotificationManager::class);
+		$notifications->method('createNotification')->willReturnCallback(
+			function (): INotification {
+				$notification = $this->createMock(INotification::class);
+				foreach (['setApp', 'setUser', 'setObject', 'setDateTime', 'setSubject'] as $setter) {
+					$notification->method($setter)->willReturnSelf();
+				}
+
+				return $notification;
+			}
+		);
+		$notifications->method('notify')->willReturnCallback(function (): void {
+			$this->adminNotices++;
+		});
+		$serviceAccount = new BackgroundServiceAccount($appConfig, $users, $groups, $session, new NullLogger(), $notifications);
+
+		$specialRights = new class($this) {
+			public function __construct(private readonly CaseRecordGrantsBackfillTest $test) {
+			}
+
+			public function giveInEveryOrganisation(string $right, string $group, ?string $register = null, ?array $schemas = null): array {
+				return $this->test->recordGive(['right' => $right, 'group' => $group, 'register' => $register, 'schemas' => $schemas]);
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			function (string $name) use ($specialRights): object {
+				if ($name !== CaseRecordGrantsBackfill::SPECIAL_RIGHTS || $this->hasSpecialRights === false) {
+					throw new RuntimeException('no such service: '.$name);
+				}
+
+				return $specialRights;
+			}
+		);
 
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->backfill = new CaseRecordGrantsBackfill(
@@ -130,8 +216,9 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 			caseTypes: $caseTypes,
 			resolver: $resolver,
 			access: $this->access,
-			groupManager: $groups,
+			serviceAccount: $serviceAccount,
 			userSession: $session,
+			container: $container,
 			logger: $this->logger,
 		);
 
@@ -146,49 +233,114 @@ class CaseRecordGrantsBackfillTest extends TestCase {
 	private function user(string $uid): IUser {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn($uid);
-		$user->method('isEnabled')->willReturn($this->admins[$uid] ?? true);
+		$user->method('isEnabled')->willReturn($this->accounts[$uid] ?? true);
 
 		return $user;
 	}//end user()
 
-	public function testEveryCaseOfADeclaringCaseTypeIsReconciledAsAnAdministrator(): void {
+	/**
+	 * Note what OpenRegister was asked to give, as the walk sees it.
+	 *
+	 * @param array<string, mixed> $call The arguments.
+	 *
+	 * @return array{organisations: int, changed: int}
+	 */
+	public function recordGive(array $call): array {
+		$this->given[] = $call + ['as' => $this->signedIn];
+
+		return ['organisations' => 1, 'changed' => 1];
+	}//end recordGive()
+
+	public function testEveryCaseOfADeclaringCaseTypeIsReconciledAsTheServiceAccount(): void {
 		$answer = $this->backfill->run();
 
 		self::assertSame(
-			['status' => 'reconciled', 'actor' => 'admin', 'cases' => 2, 'granted' => 4, 'revoked' => 2, 'refused' => 0, 'failed' => [], 'unfinished' => []],
+			['status' => 'reconciled', 'actor' => 'svc', 'cases' => 2, 'granted' => 4, 'revoked' => 2, 'refused' => 0, 'failed' => [], 'unfinished' => []],
 			$answer
 		);
 		self::assertSame(
-			[['case' => 'a-1', 'as' => 'admin'], ['case' => 'b-1', 'as' => 'admin']],
+			[['case' => 'a-1', 'as' => 'svc'], ['case' => 'b-1', 'as' => 'svc']],
 			$this->asked,
-			'declaring case types in a fixed order, as the first enabled administrator; a case type that keeps nothing private is not walked'
+			'declaring case types in a fixed order, as the service account; a case type that keeps nothing private is not walked'
 		);
 		self::assertSame('', $this->signedIn, 'nobody was signed in before, nobody is after');
-	}//end testEveryCaseOfADeclaringCaseTypeIsReconciledAsAnAdministrator()
+	}//end testEveryCaseOfADeclaringCaseTypeIsReconciledAsTheServiceAccount()
 
-	public function testASignedInAdministratorIsTheActorAndStaysSignedIn(): void {
-		$this->signedIn = 'zoe';
+	public function testTheServiceGroupIsGivenTheSpecialRightOnTheDeclaredSchemasOnlyBeforeTheWalk(): void {
+		$this->backfill->run();
 
-		self::assertSame('zoe', $this->backfill->run()['actor']);
-		self::assertSame('zoe', $this->signedIn);
-	}//end testASignedInAdministratorIsTheActorAndStaysSignedIn()
+		self::assertSame(
+			[[
+				'right' => 'grant_manage',
+				'group' => 'dossiq-background-service',
+				'register' => 'dossiq',
+				'schemas' => ['privateNote', 'reviewBatch'],
+				'as' => '',
+			]],
+			$this->given,
+			'once, narrowed to this register and the schemas the case types keep private'
+		);
+	}//end testTheServiceGroupIsGivenTheSpecialRightOnTheDeclaredSchemasOnlyBeforeTheWalk()
 
-	public function testASignedInNonAdministratorIsPutBackAfter(): void {
+	public function testASignedInPersonIsPutBackAfter(): void {
 		$this->signedIn = 'handler';
 
-		self::assertSame('admin', $this->backfill->run()['actor']);
+		self::assertSame('svc', $this->backfill->run()['actor']);
+		self::assertSame([['case' => 'a-1', 'as' => 'svc'], ['case' => 'b-1', 'as' => 'svc']], $this->asked);
 		self::assertSame('handler', $this->signedIn);
-	}//end testASignedInNonAdministratorIsPutBackAfter()
+	}//end testASignedInPersonIsPutBackAfter()
 
-	public function testWithoutAnEnabledAdministratorNothingRunsAndItSaysSo(): void {
-		$this->admins = ['aaron' => false];
+	/**
+	 * @dataProvider unusableAccounts
+	 */
+	public function testWithoutAUsableServiceAccountNothingRunsItSaysSoAndNoAdministratorIsBorrowed(string $configured, array $members, array $accounts): void {
+		$this->configured = $configured;
+		$this->serviceMembers = $members;
+		$this->accounts = $accounts;
+		$this->logger->expects(self::atLeastOnce())->method('error');
 
 		$answer = $this->backfill->run();
 
-		self::assertSame('no-administrator', $answer['status']);
+		self::assertSame('no-service-account', $answer['status']);
 		self::assertSame('', $answer['actor']);
+		self::assertSame([], $this->asked, 'no case was walked, as anybody');
+		self::assertSame([], $this->given, 'no right was given');
+		self::assertSame('', $this->signedIn, 'nobody, and certainly no administrator, was signed in');
+		self::assertGreaterThan(0, $this->adminNotices, 'the administrators were told');
+	}//end testWithoutAUsableServiceAccountNothingRunsItSaysSoAndNoAdministratorIsBorrowed()
+
+	/**
+	 * @return array<string, array{0: string, 1: list<string>, 2: array<string, bool>}>
+	 */
+	public static function unusableAccounts(): array {
+		return [
+			'none chosen, while an administrator exists' => ['', ['svc'], ['svc' => true, 'admin' => true]],
+			'chosen but disabled' => ['svc', ['svc'], ['svc' => false, 'admin' => true]],
+			'chosen but not in the group' => ['svc', [], ['svc' => true, 'admin' => true]],
+			'an administrator chosen who is not in the group' => ['admin', ['svc'], ['svc' => true, 'admin' => true]],
+		];
+	}//end unusableAccounts()
+
+	public function testWithoutTheSpecialRightInOpenRegisterNothingIsWalked(): void {
+		$this->hasSpecialRights = false;
+
+		$answer = $this->backfill->run();
+
+		self::assertSame('no-grant-right', $answer['status']);
 		self::assertSame([], $this->asked);
-	}//end testWithoutAnEnabledAdministratorNothingRunsAndItSaysSo()
+		self::assertSame('', $this->signedIn);
+	}//end testWithoutTheSpecialRightInOpenRegisterNothingIsWalked()
+
+	public function testTheAdministratorRouteWalksAsTheAdministratorAndGivesNoRight(): void {
+		$this->signedIn = 'admin';
+
+		$answer = $this->backfill->runAsCaller();
+
+		self::assertSame('admin', $answer['actor']);
+		self::assertSame([['case' => 'a-1', 'as' => 'admin'], ['case' => 'b-1', 'as' => 'admin']], $this->asked);
+		self::assertSame([], $this->given);
+		self::assertSame('admin', $this->signedIn);
+	}//end testTheAdministratorRouteWalksAsTheAdministratorAndGivesNoRight()
 
 	public function testItWalksEveryPageOfCases(): void {
 		for ($n = 2; $n <= 250; $n++) {

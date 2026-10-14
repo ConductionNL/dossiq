@@ -218,26 +218,40 @@ SHALL NOT use the shared case type listing: that listing answers one page and an
 when its read fails, and a walk over nothing would report every case reconciled. A case type read
 that fails SHALL stop the run as an error, said like every other unfinished run.
 
-OpenRegister writes a grant only for a signed-in owner, owning group member or administrator, and
-an upgrade has nobody signed in. The walk SHALL run as the signed-in administrator when there is
-one, and otherwise as the first enabled account of the `admin` group in order of user id, SHALL
-put the session back when it ends, and SHALL name that account in its answer.
+OpenRegister writes a grant only for a signed-in owner, owning group member, administrator or a
+member of a group that holds the organisation's special right `grant_manage` on the record
+(decisions 222 and 234), and an upgrade has nobody signed in. The walk SHALL run as dossiq's
+background service account, inside `BackgroundServiceAccount::runAs()`, SHALL put the session back
+when it ends, and SHALL name that account in its answer. Before it walks, it SHALL give the group
+`dossiq-background-service` the special right `grant_manage` in every organisation, narrowed to
+dossiq's register and to the schemas the case types declare under `reviewerAccess.records`, read
+from the declarations rather than listed. The account SHALL NOT be given `read` on those schemas;
+it SHALL find each record by a rule read, and nothing read that way SHALL be answered to a caller.
 
-Decision 222 (12 Oct) replaces that administrator account with dossiq's background service
-account. It is not built: OpenRegister has no right that lets an account that is neither owner
-nor administrator write a grant (Q-dossiq-L8-4). Until OpenRegister has one, this paragraph
-describes what runs.
+When no service account is usable (none chosen, unknown, disabled, or not in the group), the walk
+SHALL write nothing, SHALL answer `no-service-account`, and SHALL NOT borrow an administrator or
+any other account. When OpenRegister cannot give the special right, it SHALL write nothing and
+answer `no-grant-right`. The administrator route of REQ-CRA-004 walks as the administrator who
+calls it and gives no right.
 
 The step SHALL never throw and SHALL never report more than it did. A case that threw, a record
-OpenRegister refused, a case type with more cases than one run walks (50,000), no enabled
-administrator and no per-object sharing SHALL each be said as a warning in the upgrade output and
-as an error in the log, with the counts, up to twenty case ids and the route of REQ-CRA-004.
+OpenRegister refused, a case type with more cases than one run walks (50,000), no usable service
+account, no special right and no per-object sharing SHALL each be said as a warning in the upgrade
+output and as an error in the log, with the counts, up to twenty case ids and the route of
+REQ-CRA-004.
 
 #### Scenario: A review made by an earlier upgrade
 @e2e exclude Upgrade step over the shipped register with a sharing double, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testTheRegisteredStepGivesAnExistingReviewItsGrantsWithNobodySignedIn; the upgrade on a running instance is task 6.4 of woo-review-triage (live pass, decision 139).
 - **GIVEN** a case with assignee `j.devries`, a batch of `p.bakker` and a review in that batch with no owner and no grant
 - **WHEN** the instance is upgraded with nobody signed in
-- **THEN** `j.devries` and `p.bakker` SHALL read and update the review, and the output SHALL say the counts and the administrator account it ran as
+- **THEN** `j.devries` and `p.bakker` SHALL read and update the review, and the output SHALL say the counts and the service account it ran as
+- **AND** nobody SHALL be signed in afterwards, and the service account SHALL still not read the review
+
+#### Scenario: No usable service account, while an administrator exists
+@e2e exclude Upgrade step over the shipped register, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testWithoutAUsableServiceAccountTheRegisteredStepRefusesToBorrowAnAdministrator.
+- **GIVEN** an enabled administrator `root`, and a background service account that is not chosen, disabled or not in its group
+- **WHEN** the instance is upgraded with nobody signed in
+- **THEN** no grant SHALL be written, nobody SHALL be signed in at any point, and the output SHALL be a warning that no administrator account is used instead
 
 #### Scenario: The upgrade runs twice
 @e2e exclude Idempotency over a sharing double, covered by tests/Unit/Repair/ReconcileCaseRecordGrantsTest.php testRunningTheRegisteredStepTwiceChangesNothingTheSecondTime.

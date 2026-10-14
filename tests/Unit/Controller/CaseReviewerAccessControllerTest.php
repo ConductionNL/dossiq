@@ -69,7 +69,7 @@ class CaseReviewerAccessControllerTest extends TestCase {
 
 	public function testItAnswersTheSummedCounts(): void {
 		$sum = ['status' => 'reconciled', 'actor' => 'admin', 'cases' => 2, 'granted' => 5, 'revoked' => 0, 'refused' => 0, 'failed' => [], 'unfinished' => []];
-		$this->backfill->method('run')->willReturn($sum);
+		$this->backfill->method('runAsCaller')->willReturn($sum);
 
 		$response = $this->controller(uid: 'admin')->reconcile();
 
@@ -79,7 +79,7 @@ class CaseReviewerAccessControllerTest extends TestCase {
 
 	public function testAWalkThatDidNotFinishSaysSo(): void {
 		$sum = ['status' => 'incomplete', 'actor' => 'admin', 'cases' => 3, 'granted' => 4, 'revoked' => 0, 'refused' => 1, 'failed' => ['case-2'], 'unfinished' => []];
-		$this->backfill->method('run')->willReturn($sum);
+		$this->backfill->method('runAsCaller')->willReturn($sum);
 
 		$data = $this->controller(uid: 'admin')->reconcile()->getData();
 
@@ -88,7 +88,7 @@ class CaseReviewerAccessControllerTest extends TestCase {
 	}//end testAWalkThatDidNotFinishSaysSo()
 
 	public function testUnavailableIsNotASuccess(): void {
-		$this->backfill->method('run')->willReturn(['status' => 'unavailable', 'cases' => 0, 'granted' => 0, 'revoked' => 0, 'refused' => 0, 'failed' => []]);
+		$this->backfill->method('runAsCaller')->willReturn(['status' => 'unavailable', 'cases' => 0, 'granted' => 0, 'revoked' => 0, 'refused' => 0, 'failed' => []]);
 
 		self::assertSame(503, $this->controller(uid: 'admin')->reconcile()->getStatus());
 	}//end testUnavailableIsNotASuccess()
