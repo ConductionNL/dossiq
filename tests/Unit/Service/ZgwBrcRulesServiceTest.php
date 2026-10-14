@@ -48,6 +48,8 @@ interface BrcObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ZgwBrcRulesService
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
  * @uses \OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules

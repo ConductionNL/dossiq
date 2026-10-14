@@ -16,6 +16,12 @@
  * 0e0cfc8d), so an instance-secret fallback here could only ever accept a
  * token portaliq did not make.
  *
+ * portaliq stores that secret SENSITIVE (encrypted at rest), so it is read
+ * through `IAppConfig::getValueString()`, which decrypts it, exactly as
+ * portaliq reads it. The legacy `IConfig::getAppValue()` returns the stored
+ * ciphertext, and every HMAC check then failed (401 on every portal action,
+ * 13-14 Oct 2026).
+ *
  * Self-contained: no portaliq import, no JWT library. The HMAC check is
  * constant time (hash_equals).
  *
@@ -38,7 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCP\IConfig;
+use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -91,12 +97,12 @@ class PortalAssertionVerifier {
 	/**
 	 * Constructor.
 	 *
-	 * @param IConfig|null         $config         Where portaliq's secret lives.
+	 * @param IAppConfig|null      $config         Where portaliq's sensitive secret lives (read decrypted).
 	 * @param string|null          $secretOverride A plain secret, for tests.
 	 * @param LoggerInterface|null $logger         Rejection reasons at debug level only.
 	 */
 	public function __construct(
-		private readonly ?IConfig $config = null,
+		private readonly ?IAppConfig $config = null,
 		private readonly ?string $secretOverride = null,
 		private readonly ?LoggerInterface $logger = null,
 	) {
@@ -216,12 +222,17 @@ class PortalAssertionVerifier {
 	/**
 	 * portaliq's dedicated secret, or null when there is no usable one.
 	 *
+	 * Read through IAppConfig, non-lazy as portaliq stores it, so the
+	 * sensitive value comes back decrypted.
+	 *
 	 * @return string|null
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	private function secret(): ?string {
 		$secret = $this->secretOverride;
 		if ($secret === null && $this->config !== null) {
-			$secret = (string)$this->config->getAppValue(self::PORTALIQ_APP_ID, self::SECRET_KEY, '');
+			$secret = $this->config->getValueString(self::PORTALIQ_APP_ID, self::SECRET_KEY, '', lazy: false);
 		}
 
 		if ($secret === null || strlen($secret) < self::MIN_SECRET_LENGTH) {

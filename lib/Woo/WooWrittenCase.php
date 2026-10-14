@@ -33,12 +33,23 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\Support\ReadableDay;
+
 /**
  * The id, number and deadline of a case that was just written.
  *
  * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-intake-answers-with-the-case-number-and-deadline-req-sws-011
  */
 class WooWrittenCase {
+
+	/**
+	 * Each stored date of the answer and the key its readable day goes under.
+	 */
+	private const DAY_KEYS = [
+		'deadline' => 'deadlineDay',
+		'receivedAt' => 'receivedDay',
+		'termStartsAt' => 'termStartsDay',
+	];
 
 	/**
 	 * What the write answered.
@@ -113,6 +124,8 @@ class WooWrittenCase {
 	 * @param array<string, mixed> $case The written case.
 	 *
 	 * @return array<string, string> The keys that have a value.
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
 	 */
 	private function numberAndDeadline(array $case): array {
 		$answer = [];
@@ -122,6 +135,19 @@ class WooWrittenCase {
 			$value = trim((string)($case[$key] ?? ''));
 			if ($value !== '') {
 				$answer[$key] = $value;
+			}
+		}
+
+		// THE DATES AS A RESIDENT READS THEM, beside the stored values, which
+		// stay for every caller that computes with them. The portal's
+		// confirmation names these, so it reads "14 oktober 2026" where it
+		// printed "2026-10-14T12:34:29+00:00", the way the letter about the
+		// same request writes it.
+		$days = new ReadableDay();
+		foreach (self::DAY_KEYS as $key => $dayKey) {
+			$day = $days->dutch(value: (string)($answer[$key] ?? ''));
+			if ($day !== '') {
+				$answer[$dayKey] = $day;
 			}
 		}
 

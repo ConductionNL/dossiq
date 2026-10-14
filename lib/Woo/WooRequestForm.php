@@ -54,6 +54,17 @@ class WooRequestForm {
 	public const REQUESTER_FIELDS = ['verzoekerNaam', 'verzoekerEmail', 'verzoekerType'];
 
 	/**
+	 * The words a resident reads for each requester kind, lowercased, to the
+	 * value the case keeps. The portal shows these as the labels of the
+	 * choices (CitizenManifest::WOO_OPTIONS).
+	 */
+	private const REQUESTER_WORDS = [
+		'inwoner' => 'burger',
+		'journalist' => 'journalist',
+		'organisatie' => 'organisatie',
+	];
+
+	/**
 	 * Check the request and reduce it to what the case keeps.
 	 *
 	 * @param array<string, mixed> $request The request.
@@ -102,13 +113,13 @@ class WooRequestForm {
 		}
 
 		if ($fields['onderwerp'] === '') {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'Say what the request is about.');
+			throw new WooRequestRefused(WooRequestRefused::INVALID, 'Say what the request is about.', 'onderwerp');
 		}
 
-		$from = $this->date(value: $fields['periodeVan']);
-		$to = $this->date(value: $fields['periodeTot']);
+		$from = $this->date(value: $fields['periodeVan'], field: 'periodeVan');
+		$to = $this->date(value: $fields['periodeTot'], field: 'periodeTot');
 		if ($from !== '' && $to !== '' && $from > $to) {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The period starts after it ends.');
+			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The end date lies before the start date.', 'periodeTot');
 		}
 
 		$request = [
@@ -122,11 +133,7 @@ class WooRequestForm {
 			'toelichting' => $fields['toelichting'],
 			'verzoekerNaam' => $fields['verzoekerNaam'],
 			'verzoekerEmail' => $this->email(value: $fields['verzoekerEmail']),
-			'verzoekerType' => $this->oneOf(
-				value: $fields['verzoekerType'],
-				allowed: self::REQUESTER_KINDS,
-				refusal: 'Say whether you are asking as a burger, journalist or organisatie.'
-			),
+			'verzoekerType' => $this->requesterKind(value: $fields['verzoekerType']),
 			'verzoekerTelefoon' => $fields['verzoekerTelefoon'],
 			'verzoekerAdres' => $fields['verzoekerAdres'],
 			'documentSoorten' => $this->kinds(value: ($request['documentSoorten'] ?? null)),
@@ -167,7 +174,8 @@ class WooRequestForm {
 			if (in_array($kind, self::DOCUMENT_KINDS, true) === false) {
 				throw new WooRequestRefused(
 					WooRequestRefused::INVALID,
-					'A kind of document must be one of: ' . implode(', ', self::DOCUMENT_KINDS) . '.'
+					'Choose the kinds of document from the list.',
+					'documentSoorten'
 				);
 			}
 
@@ -180,25 +188,34 @@ class WooRequestForm {
 	}//end kinds()
 
 	/**
-	 * A value from a declared list, or '' when none was given.
+	 * Who the resident asks as, as the value the case keeps, or '' when none
+	 * was given.
 	 *
-	 * @param string            $value   The value.
-	 * @param array<int,string> $allowed The list.
-	 * @param string            $refusal What to say when it is not in it.
+	 * The form offers the three as choices, so the stored value is what
+	 * arrives. A caller that sends the word a resident reads ("Inwoner",
+	 * "Journalist", "Organisatie", in any case) is read as that value too,
+	 * because the resident meant the same thing.
 	 *
-	 * @return string The value.
+	 * @param string $value The value.
 	 *
-	 * @throws WooRequestRefused When it is given and is not in the list.
+	 * @return string The stored value.
 	 *
-	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-woo-request-keeps-what-kind-of-documents-and-which-requester-req-sws-010
+	 * @throws WooRequestRefused When it is given and is none of the three.
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
-	private function oneOf(string $value, array $allowed, string $refusal): string {
-		if ($value === '' || in_array($value, $allowed, true) === true) {
-			return $value;
+	private function requesterKind(string $value): string {
+		$kind = (self::REQUESTER_WORDS[mb_strtolower($value)] ?? mb_strtolower($value));
+		if ($value === '' || in_array($kind, self::REQUESTER_KINDS, true) === true) {
+			return $kind;
 		}
 
-		throw new WooRequestRefused(WooRequestRefused::INVALID, $refusal);
-	}//end oneOf()
+		throw new WooRequestRefused(
+			WooRequestRefused::INVALID,
+			'Choose whether you ask as a resident, a journalist or an organisation.',
+			'verzoekerType'
+		);
+	}//end requesterKind()
 
 	/**
 	 * An e-mail address, or '' when none was given.
@@ -216,7 +233,7 @@ class WooRequestForm {
 			return $value;
 		}
 
-		throw new WooRequestRefused(WooRequestRefused::INVALID, 'That is not an e-mail address.');
+		throw new WooRequestRefused(WooRequestRefused::INVALID, 'Fill in an e-mail address, for example naam@voorbeeld.nl.', 'verzoekerEmail');
 	}//end email()
 
 	/**
@@ -269,24 +286,42 @@ class WooRequestForm {
 	/**
 	 * A date as `Y-m-d`, or '' when none was given.
 	 *
+	 * Read as the stored `jjjj-mm-dd` or as a resident writes it, day first:
+	 * `14-10-2026`, `1-3-2026`, `1/3/2026` or `1.3.2026`. Whatever came in,
+	 * the case keeps `jjjj-mm-dd`, the format its schema declares.
+	 *
 	 * @param string $value The value.
+	 * @param string $field The field it was given in, for the refusal.
 	 *
 	 * @return string
 	 *
-	 * @throws WooRequestRefused When it is given and is not a date.
+	 * @throws WooRequestRefused When it is given and is not a real date.
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-woo-request-reads-the-answers-a-resident-gives-req-wdi-001
 	 */
-	private function date(string $value): string {
+	private function date(string $value, string $field): string {
 		if ($value === '') {
 			return '';
 		}
 
 		$parts = [];
-		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $parts) !== 1
-			|| checkdate((int)$parts[2], (int)$parts[3], (int)$parts[1]) === false
-		) {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'A period date must be written as YYYY-MM-DD.');
+		$year = 0;
+		$month = 0;
+		$day = 0;
+		if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $value, $parts) === 1) {
+			[$year, $month, $day] = [(int)$parts[1], (int)$parts[2], (int)$parts[3]];
+		} else if (preg_match('/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/', $value, $parts) === 1) {
+			[$day, $month, $year] = [(int)$parts[1], (int)$parts[2], (int)$parts[3]];
 		}
 
-		return $value;
+		if ($year === 0 || checkdate($month, $day, $year) === false) {
+			throw new WooRequestRefused(
+				WooRequestRefused::INVALID,
+				'Write the date as day-month-year, for example 1-3-2026.',
+				$field
+			);
+		}
+
+		return sprintf('%04d-%02d-%02d', $year, $month, $day);
 	}//end date()
 }//end class

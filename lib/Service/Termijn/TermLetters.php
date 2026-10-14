@@ -40,8 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
-use DateTimeImmutable;
-use Throwable;
+use OCA\Dossiq\Service\Support\ReadableDay;
 
 /**
  * The wording of every term notification.
@@ -64,7 +63,7 @@ class TermLetters {
 	public function render(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');
 		$case = (string)($instance['case'] ?? ($context['case'] ?? '–'));
-		$end = (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–'));
+		$end = $this->shownDay(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')), english: ($locale === 'en'));
 
 		$subject = '';
 		$body = '';
@@ -81,7 +80,7 @@ class TermLetters {
 				$body = $rendered['body'];
 				break;
 			case 'ingebrekestelling-receipt':
-				$graceEnd = (string)($context['graceEnd'] ?? '–');
+				$graceEnd = $this->shownDay(value: (string)($context['graceEnd'] ?? '–'));
 				$subject = 'Bevestiging ingebrekestelling zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
 					. 'Wij hebben uw ingebrekestelling voor zaak ' . $case . " ontvangen.\n"
@@ -137,7 +136,7 @@ class TermLetters {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function extension(string $case, string $end, array $context): array {
-		$newEnd = (string)($context['newEinddatum'] ?? $end);
+		$newEnd = $this->shownDay(value: (string)($context['newEinddatum'] ?? $end));
 		$body = "Beste aanvrager,\n\n"
 			. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
 
@@ -172,8 +171,8 @@ class TermLetters {
 	 */
 	private function informationRequest(string $case, string $locale, array $context): array {
 		$items = array_values(array_filter(array_map('strval', (array)($context['items'] ?? []))));
-		$due = (string)($context['pauseDeadline'] ?? '-');
 		$english = ($locale === 'en');
+		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), english: $english);
 
 		$list = '';
 		foreach ($items as $item) {
@@ -222,9 +221,9 @@ class TermLetters {
 	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	private function informationReminder(string $case, string $locale, array $context): array {
-		$due = (string)($context['pauseDeadline'] ?? '-');
-		$declared = trim((string)($context['chaseText'] ?? ''));
 		$english = ($locale === 'en');
+		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), english: $english);
+		$declared = trim((string)($context['chaseText'] ?? ''));
 
 		if ($english === true) {
 			$body = "Dear applicant,\n\n"
@@ -358,8 +357,8 @@ class TermLetters {
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
 	private function termStartLines(array $context, bool $english): string {
-		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''));
-		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''));
+		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''), english: $english);
+		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''), english: $english);
 		if ($received === '' || $starts === '') {
 			return '';
 		}
@@ -384,24 +383,53 @@ class TermLetters {
 	}//end termStartLines()
 
 	/**
-	 * One stored moment as a day a person reads.
+	 * One stored moment as a day a person reads: "15 juni 2026", or
+	 * "15 June 2026" in an English letter. The drawn message boards write
+	 * dates this way ("Bezwaar maken kan tot en met 18 november 2026").
 	 *
-	 * @param string $value The stored ISO 8601 moment.
+	 * The month names are spelled out here, not through `IL10N`, for the
+	 * reason the letters are: the language is the case type's, not the
+	 * signed-in reader's interface.
+	 *
+	 * @param string $value   The stored ISO 8601 date or moment.
+	 * @param bool   $english Whether the letter is in English.
 	 *
 	 * @return string The day, or an empty string when there is none to read.
+	 *
+	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
-	private function dayOf(string $value): string {
-		$value = trim($value);
-		if ($value === '') {
-			return '';
+	private function dayOf(string $value, bool $english=false): string {
+		if ($english === true) {
+			return (new ReadableDay())->english(value: $value);
 		}
 
-		try {
-			return (new DateTimeImmutable($value))->format('d-m-Y');
-		} catch (Throwable $e) {
-			return '';
-		}
+		return (new ReadableDay())->dutch(value: $value);
 	}//end dayOf()
+
+	/**
+	 * A date as it is printed in a letter: every date in every letter reads
+	 * the same way ("10 augustus 2026"), whether it was stored as a date or a
+	 * moment. A placeholder such as "–" stays as it is.
+	 *
+	 * Before this, the received and start dates were printed as days and the
+	 * end date as it was stored, so one receipt read "15-06-2026" next to
+	 * "2026-08-10".
+	 *
+	 * @param string $value   The stored date or moment, or a placeholder.
+	 * @param bool   $english Whether the letter is in English.
+	 *
+	 * @return string The day as printed, or the value itself when it is no date.
+	 *
+	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 */
+	private function shownDay(string $value, bool $english=false): string {
+		$day = $this->dayOf(value: $value, english: $english);
+		if ($day === '') {
+			return $value;
+		}
+
+		return $day;
+	}//end shownDay()
 
 	/**
 	 * The doorzending, Awb 2:3.

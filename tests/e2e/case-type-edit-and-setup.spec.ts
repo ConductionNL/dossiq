@@ -539,12 +539,9 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
 	}) => {
-		// The seeder returns success with every counter at zero when its payload
-		// is absent, which is the state it is in: the case types live under
-		// `_caseTypes_disabled` in bezwaar_seed_data.json. Reporting that as
-		// done made the affordance one-shot and silently useless, and reporting
-		// it honestly still left a step whose every click was a 422. So the
-		// step went. The action stays, for an operator who un-parks the data.
+		// The step went when the seed data was parked and every click was a
+		// 422. The action stays and now installs the on-request bezwaar-beroep
+		// package; offering it in the wizard again has not been decided.
 		await page.goto('/index.php/apps/dossiq')
 		const before = await readSetupStatus(page)
 		expect(
@@ -578,16 +575,15 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 			`POST /api/setup/action/seed returned ${run.status} with no JSON body`,
 		).not.toBeNull()
 
-		if ((run.body?.detail?.caseTypes ?? 0) === 0) {
-			// Nothing was created, so the call must refuse rather than report a
-			// success-shaped zero. 422 is the answer the retired step would have
-			// shown a person on every single click.
+		// The action installs the on-request bezwaar-beroep package. Installed
+		// or already current is a success; a refusal answers 422 rather than a
+		// success-shaped zero.
+		if (['installed', 'current'].includes(run.body?.detail?.status)) {
+			expect(run.status).toBe(200)
+			expect(run.body.success).toBe(true)
+		} else {
 			expect(run.status).toBe(422)
 			expect(run.body.success).toBe(false)
-		} else {
-			// Somebody un-parked the dataset on this instance. The action still
-			// works, and the manifest step may come back with it.
-			expect(run.body.success).toBe(true)
 		}
 
 		// Either way the payload must not have grown a step back.
