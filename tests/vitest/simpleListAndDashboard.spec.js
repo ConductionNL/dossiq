@@ -547,18 +547,31 @@ describe('the landing page', () => {
 			(item) => item.id === 'recent-cases',
 		)
 		const cont = widget('simple-continue')
-		expect(cont.type).toBe('object-table')
-		expect(cont.content.source).toEqual({ ...recent.content.source, limit: 3 })
-		expect(cont.content.rowRoute).toBe('CaseDetail')
-		expect(cont.content.viewAllRoute).toEqual(recent.content.viewAllRoute)
-		// The case number sits under the title, as on the design, not in a
-		// column of its own (nextcloud-vue 2.64.0 `columns[].secondary`).
-		expect(cont.content.columns.map((column) => column.key)).toEqual([
-			'title',
-			'status',
-		])
-		expect(cont.content.columns[0].secondary).toBe('identifier')
+		expect(cont.type).toBe('record-list')
+		expect(cont.content).toMatchObject({
+			register: recent.content.source.register,
+			schema: recent.content.source.schema,
+			filter: recent.content.source.filter,
+			limit: 3,
+			rowRoute: 'CaseDetail',
+			title: '{title}',
+		})
+		expect(cont.content.sort).toBeUndefined()
+		// The pill and the meta line read NAMES through _extend, never uuids.
+		expect(cont.content.extend).toEqual(['status', 'caseType'])
+		expect(cont.content.pill.field).toBe('status.name')
+		// A meta line of parts (nextcloud-vue 2.82.0): a case without a case
+		// type still shows its number, as "2026-0082" rather than nothing.
+		expect(cont.content.meta).toEqual({
+			parts: ['{identifier}', '{caseType.title}'],
+		})
 		expect(caseFields.has('identifier')).toBe(true)
+		expect(caseFields.has('caseType')).toBe(true)
+		// When the reader opened it, from the lens, not the case's own change.
+		expect(cont.content.trailing).toEqual(['{@self.viewedAt|relativetime}'])
+		// An unavailable lens says why, in the same words as the full tile.
+		expect(cont.content.lensReasonTexts).toEqual(recent.content.lensReasonTexts)
+		expect(Object.keys(cont.content.lensReasonTexts).length).toBeGreaterThan(0)
 	})
 
 	it('gives the week, the steps and the tasks a link of their own', () => {
