@@ -90,7 +90,7 @@ class DrcObjectLinkRulesTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($schemas[$key] ?? $key));
 		$logger = $this->createMock(LoggerInterface::class);
 
-		$lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settings);
+		$lookups = new ZgwRuleLookups(settingsService: $settings);
 		$logger->method('error')->willReturnCallback(
 			function (string $message, array $context = []): void {
 				$this->errors[] = $context;

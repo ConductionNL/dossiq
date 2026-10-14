@@ -23,25 +23,21 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zgw\LookupNotCompleted;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
+use OCA\OpenRegister\Exception\NotAuthorizedException;
+use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * The store lookups of the ZGW business rules, in the request context.
  *
  * @covers \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses   \OCA\Dossiq\Service\Zgw\LookupNotCompleted
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */
 final class ZgwRuleLookupsTest extends TestCase {
-	/**
-	 * The warnings logged.
-	 *
-	 * @var array<int, string>
-	 */
-	private array $warnings = [];
-
 	/**
 	 * A store answering from closures, recording each call.
 	 *
@@ -93,17 +89,41 @@ final class ZgwRuleLookupsTest extends TestCase {
 	private function lookups(?object $store, ?array $mappingConfig = ['sourceRegister' => '5', 'sourceSchema' => '50'], string $schema = '51'): ZgwRuleLookups {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturn($schema);
-		$logger = $this->createMock(LoggerInterface::class);
-		$logger->method('warning')->willReturnCallback(
-			function (string $message): void {
-				$this->warnings[] = $message;
-			}
-		);
-		$lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settings);
+		$lookups = new ZgwRuleLookups(settingsService: $settings);
 		$lookups->setContext(objectService: $store, mappingConfig: $mappingConfig);
 
 		return $lookups;
 	}//end lookups()
+
+	/**
+	 * A store whose every search and read fails.
+	 *
+	 * @return object
+	 */
+	private function downStore(): object {
+		$down = static function (): never {
+			throw new \RuntimeException('down');
+		};
+
+		return $this->store(search: $down, find: $down);
+	}//end downStore()
+
+	/**
+	 * What a lookup threw, as [what it was reading, why], or null when it answered.
+	 *
+	 * @param \Closure $lookup The lookup.
+	 *
+	 * @return array{0: string, 1: string}|null
+	 */
+	private function failure(\Closure $lookup): ?array {
+		try {
+			$lookup();
+		} catch (LookupNotCompleted $e) {
+			return [$e->lookup, $e->getMessage()];
+		}
+
+		return null;
+	}//end failure()
 
 	/**
 	 * A serialisable entity, as the store may answer one.
@@ -139,7 +159,8 @@ final class ZgwRuleLookupsTest extends TestCase {
 	}//end testTheContextIsTheRequests()
 
 	/**
-	 * One object by a field: the first hit's id, from an array or an entity, or null.
+	 * One object by a field: the first hit's id, from an array or an entity, or null; a search
+	 * that fails throws, and nothing is searched without a store.
 	 *
 	 * @return void
 	 */
@@ -150,17 +171,16 @@ final class ZgwRuleLookupsTest extends TestCase {
 		$this->assertSame([['search', ['name' => 'Brief', '_limit' => 1, '@register' => '5', '@schema' => '9'], true, true]], $store->calls);
 		$this->assertNull($this->lookups(store: $this->store(search: static fn (): array => []))->findObjectByField('5', '9', 'name', 'x'));
 
-		$down = $this->store(
-			search: static function (): array {
-				throw new \RuntimeException('down');
-			}
+		$this->assertSame(
+			['reference name "x"', 'down'],
+			$this->failure(fn () => $this->lookups(store: $this->downStore())->findObjectByField('5', '9', 'name', 'x'))
 		);
-		$this->assertNull($this->lookups(store: $down)->findObjectByField('5', '9', 'name', 'x'));
-		$this->assertSame(['Reference resolution failed: down'], $this->warnings);
+		$this->assertNull($this->lookups(store: null)->findObjectByField('5', '9', 'name', 'x'));
 	}//end testOneObjectByField()
 
 	/**
-	 * Every object by a field: each id, a hundred at most, none when the search fails.
+	 * Every object by a field: each id, a hundred at most; a search that fails throws, and
+	 * nothing is searched without a store.
 	 *
 	 * @return void
 	 */
@@ -170,13 +190,11 @@ final class ZgwRuleLookupsTest extends TestCase {
 		$this->assertSame(['a', 'b'], $this->lookups(store: $store)->findAllObjectsByField(register: '5', schema: '9', field: 'name', value: 'Brief'));
 		$this->assertSame(100, $store->calls[0][1]['_limit']);
 
-		$down = $this->store(
-			search: static function (): array {
-				throw new \RuntimeException('down');
-			}
+		$this->assertSame(
+			['reference name "x"', 'down'],
+			$this->failure(fn () => $this->lookups(store: $this->downStore())->findAllObjectsByField('5', '9', 'name', 'x'))
 		);
-		$this->assertSame([], $this->lookups(store: $down)->findAllObjectsByField('5', '9', 'name', 'x'));
-		$this->assertSame(['Reference resolution failed: down'], $this->warnings);
+		$this->assertSame([], $this->lookups(store: null)->findAllObjectsByField('5', '9', 'name', 'x'));
 	}//end testEveryObjectByField()
 
 	/**
@@ -207,16 +225,16 @@ final class ZgwRuleLookupsTest extends TestCase {
 		}
 
 		$this->assertSame(['down', 'No object service in the request context'], $thrown);
-		$this->assertSame([], $this->warnings, 'the strict read leaves the logging to the rule that refuses');
 	}//end testTheStrictReadThrowsWhenItCannotLook()
 
 	/**
-	 * An object by uuid is read in the request's register and the schema the key names.
+	 * An object by uuid is read in the request's register and the schema the key names. An object
+	 * the store does not hold, or does not show, is null; a read that fails for another reason throws.
 	 *
 	 * @return void
 	 */
 	public function testAnObjectByUuidAndSchemaKey(): void {
-		$store = $this->store(find: fn (string $id): mixed => (['u-1' => ['id' => 'u-1'], 'u-2' => $this->entity(['id' => 'u-2'])][$id] ?? throw new \RuntimeException('gone')));
+		$store = $this->store(find: fn (string $id): mixed => (['u-1' => ['id' => 'u-1'], 'u-2' => $this->entity(['id' => 'u-2'])][$id] ?? throw new DoesNotExistException('gone')));
 
 		$this->assertSame(['id' => 'u-1'], $this->lookups(store: $store)->findBySchemaKey(uuid: 'u-1', schemaKey: 'case_schema'));
 		$this->assertSame(['id' => 'u-2'], $this->lookups(store: $store)->findBySchemaKey(uuid: 'u-2', schemaKey: 'case_schema'));
@@ -228,6 +246,14 @@ final class ZgwRuleLookupsTest extends TestCase {
 		$this->assertNull($this->lookups(store: $store, mappingConfig: [])->findBySchemaKey('u-1', 'case_schema'));
 		$this->assertNull($this->lookups(store: $store, schema: '')->findBySchemaKey('u-1', 'case_schema'));
 		$this->assertCount(3, $store->calls);
+
+		$hidden = $this->store(find: static fn (): never => throw new NotAuthorizedException());
+		$this->assertNull($this->lookups(store: $hidden)->findBySchemaKey('u-1', 'case_schema'), 'a refused read is an object the rule cannot use');
+		$this->assertNull($this->lookups(store: $this->store(find: static fn (): mixed => null))->findBySchemaKey('u-1', 'case_schema'));
+		$this->assertSame(
+			['case_schema object u-1', 'down'],
+			$this->failure(fn () => $this->lookups(store: $this->downStore())->findBySchemaKey('u-1', 'case_schema'))
+		);
 	}//end testAnObjectByUuidAndSchemaKey()
 
 	/**
@@ -258,12 +284,12 @@ final class ZgwRuleLookupsTest extends TestCase {
 	}//end testAPairIsTakenWhenAHitCarriesTheSecondValue()
 
 	/**
-	 * Nothing is searched without a first value, a store, or a register and schema, and a search
-	 * that fails is logged and counts as free.
+	 * Nothing is searched, and the pair is free, without a first value, a store, or a register and
+	 * schema. A search that fails throws: a duplicate nobody could look for is not a free pair.
 	 *
 	 * @return void
 	 */
-	public function testAPairThatCannotBeLookedUpCountsAsFree(): void {
+	public function testAPairIsFreeOnlyWhenTheSearchRan(): void {
 		$store = $this->store(search: static fn (array $query): array => ['results' => [['org' => '1']]]);
 
 		$this->assertFalse($this->lookups(store: $store)->fieldPairExists('', 'identifier', '1', 'org'));
@@ -272,12 +298,9 @@ final class ZgwRuleLookupsTest extends TestCase {
 		$this->assertFalse($this->lookups(store: $store, mappingConfig: ['sourceSchema' => '50'])->fieldPairExists('ID-1', 'identifier', '1', 'org'));
 		$this->assertSame([], $store->calls);
 
-		$down = $this->store(
-			search: static function (): array {
-				throw new \RuntimeException('down');
-			}
+		$this->assertSame(
+			['uniqueness of identifier "ID-1"', 'down'],
+			$this->failure(fn () => $this->lookups(store: $this->downStore())->fieldPairExists('ID-1', 'identifier', '1', 'org'))
 		);
-		$this->assertFalse($this->lookups(store: $down)->fieldPairExists('ID-1', 'identifier', '1', 'org'));
-		$this->assertSame(['Uniqueness check failed: down'], $this->warnings);
-	}//end testAPairThatCannotBeLookedUpCountsAsFree()
+	}//end testAPairIsFreeOnlyWhenTheSearchRan()
 }//end class

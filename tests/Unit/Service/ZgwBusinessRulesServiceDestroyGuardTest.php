@@ -25,10 +25,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwZtcRulesService;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * What the delete of a case type answers per verdict of the delete check.
@@ -67,7 +69,7 @@ class ZgwBusinessRulesServiceDestroyGuardTest extends TestCase {
 			}
 		);
 
-		return (new ZgwBusinessRulesService(ztcRules: $ztc, dispatcher: $dispatcher))->validate(
+		return (new ZgwBusinessRulesService(ztcRules: $ztc, dispatcher: $dispatcher, results: new ZgwRuleResults(logger: $this->createMock(LoggerInterface::class))))->validate(
 			zgwApi: 'catalogi',
 			resource: 'zaaktypen',
 			action: 'destroy',

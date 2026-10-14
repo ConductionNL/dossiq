@@ -76,7 +76,7 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 				$this->errors[] = $context;
 			}
 		);
-		$lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settings);
+		$lookups = new ZgwRuleLookups(settingsService: $settings);
 		$checks  = new ZtcPublishAndDeleteChecks(lookups: $lookups, results: new ZgwRuleResults(logger: $logger), settingsService: $settings);
 		if ($rows === null) {
 			return $checks;

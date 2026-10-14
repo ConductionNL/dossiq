@@ -105,7 +105,7 @@ class DrcDocumentRelationsTest extends TestCase {
 			}
 		);
 
-		$lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settings);
+		$lookups = new ZgwRuleLookups(settingsService: $settings);
 		$lookups->setContext(objectService: $search, mappingConfig: $mappingConfig);
 
 		return new DrcDocumentRelations(

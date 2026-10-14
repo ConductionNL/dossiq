@@ -23,8 +23,16 @@ Decision 224. One PR, `--base development`, stacked on the method-decomposition 
 
 ## 4. The debt list
 
-- [x] 4.1 (`tests/Unit/Architecture/catch-return-null.allowlist.json`) two sites left, ceiling 263 to 261.
+- [x] 4.1 (`tests/Unit/Architecture/catch-return-null.allowlist.json`) two sites left, ceiling 256 to 254 (after train 5).
 
-## 5. Live
+## 5. Reference and uniqueness reads (Q-dossiq-L11-3, answered 12 Oct)
 
-- [ ] 5.1 (live pass, decision 139) With the store reachable: an objectinformatieobject create, a document delete and a case type delete answer as before.
+- [x] 5.1 (`lib/Service/Zgw/LookupNotCompleted.php`, `lib/Service/Zgw/ZgwRuleLookups.php`) `findObjectByField()`, `findAllObjectsByField()`, `findBySchemaKey()` and `fieldPairExists()` throw `LookupNotCompleted` when their read fails. Not found and a refused read (OpenRegister's `NotAuthorizedException`) stay "none"; no store or an empty schema setting stays a skipped lookup (REQ-ZBR-022).
+  - `tests/Unit/Service/Zgw/ZgwRuleLookupsTest.php`, `tests/Unit/Service/ZgwRulesBaseUniquenessTest.php`.
+- [x] 5.2 (`lib/Service/ZgwBusinessRulesService.php`) `validate()` catches it once and answers `ZgwRuleResults::notVerified()`, for the entry point's own guards and for every per-register rule.
+  - `tests/Unit/Service/ZgwBusinessRulesServiceLookupFailureTest.php`, with a control that rules which could read decide as before.
+- [x] 5.3 (`tests/Unit/Architecture/catch-return-null.allowlist.json`) three sites left, ceiling 254 to 251.
+
+## 6. Live
+
+- [ ] 6.1 (live pass, decision 139) With the store reachable: an objectinformatieobject create, a document delete and a case type delete answer as before.

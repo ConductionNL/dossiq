@@ -62,3 +62,31 @@ The refusal SHALL be logged at error with the check and the case type.
 - **GIVEN** a case type
 - **WHEN** the search runs and finds no cases
 - **THEN** the delete goes through
+
+### Requirement: A reference or uniqueness read that fails refuses the write (REQ-ZBR-022)
+
+The store reads every ZGW rule shares (`Zgw/ZgwRuleLookups`) SHALL tell "the read ran and found nothing" from "the read could not run". A read that could not run SHALL throw, and the entry point of the rules SHALL refuse the request with the answer of REQ-ZBR-020: HTTP 503, code `check-not-completed`, no `invalidParams`, logged at error with the rule and what it was reading.
+
+This holds for the identification uniqueness check (a duplicate nobody could search for is not a free identification) and for reference resolution (a zaaktype, informatieobjecttype or besluittype that could not be read is not a type that does not exist).
+
+An object the store does not hold, or does not show the caller, SHALL still read as none, as before. A lookup with nothing to read in, because the request has no store or the setting that names its schema is empty, SHALL still be skipped: an instance without a decision register cannot hold a decision either.
+
+#### Scenario: The uniqueness search fails
+<!-- @e2e exclude A store outage cannot be staged on the e2e instance. Proven by ZgwRuleLookupsTest "a pair is free only when the search ran", ZgwRulesBaseUniquenessTest and ZgwBusinessRulesServiceLookupFailureTest. -->
+- **GIVEN** a zaak with an identificatie and a bronorganisatie
+- **WHEN** the search for another zaak with that identificatie throws
+- **THEN** the create is refused with 503 and code `check-not-completed`
+- **AND** the answer does not say the identificatie is taken
+
+#### Scenario: A referenced type cannot be read
+<!-- @e2e exclude A store outage cannot be staged on the e2e instance. Proven by ZgwRuleLookupsTest "an object by uuid and schema key" and ZgwBusinessRulesServiceLookupFailureTest "a rule whose read failed refuses the write". -->
+- **GIVEN** a write that refers to a zaaktype
+- **WHEN** reading that zaaktype throws for another reason than "not found" or "not allowed"
+- **THEN** the write is refused with 503 and code `check-not-completed`
+- **AND** the log names the rule and the zaaktype
+
+#### Scenario: The referenced type does not exist
+<!-- @e2e exclude Unchanged behaviour, proven by ZgwRuleLookupsTest "an object by uuid and schema key". -->
+- **GIVEN** a write that refers to a zaaktype the store does not hold
+- **WHEN** the read answers "not found"
+- **THEN** the rule decides as before, on a type that is not there

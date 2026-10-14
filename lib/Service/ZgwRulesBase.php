@@ -112,7 +112,7 @@ abstract class ZgwRulesBase {
 		protected readonly FieldValidator $fieldValidator,
 	) {
 		$this->results = new ZgwRuleResults(logger: $logger);
-		$this->lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settingsService);
+		$this->lookups = new ZgwRuleLookups(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
