@@ -57,9 +57,9 @@
         {
             "key": "brp",
             "title": "BRP",
-            "description": "Looking a person up in the municipal population register.",
+            "description": "Reading a case worker's family relations for the conflict-of-interest check.",
             "order": 80,
-            "unconfiguredMessage": "Built and dormant. The conflict-of-interest check calls it, and it reaches nothing until an integrator sets integration.brp.mode (mock or test) with occ config:app:set.",
+            "unconfiguredMessage": "The conflict-of-interest check reads a case worker's family relations from Integriq's BRP source. That read stays off until an administrator sets relationFields on the source in Integriq.",
             "sourceTemplate": "brp-haalcentraal"
         },
         {

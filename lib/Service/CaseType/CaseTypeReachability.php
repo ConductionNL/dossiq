@@ -39,9 +39,9 @@ namespace OCA\Dossiq\Service\CaseType;
  *    else, and `Transitions\OfferedTransitions::leadsFrom()` never offers it.
  *    So a `fromStatus` that is empty, `*`, or a status this type does not
  *    declare is a move that is authored, stored, exported and never offered.
- *    Three writers put `*` there on purpose as a wildcard
- *    (`Besluitvorming\WorkflowReferenceResolver`, `Vth\VthWorkflowGraphResolver`,
- *    `Repair\SeedBezwaarWorkflowDefinition`) and no reader honours it, which is
+ *    Three seeders put `*` there on purpose as a wildcard (the besluitvorming,
+ *    VTH and bezwaar seeders, since replaced by case definition packages) and
+ *    no reader honours it, which is
  *    a capability with no caller: it reads as configured and behaves as absent.
  *
  *  - A STATUS NOTHING LEADS TO. A status declared on the case type that no

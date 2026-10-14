@@ -130,3 +130,76 @@ The installer SHALL record every installed package once in the shipped-set ledge
 - **GIVEN** the neutral settings package was installed
 - **WHEN** the installer installs it again
 - **THEN** the outcome SHALL be current and no setting SHALL be applied again
+
+### Requirement: A seed file may write into another app's register (REQ-CT-55)
+
+A package seed file SHALL name the schema its rows go to either by a settings key of this app, or by the owning app, the register slug (or the slugs that register has had, newest first) and the schema slug. For the second form the installer SHALL find the register and schema on this instance and write the rows there, record each row in the shipped-set ledger, and on a failed install take each row back out of the register it went into. When the app is not installed, or no named register holds the schema, the installer SHALL refuse the package, name the app and the schema, and write nothing. A seed file MAY name one property (`match`) by which a row this instance already holds under another id is recognised; such a row SHALL be adopted, not written a second time, and every row of that file SHALL carry the property.
+
+#### Scenario: Seed rows land in the other app's register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister
+
+- **GIVEN** the neutral shared-seed package, whose seed file names `fixture_source` of `fixture-app` in register `fixture-register`
+- **AND** `fixture-app` is installed and the register holds the schema
+- **WHEN** the installer installs the package
+- **THEN** both rows SHALL be written into that register and schema
+- **AND** the ledger SHALL hold one row for each, naming the package
+
+#### Scenario: The other app is missing
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForAnAppThatIsNotInstalledRefusesThePackage
+
+- **GIVEN** `fixture-app` is not installed
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the outcome SHALL be refused, naming `fixture-app:fixture_source`
+- **AND** no row SHALL be written
+
+#### Scenario: A row held under another id is adopted by the match property
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn
+
+- **GIVEN** the other register already holds a row with key `fixture.first` under another id
+- **WHEN** the installer installs the shared-seed package
+- **THEN** that row SHALL be adopted and left as it is
+- **AND** only the second row SHALL be written
+
+#### Scenario: A failed install takes a row back from the other register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallTakesARowBackFromTheOtherRegister
+
+- **GIVEN** the store refuses the second row
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the first row SHALL be deleted from the other app's register
+- **AND** the ledger SHALL hold no row for the package
+
+### Requirement: A seed file may recognise a row by a flag or by several properties (REQ-CT-56)
+
+The `match` of a package seed file SHALL be one property name or a list of property names. A row this instance already holds SHALL be adopted when it is equal to the package row on every property named. A matched value SHALL be a text, a whole number or a flag; a flag and a number SHALL be compared by meaning, so a flag the store answers as `1` or `"true"` counts as set. A file that matches on a flag alone SHALL adopt the row that has the flag set whatever that row is called, so an instance that replaced a shipped default gets no second one. A `match` that names no property, or a row that lacks a named property, SHALL make the package invalid.
+
+#### Scenario: An instance that replaced the default gets no second one
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByAFlagWhateverTheExistingRowIsCalled
+
+- **GIVEN** a seed file that matches on `active` and ships one row with `active` true
+- **AND** the register holds a row under another id and another name with `active` true
+- **WHEN** the installer installs the package
+- **THEN** the existing row SHALL be adopted and left as it is
+- **AND** no row SHALL be written
+
+#### Scenario: A row with the flag cleared is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsNotAdoptedByARowWithTheFlagCleared
+
+- **GIVEN** the register holds only a row with `active` false
+- **WHEN** the installer installs the package
+- **THEN** the package row SHALL be written beside it
+
+#### Scenario: A row is adopted only when every matched property is equal
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual
+
+- **GIVEN** a seed file that matches on `row` and `column`
+- **AND** the register holds a row for A and 1, and a row for B and 2
+- **WHEN** the installer installs a package that ships A and 1, and A and 2
+- **THEN** the row for A and 1 SHALL be adopted
+- **AND** the row for A and 2 SHALL be written
+
+#### Scenario: A match that names no property is refused
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedMatchThatNamesNoPropertyIsInvalid
+
+- **GIVEN** a seed file whose `match` is an empty list, a flag, or a list holding something that is not a property name
+- **WHEN** the installer installs the package
+- **THEN** the outcome SHALL be refused and the errors SHALL say what `match` must name

@@ -28,10 +28,15 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\ZgwZtcRulesService
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcConceptRules
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcTypeReferences
+ * @covers \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
  *
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
  * @uses \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses   \OCA\Dossiq\Service\FieldValidator
  */
 class ZgwZtcRulesServiceTest extends TestCase {
@@ -220,5 +225,175 @@ class ZgwZtcRulesServiceTest extends TestCase {
 		$r = $this->svc->validateDeletion('reg', 'ct-1');
 		$this->assertFalse($r['blocked']);
 		$this->assertFalse($r['requiresConfirmation']);
+	}
+
+	/**
+	 * An object service whose searches and finds are answered by closures.
+	 *
+	 * @param \Closure $search Answers (register, schema, filters).
+	 * @param \Closure|null $find Answers (id); null means the row does not exist.
+	 *
+	 * @return object
+	 */
+	private function scriptedObjectService(\Closure $search, ?\Closure $find = null): object {
+		return new class($search, $find) {
+			public function __construct(
+				private \Closure $search,
+				private ?\Closure $find,
+			) {
+			}
+
+			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
+				return ($this->search)($register, $schema, $filters);
+			}
+
+			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): mixed {
+				if ($this->find === null) {
+					throw new \OCP\AppFramework\Db\DoesNotExistException('gone');
+				}
+
+				return ($this->find)((string)$id);
+			}
+		};
+	}
+
+	/**
+	 * Characterisation (method-decomposition): the publish check stops at a failed status type read.
+	 */
+	public function testValidatePublishStopsWhenStatusTypesCannotBeRead(): void {
+		$os = $this->scriptedObjectService(static function (): array {
+			throw new \RuntimeException('down');
+		});
+		$this->svc->setContext($os, []);
+
+		$this->assertSame(['Could not load status types for case type'], $this->svc->validatePublish('reg', 'ct-1'));
+	}
+
+	/**
+	 * Characterisation: every unmet precondition is reported, in order, and a case type that is
+	 * missing or unreadable counts as one without a valid-from date.
+	 */
+	public function testValidatePublishReportsEveryUnmetPrecondition(): void {
+		$none = static fn (): array => [];
+		$notFinal = static fn (): array => [['isFinal' => 0], 'not a row', ['isFinal' => null]];
+		$broken = static function (string $id): array {
+			throw new \RuntimeException('down');
+		};
+
+		$this->svc->setContext($this->scriptedObjectService($none), []);
+		$this->assertSame(
+			['At least one status type must be defined before publishing', "'Valid from' date must be set before publishing"],
+			$this->svc->validatePublish('reg', 'ct-1')
+		);
+
+		$this->svc->setContext($this->scriptedObjectService($notFinal, $broken), []);
+		$this->assertSame(
+			['At least one status type must be marked as final', "'Valid from' date must be set before publishing"],
+			$this->svc->validatePublish('reg', 'ct-1')
+		);
+
+		$final = static fn (): array => [['isFinal' => 1]];
+		$this->svc->setContext($this->scriptedObjectService($final, static fn (string $id): array => ['validFrom' => '2026-01-01']), []);
+		$this->assertSame([], $this->svc->validatePublish('reg', 'ct-1'));
+	}
+
+	/**
+	 * Characterisation: the publish check reads the status types of the case type from the status
+	 * type schema, and the case type itself by id from the case type schema.
+	 */
+	public function testValidatePublishReadsTheConfiguredSchemas(): void {
+		$seen = [];
+		$search = static function (string $register, string $schema, array $filters) use (&$seen): array {
+			$seen[] = [$register, $schema, $filters];
+			return [];
+		};
+		$find = static function (string $id) use (&$seen): array {
+			$seen[] = $id;
+			return [];
+		};
+		$this->svc->setContext($this->scriptedObjectService($search, $find), []);
+		$this->svc->validatePublish('reg', 'ct-1');
+
+		$this->assertSame([['reg', 'statusType', ['caseType' => 'ct-1']], 'ct-1'], $seen);
+	}
+
+	/**
+	 * Characterisation: a delete check that cannot read the cases, or has no id, lets the delete through.
+	 */
+	public function testValidateDeletionPassesWhenCasesCannotBeRead(): void {
+		$default = ['blocked' => false, 'requiresConfirmation' => false, 'message' => ''];
+		$os = $this->scriptedObjectService(static function (): array {
+			throw new \RuntimeException('down');
+		});
+		$this->svc->setContext($os, []);
+
+		$this->assertSame($default, $this->svc->validateDeletion('reg', 'ct-1'));
+		$this->assertSame($default, $this->svc->validateDeletion('reg', ''));
+	}
+
+	/**
+	 * Characterisation: a case counts as closed only when its status is a final status type that
+	 * could be read; no status, another status, or an unreadable final list all count as active.
+	 */
+	public function testValidateDeletionCountsActiveAndClosedCases(): void {
+		$cases = [['status' => 'final'], ['status' => 'open'], ['status' => ''], [], ['status' => 'final-2']];
+		$search = static function (string $register, string $schema, array $filters) use ($cases): array {
+			if ($schema === 'case') {
+				return $cases;
+			}
+
+			return [['id' => 'final', 'isFinal' => true], 'not a row', ['isFinal' => true], ['id' => 'final-2']];
+		};
+		$this->svc->setContext($this->scriptedObjectService($search), []);
+
+		$this->assertSame(
+			[
+				'blocked' => true,
+				'requiresConfirmation' => false,
+				'message' => 'Cannot delete case type: 3 active case(s) still use this type. Close or reassign all cases first.',
+			],
+			$this->svc->validateDeletion('reg', 'ct-1')
+		);
+
+		$unreadable = static function (string $register, string $schema, array $filters) use ($cases): array {
+			if ($schema === 'case') {
+				return [['status' => 'final'], ['status' => 'final-2']];
+			}
+
+			throw new \RuntimeException('down');
+		};
+		$this->svc->setContext($this->scriptedObjectService($unreadable), []);
+		$this->assertStringContainsString('2 active case(s)', $this->svc->validateDeletion('reg', 'ct-1')['message']);
+
+		$closedOnly = static function (string $register, string $schema, array $filters): array {
+			if ($schema === 'case') {
+				return [['status' => 'final'], ['status' => 'final']];
+			}
+
+			return [['id' => 'final']];
+		};
+		$this->svc->setContext($this->scriptedObjectService($closedOnly), []);
+		$this->assertSame(
+			['blocked' => false, 'requiresConfirmation' => true, 'message' => 'Deleting will affect 2 closed case(s). Confirm to proceed.'],
+			$this->svc->validateDeletion('reg', 'ct-1')
+		);
+	}
+
+	/**
+	 * Characterisation: the delete check reads the cases of the case type, then its final status types.
+	 */
+	public function testValidateDeletionReadsTheConfiguredSchemas(): void {
+		$seen = [];
+		$search = static function (string $register, string $schema, array $filters) use (&$seen): array {
+			$seen[] = [$register, $schema, $filters];
+			return [['status' => 'x']];
+		};
+		$this->svc->setContext($this->scriptedObjectService($search), []);
+		$this->svc->validateDeletion('reg', 'ct-1');
+
+		$this->assertSame(
+			[['reg', 'case', ['caseType' => 'ct-1']], ['reg', 'statusType', ['caseType' => 'ct-1', 'isFinal' => true]]],
+			$seen
+		);
 	}
 }

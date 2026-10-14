@@ -30,6 +30,8 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Zgw\ZrcCaseRelationRules
  * @uses \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  * @uses \OCA\Dossiq\Service\FieldValidator
