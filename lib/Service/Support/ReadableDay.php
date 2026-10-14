@@ -76,22 +76,46 @@ class ReadableDay {
 	];
 
 	/**
-	 * One stored moment as a day a person reads.
+	 * One stored moment as a day a Dutch text reads it: "14 oktober 2026".
 	 *
 	 * The month names are spelled out here, not through `IL10N`, because the
 	 * language is the one the text is written in (a letter's case type, a
 	 * Dutch portal sentence), not the language of whoever happens to be signed
 	 * in when it is produced.
 	 *
-	 * @param string $value   The stored ISO 8601 date or moment.
-	 * @param bool   $english Whether the text is in English.
+	 * @param string $value The stored ISO 8601 date or moment.
 	 *
 	 * @return string The day, or an empty string when there is none to read.
 	 *
 	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
 	 */
-	public function of(string $value, bool $english=false): string {
+	public function dutch(string $value): string {
+		return $this->spelled(value: $value, months: self::MONTHS_NL);
+	}//end dutch()
+
+	/**
+	 * One stored moment as a day an English text reads it: "14 October 2026".
+	 *
+	 * @param string $value The stored ISO 8601 date or moment.
+	 *
+	 * @return string The day, or an empty string when there is none to read.
+	 *
+	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
+	 */
+	public function english(string $value): string {
+		return $this->spelled(value: $value, months: self::MONTHS_EN);
+	}//end english()
+
+	/**
+	 * The day with its month spelled from the given names.
+	 *
+	 * @param string             $value  The stored ISO 8601 date or moment.
+	 * @param array<int, string> $months The month names, January first.
+	 *
+	 * @return string The day, or an empty string when there is none to read.
+	 */
+	private function spelled(string $value, array $months): string {
 		$value = trim($value);
 		if ($value === '') {
 			return '';
@@ -103,11 +127,6 @@ class ReadableDay {
 			return '';
 		}
 
-		$months = self::MONTHS_NL;
-		if ($english === true) {
-			$months = self::MONTHS_EN;
-		}
-
 		return $moment->format('j').' '.$months[((int)$moment->format('n') - 1)].' '.$moment->format('Y');
-	}//end of()
+	}//end spelled()
 }//end class

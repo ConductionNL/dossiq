@@ -145,7 +145,7 @@ class WooWrittenCase {
 		// same request writes it.
 		$days = new ReadableDay();
 		foreach (self::DAY_KEYS as $key => $dayKey) {
-			$day = $days->of(value: (string)($answer[$key] ?? ''));
+			$day = $days->dutch(value: (string)($answer[$key] ?? ''));
 			if ($day !== '') {
 				$answer[$dayKey] = $day;
 			}

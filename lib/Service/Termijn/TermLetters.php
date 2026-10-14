@@ -399,7 +399,11 @@ class TermLetters {
 	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	private function dayOf(string $value, bool $english=false): string {
-		return (new ReadableDay())->of(value: $value, english: $english);
+		if ($english === true) {
+			return (new ReadableDay())->english(value: $value);
+		}
+
+		return (new ReadableDay())->dutch(value: $value);
 	}//end dayOf()
 
 	/**
