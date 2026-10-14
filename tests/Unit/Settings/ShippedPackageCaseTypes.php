@@ -79,4 +79,51 @@ final class ShippedPackageCaseTypes {
 
 		return $nested;
 	}//end nested()
+
+	/**
+	 * The case types a register.d seed writes, nested like {@see self::nested()}.
+	 *
+	 * A package may ship only the flow of a case type that register.d seeds:
+	 * the Woo request case type keeps its fixed uuid in register.d because the
+	 * portal intake opens requests on it, and its flow ships in the
+	 * `woo-verzoek` package. The flow sweeps check such a flow against these.
+	 *
+	 * @return array<int, array<string, mixed>> The case types, children nested.
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
+	 */
+	public static function seededByRegister(): array {
+		$rows = [];
+		foreach ((array)glob(__DIR__ . '/../../../lib/Settings/register.d/*.json') as $path) {
+			$data = json_decode((string)file_get_contents((string)$path), true);
+			foreach ((array)($data['components']['objects'] ?? []) as $object) {
+				if (is_array($object) === true) {
+					$rows[] = $object;
+				}
+			}
+		}
+
+		$byCollection = ['statusType' => 'statusTypes', 'roleType' => 'roleTypes', 'resultType' => 'resultTypes', 'propertyDefinition' => 'propertyDefinitions'];
+		$nested = [];
+		foreach ($rows as $row) {
+			if ((string)($row['@self']['schema'] ?? '') !== 'caseType') {
+				continue;
+			}
+
+			$caseType = $row;
+			unset($caseType['@self']);
+			$caseType['slug'] = (string)($caseType['identifier'] ?? '');
+			foreach ($rows as $child) {
+				$collection = ($byCollection[(string)($child['@self']['schema'] ?? '')] ?? null);
+				if ($collection !== null && (string)($child['caseType'] ?? '') === (string)($caseType['id'] ?? '')) {
+					unset($child['@self']);
+					$caseType[$collection][] = $child;
+				}
+			}
+
+			$nested[] = $caseType;
+		}
+
+		return $nested;
+	}//end seededByRegister()
 }//end class
