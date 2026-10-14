@@ -74,6 +74,21 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 	useEngineTaskStore: () => storeStub,
 }))
 
+/** The case the object store answers with, replaced per test. */
+let caseObject = null
+/** Every case id the page read. */
+let caseReads = []
+
+vi.mock('../../src/store/modules/object.js', () => ({
+	useObjectStore: () => ({
+		collections: {},
+		async fetchObject(type, id) {
+			caseReads.push({ type, id })
+			return caseObject
+		},
+	}),
+}))
+
 const { default: TaskDetailView } =
 	await import('../../src/views/tasks/TaskDetailView.vue')
 
@@ -141,6 +156,8 @@ beforeEach(() => {
 	checked = []
 	invokeResult = null
 	storeStub.error = null
+	caseObject = null
+	caseReads = []
 })
 
 describe('TaskDetailView', () => {
@@ -187,6 +204,37 @@ describe('TaskDetailView', () => {
 				.find('[data-testid="task-detail-state"]')
 				.attributes('data-variant'),
 		).toBe('success')
+	})
+
+	it('says after the crumbs which case the task is on and its deadline in words (DqTaak)', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(new Date(2026, 8, 20, 10, 0))
+		try {
+			caseObject = { id: 'case-9', identifier: '2026-0074' }
+			const wrapper = await mountPage(TASK)
+
+			expect(caseReads).toEqual([{ type: 'case', id: 'case-9' }])
+			expect(wrapper.find('[data-testid="task-detail-meta"]').text()).toBe(
+				'on case 2026-0074, deadline today',
+			)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('leaves the deadline out on a finished task and the line out when nothing is known', async () => {
+		caseObject = { id: 'case-9', identifier: '2026-0074' }
+		const finished = await mountPage({
+			...TASK,
+			state: 'completed',
+			isTerminal: true,
+		})
+		expect(finished.find('[data-testid="task-detail-meta"]').text()).toBe(
+			'on case 2026-0074',
+		)
+
+		const bare = await mountPage({ ...TASK, objectUuid: null, dueAt: null })
+		expect(bare.find('[data-testid="task-detail-meta"]').exists()).toBe(false)
 	})
 
 	it('draws the case card for a task on a case, naming case type and status by reference, never by id', async () => {

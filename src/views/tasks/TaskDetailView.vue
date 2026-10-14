@@ -82,6 +82,10 @@
 					</router-link>
 					<span aria-hidden="true">/</span>
 					<span>{{ title }}</span>
+					<template v-if="metaLine">
+						<span aria-hidden="true">·</span>
+						<span data-testid="task-detail-meta">{{ metaLine }}</span>
+					</template>
 				</p>
 			</div>
 
@@ -241,6 +245,7 @@ import TaskAuditLeaf from '../../components/tasks/TaskAuditLeaf.vue'
 import TaskEventsLeaf from '../../components/tasks/TaskEventsLeaf.vue'
 import TaskNotesLeaf from '../../components/tasks/TaskNotesLeaf.vue'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
+import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { caseIdFrom, taskCaseRef } from '../../utils/flowTaskHelpers.js'
 import {
@@ -248,6 +253,7 @@ import {
 	priorityLabel,
 	priorityPillTone,
 } from '../../utils/priorityValues.js'
+import { taskMetaLine } from '../../utils/taskMetaLine.js'
 import { taskStateLabel, taskStateTone } from '../../utils/taskStateLabel.js'
 
 export default {
@@ -299,6 +305,8 @@ export default {
 			busy: false,
 			/** The tab in view: the overview, or the history. */
 			activeTab: 'overview',
+			/** The number of the case the task is on, '' until it is read. */
+			caseNumber: '',
 		}
 	},
 
@@ -375,6 +383,22 @@ export default {
 		 */
 		priorityText() {
 			return priorityLabel(this.task?.priority)
+		},
+
+		/**
+		 * The line after the crumbs (DqTaak): "bij zaak 2026-0074, deadline
+		 * vandaag". The case number is read from the case; the deadline is the
+		 * task's own `dueAt` in words. A part that is not known is left out.
+		 *
+		 * @return {string} The line, or ''.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		metaLine() {
+			return taskMetaLine({
+				caseNumber: this.caseNumber,
+				dueAt: this.task?.dueAt ?? null,
+				finished: this.finished,
+			})
 		},
 
 		/**
@@ -733,6 +757,34 @@ export default {
 
 			if (this.task === null && this.engineTasks.error) {
 				this.report(this.engineTasks.error)
+			}
+
+			await this.loadCaseNumber()
+		},
+
+		/**
+		 * Read the number of the case the task is on, for the line after the
+		 * crumbs. The engine task names its case by uuid only. A case that
+		 * cannot be read leaves the number out; the line then says the
+		 * deadline alone, and the case card says why the case is missing.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		async loadCaseNumber() {
+			this.caseNumber = ''
+			const caseId = this.caseId
+			if (!caseId) {
+				return
+			}
+			try {
+				const found = await useObjectStore().fetchObject('case', caseId)
+				// The task may have changed while the case was read.
+				if (caseId === this.caseId) {
+					this.caseNumber = String(found?.identifier ?? '').trim()
+				}
+			} catch {
+				this.caseNumber = ''
 			}
 		},
 
