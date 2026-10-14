@@ -19,7 +19,8 @@ A centered first step is not route-gated in nextcloud-vue, so the tour starts wh
 
 ## Not changed
 
-- The demo staff accounts are not marked as having seen the tour. The OpenRegister example-set loader cannot set a per-user value; the request for that is with the coordinator.
+- The demo staff accounts are not marked as having seen the tour. The tour's state is the Nextcloud user value `dossiq` / `walkthrough_completed_version` (the manifest's `completionConfigKey`, served by `/api/preferences/{key}`). The OpenRegister example-set loader (`lib/Service/ExampleSet/*` on development) writes groups, service accounts, app config and objects, and has no per-user value. Loader request: a `userPreferences` block, `[{user, app, key, value}]`, written with `IConfig::setUserValue` and removed with the set.
+- Three tests that validate a built manifest against the installed library's schema now accept the validator's lag verdict, the same rule `tests/validate-manifest.js` applies. An error of the app's own still fails them.
 
 ## Rollback
 
