@@ -175,11 +175,9 @@ class ConfigKeys {
 		// PDOK integration settings (pdok-integration spec).
 		// Endpoint overrides — empty falls back to PDOK service defaults.
 		'pdok_locatieserver_endpoint',
-		'pdok_bag_endpoint',
 		'pdok_kadaster_endpoint',
 		// OpenConnector source slugs — empty = call PDOK directly.
 		'pdok_locatieserver_source',
-		'pdok_bag_source',
 		'pdok_kadaster_source',
 		// Cache TTLs (seconds).
 		'pdok_cache_lookup_ttl_seconds',

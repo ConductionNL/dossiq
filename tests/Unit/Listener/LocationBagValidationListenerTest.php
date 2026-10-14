@@ -3,8 +3,9 @@
 /**
  * LocationBagValidationListener Unit Tests
  *
- * Full validation matrix for the `location` schema's `source: bag` ⇒
- * `nummeraanduidingId` save-path enforcement (bag-location-save-validation).
+ * The `location` schema's `source: bag` contract at save time: a malformed id
+ * is refused, and whether the BAG holds the id is asked of integriq only where
+ * the check is switched on, refusing when no clear answer comes (decision 224).
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Listener
@@ -13,7 +14,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/bag-location-save-validation/specs/bag-location-save-validation/spec.md
+ * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -24,58 +25,51 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\LocationBagValidationListener;
-use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
-use OCA\Dossiq\Service\External\Bag\BagLookupResult;
+use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\Registry\BagObjectReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
+use OCP\IAppConfig;
 use OCP\IL10N;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\LocationBagValidationListener
  *
- * @uses \OCA\Dossiq\Service\External\Bag\BagLookupResult
+ * @uses \OCA\Dossiq\Service\External\IntegrationMode
  */
 class LocationBagValidationListenerTest extends TestCase {
 
 	/**
-	 * The mocked schema-slug bridge.
-	 *
-	 * @var SettingsService
+	 * A well-formed nummeraanduiding id.
 	 */
-	private SettingsService $settingsService;
+	private const ID = '0363200000123456';
 
 	/**
-	 * The mocked BAG adapter.
+	 * The value of `integration.bag.check` the next listener reads.
 	 *
-	 * @var BagAdapterInterface
+	 * @var string
 	 */
-	private BagAdapterInterface $bagAdapter;
+	private string $check = '';
 
 	/**
-	 * The mocked translation service (passthrough).
+	 * The BAG reader double.
 	 *
-	 * @var IL10N
+	 * @var BagObjectReader&MockObject
 	 */
-	private IL10N $l10n;
+	private BagObjectReader&MockObject $bagReader;
 
 	/**
 	 * The mocked logger.
 	 *
-	 * @var LoggerInterface
+	 * @var LoggerInterface&MockObject
 	 */
-	private LoggerInterface $logger;
-
-	/**
-	 * The listener under test.
-	 *
-	 * @var LocationBagValidationListener
-	 */
-	private LocationBagValidationListener $listener;
+	private LoggerInterface&MockObject $logger;
 
 	/**
 	 * Set up test fixtures.
@@ -83,27 +77,41 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->settingsService = $this->createMock(SettingsService::class);
-		$this->settingsService->method('getConfigValue')->willReturnCallback(
+		$this->bagReader = $this->createMock(BagObjectReader::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+	}//end setUp()
+
+	/**
+	 * The listener, reading `integration.bag.check` as set on this test.
+	 *
+	 * @return LocationBagValidationListener
+	 */
+	private function listener(): LocationBagValidationListener {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
 				return $key === 'location_schema' ? 'location-schema-id' : $default;
 			}
 		);
 
-		$this->bagAdapter = $this->createMock(BagAdapterInterface::class);
-		$this->l10n = $this->createMock(IL10N::class);
-		$this->l10n->method('t')->willReturnCallback(
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = ''): string => $key === 'integration.bag.check' ? $this->check : $default
+		);
+
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(
 			static fn (string $text, $parameters = []): string => $text
 		);
-		$this->logger = $this->createMock(LoggerInterface::class);
 
-		$this->listener = new LocationBagValidationListener(
-			$this->settingsService,
-			$this->bagAdapter,
-			$this->l10n,
+		return new LocationBagValidationListener(
+			$settings,
+			new IntegrationMode($appConfig),
+			$this->bagReader,
+			$l10n,
 			$this->logger,
 		);
-	}//end setUp()
+	}//end listener()
 
 	/**
 	 * Build a location ObjectEntity with the given payload.
@@ -123,15 +131,25 @@ class LocationBagValidationListenerTest extends TestCase {
 	}//end entity()
 
 	/**
-	 * Build a creating-event wrapping the given entity.
+	 * Save a BAG location with a well-formed id, with the check as set.
 	 *
-	 * @param ObjectEntity $entity Entity being created.
+	 * @param array{available:bool,reason:string,found:bool,simulated:bool}|null $answer What integriq answers; null for "not asked".
 	 *
-	 * @return ObjectCreatingEvent
+	 * @return array{0:ObjectCreatingEvent,1:ObjectEntity}
 	 */
-	private function creatingEvent(ObjectEntity $entity): ObjectCreatingEvent {
-		return new ObjectCreatingEvent($entity);
-	}//end creatingEvent()
+	private function save(?array $answer): array {
+		if ($answer === null) {
+			$this->bagReader->expects($this->never())->method('read');
+		} else {
+			$this->bagReader->expects($this->once())->method('read')->with('nummeraanduiding', self::ID)->willReturn($answer);
+		}
+
+		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => self::ID]);
+		$event = new ObjectCreatingEvent($entity);
+		$this->listener()->handle($event);
+
+		return [$event, $entity];
+	}//end save()
 
 	/**
 	 * Test that a generic unrelated event is ignored.
@@ -139,8 +157,8 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testHandleIgnoresUnrelatedEvents(): void {
-		$this->bagAdapter->expects($this->never())->method('lookupObject');
-		$this->listener->handle(new Event());
+		$this->bagReader->expects($this->never())->method('read');
+		$this->listener()->handle(new Event());
 		$this->addToAssertionCount(1);
 	}//end testHandleIgnoresUnrelatedEvents()
 
@@ -152,9 +170,9 @@ class LocationBagValidationListenerTest extends TestCase {
 	 */
 	public function testNonLocationSchemaIsIgnored(): void {
 		$entity = $this->entity(['source' => 'bag'], schemaId: 'some-other-schema');
-		$event = $this->creatingEvent($entity);
+		$event = new ObjectCreatingEvent($entity);
 
-		$this->listener->handle($event);
+		$this->listener()->handle($event);
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testNonLocationSchemaIsIgnored()
@@ -166,10 +184,10 @@ class LocationBagValidationListenerTest extends TestCase {
 	 */
 	public function testAbsentSourceIsIgnored(): void {
 		$entity = $this->entity(['case' => 'uuid-x']);
-		$event = $this->creatingEvent($entity);
+		$event = new ObjectCreatingEvent($entity);
 
-		$this->bagAdapter->expects($this->never())->method('lookupObject');
-		$this->listener->handle($event);
+		$this->bagReader->expects($this->never())->method('read');
+		$this->listener()->handle($event);
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testAbsentSourceIsIgnored()
@@ -181,10 +199,10 @@ class LocationBagValidationListenerTest extends TestCase {
 	 */
 	public function testNonBagSourceIsIgnored(): void {
 		$entity = $this->entity(['source' => 'pdok-reverse', 'latitude' => 52.0, 'longitude' => 5.0]);
-		$event = $this->creatingEvent($entity);
+		$event = new ObjectCreatingEvent($entity);
 
-		$this->bagAdapter->expects($this->never())->method('lookupObject');
-		$this->listener->handle($event);
+		$this->bagReader->expects($this->never())->method('read');
+		$this->listener()->handle($event);
 
 		$this->assertFalse($event->isPropagationStopped());
 	}//end testNonBagSourceIsIgnored()
@@ -196,10 +214,10 @@ class LocationBagValidationListenerTest extends TestCase {
 	 */
 	public function testBagSourceWithMissingIdIsRejected(): void {
 		$entity = $this->entity(['source' => 'bag', 'case' => 'uuid-x']);
-		$event = $this->creatingEvent($entity);
+		$event = new ObjectCreatingEvent($entity);
 
-		$this->bagAdapter->expects($this->never())->method('lookupObject');
-		$this->listener->handle($event);
+		$this->bagReader->expects($this->never())->method('read');
+		$this->listener()->handle($event);
 
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertSame(['nummeraanduidingId.required'], $event->getErrors()['codes']);
@@ -212,113 +230,97 @@ class LocationBagValidationListenerTest extends TestCase {
 	 */
 	public function testBagSourceWithMalformedIdIsRejected(): void {
 		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '12345']);
-		$event = $this->creatingEvent($entity);
+		$event = new ObjectCreatingEvent($entity);
 
-		$this->bagAdapter->expects($this->never())->method('lookupObject');
-		$this->listener->handle($event);
+		$this->bagReader->expects($this->never())->method('read');
+		$this->listener()->handle($event);
 
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertSame(['nummeraanduidingId.invalid'], $event->getErrors()['codes']);
 	}//end testBagSourceWithMalformedIdIsRejected()
 
 	/**
-	 * Test that source=bag with a well-formed id and a dormant (log-mode)
-	 * adapter is accepted without ever calling the adapter.
+	 * With the check off, the location is saved and marked not-checked, and integriq is not asked.
 	 *
 	 * @return void
 	 */
-	public function testValidIdWithDormantAdapterIsAcceptedWithoutRemoteCall(): void {
-		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
-		$event = $this->creatingEvent($entity);
-
-		$this->bagAdapter->method('isDormant')->willReturn(true);
-		$this->bagAdapter->expects($this->never())->method('lookupObject');
-
-		$this->listener->handle($event);
+	public function testCheckOffSavesAndMarksNotChecked(): void {
+		[$event, $entity] = $this->save(answer: null);
 
 		$this->assertFalse($event->isPropagationStopped());
-	}//end testValidIdWithDormantAdapterIsAcceptedWithoutRemoteCall()
+		$this->assertSame('not-checked', $entity->getObject()['bagCheck']);
+	}//end testCheckOffSavesAndMarksNotChecked()
 
 	/**
-	 * Test that a non-dormant adapter returning FOUND accepts the save.
+	 * With the check on and the BAG holding the id, the location is saved and marked checked.
 	 *
 	 * @return void
 	 */
-	public function testValidIdWithNonDormantFoundIsAccepted(): void {
-		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
-		$event = $this->creatingEvent($entity);
-
-		$this->bagAdapter->method('isDormant')->willReturn(false);
-		$this->bagAdapter->expects($this->once())
-			->method('lookupObject')
-			->with('nummeraanduiding', '0363010000123456')
-			->willReturn(new BagLookupResult(lookupStatus: 'FOUND', address: [], dormant: false));
-
-		$this->listener->handle($event);
+	public function testCheckOnAndFoundSavesAndMarksChecked(): void {
+		$this->check = 'on';
+		[$event, $entity] = $this->save(answer: ['available' => true, 'reason' => '', 'found' => true, 'simulated' => false]);
 
 		$this->assertFalse($event->isPropagationStopped());
-	}//end testValidIdWithNonDormantFoundIsAccepted()
+		$this->assertSame('checked', $entity->getObject()['bagCheck']);
+	}//end testCheckOnAndFoundSavesAndMarksChecked()
 
 	/**
-	 * Test that a non-dormant adapter returning NOT_FOUND rejects the save.
+	 * With the check on and the BAG holding no such id, the save is refused.
 	 *
 	 * @return void
 	 */
-	public function testValidIdWithNonDormantNotFoundIsRejected(): void {
-		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
-		$event = $this->creatingEvent($entity);
-
-		$this->bagAdapter->method('isDormant')->willReturn(false);
-		$this->bagAdapter->method('lookupObject')
-			->willReturn(new BagLookupResult(lookupStatus: 'NOT_FOUND', address: [], dormant: false));
-
-		$this->listener->handle($event);
+	public function testCheckOnAndNotFoundIsRefused(): void {
+		$this->check = 'on';
+		[$event] = $this->save(answer: ['available' => true, 'reason' => '', 'found' => false, 'simulated' => false]);
 
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertSame(['nummeraanduidingId.unknown'], $event->getErrors()['codes']);
-	}//end testValidIdWithNonDormantNotFoundIsRejected()
+	}//end testCheckOnAndNotFoundIsRefused()
 
 	/**
-	 * Test that a non-dormant adapter returning an inconclusive
-	 * LOOKUP_ERROR result accepts the save (adapter-unavailable behaviour =
-	 * accept-with-warning, not reject).
+	 * With the check on and no answer (integriq absent, PDOK down, an answer
+	 * about another object), the save is refused with its own message.
 	 *
 	 * @return void
 	 */
-	public function testValidIdWithLookupErrorAcceptsWithWarning(): void {
-		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
-		$event = $this->creatingEvent($entity);
+	public function testCheckOnWithoutAnAnswerIsRefusedNotPassed(): void {
+		foreach (['integriq-not-installed', 'unreachable', 'unclear-answer'] as $reason) {
+			$this->setUp();
+			$this->check = 'on';
+			$this->logger->expects($this->once())->method('warning');
+			[$event] = $this->save(answer: ['available' => false, 'reason' => $reason, 'found' => false, 'simulated' => false]);
 
-		$this->bagAdapter->method('isDormant')->willReturn(false);
-		$this->bagAdapter->method('lookupObject')
-			->willReturn(new BagLookupResult(lookupStatus: 'LOOKUP_ERROR', address: [], dormant: false));
-
-		$this->logger->expects($this->once())->method('info');
-
-		$this->listener->handle($event);
-
-		$this->assertFalse($event->isPropagationStopped());
-	}//end testValidIdWithLookupErrorAcceptsWithWarning()
+			$this->assertTrue($event->isPropagationStopped(), $reason);
+			$this->assertSame(['nummeraanduidingId.unchecked'], $event->getErrors()['codes']);
+			$this->assertStringContainsString('could not be checked in the BAG', $event->getErrors()['message']);
+		}
+	}//end testCheckOnWithoutAnAnswerIsRefusedNotPassed()
 
 	/**
-	 * Test that the adapter throwing accepts the save with a warning
-	 * (adapter-unavailable behaviour = accept-with-warning, not reject).
+	 * A simulated answer is not a check: with the check on it is refused, even when it says found.
 	 *
 	 * @return void
 	 */
-	public function testValidIdWithAdapterThrowingAcceptsWithWarning(): void {
-		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
-		$event = $this->creatingEvent($entity);
+	public function testCheckOnWithASimulatedAnswerIsRefused(): void {
+		$this->check = 'on';
+		[$event] = $this->save(answer: ['available' => true, 'reason' => '', 'found' => true, 'simulated' => true]);
 
-		$this->bagAdapter->method('isDormant')->willReturn(false);
-		$this->bagAdapter->method('lookupObject')->willThrowException(new \RuntimeException('boom'));
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertSame(['nummeraanduidingId.unchecked'], $event->getErrors()['codes']);
+	}//end testCheckOnWithASimulatedAnswerIsRefused()
 
-		$this->logger->expects($this->once())->method('warning');
-
-		$this->listener->handle($event);
+	/**
+	 * Any value other than `on` leaves the check off.
+	 *
+	 * @return void
+	 */
+	public function testOnlyOnSwitchesTheCheckOn(): void {
+		$this->check = 'live';
+		[$event, $entity] = $this->save(answer: null);
 
 		$this->assertFalse($event->isPropagationStopped());
-	}//end testValidIdWithAdapterThrowingAcceptsWithWarning()
+		$this->assertSame('not-checked', $entity->getObject()['bagCheck']);
+	}//end testOnlyOnSwitchesTheCheckOn()
 
 	/**
 	 * Test that the listener also validates on ObjectUpdatingEvent (not
@@ -330,7 +332,7 @@ class LocationBagValidationListenerTest extends TestCase {
 		$entity = $this->entity(['source' => 'bag']);
 		$event = new ObjectUpdatingEvent($entity, null);
 
-		$this->listener->handle($event);
+		$this->listener()->handle($event);
 
 		$this->assertTrue($event->isPropagationStopped());
 		$this->assertSame(['nummeraanduidingId.required'], $event->getErrors()['codes']);
@@ -342,6 +344,6 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testListenerConstructedSuccessfully(): void {
-		$this->assertInstanceOf(LocationBagValidationListener::class, $this->listener);
+		$this->assertInstanceOf(LocationBagValidationListener::class, $this->listener());
 	}//end testListenerConstructedSuccessfully()
 }//end class

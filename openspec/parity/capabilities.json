@@ -20142,7 +20142,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Pdok/PdokLocatieserverService.php; PdokBagService.php; lib/Service/PdokService.php; src/components/map/AddressSearch.vue",
+				"evidence": "lib/Service/Pdok/PdokLocatieserverService.php; lib/Service/PdokService.php; src/components/map/AddressSearch.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [

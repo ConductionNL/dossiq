@@ -579,7 +579,7 @@
     "row": "12.16",
     "matrix": "dossiq",
     "decision": "existing",
-    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Pdok/PdokLocatieserverService.php; PdokBagService.php; lib/Controller/BagController.php. built.state set to built. 2026-10-14: BagController was deleted (no caller, change bag-routes-retired); the evidence is now the two PDOK services, lib/Service/PdokService.php and src/components/map/AddressSearch.vue, and the rating holds.",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Pdok/PdokLocatieserverService.php; PdokBagService.php; lib/Controller/BagController.php. built.state set to built. 2026-10-14: BagController was deleted (no caller, change bag-routes-retired); the evidence is now the two PDOK services, lib/Service/PdokService.php and src/components/map/AddressSearch.vue, and the rating holds. PdokBagService left with dossiq's BAG client (change bag-client-retired); PdokLocatieserverService and PdokService carry the rating.",
     "change": null,
     "decidedOn": "2026-09-27"
   },
