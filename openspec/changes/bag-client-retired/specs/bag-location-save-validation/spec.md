@@ -90,3 +90,40 @@ the location SHALL be saved with `bagCheck` set to `not-checked`.
 - **AND** integriq is not installed, PDOK does not answer, the answer is about another object, or the answer is simulated
 - **WHEN** the location is saved
 - **THEN** the save SHALL be refused with a message saying the address could not be checked in the BAG
+
+#### Scenario: Integriq too old or absent is named in the refusal
+
+- **GIVEN** `integration.bag.check` is `on`
+- **AND** integriq is installed in a version without the BAG read, or is not installed
+- **WHEN** the location is saved
+- **THEN** the save SHALL be refused
+- **AND** the message SHALL say that integriq must be updated, or installed, for the check
+
+### Requirement: An instance that checked BAG locations before the upgrade keeps checking them
+
+On upgrade, a repair step SHALL set `integration.bag.check` to `on` where dossiq's own BAG client
+was switched on: `integration.bag.mode` at `test` or `live` (read as the deleted client read it,
+trimmed and case-insensitive), or `integration.bag.source` at `pdok`. It SHALL write nothing on any
+other instance, so the check stays off there. It SHALL write only while `integration.bag.check` does
+not exist, so running it twice changes nothing more and an administrator's own choice is kept. A
+failure SHALL be logged and SHALL NOT abort the upgrade. The step SHALL be registered under
+post-migration in `appinfo/info.xml`, with the app version moved so the upgrade runs it.
+
+#### Scenario: An instance that ran the check keeps it
+
+- **GIVEN** `integration.bag.mode` is `live` (or `test`), or `integration.bag.source` is `pdok`
+- **AND** `integration.bag.check` does not exist
+- **WHEN** the app is upgraded
+- **THEN** `integration.bag.check` SHALL be `on`
+
+#### Scenario: Every other instance stays off
+
+- **GIVEN** no old BAG setting switched the client on
+- **WHEN** the app is upgraded
+- **THEN** no app config key SHALL be written
+
+#### Scenario: An administrator's choice is kept
+
+- **GIVEN** `integration.bag.mode` is `live` and `integration.bag.check` is `off`
+- **WHEN** the app is upgraded again
+- **THEN** `integration.bag.check` SHALL stay `off`

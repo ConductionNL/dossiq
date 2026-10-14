@@ -278,21 +278,28 @@ class LocationBagValidationListenerTest extends TestCase {
 	}//end testCheckOnAndNotFoundIsRefused()
 
 	/**
-	 * With the check on and no answer (integriq absent, PDOK down, an answer
-	 * about another object), the save is refused with its own message.
+	 * With the check on and no answer (integriq absent or too old, PDOK down, an
+	 * answer about another object), the save is refused. Where integriq is absent
+	 * or too old, the message says what the administrator must do about it.
 	 *
 	 * @return void
 	 */
 	public function testCheckOnWithoutAnAnswerIsRefusedNotPassed(): void {
-		foreach (['integriq-not-installed', 'unreachable', 'unclear-answer'] as $reason) {
+		$expected = [
+			'unreachable' => ['nummeraanduidingId.unchecked', 'could not be checked in the BAG'],
+			'unclear-answer' => ['nummeraanduidingId.unchecked', 'could not be checked in the BAG'],
+			'integriq-not-installed' => ['nummeraanduidingId.integriq-missing', 'integriq must be installed'],
+			'integriq-has-no-bag-read' => ['nummeraanduidingId.integriq-outdated', 'integriq must be updated'],
+		];
+		foreach ($expected as $reason => [$code, $says]) {
 			$this->setUp();
 			$this->check = 'on';
 			$this->logger->expects($this->once())->method('warning');
 			[$event] = $this->save(answer: ['available' => false, 'reason' => $reason, 'found' => false, 'simulated' => false]);
 
 			$this->assertTrue($event->isPropagationStopped(), $reason);
-			$this->assertSame(['nummeraanduidingId.unchecked'], $event->getErrors()['codes']);
-			$this->assertStringContainsString('could not be checked in the BAG', $event->getErrors()['message']);
+			$this->assertSame([$code], $event->getErrors()['codes'], $reason);
+			$this->assertStringContainsString($says, $event->getErrors()['message'], $reason);
 		}
 	}//end testCheckOnWithoutAnAnswerIsRefusedNotPassed()
 

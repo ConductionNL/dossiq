@@ -27,8 +27,14 @@ says a guard refuses when it is unsure.
 
 ## Impact
 
-App config keys no longer read, which an administrator can delete: `integration.bag.mode`,
-`integration.bag.baseUrl`, `integration.bag.apiKey`, `integration.bag.source`, `pdok_bag_endpoint`
-and `pdok_bag_source`. An instance that ran the check before (`integration.bag.mode` test or live,
-or `integration.bag.source` pdok) sets `integration.bag.check` to `on` to keep it, and needs
-integriq with `pdok.feature_flag` on. No repair step.
+App config keys no longer read, which an administrator can delete once the upgrade has run:
+`integration.bag.mode`, `integration.bag.baseUrl`, `integration.bag.apiKey`,
+`integration.bag.source`, `pdok_bag_endpoint` and `pdok_bag_source`.
+
+An instance that ran the check before (`integration.bag.mode` test or live, or
+`integration.bag.source` pdok) keeps it: the repair step `CarryBagCheckSetting` sets
+`integration.bag.check` to `on` there, and only there, while that key does not exist yet. Any
+other instance switches the check on by setting the key itself. Where the check is on, integriq
+must be installed in a version with `BagObjectReader` and `pdok.feature_flag` on; with integriq
+missing or too old every BAG location is refused, and the refusal says integriq must be installed
+or updated. So integriq is deployed first.

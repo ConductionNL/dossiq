@@ -213,7 +213,7 @@ class LocationBagValidationListener implements IEventListener {
 				'Dossiq: the BAG check gave no clear answer, so the location save is refused',
 				['reason' => $answer['reason'], 'simulated' => $answer['simulated']]
 			);
-			return 'nummeraanduidingId.unchecked';
+			return self::uncheckedCode(reason: $answer['reason']);
 		}
 
 		if ($answer['found'] === false) {
@@ -222,6 +222,26 @@ class LocationBagValidationListener implements IEventListener {
 
 		return self::CHECKED;
 	}//end validate()
+
+	/**
+	 * The refusal code for a check that got no clear answer.
+	 *
+	 * Where integriq is absent or too old the administrator has one thing to
+	 * do, so the message names it; every other reason reads "try again later".
+	 *
+	 * @param string $reason Why the BAG read gave no answer.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+	 */
+	private static function uncheckedCode(string $reason): string {
+		return match ($reason) {
+			BagObjectReader::REASON_NO_INTEGRIQ => 'nummeraanduidingId.integriq-missing',
+			BagObjectReader::REASON_NO_READER => 'nummeraanduidingId.integriq-outdated',
+			default => 'nummeraanduidingId.unchecked',
+		};
+	}//end uncheckedCode()
 
 	/**
 	 * The translated, user-facing refusal for an error code.
@@ -243,6 +263,12 @@ class LocationBagValidationListener implements IEventListener {
 			),
 			'nummeraanduidingId.unchecked' => $this->l10n->t(
 				'The address could not be checked in the BAG, so the location was not saved. Try again later, or ask an administrator.'
+			),
+			'nummeraanduidingId.integriq-missing' => $this->l10n->t(
+				'The BAG check is on, and integriq must be installed for it, so the location was not saved. Ask an administrator.'
+			),
+			'nummeraanduidingId.integriq-outdated' => $this->l10n->t(
+				'The BAG check is on, and integriq must be updated to read the BAG, so the location was not saved. Ask an administrator.'
 			),
 		];
 

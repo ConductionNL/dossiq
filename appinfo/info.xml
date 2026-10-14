@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261014170000</version>
+    <version>0.4.47-unstable.20261014200000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -828,6 +828,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 under its key is kept. Not on install: a fresh install has none.
             -->
             <step>OCA\Dossiq\Repair\MoveDecisionTablesToOpenRegister</step>
+            <!--
+                Keeps the BAG check on where dossiq's own BAG client was
+                switched on (integration.bag.mode test or live, or
+                integration.bag.source pdok): sets integration.bag.check to on,
+                only while that key does not exist yet. Not on install: a fresh
+                install has no old BAG setting, and the check stays off.
+            -->
+            <step>OCA\Dossiq\Repair\CarryBagCheckSetting</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:

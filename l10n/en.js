@@ -7462,6 +7462,8 @@ OC.L10N.register(
         "BAG check": "BAG check",
         "Whether the BAG confirmed the address designation when the location was saved. not-checked means the BAG check was switched off, so nobody verified the address.": "Whether the BAG confirmed the address designation when the location was saved. not-checked means the BAG check was switched off, so nobody verified the address.",
         "The address could not be checked in the BAG, so the location was not saved. Try again later, or ask an administrator.": "The address could not be checked in the BAG, so the location was not saved. Try again later, or ask an administrator.",
+        "The BAG check is on, and integriq must be installed for it, so the location was not saved. Ask an administrator.": "The BAG check is on, and integriq must be installed for it, so the location was not saved. Ask an administrator.",
+        "The BAG check is on, and integriq must be updated to read the BAG, so the location was not saved. Ask an administrator.": "The BAG check is on, and integriq must be updated to read the BAG, so the location was not saved. Ask an administrator.",
         "The BAG nummeraanduiding ID must be a 16-digit number.": "The BAG nummeraanduiding ID must be a 16-digit number.",
         "The batch's name, shown on the case and on the reviewer's task.": "The batch's name, shown on the case and on the reviewer's task.",
         "The behaviour (gedrag) row identifier in the LHS matrix.": "The behaviour (gedrag) row identifier in the LHS matrix.",

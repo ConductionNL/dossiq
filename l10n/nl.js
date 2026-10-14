@@ -7462,6 +7462,8 @@ OC.L10N.register(
         "BAG check": "BAG-controle",
         "Whether the BAG confirmed the address designation when the location was saved. not-checked means the BAG check was switched off, so nobody verified the address.": "Of de BAG de nummeraanduiding bevestigde toen de locatie werd opgeslagen. not-checked betekent dat de BAG-controle uit stond, dus niemand heeft het adres gecontroleerd.",
         "The address could not be checked in the BAG, so the location was not saved. Try again later, or ask an administrator.": "Het adres kon niet in de BAG worden gecontroleerd, dus de locatie is niet opgeslagen. Probeer het later opnieuw, of vraag een beheerder.",
+        "The BAG check is on, and integriq must be installed for it, so the location was not saved. Ask an administrator.": "De BAG-controle staat aan, en daarvoor moet integriq geïnstalleerd zijn, dus de locatie is niet opgeslagen. Vraag een beheerder.",
+        "The BAG check is on, and integriq must be updated to read the BAG, so the location was not saved. Ask an administrator.": "De BAG-controle staat aan, en integriq moet worden bijgewerkt om de BAG te lezen, dus de locatie is niet opgeslagen. Vraag een beheerder.",
         "The BAG nummeraanduiding ID must be a 16-digit number.": "Het BAG-nummeraanduiding-ID moet een getal van 16 cijfers zijn.",
         "The batch's name, shown on the case and on the reviewer's task.": "De naam van de partij, te zien op de zaak en op de taak van de beoordelaar.",
         "The behaviour (gedrag) row identifier in the LHS matrix.": "De rij-identificatie van het gedrag in de LHS-matrix.",
