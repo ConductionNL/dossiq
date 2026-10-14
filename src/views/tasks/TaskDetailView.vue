@@ -533,6 +533,7 @@ export default {
 							labelField: 'name',
 							toneField: 'colour',
 						},
+
 						variantMap: STATUS_COLOUR_BADGE_VARIANTS,
 					},
 				],
