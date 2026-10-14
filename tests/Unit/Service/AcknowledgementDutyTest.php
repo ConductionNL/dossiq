@@ -524,7 +524,7 @@ class AcknowledgementDutyTest extends TestCase {
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
 		self::assertStringContainsString(needle: '2026-0042', haystack: $result['payload']['subject']);
-		self::assertStringContainsString(needle: '2026-11-01', haystack: $result['payload']['body']);
+		self::assertStringContainsString(needle: '1 november 2026', haystack: $result['payload']['body']);
 		self::assertStringContainsString(needle: 'Dakkapel Kerkstraat 12', haystack: $result['payload']['body']);
 	}//end testTheMessageCarriesTheKenmerkAndTheDeadline()
 
@@ -640,9 +640,12 @@ class AcknowledgementDutyTest extends TestCase {
 
 		self::assertTrue(condition: $result['sent'], message: (string)($result['reason'] ?? ''));
 		$body = $result['payload']['body'];
-		self::assertStringContainsString(needle: 'ontvangen op 27', haystack: $body);
-		self::assertStringContainsString(needle: 'beslistermijn start op 27', haystack: $body);
-		self::assertStringContainsString(needle: '2026-12-28', haystack: $body);
+		self::assertStringContainsString(needle: 'ontvangen op 27 november 2026', haystack: $body);
+		self::assertStringContainsString(needle: 'beslistermijn start op 27 november 2026', haystack: $body);
+		self::assertStringContainsString(needle: 'uiterlijk op 28 december 2026', haystack: $body);
+		// Every date in the receipt reads the same way (letters-print-every-date-the-same-way):
+		// the due date is stored as 2026-12-28 and was once printed so, next to 27-11-2026.
+		self::assertDoesNotMatchRegularExpression(pattern: '/\b\d{4}-\d{2}-\d{2}\b/', string: $body);
 		self::assertSame(expected: 'sanne@example.org', actual: $this->store->cases['case-woo']['outboundCommunications'][0]['recipient']);
 	}//end testTheAcknowledgementNamesTheStartAndTheDueDate()
 }//end class
