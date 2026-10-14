@@ -488,8 +488,9 @@ describe('the tabs', () => {
 			expect(entry.gridX, entry.id).toBe(half ? PAIRED[entry.id] : 0)
 			expect(entry.gridWidth, entry.id).toBe(half ? 6 : 12)
 			// Taller where the cell would scroll inside: the tabs card (Overview
-			// measured 784px over its 720), the flow runs and hours booked.
-			const taller = { 5: 19, 7: 7, 6: 3 }
+			// measured 784px over its 720; since nextcloud-vue 2.82.0 its sixteen
+			// tabs wrap to three rows, 72px more), the flow runs and hours booked.
+			const taller = { 5: 20, 7: 7, 6: 3 }
 			expect(entry.gridHeight, entry.id).toBe(
 				taller[entry.id] ?? was.gridHeight,
 			)

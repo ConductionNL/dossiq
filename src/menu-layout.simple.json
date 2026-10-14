@@ -1084,59 +1084,59 @@
 						"gridX": 0,
 						"gridY": 1,
 						"gridWidth": 12,
-						"gridHeight": 19
+						"gridHeight": 20
 					},
 					"12": {
 						"gridX": 0,
-						"gridY": 20,
+						"gridY": 21,
 						"gridWidth": 12,
 						"gridHeight": 6
 					},
 					"11": {
 						"gridX": 0,
-						"gridY": 26,
+						"gridY": 27,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
 					"7": {
 						"gridX": 0,
-						"gridY": 29,
+						"gridY": 30,
 						"gridWidth": 12,
 						"gridHeight": 7
 					},
 					"6": {
 						"gridX": 0,
-						"gridY": 36,
+						"gridY": 37,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
 					"money-payments": {
 						"gridX": 0,
-						"gridY": 39,
+						"gridY": 40,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"money-contract": {
 						"gridX": 6,
-						"gridY": 39,
+						"gridY": 40,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"family-plan-panel": {
 						"gridX": 0,
-						"gridY": 47,
+						"gridY": 48,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"work-projects": {
 						"gridX": 6,
-						"gridY": 47,
+						"gridY": 48,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},
 					"documents-merge-to-pdf": {
 						"gridX": 0,
-						"gridY": 55,
+						"gridY": 56,
 						"gridWidth": 6,
 						"gridHeight": 4
 					},

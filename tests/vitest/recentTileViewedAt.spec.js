@@ -164,9 +164,17 @@ describe('the Recently opened tile', () => {
 		expect(title.cellClass.split(' ')).toContain('cn-cell--wrap')
 		expect(when.cellClass.split(' ')).toContain('cn-cell--end')
 		// The library draws `secondary` as a second line (zuiddrecht-pixel-gaps).
+		// Since 2.82.0 the line goes through `secondaryFieldText`, which reads
+		// an enum field by its label (#1570); `identifier` is plain text.
+		const table = {
+			getCellValue: (row, key) => row[key],
+			getSchemaProperty: () => ({}),
+			translateLabel: (label) => label,
+		}
+		table.secondaryFieldText = CnDataTable.methods.secondaryFieldText.bind(table)
 		expect(
 			CnDataTable.methods.secondaryValue.call(
-				{ getCellValue: (row, key) => row[key] },
+				table,
 				{ identifier: '2026-0004' },
 				title,
 			),
