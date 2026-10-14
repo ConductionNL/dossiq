@@ -299,13 +299,8 @@ $extra = [
         // map-layer-CRUD / cases-geo routes were removed with that migration
         // (issue #112, ADR-022). PDOK address resolution is owned separately by
         // the migrate-pdok-to-openconnector change.
-        // ── BAG (Basisregistratie Adressen en Gebouwen) lookup (bag-register-adapter) ──
-        // Authoritative address + pand/verblijfsobject lookup, dormant by default
-        // (integration.bag.mode). Distinct from PDOK's free/open BAG WFS mirror
-        // (PdokBagService) — see openspec/changes/bag-register-adapter/design.md.
-    ['name' => 'bag#address', 'url' => '/api/external/bag/address', 'verb' => 'GET'],
-    ['name' => 'bag#pand', 'url' => '/api/external/bag/pand/{id}', 'verb' => 'GET'],
-    ['name' => 'bag#verblijfsobject', 'url' => '/api/external/bag/verblijfsobject/{id}', 'verb' => 'GET'],
+        // The BAG lookup routes (/api/external/bag/*) were removed: nothing called
+        // them (change bag-routes-retired).
 
         // ── BRK (Basisregistratie Kadaster) lookup (brk-woz-register-adapters) ──
         // Authoritative parcel/ownership-reference lookup, dormant by default
