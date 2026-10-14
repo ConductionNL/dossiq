@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Publication\CatalogTransport;
 use OCA\Dossiq\Service\Publication\PublicationSources;
+use OCA\Dossiq\Service\Assessment\NothingToDisclose;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -52,6 +53,14 @@ use RuntimeException;
  * Service for publishing WOO decisions through OpenCatalogi.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the threshold. The
+ *   last is NothingToDisclose (decision D2), an optional collaborator the container
+ *   wires like PagesSeen and WooDossierReturn beside it, so a publish with nothing
+ *   to disclose by record publishes the decision alone. Splitting the publish
+ *   step to save one class would put the refusal and its exception in two places.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten, for the same reason: four optional
+ *   collaborators, each defaulting to the behaviour before it existed.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
@@ -115,6 +124,8 @@ class WooPublicationService {
 	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
 	 * @param PagesSeen|null $pagesSeen The pages seen per document; publishing waits for the required ones.
+	 * @param NothingToDisclose|null $nothingToDisclose Whether the case records that nothing can be made public,
+	 *        so the decision is published alone; without it an empty disclosable set is refused as before.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -126,6 +137,7 @@ class WooPublicationService {
 		?WooCaseLedger $caseLedger = null,
 		?WooCaseDocuments $caseDocuments = null,
 		private readonly ?PagesSeen $pagesSeen = null,
+		private readonly ?NothingToDisclose $nothingToDisclose = null,
 	) {
 		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
 		$this->sources    = new PublicationSources(settingsService: $settingsService, caseDocuments: $caseDocuments);
@@ -298,7 +310,9 @@ class WooPublicationService {
 
 		$delivery = $this->sources->delivery(objectService: $objectService, register: $register, caseId: $caseId);
 		$disclosable = $delivery['documents'];
-		if (count($disclosable) === 0) {
+		if (count($disclosable) === 0
+			&& $this->nothingToDisclose?->recorded(case: $case, caseId: $caseId, assessments: $delivery['assessments']) !== true
+		) {
 			return ['available' => false, 'reason' => 'no_publishable_documents'];
 		}
 

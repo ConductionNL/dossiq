@@ -1,0 +1,11 @@
+{
+  "id": "woo-verzoek",
+  "title": "Woo-verzoek",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": [
+    "flows"
+  ],
+  "install": "auto",
+  "description": "The flow of the Woo request case type, which register.d/81-woo-verzoek.json seeds. Each move asks what its step needs: documents gathered before they are assessed, every document assessed before redaction and the decision, a decision before publication, and the publication before the case closes. Installed on every install and upgrade. The case type names this flow as its default route, so a new Woo request follows it; a case already bound to another flow keeps that one."
+}

@@ -30,6 +30,8 @@ use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
+use OCA\Dossiq\Service\Assessment\NothingToDisclose;
+use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
@@ -96,6 +98,8 @@ interface WooPublicationObjectServiceStub {
  * @uses \OCA\Dossiq\Review\PagesSeen
  * @uses \OCA\Dossiq\Service\Publication\WithheldEntries
  * @uses \OCA\Dossiq\Service\Publication\WithheldListRecorder
+ * @uses \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome
+ * @uses \OCA\Dossiq\Service\Assessment\NothingToDisclose
  */
 class WooPublicationServiceTest extends TestCase {
 
@@ -388,6 +392,189 @@ class WooPublicationServiceTest extends TestCase {
 		$this->assertFalse($result['available']);
 		$this->assertSame('no_publishable_documents', $result['reason']);
 	}//end testPublishReportsNoPublishableDocuments()
+
+	/**
+	 * Publish a case through a service that knows the case's assessments.
+	 *
+	 * @param array<string, mixed>             $case        The case row.
+	 * @param array<int, array<string, mixed>> $assessments The assessments the register holds.
+	 * @param array<int, string>               $underReview The documents under review.
+	 * @param int                              $outstanding The documents still waiting.
+	 *
+	 * @return array{result: array<string, mixed>, saves: array<int, array<int, mixed>>, created: int, attached: int}
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function publishRecording(array $case, array $assessments, array $underReview, int $outstanding): array {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+
+		$objectService = $this->createMock(WooPublicationObjectServiceStub::class);
+		$objectService->method('find')->willReturnMap([
+			['case-001', null, false, 'dossiq', 'case', ['id' => 'case-001', 'title' => 'Fietspad Lindelaan'] + $case],
+			['decision-001', null, false, 'dossiq', 'decision', ['id' => 'decision-001', 'decisionType' => 'WOO-besluit', 'description' => 'Niet openbaar gemaakt']],
+		]);
+		$objectService->method('searchObjectsBySlug')->willReturn($assessments);
+		$saves = [];
+		$objectService->method('saveObject')->willReturnCallback(
+			function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) use (&$saves) {
+				$saves[] = [$schema, $uuid, $object];
+				return ['id' => $uuid];
+			}
+		);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['case_schema', '', 'case'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['document_schema', '', 'document'],
+			['woo_publication_catalog_slug', 'publication', 'publication'],
+		]);
+		$this->settingsService->method('getWooPublicationConfigValue')->willReturnMap([
+			['woo_publication_register', 'publication'],
+			['woo_publication_schema', 'publication'],
+			['woo_publication_document_schema', 'document'],
+		]);
+
+		$created = 0;
+		$attached = 0;
+		$this->apiClient->method('createPublication')->willReturnCallback(
+			function () use (&$created): array {
+				$created++;
+				return ['id' => 'pub-001'];
+			}
+		);
+		$this->apiClient->method('attachFile')->willReturnCallback(
+			function () use (&$attached) {
+				$attached++;
+				return [];
+			}
+		);
+
+		$documents = $this->createMock(WOODocumentAssessmentService::class);
+		$documents->method('getDocumentsUnderReview')->willReturn($underReview);
+		$documents->method('getOutstanding')->willReturn(['count' => $outstanding, 'documents' => []]);
+
+		$service = new WooPublicationService(
+			settingsService: $this->settingsService,
+			apiClient: $this->apiClient,
+			categoryMapper: new WooCategoryMapper(),
+			appManager: $this->appManager,
+			logger: $this->createMock(LoggerInterface::class),
+			nothingToDisclose: new NothingToDisclose(assessments: $documents),
+		);
+
+		return [
+			'result' => $service->publish('case-001', 'decision-001'),
+			'saves' => $saves,
+			'created' => $created,
+			'attached' => $attached,
+		];
+	}//end publishRecording()
+
+	/**
+	 * D2: every document assessed and none public publishes the decision alone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testEverythingWithheldPublishesTheDecisionAlone(): void {
+		$run = $this->publishRecording(
+			case: [],
+			assessments: [
+				['documentRef' => 'doc-001', 'classification' => 'niet_openbaar'],
+				['documentRef' => 'doc-002', 'classification' => 'niet_openbaar'],
+			],
+			underReview: ['doc-001', 'doc-002'],
+			outstanding: 0,
+		);
+
+		$this->assertTrue($run['result']['available']);
+		$this->assertSame(1, $run['created'], 'the decision itself goes to opencatalogi');
+		$this->assertSame(0, $run['attached'], 'with no document attached');
+		$case = array_values(array_filter($run['saves'], static fn (array $save): bool => $save[0] === 'case'));
+		$this->assertSame('published', $case[0][2]['wooPublicationStatus']);
+	}//end testEverythingWithheldPublishesTheDecisionAlone()
+
+	/**
+	 * D1 and D2: a recorded "nothing found" with its note publishes the decision alone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testARecordedNothingFoundPublishesTheDecisionAlone(): void {
+		$run = $this->publishRecording(
+			case: ['documentSearchOutcome' => 'nothing_found', 'documentSearchNote' => 'Gezocht in mail en zaaksysteem 2025-2026.'],
+			assessments: [],
+			underReview: [],
+			outstanding: 0,
+		);
+
+		$this->assertTrue($run['result']['available']);
+		$this->assertSame(1, $run['created']);
+		$this->assertSame(0, $run['attached']);
+	}//end testARecordedNothingFoundPublishesTheDecisionAlone()
+
+	/**
+	 * "Nothing found" without a note is not a record.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testNothingFoundWithoutANoteIsRefused(): void {
+		$run = $this->publishRecording(case: ['documentSearchOutcome' => 'nothing_found'], assessments: [], underReview: [], outstanding: 0);
+
+		$this->assertSame('no_publishable_documents', $run['result']['reason']);
+		$this->assertSame(0, $run['created']);
+	}//end testNothingFoundWithoutANoteIsRefused()
+
+	/**
+	 * A partly public document still waiting for its redaction keeps the refusal.
+	 *
+	 * The disclosable set is empty here too, and publishing the decision alone
+	 * would leave out a document it promised.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testAPartlyPublicDocumentWithoutItsRedactionIsRefused(): void {
+		$run = $this->publishRecording(
+			case: [],
+			assessments: [
+				['documentRef' => 'doc-001', 'classification' => 'niet_openbaar'],
+				['documentRef' => 'doc-002', 'classification' => 'deels_openbaar'],
+			],
+			underReview: ['doc-001', 'doc-002'],
+			outstanding: 0,
+		);
+
+		$this->assertSame('no_publishable_documents', $run['result']['reason']);
+		$this->assertSame(0, $run['created']);
+	}//end testAPartlyPublicDocumentWithoutItsRedactionIsRefused()
+
+	/**
+	 * A document still waiting for its assessment keeps the refusal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testAnOutstandingAssessmentIsRefused(): void {
+		$run = $this->publishRecording(
+			case: [],
+			assessments: [['documentRef' => 'doc-001', 'classification' => 'niet_openbaar']],
+			underReview: ['doc-001', 'doc-002'],
+			outstanding: 1,
+		);
+
+		$this->assertSame('no_publishable_documents', $run['result']['reason']);
+	}//end testAnOutstandingAssessmentIsRefused()
 
 	/**
 	 * A successful publish creates the publication, attaches the disclosable

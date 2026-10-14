@@ -61,6 +61,7 @@
 				"id": "dossiq:getting-started",
 				"title": "Getting started",
 				"trigger": "first-visit",
+				"startOn": ["Dashboard"],
 				"minAppVersion": "0.2.17",
 				"steps": [
 					{
@@ -2682,7 +2683,7 @@
 								},
 								{
 									"label": "Delivered sets",
-									"widget": {"id": "case-woo-delivered-sets", "type": "object-list", "title": "Delivered sets", "icon": "PackageVariantClosed", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. Every delivery of the Woo decision as its own record: when it went out, its state and the set hash. A row opens the set with every item, both files and their hashes. Re-verification is GET /api/cases/{id}/woo/delivered-sets/{setId}/verify or occ dossiq:woo:verify-delivered-set.", "content": {"register": "dossiq", "schema": "wooDeliveredSet", "filter": {"case": "@objectId"}, "sort": {"field": "deliveredAt", "dir": "desc"}, "limit": 25, "columns": [{"key": "deliveredAt", "label": "Delivered"}, {"key": "status", "label": "State"}, {"key": "publication", "label": "Publication"}, {"key": "withdrawnAt", "label": "Withdrawn"}, {"key": "setHash", "label": "Set hash"}], "rowRoute": "WooDeliveredSetDetail", "emptyText": "Nothing has been delivered for publication from this case yet"}}
+									"widget": {"id": "case-woo-delivered-sets", "type": "object-list", "title": "Delivered sets", "icon": "PackageVariantClosed", "_note": "woo-delivered-set-is-a-record REQ-WDS-004. NO CREATE (a-delivered-set-is-written-by-publishing-only): a delivered set is what the publish wrote, with the hash of every item, so a hand-made one is a record of a delivery that never happened. The library offered its default Add here, which opened the raw schema form asking a Woo coordinator for a SHA-256 hash and a state (13 October). Every delivery of the Woo decision as its own record: when it went out, its state and the set hash. A row opens the set with every item, both files and their hashes. Re-verification is GET /api/cases/{id}/woo/delivered-sets/{setId}/verify or occ dossiq:woo:verify-delivered-set.", "content": {"register": "dossiq", "schema": "wooDeliveredSet", "allowCreate": false, "filter": {"case": "@objectId"}, "sort": {"field": "deliveredAt", "dir": "desc"}, "limit": 25, "columns": [{"key": "deliveredAt", "label": "Delivered"}, {"key": "status", "label": "State"}, {"key": "publication", "label": "Publication"}, {"key": "withdrawnAt", "label": "Withdrawn"}, {"key": "setHash", "label": "Set hash"}], "rowRoute": "WooDeliveredSetDetail", "emptyText": "Nothing has been delivered for publication from this case yet. Publish (Woo) under More writes the delivered set."}}
 								},
 								{
 									"label": "Handled elsewhere",
@@ -7150,7 +7151,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 8,
-						"gridHeight": 6,
+						"gridHeight": 7,
 						"showTitle": false
 					},
 					{
@@ -7159,14 +7160,14 @@
 						"gridX": 8,
 						"gridY": 0,
 						"gridWidth": 4,
-						"gridHeight": 6,
+						"gridHeight": 7,
 						"showTitle": true
 					},
 					{
 						"id": "3",
 						"widgetId": "case-type-terms",
 						"gridX": 0,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 8,
 						"gridHeight": 4,
 						"showTitle": false
@@ -7175,7 +7176,7 @@
 						"id": "4",
 						"widgetId": "case-type-privacy",
 						"gridX": 8,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7184,7 +7185,7 @@
 						"id": "5",
 						"widgetId": "case-type-chain",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 11,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7193,7 +7194,7 @@
 						"id": "6",
 						"widgetId": "case-type-versions",
 						"gridX": 0,
-						"gridY": 14,
+						"gridY": 15,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7202,16 +7203,16 @@
 						"id": "7",
 						"widgetId": "case-type-translations",
 						"gridX": 0,
-						"gridY": 18,
+						"gridY": 19,
 						"gridWidth": 12,
-						"gridHeight": 5,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
 						"id": "8",
 						"widgetId": "case-type-list-layout",
 						"gridX": 0,
-						"gridY": 23,
+						"gridY": 25,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
@@ -7220,16 +7221,16 @@
 						"id": "9",
 						"widgetId": "case-type-portal",
 						"gridX": 0,
-						"gridY": 27,
+						"gridY": 29,
 						"gridWidth": 12,
-						"gridHeight": 7,
+						"gridHeight": 12,
 						"showTitle": true
 					},
 					{
 						"id": "10",
 						"widgetId": "case-type-party-kinds",
 						"gridX": 0,
-						"gridY": 34,
+						"gridY": 41,
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true

@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
+use OCP\IAppConfig;
 use OCP\IConfig;
 use PHPUnit\Framework\TestCase;
 
@@ -139,13 +140,32 @@ class PortalAssertionVerifierTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheSecretIsPortaliqsDedicatedOne(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturnCallback(
-			fn (string $app, string $key, string $default = ''): string => ($app === 'portaliq' && $key === 'jwt_signing_secret') ? self::SECRET : $default
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = '', bool $lazy = false): string => ($app === 'portaliq' && $key === 'jwt_signing_secret' && $lazy === false) ? self::SECRET : $default
 		);
 
 		self::assertIsArray((new PortalAssertionVerifier(config: $config))->verify(self::mint()));
 	}//end testTheSecretIsPortaliqsDedicatedOne()
+
+	/**
+	 * REGRESSION (13-14 Oct 2026, 401 on every portal action): portaliq stores
+	 * the secret SENSITIVE, so the legacy `IConfig::getAppValue()` returns the
+	 * encrypted value and only `IAppConfig::getValueString()` returns the real
+	 * secret. The mock answers both ways, so the old legacy read fails here
+	 * on the signature check.
+	 *
+	 * @return void
+	 */
+	public function testTheSensitiveSecretIsReadDecrypted(): void {
+		$ciphertext = '$AppConfigEncryption$' . str_repeat('a1b2c3d4e5f6', 22);
+		$config = $this->createMockForIntersectionOfInterfaces([IConfig::class, IAppConfig::class]);
+		$config->method('getAppValue')->willReturn($ciphertext);
+		$config->method('getValueString')->willReturn(self::SECRET);
+
+		self::assertIsArray((new PortalAssertionVerifier(config: $config))->verify(self::mint()));
+		self::assertNull((new PortalAssertionVerifier(config: $config))->verify(self::mint(secret: $ciphertext)));
+	}//end testTheSensitiveSecretIsReadDecrypted()
 
 	/**
 	 * Without a usable dedicated secret nothing verifies: portaliq will not mint either.
@@ -153,9 +173,8 @@ class PortalAssertionVerifierTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutADedicatedSecretNothingVerifies(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('short');
-		$config->method('getSystemValue')->willReturn(self::SECRET);
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('short');
 
 		self::assertNull((new PortalAssertionVerifier(config: $config))->verify(self::mint()));
 	}//end testWithoutADedicatedSecretNothingVerifies()
