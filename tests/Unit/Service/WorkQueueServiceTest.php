@@ -30,8 +30,10 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
+use OCA\Dossiq\Service\Queue\QueueCaseFacts;
 use OCA\Dossiq\Service\Queue\QueueUrgencySettings;
 use OCA\Dossiq\Service\Queue\UrgencyProfile;
+use OCA\Dossiq\Service\Queue\UrgencyScorer;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
@@ -43,6 +45,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService
+ * @covers \OCA\Dossiq\Service\Queue\UrgencyScorer
+ * @covers \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Queue\QueueUrgencySettings
  * @uses \OCA\Dossiq\Service\Queue\UrgencyProfile
@@ -122,9 +127,9 @@ class WorkQueueServiceTest extends TestCase {
 			settingsService: $settings,
 			engineTasks: $engineTasks,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			dates: $this->caseDates(),
 			urgencySettings: new QueueUrgencySettings(settings: $settings),
-			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $this->createMock(originalClassName: LoggerInterface::class)),
+			caseFacts: new QueueCaseFacts(settingsService: $settings, journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)), dates: $this->caseDates(), logger: $this->createMock(originalClassName: LoggerInterface::class)),
 		);
 	}//end setUp()
 
@@ -225,10 +230,9 @@ class WorkQueueServiceTest extends TestCase {
 			settingsService: $settings,
 			engineTasks: $this->createMock(EngineTaskInbox::class),
 			logger: $this->createMock(LoggerInterface::class),
-			dates: $this->caseDates(),
 			urgencySettings: new QueueUrgencySettings(settings: $settings),
-			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
-			calendar: $calendar,
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class), calendar: $calendar),
+			caseFacts: new QueueCaseFacts(settingsService: $settings, journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)), dates: $this->caseDates(), logger: $this->createMock(LoggerInterface::class)),
 		);
 
 		$result = $service->scoreItem('2026-04-27', 'normal', null, new DateTimeImmutable('2026-04-24'));
@@ -735,6 +739,306 @@ class WorkQueueServiceTest extends TestCase {
 			$workload
 		);
 	}//end testComputeWorkloadCountsOpenCasesPerHandler()
+
+	// ── Characterisation before the split (method-decomposition) ────────
+
+	/**
+	 * A service over a store that can fail, with a logger that keeps its warnings.
+	 *
+	 * @param FailingWorkQueueStore $store    The store.
+	 * @param array<int, string>    $warnings Receives every warning logged.
+	 * @param WorkingDayRoll|null   $calendar The administered calendar, or none.
+	 *
+	 * @return WorkQueueService The service.
+	 */
+	private function serviceOver(FailingWorkQueueStore $store, array &$warnings, ?WorkingDayRoll $calendar = null): WorkQueueService {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			fn (string $key): string => ($this->config[$key] ?? '')
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message) use (&$warnings): void {
+				$warnings[] = $message;
+			}
+		);
+		$engineTasks = $this->createMock(EngineTaskInbox::class);
+		$engineTasks->method('openForAssignee')->willReturn([]);
+
+		return new WorkQueueService(
+			settingsService: $settings,
+			engineTasks: $engineTasks,
+			logger: $logger,
+			urgencySettings: new QueueUrgencySettings(settings: $settings),
+			scorer: new UrgencyScorer(dates: $this->caseDates(), logger: $logger, calendar: $calendar),
+			caseFacts: new QueueCaseFacts(settingsService: $settings, journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)), dates: $this->caseDates(), logger: $logger),
+		);
+	}//end serviceOver()
+
+	/**
+	 * The whole answer of one score, to the cent.
+	 *
+	 * @return void
+	 */
+	public function testAScoreCarriesItsTierItsDaysAndItsParts(): void {
+		// Monday 2026-07-13; Friday 07-17 is 4 working days on; idle since Wednesday 07-01.
+		$result = $this->service->scoreItem(' 2026-07-17', ' HIGH ', '2026-07-01', new DateTimeImmutable('2026-07-13 15:30'));
+
+		self::assertSame(
+			[
+				'deadlineTier' => 'warning',
+				'daysUntilDeadline' => 4,
+				'idleDays' => 12,
+				'score' => 522.0,
+				'scoreBreakdown' => ['deadline' => 496.0, 'priority' => 20.0, 'idle' => 6.0],
+			],
+			$result
+		);
+	}//end testAScoreCarriesItsTierItsDaysAndItsParts()
+
+	/**
+	 * Without a calendar the days are walked Monday to Friday, in both directions, and idle days
+	 * stop counting at sixty.
+	 *
+	 * @return void
+	 */
+	public function testTheWalkSkipsWeekendsBothWaysAndIdleDaysAreCapped(): void {
+		$now = new DateTimeImmutable('2026-07-13');
+
+		self::assertSame(10, $this->service->scoreItem('2026-07-27', 'low', null, $now)['daysUntilDeadline']);
+		self::assertSame(1, $this->service->scoreItem('2026-07-14', 'low', null, $now)['daysUntilDeadline']);
+		self::assertSame(-1, $this->service->scoreItem('2026-07-10', 'low', null, $now)['daysUntilDeadline']);
+		// A deadline on the weekend just past has no working day between it and Monday: zero, not overdue.
+		self::assertSame(0, $this->service->scoreItem('2026-07-11', 'low', null, $now)['daysUntilDeadline']);
+		self::assertSame('critical', $this->service->scoreItem('2026-07-11', 'low', null, $now)['deadlineTier']);
+		self::assertSame(-6, $this->service->scoreItem('2026-07-03', 'low', null, $now)['daysUntilDeadline']);
+		self::assertSame(1006.0, $this->service->scoreItem('2026-07-03', 'low', null, $now)['score']);
+
+		$idle = $this->service->scoreItem(null, 'urgent', '2025-01-01', $now);
+		self::assertSame(558, $idle['idleDays']);
+		self::assertSame(['deadline' => 0.0, 'priority' => 30.0, 'idle' => 30.0], $idle['scoreBreakdown']);
+		self::assertNull($this->service->scoreItem('geen datum', 'low', 'ook niet', $now)['daysUntilDeadline']);
+		self::assertNull($this->service->scoreItem('geen datum', 'low', 'ook niet', $now)['idleDays']);
+	}//end testTheWalkSkipsWeekendsBothWaysAndIdleDaysAreCapped()
+
+	/**
+	 * A calendar that does not answer falls back to the walk, signs a past count, and the
+	 * fallback is said once however many items are scored.
+	 *
+	 * @return void
+	 */
+	public function testASilentCalendarFallsBackAndSaysSoOnce(): void {
+		$warnings = [];
+		$silent   = $this->createMock(WorkingDayRoll::class);
+		$silent->method('daysBetween')->willReturn(null);
+		$service = $this->serviceOver(store: new FailingWorkQueueStore(), warnings: $warnings, calendar: $silent);
+		$now     = new DateTimeImmutable('2026-07-13');
+
+		self::assertSame(4, $service->scoreItem('2026-07-17', 'low', null, $now)['daysUntilDeadline']);
+		self::assertSame(-1, $service->scoreItem('2026-07-10', 'low', null, $now)['daysUntilDeadline']);
+		self::assertSame(0, $service->scoreItem('2026-07-13', 'low', null, $now)['daysUntilDeadline']);
+		self::assertSame(
+			[
+				'Dossiq work queue: the organisation calendar did not answer, so days until a deadline '
+				.'were counted Monday to Friday, without holidays or closure days',
+			],
+			$warnings
+		);
+
+		$answering = $this->createMock(WorkingDayRoll::class);
+		$answering->expects(self::once())->method('daysBetween')
+			->with(
+				self::callback(static fn (DateTimeImmutable $d): bool => $d->format('Y-m-d H:i') === '2026-07-09 00:00'),
+				self::callback(static fn (DateTimeImmutable $d): bool => $d->format('Y-m-d H:i') === '2026-07-13 00:00'),
+				WorkingDayRoll::MODE_WORKING_DAYS
+			)
+			->willReturn(2);
+		$warnings = [];
+		$past     = $this->serviceOver(store: new FailingWorkQueueStore(), warnings: $warnings, calendar: $answering)
+			->scoreItem('2026-07-09', 'low', null, new DateTimeImmutable('2026-07-13 09:00'));
+
+		self::assertSame(-2, $past['daysUntilDeadline']);
+		self::assertSame('overdue', $past['deadlineTier']);
+		self::assertSame([], $warnings);
+	}//end testASilentCalendarFallsBackAndSaysSoOnce()
+
+	/**
+	 * Of several open terms the nearest end counts; a closed term, and one without an end, do not.
+	 *
+	 * @return void
+	 */
+	public function testTheNearestOpenTermDecidesTheDeadline(): void {
+		$this->seedOpenCase(['id' => 'case-1', 'deadline' => '2026-12-31']);
+		foreach ([
+			['id' => 't1', 'status' => 'lopend', 'endDateCurrent' => '2026-08-20'],
+			['id' => 't2', 'status' => 'verlengd', 'endDateCurrent' => '2026-08-05'],
+			['id' => 't3', 'status' => 'exceeded', 'endDateCurrent' => '2026-08-10'],
+			['id' => 't4', 'status' => 'afgerond', 'endDateCurrent' => '2026-07-01'],
+			['id' => 't5', 'status' => 'lopend', 'endDateCurrent' => ''],
+			['id' => 't6', 'status' => 'lopend', 'endDateCurrent' => '2026-07-02', 'case' => 'case-2'],
+		] as $term) {
+			$this->objects->saveObject('deadlineInstance', ($term + ['case' => 'case-1']));
+		}
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame('2026-08-05', $items[0]['deadline']);
+		self::assertSame([['case' => 'case-1']], $this->objects->searches['deadlineInstance']);
+	}//end testTheNearestOpenTermDecidesTheDeadline()
+
+	/**
+	 * Without a term schema, or when the terms cannot be read, the case's own deadline counts; a
+	 * case without either has none.
+	 *
+	 * @return void
+	 */
+	public function testTheCasesOwnDeadlineIsTheFallback(): void {
+		$warnings = [];
+		$store    = new FailingWorkQueueStore();
+		$store->failOn = ['deadlineInstance'];
+		$store->saveObject('case', ['id' => 'case-1', 'assignee' => 'jan', 'deadline' => '2026-07-20', 'statusHiddenInLists' => false, 'isDraft' => false]);
+		$store->saveObject('case', ['id' => 'case-2', 'assignee' => 'jan', 'statusHiddenInLists' => false, 'isDraft' => false]);
+		$store->saveObject('deadlineInstance', ['id' => 't1', 'case' => 'case-1', 'status' => 'lopend', 'endDateCurrent' => '2026-07-14']);
+
+		$failed = array_column($this->serviceOver(store: $store, warnings: $warnings)->computeQueue('jan', new DateTimeImmutable('2026-07-13')), 'deadline', 'id');
+
+		self::assertSame(['case-1' => '2026-07-20', 'case-2' => null], $failed);
+		self::assertSame([], array_filter($warnings, static fn (string $w): bool => str_starts_with($w, 'WorkQueue')));
+
+		$store->failOn = [];
+		$this->config['termijn_instance_schema'] = '';
+		$unconfigured = array_column($this->serviceOver(store: $store, warnings: $warnings)->computeQueue('jan', new DateTimeImmutable('2026-07-13')), 'deadline', 'id');
+
+		self::assertSame(['case-1' => '2026-07-20', 'case-2' => null], $unconfigured);
+		self::assertArrayNotHasKey('', $store->searches);
+	}//end testTheCasesOwnDeadlineIsTheFallback()
+
+	/**
+	 * A case names its type by id or as an object; a type that cannot be read, or is not there,
+	 * scores with the instance thresholds, and a failed read is said in the log. Each type is read once.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseTypeIsReadOncePerTypeAndAFailureFallsBack(): void {
+		$warnings = [];
+		$store    = new FailingWorkQueueStore();
+		$store->saveObject('caseType', ['id' => 'wide', 'queueCriticalDays' => 10]);
+		$case = static fn (string $id, mixed $type): array => [
+			'id' => $id, 'assignee' => 'jan', 'caseType' => $type, 'deadline' => '2026-07-23', 'statusHiddenInLists' => false, 'isDraft' => false,
+		];
+		$store->saveObject('case', $case('by-id', 'wide'));
+		$store->saveObject('case', $case('by-id-again', 'wide'));
+		$store->saveObject('case', $case('by-object-id', ['id' => 'wide']));
+		$store->saveObject('case', $case('by-object-uuid', ['uuid' => 'wide']));
+		$store->saveObject('case', $case('empty-object', []));
+		$store->saveObject('case', $case('a-number', 7));
+		$store->saveObject('case', $case('unknown', 'gone'));
+
+		$tiers = array_column($this->serviceOver(store: $store, warnings: $warnings)->computeQueue('jan', new DateTimeImmutable('2026-07-13')), 'deadlineTier', 'id');
+
+		self::assertSame(
+			[
+				'by-id' => 'critical',
+				'by-id-again' => 'critical',
+				'by-object-id' => 'critical',
+				'by-object-uuid' => 'critical',
+				'empty-object' => 'normal',
+				'a-number' => 'normal',
+				'unknown' => 'normal',
+			],
+			$tiers
+		);
+		self::assertSame(['wide', 'gone'], $store->finds['caseType']);
+		self::assertSame([], array_filter($warnings, static fn (string $w): bool => str_starts_with($w, 'WorkQueue')));
+
+		$warnings = [];
+		$store->failOn = ['caseType'];
+		$failed = array_column($this->serviceOver(store: $store, warnings: $warnings)->computeQueue('jan', new DateTimeImmutable('2026-07-13')), 'deadlineTier', 'id');
+
+		self::assertSame('normal', $failed['by-id']);
+		self::assertSame(
+			['WorkQueue: case type read failed, scoring with the instance thresholds', 'WorkQueue: case type read failed, scoring with the instance thresholds'],
+			array_values(array_filter($warnings, static fn (string $w): bool => str_starts_with($w, 'WorkQueue')))
+		);
+	}//end testTheCaseTypeIsReadOncePerTypeAndAFailureFallsBack()
+
+	/**
+	 * A failed case search gives an empty queue, an empty workload and zero counts, each said in the log.
+	 *
+	 * @return void
+	 */
+	public function testAFailedCaseSearchIsSaidAndAnswersEmpty(): void {
+		$warnings = [];
+		$store    = new FailingWorkQueueStore();
+		$store->failOn = ['case'];
+		$service = $this->serviceOver(store: $store, warnings: $warnings);
+
+		self::assertSame([], $service->computeQueue('jan', new DateTimeImmutable('2026-07-13')));
+		self::assertSame([], $service->computeWorkload());
+		self::assertSame(['ours' => 0, 'applicant' => 0, 'thirdParty' => 0, 'total' => 0], $service->countByWaitingOn('jan'));
+		self::assertSame(
+			['WorkQueue: case search failed', 'WorkQueue: workload case search failed', 'WorkQueue: waiting-on count search failed'],
+			$warnings
+		);
+	}//end testAFailedCaseSearchIsSaidAndAnswersEmpty()
+
+	/**
+	 * The waiting-on count reads the whole list or one handler's, with a named limit.
+	 *
+	 * @return void
+	 */
+	public function testTheWaitingOnCountIsScopedToAHandler(): void {
+		$this->objects->saveObject('case', ['id' => 'c1', 'assignee' => 'jan', 'waitingOn' => 'applicant']);
+		$this->objects->saveObject('case', ['id' => 'c2', 'assignee' => 'marie', 'waitingOn' => 'third_party']);
+		$this->objects->saveObject('case', ['id' => 'c3', 'assignee' => 'jan']);
+		$this->objects->saveObject('case', ['id' => 'c4', 'assignee' => 'jan', 'endDate' => '2026-01-01']);
+
+		$all = $this->service->countByWaitingOn();
+		$jan = $this->service->countByWaitingOn('jan');
+		$this->service->countByWaitingOn('');
+
+		self::assertSame(3, $all['total']);
+		self::assertSame(['ours' => 1, 'applicant' => 1, 'thirdParty' => 0, 'total' => 2], $jan);
+		self::assertSame(
+			[['_limit' => 1000], ['_limit' => 1000, 'assignee' => 'jan'], ['_limit' => 1000]],
+			$this->objects->searches['case']
+		);
+	}//end testTheWaitingOnCountIsScopedToAHandler()
+
+	/**
+	 * A task is scored on its due date with the instance profile and no idle part.
+	 *
+	 * @return void
+	 */
+	public function testATaskIsScoredOnItsDueDate(): void {
+		$this->config['queue_critical_days'] = '10';
+		$this->objects->saveObject('caseTask', ['id' => 't1', 'assignee' => 'jan', 'title' => 'Bel terug', 'status' => 'active', 'dueDate' => '2026-07-23', 'case' => 'case-9', 'priority' => 'high']);
+		$this->objects->saveObject('caseTask', ['id' => 't2', 'assignee' => 'jan', 'status' => 'active', 'dueDate' => '']);
+
+		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));
+
+		self::assertSame(
+			[
+				'itemType' => 'task',
+				'id' => 't1',
+				'title' => 'Bel terug',
+				'case' => 'case-9',
+				'status' => 'active',
+				'priority' => 'high',
+				'deadline' => '2026-07-23',
+				'deadlineTier' => 'critical',
+				'daysUntilDeadline' => 8,
+				'idleDays' => null,
+				'score' => 762.0,
+				'scoreBreakdown' => ['deadline' => 742.0, 'priority' => 20.0, 'idle' => 0.0],
+			],
+			$items[0]
+		);
+		self::assertNull($items[1]['deadline']);
+		self::assertSame('normal', $items[1]['priority']);
+		self::assertNull($items[1]['case']);
+	}//end testATaskIsScoredOnItsDueDate()
 }//end class
 
 /**
@@ -826,5 +1130,56 @@ class FakeWorkQueueStore {
 				}
 			)
 		);
+	}//end searchObjectsBySlug()
+}//end class
+
+/**
+ * The same store, able to fail the reads of chosen schemas and remembering every find.
+ */
+class FailingWorkQueueStore extends FakeWorkQueueStore {
+
+	/**
+	 * Schema slugs whose search and find throw.
+	 *
+	 * @var array<int, string>
+	 */
+	public array $failOn = [];
+
+	/**
+	 * Every id read by find(), keyed by schema slug, in order.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	public array $finds = [];
+
+	/**
+	 * @param string          $id       Object id.
+	 * @param int|string|null $register Register (unused).
+	 * @param int|string|null $schema   Schema slug.
+	 *
+	 * @return array<string, mixed>|null The object, or null.
+	 */
+	public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+		$this->finds[(string) $schema][] = $id;
+		if (in_array((string) $schema, $this->failOn, true) === true) {
+			throw new \RuntimeException('down');
+		}
+
+		return parent::find($id, $register, $schema);
+	}//end find()
+
+	/**
+	 * @param string               $registerSlug Register slug.
+	 * @param string               $schemaSlug   Schema slug.
+	 * @param array<string, mixed> $filters      Filters.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+		if (in_array($schemaSlug, $this->failOn, true) === true) {
+			throw new \RuntimeException('down');
+		}
+
+		return parent::searchObjectsBySlug($registerSlug, $schemaSlug, $filters);
 	}//end searchObjectsBySlug()
 }//end class

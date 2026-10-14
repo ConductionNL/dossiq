@@ -209,10 +209,14 @@ describe('the connection declaration', () => {
 	// The rows this page exists for. A mock adapter WORKS and delivers
 	// nothing, so integriq shows Simulated while the adapter key is empty, and
 	// the message has to say the word.
-	// BRP is built and called, and reaches nothing until its tier key moves.
-	// No admin section writes that key, so the row's message has to name it.
-	it('names the key that wakes BRP, and offers no settings link', () => {
-		expect(byKey.brp.unconfiguredMessage).toMatch(/integration\.brp\.mode/)
+	// Dossiq ships no BRP client (ADR-118). The conflict-of-interest check
+	// reads family relations through integriq's BRP source, which stays off
+	// until relationFields is set there. No admin section in dossiq writes
+	// that, so the row's message has to name it.
+	it('names the setting that wakes BRP, and offers no settings link', () => {
+		expect(byKey.brp.unconfiguredMessage).toMatch(/relationFields/)
+		expect(byKey.brp.unconfiguredMessage).toMatch(/Integriq/)
+		expect(byKey.brp.unconfiguredMessage).not.toMatch(/integration\.brp\.mode/)
 		expect(byKey.brp.unconfiguredMessage).not.toMatch(/not built/i)
 		expect(byKey.brp.settingsUrl).toBeUndefined()
 	})

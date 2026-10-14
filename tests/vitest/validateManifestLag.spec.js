@@ -45,7 +45,7 @@
  * at or ahead of the installed one, and that is asserted below rather than
  * remembered.
  */
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -160,7 +160,12 @@ describe('check:manifest tells a lag from a defect', () => {
 	// 62-page manifest is several seconds of real work per run. The default
 	// was already being cleared by a margin that shrank with the manifest.
 	it('the shipped manifest passes, forgiving only what the library lags', () => {
-		const out = execFileSync('node', [VALIDATOR], { encoding: 'utf8' })
+		// Both streams: the lag lines go to stderr, the verdict to stdout.
+		// Reading stdout alone could never see a lag line, so the branch
+		// that expects one could not pass, and it never ran until a lag came.
+		const run = spawnSync('node', [VALIDATOR], { encoding: 'utf8' })
+		expect(run.status).toBe(0)
+		const out = String(run.stdout) + String(run.stderr)
 
 		expect(out).toContain('PASS')
 
@@ -175,13 +180,24 @@ describe('check:manifest tells a lag from a defect', () => {
 			'all',
 		)
 
-		if (declaresAll) {
+		// The tour's `startOn` (schema 2.94.0) is derived the same way.
+		const declaresStartOn = Object.hasOwn(
+			installed.properties.walkthrough.properties.tours.items.properties || {},
+			'startOn',
+		)
+
+		if (declaresAll && declaresStartOn) {
 			expect(out).not.toContain('pending a library release')
 			return
 		}
 
 		expect(out).toContain('pending a library release')
-		expect(out).toContain('visibleWhen uses "all"')
+		if (!declaresAll) {
+			expect(out).toContain('visibleWhen uses "all"')
+		}
+		if (!declaresStartOn) {
+			expect(out).toContain('uses "startOn"')
+		}
 	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {
@@ -201,6 +217,30 @@ describe('check:manifest tells a lag from a defect', () => {
 
 		expect(result.code).toBe(1)
 		expect(result.out).toContain('FAIL')
+	}, 30000)
+
+	// @spec openspec/changes/the-getting-started-tour-starts-on-the-dashboard/specs/getting-started-tour/spec.md
+	it('a tour key only the newer schema declares is a lag, and an unknown one is not', () => {
+		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
+		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
+		const tourKeys = (schema) =>
+			schema.properties.walkthrough.properties.tours.items.properties
+		expect(Object.hasOwn(tourKeys(vendored), 'startOn')).toBe(true)
+
+		const manifest = JSON.parse(
+			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+		)
+		manifest.walkthrough.tours[0].startOn = ['Dashboard']
+		const named = validate(manifest)
+		expect(named.code).toBe(0)
+		if (!Object.hasOwn(tourKeys(installed), 'startOn')) {
+			expect(named.out).toContain('pending a library release')
+		}
+
+		manifest.walkthrough.tours[0].thisTourKeyExistsNowhere = true
+		const bogus = validate(manifest)
+		expect(bogus.code).toBe(1)
+		expect(bogus.out).toContain('FAIL')
 	}, 30000)
 
 	it('a key NEITHER schema knows fails, rather than being forgiven as a lag', () => {

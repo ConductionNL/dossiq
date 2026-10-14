@@ -129,6 +129,7 @@ import {
 import { mayHoldOpenRegisterPlan } from '../../services/casePlanSource.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
+import { taskStateLabel } from '../../utils/taskStateLabel.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -344,23 +345,14 @@ export default {
 		},
 
 		/**
-		 * The reader's word for a plan-item state.
+		 * The reader's word for a plan-item state (shared with the task page).
 		 *
 		 * @param {string} state The state.
 		 * @return {string} The label.
 		 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-005-the-case-detail-renders-the-openregister-plan
 		 */
 		stateLabel(state) {
-			return (
-				{
-					available: t('dossiq', 'Waiting'),
-					enabled: t('dossiq', 'Ready to start'),
-					active: t('dossiq', 'In progress'),
-					completed: t('dossiq', 'Done'),
-					terminated: t('dossiq', 'Stopped'),
-					disabled: t('dossiq', 'Skipped'),
-				}[state] ?? state
-			)
+			return taskStateLabel(state)
 		},
 
 		/**

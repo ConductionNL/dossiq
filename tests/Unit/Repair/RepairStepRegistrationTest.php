@@ -194,12 +194,12 @@ class RepairStepRegistrationTest extends TestCase {
 	 *
 	 * 🔴 THE ORDER IS NOT DOCUMENTATION, IT IS THE CONTRACT. `info.xml` runs
 	 * the steps in the order they are written, and a step registered ahead of
-	 * its own precondition cannot succeed even once. Both blocks shipped
-	 * `SeedVthWorkflowTemplates` ahead of `VthSeedDataRepairStep`, which
-	 * provisions the case types five of the six templates resolve. Every
-	 * fresh install therefore reported "0 seeded, 5 skipped", in an
-	 * info-level line, and carried on green: the VTH catalogue was absent on
-	 * every new instance and nothing ever failed.
+	 * its own precondition cannot succeed even once. Both blocks once shipped
+	 * the VTH workflow seeder ahead of the step that provisioned its case
+	 * types. Every fresh install therefore reported "0 seeded, 5 skipped", in
+	 * an info-level line, and carried on green: the VTH catalogue was absent
+	 * on every new instance and nothing ever failed. Today the `vth` package
+	 * carries those rows and the installer writes them in dependency order.
 	 *
 	 * The pairs are asserted rather than the whole order, because only the pairs
 	 * with a real data dependency are worth freezing. Add a pair here when you
@@ -219,13 +219,8 @@ class RepairStepRegistrationTest extends TestCase {
 	public function testAStepNeverRunsBeforeWhatItDependsOn(): void {
 		$dependencies = [
 			// consumer => providers.
-			'SeedVthWorkflowTemplates' => ['VthSeedDataRepairStep'],
-			'SeedBezwaarWorkflowDefinition' => ['SeedBezwaarBeroepData'],
 			'MigrateWorkflowDefinitions' => [
-				'SeedBezwaarBeroepData',
-				'SeedBesluitvormingTemplates',
-				'VthSeedDataRepairStep',
-				'SeedVthWorkflowTemplates',
+				'InstallShippedPackages',
 				'CaseFlowSeedDataRepairStep',
 			],
 		];

@@ -40,7 +40,7 @@ function readJson(...parts) {
 }
 
 const manifest = readJson('src', 'manifest.json')
-const vthSeed = readJson('lib', 'Settings', 'vth_seed_data.json')
+const vthPackage = readJson('lib', 'Settings', 'packages', 'vth', 'case-type.json')
 const fragment = readJson(
 	'lib',
 	'Settings',
@@ -72,10 +72,13 @@ const pageColumnKeys = new Set(
 	(casesPage.config.columns || []).map(columnKeyOf).filter(Boolean),
 )
 
-/** The seeded case types that declare a list layout, by slug. */
-const layouts = (vthSeed.caseTypes || [])
+/** The case types the VTH package carries; a package names one by its identifier. */
+const packaged = vthPackage.caseType || []
+
+/** The shipped case types that declare a list layout, by identifier. */
+const layouts = packaged
 	.filter((c) => c['x-index'])
-	.map((c) => [c.slug, c['x-index']])
+	.map((c) => [c.identifier, c['x-index']])
 
 describe('a case type may carry its own list layout', () => {
 	it('declares x-index on the caseType schema, or the seed is dropped in silence', () => {
@@ -99,9 +102,7 @@ describe('a case type may carry its own list layout', () => {
 	})
 
 	it('leaves the other seeded case types silent, so they inherit the page', () => {
-		const silent = (vthSeed.caseTypes || [])
-			.filter((c) => !c['x-index'])
-			.map((c) => c.slug)
+		const silent = packaged.filter((c) => !c['x-index']).map((c) => c.identifier)
 		expect(
 			silent.length,
 			'every seeded case type overrides the page',
