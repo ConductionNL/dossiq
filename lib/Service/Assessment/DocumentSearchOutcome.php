@@ -36,7 +36,7 @@ namespace OCA\Dossiq\Service\Assessment;
  *
  * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
  */
-final class DocumentSearchOutcome {
+class DocumentSearchOutcome {
 	/**
 	 * The case field holding the outcome.
 	 */
@@ -61,7 +61,7 @@ final class DocumentSearchOutcome {
 	 *
 	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
 	 */
-	public static function recordsNothingFound(array $case): bool {
+	public function recordsNothingFound(array $case): bool {
 		if ((string)($case[self::FIELD] ?? '') !== self::NOTHING_FOUND) {
 			return false;
 		}

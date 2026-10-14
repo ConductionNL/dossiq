@@ -132,7 +132,13 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 	 *
 	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
 	 */
-	public function rebindAll(object $objectService, string $register, string $caseTypeSchema, string $templateSchema, string $caseSchema): int {
+	public function rebindAll(
+		object $objectService,
+		string $register,
+		string $caseTypeSchema,
+		string $templateSchema,
+		string $caseSchema,
+	): int {
 		try {
 			$caseTypes = $this->searchObjectsAsArrays(
 				objectService: $objectService,
@@ -141,7 +147,10 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 				filters: ['_limit' => self::PAGE],
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: the basis flow rebind could not list case types', ['app' => Application::APP_ID, 'exception' => $e->getMessage()]);
+			$this->logger->error(
+				'Dossiq: the basis flow rebind could not list case types',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
 			return 0;
 		}
 
@@ -154,7 +163,13 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 				continue;
 			}
 
-			$target = $this->template(objectService: $objectService, register: $register, schema: $templateSchema, id: $named, cache: $templates);
+			$target = $this->template(
+				objectService: $objectService,
+				register: $register,
+				schema: $templateSchema,
+				id: $named,
+				cache: $templates,
+			);
 			if ($target === null || $this->isBasis(template: $target) === true) {
 				continue;
 			}
@@ -203,26 +218,33 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 				filters: ['caseType' => $caseTypeId, '_limit' => self::PAGE],
 			);
 		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: the basis flow rebind could not list cases', ['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]);
+			$this->logger->error(
+				'Dossiq: the basis flow rebind could not list cases',
+				['app' => Application::APP_ID, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+			);
 			return 0;
 		}
 
 		$targetId = (string)($target['id'] ?? ($target['@self']['id'] ?? ''));
 		$moved = 0;
 		foreach ($cases as $case) {
+			$from = $this->basisFlowOf(
+				case: $case,
+				targetId: $targetId,
+				caseTypeId: $caseTypeId,
+				lookup: fn (string $id): ?array => $this->template(
+					objectService: $objectService,
+					register: $register,
+					schema: $templateSchema,
+					id: $id,
+					cache: $templates,
+				),
+			);
+			if ($from === null) {
+				continue;
+			}
+
 			$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-			$bound = $this->referenceId(value: ($case['workflowTemplate'] ?? ''));
-			if ($caseId === '' || $bound === '' || $bound === $targetId || ($case['isFinalStatus'] ?? false) === true) {
-				continue;
-			}
-
-			$from = $this->template(objectService: $objectService, register: $register, schema: $templateSchema, id: $bound, cache: $templates);
-			if ($from === null || $this->isBasis(template: $from) === false
-				|| $this->referenceId(value: ($from['caseType'] ?? '')) !== $caseTypeId
-			) {
-				continue;
-			}
-
 			$row = $case;
 			unset($row['@self'], $row['id']);
 			$row['workflowTemplate'] = $targetId;
@@ -232,12 +254,47 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 				$objectService->saveObject(object: $row, register: $register, schema: $caseSchema, uuid: $caseId);
 				$moved++;
 			} catch (Throwable $e) {
-				$this->logger->error('Dossiq: the basis flow rebind could not move a case', ['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]);
+				$this->logger->error(
+					'Dossiq: the basis flow rebind could not move a case',
+					['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
+				);
 			}
 		}//end foreach
 
 		return $moved;
 	}//end rebindCaseType()
+
+	/**
+	 * The basis flow an open case of this case type is still bound to, or null.
+	 *
+	 * Null for a case without an id or a binding, one already on the target,
+	 * a closed one, or one bound to any flow that is not this case type's basis.
+	 *
+	 * @param array<string, mixed>                $case       The case.
+	 * @param string                              $targetId   The flow the case type names.
+	 * @param string                              $caseTypeId The case type.
+	 * @param callable(string): ?array<string, mixed> $lookup  Reads a flow by id.
+	 *
+	 * @return array<string, mixed>|null The basis flow.
+	 */
+	private function basisFlowOf(array $case, string $targetId, string $caseTypeId, callable $lookup): ?array {
+		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
+		$bound = $this->referenceId(value: ($case['workflowTemplate'] ?? ''));
+		if ($caseId === '' || $bound === '' || $bound === $targetId || ($case['isFinalStatus'] ?? false) === true) {
+			return null;
+		}
+
+		$from = $lookup($bound);
+		if ($from === null || $this->isBasis(template: $from) === false) {
+			return null;
+		}
+
+		if ($this->referenceId(value: ($from['caseType'] ?? '')) !== $caseTypeId) {
+			return null;
+		}
+
+		return $from;
+	}//end basisFlowOf()
 
 	/**
 	 * Whether a stored flow is one the backfill made up.

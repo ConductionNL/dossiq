@@ -30,6 +30,7 @@ use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
+use OCA\Dossiq\Service\Assessment\NothingToDisclose;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
@@ -98,6 +99,7 @@ interface WooPublicationObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Publication\WithheldEntries
  * @uses \OCA\Dossiq\Service\Publication\WithheldListRecorder
  * @uses \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome
+ * @uses \OCA\Dossiq\Service\Assessment\NothingToDisclose
  */
 class WooPublicationServiceTest extends TestCase {
 
@@ -461,7 +463,7 @@ class WooPublicationServiceTest extends TestCase {
 			categoryMapper: new WooCategoryMapper(),
 			appManager: $this->appManager,
 			logger: $this->createMock(LoggerInterface::class),
-			assessments: $documents,
+			nothingToDisclose: new NothingToDisclose(assessments: $documents),
 		);
 
 		return [

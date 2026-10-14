@@ -65,10 +65,12 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param WOODocumentAssessmentService $assessments The documents under review and the outstanding ones.
 	 * @param LoggerInterface              $logger      Where an unreadable register is reported.
+	 * @param DocumentSearchOutcome        $searchOutcome Whether the case records that its search found nothing.
 	 */
 	public function __construct(
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly LoggerInterface $logger,
+		private readonly DocumentSearchOutcome $searchOutcome = new DocumentSearchOutcome(),
 	) {
 	}//end __construct()
 
@@ -95,7 +97,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 
 		// D1: a recorded "nothing found", with its note, is the answer for a
 		// case whose search found no documents. It counts for both requirements.
-		if (DocumentSearchOutcome::recordsNothingFound(case: $case) === true) {
+		if ($this->searchOutcome->recordsNothingFound(case: $case) === true) {
 			return new GuardResult(passed: true, details: ['require' => $require, 'nothingFound' => true]);
 		}
 
@@ -106,7 +108,10 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 
 		try {
 			$underReview = $this->assessments->getDocumentsUnderReview(caseId: $caseId);
-			$outstanding = ($require === self::REQUIRE_ASSESSED) ? $this->assessments->getOutstanding(caseId: $caseId) : ['count' => 0];
+			$outstanding = ['count' => 0];
+			if ($require === self::REQUIRE_ASSESSED) {
+				$outstanding = $this->assessments->getOutstanding(caseId: $caseId);
+			}
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq: the document assessment guard could not read the documents of a case',
