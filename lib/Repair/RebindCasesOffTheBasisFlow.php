@@ -244,25 +244,44 @@ class RebindCasesOffTheBasisFlow implements IRepairStep {
 				continue;
 			}
 
-			$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-			$row = $case;
-			unset($row['@self'], $row['id']);
-			$row['workflowTemplate'] = $targetId;
-			$row['workflowVersion'] = (int)($target['version'] ?? 1);
-
-			try {
-				$objectService->saveObject(object: $row, register: $register, schema: $caseSchema, uuid: $caseId);
+			if ($this->moveCase(objectService: $objectService, register: $register, caseSchema: $caseSchema, case: $case, target: $target) === true) {
 				$moved++;
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: the basis flow rebind could not move a case',
-					['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
-				);
 			}
 		}//end foreach
 
 		return $moved;
 	}//end rebindCaseType()
+
+	/**
+	 * Bind one case to the target flow, keeping everything else on it.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $register      The register.
+	 * @param string               $caseSchema    The case schema.
+	 * @param array<string, mixed> $case          The case.
+	 * @param array<string, mixed> $target        The flow the case type names.
+	 *
+	 * @return bool Whether the case was saved.
+	 */
+	private function moveCase(object $objectService, string $register, string $caseSchema, array $case, array $target): bool {
+		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
+		$row = $case;
+		unset($row['@self'], $row['id']);
+		$row['workflowTemplate'] = (string)($target['id'] ?? ($target['@self']['id'] ?? ''));
+		$row['workflowVersion'] = (int)($target['version'] ?? 1);
+
+		try {
+			$objectService->saveObject(object: $row, register: $register, schema: $caseSchema, uuid: $caseId);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: the basis flow rebind could not move a case',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		return true;
+	}//end moveCase()
 
 	/**
 	 * The basis flow an open case of this case type is still bound to, or null.

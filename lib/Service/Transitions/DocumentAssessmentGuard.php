@@ -83,6 +83,9 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult
 	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $userId is part of GuardEvaluatorInterface;
+	 *   whether documents are assessed does not depend on who asks.
+	 *
 	 * @spec openspec/changes/woo-stages-are-guarded-by-their-flow/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {

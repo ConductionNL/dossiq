@@ -21,14 +21,16 @@
             "title": "Search note",
             "description": "Where was searched and why nothing was found. Needed before a case with nothing found moves on.",
             "maxLength": 4000,
-            "inputControl": "textarea"
+            "matchType": "fulltext",
+            "inputControl": "text"
           },
           "inadmissibilityReason": {
             "type": "string",
             "title": "Reason not admissible",
             "description": "Why the request is not admissible. Needed before the case closes from its admissibility check.",
             "maxLength": 4000,
-            "inputControl": "textarea"
+            "matchType": "fulltext",
+            "inputControl": "text"
           }
         }
       }

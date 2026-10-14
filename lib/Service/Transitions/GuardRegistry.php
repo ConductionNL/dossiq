@@ -90,6 +90,10 @@ class GuardRegistry {
 	 *                                          registry built before it existed builds as it did.
 	 * @param DocumentAssessmentGuard|null $documentAssessment Whether a case's documents are gathered
 	 *                                          and assessed. Optional for the same reason.
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten: one evaluator per guard kind, which is
+	 *   what this registry is. The container builds it, and nothing calls registerEvaluator(),
+	 *   so a guard kind that is not a parameter is not registered at all.
 	 */
 	public function __construct(
 		ChecklistGuard $checklist,
