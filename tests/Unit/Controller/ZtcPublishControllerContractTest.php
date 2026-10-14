@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ZtcController Wire-Contract Tests
+ * ZtcPublishController Wire-Contract Tests
  *
  * Contract coverage (gate-25) for the three ZTC publish endpoints that had no
  * automated proof of their wire behaviour. All three are `@PublicPage`, i.e.
@@ -42,7 +42,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
-use OCA\Dossiq\Controller\ZtcController;
+use OCA\Dossiq\Controller\ZtcPublishController;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -82,11 +82,11 @@ interface ZtcContractObjectServiceStub {
 }//end interface
 
 /**
- * Wire-contract tests for the ZtcController publish endpoints.
+ * Wire-contract tests for the ZtcPublishController publish endpoints.
  *
- * @covers \OCA\Dossiq\Controller\ZtcController
+ * @covers \OCA\Dossiq\Controller\ZtcPublishController
  *
- * ZtcController extends ZgwController, which composes NormalisesObjectRows, so
+ * ZtcPublishController extends ZgwController, which composes NormalisesObjectRows, so
  * exercising it necessarily runs code declared on both. CI runs phpunit.xml
  * with beStrictAboutCoverageMetadata="true" and failOnRisky="true", which marks
  * executed-but-unlisted code risky and fails the run.
@@ -94,7 +94,7 @@ interface ZtcContractObjectServiceStub {
  * @uses \OCA\Dossiq\Controller\ZgwController
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  */
-class ZtcControllerContractTest extends TestCase {
+class ZtcPublishControllerContractTest extends TestCase {
 
 	/**
 	 * The IRequest mock handed to the controller.
@@ -113,9 +113,9 @@ class ZtcControllerContractTest extends TestCase {
 	/**
 	 * The controller under test.
 	 *
-	 * @var ZtcController
+	 * @var ZtcPublishController
 	 */
-	private ZtcController $controller;
+	private ZtcPublishController $controller;
 
 	/**
 	 * Build the controller with all collaborators mocked.
@@ -128,7 +128,7 @@ class ZtcControllerContractTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->zgwService = $this->createMock(ZgwService::class);
 
-		$this->controller = new ZtcController(
+		$this->controller = new ZtcPublishController(
 			appName: 'dossiq',
 			request: $this->request,
 			zgwService: $this->zgwService,

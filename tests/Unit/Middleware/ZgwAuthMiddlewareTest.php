@@ -173,6 +173,7 @@ class ZgwAuthMiddlewareTest extends TestCase {
 			\OCA\Dossiq\Controller\AcController::class,
 			\OCA\Dossiq\Controller\ZrcController::class,
 			\OCA\Dossiq\Controller\ZtcController::class,
+			\OCA\Dossiq\Controller\ZtcPublishController::class,
 			\OCA\Dossiq\Controller\DrcController::class,
 			\OCA\Dossiq\Controller\BrcController::class,
 			\OCA\Dossiq\Controller\NrcController::class,

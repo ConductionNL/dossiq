@@ -511,3 +511,20 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         five existing engine tests.
         Own tests: `tests/Unit/Service/Transitions/CaseDeclarationsTest` (4) and
         `CaseMoveLedgerTest` (6).
+  - [x] 8i `ZtcController` (2: TooManyPublicMethods, 12 public methods against 10, and
+        ExcessiveClassComplexity 79 against 50). The three publish routes go to their own
+        controller, `ZtcPublishController` (`ztcPublish#publish*` in `appinfo/routes.php`, same
+        URLs, verbs, rate limits and auth attributes), with `handlePublish()` and
+        `publishedCopy()`. Two helpers leave as classes of their own: `Zgw/ValidityDateFilter`
+        (the `datumGeldigheid` filter of a list) and `Zgw/ZtcTypeNameResolver` (ztc-010m, an
+        informatieobjecttype named by its omschrijving). Measured after: 9 public methods,
+        complexity under 50, both suppressions gone (phpmd.suppressWarnings minus 2: 180 to 178 on top of 8h). Bodies
+        moved unchanged.
+        Characterisation: the publish contract test existed (`ZtcControllerContractTest`, 6
+        tests) and moves with the routes as `ZtcPublishControllerContractTest`; the rate-limit
+        and middleware tests list the new controller. Own tests: `ValidityDateFilterTest` (1,
+        both bounds inclusive, open bounds) and `ZtcTypeNameResolverTest` (2, name then full
+        text, and every case that leaves the body alone).
+        Seen, not changed: the publish routes run no business rule, so the CT-02b publish guard
+        (`ZgwBusinessRulesService::guardCaseTypePublish`) does not run on them, and they check no
+        ZGW scope (the contract test says so).
