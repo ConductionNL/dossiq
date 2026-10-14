@@ -64,6 +64,11 @@ class GuardRegistry {
 	public const APPROVAL_GATE = 'approvalGate';
 
 	/**
+	 * Whether a case's documents are gathered, or gathered and every one assessed.
+	 */
+	public const DOCUMENT_ASSESSMENT = 'documentAssessment';
+
+	/**
 	 * Registered evaluators keyed by guard type.
 	 *
 	 * @var array<string, GuardEvaluatorInterface>
@@ -83,6 +88,12 @@ class GuardRegistry {
 	 * @param LoggerInterface $logger Logger for unknown guard types
 	 * @param ApprovalGuard|null $approvalGuard The walked-approval evaluator. Optional, so a
 	 *                                          registry built before it existed builds as it did.
+	 * @param DocumentAssessmentGuard|null $documentAssessment Whether a case's documents are gathered
+	 *                                          and assessed. Optional for the same reason.
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten: one evaluator per guard kind, which is
+	 *   what this registry is. The container builds it, and nothing calls registerEvaluator(),
+	 *   so a guard kind that is not a parameter is not registered at all.
 	 */
 	public function __construct(
 		ChecklistGuard $checklist,
@@ -94,6 +105,7 @@ class GuardRegistry {
 		CapacityGuard $capacity,
 		private readonly LoggerInterface $logger,
 		?ApprovalGuard $approvalGuard = null,
+		?DocumentAssessmentGuard $documentAssessment = null,
 	) {
 		$this->evaluators = [
 			'checklist' => $checklist,
@@ -115,6 +127,10 @@ class GuardRegistry {
 
 		if ($approvalGuard !== null) {
 			$this->evaluators[self::APPROVAL_GATE] = $approvalGuard;
+		}
+
+		if ($documentAssessment !== null) {
+			$this->evaluators[self::DOCUMENT_ASSESSMENT] = $documentAssessment;
 		}
 	}//end __construct()
 

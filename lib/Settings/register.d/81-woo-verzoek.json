@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.5",
+          "version": "1.4.7",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -121,6 +121,9 @@
         "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
         "subject": "Openbaarmaking van overheidsinformatie",
         "processingDeadline": "P28D",
+        "handling": {
+          "defaultGroup": "behandelaars"
+        },
         "remedy": {
           "enabled": true,
           "kind": "bezwaar",
@@ -444,6 +447,7 @@
         "identifier": "woo-verzoek",
         "category": "Transparantie",
         "initialStatus": "3c0f5a00-0000-4000-a000-00000000b001",
+        "workflowDefinition": "cb967581-3962-5b61-8106-9f75248ffd82",
         "verwerkingsactiviteit": "behandelen-woo-verzoek",
         "legalBasis": "legal_obligation",
         "portalAmendmentWindow": {

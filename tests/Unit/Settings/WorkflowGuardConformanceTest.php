@@ -17,12 +17,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard;
+use OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
 use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
 use OCA\Dossiq\Service\Transitions\RoleGuard;
@@ -31,6 +33,7 @@ use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -266,6 +269,11 @@ class WorkflowGuardConformanceTest extends TestCase {
 			$this->createMock(StatusChecklistGuard::class),
 			$this->createMock(CapacityGuard::class),
 			new NullLogger(),
+			null,
+			new DocumentAssessmentGuard(
+				new WOODocumentAssessmentService($settings, $this->createMock(IUserSession::class), new NullLogger()),
+				new NullLogger()
+			),
 		);
 	}
 

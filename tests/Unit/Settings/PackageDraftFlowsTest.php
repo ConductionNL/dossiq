@@ -60,7 +60,7 @@ class PackageDraftFlowsTest extends TestCase {
 			}
 
 			$caseTypes = [];
-			foreach (ShippedPackageCaseTypes::nested() as $caseType) {
+			foreach (array_merge(ShippedPackageCaseTypes::nested(), ShippedPackageCaseTypes::seededByRegister()) as $caseType) {
 				$caseTypes[(string)($caseType['id'] ?? '')] = $caseType;
 			}
 
@@ -71,7 +71,7 @@ class PackageDraftFlowsTest extends TestCase {
 				$flow['_where'] = $where;
 
 				$caseTypeId = (string)($flow['caseType'] ?? '');
-				self::assertArrayHasKey($caseTypeId, $caseTypes, $where . ' names a case type no package ships');
+				self::assertArrayHasKey($caseTypeId, $caseTypes, $where . ' names a case type no package or register.d seed ships');
 				$grouped[$caseTypeId] ??= ['where' => basename((string)$dir), 'caseType' => $caseTypes[$caseTypeId], 'flows' => []];
 				$grouped[$caseTypeId]['flows'][] = $flow;
 			}
