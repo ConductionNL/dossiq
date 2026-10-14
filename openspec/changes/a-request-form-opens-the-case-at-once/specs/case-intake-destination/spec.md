@@ -89,10 +89,20 @@ A case type MAY carry `intakeFormMapping` next to `intakeFormRef`: `fields`, one
 Publishing a case type SHALL validate every form bound to it against the case schema plus that type's `intakeRequirements.requiredBeforeCreation`. A finding SHALL block the publish or unpublish the form, per the `formDestinationBreak` setting. The case type's own intake form (`intakeFormRef`) is part of the case type, so a finding on it SHALL refuse the save: every `requiredBeforeCreation` property SHALL be filled by an answer or a fixed value of `intakeFormMapping` on a case type that is not a draft. A draft case type SHALL NOT be held to that list until it is published.
 
 #### Scenario: A new intake requirement catches a form that lacks it
+@e2e exclude the forms are another app's (portaliq) and the e2e rig runs dossiq alone; covered by `tests/Unit/AppInfo/BoundFormsRegistrationTest.php::testByDefaultTheBrokenFormIsUnpublishedAfterTheSaveAndItsAuthorIsTold` and `::testAFormThatLacksANewIntakeRequirementRefusesThePublishWhereItsAppSaysSo`
 
 - **GIVEN** a published portal form bound to case type `klacht` that does not ask for `communicationChannel`
 - **WHEN** `communicationChannel` is added to that type's `requiredBeforeCreation` and the type is published
-- **THEN** the publish response names the form with finding `required-unmapped`
+- **THEN** where portaliq's `formDestinationBreak` is `refuse`, the save is refused with rule `bound-form-invalid`, naming the form with finding `required-unmapped`
+- **AND** otherwise the case type is saved, the form is unpublished and its author is told
+
+#### Scenario: A case schema change re-checks the case types' own Forms bindings
+@e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/AppInfo/BoundFormsRegistrationTest.php::testDossiqAnnouncesItsOwnFormsBindingsForTheCaseSchema`
+
+- **GIVEN** a published case type with a Nextcloud Forms form bound in `intakeFormRef`
+- **WHEN** OpenRegister asks which forms write into the case schema before that schema changes
+- **THEN** dossiq names the binding with its mapping and the case type's owner
+- **AND** when the change breaks it, the binding is taken off the case type and its mapping is kept
 
 #### Scenario: Publishing a case type whose own intake form leaves out an intake requirement is refused
 @e2e exclude no Forms app is installed on the e2e rig; covered by `tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php::testPublishingReChecksTheFormAgainstTheIntakeRequirements`

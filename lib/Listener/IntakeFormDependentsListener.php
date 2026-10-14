@@ -3,7 +3,10 @@
 /**
  * Tells OpenRegister which Nextcloud Forms forms open a case, when the case schema is about to change.
  *
- * OpenRegister asks every app for its published forms that write into a schema. dossiq answers for the case schema with one form per published case type that has a Forms form bound to it, so a case schema change re-checks those bindings too.
+ * OpenRegister asks every app for its published forms that write into a
+ * schema. dossiq answers for the case schema with one form per published case
+ * type that has a Forms form bound to it, so a case schema change re-checks
+ * those bindings too.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -27,7 +30,9 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Intake\BoundFormsCheck;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
+use OCA\Dossiq\Service\Intake\IntakeFormBindings;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -46,13 +51,15 @@ class IntakeFormDependentsListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsService   $settingsService The configured case schema.
-	 * @param BoundFormsCheck   $check           Lists the bound case types and takes a binding off.
+	 * @param BoundFormsCheck    $check           Names a case type.
+	 * @param IntakeFormBindings $bindings        Lists the bound case types and takes a binding off.
 	 * @param IntakeFormBinding $binding         Reads a binding as a mapping.
 	 * @param LoggerInterface   $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly BoundFormsCheck $check,
+		private readonly IntakeFormBindings $bindings,
 		private readonly IntakeFormBinding $binding,
 		private readonly LoggerInterface $logger,
 	) {
@@ -65,11 +72,11 @@ class IntakeFormDependentsListener implements IEventListener {
 	 *
 	 * @return void
 	 *
- * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
 	 */
 	public function handle(Event $event): void {
 		$formClass = BoundFormsCheck::FORM_DEPENDENT;
-		if (is_a($event, BoundFormsCheck::DEPENDENTS_EVENT) === false || class_exists($formClass) === false) {
+		if (($event instanceof FormDestinationDependentsEvent) === false || class_exists($formClass) === false) {
 			return;
 		}
 
@@ -78,7 +85,7 @@ class IntakeFormDependentsListener implements IEventListener {
 				return;
 			}
 
-			foreach ($this->check->boundCaseTypes() as $caseType) {
+			foreach ($this->bindings->boundCaseTypes() as $caseType) {
 				$names = $this->check->namesOf(caseType: $caseType);
 				if ($names === []) {
 					continue;
@@ -93,7 +100,7 @@ class IntakeFormDependentsListener implements IEventListener {
 						author: $this->ownerOf(caseType: $caseType),
 						mapping: $this->binding->mappingFor(caseType: $caseType),
 						unpublish: function () use ($caseTypeId): void {
-							$this->check->unbind(caseTypeId: $caseTypeId);
+							$this->bindings->unbind(caseTypeId: $caseTypeId);
 						},
 					)
 				);
@@ -122,7 +129,7 @@ class IntakeFormDependentsListener implements IEventListener {
 		}
 
 		foreach (['getId', 'getUuid', 'getSlug'] as $getter) {
-			if (method_exists($schema, $getter) === true && (string)$schema->$getter() === $expected) {
+			if (is_callable([$schema, $getter]) === true && (string)$schema->$getter() === $expected) {
 				return true;
 			}
 		}

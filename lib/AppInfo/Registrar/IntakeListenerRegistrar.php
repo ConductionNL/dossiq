@@ -30,15 +30,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\WooStartFromListener;
-use OCA\Dossiq\Listener\CaseTypeBoundFormsListener;
-use OCA\Dossiq\Listener\IntakeFormBindingListener;
-use OCA\Dossiq\Listener\IntakeFormDependentsListener;
 use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
-use OCA\Dossiq\Service\Intake\BoundFormsCheck;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -145,34 +141,10 @@ class IntakeListenerRegistrar {
 			listener: IntakeRequirementsListener::class
 		);
 
-		// A case type's intake form is judged against the case schema when the
-		// case type is saved, before it is stored: a binding that would open a
-		// case the schema refuses is refused here (decision 181).
-		$context->registerEventListener(
-			event: ObjectCreatingEvent::class,
-			listener: IntakeFormBindingListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatingEvent::class,
-			listener: IntakeFormBindingListener::class
-		);
-
-		// The published forms of other apps that open a case of this type are
-		// judged on the same saves: refused before the save where the owning
-		// app asks for that, unpublished after it otherwise.
-		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectCreatedEvent::class, ObjectUpdatedEvent::class] as $caseTypeSave) {
-			$context->registerEventListener(
-				event: $caseTypeSave,
-				listener: CaseTypeBoundFormsListener::class
-			);
-		}
-
-		// OpenRegister asks which forms write into a schema before it changes;
-		// dossiq answers for its own Forms bindings on the case schema.
-		$context->registerEventListener(
-			event: BoundFormsCheck::DEPENDENTS_EVENT,
-			listener: IntakeFormDependentsListener::class
-		);
+		// The forms that open a case: a case type's own Forms binding, the
+		// forms of other apps bound to a case type, and dossiq's answer when
+		// OpenRegister asks which forms write into the case schema.
+		(new IntakeFormListenerRegistrar())->register(context: $context);
 
 		// The receipt and start dates are SET BEFORE THE CASE IS STORED, above
 		// OpenRegister's materialised calculations, which run on the creating

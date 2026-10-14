@@ -158,7 +158,7 @@ class IntakeFormBindingCheck {
 			'fixed' => (array)($mapping['fixed'] ?? []),
 		];
 
-		$found = [];
+		$requirements = $this->unmetRequirements(caseType: $caseType, mapping: $mapping);
 		$validator = $this->settingsService->getOpenRegisterClass(self::VALIDATOR);
 		$schema = $this->caseSchema();
 		if ($validator === null || $schema === null || method_exists($validator, 'validate') === false) {
@@ -166,22 +166,21 @@ class IntakeFormBindingCheck {
 				'Dossiq intake: a form bound to a case type was judged against the intake requirements only, '
 					. 'because the case schema or OpenRegister\'s validator could not be read'
 			);
-		} else {
-			$options = [];
-			if ($audience !== null) {
-				$options['audience'] = $audience;
-			}
 
-			$found = $validator->validate(mapping: $mapping, schema: $schema, options: $options);
-			if (is_array($found) === false) {
-				$found = [];
-			}
+			return $requirements;
 		}
 
-		return array_merge(
-			array_values(array_filter($found, 'is_array')),
-			$this->unmetRequirements(caseType: $caseType, mapping: $mapping)
-		);
+		$options = [];
+		if ($audience !== null) {
+			$options['audience'] = $audience;
+		}
+
+		$found = $validator->validate(mapping: $mapping, schema: $schema, options: $options);
+		if (is_array($found) === false) {
+			$found = [];
+		}
+
+		return array_merge(array_values(array_filter($found, 'is_array')), $requirements);
 	}//end findingsOfMapping()
 
 	/**

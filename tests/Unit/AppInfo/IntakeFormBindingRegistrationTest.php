@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * The registered listener refuses a case type whose intake form the case schema refuses.
  *
  * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
  * @covers \OCA\Dossiq\Listener\IntakeFormBindingListener
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBindingCheck
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBinding

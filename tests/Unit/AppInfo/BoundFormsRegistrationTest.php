@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
+use OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar;
 use OCA\Dossiq\Listener\CaseTypeBoundFormsListener;
 use OCA\Dossiq\Listener\IntakeFormDependentsListener;
 use OCA\Dossiq\Service\Intake\BoundFormsCheck;
 use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use OCA\Dossiq\Service\Intake\IntakeFormBindingCheck;
+use OCA\Dossiq\Service\Intake\IntakeFormBindings;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Db\Schema;
@@ -57,9 +59,11 @@ use RuntimeException;
  * The registered listeners judge the forms bound to a case type, and answer for dossiq's own.
  *
  * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
  * @covers \OCA\Dossiq\Listener\CaseTypeBoundFormsListener
  * @covers \OCA\Dossiq\Listener\IntakeFormDependentsListener
  * @covers \OCA\Dossiq\Service\Intake\BoundFormsCheck
+ * @covers \OCA\Dossiq\Service\Intake\IntakeFormBindings
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBindingCheck
  * @uses   \OCA\Dossiq\Service\Intake\IntakeFormBinding
  * @uses   \OCA\Dossiq\Service\Intake\IntakeRequirements
@@ -115,6 +119,13 @@ class BoundFormsRegistrationTest extends TestCase {
 	 * @var object
 	 */
 	private object $store;
+
+	/**
+	 * The settings the last check was wired to.
+	 *
+	 * @var SettingsService
+	 */
+	private SettingsService $settings;
 
 	/**
 	 * Fresh state.
@@ -260,12 +271,13 @@ class BoundFormsRegistrationTest extends TestCase {
 			][$class] ?? null)
 		);
 
+		$this->settings = $settings;
+
 		return new BoundFormsCheck(
 			$settings,
 			$dispatcher,
 			$appConfig,
 			new IntakeFormBindingCheck($settings, new IntakeFormBinding(), $logger),
-			new IntakeFormBinding(),
 			$logger
 		);
 	}//end check()
@@ -443,6 +455,7 @@ class BoundFormsRegistrationTest extends TestCase {
 	public function testDossiqAnnouncesItsOwnFormsBindingsForTheCaseSchema(): void {
 		self::assertSame([IntakeFormDependentsListener::class], $this->registeredFor(event: FormDestinationDependentsEvent::class));
 		self::assertSame(BoundFormsCheck::DEPENDENTS_EVENT, FormDestinationDependentsEvent::class);
+		self::assertSame(IntakeFormListenerRegistrar::DEPENDENTS_EVENT, FormDestinationDependentsEvent::class);
 		self::assertSame(BoundFormsCheck::FORM_DEPENDENT, FormDependent::class);
 		self::assertSame(BoundFormsCheck::DEPENDENTS_CHECK, FormDependentsCheck::class);
 		self::assertSame(BoundFormsCheck::BREAK_SETTING, FormDependentsCheck::BREAK_SETTING);
@@ -464,7 +477,7 @@ class BoundFormsRegistrationTest extends TestCase {
 		);
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects(self::never())->method('error');
-		$listener = new IntakeFormDependentsListener($settings, $this->check(), new IntakeFormBinding(), $logger);
+		$listener = new IntakeFormDependentsListener($settings, $this->check(), new IntakeFormBindings($this->settings, new IntakeFormBinding(), $logger), new IntakeFormBinding(), $logger);
 
 		$schema = new Schema();
 		$schema->setSlug('case');
@@ -512,7 +525,7 @@ class BoundFormsRegistrationTest extends TestCase {
 		$schema = new Schema();
 		$schema->setUuid('schema-uuid-case');
 		$event = new FormDestinationDependentsEvent($schema);
-		(new IntakeFormDependentsListener($settings, $this->check(), new IntakeFormBinding(), $logger))->handle($event);
+		(new IntakeFormDependentsListener($settings, $this->check(), new IntakeFormBindings($this->settings, new IntakeFormBinding(), $logger), new IntakeFormBinding(), $logger))->handle($event);
 
 		self::assertSame([], $event->getForms());
 	}//end testAFailedReadOfTheCaseTypesIsLoggedAsAnError()

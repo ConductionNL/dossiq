@@ -53,6 +53,7 @@ use Psr\Log\LoggerInterface;
  * The create listeners skip a draft and run when it is sent.
  *
  * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
+ * @covers \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
  * @covers \OCA\Dossiq\AppInfo\Registrar\WorkflowListenerRegistrar
  * @covers \OCA\Dossiq\Listener\AcknowledgementOnCreateListener
  * @covers \OCA\Dossiq\Listener\CaseNumberListener

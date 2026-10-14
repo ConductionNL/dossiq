@@ -3,7 +3,9 @@
 /**
  * Re-checks the published forms that open a case of a case type when that case type is saved.
  *
- * Before the save a form whose owning app says `refuse` stops it. After the save a broken form of an app that says `unpublish` is unpublished and its author is told.
+ * Before the save a form whose owning app says `refuse` stops it. After the
+ * save a broken form of an app that says `unpublish` is unpublished and its
+ * author is told.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -63,7 +65,7 @@ class CaseTypeBoundFormsListener implements IEventListener {
 	 *
 	 * @return void
 	 *
- * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-publishing-a-case-type-must-re-check-the-forms-bound-to-it
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectCreatingEvent === true) {

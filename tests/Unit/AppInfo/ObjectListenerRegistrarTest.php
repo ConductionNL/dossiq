@@ -37,6 +37,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\DocumentListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
