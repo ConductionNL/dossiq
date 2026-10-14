@@ -124,11 +124,13 @@ class ReconcileCaseRecordGrants implements IRepairStep {
 	 */
 	private function sentenceFor(array $answer, string $counts): string {
 		if ($answer['status'] === 'no-service-account') {
-			return 'Case record access: NOT reconciled. There is no usable background service account to write the grants as, and no administrator account is used instead. Choose one in the dossiq admin settings.';
+			return 'Case record access: NOT reconciled. There is no usable background service account to write the grants as,'
+				.' and no administrator account is used instead. Choose one in the dossiq admin settings.';
 		}
 
 		if ($answer['status'] === 'no-grant-right') {
-			return 'Case record access: NOT reconciled. OpenRegister could not give the background service group the special right grant_manage, so no grant was written.';
+			return 'Case record access: NOT reconciled. OpenRegister could not give the background service group'
+				.' the special right grant_manage, so no grant was written.';
 		}
 
 		if ($answer['status'] === 'unavailable') {
