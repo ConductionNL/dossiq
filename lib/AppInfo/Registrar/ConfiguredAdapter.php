@@ -22,9 +22,9 @@
  * the mock LOUDLY: a translated warning in the log, and a Simulated row on the
  * Integrations page, which is the half a reader actually sees.
  *
- * The shape is the `SigningAdapterInterface` one that already shipped in
- * {@see BeschikkingAdapterRegistrar}: probe, use the real thing when it is
- * there, fall back with a translated warning when it is not.
+ * The shape is the one the signing seam had before signing moved to filinq:
+ * probe, use the real thing when it is there, fall back with a translated
+ * warning when it is not.
  *
  * @category AppInfo
  * @package  OCA\Dossiq\AppInfo\Registrar

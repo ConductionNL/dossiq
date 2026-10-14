@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
+use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -74,7 +75,7 @@ class SettingsController extends Controller {
 	 * @param SettingsService $settingsService The settings service
 	 * @param IGroupManager $groupManager The group manager
 	 * @param IUserSession $userSession The user session
-	 * @param IL10N $l10n The translation service (libresign-besluit-signing hint).
+	 * @param IL10N $l10n The translation service (signing hint, refusal sentences).
 	 *
 	 * @return void
 	 */
@@ -142,14 +143,12 @@ class SettingsController extends Controller {
 			default => $this->settingsService->getPublicSettings(),
 		};
 
-		$libresignAvailable = $this->appManager->isEnabledForUser('libresign');
-		$libresignHint = null;
-		if ($libresignAvailable === false) {
-			$libresignHint = $this->l10n->t(
-				'LibreSign is not installed or enabled. Digital signing falls back to '
-				. 'the built-in stub adapter — install and enable the LibreSign app to '
-				. 'sign beschikkingen with a real eIDAS-aligned signature.'
-			);
+		// Filinq signs decisions (signing-through-filinq); without it a
+		// decision cannot be signed at all, and the settings say so.
+		$signingAvailable = FleetAppId::isEnabledForUser(appManager: $this->appManager, canonical: 'filinq');
+		$signingHint = null;
+		if ($signingAvailable === false) {
+			$signingHint = $this->l10n->t('Filinq is not installed or enabled, so decisions cannot be signed. Install and enable filinq to sign them.');
 		}
 
 		return new JSONResponse(
@@ -158,8 +157,8 @@ class SettingsController extends Controller {
 				'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
 				'isAdmin' => $isAdmin,
 				'config' => $config,
-				'libresignAvailable' => $libresignAvailable,
-				'libresignHint' => $libresignHint,
+				'signingAvailable' => $signingAvailable,
+				'signingHint' => $signingHint,
 			]
 		);
 	}//end index()

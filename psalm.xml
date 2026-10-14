@@ -57,6 +57,9 @@
         <file name="tests/Stubs/OpenRegister/Event/FlowEmailSentEvent.php" />
         <file name="tests/Stubs/Filinq/Event/DocumentGeneratedEvent.php" />
         <file name="tests/Stubs/Filinq/Event/DocumentGenerationRequestedEvent.php" />
+        <file name="tests/Stubs/Filinq/Event/SigningProvenance.php" />
+        <file name="tests/Stubs/Filinq/Event/DocumentSigningRequestedEvent.php" />
+        <file name="tests/Stubs/Filinq/Event/SigningConcludedEvent.php" />
         <!-- Shillinq's payout commands, raised and withdrawn by Money\PayoutRequester.
              Verbatim copies of the real classes. -->
         <file name="tests/Stubs/Shillinq/Event/PayableRaisedEvent.php" />
