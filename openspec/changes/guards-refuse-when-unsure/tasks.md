@@ -33,6 +33,14 @@ Decision 224. One PR, `--base development`, stacked on the method-decomposition 
   - `tests/Unit/Service/ZgwBusinessRulesServiceLookupFailureTest.php`, with a control that rules which could read decide as before.
 - [x] 5.3 (`tests/Unit/Architecture/catch-return-null.allowlist.json`) three sites left, ceiling 254 to 251.
 
-## 6. Live
+## 6. Store failures of a ZGW read, update and delete (Q-dossiq-L11-2, answered 12 Oct)
 
-- [ ] 6.1 (live pass, decision 139) With the store reachable: an objectinformatieobject create, a document delete and a case type delete answer as before.
+- [x] 6.1 (`lib/Service/Zgw/StoreFailureAnswer.php`, `lib/Service/ZgwService.php`) one place sorts a store failure into 404, 403 and 503; `handleShow()`, `handleUpdate()` and `handleDestroy()` answer through it, and a delete that happened answers 204 when only its notification fails (REQ-ZBR-023).
+  - `tests/Unit/Service/ZgwServiceStoreFailureTest.php`, one test per signal: DoesNotExistException, a null answer, NotAuthorizedException, a failure with code 403, any other failure.
+- [x] 6.2 (`lib/Controller/BrcController.php`, `lib/Service/Zgw/BrcDocumentLinkHandler.php`) the besluit delete and the besluitinformatieobject delete answer through the same place.
+  - `tests/Unit/Controller/BrcControllerTest.php`, `tests/Unit/Service/Zgw/BrcDocumentLinkHandlerTest.php`.
+- [x] 6.3 (`lib/Service/Zgw/BrcCrossRegisterSync.php`) a failed cross-register write is logged at error with the rule, the resource and the objects; it stays best effort.
+
+## 7. Live
+
+- [ ] 7.1 (live pass, decision 139) With the store reachable: an objectinformatieobject create, a document delete and a case type delete answer as before.

@@ -90,3 +90,36 @@ An object the store does not hold, or does not show the caller, SHALL still read
 - **GIVEN** a write that refers to a zaaktype the store does not hold
 - **WHEN** the read answers "not found"
 - **THEN** the rule decides as before, on a type that is not there
+
+### Requirement: A ZGW read, update or delete says why it failed (REQ-ZBR-023)
+
+A ZGW show, update or delete of a stored object SHALL sort a failure of the store into three answers, in one place for every resource:
+
+- **not found** (404, `detail` "Not found"): the store says the object is not there, by a DoesNotExistException or by answering no object;
+- **not allowed** (403, code `permission_denied`): the store refuses the caller, by OpenRegister's NotAuthorizedException or any failure carrying code 403;
+- **not completed** (503, code `store-not-reached`): any other failure. Nothing SHALL be assumed about the object, and the failure SHALL be logged at error with the operation and the object.
+
+A refused permission SHALL NOT answer 503. A store that was down SHALL NOT answer 404.
+
+A delete that happened SHALL answer 204 even when its notification fails afterwards; that failure SHALL be logged at error.
+
+The writes the Besluiten API makes in another register (the zaakbesluit of brc-006, the objectinformatieobject of brc-005a, brc-005b and brc-009) stay best effort, but a failure SHALL be logged at error with the rule, the resource and the objects involved.
+
+#### Scenario: The store is down when a besluit is deleted
+<!-- @e2e exclude A store outage cannot be staged on the e2e instance. Proven by ZgwServiceStoreFailureTest and BrcControllerTest "a missing resource cannot be deleted". -->
+- **GIVEN** a stored besluit
+- **WHEN** deleting it fails because the store cannot be reached
+- **THEN** the delete answers 503 with code `store-not-reached`
+- **AND** no notification goes out
+
+#### Scenario: The caller may not delete the object
+<!-- @e2e exclude Proven by ZgwServiceStoreFailureTest "a refused delete answers forbidden" and BrcDocumentLinkHandlerTest. -->
+- **GIVEN** a stored object the caller may not delete
+- **WHEN** OpenRegister refuses the delete
+- **THEN** the delete answers 403 with code `permission_denied`
+
+#### Scenario: The object is not there
+<!-- @e2e exclude Unchanged behaviour, proven by ZgwServiceStoreFailureTest "a delete answers not found only for an absent object". -->
+- **GIVEN** an id the store does not hold
+- **WHEN** it is deleted
+- **THEN** the delete answers 404 "Not found"
