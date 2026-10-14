@@ -342,10 +342,46 @@ class PortalContributionProviderTest extends TestCase {
 			$this->assertSame(['retentionDays' => 30], $action['draft'], $id . ': within portaliq\'s 1 to 90 days');
 			$this->assertSame('Wij hebben uw Woo-verzoek ontvangen', $action['confirmation']['title']);
 			$this->assertStringContainsString('{identifier}', $action['confirmation']['body']);
-			$this->assertStringContainsString('{deadline}', $action['confirmation']['body']);
+			// The dates as a resident reads them, never the stored moment
+			// (portal-woo-request-form-takes-dutch-input REQ-WDI-003).
+			$this->assertStringContainsString('{deadlineDay}', $action['confirmation']['body']);
+			$this->assertStringContainsString('{termStartsDay}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{deadline}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{termStartsAt}', $action['confirmation']['body']);
 			$this->assertNotSame('', trim($action['confirmation']['next']));
 		}
 	}//end testTheWooRequestSavesHalfwayAndNamesTheCaseWhenItIsIn()
+
+	/**
+	 * The period is asked as dates and the requester as a choice whose
+	 * Dutch words map to the values the route keeps, on both doors.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/portal-contribution/spec.md#requirement-the-woo-request-form-asks-dates-as-dates-and-the-requester-as-a-choice-req-wdi-004
+	 */
+	public function testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			foreach (['periodeVan', 'periodeTot'] as $field) {
+				$this->assertSame('date', ($action['fieldConfigs'][$field]['input'] ?? null), $id . ': ' . $field . ' is a date');
+			}
+
+			$this->assertSame('choices', $action['fieldConfigs']['verzoekerType']['widget']);
+			$options = $action['optionsProviders']['verzoekerType']['options'];
+			$this->assertSame(
+				['burger' => 'Inwoner', 'journalist' => 'Journalist', 'organisatie' => 'Organisatie'],
+				array_column($options, 'label', 'value'),
+				$id . ': Dutch words over the stored values'
+			);
+			$this->assertSame(
+				\OCA\Dossiq\Woo\WooRequestForm::REQUESTER_KINDS,
+				array_column($options, 'value'),
+				$id . ': every choice is a value the route keeps'
+			);
+		}
+	}//end testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice()
 
 	/**
 	 * Two doors, one route: only the dossier variant is attached to a

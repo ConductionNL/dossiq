@@ -40,8 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
-use DateTimeImmutable;
-use Throwable;
+use OCA\Dossiq\Service\Support\ReadableDay;
 
 /**
  * The wording of every term notification.
@@ -49,46 +48,6 @@ use Throwable;
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
  */
 class TermLetters {
-
-	/**
-	 * The months as a Dutch letter names them.
-	 *
-	 * @var array<int, string>
-	 */
-	private const MONTHS_NL = [
-		'januari',
-		'februari',
-		'maart',
-		'april',
-		'mei',
-		'juni',
-		'juli',
-		'augustus',
-		'september',
-		'oktober',
-		'november',
-		'december',
-	];
-
-	/**
-	 * The months as an English letter names them.
-	 *
-	 * @var array<int, string>
-	 */
-	private const MONTHS_EN = [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December',
-	];
 
 	/**
 	 * Render a template (nl) into a payload with subject + body.
@@ -440,23 +399,11 @@ class TermLetters {
 	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
 	private function dayOf(string $value, bool $english=false): string {
-		$value = trim($value);
-		if ($value === '') {
-			return '';
-		}
-
-		try {
-			$moment = new DateTimeImmutable($value);
-		} catch (Throwable $e) {
-			return '';
-		}
-
-		$months = self::MONTHS_NL;
 		if ($english === true) {
-			$months = self::MONTHS_EN;
+			return (new ReadableDay())->english(value: $value);
 		}
 
-		return $moment->format('j').' '.$months[((int)$moment->format('n') - 1)].' '.$moment->format('Y');
+		return (new ReadableDay())->dutch(value: $value);
 	}//end dayOf()
 
 	/**
