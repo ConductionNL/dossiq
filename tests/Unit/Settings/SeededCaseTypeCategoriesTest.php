@@ -69,34 +69,47 @@ class SeededCaseTypeCategoriesTest extends TestCase {
 
 
 	/**
-	 * The VTH and case-flow seed files, read by their repair steps, name one too.
+	 * The case-flow seed file, read by its repair step, names one too, and so
+	 * does every case type the VTH package carries.
 	 *
 	 * @return void
 	 */
 	public function testEveryRepairStepSeededCaseTypeHasACategory(): void {
-		foreach (['vth_seed_data.json', 'case_flow_seed_data.json'] as $file) {
+		foreach (['case_flow_seed_data.json'] as $file) {
 			$data = json_decode((string)file_get_contents(self::SETTINGS . '/' . $file), true);
 			$this->assertNotEmpty(actual: $data['caseTypes'], message: $file);
 			foreach ($data['caseTypes'] as $caseType) {
 				$this->assertCategory(caseType: $caseType, where: $file);
 			}
 		}
+
+		$packaged = ShippedPackageCaseTypes::nested();
+		$this->assertNotEmpty(actual: $packaged, message: 'packages');
+		foreach ($packaged as $caseType) {
+			$this->assertCategory(caseType: $caseType, where: 'package case type ' . $caseType['slug']);
+		}
 	}//end testEveryRepairStepSeededCaseTypeHasACategory()
 
 
 	/**
-	 * The besluitvorming template bundles name one for the case type they seed.
+	 * Every case type a shipped package carries names one.
 	 *
 	 * @return void
 	 */
-	public function testEveryTemplateBundleCaseTypeHasACategory(): void {
-		$bundles = glob(self::SETTINGS . '/templates/bvw-*.json');
-		$this->assertNotEmpty(actual: $bundles);
-		foreach ($bundles as $path) {
-			$bundle = json_decode((string)file_get_contents($path), true);
-			$this->assertCategory(caseType: $bundle['caseType'], where: basename($path));
+	public function testEveryPackageCaseTypeHasACategory(): void {
+		$packages = glob(self::SETTINGS . '/packages/*/case-type.json');
+		$this->assertNotEmpty(actual: $packages);
+		foreach ($packages as $path) {
+			$caseTypes = (array)(json_decode((string)file_get_contents($path), true)['caseType'] ?? []);
+			if (array_is_list($caseTypes) === false) {
+				$caseTypes = [$caseTypes];
+			}
+
+			foreach ($caseTypes as $caseType) {
+				$this->assertCategory(caseType: (array)$caseType, where: basename(dirname($path)));
+			}
 		}
-	}//end testEveryTemplateBundleCaseTypeHasACategory()
+	}//end testEveryPackageCaseTypeHasACategory()
 
 
 	/**

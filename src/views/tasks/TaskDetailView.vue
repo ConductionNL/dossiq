@@ -68,8 +68,15 @@
 					<CnStatusBadge
 						v-if="stateLabel"
 						:label="stateLabel"
+						:variant="stateTone"
 						size="small"
 						data-testid="task-detail-state" />
+					<CnStatusBadge
+						v-if="priorityTone"
+						:label="priorityText"
+						:variant="priorityTone"
+						size="small"
+						data-testid="task-detail-priority" />
 					<router-link :to="{ name: 'Tasks' }">
 						{{ t('dossiq', 'Tasks') }}
 					</router-link>
@@ -236,6 +243,12 @@ import TaskNotesLeaf from '../../components/tasks/TaskNotesLeaf.vue'
 import { isTerminal, useEngineTaskStore } from '../../store/modules/engineTask.js'
 import { initializeStores } from '../../store/store.js'
 import { caseIdFrom, taskCaseRef } from '../../utils/flowTaskHelpers.js'
+import {
+	PRIORITY_VALUES,
+	priorityLabel,
+	priorityPillTone,
+} from '../../utils/priorityValues.js'
+import { taskStateLabel, taskStateTone } from '../../utils/taskStateLabel.js'
 
 export default {
 	name: 'TaskDetailView',
@@ -319,18 +332,49 @@ export default {
 		},
 
 		/**
-		 * The state, for the badge beside the heading.
+		 * The state, for the badge beside the heading, in the reader's words
+		 * (DqTaak draws "In uitvoering", never "active").
 		 *
-		 * The engine's own vocabulary, untranslated into a second one. The
-		 * store's header says why: `Task::STATES` is the same CMMN vocabulary
-		 * `caseTask` used, and a mapping table here would diverge the two the
-		 * first time either side gained a value.
+		 * The engine keeps its own vocabulary; only the label is worded, and by
+		 * the one helper the case plan uses too, so the two cannot diverge.
 		 *
-		 * @return {string} The state, or ''.
+		 * @return {string} The label, or ''.
 		 * @spec openspec/specs/task-management/spec.md
 		 */
 		stateLabel() {
-			return String(this.task?.state ?? '').trim()
+			return taskStateLabel(this.task?.state)
+		},
+
+		/**
+		 * The tone of the state badge: DqTaak draws an active task in the
+		 * work-in-progress purple and a finished one in green.
+		 *
+		 * @return {string} A CnStatusBadge variant.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		stateTone() {
+			return taskStateTone(this.task?.state)
+		},
+
+		/**
+		 * The tone of the priority pill beside the state, '' for no pill.
+		 * Only a high or urgent task draws one, as DqTaak draws "Hoog".
+		 *
+		 * @return {string} A CnStatusBadge variant, or ''.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		priorityTone() {
+			return priorityPillTone(this.task?.priority)
+		},
+
+		/**
+		 * The priority in the reader's words, for the pill.
+		 *
+		 * @return {string} The label.
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		priorityText() {
+			return priorityLabel(this.task?.priority)
 		},
 
 		/**
@@ -363,7 +407,7 @@ export default {
 				fields: [
 					{
 						key: 'assignee',
-						label: t('dossiq', 'Assignee'),
+						label: t('dossiq', 'Handler'),
 						path: 'assignee',
 					},
 					{
@@ -374,7 +418,7 @@ export default {
 					},
 					{
 						key: 'due',
-						label: t('dossiq', 'Due'),
+						label: t('dossiq', 'Due by'),
 						path: 'dueAt',
 						format: 'date',
 					},
@@ -388,6 +432,14 @@ export default {
 						key: 'priority',
 						label: t('dossiq', 'Priority'),
 						path: 'priority',
+						// The engine's value worded as the case priority is
+						// (low/normal/high/urgent), never the raw "normal".
+						map: Object.fromEntries(
+							PRIORITY_VALUES.map((value) => [
+								value,
+								priorityLabel(value),
+							]),
+						),
 					},
 					{
 						key: 'requester',
@@ -426,15 +478,32 @@ export default {
 		caseFacts() {
 			const caseRoute = { name: 'CaseDetail', params: { id: '@source.id' } }
 			return {
-				source: { register: 'dossiq', schema: 'case', id: '@object.objectUuid' },
+				source: {
+					register: 'dossiq',
+					schema: 'case',
+					id: '@object.objectUuid',
+				},
+
 				fields: [
-					{ key: 'case-title', as: 'title', path: 'title', route: caseRoute },
+					{
+						key: 'case-title',
+						as: 'title',
+						path: 'title',
+						route: caseRoute,
+					},
 					{
 						key: 'case-meta',
 						as: 'line',
 						parts: [
 							'identifier',
-							{ path: 'caseType', resolve: { register: 'dossiq', schema: 'caseType', labelField: 'title' } },
+							{
+								path: 'caseType',
+								resolve: {
+									register: 'dossiq',
+									schema: 'caseType',
+									labelField: 'title',
+								},
+							},
 						],
 					},
 					{
@@ -442,18 +511,26 @@ export default {
 						as: 'line',
 						parts: [
 							{ path: 'assignee', label: t('dossiq', 'Handler') },
-							{ path: 'deadline', label: t('dossiq', 'Case deadline'), format: 'date' },
+							{
+								path: 'deadline',
+								label: t('dossiq', 'Case deadline'),
+								format: 'date',
+							},
 						],
 					},
 					{
 						key: 'case-status',
 						label: t('dossiq', 'Status'),
 						path: 'status',
-						resolve: { register: 'dossiq', schema: 'statusType', labelField: 'name' },
+						resolve: {
+							register: 'dossiq',
+							schema: 'statusType',
+							labelField: 'name',
+						},
 					},
 				],
 
-				link: { label: t('dossiq', 'Open the case'), route: caseRoute },
+				link: { label: t('dossiq', 'To the case'), route: caseRoute },
 				emptyText: '',
 			}
 		},

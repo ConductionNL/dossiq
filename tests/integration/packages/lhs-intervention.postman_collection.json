@@ -1,0 +1,191 @@
+{
+  "info": {
+    "name": "dossiq package: lhs-intervention",
+    "description": "Reads the LHS intervention decision table back through the OpenRegister objects API, after the packages workflow installed the lhs-intervention package on a clean instance (hydra ADR-118). Ids are the fixed ids in lib/Settings/packages/lhs-intervention/.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{adminUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{adminPass}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUser",
+      "value": "admin"
+    },
+    {
+      "key": "adminPass",
+      "value": "admin"
+    }
+  ],
+  "item": [
+    {
+      "name": "the intervention table",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/decision-tables/decision-table/922ad0a8-e191-5c05-a4f4-5b6aa00bbd3d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const row = pm.response.json();",
+              "pm.test('key as shipped', () => pm.expect(row.key).to.eql(\"dossiq.lhs-intervention\"));",
+              "pm.test('name as shipped', () => pm.expect(row.name).to.eql(\"LHS interventie (gedrag x gevolg)\"));",
+              "pm.test('hitPolicy as shipped', () => pm.expect(row.hitPolicy).to.eql(\"UNIQUE\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the table has its 16 rules",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/decision-tables/decision-table/922ad0a8-e191-5c05-a4f4-5b6aa00bbd3d"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('row is there (200)', () => pm.response.to.have.status(200));",
+              "const table = pm.response.json();",
+              "pm.test('16 rules', () => pm.expect(table.rules).to.have.lengthOf(16));",
+              "pm.test('two inputs and two outputs', () => {",
+              "    pm.expect(table.inputs.map(i => i.name)).to.eql(['behaviour', 'consequence']);",
+              "    pm.expect(table.outputs.map(o => o.name)).to.eql(['interventionStep', 'description']);",
+              "});",
+              "pm.collectionVariables.set('lhsTableRules', JSON.stringify(table.rules));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "the table answers what each grid cell says (decision 213)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/lhsMatrixCell?_limit=100"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('list reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const rules = JSON.parse(pm.collectionVariables.get('lhsTableRules') || '[]');",
+              "pm.test('16 grid cells to compare with', () => pm.expect(rows).to.have.lengthOf(16));",
+              "const different = [];",
+              "for (const cell of rows) {",
+              "    const hits = rules.filter(r => r.inputEntries[0] === cell.behaviourRow && r.inputEntries[1] === cell.consequenceColumn);",
+              "    const same = hits.length === 1 && hits[0].outputEntries[0] === cell.interventionStep && hits[0].outputEntries[1] === (cell.description || '');",
+              "    if (same === false) { different.push(`${cell.behaviourRow}:${cell.consequenceColumn}`); }",
+              "}",
+              "pm.test('no position where the table and the grid differ', () => pm.expect(different).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "one table under the key",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/decision-tables/decision-table?key=dossiq.lhs-intervention&_limit=10"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('list reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "pm.test('exactly one table has the key', () => pm.expect(rows.filter(r => r.key === 'dossiq.lhs-intervention')).to.have.lengthOf(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ledger records the package version",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/shippedOrigin?targetSchema=package&targetObject=lhs-intervention&_limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('list reachable (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const rows = Array.isArray(body) ? body : (body.results || []);",
+              "const records = rows.filter(r => r.targetSchema === 'package' && r.targetObject === 'lhs-intervention');",
+              "pm.test('one version record names the package at 1.0.0', () => {",
+              "    pm.expect(records).to.have.lengthOf(1);",
+              "    pm.expect(records[0].set).to.eql('lhs-intervention');",
+              "    pm.expect(records[0].setVersion).to.eql('1.0.0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -60,16 +60,92 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zgw\DrcDocumentRelations;
+use OCA\Dossiq\Service\Zgw\DrcObjectLinkRules;
+use Psr\Log\LoggerInterface;
+
 /**
  * DRC (Documenten API) business rule validation and enrichment.
  *
- * @psalm-suppress UnusedClass
+ * Holds the rules of the document itself and hands the rules of an
+ * objectinformatieobject, and the reading of stored relations, to their own
+ * classes.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwDrcRulesService extends ZgwRulesBase {
+	/**
+	 * The stored relations of a document.
+	 *
+	 * @var DrcDocumentRelations
+	 */
+	private DrcDocumentRelations $relations;
+
+	/**
+	 * The create rules of an objectinformatieobject.
+	 *
+	 * @var DrcObjectLinkRules
+	 */
+	private DrcObjectLinkRules $objectLinks;
+
+	/**
+	 * Constructor.
+	 *
+	 * Takes what every rules class takes and builds its two collaborators over
+	 * its own lookups, so they read in the request context it is given, and the
+	 * dispatcher and the container still see one DRC rules service.
+	 *
+	 * @param LoggerInterface $logger The logger.
+	 * @param SettingsService $settingsService The settings service.
+	 * @param FieldValidator $fieldValidator The field validator.
+	 */
+	public function __construct(LoggerInterface $logger, SettingsService $settingsService, FieldValidator $fieldValidator) {
+		parent::__construct(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
+		$this->relations = new DrcDocumentRelations(
+			lookups: $this->lookups,
+			results: $this->results,
+			settingsService: $settingsService,
+			fieldValidator: $fieldValidator,
+			logger: $logger
+		);
+		$this->objectLinks = new DrcObjectLinkRules(
+			lookups: $this->lookups,
+			results: $this->results,
+			settingsService: $settingsService,
+			fieldValidator: $fieldValidator,
+			logger: $logger,
+			relations: $this->relations
+		);
+	}//end __construct()
+
+	/**
+	 * Rules for creating an ObjectInformatieObject.
+	 *
+	 * @param array $body The ZGW request body
+	 *
+	 * @return array The validation result
+	 *
+	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+	 *
+	 * @see DrcObjectLinkRules::rulesObjectinformatieobjectenCreate()
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function rulesObjectinformatieobjectenCreate(array $body): array {
+		// Drc-002: the informatieobject URL is checked first, before the object is looked at.
+		$ioUrl = $body['informatieobject'] ?? '';
+		if ($ioUrl !== '') {
+			$error = $this->validateInformatieobjectUrl(ioUrl: $ioUrl);
+			if ($error !== null) {
+				return $error;
+			}
+		}
+
+		return $this->objectLinks->rulesObjectinformatieobjectenCreate(body: $body);
+	}//end rulesObjectinformatieobjectenCreate()
+
 	/**
 	 * Rules for creating an EnkelvoudigInformatieObject.
 	 *
@@ -253,7 +329,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		if ($register !== '' && $oioSchema !== '') {
 			// OIO stores the full informatieobject URL in the 'document' field,
 			// so search with both UUID and partial match to find any OIO relations.
-			$relatedIds = $this->findOioRelationsForDocument(
+			$relatedIds = $this->relations->findOioRelationsForDocument(
 				register: $register,
 				schema: $oioSchema,
 				docUuid: $existingId
@@ -277,140 +353,6 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	}//end rulesEnkelvoudiginformatieobjectenDestroy()
 
 	/**
-	 * Rules for creating an ObjectInformatieObject.
-	 *
-	 * Implements drc-002.
-	 *
-	 * @param array $body The ZGW request body
-	 *
-	 * @return array The validation result
-	 *
-	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function rulesObjectinformatieobjectenCreate(array $body): array {
-		$ioUrl      = $body['informatieobject'] ?? '';
-		$objectUrl  = $body['object'] ?? '';
-		$objectType = $body['objectType'] ?? '';
-
-		$error = $this->checkOioUrls(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType)
-			?? $this->checkOioRelations(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
-		if ($error !== null) {
-			return $error;
-		}
-
-		return $this->isValid(body: $body);
-	}//end rulesObjectinformatieobjectenCreate()
-
-	/**
-	 * Drc-002: the informatieobject URL and the object URL are valid, when given.
-	 *
-	 * @param mixed $ioUrl The informatieobject URL
-	 * @param mixed $objectUrl The object URL
-	 * @param mixed $objectType The objectType
-	 *
-	 * @return array|null The refusal, or null when acceptable
-	 */
-	private function checkOioUrls(mixed $ioUrl, mixed $objectUrl, mixed $objectType): ?array {
-		if ($ioUrl !== '') {
-			$error = $this->validateInformatieobjectUrl(ioUrl: $ioUrl);
-			if ($error !== null) {
-				return $error;
-			}
-		}
-
-		if ($objectUrl === '') {
-			return null;
-		}
-
-		return $this->validateObjectUrl(objectUrl: $objectUrl, objectType: $objectType);
-	}//end checkOioUrls()
-
-	/**
-	 * Drc-003 then drc-004: the relation is not a duplicate, and its ZIO/BIO exists.
-	 *
-	 * Uniqueness runs first so a duplicate error takes priority over the cross-register check.
-	 *
-	 * @param mixed $ioUrl The informatieobject URL
-	 * @param mixed $objectUrl The object URL
-	 * @param mixed $objectType The objectType
-	 *
-	 * @return array|null The refusal, or null when acceptable or nothing can be looked up
-	 */
-	private function checkOioRelations(mixed $ioUrl, mixed $objectUrl, mixed $objectType): ?array {
-		if ($ioUrl === '' || $objectUrl === '' || $this->objectService === null) {
-			return null;
-		}
-
-		$error = $this->checkOioUniqueness(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
-		if ($error !== null || $objectType === '') {
-			return $error;
-		}
-
-		return $this->validateOioCrossRegister(ioUrl: $ioUrl, objectUrl: $objectUrl, objectType: $objectType);
-	}//end checkOioRelations()
-
-	/**
-	 * Find OIO relations for a document UUID (drc-007/drc-008a).
-	 *
-	 * OIO objects store the full informatieobject URL in the 'document' field.
-	 * This method searches by UUID first, then by partial URL match if needed.
-	 *
-	 * @param string $register The register ID
-	 * @param string $schema The OIO schema ID
-	 * @param string $docUuid The document UUID
-	 *
-	 * @return array<string> Array of matching OIO UUIDs
-	 */
-	private function findOioRelationsForDocument(
-		string $register,
-		string $schema,
-		string $docUuid,
-	): array {
-		// First try by exact UUID (in case stored as UUID).
-		$results = $this->findAllObjectsByField(
-			register: $register,
-			schema: $schema,
-			field: 'document',
-			value: $docUuid
-		);
-		if (empty($results) === false) {
-			return $results;
-		}
-
-		// Also search by partial URL match (OIO may store full URL).
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: ['document' => '%' . $docUuid . '%', '_limit' => 100],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$ids = [];
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$id = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($id !== null) {
-					$ids[] = $id;
-				}
-			}
-
-			return $ids;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Drc-007: OIO relation search with partial match failed: ' . $e->getMessage()
-			);
-			return [];
-		}//end try
-	}//end findOioRelationsForDocument()
-
-	/**
 	 * Validate that indicatieGebruiksrecht=true requires existing gebruiksrechten (drc-006b).
 	 *
 	 * @return array Validation error
@@ -429,304 +371,6 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 			]
 		);
 	}//end validateIndicatieGebruiksrechtTrue()
-
-	/**
-	 * Validate OIO object URL (drc-002a/b/c/d).
-	 *
-	 * @param string $objectUrl The object URL
-	 * @param string $objectType The object type (zaak or besluit)
-	 *
-	 * @return array|null Validation error, or null if valid
-	 */
-	private function validateObjectUrl(string $objectUrl, string $objectType): ?array {
-		// Drc-002a/b: Check URL validity.
-		if ($this->isValidUrl(url: $objectUrl) === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De object URL is ongeldig.',
-				invalidParams: [
-					$this->fieldError(fieldName: 'object', code: 'bad-url', reason: 'De object URL is ongeldig.'),
-				]
-			);
-		}
-
-		// Drc-002a/b: Check URL contains a UUID.
-		$objectUuid = $this->extractUuid(url: $objectUrl);
-		if ($objectUuid === null) {
-			return $this->error(
-				status: 400,
-				detail: 'De object URL bevat geen geldig UUID.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'object',
-						code: 'bad-url',
-						reason: 'De object URL bevat geen geldig UUID.'
-					),
-				]
-			);
-		}
-
-		// Drc-002c/d: Validate objectType matches the URL path.
-		if ($objectType === 'case' && strpos($objectUrl, '/zaken/') === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De object URL wijst niet naar een zaak.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'object',
-						code: 'invalid-resource',
-						reason: 'De object URL wijst niet naar een zaak resource.'
-					),
-				]
-			);
-		}
-
-		if ($objectType === 'decision' && strpos($objectUrl, '/besluiten/') === false) {
-			return $this->error(
-				status: 400,
-				detail: 'De object URL wijst niet naar een besluit.',
-				invalidParams: [
-					$this->fieldError(
-						fieldName: 'object',
-						code: 'invalid-resource',
-						reason: 'De object URL wijst niet naar een besluit resource.'
-					),
-				]
-			);
-		}
-
-		return null;
-	}//end validateObjectUrl()
-
-	/**
-	 * Validate OIO cross-register: ZIO/BIO must exist (drc-004 VNG).
-	 *
-	 * @param string $ioUrl The informatieobject URL
-	 * @param string $objectUrl The object URL (zaak or besluit)
-	 * @param string $objectType The object type (zaak or besluit)
-	 *
-	 * @return array|null Validation error if relation doesn't exist, null if valid
-	 */
-	private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array {
-		$ioUuid = $this->extractUuid(url: $ioUrl) ?? '';
-		$objectUuid = $this->extractUuid(url: $objectUrl) ?? '';
-
-		if ($ioUuid === '' || $objectUuid === '') {
-			return null;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		if ($register === '') {
-			return null;
-		}
-
-		$typeMap = [
-			'case' => ['case_document_schema', 'case'],
-			'decision' => ['decision_document_schema', 'decision'],
-		];
-		if (isset($typeMap[$objectType]) === false) {
-			return null;
-		}
-
-		[$schemaKey, $searchField] = $typeMap[$objectType];
-
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
-		if ($schema === '') {
-			return null;
-		}
-
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [
-					$searchField => $objectUuid,
-					'document' => $ioUuid,
-					'_limit' => 1,
-				],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-			$total = $result['total'] ?? count($result['results'] ?? []);
-
-			if ($total === 0) {
-				$detail = 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
-				if ($objectType === 'case') {
-					$detail = 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.';
-				}
-
-				return $this->error(
-					status: 400,
-					detail: $detail,
-					invalidParams: [
-						$this->fieldError(
-							fieldName: 'nonFieldErrors',
-							code: 'inconsistent-relation',
-							reason: $detail
-						),
-					]
-				);
-			}
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Drc-004: Cross-register validation failed: ' . $e->getMessage()
-			);
-		}//end try
-
-		return null;
-	}//end validateOioCrossRegister()
-
-	/**
-	 * Validate OIO uniqueness: object + informatieobject + objectType (drc-003 VNG).
-	 *
-	 * @param string $ioUrl The informatieobject URL
-	 * @param string $objectUrl The object URL (zaak or besluit)
-	 * @param string $objectType The object type (zaak or besluit)
-	 *
-	 * @return array|null Validation error if duplicate found, null if unique
-	 */
-	private function checkOioUniqueness(string $ioUrl, string $objectUrl, string $objectType): ?array {
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$oioSchema = $this->settingsService->getConfigValue(key: 'document_link_schema');
-
-		if ($register === '') {
-			return null;
-		}
-
-		$duplicateError = $this->error(
-			status: 400,
-			detail: 'De combinatie informatieobject + object + objectType bestaat al.',
-			invalidParams: [
-				$this->fieldError(
-					fieldName: 'nonFieldErrors',
-					code: 'unique',
-					reason: 'De combinatie informatieobject + object + objectType bestaat al.'
-				),
-			]
-		);
-
-		$ioUuid = $this->extractUuid(url: $ioUrl);
-		$objectUuid = $this->extractUuid(url: $objectUrl);
-
-		// Check OIO schema for existing duplicates.
-		if ($oioSchema !== '') {
-			$found = $this->searchDuplicateRelation(
-				register: $register,
-				schema: $oioSchema,
-				ioUrl: $ioUrl,
-				objectUrl: $objectUrl,
-				ioUuid: $ioUuid,
-				objectUuid: $objectUuid,
-				objectField: 'object'
-			);
-			if ($found === true) {
-				return $duplicateError;
-			}
-		}
-
-		// Drc-003a/b: Also check ZIO/BIO schemas — a relationship created via
-		// ZRC (zaakinformatieobjecten) or BRC (besluitinformatieobjecten) counts
-		// as a duplicate for OIO creation.
-		$crossSchemaKey = '';
-		$crossField = '';
-		if ($objectType === 'case') {
-			$crossSchemaKey = 'case_document_schema';
-			$crossField = 'case';
-		} elseif ($objectType === 'decision') {
-			$crossSchemaKey = 'decision_document_schema';
-			$crossField = 'decision';
-		}
-
-		if ($crossSchemaKey !== '') {
-			$crossSchema = $this->settingsService->getConfigValue(key: $crossSchemaKey);
-			if ($crossSchema !== '') {
-				$found = $this->searchDuplicateRelation(
-					register: $register,
-					schema: $crossSchema,
-					ioUrl: $ioUrl,
-					objectUrl: $objectUrl,
-					ioUuid: $ioUuid,
-					objectUuid: $objectUuid,
-					objectField: $crossField
-				);
-				if ($found === true) {
-					return $duplicateError;
-				}
-			}
-		}
-
-		return null;
-	}//end checkOioUniqueness()
-
-	/**
-	 * Search for an existing relation in a schema by document+object combination.
-	 *
-	 * @param string $register The register ID
-	 * @param string $schema The schema ID to search
-	 * @param string $ioUrl The informatieobject URL
-	 * @param string $objectUrl The object URL
-	 * @param string|null $ioUuid The extracted informatieobject UUID
-	 * @param string|null $objectUuid The extracted object UUID
-	 * @param string $objectField The field name for the object reference
-	 *
-	 * @return bool True if a duplicate was found
-	 */
-	private function searchDuplicateRelation(
-		string $register,
-		string $schema,
-		string $ioUrl,
-		string $objectUrl,
-		?string $ioUuid,
-		?string $objectUuid,
-		string $objectField,
-	): bool {
-		try {
-			// Search by full URL.
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: ['document' => $ioUrl, $objectField => $objectUrl, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-			if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-				return true;
-			}
-
-			// Fallback: search by UUID (stored data may use UUID instead of URL).
-			if ($ioUuid !== null && $objectUuid !== null) {
-				$query = $this->objectService->buildSearchQuery(
-					requestParams: ['document' => $ioUuid, $objectField => $objectUuid, '_limit' => 1],
-					register: $register,
-					schema: $schema
-				);
-				$result = $this->objectService->searchObjectsPaginated(query: $query);
-				if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-					return true;
-				}
-
-				// Full-text search using both UUIDs (field-specific LIKE
-				// with % is not supported by MagicMapper).
-				$query = $this->objectService->buildSearchQuery(
-					requestParams: ['_search' => $ioUuid . ' ' . $objectUuid, '_limit' => 1],
-					register: $register,
-					schema: $schema
-				);
-				$result = $this->objectService->searchObjectsPaginated(query: $query);
-				if (($result['total'] ?? count($result['results'] ?? [])) > 0) {
-					return true;
-				}
-			}//end if
-		} catch (\Throwable $e) {
-			// Fail-closed: treat an indeterminate check as a duplicate to prevent
-			// inadvertent duplicates when the storage backend is unavailable.
-			$this->logger->warning(
-				'Drc-003: Uniqueness check failed for schema {schema}: {message}',
-				['schema' => $schema, 'message' => $e->getMessage()]
-			);
-			return true;
-		}//end try
-
-		return false;
-	}//end searchDuplicateRelation()
 
 	/**
 	 * Validate lock requirement for document modifications (drc-006).

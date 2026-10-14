@@ -32,6 +32,8 @@ use PHPUnit\Framework\TestCase;
  * refuses, and one that carries the guard's options when it does not.
  *
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @covers \OCA\Dossiq\Service\NotificatieService
  * @uses \OCA\Dossiq\Service\Outbound\OutboundUrlGuard
  * @uses \OCA\Dossiq\Service\Outbound\HostResolver
