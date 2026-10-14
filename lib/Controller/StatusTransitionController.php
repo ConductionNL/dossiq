@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -67,6 +68,7 @@ class StatusTransitionController extends Controller {
 	 * @param IUserSession $userSession The current session
 	 * @param LoggerInterface $logger The logger
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 * @param IL10N|null $l10n The translator a refusal's sentence is written in; the app's own when left out
 	 */
 	public function __construct(
 		string $appName,
@@ -75,6 +77,7 @@ class StatusTransitionController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
+		private readonly ?IL10N $l10n = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
