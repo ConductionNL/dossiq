@@ -143,7 +143,7 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 		$refusal = $this->target->refusal(
 			withdrawal: $withdrawal,
 			statuses: $this->statuses(caseTypeId: $self),
-			moves: $this->moves(caseTypeId: $self)
+			moves: $this->moves(caseTypeId: $self, named: ($payload['workflowDefinition'] ?? null))
 		);
 		if ($refusal === null) {
 			return;
@@ -215,18 +215,27 @@ class CaseTypePortalWithdrawalListener implements IEventListener {
 	}//end statuses()
 
 	/**
-	 * The moves of the type's active template, whichever way they were stored.
+	 * The moves of the flow the saved case type follows, whichever way they were stored.
+	 *
+	 * The flow is the one the incoming payload names in `workflowDefinition`,
+	 * else the type's active template ({@see CaseTypeStore::templateFor()}).
+	 * Judging an update by the stored active template refused the shipped Woo
+	 * case type on every upgraded instance, because that instance still held
+	 * an older basis flow without the withdrawal move.
 	 *
 	 * The authoring page writes `transitions` as a JSON string; reading that
 	 * as no moves would wave every withdrawal through on the types that have
 	 * the most moves.
 	 *
 	 * @param string $caseTypeId The case type.
+	 * @param mixed  $named      The payload's `workflowDefinition`.
 	 *
 	 * @return array<int, array<string, mixed>> The transitions.
+	 *
+	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
 	 */
-	private function moves(string $caseTypeId): array {
-		$raw = ($this->store->activeTemplate(caseTypeId: $caseTypeId)['transitions'] ?? []);
+	private function moves(string $caseTypeId, mixed $named): array {
+		$raw = ($this->store->templateFor(caseTypeId: $caseTypeId, named: $named)['transitions'] ?? []);
 		if (is_string($raw) === true) {
 			$raw = json_decode($raw, true);
 		}

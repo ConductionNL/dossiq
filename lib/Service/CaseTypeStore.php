@@ -66,22 +66,39 @@ class CaseTypeStore {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function readCaseType(string $caseTypeId): array {
+		return $this->readRow(schemaKey: 'case_type_schema', id: $caseTypeId);
+	}//end readCaseType()
+
+	/**
+	 * Read one row of a configured schema by id.
+	 *
+	 * The one catch for single-row reads, as {@see self::search()} is for
+	 * lists: an unreachable store or a missing row answers the empty array.
+	 *
+	 * @param string $schemaKey The settings key naming the schema.
+	 * @param string $id        The row's id.
+	 *
+	 * @return array<string, mixed> The row, or an empty array.
+	 *
+	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 */
+	private function readRow(string $schemaKey, string $id): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
+		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
 
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($objectService === null || $register === '' || $schema === '' || $id === '') {
 			return [];
 		}
 
 		try {
-			$found = $objectService->find($caseTypeId, register: $register, schema: $schema);
+			$found = $objectService->find($id, register: $register, schema: $schema);
 		} catch (Throwable $e) {
 			return [];
 		}
 
 		return $this->asRow(value: $found);
-	}//end readCaseType()
+	}//end readRow()
 
 	/**
 	 * Rows of one schema belonging to one case type.
@@ -135,6 +152,38 @@ class CaseTypeStore {
 
 		return $fallback;
 	}//end activeTemplate()
+
+	/**
+	 * The flow a case type follows: the one it names, else its active one.
+	 *
+	 * A case type names its flow in `workflowDefinition`. A check made while a
+	 * case type is being SAVED must judge the flow the incoming payload names,
+	 * not whichever template of the type happens to be active: an upgraded
+	 * instance can hold an older active flow (a basis template written before
+	 * the app shipped one), and judging by that refused the shipped case type
+	 * on every upgrade (Zuiddrecht, 14 Oct).
+	 *
+	 * A name that does not resolve to a stored template falls back to the
+	 * active one, so a dangling reference is judged as before.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 * @param mixed  $named      The `workflowDefinition` value: a uuid, an expanded row, or empty.
+	 *
+	 * @return array<string, mixed> The template, or an empty array when there is none.
+	 *
+	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 */
+	public function templateFor(string $caseTypeId, mixed $named): array {
+		$namedId = $this->referenceId(value: $named);
+		if ($namedId !== '') {
+			$template = $this->readRow(schemaKey: 'workflow_template_schema', id: $namedId);
+			if ($template !== []) {
+				return $template;
+			}
+		}
+
+		return $this->activeTemplate(caseTypeId: $caseTypeId);
+	}//end templateFor()
 
 	/**
 	 * Every case type sharing one identifier: the version chain.
