@@ -28,10 +28,15 @@ use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Access\CaseRecordGrantsBackfill;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
+use OCP\Notification\IManager as INotificationManager;
+use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -125,11 +130,32 @@ class ShippedPrivateRecords {
 	public array $disabled = [];
 
 	/**
-	 * Whether a grant is refused unless an administrator is signed in, as OpenRegister refuses it.
+	 * Whether a grant is refused unless an administrator or a holder of `grant_manage` is signed in, as OpenRegister refuses it.
 	 *
 	 * @var bool
 	 */
-	public bool $grantsNeedAdministrator = false;
+	public bool $grantsAreChecked = false;
+
+	/**
+	 * The uid the app config names as dossiq's background service account; '' is none chosen.
+	 *
+	 * @var string
+	 */
+	public string $serviceAccount = 'dossiq-achtergrond';
+
+	/**
+	 * Who holds OpenRegister's special right `grant_manage`, as giveInEveryOrganisation() stored it.
+	 *
+	 * @var list<array{group: string, register: ?string, schemas: ?list<string>}>
+	 */
+	public array $grantManage = [];
+
+	/**
+	 * Whether this OpenRegister has special rights at all.
+	 *
+	 * @var bool
+	 */
+	public bool $hasSpecialRights = true;
 
 	/**
 	 * Read the register as the importer does.
@@ -186,8 +212,9 @@ class ShippedPrivateRecords {
 		$grants->method('available')->willReturn(true);
 		$grants->method('reconcile')->willReturnCallback(
 			function (string $schema, string $uuid, array $readers, string $group): array {
-				// OpenRegister writes a grant only for a signed-in owner, owning group member or administrator.
-				if ($this->grantsNeedAdministrator === true && in_array('admin', ($this->groups[$this->signedIn] ?? []), true) === false) {
+				// OpenRegister writes a grant only for a signed-in owner, owning group member, administrator
+				// or holder of the special right grant_manage on the record's schema (decision 234).
+				if ($this->grantsAreChecked === true && $this->mayManageGrants(user: $this->signedIn, schema: $schema) === false) {
 					return ['granted' => 0, 'revoked' => 0, 'refused' => 1];
 				}
 
@@ -247,17 +274,93 @@ class ShippedPrivateRecords {
 			)
 		);
 		$groupManager->method('get')->willReturnCallback(static fn (string $gid): ?IGroup => $gid === 'admin' ? $admins : null);
+		$users = $this->mock(IUserManager::class);
+		$users->method('get')->willReturnCallback(fn (string $uid): ?IUser => $uid === '' ? null : $this->user(uid: $uid));
+		$appConfig = $this->mock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = ''): string => $key === BackgroundServiceAccount::CONFIG_KEY ? $this->serviceAccount : $default
+		);
+		$serviceAccount = new BackgroundServiceAccount($appConfig, $users, $groupManager, $session, $this->mock(LoggerInterface::class), $this->mock(INotificationManager::class));
+
+		$specialRights = new class($this) {
+			public function __construct(private readonly ShippedPrivateRecords $shipped) {
+			}
+
+			public function giveInEveryOrganisation(string $right, string $group, ?string $register = null, ?array $schemas = null): array {
+				return $this->shipped->give(right: $right, group: $group, register: $register, schemas: $schemas);
+			}
+		};
+		$container = $this->mock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			function (string $name) use ($specialRights): object {
+				if ($name !== CaseRecordGrantsBackfill::SPECIAL_RIGHTS || $this->hasSpecialRights === false) {
+					throw new \RuntimeException('no such service: '.$name);
+				}
+
+				return $specialRights;
+			}
+		);
 
 		return new CaseRecordGrantsBackfill(
 			settingsService: $settings,
 			caseTypes: $caseTypes,
 			resolver: $resolver,
 			access: $this->access(caseTypeSlug: $caseTypeSlug),
-			groupManager: $groupManager,
+			serviceAccount: $serviceAccount,
 			userSession: $session,
+			container: $container,
 			logger: $logger,
 		);
 	}//end backfill()
+
+	/**
+	 * Store the special right as OpenRegister's giveInEveryOrganisation() does: one entry per group.
+	 *
+	 * @param string            $right    The right; only `grant_manage` is modelled.
+	 * @param string            $group    The group.
+	 * @param string|null       $register The register it is narrowed to.
+	 * @param list<string>|null $schemas  The schemas it is narrowed to.
+	 *
+	 * @return array{organisations: int, changed: int}
+	 */
+	public function give(string $right, string $group, ?string $register, ?array $schemas): array {
+		$entry = ['group' => $group, 'register' => $register, 'schemas' => $schemas];
+		$before = $this->grantManage;
+		$this->grantManage = array_values(array_filter($this->grantManage, static fn (array $held): bool => $held['group'] !== $group));
+		$this->grantManage[] = $entry;
+
+		return ['organisations' => 1, 'changed' => ($before === $this->grantManage ? 0 : 1)];
+	}//end give()
+
+	/**
+	 * Whether OpenRegister lets this user manage the grants on a record of this schema.
+	 *
+	 * An administrator, or a member of a group that holds `grant_manage` on the
+	 * schema in this register. The record's owner and owning group also may in
+	 * OpenRegister; the reconcile never relies on that, so it is not modelled.
+	 *
+	 * @param string $user   The signed-in user; '' is nobody.
+	 * @param string $schema The record's schema slug.
+	 *
+	 * @return bool
+	 */
+	public function mayManageGrants(string $user, string $schema): bool {
+		$groups = ($this->groups[$user] ?? []);
+		if ($user === '' || in_array('admin', $groups, true) === true) {
+			return $user !== '';
+		}
+
+		foreach ($this->grantManage as $entry) {
+			if (in_array($entry['group'], $groups, true) === true
+				&& ($entry['register'] === null || $entry['register'] === 'dossiq')
+				&& ($entry['schemas'] === null || in_array($schema, $entry['schemas'], true) === true)
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end mayManageGrants()
 
 	/**
 	 * A user of this fixture; disabled when listed in `disabled`.

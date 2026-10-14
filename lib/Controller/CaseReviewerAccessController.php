@@ -86,7 +86,7 @@ class CaseReviewerAccessController extends Controller {
 			return new JSONResponse(['error' => 'administrator-only'], Http::STATUS_FORBIDDEN);
 		}
 
-		$answer = $this->backfill->run();
+		$answer = $this->backfill->runAsCaller();
 		if ($answer['status'] === 'unavailable') {
 			return new JSONResponse($answer, Http::STATUS_SERVICE_UNAVAILABLE);
 		}

@@ -54,6 +54,11 @@ class ObjectReadGrantsTest extends TestCase {
 
 	private ObjectReadGrants $grants;
 
+	/**
+	 * The object service the grants read records from.
+	 */
+	private object $objectService;
+
 	protected function setUp(): void {
 		$this->record = new class {
 			/** @var array<string, mixed> */
@@ -132,7 +137,20 @@ class ObjectReadGrantsTest extends TestCase {
 			public function __construct(private object $record) {
 			}
 
-			public function find(string $id, mixed $_extend = null, bool $files = false, string $register = '', string $schema = ''): ?object {
+			/**
+			 * How each read was scoped: true where the caller's own rules applied.
+			 *
+			 * @var list<array{rbac: bool, multitenancy: bool}>
+			 */
+			public array $reads = [];
+
+			public function find(string $id, mixed $_extend = null, bool $files = false, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?object {
+				$this->reads[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+				if ($_rbac === true) {
+					// The caller manages the grants and may not read the record (decision 234).
+					return null;
+				}
+
 				return $id === 'a-1' ? $this->record : null;
 			}
 		};
@@ -155,11 +173,19 @@ class ObjectReadGrantsTest extends TestCase {
 		);
 
 		$settings = $this->createMock(SettingsService::class);
+		$this->objectService = $objectService;
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ['register' => 'dossiq'][$key] ?? $default);
 
 		$this->grants = new ObjectReadGrants(settingsService: $settings, container: $container, logger: $this->createMock(LoggerInterface::class));
 	}//end setUp()
+
+	public function testTheRecordIsFoundByARuleReadBecauseTheCallerMayNotReadIt(): void {
+		$this->grants->reconcile(schema: 'documentReview', uuid: 'a-1', readers: ['reviewer' => ObjectReadGrants::READ], group: 'supervisors');
+
+		self::assertNotSame([], $this->objectService->reads);
+		self::assertSame(['rbac' => false, 'multitenancy' => false], $this->objectService->reads[0]);
+	}//end testTheRecordIsFoundByARuleReadBecauseTheCallerMayNotReadIt()
 
 	public function testReadersAreGrantedReadOnlyAndTheOwnerIsSkipped(): void {
 		$answer = $this->grants->reconcile(schema: 'assessment', uuid: 'a-1', readers: ['handler' => 1, 'reviewer1' => 1, 'reviewer2' => 1, '' => 1, ' ' => 3], group: 'dossiq-coordinators');

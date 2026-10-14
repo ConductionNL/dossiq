@@ -27,6 +27,7 @@ use OCA\Dossiq\Tests\Support\ShippedPrivateRecords;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
@@ -43,6 +44,9 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\Settings\SchemaSlugMap
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses   \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses   \OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException
  */
 class ReconcileCaseRecordGrantsTest extends TestCase {
 
@@ -135,15 +139,18 @@ class ReconcileCaseRecordGrantsTest extends TestCase {
 		self::assertSame(['Dossiq ' . $warning], $this->errors, 'the same sentence is an error in the log');
 	}//end testAnUnfinishedRunIsAWarningAndAnErrorNeverASuccess()
 
-	public function testNoAdministratorAndNoSharingEachSayNothingWasWritten(): void {
-		$this->runOver(answer: ['status' => 'no-administrator', 'actor' => '']);
+	public function testNoServiceAccountNoRightAndNoSharingEachSayNothingWasWritten(): void {
+		$this->runOver(answer: ['status' => 'no-service-account', 'actor' => '']);
+		$this->runOver(answer: ['status' => 'no-grant-right']);
 		$this->runOver(answer: ['status' => 'unavailable']);
 
 		self::assertSame([], $this->said['info']);
-		self::assertStringContainsString('NOT reconciled. No enabled administrator account', $this->said['warning'][0]);
-		self::assertStringContainsString('NOT reconciled. This OpenRegister has no per-object sharing', $this->said['warning'][1]);
-		self::assertCount(2, $this->errors);
-	}//end testNoAdministratorAndNoSharingEachSayNothingWasWritten()
+		self::assertStringContainsString('NOT reconciled. There is no usable background service account', $this->said['warning'][0]);
+		self::assertStringContainsString('no administrator account is used instead', $this->said['warning'][0]);
+		self::assertStringContainsString('NOT reconciled. OpenRegister could not give the background service group the special right grant_manage', $this->said['warning'][1]);
+		self::assertStringContainsString('NOT reconciled. This OpenRegister has no per-object sharing', $this->said['warning'][2]);
+		self::assertCount(3, $this->errors);
+	}//end testNoServiceAccountNoRightAndNoSharingEachSayNothingWasWritten()
 
 	public function testAWalkThatThrowsDoesNotStopTheUpgradeAndIsNotASuccess(): void {
 		$this->runOver(answer: new RuntimeException('the database went away'));
@@ -218,11 +225,12 @@ class ReconcileCaseRecordGrantsTest extends TestCase {
 
 	private function shippedCase(): ShippedPrivateRecords {
 		$shipped = new ShippedPrivateRecords($this);
-		$shipped->grantsNeedAdministrator = true;
+		$shipped->grantsAreChecked = true;
 		$shipped->groups = [
 			'j.devries' => ['dossiq-medewerkers'],
 			'p.bakker' => ['dossiq-medewerkers'],
 			'root' => ['admin'],
+			'dossiq-achtergrond' => ['dossiq-background-service'],
 		];
 		$caseType = $shipped->caseType(slug: 'woo-verzoek');
 		self::assertNotSame([], $caseType, 'The register ships the Woo request type.');
@@ -243,12 +251,40 @@ class ReconcileCaseRecordGrantsTest extends TestCase {
 
 		self::assertSame([], $this->said['warning']);
 		self::assertSame([], $this->errors);
-		self::assertStringContainsString('reconciled as root: 1 cases, 4 grants added', $this->said['info'][0]);
+		self::assertStringContainsString('reconciled as dossiq-achtergrond: 1 cases, 4 grants added', $this->said['info'][0]);
 		self::assertTrue($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'j.devries', action: 'update'), 'the handler marks');
 		self::assertTrue($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'p.bakker', action: 'update'), 'the reviewer reports pages seen');
 		self::assertTrue($shipped->admits(schema: 'reviewBatch', uuid: 'batch-1', user: 'p.bakker', action: 'read'));
-		self::assertSame(['root', ''], $shipped->sessions, 'it ran as the administrator and put the empty session back');
+		self::assertSame(['dossiq-achtergrond', ''], $shipped->sessions, 'it ran as the service account, never as root, and put the empty session back');
+		self::assertSame('', $shipped->signedIn, 'the session is clean afterwards');
+		self::assertFalse(
+			$shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'dossiq-achtergrond', action: 'read'),
+			'the service account manages the grants and still cannot read the record'
+		);
+		self::assertSame(
+			[['group' => 'dossiq-background-service', 'register' => 'dossiq', 'schemas' => $this->declaredPrivateSchemas()]],
+			$shipped->grantManage,
+			'the special right is narrowed to the schemas the case type keeps private'
+		);
 	}//end testTheRegisteredStepGivesAnExistingReviewItsGrantsWithNobodySignedIn()
+
+	/**
+	 * The schema slugs the shipped Woo request type keeps private, as the register declares them.
+	 *
+	 * @return list<string>
+	 */
+	private function declaredPrivateSchemas(): array {
+		$shipped = new ShippedPrivateRecords($this);
+		$slugs = [];
+		foreach ((array)($shipped->caseType(slug: 'woo-verzoek')['reviewerAccess']['records'] ?? []) as $record) {
+			$slugs[] = (string)(array_flip(SchemaSlugMap::SLUG_TO_CONFIG_KEY)[$record['schemaKey']] ?? '');
+		}
+
+		$slugs = array_values(array_unique(array_filter($slugs)));
+		sort($slugs);
+
+		return $slugs;
+	}//end declaredPrivateSchemas()
 
 	public function testRunningTheRegisteredStepTwiceChangesNothingTheSecondTime(): void {
 		$shipped = $this->shippedCase();
@@ -263,14 +299,48 @@ class ReconcileCaseRecordGrantsTest extends TestCase {
 		self::assertSame([], $this->said['warning']);
 	}//end testRunningTheRegisteredStepTwiceChangesNothingTheSecondTime()
 
-	public function testWithoutAnAdministratorTheRegisteredStepSaysTheRecordsStillWait(): void {
+	/**
+	 * The control: an enabled administrator exists, the service account does not work, and the step refuses to borrow the administrator.
+	 *
+	 * @dataProvider unusableServiceAccounts
+	 */
+	public function testWithoutAUsableServiceAccountTheRegisteredStepRefusesToBorrowAnAdministrator(string $configured, array $disabled, bool $member): void {
 		$shipped = $this->shippedCase();
-		$shipped->disabled = ['root'];
+		$shipped->serviceAccount = $configured;
+		$shipped->disabled = $disabled;
+		if ($member === false) {
+			$shipped->groups['dossiq-achtergrond'] = [];
+		}
 
 		$this->registeredStepOver(shipped: $shipped)->run($this->repairOutput());
 
 		self::assertSame([], $this->said['info']);
-		self::assertStringContainsString('NOT reconciled. No enabled administrator account', $this->said['warning'][0]);
-		self::assertFalse($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'j.devries', action: 'read'));
-	}//end testWithoutAnAdministratorTheRegisteredStepSaysTheRecordsStillWait()
+		self::assertStringContainsString('NOT reconciled. There is no usable background service account', $this->said['warning'][0]);
+		self::assertSame([], $shipped->sessions, 'nobody was signed in: not root, not the account');
+		self::assertSame([], $shipped->grants, 'nothing was written');
+		self::assertSame([], $shipped->grantManage, 'no right was given');
+		self::assertFalse($shipped->admits(schema: 'documentReview', uuid: 'review-1', user: 'j.devries', action: 'read'), 'the records still wait');
+	}//end testWithoutAUsableServiceAccountTheRegisteredStepRefusesToBorrowAnAdministrator()
+
+	/**
+	 * @return array<string, array{0: string, 1: list<string>, 2: bool}>
+	 */
+	public static function unusableServiceAccounts(): array {
+		return [
+			'none chosen' => ['', [], true],
+			'disabled' => ['dossiq-achtergrond', ['dossiq-achtergrond'], true],
+			'not in the group' => ['dossiq-achtergrond', [], false],
+			'the administrator chosen, not in the group' => ['root', [], true],
+		];
+	}//end unusableServiceAccounts()
+
+	public function testWithoutTheSpecialRightTheServiceAccountIsRefusedEveryGrant(): void {
+		$shipped = $this->shippedCase();
+		$shipped->hasSpecialRights = false;
+
+		$this->registeredStepOver(shipped: $shipped)->run($this->repairOutput());
+
+		self::assertStringContainsString('NOT reconciled. OpenRegister could not give', $this->said['warning'][0]);
+		self::assertSame([], $shipped->grants);
+	}//end testWithoutTheSpecialRightTheServiceAccountIsRefusedEveryGrant()
 }//end class

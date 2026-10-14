@@ -272,6 +272,15 @@ record. OpenRegister refuses a parent that references another schema
     `tests/Unit/Support/PrivateScopeVerdictDriftTest.php` runs the real `PermissionHandler::privateScopeVerdict()`
     from the sibling checkout over 5,184 cases and fails on the first one `ShippedPrivateRecords::privateVerdict()`
     answers differently.
+  - Round 10, decisions 222 and 234: the upgrade's walk runs as the background service account
+    (`BackgroundServiceAccount::runAs()`), never an administrator. It first gives `dossiq-background-service`
+    OpenRegister's organisation special right `grant_manage` (openregister #4601), narrowed to this register and
+    to the schemas the case types declare under `reviewerAccess.records`, and `ObjectReadGrants` finds each
+    record by a rule read. No usable account answers `no-service-account`, loud, and writes nothing. The
+    administrator route walks as its caller. Tests: `ReconcileCaseRecordGrantsTest` (as the account, the
+    control that refuses to borrow `root`, the session clean afterwards), `CaseRecordGrantsBackfillTest`,
+    `ObjectReadGrantsTest::testTheRecordIsFoundByARuleReadBecauseTheCallerMayNotReadIt`; red control
+    `dq-l8-logs/r10/red-borrow-admin.log` (8 fail when the walk falls back to an administrator).
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.
