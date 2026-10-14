@@ -19,7 +19,7 @@ says a guard refuses when it is unsure.
   integriq is not installed, PDOK does not answer, PDOK answers about another object, or the
   answer is simulated (integriq's PDOK clients in their mock flavour). Where the check is off, the
   location is saved and marked `bagCheck: not-checked`; a confirmed one is marked `checked`.
-- The `case-location` schema gains `bagCheck` (1.1.0 to 1.2.0).
+- The `case-location` schema gains `bagCheck`. Its version stays 1.1.0: OpenRegister's importer sees a change to `properties` whatever the version says, and the register version moves.
 - The BAG client classes, `BagRegistrar`, `PdokBagService` and their tests are deleted. The
   Kadaster client is dropped, not moved (Q-R2-11): PDOK serves the same register without a key.
 - `PdokLocatieserverService` stays: `lib/Service/PdokService.php` uses it for address search.

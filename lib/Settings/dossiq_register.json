@@ -7189,7 +7189,7 @@
             "case-location": {
                 "slug": "case-location",
                 "icon": "MapMarker",
-                "version": "1.2.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Place",
                 "title": "Case Location",
                 "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address): 0..N locations per case via back-reference on `case`.",
