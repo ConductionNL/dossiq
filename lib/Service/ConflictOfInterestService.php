@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\External\Brp\BrpHaalCentraalAdapterInterface;
+use OCA\Dossiq\Service\Registry\PersonRelationReader;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -42,6 +42,39 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class ConflictOfInterestService {
+
+	/**
+	 * `relationCheck` when the family relation step ran and found no relation
+	 * to the applicant.
+	 */
+	public const RELATION_CHECK_DONE = 'checked';
+
+	/**
+	 * `relationCheck` when the family relation step could not run on this
+	 * instance. The answer then also carries `relationCheckReason`.
+	 */
+	public const RELATION_CHECK_NOT_AVAILABLE = 'not-available';
+
+	/**
+	 * Reason returned when the family relation read is switched on and gave
+	 * no answer. A CONFLICT (it blocks), for the same reason as below.
+	 */
+	public const REASON_RELATION_INDETERMINATE = 'relatie_onbepaald';
+
+	/**
+	 * The reasons that mean the relation read is not there to be asked:
+	 * integriq is absent or too old, or the municipality has not switched
+	 * relation numbers on for its BRP source. Any other reason means the
+	 * read was asked and did not answer.
+	 *
+	 * @var array<int, string>
+	 */
+	private const RELATION_READ_ABSENT = [
+		PersonRelationReader::REASON_NO_INTEGRIQ,
+		PersonRelationReader::REASON_NO_READER,
+		'relations-not-enabled',
+		'no-source',
+	];
 
 	/**
 	 * Reason returned when the check cannot be performed because the case
@@ -71,12 +104,10 @@ class ConflictOfInterestService {
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger Logger.
-	 * @param BrpHaalCentraalAdapterInterface|null $brpAdapter Optional BRP Haal
-	 *                                                         Centraal adapter
-	 *                                                         for relationship
-	 *                                                         enrichment.
-	 *                                                         Dormant by
-	 *                                                         default.
+	 * @param PersonRelationReader|null $relationReader Reads the case worker's partner,
+	 *                                                  parents and children through
+	 *                                                  integriq. Unbound, the relation
+	 *                                                  step reports "not available".
 	 * @param MedewerkerIdentityResolverInterface|null $identityResolver Optional server-side
 	 *                                                                   case-worker identity
 	 *                                                                   resolver. Dormant by
@@ -87,7 +118,7 @@ class ConflictOfInterestService {
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
-		private readonly ?BrpHaalCentraalAdapterInterface $brpAdapter = null,
+		private readonly ?PersonRelationReader $relationReader = null,
 		private readonly ?MedewerkerIdentityResolverInterface $identityResolver = null,
 	) {
 	}//end __construct()
@@ -178,9 +209,10 @@ class ConflictOfInterestService {
 	 *                                             and only when the caller has
 	 *                                             sourced it server-side.
 	 *
-	 * @return array{conflict:bool, reason?:string}
+	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
 	public function checkConflict(string $userId, string $caseId, array $caseProperties = []): array {
 		$this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'caseId' => $caseId]);
@@ -235,7 +267,7 @@ class ConflictOfInterestService {
 	 * @param string $applicantBsn The applicant's BSN (in memory only).
 	 * @param string $caseId Case id (audit correlation).
 	 *
-	 * @return array{conflict:bool, reason?:string}
+	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
@@ -256,82 +288,74 @@ class ConflictOfInterestService {
 			}
 		}
 
-		// BRP adapter fallback — dormant by default; an active binding looks
-		// up the user's relationship to the applicant via Haal Centraal
-		// `relaties` envelope and short-circuits with `belangenconflict`.
-		$brpRelation = $this->lookupRelationViaBrp(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
-		if ($brpRelation !== null && $brpRelation !== '') {
-			return ['conflict' => true, 'reason' => $brpRelation];
-		}
-
-		return ['conflict' => false];
+		return $this->relationFromRegistry(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
 	}//end detectRelationConflict()
 
 	/**
-	 * Consult the BRP / Haal Centraal adapter for a relationship label.
+	 * Ask the population register, through integriq, whether the applicant
+	 * is the case worker's partner, parent or child.
 	 *
-	 * The adapter ships dormant by default; the LOOKUP_DEFERRED outcome
-	 * yields null so the conflict check stays open. An active binding
-	 * returns the user's relation (e.g. `partner`, `parent`, `child`)
-	 * via the persoon envelope's `relaties` block.
+	 * Three outcomes, and none of them is silent:
 	 *
-	 * Per AVG / WBP article 9 the BSN values themselves are NEVER logged
-	 * — the dormant adapter redacts them, and this caller never forwards
-	 * them to the structured logger.
+	 *   - The read is not there to be asked (integriq absent, or the
+	 *     municipality has not switched relation numbers on for its BRP
+	 *     source): no conflict is claimed, and the answer carries
+	 *     `relationCheck: not-available` with the reason, so a decision made
+	 *     without the step does not read like one made with it.
+	 *   - The read is switched on and gives no answer: INDETERMINATE. We
+	 *     asked whether a relation exists and were not told. Fail closed.
+	 *   - The read answers: a relation to the applicant is a conflict named by
+	 *     the relation; no such relation is `relationCheck: checked`.
 	 *
-	 * @param string $userBsn User BSN.
-	 * @param string $applicantBsn Applicant BSN.
+	 * Per AVG art. 9 no BSN is logged, and numbers are compared as hashes.
+	 *
+	 * @param string $userBsn The case worker's BSN (in memory only).
+	 * @param string $applicantBsn The applicant's BSN (in memory only).
 	 * @param string $caseId Case id (audit correlation).
 	 *
-	 * @return string|null Relationship label, or null when unknown / dormant.
+	 * @return array{conflict:bool, reason?:string, relationCheck?:string, relationCheckReason?:string}
 	 *
-	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
+	 * @spec openspec/changes/brp-client-retired/specs/mandaat-matrix/spec.md#requirement-conflict-of-interest-detection
 	 */
-	private function lookupRelationViaBrp(string $userBsn, string $applicantBsn, string $caseId): ?string {
-		if ($this->brpAdapter === null) {
-			return null;
+	private function relationFromRegistry(string $userBsn, string $applicantBsn, string $caseId): array {
+		$answer = ['available' => false, 'reason' => PersonRelationReader::REASON_NO_INTEGRIQ, 'relations' => []];
+		if ($this->relationReader !== null) {
+			try {
+				$answer = $this->relationReader->read($userBsn);
+			} catch (\Throwable $e) {
+				$answer = ['available' => false, 'reason' => PersonRelationReader::REASON_UNREACHABLE, 'relations' => []];
+			}
 		}
 
-		try {
-			$result = $this->brpAdapter->lookup(
-				$userBsn,
-				[
-					'lookupReason' => 'belangenconflict-detection',
-					'caseId' => $caseId,
-					'comparisonBsnHash' => substr(hash('sha256', $applicantBsn), 0, 16),
-				]
-			);
-		} catch (\Throwable $e) {
+		if ($answer['available'] === false) {
+			if (in_array($answer['reason'], self::RELATION_READ_ABSENT, true) === true) {
+				$this->logger->notice(
+					'Belangenconflict: the family relation step is not available',
+					['caseId' => $caseId, 'reason' => $answer['reason']]
+				);
+				return [
+					'conflict' => false,
+					'relationCheck' => self::RELATION_CHECK_NOT_AVAILABLE,
+					'relationCheckReason' => $answer['reason'],
+				];
+			}
+
 			$this->logger->warning(
-				'BRP relationship lookup failed',
-				['caseId' => $caseId, 'error' => $e->getMessage()]
+				'Belangenconflict: the family relation read gave no answer, blocking',
+				['caseId' => $caseId, 'reason' => $answer['reason']]
 			);
-			return null;
+			return ['conflict' => true, 'reason' => self::REASON_RELATION_INDETERMINATE];
 		}
 
-		if ($result->lookupStatus !== 'FOUND') {
-			return null;
-		}
-
-		$relations = (array)($result->persoon['relaties'] ?? []);
-		foreach ($relations as $relation) {
-			if (is_array($relation) === false) {
-				continue;
-			}
-
-			$relatedBsn = (string)($relation['citizenServiceNumber'] ?? '');
-			if ($relatedBsn === '' || $relatedBsn !== $applicantBsn) {
-				continue;
-			}
-
-			$label = (string)($relation['relatie'] ?? $relation['type'] ?? '');
-			if ($label !== '') {
-				return $label;
+		$applicantHash = self::hashBsn(bsn: $applicantBsn);
+		foreach ($answer['relations'] as $relation) {
+			if (hash_equals($applicantHash, self::hashBsn(bsn: $relation['burgerservicenummer'])) === true) {
+				return ['conflict' => true, 'reason' => $relation['relation']];
 			}
 		}
 
-		return null;
-	}//end lookupRelationViaBrp()
+		return ['conflict' => false, 'relationCheck' => self::RELATION_CHECK_DONE];
+	}//end relationFromRegistry()
 
 	/**
 	 * Manually register a belangenconflict on a case.

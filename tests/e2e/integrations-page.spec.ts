@@ -71,11 +71,13 @@ const SEEDED_KEYS = [
 const UNAVAILABLE_KEYS = ['kvk']
 
 /**
- * Built, called, and dormant until its tier key is set.
+ * Called, and off until integriq's BRP source allows it.
  *
- * connections.json gives it an `unconfiguredMessage` naming
- * `integration.brp.mode`, which integriq shows while the row is unconfigured
- * (contract D4 rule 6), because no admin section writes that key.
+ * Dossiq ships no BRP client (ADR-118): the conflict-of-interest check reads
+ * family relations through integriq's BRP source. connections.json gives the
+ * row an `unconfiguredMessage` naming `relationFields`, the setting on that
+ * source, which integriq shows while the row is unconfigured (contract D4
+ * rule 6), because no admin section in dossiq writes it.
  */
 const DORMANT_KEYS = ['brp']
 
@@ -270,7 +272,7 @@ test.describe('Integrations', () => {
 			}
 			if (DORMANT_KEYS.includes(key)) {
 				expect(row.status).toBe('unconfigured')
-				expect(row.statusMessage).toMatch(/integration\.brp\.mode/)
+				expect(row.statusMessage).toMatch(/relationFields/)
 				continue
 			}
 			if (SIMULATED_KEYS.includes(key)) {

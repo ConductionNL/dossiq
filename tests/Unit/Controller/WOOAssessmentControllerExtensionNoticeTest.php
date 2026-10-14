@@ -228,7 +228,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 		self::assertCount(1, $messages);
 		self::assertSame('ps-abc', $messages[0]['recipientRef']);
 		self::assertStringContainsString('Veel documenten van derden, zienswijzen nodig', $messages[0]['content']);
-		self::assertStringContainsString('2026-11-16', $messages[0]['content']);
+		self::assertStringContainsString('16 november 2026', $messages[0]['content']);
 
 		$records = $this->store->get('case', 'case-woo')['outboundCommunications'];
 		self::assertSame('extension', $records[0]['moment']);

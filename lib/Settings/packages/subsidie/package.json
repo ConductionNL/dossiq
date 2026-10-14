@@ -1,0 +1,12 @@
+{
+  "id": "subsidie",
+  "title": "Subsidie",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows"
+  ],
+  "install": "on-request",
+  "description": "The generic subsidie case type (Awb titel 4.2) with its statuses, roles, the beschiktBedrag field and a published flow. Installed on request: POST /api/packages/subsidie/install, or occ dossiq:package:install subsidie. Converted by scripts/packages/seed-to-package.py from the parked subsidie entry in the old bezwaar seed."
+}

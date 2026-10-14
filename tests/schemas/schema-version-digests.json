@@ -1571,6 +1571,10 @@
         "version": "1.2.0",
         "digest": "319bcc659570518fe1e09b7c052b4b211764674e326a043c27b244368b5103a1"
     },
+    "lib/Settings/register.d/89-search-outcome-and-admissibility.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
         "version": "",
         "digest": "6a9121e30829215000d98df0d6957e81afd954d1b420c6c66097524546ab3c71"
