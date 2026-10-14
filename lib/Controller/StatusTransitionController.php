@@ -322,4 +322,15 @@ class StatusTransitionController extends Controller {
 		// method" (HTTP 500) — which is exactly what broke the transition POST.
 		return $this->request->getParams();
 	}//end readJsonBody()
+
+	/**
+	 * The translator a refusal's sentence is written in.
+	 *
+	 * @return IL10N|null The injected translator, or null for the app's.
+	 *
+	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 */
+	protected function refusalL10n(): ?IL10N {
+		return $this->l10n;
+	}//end refusalL10n()
 }//end class
