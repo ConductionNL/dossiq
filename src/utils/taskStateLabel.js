@@ -42,3 +42,26 @@ export function taskStateLabel(state) {
 			return String(state).trim()
 	}
 }
+
+/**
+ * The badge tone an engine task state is drawn in.
+ *
+ * DqTaak draws an active task "In uitvoering" in the board's work-in-progress
+ * tone (purple), which keeps it apart from a case "In behandeling" in blue. A
+ * finished task reads as done (green). Every other state is neutral: waiting,
+ * ready, stopped and skipped are facts about the task, not warnings.
+ *
+ * @param {string|null|undefined} state The engine state.
+ * @return {string} A CnStatusBadge variant.
+ * @spec openspec/specs/task-management/spec.md
+ */
+export function taskStateTone(state) {
+	switch (String(state ?? '').trim()) {
+		case 'active':
+			return 'purple'
+		case 'completed':
+			return 'success'
+		default:
+			return 'default'
+	}
+}

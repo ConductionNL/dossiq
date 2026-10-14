@@ -107,13 +107,18 @@ async function mountPage(task) {
 		global: {
 			stubs: {
 				RouterLink: true,
+				// The page names each badge with its own data-testid, which
+				// falls through to this span with the variant beside it.
 				CnStatusBadge: defineComponent({
 					name: 'CnStatusBadge',
-					props: { label: { type: String, default: '' } },
+					props: {
+						label: { type: String, default: '' },
+						variant: { type: String, default: 'default' },
+					},
 					render() {
 						return h(
 							'span',
-							{ 'data-testid': 'task-detail-state' },
+							{ 'data-variant': this.variant },
 							this.label,
 						)
 					},
@@ -148,12 +153,40 @@ describe('TaskDetailView', () => {
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
 			'In execution',
 		)
+		// DqTaak: the active state in the work-in-progress purple, and a
+		// "Hoog" pill beside it for a high-priority task.
+		expect(
+			wrapper
+				.find('[data-testid="task-detail-state"]')
+				.attributes('data-variant'),
+		).toBe('purple')
+		const priority = wrapper.find('[data-testid="task-detail-priority"]')
+		expect(priority.text()).toBe('High')
+		expect(priority.attributes('data-variant')).toBe('warning')
 		expect(wrapper.find('[data-testid="cn-fact-assignee"] dd').text()).toBe(
 			'hbakker',
 		)
 		// `dueAt`, the engine's spelling. The detail page read `dueDate` and
 		// found nothing on every engine row.
 		expect(wrapper.find('[data-testid="cn-fact-due"]').exists()).toBe(true)
+	})
+
+	it('draws no priority pill for a task of normal priority, and a finished task in green', async () => {
+		const wrapper = await mountPage({
+			...TASK,
+			priority: 'normal',
+			state: 'completed',
+			isTerminal: true,
+		})
+
+		expect(wrapper.find('[data-testid="task-detail-priority"]').exists()).toBe(
+			false,
+		)
+		expect(
+			wrapper
+				.find('[data-testid="task-detail-state"]')
+				.attributes('data-variant'),
+		).toBe('success')
 	})
 
 	it('draws the case card for a task on a case, naming case type and status by reference, never by id', async () => {

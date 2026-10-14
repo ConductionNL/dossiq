@@ -9,7 +9,8 @@
  */
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { taskStateLabel } from '../../src/utils/taskStateLabel.js'
+import { priorityPillTone } from '../../src/utils/priorityValues.js'
+import { taskStateLabel, taskStateTone } from '../../src/utils/taskStateLabel.js'
 
 describe('taskStateLabel', () => {
 	it('words every state the engine persists', () => {
@@ -33,6 +34,30 @@ describe('taskStateLabel', () => {
 		])
 	})
 
+	it('draws an active task purple, a finished one green and the rest neutral', () => {
+		expect(
+			[
+				'available',
+				'enabled',
+				'active',
+				'completed',
+				'terminated',
+				'disabled',
+				'suspended',
+				null,
+			].map(taskStateTone),
+		).toEqual([
+			'default',
+			'default',
+			'purple',
+			'success',
+			'default',
+			'default',
+			'default',
+			'default',
+		])
+	})
+
 	it('shows an unknown state as written and no state as nothing', () => {
 		expect(taskStateLabel('suspended')).toBe('suspended')
 		expect(taskStateLabel(null)).toBe('')
@@ -46,5 +71,13 @@ describe('taskStateLabel', () => {
 		]) {
 			expect(readFileSync(file, 'utf8'), file).toContain('taskStateLabel(')
 		}
+	})
+})
+
+describe('priorityPillTone', () => {
+	it('gives a pill only to a priority that asks for attention', () => {
+		expect(
+			['low', 'normal', 'high', 'urgent', 'other', null].map(priorityPillTone),
+		).toEqual(['', '', 'warning', 'error', '', ''])
 	})
 })
