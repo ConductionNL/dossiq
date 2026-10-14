@@ -199,3 +199,27 @@ export function mergeColumnColour(current, candidate) {
 	if (isStatusColour(candidate)) return candidate
 	return null
 }
+
+/**
+ * A status colour as one of the library badge's tones, for a pill drawn by
+ * `CnStatusBadge` (the facts widget's `as: "pill"`), which takes a tone and
+ * not a hue. A hue and its light twin share a tone. Grey is the neutral
+ * tone, and so is a status with no colour, as on the Cases list.
+ *
+ * @type {Readonly<Record<string, string>>}
+ * @spec openspec/specs/case-types/spec.md
+ */
+export const STATUS_COLOUR_BADGE_VARIANTS = Object.freeze({
+	blue: 'info',
+	'blue-light': 'info',
+	green: 'success',
+	'green-light': 'success',
+	orange: 'warning',
+	'orange-light': 'warning',
+	red: 'error',
+	'red-light': 'error',
+	purple: 'purple',
+	'purple-light': 'purple',
+	grey: 'default',
+	'grey-light': 'default',
+})
