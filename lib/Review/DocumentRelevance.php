@@ -233,6 +233,47 @@ class DocumentRelevance {
 	}//end mark()
 
 	/**
+	 * A verdict says a document is about the request: mark the unmarked ones among these in scope.
+	 *
+	 * A document already marked, in scope or out of scope, keeps its marking.
+	 * Without the review schema nothing is recorded.
+	 *
+	 * @param string       $caseId       The case UUID.
+	 * @param list<string> $documentRefs The documents that just received a verdict.
+	 * @param string       $userId       Who gave the verdict.
+	 *
+	 * @return int How many documents were marked in scope.
+	 *
+	 * @throws RefusedException When a review cannot be written.
+	 *
+	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
+	 */
+	public function markInScopeWhereUnmarked(string $caseId, array $documentRefs, string $userId): int {
+		if ($this->isAvailable() === false || $caseId === '' || $documentRefs === []) {
+			return 0;
+		}
+
+		$reviews = $this->forCase(caseId: $caseId);
+		$marked  = 0;
+		foreach (array_unique($documentRefs) as $documentRef) {
+			$documentRef = (string)$documentRef;
+			if ($documentRef === '' || self::relevanceOf(reviews: $reviews, documentRef: $documentRef) !== self::UNMARKED) {
+				continue;
+			}
+
+			$review = ($reviews[$documentRef] ?? ['case' => $caseId, 'documentRef' => $documentRef]);
+			$review['relevance'] = self::IN_SCOPE;
+			$review['relevanceSource'] = 'reviewer';
+			$review['markedBy'] = $userId;
+			$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+			$this->save(review: $review);
+			$marked++;
+		}
+
+		return $marked;
+	}//end markInScopeWhereUnmarked()
+
+	/**
 	 * The pages seen on these reviews, and the required pages still unseen.
 	 *
 	 * @return PagesSeen The pages seen, over these reviews.

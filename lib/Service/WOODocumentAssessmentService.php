@@ -134,6 +134,7 @@ class WOODocumentAssessmentService {
 		$saved = [];
 		$errors = [];
 		$created = 0;
+		$judged = [];
 
 		foreach ($assessments as $assessment) {
 			$unseen = [];
@@ -189,6 +190,7 @@ class WOODocumentAssessmentService {
 					schema: $assessmentSchema,
 					uuid: (string)$existingId,
 				);
+				$judged[] = (string)$assessment['documentRef'];
 				continue;
 			}
 
@@ -198,9 +200,11 @@ class WOODocumentAssessmentService {
 				schema: $assessmentSchema,
 			);
 			$created++;
+			$judged[] = (string)$assessment['documentRef'];
 		}//end foreach
 
 		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $created);
+		$this->markJudgedInScope(caseId: $caseId, documentRefs: $judged, userId: $userId);
 
 		$outstanding = $this->getOutstanding(caseId: $caseId);
 
@@ -215,6 +219,35 @@ class WOODocumentAssessmentService {
 			'outstanding' => $outstanding,
 		];
 	}//end bulkUpsert()
+
+	/**
+	 * Mark the documents that just received a verdict in scope, where nobody marked them yet.
+	 *
+	 * A review that cannot be written leaves the verdict saved and the
+	 * document outstanding, which the answer's outstanding list then says.
+	 *
+	 * @param string       $caseId       The case UUID.
+	 * @param list<string> $documentRefs The documents with a saved verdict.
+	 * @param string       $userId       Who gave the verdict.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
+	 */
+	private function markJudgedInScope(string $caseId, array $documentRefs, string $userId): void {
+		if ($this->reviews === null) {
+			return;
+		}
+
+		try {
+			$this->reviews->markInScopeWhereUnmarked(caseId: $caseId, documentRefs: $documentRefs, userId: $userId);
+		} catch (RefusedException $e) {
+			$this->logger->warning(
+				'WOO bulk-upsert: the judged documents could not be marked in scope for case ' . $caseId,
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()],
+			);
+		}
+	}//end markJudgedInScope()
 
 	/**
 	 * Validate a single assessment payload.
