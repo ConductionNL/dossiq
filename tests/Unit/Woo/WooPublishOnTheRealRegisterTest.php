@@ -36,7 +36,7 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCP\App\IAppManager;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -52,7 +52,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
- * @uses   \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
@@ -212,7 +212,7 @@ class WooPublishOnTheRealRegisterTest extends TestCase {
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			null,
-			new WooCaseLedger(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
 			$this->documents,
 		);
 

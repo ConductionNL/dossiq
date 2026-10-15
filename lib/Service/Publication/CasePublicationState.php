@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Dossiq Woo case ledger
+ * Dossiq case publication state
  *
  * The two things publishing reads and writes on the case itself
  * (woo-publish-decision-from-the-case D-1 and D-2): which decision on the case
  * is its Woo decision, and the publication state the case shows
- * (`wooPublicationStatus`, `wooPublicationUrl`). Split from
- * WooPublicationService so the publication flow reads on its own.
+ * (`wooPublicationStatus`, `wooPublicationUrl`; stored names, kept). Split
+ * from the publication service so the publication flow reads on its own.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Service
+ * @package  OCA\Dossiq\Service\Publication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -26,24 +26,22 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Publication\PublicationResultLink;
-use OCA\Dossiq\Service\Publication\WithheldEntries;
-use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Woo\WooDeliveredSetWriter;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Reads the case's Woo decision and writes the case's publication state.
+ * Reads the decision a case publishes and writes the case's publication state.
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
  */
-class WooCaseLedger {
+class CasePublicationState {
 
 	use SearchesObjects;
 
@@ -165,7 +163,7 @@ class WooCaseLedger {
 	}//end absolute()
 
 	/**
-	 * The case's one Woo decision: the decision on the case that carries a `wooSummary`.
+	 * The case's one decision to publish: the decision on the case that carries a `wooSummary`.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
@@ -173,7 +171,7 @@ class WooCaseLedger {
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
-	public function resolveWooDecision(string $caseId): array {
+	public function resolveDecision(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
 		$ids = [];
 		if ($objectService !== null) {
@@ -202,7 +200,7 @@ class WooCaseLedger {
 		}
 
 		return ['decisionId' => '', 'refusal' => ['available' => false, 'reason' => 'several_woo_decisions', 'decisionIds' => $ids]];
-	}//end resolveWooDecision()
+	}//end resolveDecision()
 
 	/**
 	 * Mirror the publication state onto the case (design D-2), through the PATCH seam.
