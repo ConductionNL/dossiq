@@ -20,13 +20,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
-use OCA\Dossiq\Woo\WooResultLink;
+use OCA\Dossiq\Service\Publication\PublicationResultLink;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Pins what each publication state writes to `resultLink`, before the class moves.
+ * Pins what each publication state writes to `resultLink`.
  *
- * @covers \OCA\Dossiq\Woo\WooResultLink
+ * @covers \OCA\Dossiq\Service\Publication\PublicationResultLink
  */
 class PublicationResultLinkTest extends TestCase {
 
@@ -41,7 +41,7 @@ class PublicationResultLinkTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheLabelKeepsItsWording(): void {
-		$this->assertSame('Bekijk wat openbaar is gemaakt', WooResultLink::LABEL);
+		$this->assertSame('Bekijk wat openbaar is gemaakt', PublicationResultLink::LABEL);
 	}//end testTheLabelKeepsItsWording()
 
 	/**
@@ -51,8 +51,8 @@ class PublicationResultLinkTest extends TestCase {
 	 */
 	public function testPublishedWithAUrlWritesTheLink(): void {
 		$this->assertSame(
-			['resultLink' => ['label' => WooResultLink::LABEL, 'url' => self::URL]],
-			(new WooResultLink())->changesFor(state: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => self::URL])
+			['resultLink' => ['label' => PublicationResultLink::LABEL, 'url' => self::URL]],
+			(new PublicationResultLink())->changesFor(state: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => self::URL])
 		);
 	}//end testPublishedWithAUrlWritesTheLink()
 
@@ -62,7 +62,7 @@ class PublicationResultLinkTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithdrawnClearsTheLinkEvenWithAUrl(): void {
-		$links = new WooResultLink();
+		$links = new PublicationResultLink();
 
 		$this->assertSame(['resultLink' => null], $links->changesFor(state: ['wooPublicationStatus' => 'withdrawn']));
 		$this->assertSame(['resultLink' => null], $links->changesFor(state: ['wooPublicationStatus' => 'withdrawn', 'wooPublicationUrl' => self::URL]));
@@ -74,7 +74,7 @@ class PublicationResultLinkTest extends TestCase {
 	 * @return void
 	 */
 	public function testOtherStatesChangeNothing(): void {
-		$links = new WooResultLink();
+		$links = new PublicationResultLink();
 
 		$this->assertSame([], $links->changesFor(state: []));
 		$this->assertSame([], $links->changesFor(state: ['wooPublicationUrl' => self::URL]));
@@ -91,8 +91,8 @@ class PublicationResultLinkTest extends TestCase {
 	 */
 	public function testScalarValuesAreReadAsStrings(): void {
 		$this->assertSame(
-			['resultLink' => ['label' => WooResultLink::LABEL, 'url' => '87']],
-			(new WooResultLink())->changesFor(state: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => 87])
+			['resultLink' => ['label' => PublicationResultLink::LABEL, 'url' => '87']],
+			(new PublicationResultLink())->changesFor(state: ['wooPublicationStatus' => 'published', 'wooPublicationUrl' => 87])
 		);
 	}//end testScalarValuesAreReadAsStrings()
 }//end class

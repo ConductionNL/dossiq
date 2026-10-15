@@ -43,7 +43,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Woo\WooDeliveredSetWriter
  * @covers \OCA\Dossiq\Woo\WooCaseLedger
  *
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
