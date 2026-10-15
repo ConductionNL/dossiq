@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\NoticeNotSentException;
-use OCA\Dossiq\Service\Termijn\CaseNumberReader;
+use OCA\Dossiq\Service\CaseNumberReader;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
 use OCA\Dossiq\Service\SettingsService;
