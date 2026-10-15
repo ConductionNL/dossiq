@@ -206,6 +206,24 @@ test.describe('Workflow Board keyboard status transition', () => {
 	}
 
 	/**
+	 * Open a column's hidden cards. A column draws its first few cards and
+	 * the rest behind "Show N more" (DqWerkbord); a seeded card can be among
+	 * the rest on an instance that already holds cases.
+	 *
+	 * @param page The page.
+	 * @param name The column's status name.
+	 */
+	async function showAllCards(page: Page, name: string): Promise<void> {
+		const more = column(page, name).locator('[data-testid="board-column-more"]')
+		if (
+			(await more.count()) > 0
+			&& (await more.getAttribute('aria-expanded')) === 'false'
+		) {
+			await more.click()
+		}
+	}
+
+	/**
 	 * Open the Workflow Board and return one seeded case's card, asserting it
 	 * starts in the Ontvangen column.
 	 *
@@ -234,6 +252,10 @@ test.describe('Workflow Board keyboard status transition', () => {
 		// card to be grouped — assert it separately so a missing column does
 		// not present as "the card is missing".
 		await expect(column(page, RECEIVED)).toBeVisible({ timeout: 15000 })
+		await expect(
+			column(page, RECEIVED).locator('.case-card', { hasText: title }),
+		).toHaveCount(1, { timeout: 15000 })
+		await showAllCards(page, RECEIVED)
 
 		const card = column(page, RECEIVED)
 			.locator('.case-card', { hasText: title })
@@ -328,6 +350,8 @@ test.describe('Workflow Board keyboard status transition', () => {
 		const moved = column(page, IN_PROGRESS).locator('.case-card', {
 			hasText: KEYBOARD_TITLE,
 		})
+		await expect(moved).toHaveCount(1, { timeout: 30_000 })
+		await showAllCards(page, IN_PROGRESS)
 		await expect(
 			moved,
 			'the card must move to the "In behandeling" column',
@@ -358,7 +382,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 		// past Sortable's fallback tolerance so the drag starts and the ghost
 		// appears, cross to the target column, let go. Sortable finds the
 		// column under the pointer with elementFromPoint, so the target has to
-		// be on screen first: the board scrolls horizontally, one column per
+		// be on screen first: the columns wrap into rows, one column per
 		// non-final status on the instance.
 		const target = column(page, IN_PROGRESS)
 		await target.scrollIntoViewIfNeeded()
@@ -383,6 +407,6 @@ test.describe('Workflow Board keyboard status transition', () => {
 		await expect(
 			column(page, IN_PROGRESS).locator('.case-card', { hasText: DRAG_TITLE }),
 			'the dragged card must land in the "In behandeling" column',
-		).toBeVisible({ timeout: 30_000 })
+		).toHaveCount(1, { timeout: 30_000 })
 	})
 })
