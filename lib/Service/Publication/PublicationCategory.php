@@ -33,7 +33,6 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use Throwable;
 
 /**
  * Reads a decision's publication category from its decision type row.
@@ -128,16 +127,12 @@ class PublicationCategory {
 			return [];
 		}
 
-		try {
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $schema,
-				id: $id,
-			) ?? [];
-		} catch (Throwable) {
-			// A type that cannot be read publishes under the fallback, as before.
-			return [];
-		}
+		// A missing row reads as null; any other read failure is the publish's own failure.
+		return $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $schema,
+			id: $id,
+		) ?? [];
 	}//end decisionType()
 }//end class
