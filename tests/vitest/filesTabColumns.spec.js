@@ -1,0 +1,63 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The Files tab shows each file's name.
+ *
+ * Rehearsal R2 (15 Oct): the case's Files tab listed icon-only rows. The
+ * manifest declared its four columns as `{id, property}`, the library drops a
+ * column without `key`, and a non-empty list replaces the library's default
+ * of name, size and modified, so nothing was left. This runs the declaration
+ * through the library's own normaliser, the one CnFilesBrowser renders from.
+ *
+ * @spec openspec/changes/case-page-reads-in-dutch/specs/case-management/spec.md
+ */
+
+import { describe, expect, it } from 'vitest'
+import { normaliseFileColumns } from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/filesBrowserColumns.js'
+
+const panels = require('./helpers/casePanels.js')
+
+/**
+ * The props the Files tab hands the browser.
+ *
+ * @return {object} The props.
+ */
+function filesProps() {
+	return panels.caseWidget('case-files').props
+}
+
+describe('the Files tab columns as the library reads them', () => {
+	it('renders the name first, then the declared columns', () => {
+		const keys = normaliseFileColumns(filesProps().columns).map(
+			(column) => column.key,
+		)
+
+		expect(keys[0]).toBe('name')
+		expect(keys).toEqual(
+			expect.arrayContaining([
+				'senderName',
+				'recipientNames',
+				'scanVerdict',
+				'approvalMarker',
+			]),
+		)
+	})
+
+	it('reads the row columns from the dossier listing, keyed by file id', () => {
+		const props = filesProps()
+
+		expect(props.rowDataUrl).toBe('/apps/dossiq/api/cases/{objectId}/dossier')
+		expect(props.rowDataPath).toBe('informatieobjecten')
+		expect(props.rowDataKey).toBe('fileId')
+	})
+
+	it('control: the old declaration leaves the library nothing to render', () => {
+		const old = [
+			{ id: 'sender', label: 'Sender', property: 'senderName' },
+			{ id: 'scan', label: 'Scan', property: 'scanVerdict' },
+		]
+
+		expect(normaliseFileColumns(old)).toEqual([])
+	})
+})

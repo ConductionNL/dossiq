@@ -9984,6 +9984,7 @@
         "Zaaktype key is required": "Zaaktype-sleutel is verplicht",
         "Zaaktype slug this definition binds to (e.g. omgevingsvergunning-regulier)": "Slug van het zaaktype waar deze definitie aan hangt (bijvoorbeeld omgevingsvergunning-regulier)",
         "Zaaktype-Informatieobjecttype Relation": "Relatie zaaktype-informatieobjecttype",
+        "ZGW API": "ZGW-API",
         "ZGW API Mapping": "ZGW API Mapping",
         "ZGW API mapping": "ZGW-API-koppeling",
         "ZGW confidentiality classification (lowest to highest)": "Vertrouwelijkheidsaanduiding volgens ZGW (van laag naar hoog)",

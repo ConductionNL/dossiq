@@ -9967,6 +9967,7 @@ OC.L10N.register(
         "Zaaktype key is required": "Zaaktype key is required",
         "Zaaktype slug this definition binds to (e.g. omgevingsvergunning-regulier)": "Zaaktype slug this definition binds to (e.g. omgevingsvergunning-regulier)",
         "Zaaktype-Informatieobjecttype Relation": "Zaaktype-Informatieobjecttype Relation",
+        "ZGW API": "ZGW API",
         "ZGW API Mapping": "ZGW API Mapping",
         "ZGW API mapping": "ZGW API mapping",
         "ZGW confidentiality classification (lowest to highest)": "ZGW confidentiality classification (lowest to highest)",
