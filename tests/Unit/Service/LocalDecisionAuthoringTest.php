@@ -103,7 +103,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Service/WooPublicationService.php' => 'Publication stamping of the Woo besluit record; grey area C-3 (publication mechanics), pending the ruling recorded in the change.',
 		'lib/Repair/BackfillWooPublicationState.php' => 'Idempotent upgrade step that reads which decision on a case carries a wooSummary and writes only the case\'s publication state from it (woo-publish-decision-from-the-case D-2); authors no decision.',
 		'lib/Service/Remedy/RemedyLodging.php' => 'Reads the latest decision of a decided case to date the lodging term (Awb 6:8) and opens the remedy case with its objection; it records a lodging, decides nothing.',
-		'lib/Woo/CasePublicationState.php' => 'Reads which decision on a case carries a wooSummary, and writes only the case\'s publication state (woo-publish-decision-from-the-case D-1, D-2); authors no decision.',
+		'lib/Service/Publication/CasePublicationState.php' => 'Reads which decision on a case carries a wooSummary, and writes only the case\'s publication state (woo-publish-decision-from-the-case D-1, D-2); authors no decision.',
 	];
 
 	/**
