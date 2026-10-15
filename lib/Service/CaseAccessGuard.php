@@ -287,7 +287,18 @@ class CaseAccessGuard {
 	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
 	 */
 	private function inHandlingTeam(array $case, string $uid): bool {
-		foreach ((new CaseTypeHandling())->teams(caseType: $this->caseTypeOf(case: $case)) as $team) {
+		try {
+			$caseType = $this->caseTypeOf(case: $case);
+		} catch (Throwable $e) {
+			// An unreadable case type is not a team: deny, as every other branch of this guard does.
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: case type lookup failed, no team read: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return false;
+		}
+
+		foreach ((new CaseTypeHandling())->teams(caseType: $caseType) as $team) {
 			if ($this->groupManager->isInGroup($uid, $team) === true) {
 				return true;
 			}
@@ -297,11 +308,13 @@ class CaseAccessGuard {
 	}//end inHandlingTeam()
 
 	/**
-	 * The case type row of a case, or an empty row when it cannot be read.
+	 * The case type row of a case, or an empty row when the case names none or it is not found.
 	 *
 	 * @param array<string, mixed> $case The case.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @throws Throwable When OpenRegister fails the lookup.
 	 *
 	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
 	 */
@@ -322,15 +335,7 @@ class CaseAccessGuard {
 			return [];
 		}
 
-		try {
-			return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId) ?? []);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: case type lookup failed, no team read: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return [];
-		}
+		return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId) ?? []);
 	}//end caseTypeOf()
 
 	/**
