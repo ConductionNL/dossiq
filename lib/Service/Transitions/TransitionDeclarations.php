@@ -83,6 +83,39 @@ class TransitionDeclarations {
 	}//end withheldReasons()
 
 	/**
+	 * Whether this move closes the case, and the results it can close with.
+	 *
+	 * Published on the offered move so the form a handler confirms it in can
+	 * ask for the result BEFORE the post. Without it the close was refused
+	 * with "pick a result" by a form that had offered nothing to pick.
+	 * Asked of `statusType.isFinal`, the same question the engine asks when
+	 * the move is taken, so the form and the write cannot disagree about
+	 * which moves need a result.
+	 *
+	 * @param array<string, mixed> $transition The transition definition.
+	 * @param array<string, mixed> $case       The case.
+	 *
+	 * @return array{closesCase: bool, resultTypes: array<int, array{id: string, name: string}>}
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function closingChoice(array $transition, array $case): array {
+		$closes = $this->resultWriter->isFinalStatus(
+			statusTypeId: (string)($transition['toStatus'] ?? ''),
+		);
+		if ($closes === false) {
+			return ['closesCase' => false, 'resultTypes' => []];
+		}
+
+		return [
+			'closesCase' => true,
+			'resultTypes' => $this->resultWriter->resultTypeChoices(
+				caseTypeId: (string)($case['caseType'] ?? ''),
+			),
+		];
+	}//end closingChoice()
+
+	/**
 	 * The sentence an administrator wrote for the handler taking this move.
 	 *
 	 * A description on a status is read when the case is already there. The
