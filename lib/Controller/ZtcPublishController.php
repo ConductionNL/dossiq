@@ -68,8 +68,9 @@ class ZtcPublishController extends ZgwController {
 	/**
 	 * Publish a ZTC resource by setting isDraft to false.
 	 *
-	 * Loads the existing object, sets isDraft=false, saves it back,
-	 * and returns the outbound-mapped result.
+	 * Requires the catalogi write scope. A zaaktype passes the CT-02b publish
+	 * guard first (REQ-ZBR-024). Loads the existing object, sets isDraft=false,
+	 * saves it back, and returns the outbound-mapped result.
 	 *
 	 * @param string $resource The ZGW resource name (zaaktypen, besluittypen, informatieobjecttypen).
 	 * @param string $uuid The resource UUID.
@@ -80,6 +81,10 @@ class ZtcPublishController extends ZgwController {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
 			return $authError;
+		}
+
+		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
 		}
 
 		if ($this->zgwService->getObjectService() === null) {
@@ -97,7 +102,22 @@ class ZtcPublishController extends ZgwController {
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema']
 			);
-			$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
+			$storedData = $this->objectToArray(row: $existing);
+
+			$refusal = $this->zgwService->getBusinessRulesService()->guardPublishEndpoint(
+				resource: $resource,
+				existingObject: $storedData,
+				objectService: $this->zgwService->getObjectService(),
+				mappingConfig: $mappingConfig
+			);
+			if ($refusal !== null) {
+				return new JSONResponse(
+					data: $this->zgwService->buildValidationError(ruleResult: $refusal),
+					statusCode: $refusal['status']
+				);
+			}
+
+			$existingData = $this->publishedCopy(existingData: $storedData);
 
 			$object = $this->zgwService->getObjectService()->saveObject(
 				register: $mappingConfig['sourceRegister'],
