@@ -182,16 +182,9 @@ class AcknowledgementService {
 
 		$caseType = $this->caseTypeOf(case: $case);
 
-		if ($this->declaration->owesAcknowledgement(case: $case, caseType: $caseType) === false) {
-			$duty = ['required' => false, 'status' => self::STATUS_NOT_REQUIRED];
-			$this->write(caseId: $caseId, changes: ['acknowledgementDuty' => $duty]);
-
-			return ['sent' => false, 'reason' => 'not-required', 'duty' => $duty];
-		}
-
-		$duty = $this->dutyOn(case: $case);
-		if (($duty['status'] ?? '') === self::STATUS_MET) {
-			return ['sent' => false, 'reason' => 'already-met', 'duty' => $duty];
+		$settled = $this->nothingToSend(caseId: $caseId, case: $case, caseType: $caseType);
+		if ($settled !== null) {
+			return $settled;
 		}
 
 		$recipient = $this->addressOn(case: $case);
@@ -269,6 +262,53 @@ class AcknowledgementService {
 
 		return ['sent' => true, 'duty' => $met, 'record' => $record, 'payload' => $payload];
 	}//end acknowledge()
+
+	/**
+	 * The answer for a case that gets no acknowledgement now, or null when one is due.
+	 *
+	 * A draft is not received yet (decision 180): nothing is sent and nothing
+	 * is recorded, because the duty starts when the draft is sent and the
+	 * listener queues this again at that moment. A case that owes none records
+	 * that. A case whose duty already reads met is left as it is.
+	 *
+	 * @param string               $caseId   The case UUID.
+	 * @param array<string, mixed> $case     The case row.
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<string, mixed>|null `{sent: false, reason, duty}`, or null when the acknowledgement is due.
+	 */
+	private function nothingToSend(string $caseId, array $case, array $caseType): ?array {
+		if ($this->isDraft(case: $case) === true) {
+			return ['sent' => false, 'reason' => 'draft', 'duty' => $this->dutyOn(case: $case)];
+		}
+
+		if ($this->declaration->owesAcknowledgement(case: $case, caseType: $caseType) === false) {
+			$duty = ['required' => false, 'status' => self::STATUS_NOT_REQUIRED];
+			$this->write(caseId: $caseId, changes: ['acknowledgementDuty' => $duty]);
+
+			return ['sent' => false, 'reason' => 'not-required', 'duty' => $duty];
+		}
+
+		$duty = $this->dutyOn(case: $case);
+		if (($duty['status'] ?? '') === self::STATUS_MET) {
+			return ['sent' => false, 'reason' => 'already-met', 'duty' => $duty];
+		}
+
+		return null;
+	}//end nothingToSend()
+
+	/**
+	 * Whether the case is still a draft in OpenRegister.
+	 *
+	 * @param array<string, mixed> $case The case row, with its `@self` envelope when the store gives one.
+	 *
+	 * @return bool True for a draft.
+	 */
+	private function isDraft(array $case): bool {
+		$self = ($case['@self'] ?? null);
+
+		return (is_array($self) === true && ($self['status'] ?? null) === 'draft');
+	}//end isDraft()
 
 	/**
 	 * The refusal for an acknowledgement no transport took, after an internal line says so.

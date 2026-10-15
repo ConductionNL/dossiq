@@ -14,7 +14,7 @@
 			"section": "footer",
 			"order": 96,
 			"visibleIf": {
-				"woo.throughputReader": true
+				"woo.reportsOffered": true
 			}
 		}
 	],
@@ -24,7 +24,7 @@
 			"route": "/woo-reports",
 			"type": "custom",
 			"component": "WooReportsView",
-			"_note": "Shown in the menu only while the throughput report is switched on and the user is in its reader group (initial state woo_reports, runtime woo.throughputReader). The route stays reachable by URL, and WooReportController refuses a read from anyone else.",
+			"_note": "Shown in the menu only while a report is offered to this user (initial state woo_reports, runtime woo.reportsOffered): the throughput report switched on and the user in its reader group, or the mail parties report switched on. The route stays reachable by URL; the screen draws only the halves on offer, and WooReportController and MailPartiesReportController refuse a read from anyone else.",
 			"title": "Woo reports",
 			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl"

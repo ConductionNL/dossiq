@@ -214,6 +214,7 @@ class TriageRules {
 			return ['counts' => $counts, 'marked' => 0, 'considered' => 0];
 		}
 
+		$created = 0;
 		$reviews = $this->reviews->forCase(caseId: $caseId);
 		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
 			$review = ($reviews[$documentId] ?? ['case' => $caseId, 'documentRef' => $documentId, 'relevance' => DocumentRelevance::UNMARKED]);
@@ -233,7 +234,13 @@ class TriageRules {
 			$review['markedAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 			$this->reviews->save(review: $review);
 			$counts[(string)$rule['name']]++;
+			if (isset($reviews[$documentId]) === false) {
+				$created++;
+			}
 		}
+
+		// A review a rule just created is private to the case like any other: share it with the people on it.
+		$this->reviewerAccess->reconcileAfterCreate(caseId: $caseId, created: $created);
 
 		return ['counts' => $counts, 'marked' => array_sum($counts), 'considered' => $considered];
 	}//end apply()

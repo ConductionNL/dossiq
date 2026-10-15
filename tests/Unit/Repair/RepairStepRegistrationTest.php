@@ -98,6 +98,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
 		'MapWooRefusalGroundCodes' => 'rewrites refusal ground codes on existing Woo assessments and decisions; a fresh install has none',
 		'CreateDocumentReviews' => 'marks existing assessed Woo documents in scope; a fresh install has no assessments',
+		'ReconcileCaseRecordGrants' => 'grants the people on existing cases their private records; a fresh install has none',
 		'BackfillWooPublicationState' => 'shows the publication state on existing Woo cases; a fresh install has none',
 		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
@@ -113,6 +114,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'LinkInFlightContractDecisionsRepair' => 'links in-flight contract decisions; none exist yet',
 		'LinkInFlightRemainingDecisionsRepair' => 'links in-flight decisions; none exist yet',
 		'RepairDemoDataSchemaFork' => 'retires a schema fork only an already-enabled app could have made',
+		'CarryBagCheckSetting' => 'carries an old BAG client setting; a fresh install has none, and its BAG check stays off',
 	];
 
 	/**
@@ -222,6 +224,14 @@ class RepairStepRegistrationTest extends TestCase {
 			'MigrateWorkflowDefinitions' => [
 				'InstallShippedPackages',
 				'CaseFlowSeedDataRepairStep',
+			],
+			// It reads the imported register, the installed case types and the reviews an upgrade makes.
+			'ReconcileCaseRecordGrants' => [
+				'InitializeSettings',
+				'SeedStaffGroup',
+				'InstallShippedPackages',
+				'PublishSeededCaseTypes',
+				'CreateDocumentReviews',
 			],
 		];
 

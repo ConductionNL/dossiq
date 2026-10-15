@@ -35,6 +35,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Money\CasePaymentReader;
 use OCA\Dossiq\Service\Money\CasePaymentState;
 use OCA\Dossiq\Service\Money\UnpaidCaseGate;
@@ -61,6 +63,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * Maps dossiq's transitions onto OpenRegister's published actions.
  *
  * @covers \OCA\Dossiq\Lifecycle\CaseActionProvider
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Service\StatusTransitionService
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
@@ -401,22 +405,28 @@ class CaseActionProviderTest extends TestCase {
 		$engine = new StatusTransitionService(
 			templateLoader: $templateLoader,
 			guardRegistry: $guardRegistry,
-			sideEffectDispatcher: $this->createMock(SideEffectDispatcher::class),
-			store: $store,
 			authorizer: $this->createMock(TransitionAuthorizer::class),
 			specReader: new TransitionSpecReader(),
 			userSession: $this->createMock(IUserSession::class),
 			logger: $this->createMock(LoggerInterface::class),
-			resultWriter: $this->createMock(CaseResultWriter::class),
-			statusChecklist: $this->createMock(StatusChecklist::class),
-			declarations: $this->undeclaredStatuses(),
-			declaredMoves: $this->undeclaredTransitions(),
-			offered: $this->offeredTransitions(
-				guards: $guardRegistry,
-				reader: new TransitionSpecReader(),
-				statuses: $this->undeclaredStatuses(),
-			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
+			declarations: new CaseDeclarations(
+				statuses: $this->undeclaredStatuses(),
+				moves: $this->undeclaredTransitions(),
+				offered: $this->offeredTransitions(
+					guards: $guardRegistry,
+					reader: new TransitionSpecReader(),
+					statuses: $this->undeclaredStatuses(),
+				),
+				checklist: $this->createMock(StatusChecklist::class),
+				store: $store,
+			),
+			ledger: new CaseMoveLedger(
+				store: $store,
+				resultWriter: $this->createMock(CaseResultWriter::class),
+				dispatcher: $this->createMock(SideEffectDispatcher::class),
+				logger: $this->createMock(LoggerInterface::class),
+			),
 		);
 
 		$provider = new CaseActionProvider(

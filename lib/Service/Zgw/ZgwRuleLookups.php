@@ -29,7 +29,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\SettingsService;
-use Psr\Log\LoggerInterface;
+use OCP\AppFramework\Db\DoesNotExistException;
+use RuntimeException;
 
 /**
  * Store lookups of the ZGW business rules, in the request context.
@@ -54,11 +55,9 @@ class ZgwRuleLookups {
 	/**
 	 * Constructor.
 	 *
-	 * @param LoggerInterface $logger The logger
 	 * @param SettingsService $settingsService The settings service
 	 */
 	public function __construct(
-		private readonly LoggerInterface $logger,
 		private readonly SettingsService $settingsService,
 	) {
 	}//end __construct()
@@ -108,9 +107,11 @@ class ZgwRuleLookups {
 	 * @param string $field The field to search by
 	 * @param string $value The value to search for
 	 *
-	 * @return string|null The object UUID, or null if not found
+	 * @return string|null The object UUID, or null when none carries the value or there is no store
 	 *
-	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @throws LookupNotCompleted When the search fails: a type that could not be read does not read as absent.
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function findObjectByField(
 		string $register,
@@ -118,6 +119,10 @@ class ZgwRuleLookups {
 		string $field,
 		string $value,
 	): ?string {
+		if ($this->objectService === null) {
+			return null;
+		}
+
 		try {
 			$query = $this->objectService->buildSearchQuery(
 				requestParams: [$field => $value, '_limit' => 1],
@@ -139,16 +144,15 @@ class ZgwRuleLookups {
 
 			return $data['id'] ?? ($data['@self']['id'] ?? null);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return null;
+			throw new LookupNotCompleted(lookup: "reference {$field} \"{$value}\"", cause: $e);
 		}//end try
 	}//end findObjectByField()
 
 	/**
 	 * Find all objects matching a field value.
+	 *
+	 * Without a store in the request context nothing is looked up and the list
+	 * is empty. A search that fails throws.
 	 *
 	 * @param string $register The register to search in
 	 * @param string $schema The schema to search in
@@ -157,7 +161,9 @@ class ZgwRuleLookups {
 	 *
 	 * @return array<string> Array of matching object UUIDs
 	 *
-	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @throws LookupNotCompleted When the search fails.
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function findAllObjectsByField(
 		string $register,
@@ -165,36 +171,65 @@ class ZgwRuleLookups {
 		string $field,
 		string $value,
 	): array {
+		if ($this->objectService === null) {
+			return [];
+		}
+
 		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 100],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
+			return $this->idsByField(register: $register, schema: $schema, field: $field, value: $value);
+		} catch (\Throwable $e) {
+			throw new LookupNotCompleted(lookup: "reference {$field} \"{$value}\"", cause: $e);
+		}
+	}//end findAllObjectsByField()
 
-			$ids = [];
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
+	/**
+	 * The ids of the objects that carry a field value. A search that cannot run throws.
+	 *
+	 * An empty list means the search ran and found none.
+	 *
+	 * @param string $register The register to search in
+	 * @param string $schema The schema to search in
+	 * @param string $field The field to match on
+	 * @param string $value The field value to search for
+	 *
+	 * @return array<string> The ids of the matching objects
+	 *
+	 * @throws \Throwable When the store cannot be searched.
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function idsByField(
+		string $register,
+		string $schema,
+		string $field,
+		string $value,
+	): array {
+		if ($this->objectService === null) {
+			throw new RuntimeException('No object service in the request context');
+		}
 
-				$id = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($id !== null) {
-					$ids[] = $id;
-				}
+		$query = $this->objectService->buildSearchQuery(
+			requestParams: [$field => $value, '_limit' => 100],
+			register: $register,
+			schema: $schema
+		);
+		$result = $this->objectService->searchObjectsPaginated(query: $query);
+
+		$ids = [];
+		foreach (($result['results'] ?? []) as $obj) {
+			$data = $obj;
+			if (is_array($obj) === false) {
+				$data = $obj->jsonSerialize();
 			}
 
-			return $ids;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return [];
-		}//end try
-	}//end findAllObjectsByField()
+			$id = $data['id'] ?? ($data['@self']['id'] ?? null);
+			if ($id !== null) {
+				$ids[] = $id;
+			}
+		}
+
+		return $ids;
+	}//end idsByField()
 
 	/**
 	 * Look up an object in OpenRegister by UUID and schema key.
@@ -202,9 +237,15 @@ class ZgwRuleLookups {
 	 * @param string $uuid The object UUID
 	 * @param string $schemaKey The settings config key for the schema
 	 *
-	 * @return array|null The object data, or null on failure
+	 * Nothing is looked up, and the answer is null, without a store, a register
+	 * in the mapping or a schema setting for the key. An object the store does
+	 * not hold, or does not show this caller, is null too.
 	 *
-	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @return array|null The object data, or null when there is none to read
+	 *
+	 * @throws LookupNotCompleted When the read fails for any other reason.
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function findBySchemaKey(string $uuid, string $schemaKey): ?array {
 		if ($this->objectService === null) {
@@ -224,22 +265,45 @@ class ZgwRuleLookups {
 				register: $register,
 				schema: $schema
 			);
-			if (is_array($obj) === true) {
-				return $obj;
+		} catch (DoesNotExistException $e) {
+			return null;
+		} catch (\Throwable $e) {
+			if ($this->isRefusedRead(error: $e) === true) {
+				return null;
 			}
 
-			return $obj->jsonSerialize();
-		} catch (\Throwable $e) {
-			return null;
+			throw new LookupNotCompleted(lookup: "{$schemaKey} object {$uuid}", cause: $e);
+		}//end try
+
+		if ($obj === null || is_array($obj) === true) {
+			return $obj;
 		}
+
+		return $obj->jsonSerialize();
 	}//end findBySchemaKey()
+
+	/**
+	 * Whether a read failed because the caller may not see the object.
+	 *
+	 * OpenRegister refuses a read with its NotAuthorizedException (code 403), and
+	 * hides an object of another organisation as not found. A rule treats both
+	 * as an object it cannot use, as it did before; only a read that could not
+	 * run is a reason to refuse the request.
+	 *
+	 * @param \Throwable $error The failure.
+	 *
+	 * @return bool
+	 */
+	private function isRefusedRead(\Throwable $error): bool {
+		return is_a($error, 'OCA\\OpenRegister\\Exception\\NotAuthorizedException');
+	}//end isRefusedRead()
 
 	/**
 	 * Whether a stored object already carries this pair of values (identificatie + organisatie).
 	 *
 	 * Nothing is looked up, and the pair counts as free, without a first value, an
 	 * object service, or a register and schema in the mapping. A search that fails
-	 * is logged and counts as free too.
+	 * throws: a duplicate nobody could look for is not a free pair.
 	 *
 	 * @param string $field1Value First field value (e.g. identificatie)
 	 * @param string $field1Search OpenRegister field name to search
@@ -248,7 +312,9 @@ class ZgwRuleLookups {
 	 *
 	 * @return bool True when the pair is taken
 	 *
-	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @throws LookupNotCompleted When the search fails.
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function fieldPairExists(
 		string $field1Value,
@@ -301,12 +367,8 @@ class ZgwRuleLookups {
 
 			return ($matchCount > 0);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Uniqueness check failed: ' . $e->getMessage()
-			);
+			throw new LookupNotCompleted(lookup: "uniqueness of {$field1Search} \"{$field1Value}\"", cause: $e);
 		}//end try
-
-		return false;
 	}//end fieldPairExists()
 
 	/**

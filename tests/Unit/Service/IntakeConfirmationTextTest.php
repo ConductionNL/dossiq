@@ -48,11 +48,13 @@ use PHPUnit\Framework\TestCase;
  * The ontvangstbevestiging, and what the citizen may be told.
  *
  * @covers \OCA\Dossiq\Service\Termijn\TermLetters::render
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class IntakeConfirmationTextTest extends TestCase {
 

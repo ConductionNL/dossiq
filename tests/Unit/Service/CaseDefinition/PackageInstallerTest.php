@@ -725,6 +725,87 @@ class PackageInstallerTest extends TestCase {
 	}//end testANewerVersionAddsNewRowsAndLeavesExistingOnesAlone()
 
 	/**
+	 * Version 1.1.0 of the fixture with a new case type description and a renamed first status.
+	 *
+	 * @return string The package root.
+	 */
+	private function raisedVersion(): string {
+		return $this->variant(
+			static function (string $dir): void {
+				self::editJson($dir . '/package.json', static fn (array $m): array => ['version' => '1.1.0'] + $m);
+				self::editJson(
+					$dir . '/case-type.json',
+					static function (array $c): array {
+						$c['caseType']['description'] = 'The description 1.1.0 ships.';
+						$c['statusTypes'][0]['name'] = 'Registered';
+						return $c;
+					}
+				);
+			}
+		);
+	}//end raisedVersion()
+
+	/**
+	 * The ledger row of one target object.
+	 *
+	 * @param string $targetObject The row id.
+	 *
+	 * @return array<string, mixed> The ledger row.
+	 */
+	private function ledgerRowOf(string $targetObject): array {
+		foreach ($this->rowLedger() as $row) {
+			if ($row['targetObject'] === $targetObject) {
+				return $row;
+			}
+		}
+
+		$this->fail("No ledger row for {$targetObject}");
+	}//end ledgerRowOf()
+
+	/**
+	 * A newer version refreshes the rows nobody edited here, and stamps them with that version.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function testANewerVersionRefreshesRowsNobodyEdited(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+
+		$outcome = $this->installer(root: $this->raisedVersion())->install(id: 'fixture-case-type');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame('The description 1.1.0 ships.', $this->register->row('caseType', self::CASE_TYPE)['description']);
+		$this->assertSame('Registered', $this->register->row('statusType', '0f1c0000-0000-4000-8000-000000000011')['name']);
+		$this->assertSame(2, $outcome['refreshed']);
+		$this->assertSame([], $outcome['kept']);
+		$this->assertSame('1.1.0', $this->ledgerRowOf(targetObject: self::CASE_TYPE)['setVersion']);
+		$this->assertSame('1.0.0', $this->ledgerRowOf(targetObject: '0f1c0000-0000-4000-8000-000000000012')['setVersion'], 'a row the version did not change is not rewritten');
+	}//end testANewerVersionRefreshesRowsNobodyEdited()
+
+	/**
+	 * A row edited here survives a newer version and is named; its untouched siblings are refreshed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function testANewerVersionKeepsARowEditedHereAndNamesIt(): void {
+		$this->installer()->install(id: 'fixture-case-type');
+		$this->register->rows['caseType'][self::CASE_TYPE]['title'] = 'Edited here';
+
+		$outcome = $this->installer(root: $this->raisedVersion())->install(id: 'fixture-case-type');
+
+		$caseType = $this->register->row('caseType', self::CASE_TYPE);
+		$this->assertSame('Edited here', $caseType['title'], 'a local edit survives');
+		$this->assertSame('A neutral case type used to test the package installer.', $caseType['description']);
+		$this->assertSame([self::CASE_TYPE], $outcome['kept']);
+		$this->assertSame(1, $outcome['refreshed']);
+		$this->assertSame('Registered', $this->register->row('statusType', '0f1c0000-0000-4000-8000-000000000011')['name']);
+		$this->assertSame('1.0.0', $this->ledgerRowOf(targetObject: self::CASE_TYPE)['setVersion']);
+	}//end testANewerVersionKeepsARowEditedHereAndNamesIt()
+
+	/**
 	 * 🔴 Zuiddrecht, 14 Oct: an upgraded instance holding the Woo case type at version 1 and no flow.
 	 *
 	 * The shipped `woo-verzoek` package installs on the upgrade and writes the

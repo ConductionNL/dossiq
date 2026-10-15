@@ -87,7 +87,7 @@ class AcknowledgementOnCreateListener implements IEventListener {
 	public function handle(Event $event): void {
 		// A receipt is the create of a case that is not a draft, or the moment
 		// a draft is sent (decision 180). A draft owes nobody a confirmation.
-		$payload = $this->receipt->receivedObject(event: $event);
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null) {
 			return;
 		}

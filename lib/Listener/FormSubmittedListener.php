@@ -96,7 +96,6 @@ class FormSubmittedListener implements IEventListener {
 		$this->intake->caseFor(
 			formHash: $hash,
 			answers: $this->answers(submission: $submission),
-			submitted: (string)$this->read(subject: $submission, key: 'timestamp'),
 		);
 	}//end handle()
 

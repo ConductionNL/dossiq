@@ -142,7 +142,7 @@ final class BrcCrossRegisterSyncTest extends TestCase {
 		$this->assertSame(
 			[
 				'debug: brc-006: case_decision_schema not configured, skipping zaakbesluit sync',
-				'warning: brc-006: Failed to create zaakbesluit: saveObject is down',
+				'error: brc-006: the besluit was stored, but its zaakbesluit was not: saveObject is down',
 			],
 			$this->log
 		);
@@ -159,7 +159,7 @@ final class BrcCrossRegisterSyncTest extends TestCase {
 
 		$this->store->failOn = ['saveObject'];
 		$this->sync()->createOioInDrc(decisionUrl: 'b-url', ioUrl: 'io-url');
-		$this->assertSame(['warning: brc-005a: Failed to create OIO in DRC: saveObject is down'], $this->log);
+		$this->assertSame(['error: brc-005a: the besluitinformatieobject was stored, but its objectinformatieobject in the DRC was not: saveObject is down'], $this->log);
 
 		$this->store = new RecordsBrcStoreCalls();
 		unset($this->mappings['documenten/objectinformatieobjecten']);
@@ -221,8 +221,8 @@ final class BrcCrossRegisterSyncTest extends TestCase {
 			[
 				'error: brc-005b: objectinformatieobject mapping has no searchable register/schema, so the OIOs of b-url are being left behind as orphans',
 				'error: brc-005b: objectinformatieobject mapping has no searchable register/schema, so the OIO for io-url is being left behind as an orphan',
-				'warning: BRC: Failed to delete OIOs for besluit: search is down',
-				'warning: brc-005b: Failed to delete OIO: search is down',
+				'error: brc-009: the objectinformatieobjecten of a besluit were not all deleted from the DRC: search is down',
+				'error: brc-005b: the besluitinformatieobject was deleted, but its objectinformatieobject in the DRC was not: search is down',
 			],
 			$this->log
 		);

@@ -31,7 +31,6 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Woo\WooCaseLedger;
 use Psr\Log\LoggerInterface;
 use Throwable;

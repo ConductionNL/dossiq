@@ -15,7 +15,7 @@
   of blanking. The DMN decision tables keep working exactly as they do: they are
   the `flow` kind's neighbour, not something this replaces.
 
-  @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+  @spec openspec/specs/status-transition-engine/spec.md
 -->
 <template>
 	<div class="rules-tab">
@@ -170,7 +170,7 @@ export default {
 		 *
 		 * @return {string} The line.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		verdictLine() {
 			const verdicts = {
@@ -184,7 +184,7 @@ export default {
 		},
 	},
 
-	/** @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md */
+	/** @spec openspec/specs/status-transition-engine/spec.md */
 	async mounted() {
 		if (this.isCreate === false) {
 			await this.load()
@@ -202,7 +202,7 @@ export default {
 		 * @param {object} rule One inventory row.
 		 * @return {string} The label.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		kindLabel(rule) {
 			const kind = String(rule?.kind ?? '')
@@ -219,7 +219,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		async load() {
 			this.loading = true
@@ -254,7 +254,7 @@ export default {
 		 *
 		 * @return {string} The slug.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		schemaSlug() {
 			return String(useSettingsStore().config?.case_schema || 'case')
@@ -265,7 +265,7 @@ export default {
 		 *
 		 * @return {string} The slug.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		registerSlug() {
 			return String(useSettingsStore().config?.register || 'dossiq')
@@ -280,7 +280,7 @@ export default {
 		 * @param {object} rule One inventory row.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		async tryRule(rule) {
 			const ruleId = String(rule?.id ?? '')

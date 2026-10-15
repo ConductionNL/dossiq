@@ -246,7 +246,9 @@ class ObjectReadGrants {
 		}
 
 		try {
-			$object = $objectService->find($uuid, register: $register, schema: $schema);
+			// A rule read: the caller manages this record's grants and may not
+			// read it (decision 234). Nothing read here is answered to the caller.
+			$object = $objectService->find($uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			return null;
 		}

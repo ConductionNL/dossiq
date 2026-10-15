@@ -89,6 +89,11 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 
 const stored = { config: {} }
+const offered = { throughput: true, parties: true }
+vi.mock('@nextcloud/initial-state', () => ({
+	loadState: (app, key, fallback) =>
+		app === 'dossiq' && key === 'woo_reports' ? { ...offered } : fallback,
+}))
 vi.mock('../../src/store/modules/settings.js', () => ({
 	useSettingsStore: () => ({
 		isInitialized: true,
@@ -115,6 +120,10 @@ const { isSwitchedOn } = tab
 const view = await import('../../src/views/woo/WooReportsView.vue')
 const WooReportsView = view.default
 const { throughputUrl } = view
+const parties =
+	await import('../../src/components/reports/CaseMailPartiesReport.vue')
+const CaseMailPartiesReport = parties.default
+const { mailPartiesUrl } = parties
 
 describe('Woo report switches (REQ-WRR-001)', () => {
 	beforeEach(() => {
@@ -209,6 +218,8 @@ describe('Woo report switches (REQ-WRR-001)', () => {
 describe('Woo throughput screen (REQ-WRR-002)', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
+		offered.throughput = true
+		offered.parties = true
 	})
 
 	it('asks for the period, and for the CSV of the same period', () => {
@@ -280,5 +291,193 @@ describe('Woo throughput screen (REQ-WRR-002)', () => {
 			'Your organisation has not switched this report on.',
 		)
 		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
+	})
+})
+
+describe('The reports screen draws the halves on offer (REQ-WRR-001)', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+		offered.throughput = true
+		offered.parties = true
+	})
+
+	it('draws both halves when both are offered', () => {
+		const wrapper = mount(WooReportsView)
+
+		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(true)
+	})
+
+	it('leaves the throughput half out for somebody outside the reader group', () => {
+		offered.throughput = false
+		const wrapper = mount(WooReportsView)
+
+		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="woo-throughput-show"]').exists()).toBe(
+			false,
+		)
+		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(true)
+	})
+
+	it('leaves the parties half out while that report is off', () => {
+		offered.parties = false
+		const wrapper = mount(WooReportsView)
+
+		expect(wrapper.find('[data-testid="woo-throughput"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-mail-parties"]').exists()).toBe(
+			false,
+		)
+	})
+
+	it('starts the parties half on the case the address names', () => {
+		const wrapper = mount(WooReportsView, {
+			global: { mocks: { $route: { query: { case: 'case-7' } } } },
+		})
+
+		expect(
+			wrapper.find('[data-testid="case-mail-parties-case"]').element.value,
+		).toBe('case-7')
+	})
+})
+
+describe('Mail parties of a case (REQ-WRR-004)', () => {
+	const answer = {
+		case: 'case-7',
+		mails: 3,
+		unreadable: 1,
+		senders: [
+			{ address: 'a.jansen@gemeente.nl', count: 2 },
+			{ address: 'b@aannemer.nl', count: 1 },
+		],
+		recipients: [
+			{ address: 'b@aannemer.nl', count: 2 },
+			{ address: 'a.jansen@gemeente.nl', count: 1 },
+		],
+		domains: [
+			{ domain: 'aannemer.nl', count: 3 },
+			{ domain: 'gemeente.nl', count: 3 },
+		],
+	}
+
+	/**
+	 * The cells of one list, row by row.
+	 *
+	 * @param {object} wrapper The mounted report.
+	 * @param {string} list senders, recipients or domains.
+	 * @return {Array<Array<string>>} The cell texts.
+	 */
+	function cells(wrapper, list) {
+		return wrapper
+			.findAll('[data-testid="case-mail-parties-' + list + '"] tbody tr')
+			.map((row) => row.findAll('td').map((cell) => cell.text()))
+	}
+
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it('asks for the case, and for the CSV of the same case', () => {
+		expect(mailPartiesUrl('case-7')).toMatch(
+			/\/apps\/dossiq\/api\/cases\/case-7\/reports\/mail-parties$/,
+		)
+		expect(mailPartiesUrl('case-7', true)).toMatch(
+			/\/cases\/case-7\/reports\/mail-parties\?format=csv$/,
+		)
+		expect(mailPartiesUrl('a/b')).toContain('/cases/a%2Fb/reports/')
+	})
+
+	it('cannot be read before a case is named', async () => {
+		const wrapper = mount(CaseMailPartiesReport)
+
+		expect(
+			wrapper
+				.find('[data-testid="case-mail-parties-show"]')
+				.attributes('disabled'),
+		).toBeDefined()
+	})
+
+	it('lists the senders, recipients and domains with their counts', async () => {
+		axios.get.mockResolvedValue({ data: answer })
+		const wrapper = mount(CaseMailPartiesReport, {
+			props: { caseId: 'case-7' },
+		})
+		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
+		await flushPromises()
+
+		expect(axios.get).toHaveBeenCalledWith(
+			expect.stringMatching(/\/cases\/case-7\/reports\/mail-parties$/),
+		)
+		expect(cells(wrapper, 'senders')).toEqual([
+			['a.jansen@gemeente.nl', '2'],
+			['b@aannemer.nl', '1'],
+		])
+		expect(cells(wrapper, 'recipients')).toEqual([
+			['b@aannemer.nl', '2'],
+			['a.jansen@gemeente.nl', '1'],
+		])
+		expect(cells(wrapper, 'domains')).toEqual([
+			['aannemer.nl', '3'],
+			['gemeente.nl', '3'],
+		])
+		const totals = wrapper
+			.find('[data-testid="case-mail-parties-totals"]')
+			.text()
+		expect(totals).toContain('3')
+		expect(totals).toContain('1')
+		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
+			true,
+		)
+	})
+
+	it('says so when the case collected no mail, and offers no CSV', async () => {
+		axios.get.mockResolvedValue({
+			data: {
+				case: 'case-7',
+				mails: 0,
+				unreadable: 0,
+				senders: [],
+				recipients: [],
+				domains: [],
+			},
+		})
+		const wrapper = mount(CaseMailPartiesReport, {
+			props: { caseId: 'case-7' },
+		})
+		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
+		await flushPromises()
+
+		expect(wrapper.findComponent({ name: 'NcEmptyContent' }).exists()).toBe(true)
+		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
+		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
+			false,
+		)
+	})
+
+	it('shows the refusal and drops the last answer when the server refuses', async () => {
+		axios.get.mockResolvedValueOnce({ data: answer })
+		const wrapper = mount(CaseMailPartiesReport, {
+			props: { caseId: 'case-7' },
+		})
+		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
+		await flushPromises()
+		expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0)
+
+		axios.get.mockRejectedValueOnce({
+			response: {
+				status: 403,
+				data: {
+					message:
+						'You cannot read this case, so its report cannot be shown.',
+				},
+			},
+		})
+		await wrapper.find('[data-testid="case-mail-parties-show"]').trigger('click')
+		await flushPromises()
+
+		expect(wrapper.text()).toContain('You cannot read this case')
+		expect(wrapper.findAll('tbody tr')).toHaveLength(0)
+		expect(wrapper.find('[data-testid="case-mail-parties-csv"]').exists()).toBe(
+			false,
+		)
 	})
 })

@@ -18,7 +18,7 @@
  *  - it is silent on a case whose read carries no answer, rather than rendering
  *    a heading over three empty lines.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 import axios from '@nextcloud/axios'

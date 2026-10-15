@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Support\LetterDays
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  */
 class LetterDaysTest extends TestCase {
 

@@ -18,9 +18,8 @@
  * first case type it found. The `filter is honoured by the store` test pins
  * the other direction.
  *
- * The clock is the other half. `startDate` is what the materialised `deadline`
- * is computed from, so a case written without one has no statutory clock at
- * all, silently.
+ * The clock is the other half. The service writes no `startDate`: the receipt
+ * listener sets it in the same save, by the one rule every case follows.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -43,6 +42,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\FormsIntakeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -50,6 +50,8 @@ use Psr\Log\LoggerInterface;
  * A bound form opens a clocked case; anything else opens nothing.
  *
  * @covers \OCA\Dossiq\Service\FormsIntakeService
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Intake\IntakeFormBinding
  * @uses \OCA\Dossiq\Service\SettingsService
  */
 class FormsIntakeServiceTest extends TestCase {
@@ -87,7 +89,7 @@ class FormsIntakeServiceTest extends TestCase {
 	 *
 	 * @return FormsIntakeService The service under test.
 	 */
-	private function makeService(array $caseTypes, bool $honourFilter = false): FormsIntakeService {
+	private function makeService(array $caseTypes, bool $honourFilter = false, ?object $submitter = null): FormsIntakeService {
 		$writes = &$this->writes;
 		$queries = &$this->queries;
 
@@ -160,6 +162,10 @@ class FormsIntakeServiceTest extends TestCase {
 			}
 		);
 
+		$settings->method('getOpenRegisterClass')->willReturnCallback(
+			static fn (string $class): ?object => ([FormsIntakeService::FORM_SUBMIT => $submitter][$class] ?? null)
+		);
+
 		return new FormsIntakeService($settings, $this->createMock(LoggerInterface::class));
 	}//end makeService()
 
@@ -191,7 +197,6 @@ class FormsIntakeServiceTest extends TestCase {
 		$caseId = $service->caseFor(
 			formHash: 'form-lunch-poll',
 			answers: ['Wat eet je?' => 'Soep'],
-			submitted: '2026-09-18'
 		);
 
 		$this->assertNull($caseId, 'an unbound form must open no case');
@@ -212,7 +217,6 @@ class FormsIntakeServiceTest extends TestCase {
 		$caseId = $service->caseFor(
 			formHash: 'form-abc',
 			answers: ['Waar gaat het over?' => 'Verhuizing naar Dorpsstraat 12'],
-			submitted: '2026-09-18'
 		);
 
 		$this->assertSame('case-new', $caseId);
@@ -220,6 +224,132 @@ class FormsIntakeServiceTest extends TestCase {
 		$this->assertSame('case', $this->writes[0]['schema']);
 		$this->assertSame('type-verhuizing', $this->writes[0]['object']['caseType']);
 	}//end testABoundFormOpensACaseOfThatType()
+
+	/**
+	 * The case schema dossiq ships accepts the case this service writes.
+	 *
+	 * The service wrote `intakeChannel: forms` while the schema's enum did not
+	 * list it, so every bound submission was refused at the store and every
+	 * test here passed. This validates the written payload itself.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/leaf-integrations/spec.md
+	 */
+	public function testTheRealCaseSchemaAcceptsTheCaseAsWritten(): void {
+		$type = array_merge(
+			$this->boundType('form-abc'),
+			['id' => '6f1d0c7a-52a4-4b61-9d3e-0c2f8a7b1e10', 'initialStatus' => '1c9e4f30-7b2d-4a85-8e6f-3d5a9b0c2e41']
+		);
+		$service = $this->makeService([$type], honourFilter: true);
+
+		$service->caseFor(
+			formHash: 'form-abc',
+			answers: ['Waar gaat het over?' => 'Verhuizing naar Dorpsstraat 12'],
+		);
+
+		$this->assertCount(1, $this->writes);
+		$this->assertSame(FormsIntakeService::CHANNEL, $this->writes[0]['object']['intakeChannel']);
+		$this->assertSame(
+			[],
+			(new RealSchemaValidator())->errors(slug: 'case', payload: $this->writes[0]['object']),
+			'The case schema refuses what a bound form submission writes.'
+		);
+	}//end testTheRealCaseSchemaAcceptsTheCaseAsWritten()
+
+	/**
+	 * With OpenRegister's form submit the case goes through it, with the case type's mapping.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	public function testTheCaseGoesThroughTheFormSubmitWithTheCaseTypesMapping(): void {
+		$submitter = new class() {
+			/**
+			 * What was submitted.
+			 *
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $calls = [];
+
+			public function submit(array $destination, ?array $mapping, array $payload, mixed $subject = null, ?string $idempotencyKey = null, string $scope = ''): array {
+				$this->calls[] = ['destination' => $destination, 'mapping' => $mapping, 'payload' => $payload, 'scope' => $scope];
+
+				return ['id' => 'case-submitted', 'reference' => 'Z-2026-000123'];
+			}//end submit()
+		};
+		$type = array_merge(
+			$this->boundType('form-abc'),
+			['intakeFormMapping' => ['fields' => [['field' => 'Waar gaat het over?', 'property' => 'title', 'type' => 'text']]]]
+		);
+		$service = $this->makeService([$type], honourFilter: true, submitter: $submitter);
+
+		$caseId = $service->caseFor(formHash: 'form-abc', answers: ['Waar gaat het over?' => 'Verhuizing', 'Extra' => 'x']);
+
+		$this->assertSame('case-submitted', $caseId);
+		$this->assertSame([], $this->writes, 'One write, through the form submit.');
+		$this->assertCount(1, $submitter->calls);
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'case'], $submitter->calls[0]['destination']);
+		$this->assertSame('form-abc', $submitter->calls[0]['scope']);
+		$this->assertSame('title', $submitter->calls[0]['mapping']['fields'][0]['property']);
+		$this->assertSame('type-verhuizing', $submitter->calls[0]['mapping']['fixed']['caseType']);
+		$this->assertSame('forms', $submitter->calls[0]['mapping']['fixed']['intakeChannel']);
+		$this->assertSame(['Waar gaat het over?' => 'Verhuizing', 'Extra' => 'x'], $submitter->calls[0]['payload']);
+	}//end testTheCaseGoesThroughTheFormSubmitWithTheCaseTypesMapping()
+
+	/**
+	 * A submission the form submit refuses opens nothing, and is not written another way.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	public function testARefusedSubmitOpensNothing(): void {
+		$submitter = new class() {
+			public function submit(array $destination, ?array $mapping, array $payload, mixed $subject = null, ?string $idempotencyKey = null, string $scope = ''): array {
+				throw new class('refused') extends \RuntimeException {
+					public function getFindings(): array {
+						return [['property' => 'title', 'code' => 'required-unmapped', 'message' => 'x']];
+					}//end getFindings()
+				};
+			}//end submit()
+		};
+		$service = $this->makeService([$this->boundType('form-abc')], honourFilter: true, submitter: $submitter);
+
+		$this->assertNull($service->caseFor(formHash: 'form-abc', answers: ['Vraag' => 'Antwoord']));
+		$this->assertSame([], $this->writes, 'A refused case is not saved around the check.');
+	}//end testARefusedSubmitOpensNothing()
+
+	/**
+	 * Without the form submit, a mapped answer still fills its case property.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
+	 */
+	public function testWithoutTheFormSubmitTheMappedAnswersAreSaved(): void {
+		$type = array_merge(
+			$this->boundType('form-abc'),
+			[
+				'intakeFormMapping' => [
+					'fields' => [
+						['field' => 'Onderwerp', 'property' => 'title', 'type' => 'text'],
+						['field' => 'Niet ingevuld', 'property' => 'description', 'type' => 'text'],
+					],
+					'fixed' => ['confidentiality' => 'intern'],
+				],
+			]
+		);
+		$service = $this->makeService([$type], honourFilter: true);
+
+		$service->caseFor(formHash: 'form-abc', answers: ['Onderwerp' => 'Verhuizing']);
+
+		$written = $this->writes[0]['object'];
+		$this->assertSame('Verhuizing', $written['title']);
+		$this->assertSame('intern', $written['confidentiality']);
+		$this->assertArrayNotHasKey('description', $written, 'An unanswered question fills nothing.');
+	}//end testWithoutTheFormSubmitTheMappedAnswersAreSaved()
 
 	/**
 	 * The case opens with the clock running from the submission.
@@ -232,14 +362,14 @@ class FormsIntakeServiceTest extends TestCase {
 		$service->caseFor(
 			formHash: 'form-abc',
 			answers: ['Waar gaat het over?' => 'Verhuizing'],
-			submitted: '2026-09-18'
 		);
 
 		$written = $this->writes[0]['object'];
-		// The materialised `deadline` is dateAdd(startDate, processingDeadline),
-		// so a case written without a startDate has no statutory clock at all
-		// and nothing anywhere says so.
-		$this->assertSame('2026-09-18', $written['startDate']);
+		// The start date is not written here. The receipt listener sets it in
+		// the same save, for every case by one rule: the receipt day, or the
+		// later day the term starts (decision 218). A date written here would
+		// be kept, and a Sunday submission would start a day before its term.
+		$this->assertArrayNotHasKey('startDate', $written);
 		$this->assertSame('forms', $written['intakeChannel']);
 		// A case with no status is off every status-filtered lens and has no
 		// available transitions. The case type's prefill block fills a FORM and
@@ -263,7 +393,7 @@ class FormsIntakeServiceTest extends TestCase {
 		);
 
 		$this->assertNull(
-			$service->caseFor(formHash: 'form-nobody-bound', answers: [], submitted: '2026-09-18'),
+			$service->caseFor(formHash: 'form-nobody-bound', answers: []),
 			'a row the store handed back must still be checked against the form hash'
 		);
 		$this->assertSame([], $this->writes);
@@ -272,7 +402,7 @@ class FormsIntakeServiceTest extends TestCase {
 		// so the assertion above is about the check and not about the fake.
 		$this->assertSame(
 			'case-new',
-			$service->caseFor(formHash: 'form-abc', answers: [], submitted: '2026-09-18')
+			$service->caseFor(formHash: 'form-abc', answers: [])
 		);
 	}//end testAStoreThatIgnoresTheFilterOpensNothing()
 
@@ -283,7 +413,7 @@ class FormsIntakeServiceTest extends TestCase {
 	 */
 	public function testTheLookupFiltersByTheFormHash(): void {
 		$service = $this->makeService([$this->boundType('form-abc')], honourFilter: true);
-		$service->caseFor(formHash: 'form-abc', answers: [], submitted: '2026-09-18');
+		$service->caseFor(formHash: 'form-abc', answers: []);
 
 		$this->assertNotSame([], $this->queries, 'the store must actually be asked');
 		// A BARE key. The objects endpoint reads a bare property name and
@@ -307,7 +437,6 @@ class FormsIntakeServiceTest extends TestCase {
 				'Waar gaat het over?' => 'Verhuizing naar Dorpsstraat 12',
 				'Wanneer?' => '2026-10-01',
 			],
-			submitted: '2026-09-18'
 		);
 
 		$written = $this->writes[0]['object'];
@@ -324,7 +453,7 @@ class FormsIntakeServiceTest extends TestCase {
 	public function testASubmissionWithNothingToNameItStillOpens(): void {
 		$service = $this->makeService([$this->boundType('form-abc')], honourFilter: true);
 
-		$service->caseFor(formHash: 'form-abc', answers: [], submitted: '2026-09-18');
+		$service->caseFor(formHash: 'form-abc', answers: []);
 
 		$this->assertNotSame(
 			'',
@@ -341,7 +470,7 @@ class FormsIntakeServiceTest extends TestCase {
 	public function testAnEmptyFormHashOpensNothing(): void {
 		$service = $this->makeService([$this->boundType('form-abc')], honourFilter: true);
 
-		$this->assertNull($service->caseFor(formHash: '  ', answers: [], submitted: ''));
+		$this->assertNull($service->caseFor(formHash: '  ', answers: []));
 		$this->assertSame([], $this->queries, 'an empty hash must not even reach the store');
 	}//end testAnEmptyFormHashOpensNothing()
 }//end class

@@ -118,6 +118,11 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: CasePlanProjectionListener::class
 		);
+		// A draft has no plan. The plan is projected when the draft is sent.
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
+			listener: CasePlanProjectionListener::class
+		);
 	}//end registerCasePlanListeners()
 
 	/**
@@ -183,6 +188,11 @@ class WorkflowListenerRegistrar {
 		// filed without a number. This is the backfill for exactly that case.
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
+			listener: CaseNumberListener::class
+		);
+		// A draft gets no case number; it gets one when it is sent (decision 201).
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
 			listener: CaseNumberListener::class
 		);
 
