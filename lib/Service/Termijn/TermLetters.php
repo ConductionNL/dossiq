@@ -40,7 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
-use OCA\Dossiq\Service\Support\ReadableDay;
+use OCA\Dossiq\Service\Support\LetterDays;
 
 /**
  * The wording of every term notification.
@@ -76,7 +76,8 @@ class TermLetters {
 			)
 		);
 		$case = ($named[0] ?? '–');
-		$end = $this->shownDay(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')), locale: $locale);
+		$days = new LetterDays(language: $locale);
+		$end = $days->shown(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')));
 
 		$subject = '';
 		$body = '';
@@ -93,7 +94,10 @@ class TermLetters {
 				$body = $rendered['body'];
 				break;
 			case 'ingebrekestelling-receipt':
-				$graceEnd = $this->shownDay(value: (string)($context['graceEnd'] ?? '–'), locale: 'nl');
+				// This letter's wording exists in Dutch only, so its date is Dutch
+				// whatever the case type declared: an English date in a Dutch body
+				// reads as a mistake, not as a courtesy.
+				$graceEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($context['graceEnd'] ?? '–'));
 				$subject = 'Bevestiging ingebrekestelling zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
 					. 'Wij hebben uw ingebrekestelling voor zaak ' . $case . " ontvangen.\n"
@@ -149,7 +153,8 @@ class TermLetters {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function extension(string $case, string $end, array $context): array {
-		$newEnd = $this->shownDay(value: (string)($context['newEinddatum'] ?? $end), locale: 'nl');
+		// Dutch wording only, so a Dutch date, as in the ingebrekestelling receipt.
+		$newEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($context['newEinddatum'] ?? $end));
 		$body = "Beste aanvrager,\n\n"
 			. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
 
@@ -185,7 +190,7 @@ class TermLetters {
 	private function informationRequest(string $case, string $locale, array $context): array {
 		$items = array_values(array_filter(array_map('strval', (array)($context['items'] ?? []))));
 		$english = ($locale === 'en');
-		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), locale: $locale);
+		$due = (new LetterDays(language: $locale))->shown(value: (string)($context['pauseDeadline'] ?? '-'));
 
 		$list = '';
 		foreach ($items as $item) {
@@ -235,7 +240,7 @@ class TermLetters {
 	 */
 	private function informationReminder(string $case, string $locale, array $context): array {
 		$english = ($locale === 'en');
-		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), locale: $locale);
+		$due = (new LetterDays(language: $locale))->shown(value: (string)($context['pauseDeadline'] ?? '-'));
 		$declared = trim((string)($context['chaseText'] ?? ''));
 
 		if ($english === true) {
@@ -314,7 +319,7 @@ class TermLetters {
 				hasTerm: $hasTerm,
 				subjectOf: $subjectOf,
 				contact: $contact,
-				start: $this->termStartLines(context: $context, locale: 'en'),
+				start: $this->termStartLines(context: $context, locale: $locale),
 			);
 		}
 
@@ -363,7 +368,7 @@ class TermLetters {
 	 * front of a citizen that the term does not count from.
 	 *
 	 * @param array<string, mixed> $context The render context.
-	 * @param string               $locale  The letter's language, `en` or `nl`.
+	 * @param string               $locale  The language these lines are written in.
 	 *
 	 * @return string The lines, ending in a newline, or an empty string.
 	 *
@@ -371,8 +376,9 @@ class TermLetters {
 	 */
 	private function termStartLines(array $context, string $locale): string {
 		$english = ($locale === 'en');
-		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''), locale: $locale);
-		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''), locale: $locale);
+		$days = new LetterDays(language: $locale);
+		$received = $days->day(value: (string)($context['receivedAt'] ?? ''));
+		$starts = $days->day(value: (string)($context['termStartsAt'] ?? ''));
 		if ($received === '' || $starts === '') {
 			return '';
 		}
@@ -395,55 +401,6 @@ class TermLetters {
 
 		return $lines;
 	}//end termStartLines()
-
-	/**
-	 * One stored moment as a day a person reads: "15 juni 2026", or
-	 * "15 June 2026" in an English letter. The drawn message boards write
-	 * dates this way ("Bezwaar maken kan tot en met 18 november 2026").
-	 *
-	 * The month names are spelled out here, not through `IL10N`, for the
-	 * reason the letters are: the language is the case type's, not the
-	 * signed-in reader's interface.
-	 *
-	 * @param string $value  The stored ISO 8601 date or moment.
-	 * @param string $locale The letter's language: `en` reads English, anything else Dutch.
-	 *
-	 * @return string The day, or an empty string when there is none to read.
-	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
-	 */
-	private function dayOf(string $value, string $locale): string {
-		if ($locale === 'en') {
-			return (new ReadableDay())->english(value: $value);
-		}
-
-		return (new ReadableDay())->dutch(value: $value);
-	}//end dayOf()
-
-	/**
-	 * A date as it is printed in a letter: every date in every letter reads
-	 * the same way ("10 augustus 2026"), whether it was stored as a date or a
-	 * moment. A placeholder such as "–" stays as it is.
-	 *
-	 * Before this, the received and start dates were printed as days and the
-	 * end date as it was stored, so one receipt read "15-06-2026" next to
-	 * "2026-08-10".
-	 *
-	 * @param string $value  The stored date or moment, or a placeholder.
-	 * @param string $locale The letter's language: `en` reads English, anything else Dutch.
-	 *
-	 * @return string The day as printed, or the value itself when it is no date.
-	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
-	 */
-	private function shownDay(string $value, string $locale): string {
-		$day = $this->dayOf(value: $value, locale: $locale);
-		if ($day === '') {
-			return $value;
-		}
-
-		return $day;
-	}//end shownDay()
 
 	/**
 	 * The doorzending, Awb 2:3.

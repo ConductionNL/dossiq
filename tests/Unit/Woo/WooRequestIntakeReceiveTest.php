@@ -58,6 +58,9 @@ use stdClass;
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  */
 class WooRequestIntakeReceiveTest extends TestCase {
 

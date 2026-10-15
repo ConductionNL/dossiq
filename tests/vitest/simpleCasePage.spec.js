@@ -598,7 +598,9 @@ describe('the built simple manifest', () => {
 		)
 		// A lag of the installed library is not a defect here (validate-manifest.js
 		// tells them apart); an error of this app's own still fails.
-		expect(run.stdout + run.stderr).toMatch(/PASS \(0 errors(\)| of this app's own)/)
+		expect(run.stdout + run.stderr).toMatch(
+			/PASS \(0 errors(\)| of this app's own)/,
+		)
 		expect(run.status).toBe(0)
 	}, 120_000)
 })
