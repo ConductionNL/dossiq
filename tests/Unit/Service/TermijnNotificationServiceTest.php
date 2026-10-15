@@ -55,7 +55,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
- * @uses \OCA\Dossiq\Service\Termijn\CaseNumberReader
+ * @uses \OCA\Dossiq\Service\CaseNumberReader
  */
 class TermijnNotificationServiceTest extends TestCase {
 	use MakesRealTermNoticeSender;
