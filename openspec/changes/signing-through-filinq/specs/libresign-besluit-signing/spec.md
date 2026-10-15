@@ -64,7 +64,10 @@ When filinq concludes a request dossiq raised, a `signed` conclusion SHALL move 
 signed, with the signature level, filinq's request id and the signed document. A `declined`,
 `cancelled` or `expired` conclusion SHALL set `signing.state = not-concluded` with filinq's status
 as `signing.outcome`, leave the decision's status unchanged and allow a new request. A conclusion
-for a request the decision is not waiting on SHALL change nothing.
+for a request the decision is not waiting on SHALL change nothing. A conclusion SHALL be written as
+the background service account, never as the signed-in user. With no usable service account it SHALL
+NOT be written by any other identity: the decision keeps `signing.state = requested` and an error
+naming the decision and the signing request SHALL be logged.
 
 #### Scenario: Filinq's request expires
 
@@ -72,6 +75,13 @@ for a request the decision is not waiting on SHALL change nothing.
 - **WHEN** filinq concludes it `expired` after `signing_request_expiry_days`
 - **THEN** the decision SHALL show `signing.state = not-concluded` and `signing.outcome = expired`
 - **AND** its signature MAY be asked for again
+
+#### Scenario: No usable service account
+
+- **GIVEN** a decision waiting on a signing request and no usable background service account
+- **WHEN** filinq concludes the request
+- **THEN** nothing SHALL be written, and the decision SHALL still read `signing.state = requested`
+- **AND** an error naming the decision and the signing request SHALL be logged
 
 #### Scenario: Filinq's request is signed
 

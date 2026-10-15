@@ -27,6 +27,10 @@ does, so the dossiq half is a signing request on a document, not a beschikking s
   signed document). Declined, cancelled and expired mark the request `not-concluded` with
   filinq's status; the decision keeps its status and can be asked again. Filinq concludes every
   request it took, at the latest when `signing_request_expiry_days` (30 by default) pass.
+  The conclusion is written as the background service account (decision 242), never as the
+  signer; with no usable service account nothing is written, the decision still reads `requested`
+  and an error names the decision and the request for reconciliation.
+- `ZgwDocumentService::storeRaw` goes: its only caller was the deleted LibreSign assembler.
 - The audit packet's `validatierapport.json` says that no validation report is available,
   because filinq publishes none, rather than vouching for a signature nobody validated.
 - Deleted: `SigningAdapterInterface`, the four LibreSign classes, `MockSigningAdapter`, the
