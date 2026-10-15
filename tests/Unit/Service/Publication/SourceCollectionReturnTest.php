@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @category  Test
- * @package   OCA\Dossiq\Tests\Unit\Woo
+ * @package   OCA\Dossiq\Tests\Unit\Service\Publication
  * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2
@@ -18,12 +18,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Woo;
+namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooDecisionNotice;
-use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -31,9 +31,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Runs the return against an in-memory register holding a C1-shaped dossier.
  *
- * @covers \OCA\Dossiq\Woo\WooDossierReturn
+ * @covers \OCA\Dossiq\Service\Publication\SourceCollectionReturn
  */
-class WooDossierReturnTest extends TestCase {
+class SourceCollectionReturnTest extends TestCase {
 
 	private const COLLECTION = '0c0c0c0c-0000-4000-a000-000000000001';
 
@@ -47,9 +47,9 @@ class WooDossierReturnTest extends TestCase {
 	/**
 	 * The service under test.
 	 *
-	 * @var WooDossierReturn
+	 * @var SourceCollectionReturn
 	 */
-	private WooDossierReturn $return;
+	private SourceCollectionReturn $return;
 
 	/**
 	 * Seed one dossier with one item.
@@ -81,7 +81,7 @@ class WooDossierReturnTest extends TestCase {
 		$random = $this->createMock(ISecureRandom::class);
 		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
 
-		$this->return = new WooDossierReturn(settingsService: $settings, random: $random, logger: $this->createMock(LoggerInterface::class));
+		$this->return = new SourceCollectionReturn(settingsService: $settings, random: $random, logger: $this->createMock(LoggerInterface::class));
 	}//end setUp()
 
 	/**
@@ -189,7 +189,7 @@ class WooDossierReturnTest extends TestCase {
 		$notice = $this->createMock(WooDecisionNotice::class);
 		$notice->expects(self::once())->method('tell')->with($this->case(), 'case-1', 'pub-new')->willReturn(true);
 		$settings = $this->createMock(SettingsService::class);
-		$return = new WooDossierReturn(
+		$return = new SourceCollectionReturn(
 			settingsService: $settings,
 			random: $this->createMock(ISecureRandom::class),
 			logger: $this->createMock(LoggerInterface::class),
@@ -213,7 +213,7 @@ class WooDossierReturnTest extends TestCase {
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn(null);
-		$return = new WooDossierReturn(settingsService: $settings, random: $this->createMock(ISecureRandom::class), logger: $this->createMock(LoggerInterface::class));
+		$return = new SourceCollectionReturn(settingsService: $settings, random: $this->createMock(ISecureRandom::class), logger: $this->createMock(LoggerInterface::class));
 		self::assertFalse($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit'));
 
 		self::assertCount(1, $this->store->row(schema: 'collection', uuid: self::COLLECTION)['items']);
@@ -254,7 +254,7 @@ class WooDossierReturnTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects(self::once())->method('warning');
 
-		$return = new WooDossierReturn(settingsService: $settings, random: $random, logger: $logger);
+		$return = new SourceCollectionReturn(settingsService: $settings, random: $random, logger: $logger);
 
 		self::assertFalse($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit'));
 	}//end testAFailedWriteAnswersFalseAndIsLogged()
@@ -279,7 +279,7 @@ class WooDossierReturnTest extends TestCase {
 		$random = $this->createMock(ISecureRandom::class);
 		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
 
-		$return = new WooDossierReturn(settingsService: $settings, random: $random, logger: $this->createMock(LoggerInterface::class));
+		$return = new SourceCollectionReturn(settingsService: $settings, random: $random, logger: $this->createMock(LoggerInterface::class));
 
 		self::assertTrue($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit'));
 		self::assertSame(['woo_collection_register', 'woo_collection_schema'], $asked);

@@ -419,20 +419,20 @@ answer, decision and alert MUST reach the resident through portaliq's notice
 path".
 
 #### Scenario: The resident finds the decision in their dossier
-@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `WooDossierReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`.
+@e2e exclude Needs OpenCatalogi and a portal dossier. Covered by `SourceCollectionReturnTest::testThePublicationIsAddedByDossiq` and `testTheItemFitsTheCollectionItemSchema`.
 - **GIVEN** a Woo request started from a dossier
 - **WHEN** its decision is published
 - **THEN** the dossier MUST hold the new publication, added by dossiq
 - **AND** the resident's case MUST carry the publication link that portaliq's change rule reports
 
 #### Scenario: Republishing does not add the item twice
-@e2e exclude Needs OpenCatalogi. Covered by `WooDossierReturnTest::testRepublishingAddsNothing`.
+@e2e exclude Needs OpenCatalogi. Covered by `SourceCollectionReturnTest::testRepublishingAddsNothing`.
 - **GIVEN** a decision already published and added to the dossier
 - **WHEN** it is published again
 - **THEN** the dossier MUST still hold one item for that publication
 
 #### Scenario: A request without a dossier
-@e2e exclude Needs OpenCatalogi. Covered by `WooDossierReturnTest::testARequestWithoutADossierWritesNothing`.
+@e2e exclude Needs OpenCatalogi. Covered by `SourceCollectionReturnTest::testARequestWithoutADossierWritesNothing`.
 - **GIVEN** a Woo request case with no `wooRequest.collectionId`
 - **WHEN** its decision is published
 - **THEN** the publication MUST be created and no collection MUST be written

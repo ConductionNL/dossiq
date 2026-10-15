@@ -27,7 +27,7 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Service\Publication\CasePublicationState;
-use OCA\Dossiq\Woo\WooDossierReturn;
+use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
 use OCP\App\IAppManager;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -66,9 +66,9 @@ class WooPublicationJourneyTest extends TestCase {
 	/**
 	 * The dossier return.
 	 *
-	 * @var WooDossierReturn&MockObject
+	 * @var SourceCollectionReturn&MockObject
 	 */
-	private WooDossierReturn&MockObject $return;
+	private SourceCollectionReturn&MockObject $return;
 
 	/**
 	 * The service under test.
@@ -120,7 +120,7 @@ class WooPublicationJourneyTest extends TestCase {
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
 		$this->client = $this->createMock(OpenCatalogiApiClient::class);
-		$this->return = $this->createMock(WooDossierReturn::class);
+		$this->return = $this->createMock(SourceCollectionReturn::class);
 
 		$this->service = new WooPublicationService(
 			$settings,
