@@ -140,3 +140,35 @@ describe('the case type list formatters', () => {
 		expect(formatters.draftState(undefined)).toBe('Published')
 	})
 })
+
+describe('the requesterName formatter', () => {
+	it('names who asked, from the name the case carries', () => {
+		expect(formatters.requesterName('', { initiatorDisplayName: 'Repetitie Inwoner' })).toBe('Repetitie Inwoner')
+		expect(formatters.requesterName('person-1', { initiatorDisplayName: ' CloudGemeente B.V. ' })).toBe('CloudGemeente B.V.')
+	})
+
+	it('is empty when the case names nobody, so the field reads as empty', () => {
+		expect(formatters.requesterName('', {})).toBe('')
+		expect(formatters.requesterName(undefined, undefined)).toBe('')
+	})
+
+	it('is what the case page shows under Requester', async () => {
+		const { readFileSync } = await import('fs')
+		const { resolve } = await import('path')
+		const manifest = JSON.parse(readFileSync(resolve(__dirname, '../../src/manifest.json'), 'utf8'))
+		const found = []
+		const walk = (node) => {
+			if (Array.isArray(node)) {
+				node.forEach(walk)
+			} else if (node && typeof node === 'object') {
+				if (node.id === 'case-core' && node.type === 'data') {
+					found.push(node.content.overrides.requester)
+				}
+				Object.values(node).forEach(walk)
+			}
+		}
+		walk(manifest)
+		expect(found).toHaveLength(1)
+		expect(found[0].formatter).toBe('requesterName')
+	})
+})
