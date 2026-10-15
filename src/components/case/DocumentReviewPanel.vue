@@ -396,10 +396,10 @@
 				<table v-if="batches.length > 0" class="document-review__table">
 					<thead>
 						<tr>
-							<th>{{ t('dossiq', 'Review batch') }}</th>
-							<th>{{ t('dossiq', 'Reviewer') }}</th>
-							<th>{{ t('dossiq', 'Documents') }}</th>
-							<th>{{ t('dossiq', 'Progress') }}</th>
+							<th scope="col">{{ t('dossiq', 'Review batch') }}</th>
+							<th scope="col">{{ t('dossiq', 'Reviewer') }}</th>
+							<th scope="col">{{ t('dossiq', 'Documents') }}</th>
+							<th scope="col">{{ t('dossiq', 'Progress') }}</th>
 						</tr>
 					</thead>
 					<tbody>

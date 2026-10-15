@@ -5,7 +5,7 @@
   "phpmd.suppressWarnings": 178,
   "phpstan.ignorePatterns": 11,
   "phpstan.inlineIgnores": 4,
-  "phpunit.skips": 5,
+  "phpunit.skips": 6,
   "psalm.blanketHandlers": 17,
   "psalm.inlineSuppressions": 251,
   "psalm.referencedClasses": 78

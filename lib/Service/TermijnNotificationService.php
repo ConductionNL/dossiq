@@ -40,7 +40,6 @@ use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
-use OCA\Dossiq\Service\Termijn\CaseNumberReader;
 use OCA\Dossiq\Service\Termijn\TermLetters;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\BackgroundJob\IJobList;
