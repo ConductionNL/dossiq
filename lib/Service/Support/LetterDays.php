@@ -11,7 +11,7 @@
  * It exists so the language travels as an object instead of as a boolean
  * passed to every date. {@see \OCA\Dossiq\Service\Termijn\TermLetters} used to
  * thread `$english` through two private helpers, which left each call site
- * deciding the language again and one of them deciding it by omission.
+ * deciding the language again and two of them deciding it by omission.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Support
@@ -47,45 +47,23 @@ class LetterDays {
 	private const ENGLISH = 'en';
 
 	/**
-	 * Constructor. Private: a caller names the language through a factory, so
-	 * no boolean flag crosses a call site.
+	 * Constructor.
 	 *
-	 * @param string       $language The letter's declared locale.
-	 * @param ReadableDay  $spelling Spells a stored date as a day.
+	 * The language is named as the locale the case type declared, never as a
+	 * flag. Anything other than `en` is Dutch: the language of the register,
+	 * and of every letter that carries no locale or whose wording exists in
+	 * Dutch only.
+	 *
+	 * @param string      $language The letter's declared locale.
+	 * @param ReadableDay $spelling Spells a stored date as a day.
+	 *
+	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
-	private function __construct(
+	public function __construct(
 		private readonly string $language,
 		private readonly ReadableDay $spelling=new ReadableDay(),
 	) {
 	}//end __construct()
-
-	/**
-	 * The days of a letter in the language its case type declared.
-	 *
-	 * Anything other than `en` is Dutch, which is the language of the register
-	 * and of every letter that carries no locale.
-	 *
-	 * @param string $locale The declared locale.
-	 *
-	 * @return self The days of that language.
-	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
-	 */
-	public static function forLocale(string $locale): self {
-		return new self(language: $locale);
-	}//end forLocale()
-
-	/**
-	 * The days of a letter that is written in Dutch whatever the reader asked
-	 * for, because its wording exists in Dutch only.
-	 *
-	 * @return self The days of a Dutch letter.
-	 *
-	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
-	 */
-	public static function dutch(): self {
-		return new self(language: 'nl');
-	}//end dutch()
 
 	/**
 	 * One stored moment as the day this letter reads it.

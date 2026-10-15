@@ -30,9 +30,9 @@ class LetterDaysTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheDeclaredLocaleNamesTheMonth(): void {
-		self::assertSame('15 juni 2026', LetterDays::forLocale(locale: 'nl')->day(value: '2026-06-15T09:12:00+02:00'));
-		self::assertSame('15 June 2026', LetterDays::forLocale(locale: 'en')->day(value: '2026-06-15T09:12:00+02:00'));
-		self::assertSame('1 september 2026', LetterDays::dutch()->day(value: '2026-09-01'));
+		self::assertSame('15 juni 2026', (new LetterDays(language: 'nl'))->day(value: '2026-06-15T09:12:00+02:00'));
+		self::assertSame('15 June 2026', (new LetterDays(language: 'en'))->day(value: '2026-06-15T09:12:00+02:00'));
+		self::assertSame('1 september 2026', (new LetterDays(language: 'nl'))->day(value: '2026-09-01'));
 	}//end testTheDeclaredLocaleNamesTheMonth()
 
 	/**
@@ -42,8 +42,8 @@ class LetterDaysTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUndeclaredLanguageIsDutch(): void {
-		self::assertSame('10 augustus 2026', LetterDays::forLocale(locale: '')->day(value: '2026-08-10'));
-		self::assertSame('10 augustus 2026', LetterDays::forLocale(locale: 'de')->day(value: '2026-08-10'));
+		self::assertSame('10 augustus 2026', (new LetterDays(language: ''))->day(value: '2026-08-10'));
+		self::assertSame('10 augustus 2026', (new LetterDays(language: 'de'))->day(value: '2026-08-10'));
 	}//end testAnUndeclaredLanguageIsDutch()
 
 	/**
@@ -53,7 +53,7 @@ class LetterDaysTest extends TestCase {
 	 * @return void
 	 */
 	public function testWhatIsNoDateIsPrintedAsItStands(): void {
-		$days = LetterDays::dutch();
+		$days = new LetterDays(language: 'nl');
 
 		self::assertSame('20 oktober 2026', $days->shown(value: '2026-10-20'));
 		self::assertSame('–', $days->shown(value: '–'));

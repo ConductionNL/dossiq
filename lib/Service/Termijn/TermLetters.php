@@ -76,7 +76,7 @@ class TermLetters {
 			)
 		);
 		$case = ($named[0] ?? '–');
-		$days = LetterDays::forLocale(locale: $locale);
+		$days = new LetterDays(language: $locale);
 		$end = $days->shown(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')));
 
 		$subject = '';
@@ -94,7 +94,10 @@ class TermLetters {
 				$body = $rendered['body'];
 				break;
 			case 'ingebrekestelling-receipt':
-				$graceEnd = LetterDays::dutch()->shown(value: (string)($context['graceEnd'] ?? '–'));
+				// This letter's wording exists in Dutch only, so its date is Dutch
+				// whatever the case type declared: an English date in a Dutch body
+				// reads as a mistake, not as a courtesy.
+				$graceEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($context['graceEnd'] ?? '–'));
 				$subject = 'Bevestiging ingebrekestelling zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
 					. 'Wij hebben uw ingebrekestelling voor zaak ' . $case . " ontvangen.\n"
@@ -150,7 +153,8 @@ class TermLetters {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function extension(string $case, string $end, array $context): array {
-		$newEnd = LetterDays::dutch()->shown(value: (string)($context['newEinddatum'] ?? $end));
+		// Dutch wording only, so a Dutch date, as in the ingebrekestelling receipt.
+		$newEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($context['newEinddatum'] ?? $end));
 		$body = "Beste aanvrager,\n\n"
 			. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
 
@@ -186,7 +190,7 @@ class TermLetters {
 	private function informationRequest(string $case, string $locale, array $context): array {
 		$items = array_values(array_filter(array_map('strval', (array)($context['items'] ?? []))));
 		$english = ($locale === 'en');
-		$due = LetterDays::forLocale(locale: $locale)->shown(value: (string)($context['pauseDeadline'] ?? '-'));
+		$due = (new LetterDays(language: $locale))->shown(value: (string)($context['pauseDeadline'] ?? '-'));
 
 		$list = '';
 		foreach ($items as $item) {
@@ -236,7 +240,7 @@ class TermLetters {
 	 */
 	private function informationReminder(string $case, string $locale, array $context): array {
 		$english = ($locale === 'en');
-		$due = LetterDays::forLocale(locale: $locale)->shown(value: (string)($context['pauseDeadline'] ?? '-'));
+		$due = (new LetterDays(language: $locale))->shown(value: (string)($context['pauseDeadline'] ?? '-'));
 		$declared = trim((string)($context['chaseText'] ?? ''));
 
 		if ($english === true) {
@@ -372,7 +376,7 @@ class TermLetters {
 	 */
 	private function termStartLines(array $context, string $locale): string {
 		$english = ($locale === 'en');
-		$days = LetterDays::forLocale(locale: $locale);
+		$days = new LetterDays(language: $locale);
 		$received = $days->day(value: (string)($context['receivedAt'] ?? ''));
 		$starts = $days->day(value: (string)($context['termStartsAt'] ?? ''));
 		if ($received === '' || $starts === '') {
