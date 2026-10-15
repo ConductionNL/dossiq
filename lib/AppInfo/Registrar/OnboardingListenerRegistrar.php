@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\SupportNoteInitialStateListener;
 use OCA\Dossiq\Listener\WalkthroughSeenInitialStateListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
@@ -46,6 +47,10 @@ class OnboardingListenerRegistrar {
 		$context->registerEventListener(
 			event: BeforeTemplateRenderedEvent::class,
 			listener: WalkthroughSeenInitialStateListener::class
+		);
+		$context->registerEventListener(
+			event: BeforeTemplateRenderedEvent::class,
+			listener: SupportNoteInitialStateListener::class
 		);
 	}//end register()
 }//end class

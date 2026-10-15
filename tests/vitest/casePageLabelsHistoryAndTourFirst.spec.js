@@ -169,4 +169,10 @@ describe('N-7: the welcome tour comes before the support note', () => {
 		expect(supportDialogForThisLoad(null)).toBe(true)
 		expect(supportDialogForThisLoad(undefined)).toBe(true)
 	})
+
+	it('holds the note back on every load when an administrator switched it off', () => {
+		expect(supportDialogForThisLoad(true, false)).toBe(false)
+		expect(supportDialogForThisLoad(true, true)).toBe(true)
+		expect(supportDialogForThisLoad(true, null)).toBe(true)
+	})
 })

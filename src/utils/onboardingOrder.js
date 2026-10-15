@@ -14,13 +14,20 @@
  * Once the tour is finished or skipped, the next load shows the note the way
  * the library always did, once.
  *
+ * An administrator can switch the note off for everyone with the
+ * `show_support_note` app config (`support_note_shown`,
+ * SupportNoteInitialStateListener.php).
+ *
  * @param {unknown} walkthroughSeen The `walkthrough_seen` initial state.
+ * @param {unknown} [supportNoteShown] The `support_note_shown` initial state.
  * @return {boolean} The CnAppRoot `supportDialog` prop: false holds the note back.
  *
  * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/changes/the-support-note-can-be-switched-off/specs/first-load-onboarding/spec.md#requirement-an-administrator-can-switch-the-support-note-off-req-flo-002
  */
-export function supportDialogForThisLoad(walkthroughSeen) {
-	// Only a definite "not seen" holds the note back. A page served without
-	// the state (an older server) keeps the library's default.
-	return walkthroughSeen !== false
+export function supportDialogForThisLoad(walkthroughSeen, supportNoteShown) {
+	// Only a definite "not seen" or a definite "off" holds the note back. A
+	// page served without the state (an older server) keeps the library's
+	// default.
+	return walkthroughSeen !== false && supportNoteShown !== false
 }

@@ -168,9 +168,11 @@ export default {
 	data() {
 		return {
 			// Off on a load where the welcome tour is not yet behind the user,
-			// so the tour comes first (src/utils/onboardingOrder.js).
+			// so the tour comes first, and off when an administrator switched
+			// the note off (src/utils/onboardingOrder.js).
 			supportDialog: supportDialogForThisLoad(
 				loadState('dossiq', 'walkthrough_seen', null),
+				loadState('dossiq', 'support_note_shown', null),
 			),
 
 			objectSidebarState: reactive({
