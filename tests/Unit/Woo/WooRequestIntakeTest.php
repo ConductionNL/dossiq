@@ -39,6 +39,8 @@ use RuntimeException;
  * Runs the intake against an in-memory register holding the seeded type and a C1-shaped dossier.
  *
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
+ * @uses \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses \OCA\Dossiq\Service\Intake\CollectionLinkQueue
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
  * @covers \OCA\Dossiq\Woo\WooRequestForm
  *
