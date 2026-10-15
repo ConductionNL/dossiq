@@ -15,8 +15,10 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
+use OCP\Lock\LockedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -39,10 +41,22 @@ use RuntimeException;
  */
 class DocumentProjectionService {
 
+	use SearchesObjects;
+
 	/**
 	 * The folder OpenRegister keeps every register under, in every user's files.
 	 */
 	public const REGISTER_ROOT = 'Open Registers';
+
+	/**
+	 * How often a locked folder is asked for before the lookup gives up.
+	 */
+	private const FOLDER_LOCK_ATTEMPTS = 3;
+
+	/**
+	 * The first wait after a lock, in microseconds; each next wait is longer by as much.
+	 */
+	private const FOLDER_LOCK_WAIT_MICROSECONDS = 150000;
 
 	/**
 	 * @param DocumentRecordStore $store Cases, records, joins and types in OpenRegister.
@@ -57,6 +71,26 @@ class DocumentProjectionService {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * Run a projection as the system, for a file written with nobody signed in.
+	 *
+	 * Without OpenRegister the operation runs as it is.
+	 *
+	 * @param callable $operation The projection.
+	 *
+	 * @return mixed What the projection returns.
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	public function asSystem(callable $operation): mixed {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return $operation();
+		}
+
+		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end asSystem()
 
 	/**
 	 * Whether a node path lies under the register tree at all.
@@ -255,13 +289,55 @@ class DocumentProjectionService {
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
-		$folder = $fileService->getObjectFolder(objectEntity: $objectId, registerId: $register);
+		$folder = $this->folderWhenUnlocked(fileService: $fileService, objectId: $objectId, register: $register);
 		if (($folder instanceof Folder) === false) {
 			return null;
 		}
 
 		return $folder;
 	}//end folderOf()
+
+	/**
+	 * Ask for the folder, and ask again while a parallel request is creating it.
+	 *
+	 * Opening a case's Documents tab sends two requests at once: OpenRegister's
+	 * own folder read and dossiq's linked documents. On a case with no folder
+	 * yet both create it, and the one that loses the race met a LockedException
+	 * that went out as a 500 (13 October, Woo request, thomas.kuiper). The
+	 * other request is done in milliseconds, after which the folder simply
+	 * exists, so the lookup waits briefly and asks again. A folder that stays
+	 * locked is reported as a RuntimeException, which the read endpoints
+	 * answer as 503: busy, try again, not broken.
+	 *
+	 * @param object $fileService OpenRegister's FileService.
+	 * @param string $objectId    The object uuid.
+	 * @param string $register    The register.
+	 *
+	 * @return mixed What the file service answered.
+	 *
+	 * @throws RuntimeException When the folder stays locked.
+	 *
+	 * @spec openspec/changes/case-folder-lookup-survives-a-parallel-create/specs/document-projection/spec.md
+	 */
+	private function folderWhenUnlocked(object $fileService, string $objectId, string $register): mixed {
+		$attempt = 0;
+		while (true) {
+			$attempt++;
+			try {
+				return $fileService->getObjectFolder(objectEntity: $objectId, registerId: $register);
+			} catch (LockedException $e) {
+				if ($attempt >= self::FOLDER_LOCK_ATTEMPTS) {
+					$this->logger->warning(
+						'Dossiq: the folder of an object stayed locked',
+						['app' => Application::APP_ID, 'objectId' => $objectId, 'attempts' => $attempt]
+					);
+					throw new RuntimeException(message: 'object_folder_busy', previous: $e);
+				}
+
+				usleep(self::FOLDER_LOCK_WAIT_MICROSECONDS * $attempt);
+			}
+		}
+	}//end folderWhenUnlocked()
 
 	/**
 	 * The case whose folder holds this node, or null.

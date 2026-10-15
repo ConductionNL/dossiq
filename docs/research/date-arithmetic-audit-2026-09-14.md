@@ -84,15 +84,21 @@ consults for the day a date lands on, after this change.
 | file | lines | verdict | reaches | reason |
 |---|---|---|---|---|
 | `lib/BackgroundJob/AcknowledgementDispatchJob.php` | 136 | neither | | the retry counter for an acknowledgement that failed to send, `attempt + 1` passed to `IJobList::add()`. It is one of the `->add(` matches the pattern cannot anchor to a date type |
+| `lib/BackgroundJob/LinkCollectionToCaseJob.php` | 90 | neither | | queues the same dossier link again when the service account is missing, through `IJobList::add()`. One of the `->add(` matches the pattern cannot anchor to a date type |
 | `lib/BackgroundJob/AdviceDeadlineJob.php` | 89 | neither | | a look-ahead window the daily scan uses to pick which advices to remind on, not a date anyone is held to |
 | `lib/BackgroundJob/DsoDeadlineJob.php` | 196, 205 | statutory | `WorkingDayCalculator` | the Omgevingswet decision term; the day walk is already the calculator's |
 | `lib/Flow/DossiqAskPersonNode.php` | 648, 669 | neither | | a flow task due date and a node timeout in minutes, both process plumbing |
 | `lib/Service/Milestone/MilestoneStallTimer.php` | 154 | business | `WorkingDayCalculator` | the day after a milestone's scheduled deadline, when its stall timer breaches (`termijnbewaking-op-engine-timers` 3.1). The deadline itself comes from `StalledCaseDetector` and `MilestoneSchedule`, which count working days; the `+1 day` only moves the breach to the first day the case is late, the day BottleneckDetectionJob reported it. A milestone is a house norm, not a term the Awb names |
 | `lib/Service/Pause/ChaseSchedule.php` | 105 | business | `WorkingDayCalculator` | the interval between two reminders on a suspended term (`pause-reason-with-chasing`). The hersteltermijn ITSELF is statutory and `DeadlinePauseService` rolls it; a reminder inside that window is the gemeente's own schedule and nobody is in breach when one lands late. It still reaches the calendar, because a reason may declare `countsWorkingDays` and a reminder on a Sunday is a reminder nobody reads |
-| `lib/Service/WorkQueueService.php` | 646 | business | `WorkingDayRoll` | the business days until a deadline, for the urgency tier of the work queue. It is a display count, not a term anyone is held to, and it asks the administered calendar first (`one-term-engine`, REQ-OTE-04); the day shift only aligns its bounds with the Monday to Friday fallback walk |
+| `lib/Portal/PortalSubmissionLedger.php` | 154 | neither | | claims a portal submission key with `IMemcache::add()`; the ttl is cache plumbing, not a date anyone is held to. One of the `->add(` matches |
+| `lib/Service/Intake/CollectionLinkQueue.php` | 61 | neither | | puts the dossier link on the job list with `IJobList::add()`. One of the `->add(` matches |
+| `lib/Service/Session/SessionRules.php` | 67, 84, 134 | neither | | the generic form of the hearing planner's rules (C12): the inspection floor is a minimum notice counted backwards from the session, and rolling it forward would shorten it; the attendance grace window is hours after the session start, process plumbing |
+| `lib/Service/Queue/UrgencyScorer.php` | 253 | business | `WorkingDayRoll` | the business days until a deadline, for the urgency tier of the work queue. It is a display count, not a term anyone is held to, and it asks the administered calendar first (`one-term-engine`, REQ-OTE-04); the day shift only aligns its bounds with the Monday to Friday fallback walk |
 | `lib/Service/Queue/PersonalAgendaItemService.php` | 177 | neither | | the fortnight the personal queue looks ahead for items a person planned on their own calendar. It is a display window on a list, not a date anybody is held to, and moving it off a Saturday would hide a Saturday appointment from the person who booked it (`one-personal-queue`) |
 | `lib/Flow/DossiqRequestDecisionNode.php` | 615 | neither | | a node timeout in minutes |
 | `lib/Listener/AcknowledgementOnCreateListener.php` | 113 | neither | | queues the acknowledgement with attempt 1 through `IJobList::add()`, the same unanchored match. No date is computed here |
+| `lib/BackgroundJob/ReportGroupingJob.php` | 93 | neither | | requeues the report grouping of a case through `IJobList::add()` when no service account is set, the same unanchored match. No date is computed here |
+| `lib/Listener/ReportGroupingOnCreateListener.php` | 88 | neither | | queues the report grouping of a created case through `IJobList::add()`, the same unanchored match. No date is computed here |
 | `lib/Listener/CaseInheritedDeadlineListener.php` | 181 | statutory | engine calendar | a deelzaak inherits the parent case type's term, so it inherits the term's end date |
 | `lib/Service/Actions/ScheduleReminderHandler.php` | 162, 167 | neither | | when a reminder background job runs |
 | `lib/Service/Archival/ArchivalNominationDeriver.php` | 259 | neither | | a retention period counted in years, where a weekend cannot move the answer |
@@ -112,15 +118,17 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Doorlooptijd/CaseEnricher.php` | 233 | business | engine calendar | the dashboard's derived expected end; it mirrors a statutory term, so it rolls with it or it contradicts it on screen |
 | `lib/Service/Doorlooptijd/DeadlineComplianceCalculator.php` | 168 | neither | | month buckets for a compliance trend |
 | `lib/Service/DsoCaseService.php` | 310 | statutory | `WorkingDayCalculator` | the Omgevingswet term; the day walk is already the calculator's |
-| `lib/Service/DwangsomUitbetalingService.php` | 101 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
+| `lib/Service/Money/PayoutService.php` | 133 | statutory | engine calendar | Awb 4:17: `paymentDateLatest` is the date the dwangsom payment is late after |
 | `lib/Service/Kcc/CallbackRetrySchedule.php` | 71 | neither | | the wait before the next callback attempt, 15 minutes doubling to a day. It replaced `Kcc/SlaCalculator.php` (retired by `termijnbewaking-op-engine-timers` 4.1), whose channel SLAs nothing read; a retry wait is not a deadline and has no calendar |
-| `lib/Service/NoticeOfDefaultService.php` | 171 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
+| `lib/Service/Money/AccrualNoticeService.php` | 188 | statutory | engine calendar | Awb 4:17: the grace period whose end opens the dwangsom window |
 | `lib/Service/ProcessMining/ThroughputTrendCalculator.php` | 109 | neither | | weekly buckets for a throughput trend |
 | `lib/Service/ProcessMiningService.php` | 93, 96 | neither | | a twelve month reporting window |
 | `lib/Service/Recycle/RetentionClocks.php` | 144 | neither | | a lawful-purpose retention counted in months (AVG art. 5.1e), where a weekend cannot move the answer; the same verdict `ArchivalNominationDeriver` carries for the Archiefwet side |
+| `lib/Service/Import/CaseRecordImport.php` | 311-312 | neither | | converts the case type's declared ISO extension period (`P14D`) into a number of days, measured from a fixed day, to hand to the term carry-over. No date anyone is held to is computed here: the extended end is the carried source term's own, and the term engine rolls it (case-record-import, REQ-CRI-002) |
 | `lib/Service/Lifecycle/SilenceCloseService.php` | 131 | neither | | an ADMINISTERED period of silence a case type declares, after which the product closes the case, and the date it announces. Not a term: nothing in the Awb counts sixty days of nobody answering, the number is a gemeente's own setting, and a weekend cannot move an answer to "has anything happened". Same verdict as `RetentionClocks` for the same reason |
 | `lib/Service/QuickActionService.php` | 158 | statutory | engine calendar | Awb 9:11: the six week klacht decision term, written on intake from the KCC |
 | `lib/Service/Status/StatusDwellService.php` | 135 | business | `WorkingDayCalculator` | how long a case has sat in one status, a service level and never a term. The BREACH is the engine's: `StatusDwellTimer` arms it in the engine's own `businessDays` unit over the calendar the organisation administers. The count held on the case is the local calculator's, because the engine exposes projection and no count between two dates, so the two can differ by a day on a custom calendar. Closing that needs a count operation in openregister `working-calendar-admin` |
+| `lib/Service/Remedy/RemedyLodging.php` | 195 | statutory | engine calendar | Awb 6:7 and 6:8, the term a remedy is lodged within, counted from the day the decision was made known; the end rolls to the next working day (Algemene termijnenwet art. 1) before a lodging is judged timely |
 | `lib/Service/Stuf/StufOutboundTransport.php` | 298 | neither | | not date arithmetic: `IJobList::add()` matched the `->add(` pattern |
 | `lib/Service/Subsidie/BeschikkingService.php` | 82 | statutory | engine calendar | the bezwaartermijn of a subsidy beschikking |
 | `lib/Service/Subsidie/BewijsstukService.php` | 136 | neither | | a record retention period in years |
@@ -138,6 +146,8 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Termijn/TermEndRoll.php` | 221 | neither | itself | not date arithmetic of its own: it ASKS the engine calendar (`SlaCalculator::add()` of zero business days, which matched the `->add(` pattern) to roll a statutory end date off a weekend or a holiday. This is the Algemene termijnenwet roll, split out of `TermijnTimerService` so the admin screen can ask the roll whether a calendar answers without asking the timer service. The computation did not change when it moved, and the file it moved out of already carried this verdict |
 | `lib/Service/Termijn/TermDefinitions.php` | 247, 260 | statutory | engine calendar | `endDateCalculated`, which is the row `lib/Service/TermijnService.php` carried at line 109 until the definitions got their own class. The computation did not change when it moved: `TermijnService::createTermijnInstance()` still routes the answer through `TermijnTimerService::rollTermEndFor()`, the one call every other term site makes, so the stored date and the armed timer come from one computation. Working-day definitions reach `WorkingDayRoll` from here, and a calendar that does not answer is logged at warning as a term that is SHORTER than it is owed |
 | `lib/Service/WorkingDayCalculator.php` | 170, 204 | neither | itself | the calendar. It is the fallback the three sites use when the engine is absent, and the only holiday list dossiq is allowed to hold |
+| `lib/Woo/WooThroughputReport.php` | 164 | neither | | the throughput report adds one verdict to a per-reviewer, per-day tally through its own `add()` method. It counts work done on a day; no term is computed and nobody is held to a date |
+| `lib/Service/Term/ApplicantTermNote.php` | 256 | neither | | not date arithmetic: it parses the case type's `extensionPeriod` (ISO 8601) into a `DateInterval` only to say the period in words ("twee weken") in the sentence the applicant reads. No date is computed; the day the decision is due is copied from the case deadline the term engine keeps |
 
 ## Rows added after the reading
 
@@ -147,7 +157,10 @@ consults for the day a date lands on, after this change.
 `ontvangstbevestiging` added them, and both are `->add(` matches on
 `IJobList`, not on a date. They carry the verdict `neither` for the reason
 this file already names: two of the five patterns cannot be anchored to a
-date type. The counts below describe the reading, not the table.
+date type. `lib/BackgroundJob/ReportGroupingJob.php` and
+`lib/Listener/ReportGroupingOnCreateListener.php` arrived later the same way,
+with `ai-features-on-the-case-consume-hermiq`, and carry the same verdict for
+the same reason. The counts below describe the reading, not the table.
 
 `lib/Service/Termijn/TermDefinitions.php` and
 `lib/Service/Termijn/TermEndRoll.php` are the third and the fourth. Neither existed at

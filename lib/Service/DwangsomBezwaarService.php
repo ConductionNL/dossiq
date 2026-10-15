@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use DateTimeImmutable;
+use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -50,11 +52,13 @@ class DwangsomBezwaarService {
 	 * @param SettingsService $settingsService Settings.
 	 * @param TermijnService $termService Termijn service for events.
 	 * @param LoggerInterface $logger Logger.
+	 * @param PayoutService|null $payouts Withdraws a payout from finance while the objection runs, and raises it again after.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly TermijnService $termService,
 		private readonly LoggerInterface $logger,
+		private readonly ?PayoutService $payouts = null,
 	) {
 	}//end __construct()
 
@@ -102,6 +106,11 @@ class DwangsomBezwaarService {
 		}
 
 		$calculation['status'] = 'objection-bevroren';
+		// The stored accrual reads stoppedOn: an objection freezes the amount.
+		if ((string)($calculation['stoppedOn'] ?? '') === '') {
+			$calculation['stoppedOn'] = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
 		try {
 			$calculation = ($this->saveObjectAsArray(
 				objectService: $objectService,
@@ -122,8 +131,11 @@ class DwangsomBezwaarService {
 		);
 
 		foreach ($uitbetalingen as $u) {
-			$u['status'] = 'on-hold-objection';
 			try {
+				// A payout finance already approved stays with finance: the
+				// refusal is logged below and the row keeps its status.
+				$u = ($this->payouts?->withdrawFromFinance(row: $u, reason: trim($basis . ' ' . $rationale)) ?? $u);
+				$u['status'] = 'on-hold-objection';
 				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $uSchema, object: $u);
 			} catch (\Throwable $e) {
 				$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
@@ -213,6 +225,12 @@ class DwangsomBezwaarService {
 		foreach ($uitbetalingen as $u) {
 			$u['amount'] = $newAmountCents;
 			$u['status'] = 'voorbereid';
+			try {
+				$u = ($this->payouts?->raiseAgain(row: $u) ?? $u);
+			} catch (\Throwable $e) {
+				$this->logger->warning('Bezwaar resolve: finance refused the payout again', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
+			}
+
 			try {
 				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $uSchema, object: $u);
 			} catch (\Throwable $e) {

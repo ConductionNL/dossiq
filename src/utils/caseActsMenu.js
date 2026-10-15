@@ -72,6 +72,69 @@ export const TERM_GESTURES = [
 ]
 
 /**
+ * Why Extend term is refused on a case that used every extension its case
+ * type allows. The same sentence `refusalMessage` prints for
+ * `extension_limit_reached`.
+ *
+ * @type {string}
+ */
+export const EXTENSION_LIMIT_REASON =
+	'The term of this case was already extended as often as its case type allows.'
+
+/**
+ * Whether the case used every extension its case type allows.
+ *
+ * @param {object} state The `/lifecycle` answer.
+ * @return {boolean} False when the case type states no limit.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+ */
+function extensionsUsedUp(state) {
+	const limit = state?.maxExtensions
+	if (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1) {
+		return false
+	}
+
+	return Number(state?.extensionCount ?? 0) >= limit
+}
+
+/**
+ * The sentence a refused gesture shows.
+ *
+ * @param {{act: string, reason: string}} gesture One of TERM_GESTURES.
+ * @param {object} state The `/lifecycle` answer.
+ * @return {string} The refusal.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-a-case-type-states-how-often-its-term-may-be-extended-req-tel-001
+ */
+function gestureReason(gesture, state) {
+	if (gesture.act === 'extend' && extensionsUsedUp(state)) {
+		return EXTENSION_LIMIT_REASON
+	}
+
+	return gesture.reason
+}
+
+/**
+ * What an offered gesture says beforehand, '' for the gestures that say nothing.
+ *
+ * Board DqVolgendeStap: the extension names its limit, its reason and the
+ * message the requester gets before the handler chooses it.
+ *
+ * @param {{act: string}} gesture One of TERM_GESTURES.
+ * @param {object|null} state The `/lifecycle` answer.
+ * @return {string} The explainer, as an l10n key.
+ * @spec openspec/changes/woo-case-screens-and-objections/specs/term-extension-limit/spec.md#requirement-an-extension-answers-whether-the-requester-was-told-req-tel-002
+ */
+function gestureExplainer(gesture, state) {
+	if (gesture.act !== 'extend') {
+		return ''
+	}
+
+	return state?.maxExtensions === 1
+		? 'Once, with a reason. The requester gets a message.'
+		: 'With a reason. The requester gets a message.'
+}
+
+/**
  * The three ending acts, in the order the menu shows them.
  *
  * @type {Array<{act: string, label: string, explainer: string}>}
@@ -125,8 +188,30 @@ function transitionEntries(transitions) {
 			disabled: transitionIsBlocked(row),
 			reason: transitionBlockReason(row),
 			toStatus: String(row.toStatus ?? ''),
+			// Copied from the engine's answer, never derived here: whether
+			// the move closes the case, and the results it may close with.
+			closesCase: row.closesCase === true,
+			resultTypes: resultChoices(row.resultTypes),
 		}))
 		.filter((entry) => entry.id !== '')
+}
+
+/**
+ * The result types a closing move offers, as id and name.
+ *
+ * @param {Array<object>|undefined} rows The engine's `resultTypes`.
+ * @return {Array<{id: string, name: string}>} The choices, without blank ids.
+ * @spec openspec/specs/status-transition-engine/spec.md
+ */
+function resultChoices(rows) {
+	return (Array.isArray(rows) ? rows : [])
+		.filter(
+			(row) => row && typeof row === 'object' && String(row.id ?? '') !== '',
+		)
+		.map((row) => ({
+			id: String(row.id),
+			name: String(row.name ?? '') || String(row.id),
+		}))
 }
 
 /**
@@ -148,7 +233,12 @@ function gestureEntries(state) {
 		id: gesture.act,
 		label: gesture.label,
 		disabled: unread ? false : state[gesture.flag] !== true,
-		reason: unread ? '' : state[gesture.flag] === true ? '' : gesture.reason,
+		reason: unread
+			? ''
+			: state[gesture.flag] === true
+				? ''
+				: gestureReason(gesture, state),
+		explainer: gestureExplainer(gesture, unread ? null : state),
 	}))
 }
 
@@ -365,7 +455,16 @@ export function inputsFor(entry) {
 		// rather than changing one, and asking for a reason would be a field
 		// nobody can fill in honestly.
 		reason: id !== 'promote',
-		result: id === 'finish' || id === 'abort',
+		// A transition into a closing status asks for its result too, when
+		// the case type has results to pick from. Without this the close was
+		// refused with "pick a result" by a form that offered nothing to pick.
+		result:
+			id === 'finish'
+			|| id === 'abort'
+			|| (entry?.kind === 'transition'
+				&& entry?.closesCase === true
+				&& Array.isArray(entry?.resultTypes)
+				&& entry.resultTypes.length > 0),
 		until: id === 'hold',
 		days: id === 'suspend',
 	}

@@ -6,7 +6,10 @@ dossiq SHALL hold two admin settings, `wooReviewerThroughputReport` and `wooColl
 both false on a fresh install. `wooReviewerThroughputReport` SHALL NOT be switchable on unless
 `wooReviewerThroughputReaders` names an existing Nextcloud group. While a switch is off, its report
 routes SHALL answer 403 with the sentence that the organisation has not switched the report on, and
-its screen and CSV SHALL NOT be offered.
+its screen and CSV SHALL NOT be offered. The reports screen is in the menu while at least one report
+is offered to the signed-in user, and SHALL draw only the halves on offer: the throughput half for a
+member of the reader group while that report is on, the parties half for any signed-in user while
+that report is on.
 
 #### Scenario: Off on a fresh install
 - **GIVEN** a fresh install
@@ -57,10 +60,20 @@ under `unreadable` in the report rather than left out.
 
 ### Requirement: The collection reported by sender, recipient and domain (REQ-WRR-004)
 
-GET `/api/cases/{id}/woo/reports/parties` SHALL answer, over the case's collected mail, counts per
+GET `/api/cases/{id}/reports/mail-parties` SHALL answer, for a case of any type, over the case's collected mail, counts per
 sender address, per recipient address (to and cc), and per mail domain (of sender or any recipient),
 plus `unreadable`, and a CSV of the same. It SHALL require read access to the case and the
-`wooCollectionPartiesReport` switch.
+`wooCollectionPartiesReport` switch. The report is a generic capability (decision 182): it counts
+`provenance.mail` of whatever a case collected, and a case type uses it by collecting mail; the Woo
+case type is the first that does. Each count is per mail: an address or domain named twice in one
+mail counts once for that mail.
+
+The reports screen SHALL show the report for a case the reader names, as three lists (sender,
+recipient, domain) with their counts, the number of mails and the number whose headers could not
+be read, and the CSV download. `?case={id}` on the screen's address SHALL fill in the case, so a
+link from a case opens its report. A refused read SHALL show the server's sentence and no counts.
+The half is the generic component `src/components/reports/CaseMailPartiesReport.vue` (decision
+182), which the reports screen mounts.
 
 #### Scenario: By sender, recipient and domain
 - **GIVEN** the switch on, and three collected mails: two from a.jansen@gemeente.nl to b@aannemer.nl, one from b@aannemer.nl to a.jansen@gemeente.nl

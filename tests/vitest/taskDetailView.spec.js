@@ -74,6 +74,21 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 	useEngineTaskStore: () => storeStub,
 }))
 
+/** The case the object store answers with, replaced per test. */
+let caseObject = null
+/** Every case id the page read. */
+let caseReads = []
+
+vi.mock('../../src/store/modules/object.js', () => ({
+	useObjectStore: () => ({
+		collections: {},
+		async fetchObject(type, id) {
+			caseReads.push({ type, id })
+			return caseObject
+		},
+	}),
+}))
+
 const { default: TaskDetailView } =
 	await import('../../src/views/tasks/TaskDetailView.vue')
 
@@ -107,18 +122,22 @@ async function mountPage(task) {
 		global: {
 			stubs: {
 				RouterLink: true,
+				// The page names each badge with its own data-testid, which
+				// falls through to this span with the variant beside it.
 				CnStatusBadge: defineComponent({
 					name: 'CnStatusBadge',
-					props: { label: { type: String, default: '' } },
+					props: {
+						label: { type: String, default: '' },
+						variant: { type: String, default: 'default' },
+					},
 					render() {
 						return h(
 							'span',
-							{ 'data-testid': 'task-detail-state' },
+							{ 'data-variant': this.variant },
 							this.label,
 						)
 					},
 				}),
-				TaskCaseCard: true,
 				TaskWaitingCaseSection: true,
 				TaskNotesLeaf: true,
 				TaskEventsLeaf: true,
@@ -137,24 +156,148 @@ beforeEach(() => {
 	checked = []
 	invokeResult = null
 	storeStub.error = null
+	caseObject = null
+	caseReads = []
 })
 
 describe('TaskDetailView', () => {
-	it('renders the task the engine answered with, in the engine vocabulary', async () => {
+	it('renders the task the engine answered with, its state in the words of the reader', async () => {
 		const wrapper = await mountPage(TASK)
 
 		expect(wrapper.find('[data-testid="task-detail-title"]').text()).toBe(
 			'Check the application',
 		)
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
-			'active',
+			'In execution',
 		)
-		expect(wrapper.find('[data-testid="task-detail-assignee"]').text()).toBe(
+		// DqTaak: the active state in the work-in-progress purple, and a
+		// "Hoog" pill beside it for a high-priority task.
+		expect(
+			wrapper
+				.find('[data-testid="task-detail-state"]')
+				.attributes('data-variant'),
+		).toBe('purple')
+		const priority = wrapper.find('[data-testid="task-detail-priority"]')
+		expect(priority.text()).toBe('High')
+		expect(priority.attributes('data-variant')).toBe('warning')
+		expect(wrapper.find('[data-testid="cn-fact-assignee"] dd').text()).toBe(
 			'hbakker',
 		)
 		// `dueAt`, the engine's spelling. The detail page read `dueDate` and
 		// found nothing on every engine row.
-		expect(wrapper.find('[data-testid="task-detail-due"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="cn-fact-due"]').exists()).toBe(true)
+	})
+
+	it('draws no priority pill for a task of normal priority, and a finished task in green', async () => {
+		const wrapper = await mountPage({
+			...TASK,
+			priority: 'normal',
+			state: 'completed',
+			isTerminal: true,
+		})
+
+		expect(wrapper.find('[data-testid="task-detail-priority"]').exists()).toBe(
+			false,
+		)
+		expect(
+			wrapper
+				.find('[data-testid="task-detail-state"]')
+				.attributes('data-variant'),
+		).toBe('success')
+	})
+
+	it('says after the crumbs which case the task is on and its deadline in words (DqTaak)', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(new Date(2026, 8, 20, 10, 0))
+		try {
+			caseObject = { id: 'case-9', identifier: '2026-0074' }
+			const wrapper = await mountPage(TASK)
+
+			expect(caseReads).toEqual([{ type: 'case', id: 'case-9' }])
+			expect(wrapper.find('[data-testid="task-detail-meta"]').text()).toBe(
+				'on case 2026-0074, deadline today',
+			)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it('leaves the deadline out on a finished task and the line out when nothing is known', async () => {
+		caseObject = { id: 'case-9', identifier: '2026-0074' }
+		const finished = await mountPage({
+			...TASK,
+			state: 'completed',
+			isTerminal: true,
+		})
+		expect(finished.find('[data-testid="task-detail-meta"]').text()).toBe(
+			'on case 2026-0074',
+		)
+
+		const bare = await mountPage({ ...TASK, objectUuid: null, dueAt: null })
+		expect(bare.find('[data-testid="task-detail-meta"]').exists()).toBe(false)
+	})
+
+	it('draws the case card for a task on a case, naming case type and status by reference, never by id', async () => {
+		const wrapper = await mountPage(TASK)
+		expect(wrapper.find('[data-testid="task-case-card"]').exists()).toBe(true)
+		const content = wrapper
+			.findAllComponents({ name: 'CnFactsWidget' })
+			.at(1)
+			.props('content')
+		expect(content.source).toEqual({
+			register: 'dossiq',
+			schema: 'case',
+			id: '@object.objectUuid',
+		})
+		const meta = content.fields.find((f) => f.key === 'case-meta')
+		expect(meta.parts[1].resolve).toMatchObject({ schema: 'caseType' })
+		const status = content.fields.find((f) => f.key === 'case-status')
+		expect(status.resolve).toMatchObject({
+			schema: 'statusType',
+			labelField: 'name',
+		})
+	})
+
+	it('draws the case status as a pill in the status type colour, not as a labelled row (DqTaak)', async () => {
+		const wrapper = await mountPage(TASK)
+		const status = wrapper
+			.findAllComponents({ name: 'CnFactsWidget' })
+			.at(1)
+			.props('content')
+			.fields.find((f) => f.key === 'case-status')
+		expect(status.as).toBe('pill')
+		expect(status.label).toBeUndefined()
+		expect(status.resolve.toneField).toBe('colour')
+		expect(status.variantMap.purple).toBe('purple')
+		expect(status.variantMap['green-light']).toBe('success')
+		expect(status.variantMap.grey).toBe('default')
+	})
+
+	it('names the priority in words, the handler as Handler, and the way back as To the case', async () => {
+		// DqTaak: "Prioriteit Hoog", "Behandelaar", "Naar de zaak". The engine
+		// value "high" stays the value; only the label is worded.
+		const wrapper = await mountPage(TASK)
+		const facts = wrapper.findAllComponents({ name: 'CnFactsWidget' })
+		const task = facts.at(0).props('content').fields
+		expect(task.find((f) => f.key === 'priority').map).toEqual({
+			low: 'Low',
+			normal: 'Normal',
+			high: 'High',
+			urgent: 'Urgent',
+		})
+		expect(task.find((f) => f.key === 'assignee').label).toBe('Handler')
+		expect(task.find((f) => f.key === 'due').label).toBe('Due by')
+		expect(facts.at(1).props('content').link.label).toBe('To the case')
+	})
+
+	it('draws no case card for a task with no case', async () => {
+		const wrapper = await mountPage({
+			uuid: 'task-1',
+			title: 'Ad hoc',
+			state: 'available',
+			isTerminal: false,
+		})
+		expect(wrapper.find('[data-testid="task-case-card"]').exists()).toBe(false)
 	})
 
 	it('names every team the task is offered to, in one row', async () => {
@@ -162,7 +305,7 @@ describe('TaskDetailView', () => {
 		// `assignedGroup`, so a task offered to two teams has to say both.
 		const wrapper = await mountPage(TASK)
 
-		expect(wrapper.find('[data-testid="task-detail-team"]').text()).toBe(
+		expect(wrapper.find('[data-testid="cn-fact-team"] dd').text()).toBe(
 			'vergunningen, toezicht',
 		)
 	})
@@ -178,8 +321,8 @@ describe('TaskDetailView', () => {
 			isTerminal: false,
 		})
 
-		expect(wrapper.find('[data-testid="task-detail-due"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="task-detail-team"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="cn-fact-due"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="cn-fact-team"]').exists()).toBe(false)
 		expect(
 			wrapper.find('[data-testid="task-detail-body"]').text(),
 		).not.toContain('—')
@@ -252,7 +395,7 @@ describe('TaskDetailView', () => {
 		expect(showSuccess).not.toHaveBeenCalled()
 		// The task is still on screen, still active, still actionable.
 		expect(wrapper.find('[data-testid="task-detail-state"]').text()).toBe(
-			'active',
+			'In execution',
 		)
 		expect(
 			wrapper.find('[data-testid="task-detail-verb-complete"]').exists(),

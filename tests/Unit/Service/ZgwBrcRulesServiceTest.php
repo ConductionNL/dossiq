@@ -48,8 +48,12 @@ interface BrcObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\ZgwBrcRulesService
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
+ * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Zgw\BrcDocumentLinkRules
+ * @uses \OCA\Dossiq\Service\Zgw\BrcImmutabilityRules
  */
 class ZgwBrcRulesServiceTest extends TestCase {
 
@@ -413,4 +417,268 @@ class ZgwBrcRulesServiceTest extends TestCase {
 		$this->assertTrue($this->linkDocument(service: $this->buildService(objects: $noDocType))['valid']);
 
 	}//end testUnknownDocumentOrBesluitSkips()
+
+	/**
+	 * The stored besluit the immutability rules compare against.
+	 *
+	 * @param array $extra Fields that replace the defaults
+	 *
+	 * @return array
+	 */
+	private function storedBesluit(array $extra=[]): array {
+		return array_merge(
+			[
+				'decisionType'            => self::BT_UUID,
+				'title'                   => 'BESLUIT-1',
+				'responsibleOrganisation' => '000000000',
+			],
+			$extra
+		);
+
+	}//end storedBesluit()
+
+	/**
+	 * Assert a result refuses a change to one field.
+	 *
+	 * @param string $field  The field that may not change
+	 * @param array  $result The validation result
+	 *
+	 * @return void
+	 */
+	private function assertImmutable(string $field, array $result): void {
+		$this->assertFalse($result['valid']);
+		$this->assertSame(400, $result['status']);
+		$this->assertSame('Het veld '.$field.' mag niet gewijzigd worden.', $result['detail']);
+		$this->assertSame(
+			[['name' => $field, 'code' => 'wijzigen-niet-toegelaten', 'reason' => 'Het veld '.$field.' mag niet gewijzigd worden.']],
+			$result['invalidParams']
+		);
+		$this->assertSame([], $result['enrichedBody']);
+
+	}//end assertImmutable()
+
+	/**
+	 * Without a stored besluit, update and patch pass the body through untouched.
+	 *
+	 * @return void
+	 */
+	public function testUpdateAndPatchWithoutAStoredBesluitPassTheBodyThrough(): void {
+		$service = $this->buildService(objects: null);
+		$body    = ['besluittype' => 'https://ztc.example.com/besluittypen/'.self::OTHER_ZT_UUID, 'identificatie' => 'X'];
+
+		$this->assertSame($body, $service->rulesBesluitenUpdate(body: $body)['enrichedBody']);
+		$this->assertSame($body, $service->rulesBesluitenPatch(body: $body, existingObject: null)['enrichedBody']);
+		$this->assertTrue($service->rulesBesluitenUpdate(body: $body)['valid']);
+		$this->assertTrue($service->rulesBesluitenPatch(body: $body)['valid']);
+
+	}//end testUpdateAndPatchWithoutAStoredBesluitPassTheBodyThrough()
+
+	/**
+	 * Brc-001: another besluittype is refused on update and on patch.
+	 *
+	 * @return void
+	 */
+	public function testAnotherBesluittypeIsRefused(): void {
+		$service = $this->buildService(objects: null);
+		$body    = ['besluittype' => 'https://ztc.example.com/besluittypen/'.self::OTHER_ZT_UUID];
+
+		$this->assertImmutable(field: 'besluittype', result: $service->rulesBesluitenUpdate(body: $body, existingObject: $this->storedBesluit()));
+		$this->assertImmutable(field: 'besluittype', result: $service->rulesBesluitenPatch(body: $body, existingObject: $this->storedBesluit()));
+		$this->assertImmutable(
+			field: 'besluittype',
+			result: $service->rulesBesluitenPatch(
+				body: $body,
+				existingObject: $this->storedBesluit(extra: ['decisionType' => 'https://ztc.example.com/besluittypen/'.self::BT_UUID])
+			)
+		);
+
+	}//end testAnotherBesluittypeIsRefused()
+
+	/**
+	 * Brc-001: the same besluittype passes whether it is stored as a uuid or as a URL, and a
+	 * besluittype that holds no uuid, or a besluit that stores none, has nothing to compare.
+	 *
+	 * @return void
+	 */
+	public function testTheSameOrAnUncomparableBesluittypePasses(): void {
+		$service = $this->buildService(objects: null);
+		$same    = ['besluittype' => 'https://ztc.example.com/besluittypen/'.self::BT_UUID];
+
+		$this->assertTrue($service->rulesBesluitenPatch(body: $same, existingObject: $this->storedBesluit())['valid']);
+		$this->assertTrue(
+			$service->rulesBesluitenPatch(
+				body: $same,
+				existingObject: $this->storedBesluit(extra: ['decisionType' => 'https://other.example.com/x/'.self::BT_UUID])
+			)['valid']
+		);
+		$this->assertTrue($service->rulesBesluitenPatch(body: ['besluittype' => 'geen-uuid'], existingObject: $this->storedBesluit())['valid']);
+		$this->assertTrue(
+			$service->rulesBesluitenPatch(
+				body: ['besluittype' => 'https://ztc.example.com/besluittypen/'.self::OTHER_ZT_UUID],
+				existingObject: $this->storedBesluit(extra: ['decisionType' => ''])
+			)['valid']
+		);
+		$this->assertTrue($service->rulesBesluitenPatch(body: [], existingObject: $this->storedBesluit())['valid']);
+
+	}//end testTheSameOrAnUncomparableBesluittypePasses()
+
+	/**
+	 * Brc-002: another identificatie is refused, an empty one included.
+	 *
+	 * @return void
+	 */
+	public function testAnotherIdentificatieIsRefused(): void {
+		$service = $this->buildService(objects: null);
+
+		$this->assertImmutable(field: 'identificatie', result: $service->rulesBesluitenUpdate(body: ['identificatie' => 'BESLUIT-2'], existingObject: $this->storedBesluit()));
+		$this->assertImmutable(field: 'identificatie', result: $service->rulesBesluitenPatch(body: ['identificatie' => 'BESLUIT-2'], existingObject: $this->storedBesluit()));
+		$this->assertImmutable(field: 'identificatie', result: $service->rulesBesluitenUpdate(body: ['identificatie' => ''], existingObject: $this->storedBesluit()));
+		$this->assertTrue($service->rulesBesluitenPatch(body: ['identificatie' => 'BESLUIT-1'], existingObject: $this->storedBesluit())['valid']);
+
+	}//end testAnotherIdentificatieIsRefused()
+
+	/**
+	 * Brc-002: the stored identificatie is the title, else the identifier, else identificatie; an
+	 * empty title does not fall through to the identifier, and a besluit that stores none accepts any.
+	 *
+	 * @return void
+	 */
+	public function testWhereTheStoredIdentificatieIsRead(): void {
+		$service = $this->buildService(objects: null);
+		$body    = ['identificatie' => 'B-2'];
+
+		$byIdentifier = ['identifier' => 'B-1'];
+		$byDutchName  = ['identificatie' => 'B-1'];
+		$emptyTitle   = ['title' => '', 'identifier' => 'B-1'];
+		$emptyTitleNl = ['title' => '', 'identifier' => 'B-9', 'identificatie' => 'B-1'];
+
+		$this->assertImmutable(field: 'identificatie', result: $service->rulesBesluitenPatch(body: $body, existingObject: $byIdentifier));
+		$this->assertImmutable(field: 'identificatie', result: $service->rulesBesluitenPatch(body: $body, existingObject: $byDutchName));
+		$this->assertTrue($service->rulesBesluitenPatch(body: $body, existingObject: $emptyTitle)['valid']);
+		$this->assertImmutable(field: 'identificatie', result: $service->rulesBesluitenPatch(body: $body, existingObject: $emptyTitleNl));
+		$this->assertTrue($service->rulesBesluitenPatch(body: ['identificatie' => 'B-1'], existingObject: $emptyTitleNl)['valid']);
+		$this->assertTrue($service->rulesBesluitenPatch(body: $body, existingObject: [])['valid']);
+
+	}//end testWhereTheStoredIdentificatieIsRead()
+
+	/**
+	 * Brc-002: another verantwoordelijkeOrganisatie is refused; the stored one is read from
+	 * responsibleOrganisation first, then from the Dutch name.
+	 *
+	 * @return void
+	 */
+	public function testAnotherVerantwoordelijkeOrganisatieIsRefused(): void {
+		$service = $this->buildService(objects: null);
+		$body    = ['verantwoordelijkeOrganisatie' => '111111111'];
+		$field   = 'verantwoordelijkeOrganisatie';
+
+		$this->assertImmutable(field: $field, result: $service->rulesBesluitenUpdate(body: $body, existingObject: $this->storedBesluit()));
+		$this->assertImmutable(field: $field, result: $service->rulesBesluitenPatch(body: $body, existingObject: $this->storedBesluit()));
+		$this->assertImmutable(field: $field, result: $service->rulesBesluitenPatch(body: $body, existingObject: ['verantwoordelijkeOrganisatie' => '000000000']));
+		$this->assertTrue(
+			$service->rulesBesluitenPatch(
+				body: $body,
+				existingObject: ['responsibleOrganisation' => '111111111', 'verantwoordelijkeOrganisatie' => '000000000']
+			)['valid']
+		);
+		$this->assertTrue($service->rulesBesluitenPatch(body: $body, existingObject: ['responsibleOrganisation' => ''])['valid']);
+		$this->assertTrue($service->rulesBesluitenPatch(body: ['verantwoordelijkeOrganisatie' => '000000000'], existingObject: $this->storedBesluit())['valid']);
+
+	}//end testAnotherVerantwoordelijkeOrganisatieIsRefused()
+
+	/**
+	 * The first refusal wins: besluittype, then identificatie, then verantwoordelijkeOrganisatie.
+	 *
+	 * @return void
+	 */
+	public function testImmutabilityRefusalsComeInOrder(): void {
+		$service = $this->buildService(objects: null);
+		$all     = [
+			'besluittype'                  => 'https://ztc.example.com/besluittypen/'.self::OTHER_ZT_UUID,
+			'identificatie'                => 'BESLUIT-2',
+			'verantwoordelijkeOrganisatie' => '111111111',
+		];
+
+		$this->assertImmutable(field: 'besluittype', result: $service->rulesBesluitenUpdate(body: $all, existingObject: $this->storedBesluit()));
+		unset($all['besluittype']);
+		$this->assertImmutable(field: 'identificatie', result: $service->rulesBesluitenPatch(body: $all, existingObject: $this->storedBesluit()));
+
+	}//end testImmutabilityRefusalsComeInOrder()
+
+	/**
+	 * A PUT that leaves the immutable fields out gets them from the stored besluit; a PATCH does not.
+	 *
+	 * @return void
+	 */
+	public function testPutCarriesTheImmutableFieldsForwardAndPatchDoesNot(): void {
+		$service = $this->buildService(objects: null);
+		$body    = ['toelichting' => 'x'];
+
+		$this->assertSame(
+			['toelichting' => 'x', 'identificatie' => 'BESLUIT-1', 'verantwoordelijkeOrganisatie' => '000000000'],
+			$service->rulesBesluitenUpdate(body: $body, existingObject: $this->storedBesluit())['enrichedBody']
+		);
+		$this->assertSame($body, $service->rulesBesluitenPatch(body: $body, existingObject: $this->storedBesluit())['enrichedBody']);
+		$this->assertSame(
+			['toelichting' => 'x', 'identificatie' => 'B-1', 'verantwoordelijkeOrganisatie' => '222222222'],
+			$service->rulesBesluitenUpdate(
+				body: $body,
+				existingObject: ['title' => '', 'identifier' => 'B-9', 'identificatie' => 'B-1', 'verantwoordelijkeOrganisatie' => '222222222']
+			)['enrichedBody']
+		);
+
+	}//end testPutCarriesTheImmutableFieldsForwardAndPatchDoesNot()
+
+	/**
+	 * A PUT keeps what it sends, and adds nothing when the stored besluit holds nothing to carry.
+	 *
+	 * @return void
+	 */
+	public function testPutKeepsWhatItSendsAndAddsNothingFromAnEmptyBesluit(): void {
+		$service = $this->buildService(objects: null);
+		$sent    = ['identificatie' => 'BESLUIT-1', 'verantwoordelijkeOrganisatie' => '000000000'];
+
+		$this->assertSame($sent, $service->rulesBesluitenUpdate(body: $sent, existingObject: $this->storedBesluit())['enrichedBody']);
+		$this->assertSame(
+			['identificatie' => '', 'verantwoordelijkeOrganisatie' => ''],
+			$service->rulesBesluitenUpdate(body: ['identificatie' => '', 'verantwoordelijkeOrganisatie' => ''], existingObject: [])['enrichedBody']
+		);
+		$this->assertSame([], $service->rulesBesluitenUpdate(body: [], existingObject: ['decisionType' => self::BT_UUID])['enrichedBody']);
+
+	}//end testPutKeepsWhatItSendsAndAddsNothingFromAnEmptyBesluit()
+
+	/**
+	 * Brc-003: an informatieobject URL that names no document is refused before brc-008 is asked.
+	 *
+	 * @return void
+	 */
+	public function testUnknownInformatieobjectWithoutUuidIsRefused(): void {
+		$service = $this->buildService(objects: $this->bioWorld(documentTypes: ['Brief'], docTypeName: 'Brief'));
+		$result  = $service->rulesBesluitinformatieobjectenCreate(
+			body: ['decision' => 'https://brc.example.com/besluiten/'.self::DECISION_UUID, 'informatieobject' => 'https://drc.example.com/geen-uuid']
+		);
+
+		$this->assertFalse($result['valid']);
+		$this->assertSame(400, $result['status']);
+
+	}//end testUnknownInformatieobjectWithoutUuidIsRefused()
+
+	/**
+	 * Without a context or without an informatieobject, a link only gets its brc-004 relation text.
+	 *
+	 * @return void
+	 */
+	public function testLinkWithoutContextOrDocumentOnlyGetsTheRelationText(): void {
+		$text = 'Legt vast, omgekeerd: wordt vastgelegd door';
+
+		$this->assertSame(
+			['informatieobject' => 'https://drc.example.com/geen-uuid', 'natureRelationshipDisplay' => $text],
+			$this->buildService(objects: null)->rulesBesluitinformatieobjectenCreate(body: ['informatieobject' => 'https://drc.example.com/geen-uuid'])['enrichedBody']
+		);
+		$this->assertSame(
+			['decision' => 'x', 'natureRelationshipDisplay' => $text],
+			$this->buildService(objects: [])->rulesBesluitinformatieobjectenCreate(body: ['decision' => 'x'])['enrichedBody']
+		);
+
+	}//end testLinkWithoutContextOrDocumentOnlyGetsTheRelationText()
 }//end class

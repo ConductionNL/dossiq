@@ -392,7 +392,7 @@ class ConfiguredRegistryServiceTest extends TestCase {
 	 *
 	 * `ObjectService::deleteObject()`'s first parameter is `$uuid`. Passing
 	 * `id:` raises "Unknown named parameter $id" at runtime — the bug that made
-	 * InspectionChecklistService::deleteChecklist() 500 on every call. This
+	 * ChecklistTemplateStore::delete() 500 on every call. This
 	 * test fails if that regression returns.
 	 *
 	 * @return void

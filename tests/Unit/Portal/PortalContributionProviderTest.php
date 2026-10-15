@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -55,7 +56,14 @@ class PortalContributionProviderTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->provider = new PortalContributionProvider();
+		$caseTypes = $this->createMock(IntakeCaseTypes::class);
+		$caseTypes->method('caseTypes')->willReturn(
+			[
+				'createBezwaar' => 'bbbbbbbb-0000-4000-a000-000000000001',
+				'createKlacht' => 'kkkkkkkk-0000-4000-a000-000000000002',
+			]
+		);
+		$this->provider = new PortalContributionProvider(caseTypes: $caseTypes);
 
 		// Load the base register + every register.d fragment exactly as the
 		// runtime does (SettingsService merges lib/Settings/register.d/*.json
@@ -197,11 +205,11 @@ class PortalContributionProviderTest extends TestCase {
 		// their own guard checks (case-actions-on-the-case-page).
 		foreach (['createBezwaar', 'createKlacht'] as $id) {
 			$action = $this->citizenAction(id: $id);
-			$this->assertSame('againstCaseId', $action['recordField'], $id);
-			$this->assertContains('againstCaseId', $action['fields'], $id);
-			$this->assertArrayHasKey('againstCaseId', $action['crossRefs'], $id);
+			$this->assertSame('contestedCase', $action['recordField'], $id);
+			$this->assertContains('contestedCase', $action['fields'], $id);
+			$this->assertArrayHasKey('contestedCase', $action['crossRefs'], $id);
 			// The case is given by the page, never typed.
-			$this->assertFalse($action['fieldConfigs']['againstCaseId']['visible'], $id);
+			$this->assertFalse($action['fieldConfigs']['contestedCase']['visible'], $id);
 		}
 	}//end testTheReplyActionNamesTheFieldARecordLandsIn()
 
@@ -334,10 +342,63 @@ class PortalContributionProviderTest extends TestCase {
 			$this->assertSame(['retentionDays' => 30], $action['draft'], $id . ': within portaliq\'s 1 to 90 days');
 			$this->assertSame('Wij hebben uw Woo-verzoek ontvangen', $action['confirmation']['title']);
 			$this->assertStringContainsString('{identifier}', $action['confirmation']['body']);
-			$this->assertStringContainsString('{deadline}', $action['confirmation']['body']);
+			// The dates as a resident reads them, never the stored moment
+			// (portal-woo-request-form-takes-dutch-input REQ-WDI-003).
+			$this->assertStringContainsString('{deadlineDay}', $action['confirmation']['body']);
+			$this->assertStringContainsString('{termStartsDay}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{deadline}', $action['confirmation']['body']);
+			$this->assertStringNotContainsString('{termStartsAt}', $action['confirmation']['body']);
 			$this->assertNotSame('', trim($action['confirmation']['next']));
 		}
 	}//end testTheWooRequestSavesHalfwayAndNamesTheCaseWhenItIsIn()
+
+	/**
+	 * The period is asked as dates and the requester as a choice whose
+	 * Dutch words map to the values the route keeps, on both doors.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/portal-contribution/spec.md#requirement-the-woo-request-form-asks-dates-as-dates-and-the-requester-as-a-choice-req-wdi-004
+	 */
+	public function testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			foreach (['periodeVan', 'periodeTot'] as $field) {
+				$this->assertSame('date', ($action['fieldConfigs'][$field]['input'] ?? null), $id . ': ' . $field . ' is a date');
+			}
+
+			$this->assertSame('choices', $action['fieldConfigs']['verzoekerType']['widget']);
+			$options = $action['optionsProviders']['verzoekerType']['options'];
+			$this->assertSame(
+				['burger' => 'Inwoner', 'journalist' => 'Journalist', 'organisatie' => 'Organisatie'],
+				array_column($options, 'label', 'value'),
+				$id . ': Dutch words over the stored values'
+			);
+			$this->assertSame(
+				\OCA\Dossiq\Woo\WooRequestForm::REQUESTER_KINDS,
+				array_column($options, 'value'),
+				$id . ': every choice is a value the route keeps'
+			);
+		}
+	}//end testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice()
+
+	/**
+	 * The requester's name and e-mail address start from the signed-in
+	 * resident's own details, on both doors.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-prefills-the-requester/specs/portal-contribution/spec.md#requirement-the-woo-request-starts-from-the-signed-in-residents-name-and-e-mail-address
+	 */
+	public function testTheWooRequestPrefillsTheRequesterFromTheProfile(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			$this->assertSame('name', ($action['fieldConfigs']['verzoekerNaam']['prefill'] ?? null), $id);
+			$this->assertSame('email', ($action['fieldConfigs']['verzoekerEmail']['prefill'] ?? null), $id);
+		}
+	}//end testTheWooRequestPrefillsTheRequesterFromTheProfile()
 
 	/**
 	 * Two doors, one route: only the dossier variant is attached to a
@@ -568,9 +629,9 @@ class PortalContributionProviderTest extends TestCase {
 	public function testTheResidentPagesShareOneGroupAndDoNotRepeatTheSiteSections(string $audience): void {
 		$contribution = $this->provider->getContribution(['audience' => $audience]);
 
-		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken'], array_column($contribution['pages'], 'id'));
+		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken', 'startWooVerzoekAlgemeen'], array_column($contribution['pages'], 'id'));
 		$this->assertSame(
-			['Overzicht', 'Uw zaak', 'Berichten', 'Mijn verzoeken'],
+			['Overzicht', 'Uw zaak', 'Berichten', 'Mijn verzoeken', 'Informatie opvragen (Woo-verzoek)'],
 			array_column($contribution['pages'], 'label')
 		);
 		foreach ($contribution['pages'] as $page) {
@@ -612,15 +673,26 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertSame('tasks', $pages[0]['blocks'][1]['type']);
 		$this->assertSame(['type' => 'greeting', 'showDate' => false], $pages[0]['blocks'][0]);
 		$this->assertSame('Wat u nog moet doen', $pages[0]['blocks'][1]['label']);
+		// What the resident can arrange comes next: a tile to the page of the
+		// one start point, not its form (resident-start-points-have-a-page).
+		$this->assertSame(
+			['type' => 'cta', 'page' => 'startWooVerzoekAlgemeen', 'label' => 'Informatie opvragen (Woo-verzoek)'],
+			$pages[0]['blocks'][2]
+		);
 		$this->assertSame(
 			['Lopende zaken', 'Nieuwe berichten'],
-			[$pages[0]['blocks'][2]['label'], $pages[0]['blocks'][3]['label']]
+			[$pages[0]['blocks'][3]['label'], $pages[0]['blocks'][4]['label']]
 		);
-		$this->assertSame(['cases', 'inbox'], [$pages[0]['blocks'][2]['type'], $pages[0]['blocks'][3]['type']]);
+		$this->assertSame(['cases', 'inbox'], [$pages[0]['blocks'][3]['type'], $pages[0]['blocks'][4]['type']]);
 		// Bezwaar and klacht act on one case: they left the overview for the
-		// case page (case-actions-on-the-case-page).
-		$this->assertCount(4, $pages[0]['blocks']);
-		$this->assertNotContains('cta', array_column($pages[0]['blocks'], 'type'));
+		// case page (case-actions-on-the-case-page). The only cta left there
+		// opens a page, never an action.
+		$this->assertCount(5, $pages[0]['blocks']);
+		foreach ($pages[0]['blocks'] as $block) {
+			if ($block['type'] === 'cta') {
+				$this->assertArrayNotHasKey('action', $block);
+			}
+		}
 		$this->assertSame(
 			['collection' => 'mijnZaken', 'titleFields' => ['title'], 'heading' => 'record', 'under' => 'cases'],
 			$pages[1]['record']
@@ -639,7 +711,7 @@ class PortalContributionProviderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
 	public function testTheResidentPagesDeclareTheBoardKeys(): void {
 		$pages = $this->provider->getContribution(['audience' => 'citizen'])['pages'];
@@ -700,8 +772,13 @@ class PortalContributionProviderTest extends TestCase {
 			$this->assertNotSame('', $page['group']);
 			$this->assertNotSame('', $page['label']);
 			foreach ($page['blocks'] as $block) {
-				// A cta names an action here; portaliq also allows a page or
-				// a route (REQ-SMO-024), which no dossiq tile needs.
+				// A cta names an action or, as the overview's start tiles do,
+				// a page of the same contribution (REQ-SMO-024).
+				if ($block['type'] === 'cta' && isset($block['page']) === true) {
+					$this->assertContains($block['page'], array_column($contribution['pages'], 'id'));
+					continue;
+				}
+
 				if ($block['type'] === 'action' || $block['type'] === 'cta') {
 					$this->assertContains($block['action'], $actions);
 					continue;
@@ -744,7 +821,7 @@ class PortalContributionProviderTest extends TestCase {
 		$guarded = [];
 
 		foreach ($contribution['actions'] as $action) {
-			foreach (['againstCaseId', 'caseId'] as $reference) {
+			foreach (['contestedCase', 'caseId'] as $reference) {
 				if (in_array($reference, (array)($action['fields'] ?? []), true) === false) {
 					continue;
 				}
@@ -781,11 +858,24 @@ class PortalContributionProviderTest extends TestCase {
 			$actions[(string)$action['id']] = $action;
 		}
 
-		$this->assertSame('bezwaarschrift', $actions['createBezwaar']['defaults']['kind']);
-		$this->assertNotContains('kind', $actions['createBezwaar']['fields']);
+		// Decision 179 (Q8): bezwaar and klacht open a case of the configured
+		// case type. The case type is stamped, never offered.
+		$this->assertSame('case', $actions['createBezwaar']['schema']);
+		$this->assertSame('bbbbbbbb-0000-4000-a000-000000000001', $actions['createBezwaar']['defaults']['caseType']);
+		$this->assertNotContains('caseType', $actions['createBezwaar']['fields']);
 
-		$this->assertSame('klachtschrift', $actions['createKlacht']['defaults']['kind']);
-		$this->assertNotContains('kind', $actions['createKlacht']['fields']);
+		$this->assertSame('case', $actions['createKlacht']['schema']);
+		$this->assertSame('kkkkkkkk-0000-4000-a000-000000000002', $actions['createKlacht']['defaults']['caseType']);
+		$this->assertNotContains('caseType', $actions['createKlacht']['fields']);
+
+		// Every field and default they write is a property of the case schema,
+		// or the write would be refused (decision 179: a form is valid against
+		// its destination).
+		$caseProperties = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/dossiq_register.json'), true)['components']['schemas']['case']['properties'];
+		foreach (['createBezwaar', 'createKlacht'] as $id) {
+			$written = array_merge($actions[$id]['fields'], array_keys($actions[$id]['defaults']));
+			$this->assertSame([], array_values(array_diff($written, array_keys($caseProperties))), $id);
+		}
 
 		// Every create on portaalVerzoek stamps a kind the schema accepts. A
 		// kind left to the client arrived as 'klacht', outside the enum, and
@@ -1203,4 +1293,63 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertNotEmpty($props, "schema '{$slug}' must declare properties");
 		return $props;
 	}
+
+	/**
+	 * dossiq's receiveWooRequest() has opencatalogi's signature, so portaliq
+	 * swaps one app id. The expected signature is copied from opencatalogi's
+	 * class at 35999c29, lib/Portal/PortalContributionProvider.php line 122:
+	 * `public function receiveWooRequest(array $answers, string $receivedAt=''): array`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	public function testReceiveWooRequestHasOpencatalogisSignature(): void {
+		$method = new \ReflectionMethod(PortalContributionProvider::class, 'receiveWooRequest');
+		$parameters = $method->getParameters();
+
+		self::assertTrue($method->isPublic());
+		self::assertSame('array', (string)$method->getReturnType());
+		self::assertCount(2, $parameters);
+		self::assertSame('answers', $parameters[0]->getName());
+		self::assertSame('array', (string)$parameters[0]->getType());
+		self::assertFalse($parameters[0]->isOptional());
+		self::assertSame('receivedAt', $parameters[1]->getName());
+		self::assertSame('string', (string)$parameters[1]->getType());
+		self::assertSame('', $parameters[1]->getDefaultValue());
+	}//end testReceiveWooRequestHasOpencatalogisSignature()
+
+	/**
+	 * Built with `new`, as portaliq may, the provider answers unavailable with
+	 * opencatalogi's five keys, each a string, plus caseUrl.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey(): void {
+		$answer = $this->provider->receiveWooRequest(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00');
+
+		self::assertSame(['outcome', 'requestId', 'reference', 'dueAt', 'message', 'caseUrl'], array_keys($answer));
+		self::assertSame('unavailable', $answer['outcome']);
+		foreach ($answer as $value) {
+			self::assertIsString($value);
+		}
+	}//end testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey()
+
+	/**
+	 * With the intake wired, the request goes to receive() with origin portal-form.
+	 *
+	 * @return void
+	 */
+	public function testTheProviderHandsTheRequestToTheIntakeAsAPortalForm(): void {
+		$intake = $this->createMock(\OCA\Dossiq\Woo\WooRequestIntake::class);
+		$intake->expects(self::once())->method('receive')
+			->with(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00', 'portal-form')
+			->willReturn(['outcome' => 'armed', 'requestId' => 'c1', 'reference' => 'ZAAK-1', 'dueAt' => '2026-12-28', 'message' => '', 'caseUrl' => '']);
+
+		$provider = new PortalContributionProvider(wooRequests: $intake);
+		$answer = $provider->receiveWooRequest(['requestedInformation' => 'Adviezen'], '2026-11-27T10:15:00+01:00');
+
+		self::assertSame('armed', $answer['outcome']);
+		self::assertSame('2026-12-28', $answer['dueAt']);
+	}//end testTheProviderHandsTheRequestToTheIntakeAsAPortalForm()
 }

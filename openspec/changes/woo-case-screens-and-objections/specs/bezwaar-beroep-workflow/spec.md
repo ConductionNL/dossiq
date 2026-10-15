@@ -2,45 +2,37 @@
 
 ### Requirement: An objection against a Woo decision is registered from the Woo case (REQ-WCS-004)
 
-A Woo case with a stored decision SHALL offer a `Register objection` header action. Its dialog SHALL
-ask for the received date, the channel and the grounds, and SHALL post them to a new endpoint POST
-`/api/cases/{id}/woo/objection`. The endpoint SHALL, in one request:
+Amended per decision 182: the capability is generic and lives in `specs/remedy-lodging/spec.md`
+(REQ-RML-001). This requirement is the configuration that makes it serve the Wet open overheid (Woo)
+case type.
 
-1. refuse with 409 when the Woo case has no decision;
-2. open a case of the Bezwaar case type whose `relatedCases` holds the Woo case;
-3. attach the objection record with `contestedDecision` set to the Woo decision, through the same
-   service code `bezwaarObjection#open` runs, so there is one way an objection is recorded;
-4. answer `{bezwaarCaseId, objectionId, deadline, isTimely}`.
-
-When step 3 fails, the bezwaar case of step 2 SHALL be deleted again and the endpoint SHALL answer
-the error. No bezwaar case SHALL exist without its objection record. The caller SHALL need mutation
-access to the Woo case (`requireCaseMutationAccess`).
+The Woo request case type SHALL declare a `remedy` of kind `bezwaar` whose `caseType` is the Bezwaar
+case type. A Woo case with a stored decision SHALL offer a `Register objection` header action. Its
+dialog SHALL ask for the received date, the channel and the grounds, and SHALL post them to POST
+`/api/cases/{id}/remedy`. There is no Woo-specific endpoint and no Woo-specific class: the same
+action serves any case type that declares a remedy case type.
 
 #### Scenario: An objection opens its own case
 - **GIVEN** a Woo case with a decision made known on 2026-11-02
 - **WHEN** the handler registers an objection received on 2026-12-01
-- **THEN** a Bezwaar case SHALL exist whose `relatedCases` holds the Woo case
+- **THEN** a Bezwaar case SHALL exist that is related to the Woo case
 - **AND** an objection record SHALL link that case and the Woo decision
 - **AND** the Woo case page SHALL link to the Bezwaar case, and the Bezwaar case page SHALL link back
 
 #### Scenario: No decision, no objection
 - **GIVEN** a Woo case without a decision
-- **WHEN** POST `/woo/objection` is called
+- **WHEN** POST `/api/cases/{id}/remedy` is called
 - **THEN** it SHALL answer 409 and no case SHALL be created
-
-#### Scenario: A failed objection record leaves no empty case
-- **GIVEN** an objection payload the objection schema refuses
-- **WHEN** POST `/woo/objection` is called
-- **THEN** it SHALL answer the error and no Bezwaar case SHALL remain
 
 ### Requirement: The objection has its own term and timeliness (REQ-WCS-005)
 
-The Bezwaar case SHALL get its statutory decision term from the Bezwaar case type: six weeks
-(Awb art. 7:10 lid 1), rolled under the Awt, starting the day after the objection period ended or
-the day it was received, whichever is later. The endpoint SHALL set `isTimely` from Awb art. 6:7
-and 6:8: an objection received within six weeks from the day after the decision was made known is
-timely. An untimely objection SHALL still be registered, marked `isTimely: false`, for the jurist
-to judge (Awb art. 6:11).
+Amended per decision 182: timeliness is generic and lives in `specs/remedy-lodging/spec.md`
+(REQ-RML-002). This requirement is the configuration.
+
+The Woo request case type's `remedy` SHALL declare a term of 42 days, the six weeks of Algemene wet
+bestuursrecht (Awb) art. 6:7. The Bezwaar case SHALL get its statutory decision term from the
+Bezwaar case type: six weeks (Awb art. 7:10 lid 1), rolled to the next working day, with one
+extension of six weeks.
 
 #### Scenario: A timely objection
 - **GIVEN** a Woo decision made known on 2026-11-02
@@ -56,11 +48,13 @@ to judge (Awb art. 6:11).
 
 The Bezwaar case type SHALL be seeded with the Woo request case type, from a register fragment of
 its own, on every install that has the Woo request case type. The Beroep and Subsidie demo case
-types SHALL stay parked under `_caseTypes_disabled`. A Bezwaren index page SHALL list the cases of
-the Bezwaar case type and SHALL be reachable from the navigation.
+types SHALL stay parked under `_caseTypes_disabled`. The cases of the Bezwaar case type SHALL be
+listed on the Cases page under their case type, reachable from the navigation. There SHALL be no
+separate Bezwaren page: an index over `case` narrowed by case type is what the Cases page already
+is, which is why the page of that name was deleted on 2026-09-02 (`src/menu-layout.json`).
 
 #### Scenario: A fresh install can handle an objection
 - **GIVEN** a fresh install with the English demo profile
 - **WHEN** the register is imported
 - **THEN** the Bezwaar case type SHALL exist and the Beroep and Subsidie demo case types SHALL NOT
-- **AND** the Bezwaren page SHALL list a newly registered objection
+- **AND** the Cases page SHALL list a newly registered objection under the Bezwaar case type

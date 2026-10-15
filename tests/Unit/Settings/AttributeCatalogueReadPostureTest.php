@@ -34,7 +34,7 @@
  * STILL OPEN, AND DELIBERATELY NOT DONE HERE. Nothing scopes who may WRITE the
  * catalogue. Scoping it needs a live probe first, because the shipped seeders
  * write these rows through the same RBAC-checked path with no session user
- * (`TemplateBundleSeeder.php:474`, `VthSeedDataRepairStep.php:448`), so a create
+ * (`VthSeedDataRepairStep.php:448`, and the package installer), so a create
  * rule that refuses Anonymous could refuse `occ maintenance:repair` too.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>

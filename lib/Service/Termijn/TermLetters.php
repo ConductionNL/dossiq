@@ -40,8 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
-use DateTimeImmutable;
-use Throwable;
+use OCA\Dossiq\Service\Support\LetterDays;
 
 /**
  * The wording of every term notification.
@@ -60,11 +59,25 @@ class TermLetters {
 	 * @return array{subject:string, body:string, locale:string}
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/receipt-names-the-case-number/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function render(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');
-		$case = (string)($instance['case'] ?? ($context['case'] ?? '–'));
-		$end = (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–'));
+		// 🔴 THE TERM'S CASE LINK IS A UUID, NOT A KENMERK. A term instance points
+		// at its case by id, so reading it first put "Ontvangstbevestiging zaak
+		// cecc92cc-..." in a resident's inbox while the case carried 2026-0117.
+		// The caller's `case` is the number read from the case itself; the term's
+		// link is the fallback for a caller that knows nothing else. Written
+		// without branches on purpose: this class sits at its complexity limit.
+		$named = array_values(
+			array_filter(
+				[trim((string)($context['case'] ?? '')), trim((string)($instance['case'] ?? ''))],
+				static fn (string $value): bool => ($value !== '')
+			)
+		);
+		$case = ($named[0] ?? '–');
+		$days = new LetterDays(language: $locale);
+		$end = $days->shown(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')));
 
 		$subject = '';
 		$body = '';
@@ -81,7 +94,10 @@ class TermLetters {
 				$body = $rendered['body'];
 				break;
 			case 'ingebrekestelling-receipt':
-				$graceEnd = (string)($context['graceEnd'] ?? '–');
+				// This letter's wording exists in Dutch only, so its date is Dutch
+				// whatever the case type declared: an English date in a Dutch body
+				// reads as a mistake, not as a courtesy.
+				$graceEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($context['graceEnd'] ?? '–'));
 				$subject = 'Bevestiging ingebrekestelling zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
 					. 'Wij hebben uw ingebrekestelling voor zaak ' . $case . " ontvangen.\n"
@@ -137,7 +153,8 @@ class TermLetters {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function extension(string $case, string $end, array $context): array {
-		$newEnd = (string)($context['newEinddatum'] ?? $end);
+		// Dutch wording only, so a Dutch date, as in the ingebrekestelling receipt.
+		$newEnd = (new LetterDays(language: 'nl'))->shown(value: (string)($context['newEinddatum'] ?? $end));
 		$body = "Beste aanvrager,\n\n"
 			. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
 
@@ -172,8 +189,8 @@ class TermLetters {
 	 */
 	private function informationRequest(string $case, string $locale, array $context): array {
 		$items = array_values(array_filter(array_map('strval', (array)($context['items'] ?? []))));
-		$due = (string)($context['pauseDeadline'] ?? '-');
 		$english = ($locale === 'en');
+		$due = (new LetterDays(language: $locale))->shown(value: (string)($context['pauseDeadline'] ?? '-'));
 
 		$list = '';
 		foreach ($items as $item) {
@@ -222,9 +239,9 @@ class TermLetters {
 	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	private function informationReminder(string $case, string $locale, array $context): array {
-		$due = (string)($context['pauseDeadline'] ?? '-');
-		$declared = trim((string)($context['chaseText'] ?? ''));
 		$english = ($locale === 'en');
+		$due = (new LetterDays(language: $locale))->shown(value: (string)($context['pauseDeadline'] ?? '-'));
+		$declared = trim((string)($context['chaseText'] ?? ''));
 
 		if ($english === true) {
 			$body = "Dear applicant,\n\n"
@@ -293,7 +310,7 @@ class TermLetters {
 			return $this->acknowledgementWaiting(english: $english);
 		}
 
-		$start = $this->termStartLines(context: $context, english: false);
+		$start = $this->termStartLines(context: $context, locale: 'nl');
 
 		if ($english === true) {
 			return $this->acknowledgementInEnglish(
@@ -302,7 +319,7 @@ class TermLetters {
 				hasTerm: $hasTerm,
 				subjectOf: $subjectOf,
 				contact: $contact,
-				start: $this->termStartLines(context: $context, english: true),
+				start: $this->termStartLines(context: $context, locale: $locale),
 			);
 		}
 
@@ -351,15 +368,17 @@ class TermLetters {
 	 * front of a citizen that the term does not count from.
 	 *
 	 * @param array<string, mixed> $context The render context.
-	 * @param bool                 $english Whether the reader asked for English.
+	 * @param string               $locale  The language these lines are written in.
 	 *
 	 * @return string The lines, ending in a newline, or an empty string.
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
-	private function termStartLines(array $context, bool $english): string {
-		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''));
-		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''));
+	private function termStartLines(array $context, string $locale): string {
+		$english = ($locale === 'en');
+		$days = new LetterDays(language: $locale);
+		$received = $days->day(value: (string)($context['receivedAt'] ?? ''));
+		$starts = $days->day(value: (string)($context['termStartsAt'] ?? ''));
 		if ($received === '' || $starts === '') {
 			return '';
 		}
@@ -382,26 +401,6 @@ class TermLetters {
 
 		return $lines;
 	}//end termStartLines()
-
-	/**
-	 * One stored moment as a day a person reads.
-	 *
-	 * @param string $value The stored ISO 8601 moment.
-	 *
-	 * @return string The day, or an empty string when there is none to read.
-	 */
-	private function dayOf(string $value): string {
-		$value = trim($value);
-		if ($value === '') {
-			return '';
-		}
-
-		try {
-			return (new DateTimeImmutable($value))->format('d-m-Y');
-		} catch (Throwable $e) {
-			return '';
-		}
-	}//end dayOf()
 
 	/**
 	 * The doorzending, Awb 2:3.

@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SetupController;
 use OCA\Dossiq\Service\DemoDataService;
-use OCA\Dossiq\Service\SeedDataService;
+use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
 use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
@@ -68,12 +68,12 @@ class SetupControllerStatusTest extends TestCase {
 	 *
 	 * @param array<string,string>     $config             App-config values.
 	 * @param bool                     $openRegisterOnline Whether OpenRegister is available.
-	 * @param array<string,mixed>|null $seedResult         What the seeder returns, when it is asked.
+	 * @param array<string,mixed>|null $seedResult         What the package installer answers, when it is asked.
 	 * @param array<string,mixed>|\Throwable|null $demoResult What the demo import returns, or throws.
 	 * @param array<string,mixed>|null $requestParams      Request params, for the config-fields step.
 	 *
-	 * @return array{controller: SetupController, written: array<string,string>, settings: SettingsService} The
-	 *   controller, a live view of every app-config value it wrote, and its settings collaborator.
+	 * @return array{controller: SetupController, written: array<string,string>, settings: SettingsService, asked: list<string>} The
+	 *   controller, a live view of every app-config value it wrote, its settings collaborator, and the package ids the installer was asked for.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) — one harness, one controller, five collaborators
 	 */
@@ -85,6 +85,7 @@ class SetupControllerStatusTest extends TestCase {
 		?array $requestParams = null,
 	): array {
 		$written = [];
+		$asked = [];
 
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')
@@ -104,7 +105,7 @@ class SetupControllerStatusTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('isOpenRegisterAvailable')->willReturn($openRegisterOnline);
 
-		$seeder = $this->createMock(SeedDataService::class);
+		$packages = $this->createMock(PackageInstaller::class);
 		// ADR-111 added the generated demo dataset as its own service and its
 		// own setup step. Since the bezwaar/beroep `seed` step was retired,
 		// the demo import IS the app's demo-data affordance, so it is driven
@@ -119,7 +120,12 @@ class SetupControllerStatusTest extends TestCase {
 			]
 		);
 		if ($seedResult !== null) {
-			$seeder->method('seedBezwaarBeroepData')->willReturn($seedResult);
+			$packages->method('install')->willReturnCallback(
+				static function (string $id) use ($seedResult, &$asked): array {
+					$asked[] = $id;
+					return $seedResult;
+				}
+			);
 		}
 
 		if ($demoResult instanceof \Throwable) {
@@ -149,11 +155,11 @@ class SetupControllerStatusTest extends TestCase {
 			appConfig: $appConfig,
 			demoDataService: $demo,
 			settingsService: $settings,
-			seedDataService: $seeder,
+			packages: $packages,
 			readiness: new FirstRunReadiness(settingsService: $settings, appConfig: $appConfig),
 		);
 
-		return ['controller' => $controller, 'written' => &$written, 'settings' => $settings];
+		return ['controller' => $controller, 'written' => &$written, 'settings' => $settings, 'asked' => &$asked];
 
 	}//end build()
 
@@ -175,7 +181,7 @@ class SetupControllerStatusTest extends TestCase {
 	 *
 	 * It used to be reported as "not done", which was the honest answer to the
 	 * wrong question. The step ran the `seed` action over
-	 * `lib/Settings/bezwaar_seed_data.json`, whose case types are parked under
+	 * the old `bezwaar_seed_data.json`, whose case types were parked under
 	 * `_caseTypes_disabled`, so every click answered 422 and the step could
 	 * never become done. The manifest no longer declares it, and this payload
 	 * is the wizard's step contract: a step reported here but declared nowhere
@@ -272,7 +278,7 @@ class SetupControllerStatusTest extends TestCase {
 	 * With the payout integration configured and no signing secret, the step
 	 * is outstanding.
 	 *
-	 * DwangsomPaymentCallbackController cannot verify a callback's origin
+	 * PayoutCallbackController cannot verify a callback's origin
 	 * without it, so this is the state the warning exists to catch.
 	 *
 	 * @return void
@@ -390,44 +396,36 @@ class SetupControllerStatusTest extends TestCase {
 
 	}//end testTheMarkerWrittenByThisCallDoesNotSettleTheStepYet()
 	/**
-	 * A seeder that created nothing has not completed the step.
-	 *
-	 * `seedBezwaarBeroepData()` returns `success: true` with every counter at
-	 * zero when its payload is absent — which is the state it is in, its case
-	 * types having been parked under `_caseTypes_disabled` in favour of a
-	 * register.d fragment. Recording that as done made the affordance one-shot
-	 * and silently useless: one click reported "Seeded 0 case types, 0 status
-	 * types, 0 role types (0 skipped)" as a success, marked the step complete,
-	 * and the wizard never offered it again.
+	 * The `seed` action installs the on-request package and records the step.
 	 *
 	 * @return void
 	 */
-	public function testASeedThatCreatedNothingDoesNotRecordTheStepAsDone(): void {
+	public function testASeedThatInstalledThePackageRecordsTheStepAsDone(): void {
 		$built = $this->build(
 			config: $this->provisioned(),
-			seedResult: ['success' => true, 'caseTypes' => 0, 'statusTypes' => 0, 'roleTypes' => 0, 'workflows' => 0, 'skipped' => 0]
+			seedResult: ['status' => PackageInstaller::INSTALLED, 'package' => 'bezwaar-beroep', 'version' => '1.0.0', 'message' => 'Installed.', 'written' => 33, 'skipped' => 0]
 		);
 
 		$response = $built['controller']->runAction(actionId: 'seed');
 
-		$this->assertSame(422, $response->getStatus());
-		$this->assertFalse($response->getData()['success']);
-		$this->assertArrayNotHasKey('setup_seed_done', $built['written']);
+		$this->assertSame(200, $response->getStatus());
+		$this->assertTrue($response->getData()['success']);
+		$this->assertSame(33, $response->getData()['detail']['written']);
+		$this->assertSame('1', $built['written']['setup_seed_done'] ?? null);
+		$this->assertSame(['bezwaar-beroep'], $built['asked'], 'the action installs exactly the bezwaar-beroep package');
 
-	}//end testASeedThatCreatedNothingDoesNotRecordTheStepAsDone()
+	}//end testASeedThatInstalledThePackageRecordsTheStepAsDone()
 
 	/**
-	 * A seeder that created something completes the step.
-	 *
-	 * The positive control: without it the assertion above would pass just as
-	 * happily if the step could never be recorded at all.
+	 * A package already at this version still completes the step: its case
+	 * types are on this instance.
 	 *
 	 * @return void
 	 */
-	public function testASeedThatCreatedSomethingRecordsTheStepAsDone(): void {
+	public function testASeedOfAnAlreadyInstalledPackageStillRecordsTheStepAsDone(): void {
 		$built = $this->build(
 			config: $this->provisioned(),
-			seedResult: ['success' => true, 'caseTypes' => 3, 'statusTypes' => 9, 'roleTypes' => 2, 'workflows' => 1, 'skipped' => 0]
+			seedResult: ['status' => PackageInstaller::CURRENT, 'package' => 'bezwaar-beroep', 'version' => '1.0.0', 'message' => 'Already installed.']
 		);
 
 		$response = $built['controller']->runAction(actionId: 'seed');
@@ -435,49 +433,30 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertTrue($response->getData()['success']);
 		$this->assertSame('1', $built['written']['setup_seed_done'] ?? null);
 
-	}//end testASeedThatCreatedSomethingRecordsTheStepAsDone()
+	}//end testASeedOfAnAlreadyInstalledPackageStillRecordsTheStepAsDone()
 
 	/**
-	 * A run that only SKIPPED objects still counts as having done the step:
-	 * everything it would have created is already there.
+	 * A refused or failed install answers 422 with the installer's own message
+	 * and leaves the step open.
 	 *
 	 * @return void
 	 */
-	public function testASeedThatOnlySkippedStillRecordsTheStepAsDone(): void {
-		$built = $this->build(
-			config: $this->provisioned(),
-			seedResult: ['success' => true, 'caseTypes' => 0, 'statusTypes' => 0, 'roleTypes' => 0, 'workflows' => 0, 'skipped' => 12]
-		);
+	public function testARefusedOrFailedSeedReportsTheInstallersOwnMessage(): void {
+		foreach ([PackageInstaller::REFUSED, PackageInstaller::FAILED] as $status) {
+			$built = $this->build(
+				config: $this->provisioned(),
+				seedResult: ['status' => $status, 'package' => 'bezwaar-beroep', 'version' => '1.0.0', 'message' => "Package 'bezwaar-beroep' was not installed."]
+			);
 
-		$response = $built['controller']->runAction(actionId: 'seed');
+			$response = $built['controller']->runAction(actionId: 'seed');
 
-		$this->assertTrue($response->getData()['success']);
-		$this->assertSame('1', $built['written']['setup_seed_done'] ?? null);
+			$this->assertSame(422, $response->getStatus(), $status);
+			$this->assertFalse($response->getData()['success'], $status);
+			$this->assertSame("Package 'bezwaar-beroep' was not installed.", $response->getData()['message'], $status);
+			$this->assertArrayNotHasKey('setup_seed_done', $built['written'], $status);
+		}
 
-	}//end testASeedThatOnlySkippedStillRecordsTheStepAsDone()
-
-	/**
-	 * A refused seed is reported with the seeder's own message.
-	 *
-	 * The `success: false` branch, distinct from the zero-counter one above:
-	 * "the register is not configured" and "there was nothing to write" are
-	 * different problems and must not arrive as the same sentence.
-	 *
-	 * @return void
-	 */
-	public function testARefusedSeedReportsTheSeedersOwnMessage(): void {
-		$built = $this->build(
-			config: $this->provisioned(),
-			seedResult: ['success' => false, 'message' => 'Register or schemas not configured']
-		);
-
-		$response = $built['controller']->runAction(actionId: 'seed');
-
-		$this->assertSame(422, $response->getStatus());
-		$this->assertSame('Register or schemas not configured', $response->getData()['message']);
-		$this->assertArrayNotHasKey('setup_seed_done', $built['written']);
-
-	}//end testARefusedSeedReportsTheSeedersOwnMessage()
+	}//end testARefusedOrFailedSeedReportsTheInstallersOwnMessage()
 
 	/**
 	 * An unknown action id answers 404 rather than doing nothing quietly.

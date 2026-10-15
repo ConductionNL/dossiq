@@ -48,3 +48,13 @@ so they stay open for Ruben rather than receive an invented basis.
 long as the aanvulling takes, with no fixed length, and a klacht is not an aanvraag for a
 beschikking, so 4:15 does not apply to it. The new rows ship no pause durations rather
 than invent them.
+
+## Decision (11 Oct): the other two subsidy types use the Awb fallback too
+
+Ruben decided the open questions above. `subsidieaanvraag` and
+`zaaktype-innovatiefonds-2026` each take eight weeks under Awb art. 4:13 lid 2, statutory,
+with Awb art. 4:14 lid 3 as the notice of a later term, exactly as the cultuursubsidie
+does. The case types change with them so the declared deadline and the definition agree:
+`subsidieaanvraag` goes from six weeks plus a four week extension to P56D with no fixed
+extension (a later term is a 4:14 lid 3 notice, the supervisor path, not a standard
+extension), and the innovatiefonds goes from P13W to P8W. No open question is left.

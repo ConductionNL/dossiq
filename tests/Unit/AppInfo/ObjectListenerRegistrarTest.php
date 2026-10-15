@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
 use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
+use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
@@ -36,9 +37,14 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\DocumentListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
  * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
+ * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
 
@@ -85,6 +91,20 @@ class ObjectListenerRegistrarTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A created case reaches the report grouping, through the intake registrar
+	 * this one calls (ai-features-on-the-case, REQ-AIC-04).
+	 *
+	 * @return void
+	 */
+	public function testTheReportGroupingIsRegisteredOnCreation(): void {
+		$this->assertContains(
+			needle: ReportGroupingOnCreateListener::class,
+			haystack: ($this->registrations()['OCA\OpenRegister\Event\ObjectCreatedEvent'] ?? []),
+			message: 'without the registration no case is ever grouped, and every grouping test stays green',
+		);
+	}//end testTheReportGroupingIsRegisteredOnCreation()
+
 	public function testTheGuardIsNotOnThePostPersistEvent(): void {
 		$registered = $this->registrations();
 

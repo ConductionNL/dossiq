@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Status\DerivedStatusEvaluator
  * @covers \OCA\Dossiq\Service\Status\StatusDeclaration
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class DerivedStatusTest extends TestCase {
 
@@ -97,7 +98,7 @@ class DerivedStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testTheCaseMovesWhenEveryConditionHolds(): void {
 		$case = [
@@ -121,7 +122,7 @@ class DerivedStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAnUnmetDerivationNamesTheMissingDocument(): void {
 		$case = [
@@ -150,7 +151,7 @@ class DerivedStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAnEmptyFieldDoesNotSatisfyFieldPresent(): void {
 		$case = [
@@ -174,7 +175,7 @@ class DerivedStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testALaterStatusIsNotPulledBackToAnEarlierDerivedOne(): void {
 		$case = [
@@ -193,7 +194,7 @@ class DerivedStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testOnlyTheDeclaringStatusCountsAsDerived(): void {
 		$service = $this->service();
@@ -214,7 +215,7 @@ class DerivedStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAnUnknownConditionKindIsDropped(): void {
 		$declaration = new StatusDeclaration();

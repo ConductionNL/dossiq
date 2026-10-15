@@ -20,6 +20,22 @@
 		{
 			"mechanism": "notification:caseMovedForItsFollowers",
 			"reason": "The recipients are the case's watchers, who are staff with queues, so this entry says where it stops rather than that nobody is addressed. It reaches them through the notification bell, and that is the whole of it BY DESIGN rather than for want of a source. A queue is what you have to do; a case you follow is a case somebody else is doing. Putting followed cases on the personal queue would fill a handler's own list with work that is not theirs, which is the failure this test was written to catch, running the other way. The Followed lens on Cases and the Cases you follow tile on My Work are where a follower looks, and neither is the queue."
+		},
+		{
+			"mechanism": "notification:newSupplierMessage",
+			"reason": "A message from the organisation to a supplier is mailed to the supplier at supplierRef.contactEmail (portal-contribution T3, decision 128). The recipient is a supplier outside the organisation: they have no dossiq queue for anything to land on."
+		},
+		{
+			"mechanism": "notification:contractExpiring",
+			"reason": "A supplier's contract that is about to end is mailed to the supplier at supplierRef.contactEmail (portal-contribution T3, decision 128). The recipient is a supplier outside the organisation: they have no dossiq queue for anything to land on."
+		},
+		{
+			"mechanism": "notification:invoiceDue",
+			"reason": "A supplier's invoice that falls due is mailed to the supplier at supplierRef.contactEmail (portal-contribution T3, decision 128). The recipient is a supplier outside the organisation: they have no dossiq queue for anything to land on."
+		},
+		{
+			"mechanism": "notification:tenderPublished",
+			"reason": "The award of a tender to a supplier is mailed to the supplier at supplierRef.contactEmail (portal-contribution T3, decision 128). The recipient is a supplier outside the organisation: they have no dossiq queue for anything to land on."
 		}
 	]
 }

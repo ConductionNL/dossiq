@@ -9,10 +9,11 @@
  * because every decline hands the question back to the matrix and a decline it
  * should not have made is invisible in the result.
  *
- * The evaluator here is OpenRegister's own, a verbatim copy kept under
- * tests/Stubs. That matters: a hand-written fake evaluator would let these
- * tests agree with whatever this class happens to send it, which is the shape
- * of a fake that cannot fail.
+ * The table is stored in an in-memory stand-in for OpenRegister's
+ * DecisionTableStore that evaluates with OpenRegister's own evaluator, a
+ * verbatim copy kept under tests/Stubs. That matters: a hand-written fake
+ * evaluator would let these tests agree with whatever this class happens to
+ * send it, which is the shape of a fake that cannot fail.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service\Vth
@@ -27,54 +28,38 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @spec openspec/changes/decision-tables-live-in-openregister/specs/decision-tables/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Vth;
 
+use OCA\Dossiq\Service\Dmn\StoredDecisionTables;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Vth\LhsDecisionTableLookup;
-use OCA\Dossiq\Service\Vth\LhsMatrixDecisionTableMigrator;
+use OCA\Dossiq\Tests\Support\InMemoryDecisionTableStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * The projected decision table, and when it declines to answer.
- *
- * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md
+ * @covers \OCA\Dossiq\Service\Vth\LhsDecisionTableLookup
+ * @covers \OCA\Dossiq\Service\Dmn\StoredDecisionTables
  */
 class LhsDecisionTableLookupTest extends TestCase {
-	/**
-	 * Decision tables the fake register holds.
-	 *
-	 * @var array<int, array<string, mixed>>
-	 */
-	private array $tables = [];
 
 	/**
-	 * Whether the container can resolve the evaluator.
-	 *
-	 * @var bool
-	 */
-	private bool $evaluatorAvailable = true;
-
-	/**
-	 * A table projected from matrix `m-1`, carrying one rule.
-	 *
-	 * @param bool $enabled Whether the table is enabled.
+	 * The table projected from matrix version 3, as stored in OpenRegister.
 	 *
 	 * @return array<string, mixed> The table.
 	 */
-	private function table(bool $enabled = true): array {
+	private function table(): array {
 		return [
-			'id' => 'table-1',
+			'key' => 'dossiq.lhs-matrix-3',
 			'name' => 'LHS 2024',
-			'description' => 'Projected. ' . LhsMatrixDecisionTableMigrator::MARKER_PREFIX . 'm-1',
 			'hitPolicy' => 'UNIQUE',
-			'enabled' => $enabled,
 			'inputs' => [
 				['name' => 'severity', 'type' => 'string'],
 				['name' => 'behaviour', 'type' => 'string'],
@@ -82,213 +67,98 @@ class LhsDecisionTableLookupTest extends TestCase {
 			],
 			'outputs' => [['name' => 'intervention', 'type' => 'string']],
 			'rules' => [
-				[
-					'id' => 'gering:goedwillend:overheid',
-					// EXACTLY what LhsMatrixDecisionTableMigrator writes: bare
-					// values, not quoted FEEL literals. A fixture that quoted
-					// them would prove the evaluator works on a shape the
-					// projection never produces.
-					'inputEntries' => ['gering', 'goedwillend', 'overheid'],
-					'outputEntries' => ['warning'],
-				],
+				['id' => 'a', 'inputEntries' => ['gering', 'goedwillend', 'burger'], 'outputEntries' => ['warning']],
+				['id' => 'b', 'inputEntries' => ['ernstig', 'calculerend', 'burger'], 'outputEntries' => ['prosecute']],
 			],
 		];
 	}//end table()
 
 	/**
-	 * Build the lookup over a fake register and the real evaluator.
+	 * The lookup over a container that answers with the given store.
+	 *
+	 * @param object|null $store The store, or null for an OpenRegister without one.
+	 * @param LoggerInterface|null $logger The logger.
 	 *
 	 * @return LhsDecisionTableLookup The lookup.
 	 */
-	private function lookup(): LhsDecisionTableLookup {
-		$tables = &$this->tables;
-
-		$objectService = new class($tables) {
-			/**
-			 * @param array<int, array<string, mixed>> $tables Stored tables.
-			 */
-			public function __construct(private array &$tables) {
-			}
-
-			/**
-			 * @param string               $register The register.
-			 * @param string               $schema   The schema.
-			 * @param array<string, mixed> $filters  The filters.
-			 *
-			 * @return array<int, array<string, mixed>> The rows.
-			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
-				return $this->tables;
-			}
-		};
-
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
-		$settings->method('getConfigValue')->willReturnCallback(
-			static function (string $key, string $default = ''): string {
-				$map = ['register' => 'dossiq', 'decision_table_schema' => 'decisionTable'];
-
-				return ($map[$key] ?? $default);
-			}
-		);
-
+	private function lookup(?object $store, ?LoggerInterface $logger = null): LhsDecisionTableLookup {
 		$container = $this->createMock(ContainerInterface::class);
-		if ($this->evaluatorAvailable === true) {
-			// OpenRegister's OWN evaluator, kept verbatim under tests/Stubs. A
-			// hand-written fake would agree with whatever this class sends it.
-			$evaluatorClass = '\\OCA\\OpenRegister\\Service\\Dmn\\DecisionTableEvaluator';
-			$container->method('get')->willReturn(new $evaluatorClass());
+		if ($store === null) {
+			$container->method('get')->willThrowException(new RuntimeException('no store'));
 		} else {
-			$container->method('get')->willThrowException(new RuntimeException('not registered'));
+			$container->method('get')->willReturn($store);
 		}
 
 		return new LhsDecisionTableLookup(
-			$settings,
-			$container,
-			$this->createMock(LoggerInterface::class)
+			new StoredDecisionTables($this->createMock(SettingsService::class), $container),
+			($logger ?? $this->createMock(LoggerInterface::class))
 		);
 	}//end lookup()
 
 	/**
-	 * An enabled projected table answers.
+	 * The stored table answers the triple, named by its matrix version.
 	 *
 	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
 	 */
-	public function testAnEnabledProjectionAnswers(): void {
-		$this->tables = [$this->table()];
+	public function testTheStoredTableAnswers(): void {
+		$store = new InMemoryDecisionTableStore(['dossiq.lhs-matrix-3' => $this->table()]);
 
-		$this->assertSame(
-			'warning',
-			$this->lookup()->intervention('m-1', 'gering', 'goedwillend', 'overheid')
-		);
-	}//end testAnEnabledProjectionAnswers()
+		self::assertSame('prosecute', $this->lookup($store)->intervention('3', 'ernstig', 'calculerend', 'burger'));
+		self::assertSame(['dossiq.lhs-matrix-3'], $store->asked);
+	}//end testTheStoredTableAnswers()
 
 	/**
-	 * 🔴 A DISABLED table is not consulted.
-	 *
-	 * Reading it anyway would make the enforcement answer depend on a table an
-	 * administrator deliberately switched off.
+	 * Another version's table is not used: the reference names the version.
 	 *
 	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
 	 */
-	public function testADisabledProjectionIsNotConsulted(): void {
-		$this->tables = [$this->table(enabled: false)];
+	public function testAnotherVersionsTableIsNotUsed(): void {
+		$store = new InMemoryDecisionTableStore(['dossiq.lhs-matrix-3' => $this->table()]);
 
-		$this->assertNull(
-			$this->lookup()->intervention('m-1', 'gering', 'goedwillend', 'overheid')
-		);
-	}//end testADisabledProjectionIsNotConsulted()
+		self::assertNull($this->lookup($store)->intervention('4', 'ernstig', 'calculerend', 'burger'));
+	}//end testAnotherVersionsTableIsNotUsed()
 
 	/**
-	 * No projection at all declines, so the matrix answers.
+	 * No table for the version declines quietly (the ordinary state before the projection runs).
 	 *
 	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
 	 */
-	public function testNoProjectionDeclines(): void {
-		$this->tables = [];
+	public function testNoProjectionDeclinesWithoutAWarning(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
 
-		$this->assertNull(
-			$this->lookup()->intervention('m-1', 'gering', 'goedwillend', 'overheid')
-		);
-	}//end testNoProjectionDeclines()
+		self::assertNull($this->lookup(new InMemoryDecisionTableStore(), $logger)->intervention('3', 'gering', 'goedwillend', 'burger'));
+	}//end testNoProjectionDeclinesWithoutAWarning()
 
 	/**
-	 * A table belonging to ANOTHER matrix is not used.
-	 *
-	 * The marker carries the matrix id, and taking any table that happened to
-	 * be there would answer one matrix's question from another's rules.
+	 * A table that exists and matches no rule declines, and says so at warning.
 	 *
 	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
 	 */
-	public function testAnotherMatrixsTableIsNotUsed(): void {
-		$this->tables = [$this->table()];
+	public function testAnUnmatchedTripleDeclinesWithAWarning(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
+		$store = new InMemoryDecisionTableStore(['dossiq.lhs-matrix-3' => $this->table()]);
 
-		$this->assertNull(
-			$this->lookup()->intervention('m-2', 'gering', 'goedwillend', 'overheid')
-		);
-	}//end testAnotherMatrixsTableIsNotUsed()
+		self::assertNull($this->lookup($store, $logger)->intervention('3', 'gering', 'calculerend', 'overheid'));
+	}//end testAnUnmatchedTripleDeclinesWithAWarning()
 
 	/**
-	 * The table is resolved by MARKER, not by name.
-	 *
-	 * A name is editable in the decision-table editor, so matching on one would
-	 * detach the table from its matrix the moment somebody renamed it.
+	 * An OpenRegister without the store declines.
 	 *
 	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
 	 */
-	public function testARenamedTableStillResolves(): void {
-		$table = $this->table();
-		$table['name'] = 'Renamed by an administrator';
-		$this->tables = [$table];
-
-		$this->assertSame(
-			'warning',
-			$this->lookup()->intervention('m-1', 'gering', 'goedwillend', 'overheid')
-		);
-	}//end testARenamedTableStillResolves()
+	public function testAnAbsentStoreDeclines(): void {
+		self::assertNull($this->lookup(null)->intervention('3', 'ernstig', 'calculerend', 'burger'));
+	}//end testAnAbsentStoreDeclines()
 
 	/**
-	 * A triple the table cannot resolve declines rather than inventing one.
+	 * The stored key of a version, and an empty version reads as 1.
 	 *
 	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
 	 */
-	public function testAnUnmatchedTripleDeclines(): void {
-		$this->tables = [$this->table()];
-
-		$this->assertNull(
-			$this->lookup()->intervention('m-1', 'ernstig', 'crimineel', 'burger')
-		);
-	}//end testAnUnmatchedTripleDeclines()
-
-	/**
-	 * With no evaluator resolvable, the lookup declines instead of failing.
-	 *
-	 * An OpenRegister release that has not shipped the evaluator must degrade
-	 * to the matrix, not take enforcement recommendations down with it.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
-	 */
-	public function testAnUnresolvableEvaluatorDeclines(): void {
-		$this->tables = [$this->table()];
-		$this->evaluatorAvailable = false;
-
-		$this->assertNull(
-			$this->lookup()->intervention('m-1', 'gering', 'goedwillend', 'overheid')
-		);
-	}//end testAnUnresolvableEvaluatorDeclines()
-
-	/**
-	 * An unconfigured instance declines without reaching the register.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/lhs-matrix-is-a-decision-table/specs/lhs-decision-table/spec.md#requirement-req-ldt-005-the-evaluator-is-the-lookup
-	 */
-	public function testAnUnconfiguredInstanceDeclines(): void {
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn(null);
-		$settings->method('getConfigValue')->willReturn('');
-
-		$lookup = new LhsDecisionTableLookup(
-			$settings,
-			$this->createMock(ContainerInterface::class),
-			$this->createMock(LoggerInterface::class)
-		);
-
-		$this->assertNull($lookup->intervention('m-1', 'gering', 'goedwillend', 'overheid'));
-	}//end testAnUnconfiguredInstanceDeclines()
+	public function testTheReferenceOfAVersion(): void {
+		self::assertSame('dossiq.lhs-matrix-3', $this->lookup(null)->referenceFor('3'));
+		self::assertSame('dossiq.lhs-matrix-1', $this->lookup(null)->referenceFor(''));
+	}//end testTheReferenceOfAVersion()
 }//end class

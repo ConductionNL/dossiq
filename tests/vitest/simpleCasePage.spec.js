@@ -244,7 +244,7 @@ describe('the stage', () => {
 describe('the actions', () => {
 	const ids = original.headerActions.map((action) => action.id)
 
-	it('patches only actions that exist, and leaves none of the 26 unplaced', () => {
+	it('patches only actions that exist, and leaves none of the 31 unplaced', () => {
 		const patched = Object.keys(overlay.configPatch.headerActions)
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
@@ -258,12 +258,12 @@ describe('the actions', () => {
 			return action.adminOnly ? 'admin' : (action.group ?? 'top')
 		})
 		const count = (where) => placed.filter((place) => place === where).length
-		expect(placed).toHaveLength(26)
+		expect(placed).toHaveLength(31)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(16)
-		expect(count('Publication')).toBe(3)
-		expect(count('Dossier')).toBe(1)
+		expect(count('Case')).toBe(17)
+		expect(count('Publication')).toBe(4)
+		expect(count('Dossier')).toBe(4)
 		expect(count('admin')).toBe(2)
 	})
 
@@ -353,13 +353,13 @@ describe('the tabs', () => {
 	const tabsOf = (config) =>
 		config.widgets.find((widget) => widget.id === 'case-panels').content
 
-	it('shows five and keeps the other nine under More, losing none', () => {
+	it('shows five and keeps the other ten under More, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow).map((tab) => tab.label),
 		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'History'])
-		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(9)
+		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(10)
 		const widgetIds = (content) => content.tabs.map((tab) => tab.widgetId).sort()
 		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
 	})
@@ -394,11 +394,11 @@ describe('the tabs', () => {
 		// reads, holds all of them. The simple page reads that collection.
 		expect('stagesEndpoint' in find(simple, 'case-stages').content).toBe(false)
 
+		// The deadline tile only loses its own label in the side column, where
+		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline']
 		const others = (config) =>
-			config.widgets.filter(
-				(widget) =>
-					widget.id !== 'case-panels' && widget.id !== 'case-stages',
-			)
+			config.widgets.filter((widget) => !patched.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})
@@ -469,21 +469,43 @@ describe('the tabs', () => {
 				.map((entry) => entry.id)
 				.filter((id) => !gone.includes(id)),
 		)
+		// The body grid sits beside the side column at the library's 12 columns
+		// (nextcloud-vue 2.81.0 keeps it a grid there; before it collapsed to one
+		// stacked column under 1000px). The tabs card (`5`) leads, as DqZaak draws
+		// it, with the plan, terms, flows and hours full width under it; the
+		// cards the board does not draw pair up two to a row. Sizes are the
+		// manifest's, except three that would scroll inside.
+		const PAIRED = {
+			'money-payments': 0,
+			'money-contract': 6,
+			'family-plan-panel': 0,
+			'work-projects': 6,
+			'documents-merge-to-pdf': 0,
+		}
 		for (const entry of simple.layout) {
 			const was = original.layout.find((item) => item.id === entry.id)
-			if (entry.id === '6') {
-				// Hours booked moves to where the stages were, beside the tabs.
-				expect(entry).toEqual({
-					...was,
-					gridX: 9,
-					gridY: 4,
-					gridWidth: 3,
-					gridHeight: 2,
-				})
-				continue
-			}
-			expect(entry, entry.id).toEqual(was)
+			const half = entry.id in PAIRED
+			expect(entry.gridX, entry.id).toBe(half ? PAIRED[entry.id] : 0)
+			expect(entry.gridWidth, entry.id).toBe(half ? 6 : 12)
+			// Taller where the cell would scroll inside: the tabs card (Overview
+			// measured 784px over its 720; since nextcloud-vue 2.82.0 its sixteen
+			// tabs wrap to three rows, 72px more), the flow runs and hours booked.
+			const taller = { 5: 20, 7: 7, 6: 3 }
+			expect(entry.gridHeight, entry.id).toBe(
+				taller[entry.id] ?? was.gridHeight,
+			)
 		}
+		const order = [...simple.layout]
+			.sort((a, b) => a.gridY - b.gridY)
+			.map((entry) => entry.id)
+		expect(order.slice(0, 6)).toEqual([
+			'presence-strip',
+			'5',
+			'12',
+			'11',
+			'7',
+			'6',
+		])
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {
@@ -574,7 +596,11 @@ describe('the built simple manifest', () => {
 				encoding: 'utf8',
 			},
 		)
-		expect(run.stdout + run.stderr).toContain('PASS (0 errors)')
+		// A lag of the installed library is not a defect here (validate-manifest.js
+		// tells them apart); an error of this app's own still fails.
+		expect(run.stdout + run.stderr).toMatch(
+			/PASS \(0 errors(\)| of this app's own)/,
+		)
 		expect(run.status).toBe(0)
 	}, 120_000)
 })

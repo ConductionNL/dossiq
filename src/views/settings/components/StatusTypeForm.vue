@@ -525,7 +525,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		waitingOnOptions() {
 			const labels = {
@@ -542,7 +542,7 @@ export default {
 		 *
 		 * @return {object|null} The option.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		selectedWaitingOn() {
 			return (
@@ -578,7 +578,7 @@ export default {
 		 *
 		 * @return {Array<object>} The rules.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		fieldRules() {
 			return Array.isArray(this.form.fieldRules) ? this.form.fieldRules : []
@@ -589,7 +589,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		ruleOptions() {
 			const labels = fieldRuleLabels()
@@ -602,7 +602,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		kindOptions() {
 			const labels = conditionKindLabels()
@@ -615,7 +615,7 @@ export default {
 		 *
 		 * @return {Array<object>} The options.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		fieldOptions() {
 			return this.fields
@@ -702,7 +702,7 @@ export default {
 		 * @param {object} rule The rule row.
 		 * @return {object|null} The option.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		selectedRule(rule) {
 			return this.ruleOptions.find((o) => o.id === rule.rule) || null
@@ -714,7 +714,7 @@ export default {
 		 * @param {object} rule The rule row.
 		 * @return {object|null} The option.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		selectedField(rule) {
 			return this.fieldOptions.find((o) => o.id === rule.field) || null
@@ -726,7 +726,7 @@ export default {
 		 * @param {object} rule The rule row.
 		 * @return {object|null} The option.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		selectedKind(rule) {
 			return (
@@ -740,7 +740,7 @@ export default {
 		 * @param {object} rule The rule row.
 		 * @return {string} The names, comma separated.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		groupsText(rule) {
 			return normaliseGroups(rule.groups).join(', ')
@@ -752,7 +752,7 @@ export default {
 		 * @param {string} text What the author typed.
 		 * @return {Array<string>} The names.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		splitGroups(text) {
 			return normaliseGroups(String(text ?? '').split(','))
@@ -766,7 +766,7 @@ export default {
 		 * @param {string|Array} value The new value.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		updateRule(index, field, value) {
 			this.update(
@@ -789,7 +789,7 @@ export default {
 		 * @param {boolean} conditional Whether the rule holds only sometimes.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		toggleCondition(index, conditional) {
 			this.updateRule(index, 'condition', conditional ? ruleCondition() : null)
@@ -803,7 +803,7 @@ export default {
 		 * @param {string} value The new value.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		updateCondition(index, field, value) {
 			const rule = this.fieldRules[index]
@@ -819,7 +819,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		addRule() {
 			this.update('fieldRules', [...this.fieldRules, fieldRule()])
@@ -831,7 +831,7 @@ export default {
 		 * @param {number} index Which rule.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		removeRule(index) {
 			this.update(

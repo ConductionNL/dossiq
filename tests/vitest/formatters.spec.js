@@ -99,3 +99,86 @@ describe('the connection formatters the Integrations page reads', () => {
 		expect(registry.connectionSettingsLabel('')).toBe('')
 	})
 })
+
+describe('the case type list formatters', () => {
+	it('processingTime adds the extension a case type allows, and only then', () => {
+		const time = formatters.isoDuration('P56D')
+		const extension = formatters.isoDuration('P42D')
+		expect(
+			formatters.processingTime('P56D', {
+				extensionAllowed: true,
+				extensionPeriod: 'P42D',
+			}),
+		).toBe(`${time}, +${extension}`)
+		expect(
+			formatters.processingTime('P56D', {
+				extensionAllowed: false,
+				extensionPeriod: 'P42D',
+			}),
+		).toBe(time)
+		expect(formatters.processingTime('P56D', {})).toBe(time)
+		expect(formatters.processingTime('P56D')).toBe(time)
+		expect(formatters.processingTime('', { extensionPeriod: 'P14D' })).toBe('')
+	})
+
+	it('isoDuration puts a statutory term in words and leaves other text alone', () => {
+		expect(formatters.isoDuration('P56D')).not.toBe('P56D')
+		expect(formatters.isoDuration('Termijn van de rechtbank')).toBe(
+			'Termijn van de rechtbank',
+		)
+		expect(formatters.isoDuration('')).toBe('')
+	})
+
+	it('versionLabel writes the version as a phrase and nothing for no version', () => {
+		expect(formatters.versionLabel(3)).toBe('Version 3')
+		expect(formatters.versionLabel(null)).toBe('')
+	})
+
+	it('draftState says Draft only for a draft, and Published for everything else', () => {
+		expect(formatters.draftState(true)).toBe('Draft')
+		expect(formatters.draftState(false)).toBe('Published')
+		expect(formatters.draftState(undefined)).toBe('Published')
+	})
+})
+
+describe('the requesterName formatter', () => {
+	it('names who asked, from the name the case carries', () => {
+		expect(
+			formatters.requesterName('', {
+				initiatorDisplayName: 'Repetitie Inwoner',
+			}),
+		).toBe('Repetitie Inwoner')
+		expect(
+			formatters.requesterName('person-1', {
+				initiatorDisplayName: ' CloudGemeente B.V. ',
+			}),
+		).toBe('CloudGemeente B.V.')
+	})
+
+	it('is empty when the case names nobody, so the field reads as empty', () => {
+		expect(formatters.requesterName('', {})).toBe('')
+		expect(formatters.requesterName(undefined, undefined)).toBe('')
+	})
+
+	it('is what the case page shows under Requester', async () => {
+		const { readFileSync } = await import('fs')
+		const { resolve } = await import('path')
+		const manifest = JSON.parse(
+			readFileSync(resolve(__dirname, '../../src/manifest.json'), 'utf8'),
+		)
+		const found = []
+		const walk = (node) => {
+			if (Array.isArray(node)) {
+				node.forEach(walk)
+			} else if (node && typeof node === 'object') {
+				if (node.id === 'case-core' && node.type === 'data') {
+					found.push(node.content.overrides.requester)
+				}
+				Object.values(node).forEach(walk)
+			}
+		}
+		walk(manifest)
+		expect(found).toHaveLength(1)
+		expect(found[0].formatter).toBe('requesterName')
+	})
+})

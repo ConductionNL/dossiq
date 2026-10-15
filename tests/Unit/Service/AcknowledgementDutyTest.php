@@ -42,6 +42,9 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Woo\WooReceivedAnswers;
+use OCA\Dossiq\Woo\WooRequestForm;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -102,9 +105,14 @@ class AcknowledgementCaseStore {
  * Confirming receipt, recording it, and refusing when there is nowhere to send.
  *
  * @covers \OCA\Dossiq\Service\AcknowledgementService
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
+ * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
+ * @uses \OCA\Dossiq\Service\Email\SenderIdentity
+ * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Service\CaseFieldWriter
  * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
@@ -118,9 +126,15 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Woo\WooReceivedAnswers
+ * @uses \OCA\Dossiq\Woo\WooRequestForm
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class AcknowledgementDutyTest extends TestCase {
 	use MakesRealTermNoticeSender;
+
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The in-memory case store.
@@ -193,6 +207,11 @@ class AcknowledgementDutyTest extends TestCase {
 		$terms = $this->createMock(originalClassName: TermijnService::class);
 		$terms->method('getTermijnInstanceForZaak')->willReturnCallback(fn (): ?array => $this->term);
 
+		// The sender reads the same term back by its id, the way production does,
+		// so a term whose case link is a UUID reaches the letter the way it does live.
+		$noticeTerms = $this->createMock(originalClassName: TermijnService::class);
+		$noticeTerms->method('getTermijnInstance')->willReturnCallback(fn (): ?array => $this->term);
+
 		return new AcknowledgementService(
 			settingsService: $settings,
 			caseTypeResolver: $resolver,
@@ -200,7 +219,7 @@ class AcknowledgementDutyTest extends TestCase {
 			declaration: new CaseTypeAcknowledgement(),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
-				termService: $this->createMock(originalClassName: TermijnService::class),
+				termService: $noticeTerms,
 				sender: ($sender ?? $this->sentNotices()),
 				logger: $logger,
 				requester: new RequesterNoticeSender(
@@ -288,6 +307,7 @@ class AcknowledgementDutyTest extends TestCase {
 		return [
 			'the portal aanvraag' => ['website'],
 			'the mail intake' => ['email'],
+			'a Nextcloud Forms form' => ['forms'],
 			'the API case creation' => ['zgw-api'],
 		];
 	}//end electronicIntakePaths()
@@ -310,6 +330,91 @@ class AcknowledgementDutyTest extends TestCase {
 		);
 		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
 	}//end testACaseTypedAtTheBalieIsNotMailed()
+
+	/**
+	 * A case type that leaves `forms` out of its channel list sends none for a forms case.
+	 *
+	 * Decision 236: on by default, and the case type can switch it off.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/burger-notifications/spec.md#requirement-the-acknowledgement-of-receipt-has-a-trigger-req-term-020
+	 */
+	public function testACaseTypeSwitchesTheFormsAcknowledgementOff(): void {
+		$caseId = $this->seedCase(overrides: ['intakeChannel' => 'forms']);
+		$this->caseType = ['acknowledgement' => ['intakeChannels' => ['email', 'website', 'zgw-api']]];
+		$sender = $this->createMock(originalClassName: TermNoticeSender::class);
+		$sender->expects(self::never())->method('send');
+
+		$result = $this->service(sender: $sender)->acknowledge(caseId: $caseId);
+
+		self::assertFalse(condition: $result['sent']);
+		self::assertSame(expected: 'not-required', actual: $result['reason']);
+		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
+	}//end testACaseTypeSwitchesTheFormsAcknowledgementOff()
+
+	/**
+	 * A draft is not confirmed and records nothing; the same case, sent, is confirmed once.
+	 *
+	 * The listener queues nothing for a draft. This is the service's own
+	 * refusal, for a job that was queued some other way.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/burger-notifications/spec.md#requirement-the-acknowledgement-of-receipt-has-a-trigger-req-term-020
+	 */
+	public function testADraftIsNotConfirmedUntilItIsSent(): void {
+		$caseId = $this->seedCase(overrides: ['intakeChannel' => 'forms', '@self' => ['status' => 'draft']]);
+		$sender = $this->createMock(originalClassName: TermNoticeSender::class);
+		$sender->expects(self::once())->method('send')
+			->willReturn(['notificationChannel' => 'email', 'sent' => true, 'duplicate' => false]);
+		$service = $this->service(sender: $sender);
+
+		$draft = $service->acknowledge(caseId: $caseId);
+		self::assertFalse(condition: $draft['sent']);
+		self::assertSame(expected: 'draft', actual: $draft['reason']);
+		self::assertArrayNotHasKey(key: 'acknowledgementDuty', array: $this->store->cases[$caseId]);
+		self::assertArrayNotHasKey(key: 'outboundCommunications', array: $this->store->cases[$caseId]);
+
+		$this->store->cases[$caseId]['@self'] = ['status' => 'active'];
+		self::assertTrue(condition: $service->acknowledge(caseId: $caseId)['sent']);
+		self::assertSame(expected: 'already-met', actual: $service->acknowledge(caseId: $caseId)['reason']);
+	}//end testADraftIsNotConfirmedUntilItIsSent()
+
+	/**
+	 * An address that is not an address gets no mail: the case refuses as one without an address.
+	 *
+	 * A form's answer is typed by the sender. What fails the address check is
+	 * never handed to a transport.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/burger-notifications/spec.md#requirement-the-acknowledgement-of-receipt-has-a-trigger-req-term-020
+	 */
+	public function testAnAddressThatFailsValidationIsNeverMailed(): void {
+		$caseId = $this->seedCase(
+			overrides: [
+				'intakeChannel' => 'forms',
+				'email' => 'jan at example',
+				'initiator' => ['email' => 'jan@'],
+				'initiatorSourceId' => 'jan.example.nl',
+			]
+		);
+		$sender = $this->createMock(originalClassName: TermNoticeSender::class);
+		$sender->expects(self::never())->method('send');
+
+		try {
+			$this->service(sender: $sender)->acknowledge(caseId: $caseId);
+			self::fail(message: 'an address that fails validation must refuse rather than be mailed');
+		} catch (RefusedException $e) {
+			self::assertSame(expected: 'acknowledgement-no-address', actual: $e->getRule());
+		}
+
+		$records = $this->store->cases[$caseId]['outboundCommunications'];
+		self::assertCount(expectedCount: 1, haystack: $records);
+		self::assertSame(expected: 'not-sent', actual: $records[0]['status']);
+		self::assertNotSame(expected: AcknowledgementService::STATUS_MET, actual: ($this->store->cases[$caseId]['acknowledgementDuty']['status'] ?? ''));
+	}//end testAnAddressThatFailsValidationIsNeverMailed()
 
 	/**
 	 * A case with no address refuses, with a status and a sentence.
@@ -512,9 +617,32 @@ class AcknowledgementDutyTest extends TestCase {
 		$result = $this->service()->acknowledge(caseId: $caseId);
 
 		self::assertStringContainsString(needle: '2026-0042', haystack: $result['payload']['subject']);
-		self::assertStringContainsString(needle: '2026-11-01', haystack: $result['payload']['body']);
+		self::assertStringContainsString(needle: '1 november 2026', haystack: $result['payload']['body']);
 		self::assertStringContainsString(needle: 'Dakkapel Kerkstraat 12', haystack: $result['payload']['body']);
 	}//end testTheMessageCarriesTheKenmerkAndTheDeadline()
+
+	/**
+	 * The receipt names the case by its number, also when the term links the case by UUID.
+	 *
+	 * A term instance points at its case by id. The letter read that link first,
+	 * so a resident's inbox showed "Ontvangstbevestiging zaak cecc92cc-..." for a
+	 * case numbered 2026-0117 (Zuiddrecht live round 3).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/receipt-names-the-case-number/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
+	 */
+	public function testTheReceiptNamesTheCaseNumberNotTheTermsCaseLink(): void {
+		$uuid = 'cecc92cc-6e45-4edd-b38f-908fb543e710';
+		$this->term = ['id' => 'ti-1', 'case' => $uuid, 'endDateCurrent' => '2026-11-01'];
+		$caseId = $this->seedCase(overrides: ['id' => $uuid, 'identifier' => '2026-0117']);
+
+		$result = $this->service()->acknowledge(caseId: $caseId);
+
+		self::assertSame(expected: 'Ontvangstbevestiging zaak 2026-0117', actual: $result['payload']['subject']);
+		self::assertStringContainsString(needle: 'kenmerk 2026-0117', haystack: $result['payload']['body']);
+		self::assertStringNotContainsString(needle: $uuid, haystack: $result['payload']['body']);
+	}//end testTheReceiptNamesTheCaseNumberNotTheTermsCaseLink()
 
 	/**
 	 * REQ-WRN-003: the mail server refused the acknowledgement, so the duty is
@@ -586,4 +714,54 @@ class AcknowledgementDutyTest extends TestCase {
 
 		return $sender;
 	}//end sentNotices()
+
+	/**
+	 * Row 10.8 (woo-request-takes-over-from-opencatalogi 2.1): the confirmation
+	 * of a Woo request received through the portal form names the day it was
+	 * received, the day its term starts and its due date.
+	 *
+	 * The case is the one `WooRequestIntake::receive()` writes, built with the
+	 * same mapping (WooReceivedAnswers, WooRequestForm), plus the stamp
+	 * IntakeTermStartListener writes on create (a Friday morning, so the term
+	 * starts on arrival), and the statutory term the case-created listener binds.
+	 *
+	 * @return void
+	 */
+	public function testTheAcknowledgementNamesTheStartAndTheDueDate(): void {
+		$answers = [
+			'requestedInformation' => 'Alle e-mails over de brug.',
+			'requesterName' => 'Sanne de Groot',
+			'requesterEmail' => 'sanne@example.org',
+			'channel' => 'web',
+		];
+		$map = new WooReceivedAnswers(dates: $this->caseDates());
+		$wooRequest = (new WooRequestForm())->normalise(request: $map->toRequest(answers: $answers, origin: 'portal-form'));
+		$case = [
+			'id' => 'case-woo',
+			'caseType' => 'ct-woo',
+			'identifier' => 'WOO-2026-0007',
+			'title' => $wooRequest['onderwerp'],
+		] + $map->intake(answers: $answers, origin: 'portal-form', receivedAt: '2026-11-27T10:00:00+01:00') + [
+			'wooRequest' => $wooRequest,
+			'termStartsAt' => '2026-11-27T10:00:00+01:00',
+			'receivedOutsideWorkingHours' => false,
+		];
+		$this->store->cases['case-woo'] = $case;
+		$this->term = ['id' => 'ti-woo', 'case' => 'case-woo', 'endDateCurrent' => '2026-12-28'];
+		// The Woo case type keeps its requester in the request as sent, and says so
+		// (register.d/81-woo-verzoek.json); without the declaration no address is found.
+		$this->caseType = ['acknowledgement' => ['addressFields' => ['wooRequest.verzoekerEmail']]];
+
+		$result = $this->service()->acknowledge(caseId: 'case-woo');
+
+		self::assertTrue(condition: $result['sent'], message: (string)($result['reason'] ?? ''));
+		$body = $result['payload']['body'];
+		self::assertStringContainsString(needle: 'ontvangen op 27 november 2026', haystack: $body);
+		self::assertStringContainsString(needle: 'beslistermijn start op 27 november 2026', haystack: $body);
+		self::assertStringContainsString(needle: 'uiterlijk op 28 december 2026', haystack: $body);
+		// Every date in the receipt reads the same way (letters-print-every-date-the-same-way):
+		// the due date is stored as 2026-12-28 and was once printed so, next to 27-11-2026.
+		self::assertDoesNotMatchRegularExpression(pattern: '/\b\d{4}-\d{2}-\d{2}\b/', string: $body);
+		self::assertSame(expected: 'sanne@example.org', actual: $this->store->cases['case-woo']['outboundCommunications'][0]['recipient']);
+	}//end testTheAcknowledgementNamesTheStartAndTheDueDate()
 }//end class

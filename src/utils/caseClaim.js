@@ -16,6 +16,7 @@ import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { announceCasesChanged } from './casesChanged.js'
 
 /**
  * Row-action handler for the Queue and Cases indexes: take this case.
@@ -55,10 +56,8 @@ export async function claimCase({ item }) {
 		showSuccess(t('dossiq', 'You are now handling this case.'))
 		// The same signal the reassign and bulk-transition handlers send: the
 		// row the user just claimed no longer belongs on the queue, and leaving
-		// it on screen invites a second claim on a case that already moved. The
-		// list's own refresh comes from its live-collection subscription; this
-		// event is the app-level notice beside it.
-		window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+		// it on screen invites a second claim on a case that already moved.
+		announceCasesChanged(caseId)
 	} catch (err) {
 		const refusal = String(err?.response?.data?.error ?? '')
 		showError(

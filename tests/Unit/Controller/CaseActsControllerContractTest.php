@@ -226,6 +226,7 @@ class CaseActsControllerContractTest extends TestCase {
 
 		$this->caseAccessGuard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
 		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('ahmed');
@@ -269,6 +270,77 @@ class CaseActsControllerContractTest extends TestCase {
 		$this->assertTrue(condition: $acts['finish']['allowed']);
 		$this->assertSame(expected: '', actual: $acts['finish']['reason'], message: 'a permitted act carries no reason');
 	}//end testTheActsReadListsRefusedActsWithTheirReason()
+
+	/**
+	 * A controller signed in as someone the guard answers for.
+	 *
+	 * @param bool $reads Whether the caller may read the case.
+	 * @param bool $acts  Whether the caller may act on it.
+	 *
+	 * @return CaseActsController
+	 */
+	private function controllerFor(bool $reads, bool $acts): CaseActsController {
+		$guard = $this->createMock(originalClassName: CaseAccessGuard::class);
+		$guard->method('hasCaseReadAccess')->willReturn($reads);
+		$guard->method('hasCaseMutationAccess')->willReturn($acts);
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn('thomas');
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return new CaseActsController(
+			appName: 'dossiq',
+			request: $this->request,
+			acts: $this->facade(),
+			overview: $this->overview(),
+			caseAccessGuard: $guard,
+			userSession: $session,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+	}//end controllerFor()
+
+	/**
+	 * A handling team member reads an unclaimed case's acts, each refused until they claim it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	public function testAReaderWhoIsNotTheHandlerSeesEveryActRefused(): void {
+		$this->holds->method('isHeld')->willReturn(false);
+		$this->drafts->method('isDraft')->willReturn(false);
+		$this->endings->method('endingOf')->willReturn([]);
+
+		$response = $this->controllerFor(reads: true, acts: false)->acts(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$acts = $response->getData()['acts'];
+		$this->assertNotSame(expected: [], actual: $acts);
+		foreach ($acts as $act) {
+			$this->assertFalse(condition: $act['allowed'], message: $act['act'] . ' is refused to a reader');
+			$this->assertStringContainsString(needle: 'Claim this case first', haystack: $act['reason']);
+		}
+
+		$handler = $this->controllerFor(reads: true, acts: true)->acts(caseId: 'case-1')->getData()['acts'];
+		$this->assertTrue(condition: array_column(array: $handler, column_key: 'allowed', index_key: 'act')['finish'], message: 'the handler keeps the act');
+	}//end testAReaderWhoIsNotTheHandlerSeesEveryActRefused()
+
+	/**
+	 * Someone who may not read the case gets 403 on the acts read, and the case is never loaded.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	public function testANonReaderGetsNoActs(): void {
+		$this->store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$this->store->expects($this->never())->method('loadCase');
+
+		$response = $this->controllerFor(reads: false, acts: false)->acts(caseId: 'case-1');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: 'not-authorized', actual: $response->getData()['error']);
+	}//end testANonReaderGetsNoActs()
 
 	/**
 	 * Marking a case a draft answers with what the draft now is.

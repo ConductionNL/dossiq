@@ -64,6 +64,11 @@ class GuardRegistry {
 	public const APPROVAL_GATE = 'approvalGate';
 
 	/**
+	 * Whether a case's documents are gathered, or gathered and every one assessed.
+	 */
+	public const DOCUMENT_ASSESSMENT = 'documentAssessment';
+
+	/**
 	 * Registered evaluators keyed by guard type.
 	 *
 	 * @var array<string, GuardEvaluatorInterface>
@@ -77,30 +82,41 @@ class GuardRegistry {
 	 * @param RequiredFieldGuard $requiredField Built-in required-field evaluator
 	 * @param RequiredDocumentGuard $requiredDocument Built-in required-document evaluator
 	 * @param RoleGuard $roleGuard Built-in role evaluator
-	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
+	 * @param DelegatedAuthorityGuard $authority Asks decidiq whether the acting person holds the authority
 	 * @param StatusChecklistGuard $statusChecklist Required-items-of-the-current-status evaluator
 	 * @param CapacityGuard $capacity Capacity-of-the-status-being-entered evaluator
 	 * @param LoggerInterface $logger Logger for unknown guard types
 	 * @param ApprovalGuard|null $approvalGuard The walked-approval evaluator. Optional, so a
 	 *                                          registry built before it existed builds as it did.
+	 * @param DocumentAssessmentGuard|null $documentAssessment Whether a case's documents are gathered
+	 *                                          and assessed. Optional for the same reason.
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten: one evaluator per guard kind, which is
+	 *   what this registry is. The container builds it, and nothing calls registerEvaluator(),
+	 *   so a guard kind that is not a parameter is not registered at all.
 	 */
 	public function __construct(
 		ChecklistGuard $checklist,
 		RequiredFieldGuard $requiredField,
 		RequiredDocumentGuard $requiredDocument,
 		RoleGuard $roleGuard,
-		MandaatGuard $mandateGuard,
+		DelegatedAuthorityGuard $authority,
 		StatusChecklistGuard $statusChecklist,
 		CapacityGuard $capacity,
 		private readonly LoggerInterface $logger,
 		?ApprovalGuard $approvalGuard = null,
+		?DocumentAssessmentGuard $documentAssessment = null,
 	) {
 		$this->evaluators = [
 			'checklist' => $checklist,
 			'requiredField' => $requiredField,
 			'requiredDocument' => $requiredDocument,
 			'roleGuard' => $roleGuard,
-			'mandaatGuard' => $mandateGuard,
+			'delegatedAuthorityGuard' => $authority,
+			// The legacy key stays answered: workflow definitions stored on live
+			// instances still name it with no config, and an unknown guard type
+			// refuses every transition. Its act key was the case property below.
+			'mandaatGuard' => $authority->withDefaults(defaults: ['actField' => 'mandaatCategorie']),
 			// Registered like any other type, but declared by no template: the
 			// engine appends it to every transition's guard list itself.
 			self::STATUS_CHECKLIST => $statusChecklist,
@@ -111,6 +127,10 @@ class GuardRegistry {
 
 		if ($approvalGuard !== null) {
 			$this->evaluators[self::APPROVAL_GATE] = $approvalGuard;
+		}
+
+		if ($documentAssessment !== null) {
+			$this->evaluators[self::DOCUMENT_ASSESSMENT] = $documentAssessment;
 		}
 	}//end __construct()
 

@@ -9,7 +9,7 @@ Kind: code. Size M. Row: portaliq `dem-rm-my-products` (decision 105). Board: Th
 
 ## 2. Issuing
 
-- [ ] 2.1 (waits on Q-dossiq-L2-4: nothing in dossiq marks a decision or result as granted) Add `lib/Service/Permit/PermitIssuer.php` and `lib/Listener/PermitFromDecisionListener.php` per design D2 (create once per decision, revoke, plate change). Verify: `tests/Unit/Service/Permit/PermitIssuerTest.php` covers grant, a repeated event, revoke and a plate change.
+- [x] 2.1 (Ruben 10 Oct, decision 172, Q-dossiq-L2-4 option 2: issue on the decision app's outcome event; decision 182: procedures are configuration. decidiq already raises `DecisionConcludedEvent`, so nothing was built there. Generic capability `lib/Service/Product/CaseOutcomeProductIssuer.php`, handed every terminal outcome by the existing `DecisionConcludedListener`: the case type's product declaration (`issuesPermit`: `schema`, `issueOn`, `kind`, `theme`, `titleTemplate`, `detailsFromCase`, `compactFields`, and `changesProduct` {answer, set} on a change case type) says what is issued on which outcome. The parking case types in `85-permits.json` are configured with it (caseType 1.18.0; `changesPlateOf` replaced by `changesProduct`). Revoking is not decided by this event and stays out. Tests: `tests/Unit/Service/Product/CaseOutcomeProductIssuerTest.php`, `DecisionConcludedListenerTest::testATerminalOutcomeIsHandedToTheProductIssuerWithItsStatus`.) Issue the held product on the declared outcome per design D2 (create once per decision, a change case changes the product it names).
 
 ## 3. Contribution
 

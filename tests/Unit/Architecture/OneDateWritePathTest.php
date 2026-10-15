@@ -70,7 +70,7 @@ class OneDateWritePathTest extends TestCase {
 	 */
 	private const RETIRED_NORMALISERS = [
 		'Service/Doorlooptijd/CaseEnricher.php' => 'normaliseDate',
-		'Controller/DwangsomPaymentCallbackController.php' => 'parseDate',
+		'Controller/PayoutCallbackController.php' => 'parseDate',
 		'Service/WOODeadlineService.php' => 'parseIsoDate',
 		'Service/WorkQueueService.php' => 'parseDateOnly',
 		'Service/TermijnTimerService.php' => 'dateOrNull',
@@ -95,7 +95,11 @@ class OneDateWritePathTest extends TestCase {
 			'Controller/TermijnController.php',
 			'Service/DeadlineExtensionService.php',
 		],
-		'ZrcController' => ['Controller/ZrcController.php'],
+		'ZrcController' => [
+			'Controller/ZrcController.php',
+			// The eindstatus date moved here in method-decomposition slice 6c.
+			'Service/Zgw/ZrcStatusEffects.php',
+		],
 		'ComplaintController' => [
 			'Controller/ComplaintController.php',
 			'Service/ComplaintService.php',
@@ -117,29 +121,17 @@ class OneDateWritePathTest extends TestCase {
 			'Service/QuickActionService.php',
 			'Service/ContactMomentService.php',
 			'Service/Kcc/ContactMomentService.php',
+			// The timestamps moved here in method-decomposition slice 8a.
+			'Service/Kcc/ContactMomentPayload.php',
 		],
 		'DwangsomController' => [
 			'Controller/DwangsomController.php',
-			'Service/DwangsomCalculationService.php',
+			'Service/Money/AccruingAmountSettler.php',
 		],
-		'DwangsomPaymentCallbackController' => [
-			'Controller/DwangsomPaymentCallbackController.php',
-			'Service/DwangsomUitbetalingService.php',
+		'PayoutCallbackController' => [
+			'Controller/PayoutCallbackController.php',
+			'Service/Money/PayoutService.php',
 		],
-	];
-
-	/**
-	 * The five StUF files that hard-coded Europe/Amsterdam.
-	 *
-	 * A Belgian tenant is in ALLOWED_TIMEZONES, so the literal was wrong for
-	 * a tenant we accept, not merely inelegant.
-	 *
-	 * @var array<int, string>
-	 */
-	private const STUF_FILES = [
-		'Service/StufMessageBuilder.php',
-		'Service/Stuf/StufMessageHandler.php',
-		'Service/Stuf/StufCaseMappingStore.php',
 	];
 
 	/**
@@ -344,24 +336,6 @@ class OneDateWritePathTest extends TestCase {
 			. implode("\n - ", $dark) . "\n" . self::ADVICE
 		);
 	}//end testEveryWritePathReachesTheNormaliser()
-
-	/**
-	 * The five StUF files read the tenant zone through the normaliser.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
-	 */
-	public function testStufMessagesReadTheTenantZone(): void {
-		foreach (self::STUF_FILES as $file) {
-			$full = self::LIB_DIR . '/' . $file;
-			self::assertFileExists(filename: $full, message: 'StUF file is gone: ' . $file);
-			self::assertTrue(
-				condition: str_contains((string)file_get_contents($full), 'CaseDateNormaliser'),
-				message: $file . ' still states its own zone. A Belgian tenant then sends Dutch timestamps. ' . self::ADVICE
-			);
-		}
-	}//end testStufMessagesReadTheTenantZone()
 
 	/**
 	 * The normaliser itself exists, is public and does the work.

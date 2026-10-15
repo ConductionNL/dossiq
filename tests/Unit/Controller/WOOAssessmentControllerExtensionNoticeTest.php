@@ -57,6 +57,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  * @covers \OCA\Dossiq\Service\Termijn\ExtensionNotice
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
@@ -64,6 +65,10 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
+ * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
+ * @uses \OCA\Dossiq\Service\Email\SenderIdentity
+ * @uses \OCA\Dossiq\Service\Email\IntakeAccount
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
@@ -81,6 +86,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -224,7 +230,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 		self::assertCount(1, $messages);
 		self::assertSame('ps-abc', $messages[0]['recipientRef']);
 		self::assertStringContainsString('Veel documenten van derden, zienswijzen nodig', $messages[0]['content']);
-		self::assertStringContainsString('2026-11-16', $messages[0]['content']);
+		self::assertStringContainsString('16 november 2026', $messages[0]['content']);
 
 		$records = $this->store->get('case', 'case-woo')['outboundCommunications'];
 		self::assertSame('extension', $records[0]['moment']);

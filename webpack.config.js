@@ -27,10 +27,6 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
-	personalSettings: {
-		import: path.join(__dirname, 'src', 'personalSettings.js'),
-		filename: appId + '-personal-settings.js',
-	},
 	casesOverviewWidget: {
 		import: path.join(__dirname, 'src', 'casesOverviewWidget.js'),
 		filename: appId + '-casesOverviewWidget.js',

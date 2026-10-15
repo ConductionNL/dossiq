@@ -134,6 +134,33 @@ class PackageValidator {
 	}//end validatePackage()
 
 	/**
+	 * Validate a package the app ships on disk, as {@see PackageDirectory::read()} returns it.
+	 *
+	 * Structural only, and it writes nothing: the manifest names an id that is
+	 * its directory, a title, a version, what it requires and which parts it
+	 * carries; every part it declares is present and parses; every row carries
+	 * the id that lets a second install recognise it. Whether this instance
+	 * meets `requires` is the installer's question, asked after this one.
+	 *
+	 * @param array{id: string, files: array<string, string>} $package The package.
+	 *
+	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>}
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function validateShipped(array $package): array {
+		$shipped = new ShippedPackageRules();
+		$result = $shipped->check(package: $package);
+
+		$this->logger->info(
+			'Validated shipped package {id}: {errorCount} error(s)',
+			['id' => $package['id'], 'errorCount' => count($result['errors'])]
+		);
+
+		return $result;
+	}//end validateShipped()
+
+	/**
 	 * Collect an error for every required package file missing from the archive.
 	 *
 	 * @param \ZipArchive $zip The opened ZIP archive.

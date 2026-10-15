@@ -53,6 +53,7 @@ use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * Computes process-mining bottleneck metrics from recorded status history.
@@ -68,6 +69,7 @@ class ProcessMiningService {
 	 * @param TransitionMatrixBuilder $transitionBuilder Transition matrix + rework detection.
 	 * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 */
@@ -77,6 +79,7 @@ class ProcessMiningService {
 		private readonly TransitionMatrixBuilder $transitionBuilder,
 		private readonly ThroughputTrendCalculator $throughputCalculator,
 		private readonly CaseDateNormaliser $dates,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -89,7 +92,7 @@ class ProcessMiningService {
 	 * @return array<string, mixed> The structured response body.
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
 		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());
@@ -339,7 +342,7 @@ class ProcessMiningService {
 				$title = $caseTypeKey;
 				if (isset($caseTypeIndex[$caseTypeKey]) === true) {
 					$entry = $caseTypeIndex[$caseTypeKey];
-					$title = (string)($entry['title'] ?? $caseTypeKey);
+					$title = $this->text->textOr(value: ($entry['title'] ?? null), fallback: $caseTypeKey);
 				}
 
 				$groups[$caseTypeKey] = ['title' => $title, 'cases' => []];

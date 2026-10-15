@@ -3153,6 +3153,85 @@ Tasks and History, and MUST keep every other tab under More.
 - **WHEN** a handler opens a case
 - **THEN** the strip MUST show the five tabs in that order
 - **AND** More MUST list the other eight
+<!-- Folded 2026-10-10 from archive 2026-09-20-columns-follow-the-case-type, whose archive step folded nothing. -->
+
+### Requirement: The case list shows the columns of the type you picked (REQ-CM-70)
+
+You pick a case type in the sidebar and the list shows what that type needs.
+`#Cases` SHALL let each `caseType` scope of its `folderSidebar` declare
+`columns`, and SHALL render those columns while that scope is selected. A
+scope that declares no `columns` SHALL inherit the page's columns, and the
+All types folder SHALL always show the page's columns.
+
+The declaration SHALL live on the case type RECORD, in its `x-index` block,
+and not in `src/manifest.json`. dossiq's folder sidebar is
+`source: "register"` over `caseType`, so it has no manifest folder entries to
+declare on; for a register-derived folder list the library reads the same
+three keys off each row. `x-index` SHALL therefore be a declared property of
+the `caseType` schema, because OpenRegister's magic mapper is a whitelist by
+omission: an undeclared key is answered 200 and stored nowhere, which reads
+on screen as a case type that simply has no columns of its own.
+
+A scope SHALL only select from the columns the page declares. The page
+decides which columns exist; the scope decides which of them it shows and in
+what order. A column a scope names that the page does not carry is dropped by
+the library rather than rendered empty, so the page SHALL declare every
+column any case type asks for.
+
+#### Scenario: A permit shows its expiry date
+@e2e tests/e2e/columns-follow-the-case-type.spec.ts
+
+- **GIVEN** the Cases page with a case type scope declaring the columns case
+  number, title, decision date and expiry date
+- **WHEN** you pick that case type in the folder sidebar
+- **THEN** the list header SHALL show those four columns
+- **AND** it SHALL NOT show the page's default columns
+
+#### Scenario: All types returns to the page columns
+@e2e tests/e2e/columns-follow-the-case-type.spec.ts
+
+- **GIVEN** a case type scope with its own columns is selected
+- **WHEN** you pick All types
+- **THEN** the list header SHALL show the page's columns again
+
+#### Scenario: A silent scope inherits
+@e2e exclude Manifest resolution, covered by vitest.
+
+- **GIVEN** a case type scope that declares no `columns`
+- **WHEN** you pick it
+- **THEN** the list SHALL show the page's columns
+
+### Requirement: A scope may order and search on its own fields (REQ-CM-71)
+
+A `caseType` scope MAY declare `defaultSort` and `searchFields` beside its
+`columns`. While that scope is selected the list SHALL order by the scope's
+`defaultSort` and SHALL search the scope's `searchFields`. Both SHALL fall
+back to the page's when the scope is silent. The key is `defaultSort`, which
+is what `resolveScopeLayout` reads; a scope spelling it `sort` is a scope
+that declares no order, silently.
+
+#### Scenario: A handhavingszaak orders by its decision date
+@e2e tests/e2e/columns-follow-the-case-type.spec.ts
+
+- **GIVEN** a handhaving scope declaring `defaultSort` on `besluitdatum`,
+  descending
+- **WHEN** you pick it
+- **THEN** the first row SHALL be the case decided most recently
+
+### Requirement: A column names a property the case type carries (REQ-CM-72)
+
+A scope column SHALL name a property declared on that case type. A manifest
+declaring a column no case type property answers to SHALL fail the manifest
+test, so an empty column cannot reach a page.
+
+#### Scenario: An unknown column fails the test, not the page
+@e2e exclude Manifest validation, covered by vitest.
+
+- **GIVEN** a scope declaring a column named `vervaldatum` on a case type with
+  no such property
+- **WHEN** the manifest test runs
+- **THEN** it SHALL fail naming the scope and the column
+
 ### Requirement: A case detail page locks the case it shows
 
 When a person opens a case detail page, the page SHALL send its lock request
@@ -4410,3 +4489,77 @@ The system MUST provide full-text search across cases matching against title, de
 - **Archiefwet**: Case result types with archival rules (retain/destroy, retention period).
 - **Awb**: Administrative law requirements for case handling deadlines and notifications.
 - **Competitor reference**: Dimpact ZAC uses Flowable CMMN engine for case lifecycle, Solr for case search, and OPA for authorization. CaseFabric provides visual CMMN case modeling. Flowable Platform has native CMMN case plan execution with milestone tracking.
+
+### Requirement: Case ownership is a dated chain of holdings (REQ-CUS-01)
+
+A case SHALL carry a `caseCustody` record for every period it was held. Each
+holding SHALL name the organisation unit, the handler where there is one,
+the moment it began, the moment it ended, the reason for the move and who
+made it. A case SHALL have exactly one open holding at any moment.
+
+#### Scenario: A transfer closes one holding and opens the next
+@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
+
+- **GIVEN** a case held by unit A since 3 March
+- **WHEN** it is transferred to unit B on 12 April
+- **THEN** the holding by unit A SHALL be closed on 12 April
+- **AND** an open holding by unit B SHALL begin on the same moment
+- **AND** the reason and the person who moved it SHALL be recorded on the new holding
+
+#### Scenario: Who held the case in March is a query
+@e2e exclude unit over the reader; CaseCustodyQueryTest
+
+- **GIVEN** a case transferred three times in a year
+- **WHEN** the custody is read for 15 March
+- **THEN** exactly one unit SHALL be returned
+- **AND** the answer SHALL come from the custody record, not from the audit diff
+
+#### Scenario: A case is never held by nobody
+@e2e exclude unit; CaseCustodyChainTest
+
+- **GIVEN** any case in the system
+- **WHEN** its holdings are read
+- **THEN** exactly one SHALL be open
+- **AND** the holdings SHALL cover the case's life without a gap
+
+### Requirement: A colleague may ask the holder for a case (REQ-CUS-02)
+
+A user SHALL be able to request a case from the person or unit holding it,
+with a reason. The request SHALL reach the holder as a task. The holder
+SHALL accept or refuse, and a refusal SHALL carry a reason. Both answers
+SHALL be recorded on the case.
+
+Who may answer for a unit SHALL be decided per case: whoever has mutation
+access on the case may accept or refuse, and asking needs read access
+(decision 168). There is no separate action registry for this answer.
+
+#### Scenario: Only someone who may change the case answers the request
+
+- **GIVEN** a takeover request on a case
+- **WHEN** a user with read access but no mutation access tries to accept it
+- **THEN** the answer SHALL be refused with HTTP 403
+- **AND** the case SHALL stay where it is
+
+#### Scenario: The holder refuses with a reason
+@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
+
+- **GIVEN** a case held by a handler
+- **WHEN** a colleague requests it and the holder refuses, giving a reason
+- **THEN** the case SHALL stay with the holder
+- **AND** the refusal and its reason SHALL be readable on the case
+
+#### Scenario: Accepting moves the case and writes the next holding
+@e2e tests/e2e/custody-and-handover-of-a-case.spec.ts
+
+- **GIVEN** the same request
+- **WHEN** the holder accepts
+- **THEN** the case SHALL move to the asker through the ordinary transfer path
+- **AND** a new holding SHALL open naming the asker
+
+#### Scenario: An unanswered request escalates to the unit
+@e2e exclude time-dependent; unit over the timer-fired listener, CaseTakeoverEscalationTest
+
+- **GIVEN** a takeover request older than the period the case type declares
+- **WHEN** the period passes with no answer
+- **THEN** the request SHALL go to the unit holding the case
+- **AND** it SHALL NOT expire unanswered

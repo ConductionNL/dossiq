@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ namespace OCA\Dossiq\Service\Status;
 /**
  * Reads a status type's field rules and writes them in OpenRegister's shape.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusFieldRuleDeclaration {
 
@@ -99,7 +99,7 @@ class StatusFieldRuleDeclaration {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The `fields` block, possibly empty.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function fieldsBlock(array $statusType): array {
 		$declared = ($statusType['fieldRules'] ?? null);
@@ -128,7 +128,7 @@ class StatusFieldRuleDeclaration {
 	 *
 	 * @return array{0: string, 1: array<string, mixed>}|null The kind and the entry.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function entryOf(mixed $rule): ?array {
 		if (is_array($rule) === false) {
@@ -176,7 +176,7 @@ class StatusFieldRuleDeclaration {
 	 *
 	 * @return array<int, string> The group names.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function groupsOf(array $rule): array {
 		$declared = ($rule['groups'] ?? null);
@@ -212,7 +212,7 @@ class StatusFieldRuleDeclaration {
 	 *
 	 * @return array<string, mixed>|null The JSONLogic node.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function conditionOf(mixed $condition): ?array {
 		if (is_array($condition) === false) {
@@ -248,7 +248,7 @@ class StatusFieldRuleDeclaration {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The block, ordered.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function inPublishedOrder(array $block): array {
 		$ordered = [];

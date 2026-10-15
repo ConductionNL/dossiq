@@ -34,6 +34,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use RuntimeException;
 
 /**
@@ -51,6 +52,7 @@ class CaseResultWriter {
 	 *                                          closes with its parent's result types.
 	 * @param ArchivalNominationDeriver $archivalDeriver The zrc-021 derivation, shared
 	 *                                          with the ZGW API closing path.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 *
 	 * @return void
 	 */
@@ -58,6 +60,7 @@ class CaseResultWriter {
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly ArchivalNominationDeriver $archivalDeriver,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -156,6 +159,38 @@ class CaseResultWriter {
 	}//end archivalFuture()
 
 	/**
+	 * The result types a case of this type can close with, as a picker reads them.
+	 *
+	 * The same list `resolveClosingResult()` refuses against, read through the
+	 * same resolver, so a picker offering these can never offer a result the
+	 * close then refuses, nor miss one a parent case type contributes.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<int, array{id: string, name: string}> The choices, empty when none or unreadable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function resultTypeChoices(string $caseTypeId): array {
+		$choices = [];
+		foreach ($this->caseTypeResolver->resultTypesFor(caseTypeId: $caseTypeId) as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			if ($id === '') {
+				continue;
+			}
+
+			$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
+			if ($name === '') {
+				$name = $id;
+			}
+
+			$choices[] = ['id' => $id, 'name' => $name];
+		}
+
+		return $choices;
+	}//end resultTypeChoices()
+
+	/**
 	 * List the result type UUIDs a case type offers.
 	 *
 	 * 🔴 THROUGH THE RESOLVER. Asking the store for `resultType where caseType
@@ -226,7 +261,7 @@ class CaseResultWriter {
 	 */
 	private function lookupResultTypeName(string $resultTypeId): string {
 		$row = $this->findRow(schemaKey: 'result_type_schema', id: $resultTypeId);
-		$name = (string)($row['name'] ?? ($row['title'] ?? ''));
+		$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 		if ($name === '') {
 			return $resultTypeId;
 		}

@@ -302,8 +302,11 @@ export default {
 
 .case-card__header {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: 8px;
+	/* The card is as wide as its column; a long number, type and deadline
+	   wrap rather than run past the card's edge. */
+	gap: 4px 8px;
 	margin-bottom: 6px;
 	/* Space for the absolutely-positioned .case-card__select checkbox. */
 	padding-inline-start: 26px;
@@ -312,7 +315,8 @@ export default {
 }
 
 .case-card__identifier {
-	white-space: nowrap;
+	min-width: 0;
+	overflow-wrap: anywhere;
 }
 
 .case-card__type {
@@ -335,6 +339,7 @@ export default {
 }
 
 .case-card__title {
+	overflow-wrap: anywhere;
 	font-size: 15px;
 	font-weight: 700;
 	line-height: 1.3;
@@ -356,6 +361,7 @@ export default {
 }
 
 .case-card__requester {
+	min-width: 0;
 	font-size: 13px;
 	color: var(--color-text-maxcontrast);
 	overflow: hidden;

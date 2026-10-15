@@ -93,6 +93,7 @@ class ConfigKeys {
 		'advisory_report_schema',
 		'appeal_decision_schema',
 		'default_case_type',
+		'portal_filing_case_types',
 		'inspectie_checklist_schema',
 		'inspectie_rapport_schema',
 		'handhavingsactie_schema',
@@ -174,11 +175,9 @@ class ConfigKeys {
 		// PDOK integration settings (pdok-integration spec).
 		// Endpoint overrides — empty falls back to PDOK service defaults.
 		'pdok_locatieserver_endpoint',
-		'pdok_bag_endpoint',
 		'pdok_kadaster_endpoint',
 		// OpenConnector source slugs — empty = call PDOK directly.
 		'pdok_locatieserver_source',
-		'pdok_bag_source',
 		'pdok_kadaster_source',
 		// Cache TTLs (seconds).
 		'pdok_cache_lookup_ttl_seconds',
@@ -287,6 +286,10 @@ class ConfigKeys {
 		// field that did not exist. Registered here so it does.
 		'email_from_address',
 		'email_from_name',
+		// Which transport each kind of outbound mail leaves through, as a JSON
+		// map of kind to `mail-account` or `imailer` (decisions 165, 182).
+		// Empty means MailTransportPolicy::DEFAULTS.
+		'mail_transport_by_kind',
 		// Empty means "the from-address's own domain", never "no restriction".
 		'email_recipient_allowlist',
 		// Per-user mail matching (email-case-matching). Off unless an admin
@@ -324,13 +327,15 @@ class ConfigKeys {
 		// Official publication (DROP / LVBB) — empty disables dispatch.
 		'drop_lvbb_endpoint',
 		'drop_lvbb_token',
-		// Mandaatregister authority validation — empty falls back to manual confirmation.
-		'mandaatregister_endpoint',
-		'mandaatregister_token',
 		// ZGW DRC case dossier (document-zaakdossier spec).
 		'dossier_informatieobject_schema',
 		'dossier_zaakinformatieobject_schema',
 		'woo_assessment_schema',
+		'document_review_schema',
+		'triage_rule_schema',
+		'review_batch_schema',
+		'stopping_rule_schema',
+		'recall_sample_schema',
 		'dossier_besluitinformatieobject_schema',
 		'dossier_informatieobjecttype_schema',
 		// Maximum upload size in bytes (0 = no app-level limit, NC limit applies).

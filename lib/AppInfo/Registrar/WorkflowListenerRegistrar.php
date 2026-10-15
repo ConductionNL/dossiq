@@ -65,6 +65,18 @@ class WorkflowListenerRegistrar {
 	];
 
 	/**
+	 * The event OpenRegister sends when a draft is sent (it leaves status `draft`).
+	 *
+	 * By name, so an OpenRegister without the draft lifecycle never sends it
+	 * and this app does not need its class. The same name as
+	 * {@see \OCA\Dossiq\Service\Intake\ReceiptMoment::ACTIVATED_EVENT};
+	 * ReceiptDatesRegistrationTest holds the two together.
+	 *
+	 * @var string
+	 */
+	private const DRAFT_SENT_EVENT = 'OCA\OpenRegister\Event\ObjectActivatedEvent';
+
+	/**
 	 * Register the termijn and decision listeners.
 	 *
 	 * @param IRegistrationContext $context The registration context.
@@ -106,6 +118,11 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: CasePlanProjectionListener::class
 		);
+		// A draft has no plan. The plan is projected when the draft is sent.
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
+			listener: CasePlanProjectionListener::class
+		);
 	}//end registerCasePlanListeners()
 
 	/**
@@ -127,6 +144,11 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
 		);
+		// A draft binds no term; sending it does (decision 180).
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
+			listener: DeadlineCaseCreatedListener::class
+		);
 
 		// The chain of custody starts where the case was registered. Without
 		// this the chain would begin at the first MOVE, which reads as though
@@ -140,6 +162,10 @@ class WorkflowListenerRegistrar {
 		// When the request arrived, and when its clock starts. Written once at
 		// creation and never recomputed: the stamp is a record of what the
 		// citizen was told, not a derivation of what today's calendar says.
+		// It also runs before the case is stored, and in the save that sends a
+		// draft, registered with the intake listeners
+		// (IntakeListenerRegistrar::RECEIPT_DATES_PRIORITY). This registration
+		// is the fallback for the bulk save, which sends no creating event.
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: IntakeTermStartListener::class
@@ -164,6 +190,11 @@ class WorkflowListenerRegistrar {
 			event: ObjectCreatedEvent::class,
 			listener: CaseNumberListener::class
 		);
+		// A draft gets no case number; it gets one when it is sent (decision 201).
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
+			listener: CaseNumberListener::class
+		);
 
 		// Awb 4:3a: a case created from an electronic submission owes its
 		// sender a confirmation of receipt. The text, the renderer and the
@@ -173,6 +204,11 @@ class WorkflowListenerRegistrar {
 		// is down cannot stop a case being created.
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
+			listener: AcknowledgementOnCreateListener::class
+		);
+		// A draft owes nobody a confirmation; the moment it is sent does.
+		$context->registerEventListener(
+			event: self::DRAFT_SENT_EVENT,
 			listener: AcknowledgementOnCreateListener::class
 		);
 	}//end registerTermijnListeners()

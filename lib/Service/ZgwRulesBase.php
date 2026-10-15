@@ -29,8 +29,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use GuzzleHttp\Client;
+use OCA\Dossiq\Service\Outbound\OutboundUrlGuard;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Support\SuppressesWarnings;
+use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,31 +41,10 @@ use Psr\Log\LoggerInterface;
  * Provides shared utilities: UUID extraction, URL validation,
  * external URL fetching, OpenRegister lookups, error builders.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 abstract class ZgwRulesBase {
 	use SearchesObjects;
-	use SuppressesWarnings;
-
-	/**
-	 * RFC1918 + loopback + link-local + cloud-metadata CIDR blocks to deny in
-	 * outbound HTTP requests from fetchExternalUrl (SSRF protection — WF1).
-	 *
-	 * Must be kept in sync with NotificatieService::BLOCKED_CIDRS.
-	 *
-	 * @var string[]
-	 */
-	private const BLOCKED_CIDRS = [
-		'10.0.0.0/8',
-		'172.16.0.0/12',
-		'192.168.0.0/16',
-		'127.0.0.0/8',
-		'169.254.0.0/16',
-		'::1/128',
-		'fc00::/7',
-	];
 
 	/**
 	 * Ordered vertrouwelijkheidaanduiding severity levels (zrc-006).
@@ -100,6 +81,23 @@ abstract class ZgwRulesBase {
 	protected ?array $mappingConfig = null;
 
 	/**
+	 * Builds the answers of a rule: valid, refused, and the field a refusal names.
+	 *
+	 * @var ZgwRuleResults
+	 */
+	protected readonly ZgwRuleResults $results;
+
+	/**
+	 * Reads the store for the rules, in the request's context.
+	 *
+	 * A rules class hands this same object to a collaborator it builds, so the
+	 * collaborator reads in the same context without being told it again.
+	 *
+	 * @var ZgwRuleLookups
+	 */
+	protected readonly ZgwRuleLookups $lookups;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger
@@ -113,6 +111,8 @@ abstract class ZgwRulesBase {
 		protected readonly SettingsService $settingsService,
 		protected readonly FieldValidator $fieldValidator,
 	) {
+		$this->results = new ZgwRuleResults(logger: $logger);
+		$this->lookups = new ZgwRuleLookups(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -128,6 +128,7 @@ abstract class ZgwRulesBase {
 	public function setContext(?object $objectService, ?array $mappingConfig): void {
 		$this->objectService = $objectService;
 		$this->mappingConfig = $mappingConfig;
+		$this->lookups->setContext(objectService: $objectService, mappingConfig: $mappingConfig);
 	}//end setContext()
 
 	/**
@@ -140,12 +141,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function isValid(array $body): array {
-		return [
-			'valid' => true,
-			'status' => 200,
-			'detail' => '',
-			'enrichedBody' => $body,
-		];
+		return $this->results->isValid(body: $body);
 	}//end isValid()
 
 	/**
@@ -166,18 +162,7 @@ abstract class ZgwRulesBase {
 		array $invalidParams = [],
 		string $code = '',
 	): array {
-		$result = [
-			'valid' => false,
-			'status' => $status,
-			'detail' => $detail,
-			'invalidParams' => $invalidParams,
-			'enrichedBody' => [],
-		];
-		if ($code !== '') {
-			$result['code'] = $code;
-		}
-
-		return $result;
+		return $this->results->error(status: $status, detail: $detail, invalidParams: $invalidParams, code: $code);
 	}//end error()
 
 	/**
@@ -192,11 +177,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fieldError(string $fieldName, string $code, string $reason): array {
-		return [
-			'name' => $fieldName,
-			'code' => $code,
-			'reason' => $reason,
-		];
+		return $this->results->fieldError(fieldName: $fieldName, code: $code, reason: $reason);
 	}//end fieldError()
 
 	/**
@@ -209,18 +190,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fieldImmutableError(string $fieldName): array {
-		$detail = "Het veld {$fieldName} mag niet gewijzigd worden.";
-		return $this->error(
-			status: 400,
-			detail: $detail,
-			invalidParams: [
-				$this->fieldError(
-					fieldName: $fieldName,
-					code: 'wijzigen-niet-toegelaten',
-					reason: $detail
-				),
-			]
-		);
+		return $this->results->fieldImmutableError(fieldName: $fieldName);
 	}//end fieldImmutableError()
 
 	/**
@@ -474,9 +444,10 @@ abstract class ZgwRulesBase {
 	/**
 	 * Fetch data from an external URL (selectielijst, resultaattypeomschrijving).
 	 *
-	 * WF1 fix: added SSRF guard (rejects RFC1918/loopback/link-local/cloud-metadata
-	 * addresses), TLS verification enabled (verify => true), and redirect following
-	 * disabled (allow_redirects => false) to prevent redirect-based bypasses.
+	 * The URL comes from a request body, so {@see OutboundUrlGuard} resolves it
+	 * first: https only, no address inside the instance's own network. The
+	 * request then goes to the address that was inspected, follows no redirect
+	 * and verifies TLS.
 	 *
 	 * @param string $url The URL to fetch
 	 *
@@ -485,9 +456,9 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function fetchExternalUrl(string $url): ?array {
-		// WF1: SSRF guard — reject private/loopback/cloud-metadata URLs before
-		// establishing any outbound connection.
-		if ($this->isSafeExternalUrl(url: $url) === false) {
+		$guard = $this->outboundGuard();
+		$address = $guard->publicAddress(url: $url);
+		if ($address === null) {
 			$this->logger->warning(
 				'fetchExternalUrl blocked: URL failed SSRF safety check',
 				['url' => substr($url, 0, 200)]
@@ -496,15 +467,11 @@ abstract class ZgwRulesBase {
 		}
 
 		try {
-			$client = new Client(
-				[
-					'timeout' => 10,
-					'verify' => true,
-					'allow_redirects' => false,
-				]
+			$body = $this->httpGet(
+				url: $url,
+				options: (['timeout' => 10] + $guard->requestOptions(url: $url, address: $address))
 			);
-			$response = $client->get($url);
-			$data = json_decode((string)$response->getBody(), true);
+			$data = json_decode($body, true);
 			if (is_array($data) === false) {
 				return null;
 			}
@@ -520,142 +487,35 @@ abstract class ZgwRulesBase {
 	}//end fetchExternalUrl()
 
 	/**
-	 * Validate that a URL is safe for outbound fetching (SSRF guard).
+	 * The guard every outbound fetch of a rules class goes through.
 	 *
-	 * Requires http or https scheme and verifies that the hostname resolves
-	 * only to public IP addresses — rejects RFC1918, loopback, link-local,
-	 * and cloud-metadata addresses (169.254.169.254).
+	 * Built here, not injected: a rules class is constructed in a dozen places
+	 * from the same three collaborators, and the guard needs only the logger.
 	 *
-	 * Returns false (fail-closed) when the URL is unparseable, the hostname
-	 * resolves to no records, or any resolved address falls in a blocked CIDR.
+	 * @return OutboundUrlGuard
 	 *
-	 * @param string $url The URL to validate
-	 *
-	 * @return bool True if the URL is safe for outbound fetching
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function isSafeExternalUrl(string $url): bool {
-		$parsed = parse_url($url);
-		$scheme = strtolower($parsed['scheme'] ?? '');
-
-		if (in_array($scheme, ['http', 'https'], true) === false) {
-			return false;
-		}
-
-		$host = $parsed['host'] ?? '';
-		if ($host === '') {
-			return false;
-		}
-
-		// Resolve all A/AAAA records and block private ranges.
-		$records = $this->withoutWarnings(
-			operation: static function () use ($host): mixed {
-				return dns_get_record($host, (DNS_A | DNS_AAAA));
-			}
-		);
-		if ($records === false || count($records) === 0) {
-			$this->logger->warning(
-				'fetchExternalUrl SSRF: DNS resolution returned no records',
-				['host' => $host, 'detail' => $this->lastSuppressedWarning()]
-			);
-			return false;
-		}
-
-		foreach ($records as $record) {
-			$ipAddress = $record['ip'] ?? ($record['ipv6'] ?? null);
-			if ($ipAddress === null) {
-				continue;
-			}
-
-			foreach (self::BLOCKED_CIDRS as $cidr) {
-				if ($this->ipInCidr(ipAddress: $ipAddress, cidr: $cidr) === true) {
-					$this->logger->warning(
-						'fetchExternalUrl SSRF: host resolves to private/loopback address',
-						['host' => $host, 'ip' => $ipAddress, 'cidr' => $cidr]
-					);
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}//end isSafeExternalUrl()
+	protected function outboundGuard(): OutboundUrlGuard {
+		return new OutboundUrlGuard(logger: $this->logger);
+	}//end outboundGuard()
 
 	/**
-	 * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
+	 * Make the GET request of an outbound fetch.
 	 *
-	 * @param string $ipAddress The IP address to test
-	 * @param string $cidr The CIDR block (e.g. '10.0.0.0/8')
+	 * Its own method so a test can see the options a fetch connects with:
+	 * Guzzle is Nextcloud's, and is not there when the unit tests run.
 	 *
-	 * @return bool True if the IP is within the range
+	 * @param string $url The URL the guard approved.
+	 * @param array<string, mixed> $options The request options, the guard's included.
+	 *
+	 * @return string The response body.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function ipInCidr(string $ipAddress, string $cidr): bool {
-		$isIpv6Cidr = str_contains($cidr, ':');
-		$isIpv6Ip = str_contains($ipAddress, ':');
-
-		if ($isIpv6Cidr === true && $isIpv6Ip === true) {
-			return $this->ipv6InCidr(ipAddress: $ipAddress, cidr: $cidr);
-		}
-
-		if ($isIpv6Cidr === false && $isIpv6Ip === false) {
-			return $this->ipv4InCidr(ipAddress: $ipAddress, cidr: $cidr);
-		}
-
-		// Mixed IPv4/IPv6 — not in range.
-		return false;
-	}//end ipInCidr()
-
-	/**
-	 * Check if an IPv6 address falls within an IPv6 CIDR range.
-	 *
-	 * @param string $ipAddress The IPv6 address to test
-	 * @param string $cidr The IPv6 CIDR block (e.g. 'fc00::/7')
-	 *
-	 * @return bool True if the IP is within the range
-	 */
-	private function ipv6InCidr(string $ipAddress, string $cidr): bool {
-		[$network, $prefix] = explode('/', $cidr);
-		$prefixLen = (int)$prefix;
-		$networkBin = inet_pton($network);
-		$ipBin = inet_pton($ipAddress);
-		if ($networkBin === false || $ipBin === false) {
-			return false;
-		}
-
-		$bytes = (int)ceil($prefixLen / 8);
-		$mask = str_repeat("\xff", intdiv($prefixLen, 8));
-		$remain = $prefixLen % 8;
-		if ($remain > 0) {
-			$mask .= chr(0xff & (0xff << (8 - $remain)));
-		}
-
-		$mask = str_pad($mask, 16, "\x00");
-		return (substr($ipBin, 0, $bytes) & $mask) === (substr($networkBin, 0, $bytes) & $mask);
-	}//end ipv6InCidr()
-
-	/**
-	 * Check if an IPv4 address falls within an IPv4 CIDR range.
-	 *
-	 * @param string $ipAddress The IPv4 address to test
-	 * @param string $cidr The IPv4 CIDR block (e.g. '10.0.0.0/8')
-	 *
-	 * @return bool True if the IP is within the range
-	 */
-	private function ipv4InCidr(string $ipAddress, string $cidr): bool {
-		[$network, $prefix] = explode('/', $cidr);
-		$prefixLen = (int)$prefix;
-		$mask = 0;
-		if ($prefixLen !== 0) {
-			$mask = (~0 << (32 - $prefixLen));
-		}
-
-		$networkLong = ip2long($network);
-		$ipLong = ip2long($ipAddress);
-		if ($networkLong === false || $ipLong === false) {
-			return false;
-		}
-
-		return ($ipLong & $mask) === ($networkLong & $mask);
-	}//end ipv4InCidr()
+	protected function httpGet(string $url, array $options): string {
+		return (string)(new Client())->get($url, $options)->getBody();
+	}//end httpGet()
 
 	/**
 	 * Generate a unique identificatie string.
@@ -691,33 +551,7 @@ abstract class ZgwRulesBase {
 		string $field,
 		string $value,
 	): ?string {
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 1],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$results = $result['results'] ?? [];
-			if (empty($results) === true) {
-				return null;
-			}
-
-			$obj = $results[0];
-			$data = $obj;
-			if (is_array($obj) === false) {
-				$data = $obj->jsonSerialize();
-			}
-
-			return $data['id'] ?? ($data['@self']['id'] ?? null);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return null;
-		}//end try
+		return $this->lookups->findObjectByField(register: $register, schema: $schema, field: $field, value: $value);
 	}//end findObjectByField()
 
 	/**
@@ -738,35 +572,7 @@ abstract class ZgwRulesBase {
 		string $field,
 		string $value,
 	): array {
-		try {
-			$query = $this->objectService->buildSearchQuery(
-				requestParams: [$field => $value, '_limit' => 100],
-				register: $register,
-				schema: $schema
-			);
-			$result = $this->objectService->searchObjectsPaginated(query: $query);
-
-			$ids = [];
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$id = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($id !== null) {
-					$ids[] = $id;
-				}
-			}
-
-			return $ids;
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Reference resolution failed: ' . $e->getMessage(),
-				['field' => $field, 'value' => $value]
-			);
-			return [];
-		}//end try
+		return $this->lookups->findAllObjectsByField(register: $register, schema: $schema, field: $field, value: $value);
 	}//end findAllObjectsByField()
 
 	/**
@@ -780,31 +586,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function findBySchemaKey(string $uuid, string $schemaKey): ?array {
-		if ($this->objectService === null) {
-			return null;
-		}
-
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			$obj = $this->objectService->find(
-				id: $uuid,
-				register: $register,
-				schema: $schema
-			);
-			if (is_array($obj) === true) {
-				return $obj;
-			}
-
-			return $obj->jsonSerialize();
-		} catch (\Throwable $e) {
-			return null;
-		}
+		return $this->lookups->findBySchemaKey(uuid: $uuid, schemaKey: $schemaKey);
 	}//end findBySchemaKey()
 
 	/**
@@ -818,8 +600,6 @@ abstract class ZgwRulesBase {
 	 *
 	 * @return array|null Validation error if duplicate found, null if unique
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function checkFieldUniqueness(
@@ -829,84 +609,26 @@ abstract class ZgwRulesBase {
 		string $field2Search,
 		string $errorField,
 	): ?array {
-		if ($field1Value === '' || $this->objectService === null) {
+		$taken = $this->lookups->fieldPairExists(
+			field1Value: $field1Value,
+			field1Search: $field1Search,
+			field2Value: $field2Value,
+			field2Search: $field2Search
+		);
+		if ($taken === false) {
 			return null;
 		}
 
-		$register = $this->mappingConfig['sourceRegister'] ?? '';
-		$schema = $this->mappingConfig['sourceSchema'] ?? '';
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			// Build query directly to avoid buildSearchQuery's underscore-splitting
-			// which breaks camelCase field names like sourceOrganisation.
-			// Search only by field1 (identifier) because OpenRegister may store
-			// numeric strings (e.g. "000000000") as integers, which breaks
-			// exact-match search for field2 (sourceOrganisation).
-			$query = [
-				'@self' => [
-					'register' => (int)$register,
-					'schema' => (int)$schema,
-				],
-				$field1Search => $field1Value,
-			];
-
-			$result = $this->objectService->searchObjectsPaginated(
-				query: $query,
-				_rbac: false,
-				_multitenancy: false
-			);
-
-			// Post-filter results by field2 value in memory, comparing both
-			// string and numeric forms to handle integer coercion by OpenRegister.
-			// OpenRegister may store numeric-looking strings (e.g. "000000000")
-			// as integer 0, which the magic mapper may serialize to empty string.
-			// When the stored value is empty but field2 was provided, we still
-			// count it as a match (conservative: assume coercion happened).
-			$matchCount = 0;
-			foreach (($result['results'] ?? []) as $obj) {
-				$data = $obj;
-				if (is_array($obj) === false) {
-					$data = $obj->jsonSerialize();
-				}
-
-				$storedVal = $data[$field2Search] ?? null;
-				$storedStr = (string)$storedVal;
-				$compareStr = (string)$field2Value;
-
-				// Match when: no field2 filter, or values match directly,
-				// or stored is empty/0 (likely coerced from numeric string).
-				$isMatch = ($field2Value === '')
-					|| ($storedStr === $compareStr)
-					|| ($storedStr === '')
-					|| ($storedStr === '0' && preg_match('/^0+$/', $field2Value) === 1);
-
-				if ($isMatch === true) {
-					$matchCount++;
-				}
-			}//end foreach
-
-			if ($matchCount > 0) {
-				return $this->error(
-					status: 400,
-					detail: 'De combinatie is niet uniek.',
-					invalidParams: [
-						$this->fieldError(
-							fieldName: $errorField,
-							code: 'identificatie-niet-uniek',
-							reason: 'De combinatie bestaat al.'
-						),
-					]
-				);
-			}
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Uniqueness check failed: ' . $e->getMessage()
-			);
-		}//end try
-
-		return null;
+		return $this->error(
+			status: 400,
+			detail: 'De combinatie is niet uniek.',
+			invalidParams: [
+				$this->fieldError(
+					fieldName: $errorField,
+					code: 'identificatie-niet-uniek',
+					reason: 'De combinatie bestaat al.'
+				),
+			]
+		);
 	}//end checkFieldUniqueness()
 }//end class

@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\KpiAggregationService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -85,6 +86,29 @@ final class KpiAggregationServiceTest extends TestCase {
 		$this->assertSame(23, $kpis['taskCount'], "taskCount must count the user's own open tasks.");
 		$this->assertSame(2, $kpis['tasksDueToday'], 'tasksDueToday must count those due today.');
 		$this->assertSame(1, $kpis['newToday'], 'newToday must count open cases started today.');
+	}
+
+	/**
+	 * The My work tile reads the reader's own closed cases, this month and the
+	 * month before it, with both month names.
+	 *
+	 * @return void
+	 */
+	public function testReportsTheReadersOwnClosedCasesThisAndLastMonth(): void {
+		$kpis = $this->service()->computeKpis('admin');
+
+		$this->assertSame(7, $kpis['myCompletedCount'], 'myCompletedCount must count this month for the reader.');
+		$this->assertSame(5, $kpis['myCompletedLastMonth'], 'myCompletedLastMonth must count the month before.');
+		$this->assertSame(
+			mb_strtolower(date('F')),
+			$kpis['thisMonthName'],
+			'thisMonthName must name the current month.'
+		);
+		$this->assertSame(
+			mb_strtolower((new \DateTimeImmutable('first day of last month'))->format('F')),
+			$kpis['lastMonthName'],
+			'lastMonthName must name the month before, also in January.'
+		);
 	}
 
 	/**
@@ -289,6 +313,25 @@ final class KpiAggregationServiceTest extends TestCase {
 	}
 
 	/**
+	 * A case that ended before it started pulls the mean down by its days.
+	 *
+	 * The duration carries its sign, so a typo in one date shows in the figure
+	 * instead of reading as an ordinary lead time.
+	 *
+	 * @return void
+	 */
+	public function testAnEndBeforeTheStartCountsAsNegativeDays(): void {
+		$closed = [
+			['startDate' => '2026-09-01', 'endDate' => '2026-09-21'],
+			['startDate' => '2026-09-11', 'endDate' => '2026-09-01'],
+		];
+
+		$kpis = $this->service(closedCases: $closed)->computeKpis('admin');
+
+		$this->assertSame(5.0, $kpis['avgProcessingDays'], '20 and -10 days average 5.');
+	}
+
+	/**
 	 * A row that is neither an array nor a readable entity folds to nothing
 	 * rather than crashing the whole payload.
 	 *
@@ -422,7 +465,12 @@ final class KpiAggregationServiceTest extends TestCase {
 			}
 		);
 
-		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, new NullLogger());
+		// The app catalogue: the month names are keys, so an identity
+		// translator is the English reader's view.
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		return new KpiAggregationService($appConfig, $container, $appManager, $engineTasks, $l10n, new NullLogger());
 	}
 
 	/**
@@ -543,6 +591,13 @@ final class KpiAggregationServiceTest extends TestCase {
 
 					if (($f['startDate'] ?? null) === $this->today) {
 						return 1;
+					}
+
+					// The reader's own closed cases: this month and last differ,
+					// so a service that sent one range for both answers the same
+					// number twice.
+					if (isset($f['assignee'], $f['endDate']) === true) {
+						return ((string)$f['endDate']['gte'] === date('Y-m-01')) ? 7 : 5;
 					}
 
 					return 16;

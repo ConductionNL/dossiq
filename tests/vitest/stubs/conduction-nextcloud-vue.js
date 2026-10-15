@@ -275,6 +275,38 @@ export const CnContextMenu = {
 }
 
 /**
+ * Stand-in for CnFactsWidget: one `cn-fact-<key>` row per declared field that
+ * the object carries, with a `list` field joined by ", " and the other values
+ * as they are. The real widget (date formats, links, pills) is tested in
+ * nextcloud-vue; a spec here asserts only WHICH facts the page declares and
+ * that an absent one is dropped.
+ */
+export const CnFactsWidget = {
+	name: 'CnFactsWidget',
+	props: {
+		content: { type: Object, default: () => ({}) },
+		objectData: { type: Object, default: null },
+	},
+	render() {
+		const rows = []
+		for (const field of this.content.fields ?? []) {
+			const raw = (this.objectData ?? {})[field.path]
+			const value = Array.isArray(raw)
+				? raw.join(', ')
+				: String(raw ?? '').trim()
+			if (value === '') continue
+			rows.push(
+				h('div', { 'data-testid': `cn-fact-${field.key}` }, [
+					h('dt', field.label),
+					h('dd', value),
+				]),
+			)
+		}
+		return h('dl', rows)
+	},
+}
+
+/**
  * `useContextMenu` and `buildManifestRoutes` — RE-EXPORTED FROM THE REAL
  * PACKAGE, not stubbed.
  *
@@ -298,3 +330,7 @@ export {
 	splitRouteName,
 	splitRoutePath,
 } from '@conduction/nextcloud-vue/src/utils/buildManifestRoutes.js'
+export {
+	dispatchObjectsChanged,
+	OBJECTS_CHANGED_EVENT,
+} from '@conduction/nextcloud-vue/src/utils/objectSignals.js'

@@ -2,7 +2,7 @@
 	"_meta": {
 		"spdx-license": "EUPL-1.2",
 		"spdx-copyright": "2026 Conduction B.V.",
-		"description": "The SIMPLE structure profile, and the default one (openspec/changes/archive/2026-10-10-simple-structure-profile). `menu-layout.json` is the FULL profile and is untouched: an administrator brings it back with the setting `menu_structure`. Both profiles are built from the same manifest and the same fragments, so nothing is deleted and every page stays routable; this file only decides what the navigation offers first. THE FOUR STANDARD KEYS (`relocations`, `removals`, `settingsSection`, `integrationsSection`) go to the library's buildManifest exactly as the full file's do. `relocations` is ABSENT on purpose, and must stay absent rather than become `{}`. The simple menu is flat, eight entries, the first group without a caption and the others under one each, as DqZijbalk draws them, plus the case types each user chose under My case types, so nothing moves under a parent. And the library's relocation step ends by dropping every entry that has no route, no href, no action and no children, which is what a caption is: with any `relocations` object at all, the captions disappear. THE TWO PROFILE KEYS are read by src/utils/structureProfile.js, because buildManifest's layout has no word for either. `menu` is merged BEFORE the manifest's own menu. buildManifest merges entries by id and the FIRST definition of a key wins, so an entry here that carries only `id` and `order` takes its label, icon and route from the manifest and keeps the order written here, and an entry the manifest does not know (the three captions) is simply added. `pages` holds page overlays: `configAppend` appends items to a list in the page's config, by key. It is how My work and the dashboard gain the links that replace the three entries this profile takes out of the menu. A link, not a waiver: tests/vitest/structureProfile.spec.js fails when an entry is removed here and no reachable page links to its route.",
+		"description": "The SIMPLE structure profile, and the default one (openspec/changes/archive/2026-10-10-simple-structure-profile). `menu-layout.json` is the FULL profile and is untouched: an administrator brings it back with the setting `menu_structure`. Both profiles are built from the same manifest and the same fragments, so nothing is deleted and every page stays routable; this file only decides what the navigation offers first. THE FOUR STANDARD KEYS (`relocations`, `removals`, `settingsSection`, `integrationsSection`) go to the library's buildManifest exactly as the full file's do. `relocations` is absent because nothing moves: the simple menu is flat, eight entries, the first group without a caption and the others under one each, as DqZijbalk draws them, plus the case types each user chose under My case types. The library's relocation step keeps a caption unless the relocations emptied it, so adding the key would not cost the captions. THE TWO PROFILE KEYS are read by src/utils/structureProfile.js, because buildManifest's layout has no word for either. `menu` is merged BEFORE the manifest's own menu. buildManifest merges entries by id and the FIRST definition of a key wins, so an entry here that carries only `id` and `order` takes its label, icon and route from the manifest and keeps the order written here, and an entry the manifest does not know (the three captions) is simply added. `pages` holds page overlays: `configAppend` appends items to a list in the page's config, by key. It is how My work and the dashboard gain the links that replace the three entries this profile takes out of the menu. A link, not a waiver: tests/vitest/structureProfile.spec.js fails when an entry is removed here and no reachable page links to its route.",
 		"removalsNote": "The first eight are the full profile's own removals, repeated because buildManifest takes ONE list; the spec fails when the two drift. The last three are this profile's: `PersonalQueueMenu` (Your queue) and `MyWork` (Assigned to me) are reached from the My work page, and `EndOfDayMenu` (Close out your day) from My work and from the dashboard. `SettingsGroup` is an empty shell in the manifest (a label and no route). The full profile loses it to the relocation step's clean-up; this profile has no relocation step, so it is removed by name.",
 		"settingsNote": "The first six are the full profile's. `CasesDeletedMenu`, `CaseObjectsMenu`, `MailIntakeLogMenu` and `WooReportsMenu` join them here: a recycle bin, an object register, an intake log and the Woo review reports are set-up and inspection, not daily work. `WooReportsMenu` shows only to the throughput reader group.",
 		"myCaseTypesNote": "`MyCaseTypesCaption` is the heading the case types each user chose stand under (openspec/changes/case-types-in-my-menu, board DqZijbalk). It replaces the fixed Woo requests entry: the entries come from the backend `/api/manifest` delta, in the user's order, at orders 31 to 60, which is why Relations, Contacts and Organisations sit at 80, 82 and 84. The delta repeats the caption whole, with `href` to the Dossiq section of Nextcloud's personal settings, so the heading stands in the full profile too. Declared here as well so the simple menu has its heading on the first paint.",
@@ -14,7 +14,6 @@
 		"Analytics",
 		"TermijnDashboardMenu",
 		"ProcessMiningDashboardMenu",
-		"TenantsMenu",
 		"SubstitutionAdminMenu",
 		"BezwaarCommitteesMenu",
 		"PersonalQueueMenu",
@@ -28,12 +27,10 @@
 		"Analytics": "Reports",
 		"TermijnDashboardMenu": "Reports",
 		"ProcessMiningDashboardMenu": "Reports",
-		"TenantsMenu": "openregister:organisation",
 		"SubstitutionAdminMenu": "Cases",
 		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
 	},
 	"settingsSection": [
-		"TenantsMenu",
 		"WmsLayersMenu",
 		"LhsRecommendationsMenu",
 		"BezwaarCommitteesMenu",
@@ -188,14 +185,6 @@
 				}
 			}
 		},
-		"card": {
-			"title": "Close out your day",
-			"text": "See what is still open today and get it ready for tomorrow.",
-			"link": {
-				"label": "To the day close",
-				"route": "EndOfDay"
-			}
-		},
 		"footer": ["settings", "Documentation"]
 	},
 	"pages": [
@@ -203,43 +192,25 @@
 			"id": "MyWorkHome",
 			"_note": "The landing page in the simple structure (openspec/changes/landing-views). It carries what the dashboard carried in this structure until 7 October 2026: the greeting with its My work / My team switch, First today, four counts of MY cases, the week, my cases per step, my tasks and continue working (openspec/changes/archive/2026-10-10-simple-list-and-dashboard, whose notes on each widget still hold). THE SWITCH NOW CHANGES VIEWS, NOT PAGES. Its options carry `view` (nextcloud-vue 2.66.0 page views): My work is the `mine` view, My team the `team` view the manifest declares on this page. Before, My work opened the dashboard and My team the team queue, two pages with two headers, and the greeting stood over an empty area. THE GREETING IS THE PAGE'S OWN GRID, the views are drawn below it. `configPatch` replaces only the `mine` view's widgets and layout, so `team` stays the manifest's, one definition for both structures. `mine` keeps two widgets of the full My work page that nothing in the design replaces: Cases you follow and My archival reviews. Deadlines, Open Cases and the task table are not repeated: the week, the counts, First today and My tasks already show the same cases. THE PAGE HEADER STAYS. The dashboard hid it (`showHeader: false`), but this page's header carries the links that stand in for the menu entries this profile removes (Your queue, Assigned to me, Close out your day), and a hidden header hides them too. `simple-my-tasks` is a custom widget, so the page gains its slot.",
 			"config": {
-				"widgets": [
+				"widgets": [],
+				"layout": [],
+				"description": "",
+				"greeting": "first",
+				"showActionsMenu": false,
+				"viewLinks": [
 					{
-						"id": "simple-greeting",
-						"type": "header",
-						"title": "Greeting",
-						"content": {
-							"greeting": true,
-							"showDate": true,
-							"ground": true,
-							"views": {
-								"ariaLabel": "Whose work",
-								"options": [
-									{
-										"label": "My work",
-										"view": "mine"
-									},
-									{
-										"label": "My team",
-										"view": "team"
-									}
-								]
-							}
-						}
+						"label": "Your queue",
+						"route": "PersonalQueue"
+					},
+					{
+						"label": "Assigned to me",
+						"route": "MyWork"
+					},
+					{
+						"label": "Close out your day",
+						"route": "EndOfDay"
 					}
 				],
-				"layout": [
-					{
-						"id": "s1",
-						"widgetId": "simple-greeting",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
-					}
-				],
-				"description": "Your work today, then the team",
 				"showWidgetActions": false
 			},
 			"configPatch": {
@@ -248,8 +219,9 @@
 						"widgets": [
 							{
 								"id": "simple-first-today",
-								"type": "banner",
+								"type": "custom",
 								"title": "First today",
+								"_note": "DqMijnWerk names ONE case, the one of yours furthest past its deadline, with its acts. The library banner counts cases and cannot name one, so FirstTodayWidget draws the library's attention card around the case it finds, and draws nothing when none of yours is due. `content` is the DECLARATION of what is past term (the same filter and link appinfo/attention.json carries for LaunchPad): the widget reads the filter from `visibleWhen.source` and its first action from `actions[0]`, so the dashboard and the feed cannot count differently. See its registry entry.",
 								"content": {
 									"layout": "attention",
 									"variant": "error",
@@ -284,14 +256,8 @@
 													"deadline[lt]": "@today+1d"
 												}
 											}
-										},
-										{
-											"label": "Open the board",
-											"route": "WorkflowBoard",
-											"primary": true
 										}
-									],
-									"text": "Cases past their deadline"
+									]
 								}
 							},
 							{
@@ -370,9 +336,9 @@
 							{
 								"id": "simple-waiting",
 								"type": "stat",
-								"title": "Awaiting applicant",
+								"title": "Waiting on the applicant",
 								"content": {
-									"label": "Awaiting applicant",
+									"label": "Waiting on the applicant",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
@@ -408,22 +374,15 @@
 								"title": "Closed this month",
 								"content": {
 									"label": "Closed this month",
+									"caption": "{lastMonthName}: {myCompletedLastMonth}",
 									"format": {
 										"style": "decimal",
 										"decimals": 0
 									},
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"metric": "count",
-										"filter": {
-											"assignee": "@me",
-											"isFinalStatus": true,
-											"endDate": {
-												"gte": "@monthStart"
-											}
-										}
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
 									},
+									"valueField": "myCompletedCount",
 									"route": {
 										"name": "Cases",
 										"query": {
@@ -464,10 +423,11 @@
 							},
 							{
 								"id": "simple-my-tasks",
-								"type": "custom",
+								"type": "tasks",
 								"title": "My tasks",
-								"_note": "`variant: list` is the opt-in checkbox list of the DqDashboard board (a box, the task, its case on a muted second line, the due date on the right). Ticking a box completes the task through useEngineTaskStore.invoke(uuid, 'complete'), the task page's own path. Without the key MyWorkWidget draws the table, which is what the full profile and the My work page keep.",
+								"_note": "The library's `tasks` widget with `variant: list` is the board's My tasks card (a box, the task, its case on a muted second line, the due date on the right); ticking a box completes the task through the engine. It replaced the app's own MyWorkWidget here, which keeps the table, the substitution toggle and the full profile's My work page. The header link is the placement's `headerLink`.",
 								"content": {
+									"scope": "assigned",
 									"variant": "list",
 									"limit": 10,
 									"rowRoute": "TaskDetail",
@@ -511,76 +471,65 @@
 							},
 							{
 								"id": "simple-continue",
-								"type": "object-table",
+								"type": "record-list",
 								"title": "Continue working",
+								"_note": "DqMijnWerk's Verder werken: a row per case the reader opened last. The title, under it the case number and the case type, then the status pill and when the reader opened it. The library's record-list over OpenRegister's `_recent` lens, which carries its own order (last view first), so no `sort` here. Status and case type are read through _extend, so the pill and the meta line say names and never ids. The meta line is a list of parts (nextcloud-vue 2.82.0), so a case without a case type still shows its number. The time is `@self.viewedAt`, the moment the lens adds per object, not the case's own last change. When the lens reports itself unavailable, `lensReasonTexts` says why instead of `emptyText` (nextcloud-vue 2.82.0, #1555); the texts are the ones the full profile's Recently opened tile uses. The board draws no link to all of them, so there is none.",
 								"content": {
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"filter": {
-											"_recent": true
-										},
-										"limit": 3
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"_recent": true
 									},
-									"columns": [
-										{
-											"key": "title",
-											"cellClass": "cn-cell--strong",
-											"secondary": "identifier"
-										},
-										{
-											"key": "status",
-											"label": "Status",
-											"formatter": "statusTypeName",
-											"widget": "statusBadge"
-										}
+									"limit": 3,
+									"extend": [
+										"status",
+										"caseType"
+									],
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": {
+										"parts": [
+											"{identifier}",
+											"{caseType.title}"
+										]
+									},
+									"pill": {
+										"field": "status.name"
+									},
+									"trailing": [
+										"{@self.viewedAt|relativetime}"
 									],
 									"rowRoute": "CaseDetail",
-									"viewAllRoute": {
-										"name": "Cases",
-										"query": {
-											"_recent": "true"
-										}
-									},
-									"viewAllLabel": "View all",
-									"hideHeader": true,
-									"borderless": true,
-									"emptyText": "Cases you open show up here"
+									"emptyText": "Cases you open show up here",
+									"lensReasonTexts": {
+										"recent.audit-trail-disabled": "This server does not keep track of which cases you open.",
+										"recent.anonymous": "Sign in to see the cases you opened recently.",
+										"recent.read-history-unavailable": "Your recent cases are not available right now."
+									}
 								}
 							},
 							{
 								"id": "followed-cases",
-								"type": "object-table",
+								"type": "record-list",
 								"title": "Cases you follow",
+								"_note": "DqMijnWerk draws the cases you follow as rows: the title, the case number under it and the status as a pill. That is the library's record-list over the same `_watching` lens the full profile's table reads, with the status read through _extend so the pill says its name and never its id. The link to all of them is the placement's `headerLink`, where the board has it.",
 								"content": {
-									"source": {
-										"register": "dossiq",
-										"schema": "case",
-										"filter": {
-											"_watching": true
-										},
-										"limit": 5
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"_watching": true
 									},
-									"columns": [
-										{
-											"key": "identifier",
-											"cellClass": "cn-cell--muted"
-										},
-										{
-											"key": "title",
-											"cellClass": "cn-cell--strong"
-										}
+									"extend": [
+										"status"
 									],
-									"rowRoute": "CaseDetail",
-									"viewAllRoute": {
-										"name": "Cases",
-										"query": {
-											"_watching": "true"
-										}
+									"limit": 5,
+									"presentation": "rows",
+									"title": "{title}",
+									"meta": "{identifier}",
+									"pill": {
+										"field": "status.name"
 									},
-									"viewAllLabel": "View all",
-									"hideHeader": true,
-									"borderless": true,
+									"rowRoute": "CaseDetail",
 									"emptyText": "Follow a case to keep an eye on it here"
 								}
 							},
@@ -706,7 +655,14 @@
 								"gridY": 16,
 								"gridWidth": 6,
 								"gridHeight": 4,
-								"showTitle": true
+								"showTitle": true,
+								"headerLink": {
+									"label": "View all",
+									"route": "Cases",
+									"query": {
+										"_watching": "true"
+									}
+								}
 							},
 							{
 								"id": "s12",
@@ -721,33 +677,8 @@
 					}
 				}
 			},
-			"configAppend": {
-				"headerActions": [
-					{
-						"id": "open-your-queue",
-						"type": "open-page",
-						"label": "Your queue",
-						"icon": "ClipboardListOutline",
-						"target": "PersonalQueue"
-					},
-					{
-						"id": "open-assigned-to-me",
-						"type": "open-page",
-						"label": "Assigned to me",
-						"icon": "ClipboardAccountOutline",
-						"target": "MyWork"
-					},
-					{
-						"id": "open-end-of-day",
-						"type": "open-page",
-						"label": "Close out your day",
-						"icon": "ClipboardCheckOutline",
-						"target": "EndOfDay"
-					}
-				]
-			},
 			"slots": {
-				"widget-simple-my-tasks": "MyWorkWidget"
+				"widget-simple-first-today": "FirstTodayWidget"
 			}
 		},
 		{
@@ -976,6 +907,9 @@
 					"copy-case": {
 						"group": "Case"
 					},
+					"remedy-lodge": {
+						"group": "Case"
+					},
 					"woo-publish": {
 						"group": "Publication"
 					},
@@ -987,6 +921,18 @@
 					},
 					"export-dossier": {
 						"group": "Dossier"
+					},
+					"woo-search-plan": {
+						"group": "Dossier"
+					},
+					"woo-gather-documents": {
+						"group": "Dossier"
+					},
+					"document-assess": {
+						"group": "Dossier"
+					},
+					"assessment-decide": {
+						"group": "Publication"
 					},
 					"case-rebind": {
 						"group": "Case"
@@ -1005,6 +951,20 @@
 					}
 				},
 				"widgets": {
+					"case-tile-deadline": {
+						"_note": "The deadline is the first card of the side column, and the card already carries the widget title (Termijn) as its heading, as DqZaak draws it. The countdown's own label would print the same word a second time under it, so the simple structure leaves it out. The rest of the content is the manifest's, repeated because a patch replaces `content` whole.",
+						"content": {
+							"field": "deadline",
+							"icon": "ClockAlertOutline",
+							"showDate": true,
+							"settledField": "isFinalStatus",
+							"settledLabel": "Handled",
+							"thresholds": {
+								"warn": 14,
+								"danger": 5
+							}
+						}
+					},
 					"case-stages": {
 						"content": {
 							"currentField": "status",
@@ -1100,6 +1060,11 @@
 									"widgetId": "case-knowledge-panel",
 									"label": "Knowledge",
 									"overflow": true
+								},
+								{
+									"widgetId": "case-document-review",
+									"label": "Review",
+									"overflow": true
 								}
 							],
 							"variant": "segmented"
@@ -1111,11 +1076,71 @@
 					"kpi-2": null,
 					"kpi-5": null,
 					"3": null,
+					"presence-strip": {
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1
+					},
+					"5": {
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 12,
+						"gridHeight": 20
+					},
+					"12": {
+						"gridX": 0,
+						"gridY": 21,
+						"gridWidth": 12,
+						"gridHeight": 6
+					},
+					"11": {
+						"gridX": 0,
+						"gridY": 27,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					"7": {
+						"gridX": 0,
+						"gridY": 30,
+						"gridWidth": 12,
+						"gridHeight": 7
+					},
 					"6": {
-						"gridX": 9,
-						"gridY": 4,
-						"gridWidth": 3,
-						"gridHeight": 2
+						"gridX": 0,
+						"gridY": 37,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					"money-payments": {
+						"gridX": 0,
+						"gridY": 40,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					"money-contract": {
+						"gridX": 6,
+						"gridY": 40,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					"family-plan-panel": {
+						"gridX": 0,
+						"gridY": 48,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					"work-projects": {
+						"gridX": 6,
+						"gridY": 48,
+						"gridWidth": 6,
+						"gridHeight": 4
+					},
+					"documents-merge-to-pdf": {
+						"gridX": 0,
+						"gridY": 56,
+						"gridWidth": 6,
+						"gridHeight": 4
 					},
 					"case-banners": null
 				}
@@ -1160,7 +1185,7 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
@@ -1169,7 +1194,7 @@
 						"gridX": 4,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					},
 					{
@@ -1178,7 +1203,7 @@
 						"gridX": 8,
 						"gridY": 4,
 						"gridWidth": 4,
-						"gridHeight": 4,
+						"gridHeight": 6,
 						"showTitle": true
 					}
 				]
@@ -1305,6 +1330,7 @@
 			"id": "Cases",
 			"_note": "The cases list in the simple structure (openspec/changes/archive/2026-10-10-simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day AFTER it ends (`lt 0`) and amber on its last day, the same rule the board and the week strip use: a term is not late on its last day (one-term-engine, REQ-OTE-05).",
 			"config": {
+				"searchPlaceholder": "Search by case, number or requester",
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
 				"columns": [
@@ -1544,6 +1570,43 @@
 			"id": "Queue",
 			"title": "Team queue",
 			"config": {
+				"folderSidebar": null,
+				"searchPlaceholder": "Search by case, number or requester",
+				"columns": [
+					{
+						"key": "title",
+						"width": "328px",
+						"label": "Case",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier} · {initiatorDisplayName}"
+					},
+					{
+						"key": "caseType",
+						"width": "179px",
+						"label": "Type",
+						"formatter": "caseTypeName"
+					},
+					{
+						"key": "deadline",
+						"width": "141px",
+						"label": "Deadline",
+						"widget": "date",
+						"widgetProps": {
+							"variantWhen": [
+								{
+									"op": "lt",
+									"value": 0,
+									"variant": "error"
+								},
+								{
+									"op": "lte",
+									"value": 5,
+									"variant": "warning"
+								}
+							]
+						}
+					}
+				],
 				"showTitle": true,
 				"countText": "{shown} of {total} open cases without a handler, oldest first",
 				"footerNote": "a case leaves the queue as soon as someone picks it up",
@@ -1562,6 +1625,108 @@
 						"label": "New case",
 						"variant": "primary",
 						"icon": "Plus"
+					}
+				]
+			}
+		},
+		{
+			"id": "CaseTypes",
+			"_note": "The case type list as DqZaaktypen draws it (relay 8): the title with its identifier under it, Domain, Processing time and Version, no folder sidebar (the Domain column carries it), and the lenses All, Published and Draft. The board also has a Meegeleverd lens and a Status pill that read origin and isDraft; those are not drawn: `origin` has no values the board names yet, so inventing a lens over it would count the wrong cases.",
+			"config": {
+				"folderSidebar": null,
+				"showTitle": true,
+				"countSubtitle": "{total} case types",
+				"searchPlaceholder": "Search in this list",
+				"headerActions": [
+					{
+						"id": "case-type-import",
+						"type": "open-modal",
+						"label": "Import case type from a file",
+						"icon": "TrayArrowUp",
+						"target": "CaseTypeImportDialog"
+					}
+				],
+				"headerButtons": [
+					{
+						"action": "export",
+						"label": "Download",
+						"icon": "TrayArrowDown"
+					},
+					{
+						"action": "actions-menu",
+						"label": "Actions"
+					},
+					{
+						"action": "add",
+						"label": "New case type",
+						"variant": "primary",
+						"icon": "Plus"
+					}
+				],
+				"columns": [
+					{
+						"key": "title",
+						"label": "Case type",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier}"
+					},
+					{
+						"key": "category",
+						"label": "Domain"
+					},
+					{
+						"key": "processingDeadline",
+						"label": "Processing time",
+						"formatter": "processingTime"
+					},
+					{
+						"key": "version",
+						"label": "Version",
+						"formatter": "versionLabel"
+					},
+					{
+						"key": "isDraft",
+						"label": "Status",
+						"formatter": "draftState",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"false": "success",
+								"true": "warning"
+							}
+						}
+					}
+				],
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							}
+						},
+						"default": true,
+						"showCount": true
+					},
+					{
+						"label": "Published",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"isDraft": false
+						},
+						"showCount": true
+					},
+					{
+						"label": "Draft",
+						"filter": {
+							"supersededBy": {
+								"isnull": true
+							},
+							"isDraft": true
+						},
+						"showCount": true
 					}
 				]
 			}

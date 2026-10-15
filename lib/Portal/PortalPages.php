@@ -36,6 +36,14 @@ namespace OCA\Dossiq\Portal;
 class PortalPages {
 
 	/**
+	 * The create a list page starts with when that create writes elsewhere.
+	 *
+	 * @var array<string, string>
+	 */
+	private const PAGE_START_ACTIONS = ['verzoeken' => 'createKlacht'];
+
+
+	/**
 	 * One page per listable collection, under one menu group.
 	 *
 	 * The pages portaliq would make when an app declares none (the create
@@ -98,6 +106,9 @@ class PortalPages {
 	 * an unknown key in silence, so a key invented here would read as
 	 * declared for ever and do nothing.
 	 *
+	 * After the four come the start pages: one per action a resident starts
+	 * from nothing, which no other page offers (see startPages()).
+	 *
 	 * @param array<int, array<string, mixed>> $collections The citizen collections.
 	 * @param array<int, array<string, mixed>> $actions The citizen actions.
 	 * @param string $group The group every page sits in.
@@ -105,9 +116,17 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The pages.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
 	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
+		$listPages = $this->residentListPages(collections: $collections, actions: $actions, group: $group, labels: $labels);
+		$startPages = $this->startPages(
+			actions: $actions,
+			offered: $this->offeredActions(pages: $listPages),
+			group: $group
+		);
+
 		$pages = [];
 		$pages[] = [
 			'id' => 'overzicht',
@@ -118,7 +137,7 @@ class PortalPages {
 			// renders the rest below it.
 			'home' => true,
 			'menu' => false,
-			'blocks' => $this->residentOverviewBlocks(collections: $collections, labels: $labels),
+			'blocks' => $this->residentOverviewBlocks(collections: $collections, labels: $labels, startPages: $startPages),
 		];
 
 		$pages[] = [
@@ -136,6 +155,23 @@ class PortalPages {
 			'blocks' => $this->residentCaseBlocks(collections: $collections, actions: $actions),
 		];
 
+		return array_merge($pages, $listPages, $startPages);
+	}//end forResident()
+
+	/**
+	 * The two list pages that stay as they were: the messages and the requests.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
+	 * @param string                           $group       The group every page sits in.
+	 * @param array<string, string>            $labels      The label per page id.
+	 *
+	 * @return array<int, array<string, mixed>> The pages, those whose collection is declared.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 */
+	private function residentListPages(array $collections, array $actions, string $group, array $labels): array {
+		$pages = [];
 		foreach (['berichten', 'verzoeken'] as $id) {
 			if ($this->declares(rows: $collections, id: $id) === false) {
 				continue;
@@ -149,7 +185,7 @@ class PortalPages {
 				'blocks' => [],
 			];
 			foreach ($actions as $action) {
-				if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === $this->schemaOf(collections: $collections, id: $id)) {
+				if ($this->startsOn(action: $action, page: $id, collections: $collections) === true) {
 					$page['blocks'][] = ['type' => 'action', 'action' => (string)$action['id']];
 					break;
 				}
@@ -161,7 +197,94 @@ class PortalPages {
 		}//end foreach
 
 		return $pages;
-	}//end forResident()
+	}//end residentListPages()
+
+	/**
+	 * One page for every start point no page offers yet.
+	 *
+	 * WHY A PAGE OF ITS OWN. Portaliq makes a start tile only for an action a
+	 * page of the contribution offers through an `action` block, and routes
+	 * the tile to that page (StartTileCollector). An `action` block renders
+	 * the whole form, so the start point gets a page that holds only its
+	 * form, as the boards draw a request form on a page of its own. Without
+	 * it an action that starts from nothing had no tile and no way in.
+	 *
+	 * @param array<int, array<string, mixed>> $actions The citizen actions.
+	 * @param array<string, true>              $offered The action ids a page already offers.
+	 * @param string                           $group   The group every page sits in.
+	 *
+	 * @return array<int, array<string, mixed>> The pages; the page id is the action id.
+	 *
+	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
+	 */
+	private function startPages(array $actions, array $offered, string $group): array {
+		$pages = [];
+		foreach ($actions as $action) {
+			$id = (string)($action['id'] ?? '');
+			if ($id === '' || isset($offered[$id]) === true || $this->isStartPoint(action: $action) === false) {
+				continue;
+			}
+
+			$pages[] = [
+				'id' => $id,
+				'label' => (string)$action['label'],
+				'group' => $group,
+				'menu' => false,
+				'blocks' => [['type' => 'action', 'action' => $id]],
+			];
+		}
+
+		return $pages;
+	}//end startPages()
+
+	/**
+	 * Whether an action is one a resident starts from nothing.
+	 *
+	 * It offers itself as a start tile (a `summary` and its `audiences`,
+	 * REQ-SRPD-006) and needs nothing to start from: no case it is about
+	 * (`recordField`), no row it acts on (`rowField`) and nothing it is
+	 * attached to (`attachTo`). A bezwaar or a klacht is about one case, so it
+	 * stays on the case page.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return bool True for a start point.
+	 */
+	private function isStartPoint(array $action): bool {
+		foreach (['recordField', 'rowField', 'attachTo'] as $key) {
+			if (isset($action[$key]) === true) {
+				return false;
+			}
+		}
+
+		$label = ($action['label'] ?? null);
+		$summary = ($action['summary'] ?? null);
+		$audiences = ($action['audiences'] ?? null);
+
+		return is_string($label) === true && trim($label) !== ''
+			&& is_string($summary) === true && trim($summary) !== ''
+			&& is_array($audiences) === true && $audiences !== [];
+	}//end isStartPoint()
+
+	/**
+	 * The action ids the pages offer through an `action` block.
+	 *
+	 * @param array<int, array<string, mixed>> $pages The pages.
+	 *
+	 * @return array<string, true> The action ids, as keys.
+	 */
+	private function offeredActions(array $pages): array {
+		$offered = [];
+		foreach ($pages as $page) {
+			foreach ($page['blocks'] as $block) {
+				if (($block['type'] ?? '') === 'action') {
+					$offered[(string)$block['action']] = true;
+				}
+			}
+		}
+
+		return $offered;
+	}//end offeredActions()
 
 	/**
 	 * The overview's blocks: what the resident still has to do, their running
@@ -169,14 +292,18 @@ class PortalPages {
 	 *
 	 * @param array<int, array<string, mixed>> $collections The citizen collections.
 	 * @param array<string, string>            $labels      The label per page id, and `lopendeZaken` for the running cases.
+	 * @param array<int, array<string, mixed>> $startPages  The start pages, each a tile after what the resident still has to do.
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/changes/resident-overview-reads-as-designed/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
+	 * @spec openspec/changes/resident-start-points-have-a-page/specs/portal-contribution/spec.md#requirement-every-start-point-has-a-page-and-a-tile-on-the-overview-req-rsp-001
 	 */
-	private function residentOverviewBlocks(array $collections, array $labels = []): array {
+	private function residentOverviewBlocks(array $collections, array $labels = [], array $startPages = []): array {
 		// THE OVERVIEW OPENS WITH THE TIME OF DAY AND THE RESIDENT'S FIRST NAME
 		// ("Goedemiddag, Sanne"), as the Zuiddrecht design draws it. Portaliq's
 		// `greeting` block says that itself and takes the place of the plain
@@ -205,6 +332,13 @@ class PortalPages {
 				'dueInLine' => true,
 				'buttonLabel' => 'Document toevoegen',
 			];
+		}
+
+		// WHAT THE RESIDENT CAN ARRANGE, between what they still have to do and
+		// their running cases, as the overview board orders it: a tile to the
+		// page of each start point (portaliq REQ-SMO-024), not the form itself.
+		foreach ($startPages as $page) {
+			$blocks[] = ['type' => 'cta', 'page' => (string)$page['id'], 'label' => (string)$page['label']];
 		}
 
 		// The board draws the running cases compact, with "Alle zaken" beside
@@ -238,7 +372,7 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function residentCaseBlocks(array $collections, array $actions): array {
@@ -339,4 +473,30 @@ class PortalPages {
 
 		return $pages;
 	}//end withCaseScreen()
+
+	/**
+	 * Whether a create action is the one a list page starts with.
+	 *
+	 * The action that writes the page's own schema, or the one named for the
+	 * page in {@see self::PAGE_START_ACTIONS}: the complaint opens a case now
+	 * (decision 179, Q8), not a row of the page's list, and the "Klacht
+	 * indienen" page still starts with it.
+	 *
+	 * @param array<string, mixed>             $action      The action.
+	 * @param string                           $page        The page (and collection) id.
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 *
+	 * @return bool True when the page starts with this action.
+	 */
+	private function startsOn(array $action, string $page, array $collections): bool {
+		if (($action['type'] ?? '') !== 'create') {
+			return false;
+		}
+
+		if ((self::PAGE_START_ACTIONS[$page] ?? '') === ($action['id'] ?? null)) {
+			return true;
+		}
+
+		return ($action['schema'] ?? '') === $this->schemaOf(collections: $collections, id: $page);
+	}//end startsOn()
 }//end class

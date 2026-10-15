@@ -32,6 +32,7 @@
                     "email",
                     "post",
                     "website",
+                    "forms",
                     "other",
                     "zgw-api"
                   ]
@@ -39,10 +40,11 @@
                 "default": [
                   "email",
                   "website",
+                  "forms",
                   "zgw-api"
                 ],
                 "title": "Intake channels that owe one",
-                "description": "The values of case.intakeChannel that owe an acknowledgement. The default is every electronic channel: mail, the portal and the API."
+                "description": "The values of case.intakeChannel that owe an acknowledgement. The default is every electronic channel: mail, the portal, a Nextcloud Forms form and the API. Leave a channel out of this list to send none for it."
               },
               "defaultChannel": {
                 "type": "string",
@@ -66,6 +68,15 @@
                 "default": "nl",
                 "title": "Language",
                 "description": "The language the acknowledgement is written in. Dutch unless this case type declares another."
+              },
+              "addressFields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "title": "Address fields",
+                "description": "Where on a case of this type the sender's e-mail address is kept, as dot paths (for example wooRequest.verzoekerEmail). Read before the general contact fields, so a case type that keeps its requester in its own object is still answered."
               }
             }
           },

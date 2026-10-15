@@ -17,7 +17,7 @@ are where local stubs lie).
 
 ## 1. Receive opencatalogi's shape
 
-- [ ] 1.1 Add `WooRequestIntake::receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array`
+- [x] 1.1 Add `WooRequestIntake::receive(array $answers, string $receivedAt = '', string $origin = 'portal-form'): array`
   with the mapping of REQ-WTO-001. Add `portal-form` and `opencatalogi` to `ORIGINS`, to
   `INTAKE_CHANNEL` and to the `wooRequest.origin` enum in `register.d/81-woo-verzoek.json`. Make
   `subjectRef` optional in `WooRequestForm::normalise()` for those two origins only. Keep `start()`
@@ -27,7 +27,11 @@ are where local stubs lie).
     `testEveryOutcomeCarriesAllSixKeysAsStrings`, `testThePortalDossierOriginStillNeedsASubject`.
   - Validate the written case against the real schema with `tests/Support/RealSchemaValidator`:
     `testTheReceivedCaseValidatesAgainstTheCaseSchema`.
-- [ ] 1.2 Add `PortalContributionProvider::receiveWooRequest(array $answers, string $receivedAt = ''): array`
+  - Built (10 Oct): `lib/Woo/WooRequestIntake.php` `receive()`, the answer mapping in
+    `lib/Woo/WooReceivedAnswers.php` (test `tests/Unit/Woo/WooReceivedAnswersTest.php`). Decision 179:
+    the submit creates the case directly, no intake object in between. Phone and address go on
+    `wooRequest.verzoekerTelefoon` / `verzoekerAdres` (spec amended: no requester role type is seeded).
+- [x] 1.2 Add `PortalContributionProvider::receiveWooRequest(array $answers, string $receivedAt = ''): array`
   calling `receive()` with origin `portal-form`. Its constructor takes `WooRequestIntake` as an
   optional dependency, as opencatalogi's does, and answers `unavailable` with every key when it is
   null (REQ-WTO-001).
@@ -39,24 +43,41 @@ are where local stubs lie).
   - Through the caller: construct the provider through the real DI container the way portaliq's
     `PortalProviderLocator::locate('dossiq')` does (`OCA\Dossiq\Portal\PortalContributionProvider`),
     and call `receiveWooRequest()` on it: `testTheProviderPortaliqLocatesReceivesARequest`.
+  - Built (10 Oct): `tests/Unit/Portal/PortalContributionProviderTest.php`
+    `testReceiveWooRequestHasOpencatalogisSignature`, `testWithoutTheIntakeTheAnswerIsUnavailableWithEveryKey`,
+    `testTheProviderHandsTheRequestToTheIntakeAsAPortalForm`. The real-container construction is not a unit
+    test (no container in phpunit-unit); it is part of the 6.1 e2e (live pass, decision 139).
 
 ## 2. armed means a term runs
 
-- [ ] 2.1 `receive()` starts the case on `receivedAt`, then reads back the case and its term
+- [x] 2.1 `receive()` starts the case on `receivedAt`, then reads back the case and its term
   instance and answers `armed` only per REQ-WTO-002. On a written case without a running term it
   answers `not-armed` and writes an internal timeline entry. Without OpenRegister, the register,
   the case type or the term engine it answers `unavailable` and writes nothing (REQ-WTO-002).
   - **fails today**: `tests/Unit/Woo/WooRequestIntakeReceiveTest.php`
     `testTheTermCountsFromWhenTheRequesterSentIt` (sent 2026-11-27, delivered 2026-11-30, expects
     `dueAt` 2026-12-28), `testARefusedTimerIsNotArmed`, `testNoTermEngineWritesNoCase`.
+  - Built (10 Oct): `lib/Woo/WooReceivedTerm.php` (test `tests/Unit/Woo/WooReceivedTermTest.php`) and the
+    three tests above. The P28D count and Awt roll themselves are the term engine's, bound by
+    `DeadlineCaseCreatedListener` from the case's `receivedAt`; the intake test plays that part.
+    Row 10.8 done (10 Oct, below).
   - Row 10.8: `tests/Unit/Service/AcknowledgementDutyTest.php`
     `testTheAcknowledgementNamesTheStartAndTheDueDate`, on the rendered template text of a case
     written by `receive()`. It may pass already if `intake-says-when-the-term-starts` finished it;
     say which in the PR body.
+  - Row 10.8 result (10 Oct): it did NOT pass. Red first: `acknowledgement_no_address`, because a case
+    written by `receive()` keeps the requester's address only in `wooRequest.verzoekerEmail` and
+    `CaseContactDirectory` reads `email`/`initiator`/`betrokkenen`/`contacts`, none declared on the case
+    schema. Fixed generically (decision 182): the `acknowledgement` declaration takes `addressFields`
+    (`CaseTypeAcknowledgement::addressesOn()`, tried first by `AcknowledgementService`), and the Woo case
+    type declares `wooRequest.verzoekerEmail` (`specs/burger-notifications/spec.md` REQ-ACK-ADDR-001).
+    Green: `testTheAcknowledgementNamesTheStartAndTheDueDate` and
+    `CaseTypeAcknowledgementTest::testTheAddressIsReadWhereTheCaseTypeDeclaresIt`.
 
 ## 3. Parity on opencatalogi's fixtures
 
-- [ ] 3.1 Add `tests/Unit/Woo/WooTermParityTest.php`. One test per scenario of REQ-WTO-003, each with
+- [x] 3.1 Add `tests/Unit/Service/Term/StatutoryTermParityTest.php` (named generically, decision 182; it was
+  `tests/Unit/Woo/WooTermParityTest.php`). One test per scenario of REQ-WTO-003, each with
   a docblock line `Mirrors opencatalogi tests/Unit/Service/Woo/<File>::<test>`. Mirror at least
   `StatutoryTermTest::testTheFirstExtensionIsGrantedForTwoWeeks`, `testTheSecondExtensionIsRefused`,
   `testARefusedSecondExtensionChangesNothing`, `testAPauseSuspendsTheTermAndLeavesNoDueMoment`,
@@ -70,87 +91,85 @@ are where local stubs lie).
     in `DeadlineReportingService` here and say so in the PR body.
   - The others may pass on arrival if wave 1 did its work. That is the point of a parity suite.
     State in the PR body which ones were red before and which were green.
+  - Done: the six term scenarios were green on arrival; `testTermsReportCountsEveryOutcome` and
+    `testAShareOfNothingIsNotFullCompliance` were red (no `met`/`missed`/`running`/`suspended`, and
+    the share counted running terms in its denominator and answered 0.0 for nothing decided). Fixed
+    generically: `lib/Service/Termijn/TermOutcome.php` (own test `tests/Unit/Service/Termijn/TermOutcomeTest.php`)
+    classifies every term and computes `metShare` = met / (met + missed), null when nothing is
+    decided; `DeadlineReportingService` reports it per case type and on the dashboard snapshot, and
+    `src/views/termijn/tdWidgetMixin.js` shows a dash for null.
 
 ## 4. The import
 
-- [ ] 4.1 Declare `formerReferences` (array of `{application, reference}`) on the case in
+- [x] 4.1 Declare `formerReferences` (array of `{application, reference}`) on the case in
   `lib/Settings/dossiq_register.json`, add it to the case search declaration in
   `register.d/39-search-declarations.json`, and bump the register version (REQ-WTO-004).
   - unit: `tests/Unit/Settings/CaseSchemaTest.php` `testFormerReferencesIsDeclaredAndSearchable`.
-- [ ] 4.2 Add `lib/Woo/OpenCatalogiWooImport.php` with `run(bool $dryRun = false): array` per
-  REQ-WTO-004. Resolve opencatalogi's register and `wooRequest` schema by slug through
-  OpenRegister, as the system, `_rbac: false`. Find an existing case by
-  `wooRequest.originReference` before creating. Arm the timer through the same arming code
-  `ArmTermijnEngineTimers` uses (REQ-TOT-006), with SLA `days(startDate to deadline)`, and suspend
-  at once for a suspended source. Stamp `migratedTo` and `migratedAt` last (REQ-WTO-004).
-  - **fails today** (the class does not exist): `tests/Unit/Woo/OpenCatalogiWooImportTest.php`
-    `testARunningRequestMovesWithItsRemainingTime`, `testAnExtendedSuspendedRequestKeepsBoth`,
-    `testEveryStatusMapsToItsStage` (all five), `testASecondRunImportsNothingAndArmsNothing`,
-    `testAHalfFinishedRequestIsCompletedNotDuplicated`,
+  - Built (10 Oct): register 0.20.27, `matchType: exact` like `identifier` (a whole reference, not half).
+- [x] 4.2 The import, generic per decision 182 (amended 10 Oct): no `OpenCatalogiWooImport`. The
+  capability is `case-record-import` (`specs/case-record-import/spec.md`, REQ-CRI-001 to 003) and the
+  Woo part is the `recordImports` declaration on the Woo case type (REQ-WTO-004).
+  - Built: `lib/Service/Import/CaseRecordImport.php` (`run()`, `dryRun()`), the declaration reader
+    `lib/Service/Import/RecordCaseMapping.php`, the OpenRegister side `lib/Service/Import/RecordImportStore.php`,
+    and the term carry `lib/Service/Term/TermCarryOver.php` (generic term-engine behaviour: cancel the fresh
+    timer, write the source's end, extensions and status, re-arm through `armBeslistermijn` with the breach
+    mark, suspend at once, record each extension). `caseType.recordImports` declared in
+    `lib/Settings/dossiq_register.json` (caseType 1.17.0, register 0.20.28); the opencatalogi declaration on
+    the Woo case type in `register.d/81-woo-verzoek.json` (object 1.2.0).
+  - Tests: `tests/Unit/Service/Import/CaseRecordImportTest.php` runs the Woo case type's real declaration over
+    `tests/Fixtures/opencatalogi-woo-requests.json`: `testARunningRequestMovesWithItsRemainingTime`,
+    `testAnExtendedSuspendedRequestKeepsBoth`, `testEveryStatusMapsToItsStage`,
+    `testASecondRunImportsNothingAndArmsNothing`, `testAHalfFinishedRequestIsCompletedNotDuplicated`,
     `testARefusedStampIsAFailureNotAMigration`, `testOpencatalogisTimerIsNeverTouched`,
-    `testWithoutOpencatalogiNothingIsImported`.
-  - Use opencatalogi's real `wooRequest` shape as the fixture: copy one object of each status
-    from `lib/Settings/opencatalogi_mock_register.json` at 35999c29 into
-    `tests/Fixtures/opencatalogi-woo-requests.json` and cite the source line.
-- [ ] 4.3 Add `lib/Command/ImportOpenCatalogiWooRequests.php` (`dossiq:woo:import-opencatalogi`,
-  `--dry-run`) and register it in `appinfo/info.xml` (REQ-WTO-004).
-  - Through the caller: `tests/Unit/Command/ImportOpenCatalogiWooRequestsTest.php`
-    `testTheCommandPrintsTheUnmigratedCount`, built on the real import class with a register
-    double.
+    `testWithoutOpencatalogiNothingIsImported`, `testEveryWrittenCaseFitsTheCaseSchema` (real schema). Plus
+    `RecordCaseMappingTest`, `RecordImportStoreTest`, `tests/Unit/Service/Term/TermCarryOverTest.php`.
+  - `lib/Woo/OpenCatalogiWooCase.php` (#3608) was unused by the import and is removed, with its test (refactor lane R8).
+- [x] 4.3 The command, generic: `lib/Command/ImportCaseRecordsCommand.php`
+  (`dossiq:case:import-records <caseType> [--import=<key>] [--dry-run]`), registered in `appinfo/info.xml`.
+  - Through the caller: `tests/Unit/Command/ImportCaseRecordsCommandTest.php`
+    `testTheCommandPrintsTheUnmigratedCount`, built on the real import class with an in-memory register.
 - [ ] 4.4 Search: a case is found by a former reference (REQ-WTO-004).
   - e2e `tests/e2e/woo-takeover.spec.ts`: seed one imported case and search "WOO-2026-A1B2C3" on
     the cases list. Cite REQ-WTO-004.
+  - written (11 Oct): `tests/e2e/woo-takeover.spec.ts` seeds an opencatalogi `wooRequest`, runs
+    `occ dossiq:case:import-records woo-verzoek`, reads the case (status, startDate, deadline,
+    formerReferences, the source's `migratedTo`), finds it with `_search` on the old number, and runs
+    the import again expecting 0 imported. It skips on a shared instance (the import reads every
+    wooRequest) and when opencatalogi is absent. The run is owed to the live pass (decision 139).
 
 ## 5. Drafting through filinq
 
-- [ ] 5.1 Read filinq's `woo-request-workflow` change on filinq `development` at the moment you build
-  (on 2026-10-05 it was on filinq's spec branch `spec/woo-capability-build-specs`, PR #1341, issue
-  #1343). It names the contract: `DocumentGenerationRequestedEvent` with `templateSlug`
-  `woo-besluit` or `woo-inventarislijst` and `data.wooDecision`. Copy the `wooDecision` shape from its
-  spec into this change's `design.md` (create it). If filinq has not merged it, build the adapter
-  against that contract, keep 5.2's contract test, and say in the PR body that drafting is proven only
-  on dossiq's side until filinq lands (REQ-WTO-005).
-- [ ] 5.2 Add `lib/Woo/WooDecisionDrafts.php` with `draft(string $caseId): array` per REQ-WTO-005 and
-  REQ-WTO-006, dispatching the event through `IEventDispatcher` the way
-  `lib/Service/Beschikking/FilinqTemplateEngineAdapter.php` already does. Call it from
-  `WOODecisionService::assembleDecision()` and return its answer under `draft` (REQ-WTO-005,
-  REQ-WTO-006).
-  - **fails today**: `tests/Unit/Service/WOODecisionServiceTest.php`
-    `testTheDecisionCarriesTheDraftStatus`, `testAnUnhandledEventIsFilinqMissingAndFilesNothing`,
-    `testFilinqsErrorIsTheReason`.
-  - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
-    `testCreateDecisionAnswersTheDraftStatus`.
-  - Contract: `tests/Unit/Woo/WooDecisionDraftsContractTest.php` asserts the request keys
-    (`templateSlug`, `data.wooDecision`, `object`, `format`) and the result keys it reads, as literals
-    copied from filinq's spec with its source line. filinq's change tests the same contract on its
-    side; name that test in the PR body.
-
-- [ ] 5.3 The `wooDecision` dossiq sends has the shape filinq's template service checks (REQ-WTO-005,
-  row 7.9's dossiq half). filinq's `woo-request-workflow` REQ-DDWRW-010 reads `data.wooDecision` with
-  `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind` (`disclose`,
-  `partially-disclose`, `withhold` or `not-held`), `organisation`, and `documents`, a list of
-  `{inventoryNumber, title, date, assessment, groundCodes, remark}` with `assessment` one of
-  `disclose`, `partially-disclose`, `withhold`. It refuses a missing key, a `partially-disclose` or
-  `withhold` document without a ground code, and a duplicate inventory number. Build the shape in one
-  place (`WooDecisionDrafts::wooDecision(string $caseId): array`), mapping dossiq's assessment
-  `classification` `openbaar` to `disclose`, `deels_openbaar` to `partially-disclose` and
-  `niet_openbaar` to `withhold`, and `weigeringsgronden` to `groundCodes`.
-  - **fails today** (the class does not exist): `tests/Unit/Woo/WooDecisionShapeTest.php`
-    `testEveryKeyFilinqRequiresIsPresent`, `testDossiqClassificationsMapToFilinqAssessments`,
-    `testAWithheldDocumentCarriesItsGroundCodes`, `testInventoryNumbersAreUniqueAndStable`, built from
-    a fixture case with one document of each classification. Copy the key list as literals from
-    filinq's spec with its source line, so a rename on either side fails this test.
-  - Through the caller: `WOODecisionServiceTest::testTheDraftRequestCarriesTheWooDecisionShape`
-    captures the dispatched `DocumentGenerationRequestedEvent` and runs the same assertions on its
-    `data.wooDecision`.
+- [x] 5.1 filinq's contract read on filinq `development` (10 Oct 2026): `OCA\Filinq\Event\DocumentGenerationRequestedEvent`
+  (`lib/Event/DocumentGenerationRequestedEvent.php`) with `templateSlug` + `templateNamespace`, `data`,
+  `object`, `format`, handled by `DocumentGenerationRequestedListener` through
+  `DocumentGenerationRequestService::generate()`. The filinq side under decision 156 is therefore
+  built; only the `woo-besluit` / `woo-inventarislijst` template content is filinq's
+  `woo-request-workflow` (not on development).
+- [x] 5.2 Decision 182: generic, not `WooDecisionDrafts`. `lib/Service/Drafts/CaseDocumentDrafts.php`
+  (`draft(caseId, purpose)`) over the case type's `documentDrafts` (`register.d/89-case-document-drafts.json`),
+  called from `WOODecisionService::assembleDecision()` for `decision` and `inventory` (answers under
+  `draft` and `inventoryDraft`). REQ-CDD-001/003, REQ-WTO-005/006.
+  - done: `tests/Unit/Service/Drafts/CaseDocumentDraftsTest.php` (7: the Woo case type's real declaration
+    drafted and filed, filinq's error is the reason, unhandled is filinq-missing, undeclared asks nothing,
+    unbuildable data refused before filinq, data beside the case without a data key, inventory);
+    through the caller `WOODecisionServiceTest::testTheDecisionCarriesTheDraftStatus`.
+- [x] 5.3 The `wooDecision` shape is configuration on the Woo case type, built by the generic
+  `lib/Service/Drafts/CaseDraftData.php` (REQ-CDD-002).
+  - done: `tests/Unit/Service/Drafts/CaseDraftDataTest.php` (6); the shape over one assessment of each
+    classification in `CaseDocumentDraftsTest::testTheWooDecisionIsDraftedFromItsCaseTypesTemplateAndFiled`.
 
 ## 6. End to end and live
 
 - [ ] 6.1 `tests/e2e/woo-takeover.spec.ts` also: call the portal form path through portaliq's
   delivery job on the dev instance (or the provider method through a test route if portaliq is not
   installed in CI) and read the case back with its `deadline`. Cite REQ-WTO-001 and REQ-WTO-002.
+  - blocked (11 Oct): portaliq's `PortalWooRequestDelivery` (development) delivers a Woo form only to
+    opencatalogi (`APP = 'opencatalogi'`), so no portal form reaches dossiq's `receiveWooRequest()`
+    yet, and dossiq ships no test route by design. Switching the delivery target is the decision-179
+    form-to-destination change the architect owns. Until then the provider method is covered by
+    `tests/Unit/Portal/PortalContributionProviderTest.php` and `tests/Unit/Woo/WooRequestIntakeReceiveTest.php`.
 - [ ] 6.2 Live check after merge on the dev instance: create two opencatalogi `wooRequest` objects
-  (one running, one suspended), run `occ dossiq:woo:import-opencatalogi`, and record the output,
+  (one running, one suspended), run `occ dossiq:case:import-records woo-verzoek`, and record the output,
   the two cases' `deadline`, the two FlowTimers' fire moments and the sources' `migratedTo`. Run it
   a second time and record that nothing changed.
 

@@ -89,7 +89,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Service/BesluitMaterialisationService.php' => 'THE sanctioned door: materialises the ZGW Besluit as a projection of a decidiq DecisionConcludedEvent outcome; authors nothing of its own.',
 		'lib/Service/Bezwaar/DecisionService.php' => 'Awb record keeper: publish() raises the decision in decidiq (fails closed) and persists only the returned decisionRef plus notification audit on the record.',
 		'lib/Listener/BezwaarDecisionListener.php' => 'Fail-closed guard: reverts a bezwaar status when no published decision exists; probes decision records, never authors one.',
-		'lib/Controller/BrcController.php' => 'ZGW Besluiten API (BRC): external registry writes besluit RECORDS the API mandates; record store compliance, not deliberation.',
+		'lib/Service/Zgw/BrcCrossRegisterSync.php' => 'ZGW Besluiten API (BRC): writes the zaakbesluit link the API mandates beside a besluit RECORD an external registry stored (brc-006); record store compliance, not deliberation. Moved here from BrcController with the code (method-decomposition 8f).',
 		'lib/Repair/LinkInFlightRemainingDecisionsRepair.php' => 'One-time idempotent migration linking in-flight records to their decidiq decisions.',
 		'lib/Repair/RewriteWooPublicationSummaries.php' => 'Idempotent upgrade step that rewrites only the old "WOO besluit voor zaak <uuid>" description on existing Woo besluit records to the wording WOODecisionService already writes; changes words, decides nothing.',
 		'lib/Repair/MapWooRefusalGroundCodes.php' => 'Idempotent upgrade step that rewrites only the refusal ground codes stored on existing Woo assessments and decision records onto the settled list; maps codes, decides nothing.',
@@ -102,13 +102,14 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Service/WOODecisionService.php' => 'BLOCKED-2 (see the change tasks): authors the Woo besluit locally because decidiq has no woo-decision type yet. The raise moves to the delegation seam when decidiq grows one; the assembly and the Art. 5.1/5.2 guard stay either way.',
 		'lib/Service/WooPublicationService.php' => 'Publication stamping of the Woo besluit record; grey area C-3 (publication mechanics), pending the ruling recorded in the change.',
 		'lib/Repair/BackfillWooPublicationState.php' => 'Idempotent upgrade step that reads which decision on a case carries a wooSummary and writes only the case\'s publication state from it (woo-publish-decision-from-the-case D-2); authors no decision.',
+		'lib/Service/Remedy/RemedyLodging.php' => 'Reads the latest decision of a decided case to date the lodging term (Awb 6:8) and opens the remedy case with its objection; it records a lodging, decides nothing.',
 		'lib/Woo/WooCaseLedger.php' => 'Reads which decision on a case carries a wooSummary, and writes only the case\'s publication state (woo-publish-decision-from-the-case D-1, D-2); authors no decision.',
 	];
 
 	/**
-	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The first one
-	 * is deprecated stock (dossiq-decisions-to-decidiq) and leaves
-	 * when its endpoint moves to OpenRegister; the KCC entry is a
+	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The standalone
+	 * decision-table endpoint left when the tables moved to OpenRegister's
+	 * register (decision-tables-live-in-openregister); the KCC entry is a
 	 * sanctioned non-decision consumer and stays. A new entry needs the same
 	 * argument the KCC one made: rules that are not case verdicts, evaluated
 	 * on the SHARED engine with the domain dialect kept app-side.
@@ -116,7 +117,6 @@ class LocalDecisionAuthoringTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWED_EVALUATOR_CONSUMERS = [
-		'lib/Controller/DecisionTableController.php' => 'The standalone /api/decisions/{id}/evaluate endpoint, until flow-decision-tables lands in OpenRegister.',
 		'lib/Service/Kcc/RoutingTableEvaluator.php' => 'SANCTIONED, not deprecated stock: KCC contact-moment routing compiled onto the shared evaluator (kcc-routing-onto-or-decision-tables). Routing a call is triage, not a case verdict; the alternative to this consumer is the private matcher wave 4 retires.',
 	];
 

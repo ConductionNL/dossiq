@@ -39,12 +39,24 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
+
 /**
  * Reads the remedy a case type declares, and writes the clause its decisions print.
  *
  * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
  */
 class RemedyClauseDeclaration {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param LanguageMapText $text A translatable title or name as one string.
+	 */
+	public function __construct(
+		private readonly LanguageMapText $text = new LanguageMapText(),
+	) {
+	}//end __construct()
 
 	/**
 	 * The case type property holding the declaration.
@@ -93,7 +105,8 @@ class RemedyClauseDeclaration {
 	 *
 	 * @param array<string, mixed> $caseType The effective case type row.
 	 *
-	 * @return array{kind: string, termDays: int, body: string, enabled: bool} The declaration.
+	 * @return array{kind: string, termDays: int, body: string, enabled: bool, caseType: string} The declaration;
+	 *         `caseType` is the case type a lodged remedy opens, '' when none is named.
 	 *
 	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#requirement-the-remedy-clause-is-declared-on-the-case-type-and-printed-req-dec-03
 	 */
@@ -116,6 +129,7 @@ class RemedyClauseDeclaration {
 			'termDays' => max(0, (int)($declared['termDays'] ?? 0)),
 			'body' => trim((string)($declared['body'] ?? '')),
 			'enabled' => (($declared['enabled'] ?? true) !== false),
+			'caseType' => trim((string)($declared['caseType'] ?? '')),
 		];
 	}//end declarationFor()
 
@@ -217,7 +231,7 @@ class RemedyClauseDeclaration {
 			return [];
 		}
 
-		$title = trim((string)($caseType['title'] ?? ''));
+		$title = $this->text->textOf(value: ($caseType['title'] ?? null));
 		if ($title === '') {
 			$title = 'this case type';
 		}

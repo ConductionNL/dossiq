@@ -31,7 +31,8 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
-use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
+use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
+use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -48,9 +49,10 @@ use OCP\IRequest;
  * - brc-006: Zaak-besluit relation (via ZRC zaakbesluiten endpoint)
  * - brc-009: Cascade delete of BIOs and OIOs when deleting a besluit
  *
- * @psalm-suppress UnusedClass
+ * The besluitinformatieobject routes are `Zgw\BrcDocumentLinkHandler`; what is
+ * kept in step in the other registers is `Zgw\BrcCrossRegisterSync`.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -63,7 +65,24 @@ class BrcController extends ZgwController {
 	private const ZGW_API = 'besluiten';
 
 	/**
+	 * What the Besluiten API keeps in step in the Zaken and Documenten registers.
+	 *
+	 * @var BrcCrossRegisterSync
+	 */
+	private readonly BrcCrossRegisterSync $sync;
+
+	/**
+	 * The besluitinformatieobject routes.
+	 *
+	 * @var BrcDocumentLinkHandler
+	 */
+	private readonly BrcDocumentLinkHandler $documentLinks;
+
+	/**
 	 * Constructor.
+	 *
+	 * Builds the two collaborators from what it is given, so the container and
+	 * the routes still see one Besluiten controller.
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
@@ -74,9 +93,11 @@ class BrcController extends ZgwController {
 		string $appName,
 		IRequest $request,
 		private readonly ZgwService $zgwService,
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->sync = new BrcCrossRegisterSync(zgwService: $zgwService, settingsService: $settingsService);
+		$this->documentLinks = new BrcDocumentLinkHandler(zgwService: $zgwService, sync: $this->sync);
 	}//end __construct()
 
 	/**
@@ -101,7 +122,7 @@ class BrcController extends ZgwController {
 
 		// BesluitInformatieObjecten returns a plain array per ZGW spec.
 		if ($resource === 'besluitinformatieobjecten') {
-			return $this->indexBesluitInformatieObjecten();
+			return $this->documentLinks->index(request: $this->request);
 		}
 
 		return $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
@@ -137,7 +158,7 @@ class BrcController extends ZgwController {
 
 		// For besluitinformatieobjecten: use custom create with OIO sync.
 		if ($resource === 'besluitinformatieobjecten') {
-			return $this->createBesluitInformatieObject();
+			return $this->documentLinks->create(request: $this->request);
 		}
 
 		// Brc-006: For besluiten with a zaak, sync zaakbesluit to ZRC after creation.
@@ -299,7 +320,7 @@ class BrcController extends ZgwController {
 
 		// Brc-005b: Delete OIO when deleting BIO.
 		if ($resource === 'besluitinformatieobjecten') {
-			return $this->destroyBesluitInformatieObject(uuid: $uuid);
+			return $this->documentLinks->destroy(request: $this->request, uuid: $uuid);
 		}
 
 		return $this->zgwService->handleDestroy(
@@ -406,7 +427,7 @@ class BrcController extends ZgwController {
 				if ($caseUrl !== '') {
 					$decisionUrl = $data['url'] ?? '';
 					if ($decisionUrl !== '') {
-						$this->syncCaseDecisionToZrc(caseUrl: $caseUrl, decisionUrl: $decisionUrl);
+						$this->sync->syncCaseDecisionToZrc(caseUrl: $caseUrl, decisionUrl: $decisionUrl);
 					}
 				}
 			}
@@ -414,465 +435,6 @@ class BrcController extends ZgwController {
 
 		return $response;
 	}//end createBesluitWithZaakSync()
-
-	/**
-	 * Sync a zaak-besluit relation to ZRC (brc-006).
-	 *
-	 * Creates a "zaakbesluit" record linking the zaak to the besluit
-	 * in the ZRC register.
-	 *
-	 * @param string $caseUrl The zaak URL
-	 * @param string $decisionUrl The besluit URL
-	 *
-	 * @return void
-	 */
-	private function syncCaseDecisionToZrc(string $caseUrl, string $decisionUrl): void {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return;
-		}
-
-		// Look for a zaakbesluit mapping/schema.
-		$zbSchema = $this->settingsService->getConfigValue(key: 'case_decision_schema');
-		if ($zbSchema === '') {
-			$this->zgwService->getLogger()->debug(
-				'brc-006: case_decision_schema not configured, skipping zaakbesluit sync'
-			);
-			return;
-		}
-
-		$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-		$zaakUuid = '';
-		if (preg_match($uuidPattern, $caseUrl, $match) === 1) {
-			$zaakUuid = $match[1];
-		}
-
-		if ($zaakUuid === '') {
-			return;
-		}
-
-		// Use the zaken mapping config for register.
-		$casesConfig = $this->zgwService->loadMappingConfig('zaken', 'zaken');
-		$register = $casesConfig['sourceRegister'] ?? '';
-		if ($register === '') {
-			return;
-		}
-
-		try {
-			$zbData = [
-				'case' => $zaakUuid,
-				'decision' => $decisionUrl,
-			];
-
-			$objectService->saveObject(
-				register: $register,
-				schema: $zbSchema,
-				object: $zbData
-			);
-
-			$this->zgwService->getLogger()->info(
-				'brc-006: Created zaakbesluit for zaak=' . $zaakUuid . ' besluit=' . $decisionUrl
-			);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'brc-006: Failed to create zaakbesluit: ' . $e->getMessage()
-			);
-		}
-	}//end syncZaakBesluitToZrc()
-
-	/**
-	 * List BesluitInformatieObjecten as a plain array (per ZGW spec).
-	 *
-	 * Unlike paginated resources, besluitinformatieobjecten returns a flat array.
-	 *
-	 * @return JSONResponse
-	 */
-	private function indexBesluitInformatieObjecten(): JSONResponse {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
-		}
-
-		$resource = 'besluitinformatieobjecten';
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
-		}
-
-		try {
-			$params = $this->request->getParams();
-			$filters = $this->zgwService->translateQueryParams(
-				params: $params,
-				mappingConfig: $mappingConfig
-			);
-
-			$searchParams = array_merge($filters, ['_limit' => 100]);
-
-			$query = $objectService->buildSearchQuery(
-				requestParams: $searchParams,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			$objects = $result['results'] ?? [];
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = [];
-			foreach ($objects as $object) {
-				$objectData = $this->objectToArray(row: $object);
-
-				$mapped[] = $this->zgwService->applyOutboundMapping(
-					objectData: $objectData,
-					mapping: $outboundMapping,
-					mappingConfig: $mappingConfig,
-					baseUrl: $baseUrl
-				);
-			}
-
-			return new JSONResponse(data: $mapped);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC list BIO error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Internal server error'],
-				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
-			);
-		}//end try
-	}//end indexBesluitInformatieObjecten()
-
-	/**
-	 * Create a BesluitInformatieObject with cross-register OIO sync (brc-005a).
-	 *
-	 * After creating the BIO, also creates an ObjectInformatieObject in the
-	 * DRC register with objectType=besluit.
-	 *
-	 * @return JSONResponse
-	 */
-	private function createBesluitInformatieObject(): JSONResponse {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
-		}
-
-		$resource = 'besluitinformatieobjecten';
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
-		}
-
-		try {
-			$body = $this->zgwService->getRequestBody($this->request);
-
-			// Run business rules (brc-003a, brc-008a).
-			$ruleResult = $this->zgwService->getBusinessRulesService()->validate(
-				zgwApi: self::ZGW_API,
-				resource: $resource,
-				action: 'create',
-				body: $body,
-				objectService: $objectService,
-				mappingConfig: $mappingConfig
-			);
-			if ($ruleResult['valid'] === false) {
-				return new JSONResponse(
-					data: $this->zgwService->buildValidationError($ruleResult),
-					statusCode: $ruleResult['status']
-				);
-			}
-
-			$enrichedBody = $ruleResult['enrichedBody'];
-
-			// Create the BIO via standard mapping flow.
-			$inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
-			$englishData = $this->zgwService->applyInboundMapping(
-				body: $enrichedBody,
-				mapping: $inboundMapping,
-				mappingConfig: $mappingConfig
-			);
-
-			// @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
-			if (is_array($englishData) === false) {
-				return new JSONResponse(
-					data: ['detail' => 'Invalid mapping result'],
-					statusCode: Http::STATUS_BAD_REQUEST
-				);
-			}
-
-			$object = $objectService->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $englishData
-			);
-			$objectData = $this->objectToArray(row: $object);
-
-			$objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-
-			// Brc-005a: Create OIO in DRC.
-			$decisionUrl = $enrichedBody['decision'] ?? '';
-			$ioUrl = $enrichedBody['informatieobject'] ?? '';
-			if ($decisionUrl !== '' && $ioUrl !== '') {
-				$this->createOioInDrc(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
-			}
-
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $objectUuid,
-				'create'
-			);
-
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC create BIO error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => $e->getMessage()],
-				statusCode: Http::STATUS_BAD_REQUEST
-			);
-		}//end try
-	}//end createBesluitInformatieObject()
-
-	/**
-	 * Create an ObjectInformatieObject in the DRC register (brc-005a).
-	 *
-	 * @param string $decisionUrl The besluit URL (full ZGW URL)
-	 * @param string $ioUrl The informatieobject URL (full ZGW URL)
-	 *
-	 * @return void
-	 */
-	private function createOioInDrc(string $decisionUrl, string $ioUrl): void {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return;
-		}
-
-		$oioMappingConfig = $this->zgwService->loadMappingConfig('documenten', 'objectinformatieobjecten');
-		if ($oioMappingConfig === null) {
-			return;
-		}
-
-		try {
-			$oioData = [
-				'document' => $ioUrl,
-				'object' => $decisionUrl,
-				'objectType' => 'decision',
-			];
-
-			$objectService->saveObject(
-				register: $oioMappingConfig['sourceRegister'],
-				schema: $oioMappingConfig['sourceSchema'],
-				object: $oioData
-			);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'brc-005a: Failed to create OIO in DRC: ' . $e->getMessage()
-			);
-		}
-	}//end createOioInDrc()
-
-	/**
-	 * Delete ObjectInformatieObjecten from DRC for a given besluit (brc-005b/009).
-	 *
-	 * @param string $decisionUrl The besluit URL to match OIOs against
-	 *
-	 * @return void
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
-	 *  constructor on a value object, not a service call. Injecting it would put a
-	 *  collaborator in four controllers to answer one question about their own config.
-	 */
-	private function deleteOiosForDecision(string $decisionUrl): void {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return;
-		}
-
-		$oioMappingConfig = $this->zgwService->loadMappingConfig('documenten', 'objectinformatieobjecten');
-		if ($oioMappingConfig === null) {
-			return;
-		}
-
-		// An unsearchable scope answers with an empty page and no error
-		// ({@see ZgwSearchScope}), so the besluit goes and every OIO that
-		// pointed at it survives as an orphan. Name it instead.
-		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
-		if ($oioScope === null) {
-			$this->zgwService->getLogger()->error(
-				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
-				. 'so the OIOs of ' . $decisionUrl . ' are being left behind as orphans'
-			);
-			return;
-		}
-
-		try {
-			$query = $objectService->buildSearchQuery(
-				requestParams: ['object' => $decisionUrl],
-				register: $oioScope->register,
-				schema: $oioScope->schema
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			foreach (($result['results'] ?? []) as $oio) {
-				$oioData = $this->objectToArray(row: $oio);
-
-				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
-				if ($oioUuid !== '') {
-					$objectService->deleteObject(
-						uuid: $oioUuid,
-						_rbac: false,
-						_multitenancy: false
-					);
-				}
-			}
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'BRC: Failed to delete OIOs for besluit: ' . $e->getMessage()
-			);
-		}//end try
-	}//end deleteOiosForBesluit()
-
-	/**
-	 * Delete a BesluitInformatieObject and its OIO in DRC (brc-005b).
-	 *
-	 * @param string $uuid The BIO UUID to delete
-	 *
-	 * @return JSONResponse
-	 */
-	private function destroyBesluitInformatieObject(string $uuid): JSONResponse {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return $this->zgwService->unavailableResponse();
-		}
-
-		$resource = 'besluitinformatieobjecten';
-		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
-		if ($mappingConfig === null) {
-			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
-		}
-
-		try {
-			// Read the BIO to get besluit URL before deletion.
-			$bioObj = $objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$bioData = $this->objectToArray(row: $bioObj);
-
-			// Build the besluit URL from the stored decision UUID.
-			$decisionUuid = $bioData['decision'] ?? '';
-			$decisionUrl = '';
-			if ($decisionUuid !== '') {
-				$decisionUrl = $this->zgwService->buildBaseUrl(
-					$this->request,
-					self::ZGW_API,
-					'besluiten'
-				) . '/' . $decisionUuid;
-			}
-
-			$ioUrl = $bioData['document'] ?? '';
-
-			// Delete the BIO.
-			$objectService->deleteObject(uuid: $uuid);
-
-			// Brc-005b: Delete matching OIO in DRC.
-			if ($decisionUrl !== '' && $ioUrl !== '') {
-				$this->deleteOioByDecisionAndIo(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
-			}
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $uuid,
-				'destroy'
-			);
-
-			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC delete BIO error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
-		}//end try
-	}//end destroyBesluitInformatieObject()
-
-	/**
-	 * Delete an OIO from DRC matching a specific besluit and informatieobject (brc-005b).
-	 *
-	 * @param string $decisionUrl The besluit URL
-	 * @param string $ioUrl The informatieobject URL
-	 *
-	 * @return void
-	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
-	 *  constructor on a value object, not a service call. Injecting it would put a
-	 *  collaborator in four controllers to answer one question about their own config.
-	 */
-	private function deleteOioByDecisionAndIo(string $decisionUrl, string $ioUrl): void {
-		$objectService = $this->zgwService->getObjectService();
-		if ($objectService === null) {
-			return;
-		}
-
-		$oioMappingConfig = $this->zgwService->loadMappingConfig('documenten', 'objectinformatieobjecten');
-		if ($oioMappingConfig === null) {
-			return;
-		}
-
-		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
-		if ($oioScope === null) {
-			$this->zgwService->getLogger()->error(
-				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
-				. 'so the OIO for ' . $ioUrl . ' is being left behind as an orphan'
-			);
-			return;
-		}
-
-		try {
-			$query = $objectService->buildSearchQuery(
-				requestParams: [
-					'object' => $decisionUrl,
-					'document' => $ioUrl,
-				],
-				register: $oioScope->register,
-				schema: $oioScope->schema
-			);
-			$result = $objectService->searchObjectsPaginated(query: $query);
-
-			foreach (($result['results'] ?? []) as $oio) {
-				$oioData = $this->objectToArray(row: $oio);
-
-				$oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
-				if ($oioUuid !== '') {
-					$objectService->deleteObject(
-						uuid: $oioUuid,
-						_rbac: false,
-						_multitenancy: false
-					);
-				}
-			}
-		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'brc-005b: Failed to delete OIO: ' . $e->getMessage()
-			);
-		}//end try
-	}//end deleteOioByBesluitAndIo()
 
 	/**
 	 * Delete a besluit with cascade to BIOs and OIOs (brc-009).
@@ -893,13 +455,22 @@ class BrcController extends ZgwController {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
 		}
 
+		$object = $resource . ' ' . $uuid;
 		try {
-			// Validate the besluit exists (will throw if not found).
 			$existingObj = $objectService->find(
 				$uuid,
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema']
 			);
+		} catch (\Throwable $e) {
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
+		}
+
+		if ($existingObj === null) {
+			return $this->zgwService->notFoundResponse();
+		}
+
+		try {
 			$existingData = $this->objectToArray(row: $existingObj);
 
 			// Run destroy business rules.
@@ -927,29 +498,16 @@ class BrcController extends ZgwController {
 			// Cascade delete of BesluitInformatieObjecten is handled by
 			// OpenRegister via onDelete: CASCADE on decisionDocument.decision.
 			// Brc-009: Sync-delete OIOs in DRC (cross-component side-effect).
-			$this->deleteOiosForDecision(decisionUrl: $decisionUrl);
+			$this->sync->deleteOiosForDecision(decisionUrl: $decisionUrl);
 
 			// Delete the besluit itself.
 			$objectService->deleteObject(uuid: $uuid);
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $uuid,
-				'destroy'
-			);
-
-			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC delete besluit error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
 		}//end try
+
+		$this->zgwService->notifyDeleted(request: $this->request, zgwApi: self::ZGW_API, resource: $resource, uuid: $uuid);
+
+		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 	}//end destroyBesluit()
 }//end class

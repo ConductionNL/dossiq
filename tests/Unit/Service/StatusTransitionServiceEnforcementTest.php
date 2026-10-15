@@ -51,6 +51,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
@@ -73,6 +75,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * The role check and the side effects, asked of one execute() call.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @covers \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  *
  * `TransitionSpecReader` is a real collaborator here rather than a mock, so
@@ -191,8 +195,6 @@ class StatusTransitionServiceEnforcementTest extends TestCase {
 		$this->service = new StatusTransitionService(
 			templateLoader: $templateLoader,
 			guardRegistry: $guardRegistry,
-			sideEffectDispatcher: $this->dispatcher,
-			store: $this->store,
 			// The REAL gate, over a mocked membership lookup. A mocked
 			// authorizer answering `true` is the shape that let the board's
 			// bypass go unnoticed for as long as it did.
@@ -203,16 +205,24 @@ class StatusTransitionServiceEnforcementTest extends TestCase {
 			specReader: new TransitionSpecReader(),
 			userSession: $userSession,
 			logger: $this->createMock(LoggerInterface::class),
-			resultWriter: $resultWriter,
-			statusChecklist: $checklist,
-			declarations: $this->undeclaredStatuses(),
-			declaredMoves: $this->undeclaredTransitions(),
-			offered: $this->offeredTransitions(
-				guards: $guardRegistry,
-				reader: new TransitionSpecReader(),
-				statuses: $this->undeclaredStatuses(),
-			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
+			declarations: new CaseDeclarations(
+				statuses: $this->undeclaredStatuses(),
+				moves: $this->undeclaredTransitions(),
+				offered: $this->offeredTransitions(
+					guards: $guardRegistry,
+					reader: new TransitionSpecReader(),
+					statuses: $this->undeclaredStatuses(),
+				),
+				checklist: $checklist,
+				store: $this->store,
+			),
+			ledger: new CaseMoveLedger(
+				store: $this->store,
+				resultWriter: $resultWriter,
+				dispatcher: $this->dispatcher,
+				logger: $this->createMock(LoggerInterface::class),
+			),
 		);
 	}//end setUp()
 

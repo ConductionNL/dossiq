@@ -25,7 +25,7 @@
 	its status maximum, with no derivation pending, renders nothing at all
 	rather than three empty lines.
 
-	@spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	@spec openspec/specs/status-transition-engine/spec.md
 -->
 <template>
 	<div
@@ -154,7 +154,7 @@ export default {
 		 *
 		 * @return {string} The case uuid, or the empty string.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		caseId() {
 			return String(this.objectId || this.$route?.params?.id || '')
@@ -165,7 +165,7 @@ export default {
 		 *
 		 * @return {{name: string, unmet: Array<string>}|null} The verdict.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		reasons() {
 			return derivationReasons(this.derivation)
@@ -176,7 +176,7 @@ export default {
 		 *
 		 * @return {string} The heading, or the empty string.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		heading() {
 			return this.reasons ? derivationHeading(this.reasons.name) : ''
@@ -187,7 +187,7 @@ export default {
 		 *
 		 * @return {string} The sentence, or the empty string.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		waiting() {
 			return waitingOnLabel(this.current?.waitingOn)
@@ -198,7 +198,7 @@ export default {
 		 *
 		 * @return {string} The sentence, or the empty string.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		dwellText() {
 			return dwellLabel(this.current?.dwell)
@@ -209,7 +209,7 @@ export default {
 		 *
 		 * @return {boolean} True when the status maximum is past.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		breached() {
 			return isDwellBreached(this.current?.dwell)
@@ -255,7 +255,7 @@ export default {
 		 *
 		 * @return {Array<string>} The lines, empty when the status asks nothing.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		fieldRuleLines() {
 			const rules = fieldRulesOf(this.objectData)
@@ -294,7 +294,7 @@ export default {
 		 *
 		 * @return {boolean} True when at least one of the three lines has text.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		show() {
 			// The field rules are NOT behind `loaded`: they ride on the case
@@ -345,7 +345,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
 		 */
 		async load() {

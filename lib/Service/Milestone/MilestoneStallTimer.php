@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Milestone;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -115,12 +116,14 @@ class MilestoneStallTimer {
 	 * @param StalledCaseDetector $detector        Names the milestone a case waits on and its deadline.
 	 * @param CaseDateNormaliser  $dates           Today, in the administered zone.
 	 * @param LoggerInterface     $logger          Logs engine refusals.
+	 * @param DayCount            $days            Counts the days between two moments.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly StalledCaseDetector $detector,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
+		private readonly DayCount $days = new DayCount(),
 	) {
 	}//end __construct()
 
@@ -156,7 +159,7 @@ class MilestoneStallTimer {
 			return self::DUE;
 		}
 
-		return $this->arm(caseId: $caseId, waiting: $waiting, anchor: $today, slaDays: (int) $today->diff($stall)->days);
+		return $this->arm(caseId: $caseId, waiting: $waiting, anchor: $today, slaDays: $this->days->between(from: $today, to: $stall));
 	}//end sync()
 
 	/**

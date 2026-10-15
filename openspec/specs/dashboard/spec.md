@@ -1059,6 +1059,119 @@ answer its open tasks through Nextcloud's widget item API.
 - **GIVEN** a handler with two open tasks
 - **WHEN** a client asks the widget item API for "My tasks"
 - **THEN** it MUST answer both tasks with a link to each
+<!-- Folded 2026-10-10 from archive 2026-09-20-a-dashboard-the-reader-arranges, whose archive step
+     folded nothing. That change named these REQ-DASH-023 and REQ-DASH-024; the ids now belong to
+     widgets-my-open-cases-on-the-start-page, so they are renumbered 030 and 031 here. -->
+
+### Requirement: REQ-DASH-030 A reader keeps their own arrangement of a dashboard
+
+Every dashboard page in this app SHALL declare `config.userLayout: true`, so
+a user keeps their own arrangement of it without changing what anybody else
+sees.
+
+It SHALL declare `config.appId` beside it. The key on its own does nothing:
+`CnDashboardPage` returns early from both the load and the save unless an app
+id is set, and the manifest renderer passes none of its own, so a page
+carrying only `userLayout` reads and writes no arrangement and looks exactly
+like one that works to a reader who never drags a widget.
+
+It SHALL declare `config.pageId` as well, naming the page. Left out, the
+stored arrangement is keyed on a slug of the page TITLE, so editing a heading
+silently orphans every arrangement anybody had.
+
+The manifest SHALL decide which widgets exist and the user SHALL decide
+where they sit. A widget an administrator removes from the manifest SHALL
+disappear for every user, stored arrangement or not, because an arrangement
+that resurrects a widget an administrator deliberately took off the page
+puts it back with nothing on screen to say why.
+
+#### Scenario: One user's arrangement is their own
+
+- **GIVEN** two handlers both open the Dashboard
+- **WHEN** the first moves the Overdue card to the top row
+- **AND** reloads the page
+- **THEN** the first handler SHALL see the card where they left it
+- **AND** the second handler SHALL see the arrangement the manifest ships
+
+@e2e tests/e2e/a-dashboard-the-reader-arranges.spec.ts
+
+#### Scenario: An administrator's removal wins
+
+- **GIVEN** a handler has arranged a dashboard that includes a widget
+- **WHEN** an administrator removes that widget from the manifest
+- **THEN** the widget SHALL NOT appear for that handler
+
+@e2e exclude The merge rule is a pure function in the library and is asserted at its edges there; this app declares the key and adds no code path.
+
+#### Scenario: An instance with no preference route renders the manifest
+
+- **GIVEN** an instance whose preference endpoint is unavailable
+- **WHEN** a handler opens a dashboard
+- **THEN** the page SHALL render the arrangement the manifest ships
+- **AND** SHALL NOT show an error
+
+@e2e exclude Failure path in the library; asserted by its own suite.
+
+### Requirement: REQ-DASH-031 The two lists a handler wants are offered by name
+
+The Dashboard page SHALL declare `config.userWidgets` carrying the case
+lists a handler would ask for and cannot configure: the cases they follow,
+and their team's shared queue.
+
+A preset SHALL carry its own register, schema and filter. A user has neither
+a register nor a schema in front of them, so a widget type that asks for one
+is a widget they cannot finish, and the failure arrives as a blank card
+rather than a refusal.
+
+The second list is the SHARED QUEUE and not the reader's `assignedGroup`.
+Measured 2026-09-18, nothing can express "assigned to my team": the library's
+`resolveFilterTokens` resolves `@me`, `@now`, `@today`, `@today±Nd`,
+`@monthStart`, `@quarterStart` and `@yearStart` and no group token, the
+manifest schema's `sentinelFilterToken` pattern enumerates exactly those, and
+OpenRegister reserves no group lens. A preset filtering on an unresolved token
+sends the literal string, matches nothing, and arrives as a permanently empty
+card, which is the failure this requirement was written to prevent. The
+group-scoped variant waits on a `@myGroups` token in nextcloud-vue.
+
+#### Scenario: A handler adds a list they did not have to configure
+
+- **GIVEN** a handler on the Dashboard
+- **WHEN** they open the add-widget modal
+- **THEN** they SHALL be offered "Cases you follow" and "Your team's queue"
+- **AND** adding one SHALL render the list without asking for a register or
+  a schema
+
+@e2e tests/e2e/a-dashboard-the-reader-arranges.spec.ts
+
+### Requirement: REQ-DASH-029 Your team's queue is the unclaimed work of the reader's own teams
+
+The `your-teams-queue` preset in the Dashboard's `config.userWidgets` SHALL
+filter `assignedGroup` on `@myGroups` beside the Queue page's own conditions
+(`assignee: "IS NULL"`, `isFinalStatus: false`, `statusHiddenInLists: false`,
+`isDraft: false`, `isTemplate: false`). A team is a Nextcloud group, and
+`@myGroups` resolves to the ids of the groups the reader is in. While those
+load, and for a reader in no group, the list SHALL NOT fetch and SHALL show
+its prompt, never every team's work.
+
+This narrows REQ-DASH-031 (archived as REQ-DASH-024), whose second list was the shared queue because no
+token could name the reader's groups.
+
+#### Scenario: A handler sees only their own teams' unclaimed cases
+
+- **GIVEN** a handler in the group `behandelaars` and not in `toezicht`
+- **AND** an unclaimed open case with `assignedGroup: behandelaars` and one with `assignedGroup: toezicht`
+- **WHEN** they add "Your team's queue" to their Dashboard
+- **THEN** the list SHALL show the first case and SHALL NOT show the second
+
+@e2e exclude The filter is asserted in tests/vitest/dashboardUserLayout.spec.js and its resolution in nextcloud-vue's tests/utils/resolveFilterTokensMyGroups.spec.js; a browser run needs the nextcloud-vue release that carries @myGroups, after which tests/e2e/a-dashboard-the-reader-arranges.spec.ts is the place to extend.
+
+#### Scenario: A reader in no team sees a prompt, not every team
+
+- **GIVEN** a reader in no Nextcloud group
+- **WHEN** the preset renders
+- **THEN** it SHALL show its prompt and SHALL send no request
+
+@e2e exclude Library behaviour, covered by nextcloud-vue's tests/utils/resolveFilterTokensMyGroups.spec.js.
 
 ## Non-Functional Requirements
 

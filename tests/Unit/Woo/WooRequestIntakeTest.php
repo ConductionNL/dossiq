@@ -24,6 +24,11 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use OCA\Dossiq\Woo\WooRequestRefused;
+use OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob;
+use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\BackgroundJob\IJobList;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -34,6 +39,8 @@ use RuntimeException;
  * Runs the intake against an in-memory register holding the seeded type and a C1-shaped dossier.
  *
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
+ * @uses \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses \OCA\Dossiq\Service\Intake\CollectionLinkQueue
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
  * @covers \OCA\Dossiq\Woo\WooRequestForm
  *
@@ -43,7 +50,16 @@ use RuntimeException;
  * caller either has.
  *
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
+ * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
+ * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
+ * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses   \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses   \OCA\Dossiq\Service\Intake\CollectionLinkQueue
  */
 class WooRequestIntakeTest extends TestCase {
 
@@ -119,7 +135,23 @@ class WooRequestIntakeTest extends TestCase {
 	 *
 	 * @return WooRequestIntake
 	 */
-	private function intakeOn(object $store): WooRequestIntake {
+	private function intakeOn(object $store, ?IJobList $jobList = null): WooRequestIntake {
+		return new WooRequestIntake(
+			settingsService: $this->settingsOn(store: $store),
+			urlGenerator: $this->urls(),
+			logger: $this->createMock(LoggerInterface::class),
+			linkQueue: $jobList === null ? null : new CollectionLinkQueue(jobList: $jobList),
+		);
+	}//end intakeOn()
+
+	/**
+	 * The settings over a given store.
+	 *
+	 * @param object $store The register.
+	 *
+	 * @return SettingsService
+	 */
+	private function settingsOn(object $store): SettingsService {
 		/** @var SettingsService&MockObject $settings */
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
@@ -136,16 +168,21 @@ class WooRequestIntakeTest extends TestCase {
 			fn (string $key): string => SettingsService::WOO_PUBLICATION_DEFAULTS[$key] ?? ''
 		);
 
+		return $settings;
+	}//end settingsOn()
+
+	/**
+	 * The url generator.
+	 *
+	 * @return IURLGenerator
+	 */
+	private function urls(): IURLGenerator {
 		/** @var IURLGenerator&MockObject $urls */
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
-		return new WooRequestIntake(
-			settingsService: $settings,
-			urlGenerator: $urls,
-			logger: $this->createMock(LoggerInterface::class),
-		);
-	}//end intakeOn()
+		return $urls;
+	}//end urls()
 
 	/**
 	 * The seeded rows in a store that behaves like OpenRegister on a request
@@ -262,7 +299,9 @@ class WooRequestIntakeTest extends TestCase {
 		self::assertSame('Alle stukken over het parkeerbeleid.', $case['description']);
 		self::assertSame('status-ontvangst', $case['status']);
 		self::assertSame('website', $case['intakeChannel']);
-		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $case['startDate']);
+		// No startDate from the intake: the term-start listener gives a
+		// submit-opened case the date its term starts (decision 181, Q11).
+		self::assertArrayNotHasKey('startDate', $case);
 		self::assertSame(
 			[
 				'onderwerp' => 'Parkeerbeleid centrum',
@@ -336,6 +375,23 @@ class WooRequestIntakeTest extends TestCase {
 			$case['properties']
 		);
 	}//end testTheRequestKeepsTheDocumentKindsAndTheRequester()
+
+	/**
+	 * The case names who asked, so its Requester shows the resident rather than a dash.
+	 *
+	 * The control: a request without a name names nobody.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
+	 */
+	public function testTheCaseNamesWhoAsked(): void {
+		$named = $this->intake->start($this->request(['verzoekerNaam' => 'Sanne de Vries', 'verzoekerType' => 'burger']));
+		self::assertSame('Sanne de Vries', $this->store->row(schema: 'case', uuid: $named['caseId'])['initiatorDisplayName']);
+
+		$unnamed = $this->intake->start($this->request(['collectionId' => '', 'origin' => 'pipelinq', 'originReference' => 'ticket-10']));
+		self::assertArrayNotHasKey('initiatorDisplayName', $this->store->row(schema: 'case', uuid: $unnamed['caseId']));
+	}//end testTheCaseNamesWhoAsked()
 
 	/**
 	 * 🔴 An answer outside its list is refused and nothing is written: a
@@ -416,6 +472,9 @@ class WooRequestIntakeTest extends TestCase {
 
 				$saved['identifier'] = '2026-0003';
 				$saved['deadline'] = '2026-10-30';
+				// The term-start listener stamps these inside the create.
+				$saved['receivedAt'] = '2026-10-11T21:40:00+02:00';
+				$saved['termStartsAt'] = '2026-10-12T08:30:00+02:00';
 				return $saved;
 			}
 		};
@@ -425,6 +484,9 @@ class WooRequestIntakeTest extends TestCase {
 
 		self::assertSame('2026-0003', $answer['identifier']);
 		self::assertSame('2026-10-30', $answer['deadline']);
+		// Decision 179: the answer carries the received moment and the term start too.
+		self::assertSame('2026-10-11T21:40:00+02:00', $answer['receivedAt']);
+		self::assertSame('2026-10-12T08:30:00+02:00', $answer['termStartsAt']);
 	}//end testTheAnswerNamesTheCaseNumberAndTheDeadline()
 
 	/**
@@ -466,6 +528,50 @@ class WooRequestIntakeTest extends TestCase {
 		self::assertSame($before, $collection['items']);
 		self::assertSame(self::RESIDENT, $collection['owner']);
 	}//end testTheDossierRecordsTheCaseOnce()
+
+	/**
+	 * With a job list the case is answered first and the dossier is linked by
+	 * the job right after; the job writes what the inline link wrote
+	 * (portal-submission-is-made-once REQ-PSM-002).
+	 *
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
+	 *
+	 * @return void
+	 */
+	public function testWithAJobListTheDossierIsLinkedAfterTheCaseIsAnswered(): void {
+		$queued = [];
+		$jobList = $this->createMock(IJobList::class);
+		$jobList->method('add')->willReturnCallback(
+			static function (string $job, mixed $argument) use (&$queued): void {
+				$queued[] = [$job, $argument];
+			}
+		);
+
+		$result = $this->intakeOn(store: $this->store, jobList: $jobList)->start($this->request());
+
+		self::assertNotSame('', $result['caseId']);
+		self::assertCount(0, $this->store->all(schema: 'caseObject'), 'nothing linked before the answer');
+		self::assertSame(
+			[[LinkCollectionToCaseJob::class, ['register' => 'dossiq', 'caseId' => $result['caseId'], 'collectionId' => self::COLLECTION, 'subjectRef' => self::RESIDENT]]],
+			$queued
+		);
+
+		$job = new LinkCollectionToCaseJob(
+			time: $this->createMock(ITimeFactory::class),
+			settingsService: $this->settingsOn(store: $this->store),
+			urlGenerator: $this->urls(),
+			jobList: $jobList,
+			logger: $this->createMock(LoggerInterface::class),
+			serviceAccount: $this->createMock(BackgroundServiceAccount::class),
+		);
+		$job->link(argument: $queued[0][1]);
+
+		self::assertCount(2, $this->store->all(schema: 'caseObject'));
+		self::assertSame(
+			['dossiq:case:' . $result['caseId']],
+			$this->store->row(schema: 'collection', uuid: self::COLLECTION)['sourceOf']
+		);
+	}//end testWithAJobListTheDossierIsLinkedAfterTheCaseIsAnswered()
 
 	/**
 	 * A portal forward arrives without a Nextcloud user. OpenRegister then
@@ -623,4 +729,19 @@ class WooRequestIntakeTest extends TestCase {
 		$this->expectExceptionMessage(WooRequestRefused::UNAVAILABLE);
 		$this->intake->start($this->request());
 	}//end testWithoutTheCaseTypeTheIntakeIsUnavailable()
+	/**
+	 * A request that names an earlier Woo case carries it on the case for WooStartFromListener (REQ-WRC-005).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-new-request-starts-from-the-configuration-of-an-earlier-one-req-wrc-005
+	 */
+	public function testARequestThatStartsFromAnEarlierOneNamesIt(): void {
+		$earlier = '55555555-5555-4555-8555-555555555555';
+		$answer = $this->intake->start(request: $this->request(overrides: ['startFrom' => $earlier]));
+		self::assertSame($earlier, $this->store->row('case', $answer['caseId'])['wooStartFrom']);
+
+		$other = $this->intake->start(request: $this->request(overrides: ['startFrom' => 'not a uuid']));
+		self::assertArrayNotHasKey('wooStartFrom', $this->store->row('case', $other['caseId']));
+	}//end testARequestThatStartsFromAnEarlierOneNamesIt()
 }//end class

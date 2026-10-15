@@ -55,6 +55,7 @@ use OCA\Dossiq\Service\TenantService;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -72,6 +73,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Middleware\MandateValidationMiddleware
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses   \OCA\Dossiq\Middleware\MandateDeniedException
+ * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
  */
 class RefusalCarriesAStatusTest extends TestCase {
 	/**
@@ -99,6 +101,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	private function transitionController(
 		StatusTransitionService $engine,
 		array $body = ['transitionId' => 't-close'],
+		?IL10N $l10n = null,
 	): StatusTransitionController {
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParams')->willReturn($body);
@@ -110,6 +113,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 			userSession: $this->session(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			caseAccessGuard: $this->createMock(originalClassName: CaseAccessGuard::class),
+			l10n: $l10n,
 		);
 	}//end transitionController()
 
@@ -216,6 +220,64 @@ class RefusalCarriesAStatusTest extends TestCase {
 			message: 'caseLifecycleHelpers reads `code`; dropping it would show the slug to a handler.'
 		);
 	}//end testClosingWithoutAResultAnswers422()
+
+	/**
+	 * The 422 a Dutch handler meets is a Dutch sentence, from the catalogue.
+	 *
+	 * Live on 13 October a Woo coordinator closed a case and read "Pick a result
+	 * before closing this case." in English. The sentence is the catalogue key,
+	 * so the refusal goes out in the reader's language; `error` and `code` stay
+	 * the slugs code reads.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 */
+	public function testARefusalAnswersInTheReadersLanguage(): void {
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
+		$engine->method('execute')->willThrowException(
+			new RefusedException(
+				rule: 'result-type-required',
+				sentence: 'Pick a result before closing this case.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			)
+		);
+
+		$catalogue = (array)json_decode((string)file_get_contents(__DIR__ . '/../../../l10n/nl.json'), true);
+		$dutch = (array)($catalogue['translations'] ?? []);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text): string => (string)($dutch[$text] ?? $text)
+		);
+
+		$body = (array)$this->transitionController(engine: $engine, l10n: $l10n)->execute('case-1')->getData();
+
+		self::assertSame(expected: 'Kies een resultaat voordat je deze zaak afsluit.', actual: $body['message']);
+		self::assertSame(expected: 'result-type-required', actual: $body['error']);
+		self::assertSame(expected: 'result_type_required', actual: $body['code']);
+	}//end testARefusalAnswersInTheReadersLanguage()
+
+	/**
+	 * Without a translator the sentence goes out as written, never empty.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 */
+	public function testARefusalWithoutATranslatorKeepsItsSentence(): void {
+		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
+		$engine->method('execute')->willThrowException(
+			new RefusedException(
+				rule: 'result-type-required',
+				sentence: 'Pick a result before closing this case.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			)
+		);
+
+		$body = (array)$this->transitionController(engine: $engine)->execute('case-1')->getData();
+
+		self::assertSame(expected: 'Pick a result before closing this case.', actual: $body['message']);
+	}//end testARefusalWithoutATranslatorKeepsItsSentence()
 
 	/**
 	 * A guard refusal answers 409, names its rule, and still lists the guards.
@@ -330,6 +392,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 			decisionService: $service,
 			userSession: $this->session(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			accessGuard: $this->createMock(originalClassName: \OCA\Dossiq\Service\CaseAccessGuard::class),
 		);
 	}//end decisionController()
 

@@ -7,7 +7,10 @@
  * (Omgevingsvergunning-regulier 56d, Wmo-aanvraag 42d, Woo-verzoek 28d
  * with €15/day max €500 regime) from
  * `lib/Settings/termijnbewaking_seed_data.json` into OpenRegister. The
- * seed is idempotent: an existing definition with the same id is skipped.
+ * seed is idempotent: an existing definition with the same id is skipped,
+ * except that a key the seed declares and the stored row lacks is added to
+ * it (never overwritten), so a setting a later release adds to a shipped
+ * definition reaches the installs that seeded it before.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -82,14 +85,14 @@ class DeadlineMonitoringSeedDataService {
 			return ['success' => false, 'message' => 'Invalid seed JSON'];
 		}
 
-		$existingIds = $this->existingDefinitionIds(objectService: $objectService, register: $register, schema: $schema);
+		$existing = $this->existingDefinitions(objectService: $objectService, register: $register, schema: $schema);
 
 		$counts = $this->insertDefinitions(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
 			data: $data,
-			existingIds: $existingIds,
+			existing: $existing,
 		);
 
 		$this->logger->info('Dossiq termijnbewaking: seed complete', $counts);
@@ -104,7 +107,7 @@ class DeadlineMonitoringSeedDataService {
 	 * @param string $register Register id.
 	 * @param string $schema Schema id.
 	 * @param array<string, mixed> $data The decoded seed file.
-	 * @param array<int, string> $existingIds Already-seeded definition ids.
+	 * @param array<string, array<string, mixed>> $existing Already-seeded definitions, by id.
 	 *
 	 * @return array<string, int> Per-kind counts.
 	 */
@@ -113,20 +116,29 @@ class DeadlineMonitoringSeedDataService {
 		string $register,
 		string $schema,
 		array $data,
-		array $existingIds,
+		array $existing,
 	): array {
-		$counts = ['definities' => 0, 'skipped' => 0, 'failed' => 0];
+		$counts = ['definities' => 0, 'skipped' => 0, 'backfilled' => 0, 'failed' => 0];
 
 		foreach (($data['termijnDefinities'] ?? []) as $row) {
 			$rowId = (string)($row['id'] ?? '');
-			if ($rowId !== '' && in_array($rowId, $existingIds, true) === true) {
-				$counts['skipped']++;
-				continue;
+			$kind = 'definities';
+			if ($rowId !== '' && isset($existing[$rowId]) === true) {
+				// Only the keys the stored row lacks. An administrator's edit of
+				// a key the seed also ships is theirs and stays.
+				$missing = array_diff_key($row, $existing[$rowId]);
+				if ($missing === []) {
+					$counts['skipped']++;
+					continue;
+				}
+
+				$row = array_merge($existing[$rowId], $missing);
+				$kind = 'backfilled';
 			}
 
 			try {
 				$this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $schema, object: $row);
-				$counts['definities']++;
+				$counts[$kind]++;
 			} catch (\Throwable $e) {
 				// COUNTED, not merely logged. A refused row that only logs
 				// leaves the summary success-shaped, which is how a fresh
@@ -144,15 +156,15 @@ class DeadlineMonitoringSeedDataService {
 	}//end insertDefinitions()
 
 	/**
-	 * Collect existing TermijnDefinitie ids for idempotent skip-detection.
+	 * Collect existing TermijnDefinitie rows, by id, for skip and backfill detection.
 	 *
 	 * @param object $objectService OpenRegister ObjectService.
 	 * @param string $register Register id.
 	 * @param string $schema Schema id.
 	 *
-	 * @return array<int, string>
+	 * @return array<string, array<string, mixed>>
 	 */
-	private function existingDefinitionIds(object $objectService, string $register, string $schema): array {
+	private function existingDefinitions(object $objectService, string $register, string $schema): array {
 		if (method_exists($objectService, 'findObjects') === false) {
 			return [];
 		}
@@ -163,18 +175,14 @@ class DeadlineMonitoringSeedDataService {
 			return [];
 		}
 
-		$ids = [];
+		$byId = [];
 		foreach ($rows as $row) {
-			$rowId = '';
-			if (isset($row['id']) === true) {
-				$rowId = (string)$row['id'];
-			}
-
+			$rowId = (string)($row['id'] ?? '');
 			if ($rowId !== '') {
-				$ids[] = $rowId;
+				$byId[$rowId] = $row;
 			}
 		}
 
-		return $ids;
-	}//end existingDefinitionIds()
+		return $byId;
+	}//end existingDefinitions()
 }//end class

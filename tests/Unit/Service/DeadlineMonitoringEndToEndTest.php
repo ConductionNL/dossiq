@@ -37,9 +37,9 @@ use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\DwangsomBezwaarService;
-use OCA\Dossiq\Service\DwangsomCalculationService;
-use OCA\Dossiq\Service\DwangsomUitbetalingService;
-use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\Money\PayoutService;
+use OCA\Dossiq\Service\Money\AccruingAmountSettler;
+use OCA\Dossiq\Service\Money\AccrualNoticeService;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
@@ -61,9 +61,9 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	private TermijnService $termService;
 	private DeadlinePauseService $pauseService;
 	private DeadlineExtensionService $extService;
-	private NoticeOfDefaultService $ingService;
-	private DwangsomCalculationService $calcService;
-	private DwangsomUitbetalingService $outService;
+	private AccrualNoticeService $ingService;
+	private AccruingAmountSettler $settler;
+	private PayoutService $outService;
 	private DwangsomBezwaarService $bezService;
 	private TermijnNotificationService $notifService;
 	private TermijnTimerFiredListener $firedListener;
@@ -92,9 +92,9 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->termService = new TermijnService($settings, $logger);
 		$this->pauseService = new DeadlinePauseService($this->termService);
 		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates());
-		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
-		$this->calcService = new DwangsomCalculationService(settingsService: $settings, logger: $logger, dates: $this->caseDates());
-		$this->outService = new DwangsomUitbetalingService(settingsService: $settings, dates: $this->caseDates());
+		$this->ingService = new AccrualNoticeService($settings, $this->termService, $logger);
+		$this->settler = new AccruingAmountSettler(settingsService: $settings, dates: $this->caseDates());
+		$this->outService = new PayoutService(settingsService: $settings, dates: $this->caseDates());
 		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
 			$this->termService,
@@ -116,8 +116,6 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 				),
 				logger: $logger
 			),
-			$this->calcService,
-			$settings,
 			$logger,
 			$account
 		);
@@ -250,7 +248,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertSame('exceeded', $flipped['status']);
 
 		// Register ingebrekestelling (after deadline).
-		$row = $this->ingService->registerNoticeOfDefault(
+		$row = $this->ingService->registerNotice(
 			$instanceId,
 			new DateTimeImmutable('2026-03-15'),
 			'email',
@@ -260,20 +258,28 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
 		$calculationId = (string)$row['penaltyPaymentCalculation']['id'];
 
-		// Settle the accrual 5 days past the (receipt + 14d grace) start:
-		// the derivation lands where 5 legacy daily ticks landed.
-		$this->calcService->accrueThrough($calculationId, new DateTimeImmutable('2026-04-03'));
-		$accrued = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
-		self::assertSame(5, $accrued['currentDag']);
-		self::assertSame(11500, $accrued['cumulativeAmount']);
+		// The day count and the amount are stored calculations on the
+		// schema; OpenRegister materialises them on save and in its temporal
+		// sweep. 5 days past the start the Awb bands give 11500 (evaluated
+		// with OpenRegister's CalculationEvaluator, see the C16 cross-check).
+		$row = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
+		self::assertArrayNotHasKey('cumulativeAmount', $row, 'dossiq no longer writes the accrued amount');
+		self::assertSame([], $row['rateBands']);
+		$this->objects->store['penaltyPaymentCalculation'][$calculationId]['cumulativeAmount'] = 11500;
 
-		// Beschikking arrives — stop, settling through the stop moment.
-		$stopped = $this->calcService->stopForBeschikking($calculationId, new DateTimeImmutable('2026-04-03'));
+		// Beschikking arrives: the settler stops the clock and locks the amount.
+		$stopped = $this->settler->settle(
+			schemaConfigKey: 'dwangsom_berekening_schema',
+			id: $calculationId,
+			status: 'gestopt-wegens-decision',
+			stopAt: new DateTimeImmutable('2026-04-03 10:00'),
+		);
 		self::assertSame('gestopt-wegens-decision', $stopped['status']);
+		self::assertSame('2026-04-03', $stopped['stoppedOn']);
 		self::assertSame(11500, $stopped['definitiveAmount']);
 
 		// Prepare payment.
-		$uitb = $this->outService->prepareBetaling(
+		$uitb = $this->outService->preparePayout(
 			$calculationId,
 			'J. Burger',
 			'NL91ABNA0417164300',

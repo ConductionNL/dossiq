@@ -147,6 +147,28 @@ class CrossAppListenerRegistrar {
 			'OCA\Integriq\Event\DeliveryConcludedEvent',
 			\OCA\Dossiq\Listener\DeliveryConcludedListener::class
 		);
+		// Decision 193: integriq sends dossiq's StUF and concludes each message
+		// with StufZdsCaseConcludedEvent; a failure reaches the administrators
+		// as the Notifier's stuf_* notification. By name, for the same reason;
+		// the listener is named by string too, which keeps this registrar under
+		// phpmd's coupling ceiling (StufZdsCaseConcludedListener::EVENT_CLASS).
+		$context->registerEventListener(
+			'OCA\Integriq\Event\StufZdsCaseConcludedEvent',
+			'OCA\Dossiq\Listener\StufZdsCaseConcludedListener'
+		);
+		// Decision 199: integriq answers StUF provider requests (zakLv01, zakLk01,
+		// npsLv01, edcLk01) and asks the owning app through these typed events.
+		// By name, as above; one listener answers the two questions.
+		foreach (['StufCaseQueryEvent', 'StufPersonQueryEvent'] as $providerEvent) {
+			$context->registerEventListener('OCA\Integriq\Event\\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderQueryListener');
+		}
+
+		// Decision 206: the two write events go to their own listener, which
+		// carries a mapped operation out as the background service account.
+		foreach (['StufCaseMutationEvent', 'StufDocumentMutationEvent'] as $providerEvent) {
+			$context->registerEventListener('OCA\Integriq\Event\\' . $providerEvent, 'OCA\Dossiq\Listener\StufProviderWriteListener');
+		}
+
 		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
 		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
 		// tracked message, `failed` and `read` included, so this is how a case
@@ -256,6 +278,19 @@ class CrossAppListenerRegistrar {
 		$context->registerEventListener(
 			'OCA\\OpenRegister\\Event\\ObjectUpdatedEvent',
 			'OCA\\Dossiq\\Listener\\CaseCompletedSatisfactionListener'
+		);
+
+		// A case that names a BRP person or KvK company as requester asks
+		// OpenRegister to keep that row current from the source (contacts-domain
+		// 4.3, Tier B B22, openregister registry-subscriptions). After the save;
+		// FQN strings for the reason above.
+		$context->registerEventListener(
+			'OCA\\OpenRegister\\Event\\ObjectCreatedEvent',
+			'OCA\\Dossiq\\Listener\\RequesterRegistrySubscriptionListener'
+		);
+		$context->registerEventListener(
+			'OCA\\OpenRegister\\Event\\ObjectUpdatedEvent',
+			'OCA\\Dossiq\\Listener\\RequesterRegistrySubscriptionListener'
 		);
 	}//end registerPortalListeners()
 }//end class

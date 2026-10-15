@@ -3,17 +3,16 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 /**
- * The My tasks tile's opt-in checkbox list, after the DqDashboard board.
+ * The My tasks tile on the simple dashboard, after the DqDashboard board.
  *
- * The simple profile's dashboard declares `content.variant: "list"` on
- * `simple-my-tasks`; nothing else does. What is asserted here:
+ * The simple profile places the library's `tasks` widget with
+ * `variant: "list"` as `simple-my-tasks`. The full profile keeps the app's
+ * own MyWorkWidget table (with the substitution toggle). What is asserted:
  *
- * - THE FULL PROFILE IS UNCHANGED. No widget in src/manifest.json declares
- *   the variant, and the full profile's own entry still draws the table.
- * - The list draws a checkbox, the task, its case and the due date per row.
- * - Ticking completes the task through `useEngineTaskStore.invoke(uuid,
- *   'complete')`, the call the task page makes, and a refusal unticks the box
- *   and shows the engine's own message.
+ * - THE FULL PROFILE IS UNCHANGED: no widget in src/manifest.json declares
+ *   the variant, and its entry still draws the table.
+ * - The simple profile's tile is the library widget, and the app tile has
+ *   no list branch left.
  *
  * @spec openspec/specs/dashboard/spec.md
  */
@@ -200,120 +199,24 @@ describe('the full profile is unchanged', () => {
 })
 
 describe('the simple dashboard list', () => {
-	it('is declared by the simple profile only, on the same tile', () => {
-		expect(simpleTile.content.variant).toBe('list')
-	})
-
-	it('draws a checkbox, the task, its case and the due date per row', async () => {
-		const wrapper = await mountTile(simpleTile, [
-			engineRow(),
-			engineRow({
-				id: 154,
-				uuid: 'b0b0b0b0-0000-4000-8000-000000000002',
-				title: 'Inwoner bellen over ontbrekend ID-bewijs',
-				subject: { title: 'Parkeervergunningen binnenstad' },
-				dueAt: inDays(1),
-				daysUntilDue: 1,
-			}),
-			engineRow({
-				id: 155,
-				uuid: 'b0b0b0b0-0000-4000-8000-000000000003',
-				title: 'Hoorzitting inplannen',
-				subject: null,
-				dueAt: inDays(-3),
-				daysUntilDue: null,
-				daysOverdue: 3,
-			}),
-		])
-
-		expect(wrapper.find('table').exists()).toBe(false)
-		const found = wrapper.findAll('[data-testid="my-work-task-row"]')
-		expect(found).toHaveLength(3)
-
-		expect(found[0].find('input[type="checkbox"]').exists()).toBe(true)
-		expect(found[0].find('.dossiq-task-list__title').text()).toBe(
-			'Documenten beoordelen op openbaarheid',
+	it('is the library tasks widget in its list variant, not the app tile', () => {
+		// The board's checkbox list is nextcloud-vue's `tasks` widget with
+		// `variant: list` (2.81.0). The completion, the case line and the due
+		// date are tested there; this asserts only that the simple profile
+		// places it and that the app tile no longer carries a list.
+		expect(simpleTile.type).toBe('tasks')
+		expect(simpleTile.content).toMatchObject({
+			scope: 'assigned',
+			variant: 'list',
+			rowRoute: 'TaskDetail',
+			viewAllRoute: { name: 'Tasks' },
+			viewAllLabel: 'View all',
+		})
+		const source = fs.readFileSync(
+			path.join(ROOT, 'src/views/widgets/MyWorkWidget.vue'),
+			'utf8',
 		)
-		expect(found[0].find('.dossiq-task-list__title').attributes('href')).toBe(
-			'/apps/dossiq/tasks/232e2433-26a5-45f9-a71f-d9a3f2cdfddf',
-		)
-		expect(found[0].find('.dossiq-task-list__case').text()).toBe(
-			'Verlichting fietspad Lindelaan',
-		)
-		expect(found[0].find('.dossiq-task-list__due').text()).toBe('Today')
-		expect(found[0].find('.dossiq-task-list__due--urgent').exists()).toBe(true)
-
-		expect(found[1].find('.dossiq-task-list__due').text()).toBe('Tomorrow')
-		expect(found[1].find('.dossiq-task-list__due--urgent').exists()).toBe(false)
-
-		// No case on the row: the second line stays empty, never a uuid.
-		expect(found[2].find('.dossiq-task-list__case').text()).toBe('')
-		expect(found[2].find('.dossiq-task-list__due').text()).toBe('3 days overdue')
-		expect(found[2].find('.dossiq-task-list__due--urgent').exists()).toBe(true)
-	})
-
-	it('shows a day and a month for a deadline further out', async () => {
-		const wrapper = await mountTile(simpleTile, [
-			engineRow({ dueAt: inDays(5), daysUntilDue: 5 }),
-		])
-		const label = wrapper.find('.dossiq-task-list__due').text()
-		expect(label).not.toBe('')
-		expect(label).not.toContain('days')
-		expect(label).toContain(String(new Date(inDays(5)).getDate()))
-	})
-
-	it('opens the task from its title, by uuid', async () => {
-		const wrapper = await mountTile(simpleTile, [engineRow()])
-		await wrapper.find('.dossiq-task-list__title').trigger('click')
-		expect(pushed).toEqual([
-			{
-				name: 'TaskDetail',
-				params: { id: '232e2433-26a5-45f9-a71f-d9a3f2cdfddf' },
-			},
-		])
-	})
-
-	it('completes a ticked task through the task page path and reads the list anew', async () => {
-		const wrapper = await mountTile(simpleTile, [engineRow()])
-		invokeAnswer = {
-			uuid: '232e2433-26a5-45f9-a71f-d9a3f2cdfddf',
-			state: 'completed',
-		}
-		rows = []
-
-		const box = wrapper.find('[data-testid="my-work-task-check"]')
-		box.element.checked = true
-		await box.trigger('change')
-		await flushPromises()
-
-		expect(invoked).toEqual([
-			{
-				uuid: '232e2433-26a5-45f9-a71f-d9a3f2cdfddf',
-				verb: 'complete',
-				body: undefined,
-			},
-		])
-		expect(showSuccess).toHaveBeenCalledTimes(1)
-		expect(calls).toHaveLength(2)
-		expect(wrapper.findAll('[data-testid="my-work-task-row"]')).toHaveLength(0)
-	})
-
-	it('unticks the box and shows the engine refusal when completion is refused', async () => {
-		const wrapper = await mountTile(simpleTile, [engineRow()])
-		invokeAnswer = null
-		storeStub.error = 'Fill in Besluit before completing this task'
-
-		const box = wrapper.find('[data-testid="my-work-task-check"]')
-		box.element.checked = true
-		await box.trigger('change')
-		await flushPromises()
-
-		expect(invoked).toHaveLength(1)
-		expect(showError).toHaveBeenCalledWith(
-			'Fill in Besluit before completing this task',
-		)
-		expect(showSuccess).not.toHaveBeenCalled()
-		expect(box.element.checked).toBe(false)
-		expect(wrapper.findAll('[data-testid="my-work-task-row"]')).toHaveLength(1)
+		expect(source).not.toContain('dossiq-task-list')
+		expect(source).not.toContain("'list'")
 	})
 })

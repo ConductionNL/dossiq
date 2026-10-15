@@ -48,10 +48,13 @@ use PHPUnit\Framework\TestCase;
  * The ontvangstbevestiging, and what the citizen may be told.
  *
  * @covers \OCA\Dossiq\Service\Termijn\TermLetters::render
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class IntakeConfirmationTextTest extends TestCase {
 
@@ -73,9 +76,9 @@ class IntakeConfirmationTextTest extends TestCase {
 		);
 
 		self::assertStringContainsString('ZAAK-2026-0001', $rendered['body'], 'The reference.');
-		self::assertStringContainsString('08-03-2026', $rendered['body'], 'The moment it was received.');
-		self::assertStringContainsString('09-03-2026', $rendered['body'], 'The moment the term starts.');
-		self::assertStringContainsString('30-04-2026', $rendered['body'], 'The deadline.');
+		self::assertStringContainsString('8 maart 2026', $rendered['body'], 'The moment it was received.');
+		self::assertStringContainsString('9 maart 2026', $rendered['body'], 'The moment the term starts.');
+		self::assertStringContainsString('30 april 2026', $rendered['body'], 'The deadline.');
 		self::assertStringContainsString(
 			'eerstvolgende werkdag',
 			$rendered['body'],
@@ -100,7 +103,7 @@ class IntakeConfirmationTextTest extends TestCase {
 			],
 		);
 
-		self::assertStringContainsString('10-03-2026', $rendered['body']);
+		self::assertStringContainsString('10 maart 2026', $rendered['body']);
 		self::assertStringNotContainsString(
 			'eerstvolgende werkdag',
 			$rendered['body'],
@@ -125,9 +128,9 @@ class IntakeConfirmationTextTest extends TestCase {
 			],
 		);
 
-		self::assertStringContainsString('08-03-2026', $rendered['body']);
-		self::assertStringContainsString('09-03-2026', $rendered['body']);
-		self::assertStringContainsString('30-04-2026', $rendered['body']);
+		self::assertStringContainsString('8 March 2026', $rendered['body']);
+		self::assertStringContainsString('9 March 2026', $rendered['body']);
+		self::assertStringContainsString('30 April 2026', $rendered['body']);
 		self::assertStringContainsString('first working day', $rendered['body']);
 	}//end testTheEnglishBodySaysTheSame()
 
@@ -142,7 +145,7 @@ class IntakeConfirmationTextTest extends TestCase {
 		$rendered = $this->render(locale: 'nl', context: []);
 
 		self::assertStringContainsString('ZAAK-2026-0001', $rendered['body']);
-		self::assertStringContainsString('30-04-2026', $rendered['body'], 'The deadline is unaffected.');
+		self::assertStringContainsString('30 april 2026', $rendered['body'], 'The deadline is unaffected.');
 		self::assertStringNotContainsString(
 			'beslistermijn start op',
 			$rendered['body'],

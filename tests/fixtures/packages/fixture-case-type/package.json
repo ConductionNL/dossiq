@@ -1,0 +1,9 @@
+{
+  "id": "fixture-case-type",
+  "title": "Fixture case type",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": ["case-type", "flows", "seed"],
+  "install": "auto",
+  "description": "A neutral case type with two statuses, one role, one flow and one extra property. It belongs to no procedure: the installer's tests and the CI install job use it to prove the installer, never to prove a procedure."
+}

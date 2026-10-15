@@ -1,0 +1,825 @@
+{
+	"set": "zuiddrecht",
+	"$comment": "Dossiq's part of the Zuiddrecht example set, installed with `occ openregister:example-set:install zuiddrecht` (the loader lives in OpenRegister). People and organisations come from the cast in openregister/lib/Settings/example-sets/zuiddrecht.json and are quoted with {{cast:key.field}}; never type a name, BSN or KVK number here. Sanne de Vries's own cases belong to portaliq's fragment, not this one. Every case type, status and result is found by a lookup on what dossiq ships, so this file adds example cases and no procedure. Runs after opencatalogi so the published Woo decision can name its publication. It also makes the background service account dossiq's jobs run as, points the Woo publications at the Zuiddrecht catalog, and links the two finished cases to their results once those exist. Finally it marks the getting-started tour as seen for the nine staff members (`userPreferences`, which needs OpenRegister REQ-EXS-024), with the manifest version the tour compares against, so a demo opens on the work and not on the tour.",
+	"after": [
+		"opencatalogi"
+	],
+	"groups": [
+		{
+			"group": "dossiq-medewerkers",
+			"displayName": "Dossiq medewerkers",
+			"members": [
+				"daan",
+				"esra",
+				"thomas",
+				"marleen"
+			]
+		},
+		{
+			"group": "behandelaars",
+			"displayName": "Behandelaars",
+			"members": [
+				"thomas"
+			]
+		},
+		{
+			"group": "dossiq-coordinators",
+			"displayName": "Dossiq coordinatoren",
+			"members": [
+				"marleen"
+			]
+		},
+		{
+			"group": "dossiq-sensitive",
+			"displayName": "Dossiq gevoelige gegevens",
+			"members": [
+				"thomas"
+			]
+		},
+		{
+			"group": "kcc",
+			"displayName": "KCC",
+			"members": [
+				"daan"
+			]
+		},
+		{
+			"group": "procest-admin",
+			"displayName": "Dossiq beheer",
+			"members": [
+				"noor"
+			]
+		}
+	],
+	"serviceAccounts": [
+		{
+			"key": "background",
+			"uid": "dossiq-background",
+			"displayName": "Dossiq achtergrondtaken",
+			"groups": [
+				"dossiq-background-service"
+			]
+		}
+	],
+	"appConfig": [
+		{
+			"key": "background_service_account",
+			"value": "{{account:background.uid}}"
+		},
+		{
+			"key": "woo_publication_catalog_slug",
+			"value": "zuiddrecht"
+		}
+	],
+	"userPreferences": [
+		{
+			"user": "{{cast:daan.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:esra.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:thomas.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:marleen.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:ilse.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:bram.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:petra.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:samira.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		},
+		{
+			"user": "{{cast:noor.uid}}",
+			"key": "pref_walkthrough_completed_version",
+			"value": "1.2.0"
+		}
+	],
+	"objects": [
+		{
+			"key": "persoon-henk",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:henk.bsn}}",
+				"name": {
+					"givenNames": "{{cast:henk.givenName}}",
+					"surname": "{{cast:henk.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:henk.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:henk.address.street}}",
+					"houseNumber": "{{cast:henk.address.number}}",
+					"postcode": "{{cast:henk.address.postcode}}",
+					"city": "{{cast:henk.address.city}}"
+				},
+				"displayName": "{{cast:henk.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-linda",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:linda.bsn}}",
+				"name": {
+					"givenNames": "{{cast:linda.givenName}}",
+					"surname": "{{cast:linda.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:linda.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:linda.address.street}}",
+					"houseNumber": "{{cast:linda.address.number}}",
+					"postcode": "{{cast:linda.address.postcode}}",
+					"city": "{{cast:linda.address.city}}"
+				},
+				"displayName": "{{cast:linda.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "persoon-fatima",
+			"register": "dossiq",
+			"schema": "brpPerson",
+			"data": {
+				"citizenServiceNumber": "{{cast:fatima.bsn}}",
+				"name": {
+					"givenNames": "{{cast:fatima.givenName}}",
+					"surname": "{{cast:fatima.familyName}}"
+				},
+				"birth": {
+					"date": "{{cast:fatima.birthDate}}"
+				},
+				"residence": {
+					"street": "{{cast:fatima.address.street}}",
+					"houseNumber": "{{cast:fatima.address.number}}",
+					"postcode": "{{cast:fatima.address.postcode}}",
+					"city": "{{cast:fatima.address.city}}"
+				},
+				"displayName": "{{cast:fatima.displayName}}",
+				"description": "Voorbeeldpersoon van de gemeente Zuiddrecht. Geen echte persoon."
+			}
+		},
+		{
+			"key": "bedrijf-slagerij",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:slagerij.kvk}}",
+				"tradeName": "{{cast:slagerij.name}}",
+				"legalForm": "{{cast:slagerij.legalForm}}",
+				"address": {
+					"streetName": "{{cast:slagerij.address.street}}",
+					"houseNumber": "{{cast:slagerij.address.number}}",
+					"postcode": "{{cast:slagerij.address.postcode}}",
+					"place": "{{cast:slagerij.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "bedrijf-cloudgemeente",
+			"register": "dossiq",
+			"schema": "kvkCompany",
+			"data": {
+				"kvkNumber": "{{cast:cloudgemeente.kvk}}",
+				"tradeName": "{{cast:cloudgemeente.name}}",
+				"legalForm": "{{cast:cloudgemeente.legalForm}}",
+				"address": {
+					"streetName": "{{cast:cloudgemeente.address.street}}",
+					"houseNumber": "{{cast:cloudgemeente.address.number}}",
+					"postcode": "{{cast:cloudgemeente.address.postcode}}",
+					"place": "{{cast:cloudgemeente.address.city}}"
+				},
+				"description": "Voorbeeldbedrijf van de gemeente Zuiddrecht. Geen echt bedrijf."
+			}
+		},
+		{
+			"key": "kcc-daan",
+			"register": "dossiq",
+			"schema": "kccAgent",
+			"data": {
+				"userRef": "{{cast:daan.uid}}",
+				"availableForChannels": [
+					"phone",
+					"email"
+				],
+				"currentStatus": "available",
+				"skills": [
+					"Nederlands",
+					"Parkeren",
+					"Openbare ruimte"
+				],
+				"currentWorkload": 4,
+				"team": "{{cast:daan.team}}"
+			}
+		},
+		{
+			"key": "afspraak-balie",
+			"register": "dossiq",
+			"schema": "plannedActionType",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				}
+			},
+			"data": {
+				"identifier": "afspraak-balie",
+				"label": "Afspraak aan de balie",
+				"caseType": "{{lookup:caseType}}",
+				"ownerRole": "behandelaar"
+			}
+		},
+		{
+			"key": "parkeren-henk",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "parkeervergunning-bewoners"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"bezig": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Bewonersvergunning Kerkplein",
+				"description": "Meneer Bakker belde het KCC voor een parkeervergunning voor zijn auto bij zijn huis aan het Kerkplein. Het KCC heeft de aanvraag voor hem ingevoerd.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"portalSubject": "{{cast:henk.uid}}",
+				"portalParty": "subject:{{cast:henk.uid}}",
+				"intakeChannel": "phone",
+				"communicationChannel": "post",
+				"confidentiality": "intern",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-34}}",
+				"endDate": "{{date:-27}}",
+				"receivedAt": "{{datetime:-34 10:19}}",
+				"currentStatusEnteredAt": "{{datetime:-27 14:10}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-34 10:19}}"
+					},
+					{
+						"status": "{{lookup:bezig}}",
+						"enteredAt": "{{datetime:-33 09:05}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-27 14:10}}"
+					}
+				],
+				"tags": [
+					"parkeren",
+					"kerkplein"
+				]
+			}
+		},
+		{
+			"key": "parkeren-henk-resultaat",
+			"register": "dossiq",
+			"schema": "result",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "parkeervergunning-bewoners"
+					}
+				},
+				"resultType": {
+					"schema": "resultType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Verleend"
+					}
+				}
+			},
+			"data": {
+				"name": "Verleend",
+				"case": "{{object:parkeren-henk.id}}",
+				"resultType": "{{lookup:resultType}}",
+				"description": "Bewonersvergunning voor de zone Kerkplein verleend voor een jaar.",
+				"publicExplanation": "U heeft een parkeervergunning voor de zone Kerkplein. De vergunning geldt een jaar."
+			}
+		},
+		{
+			"key": "parkeren-henk-telefoon",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-34 10:05}}",
+				"endTime": "{{datetime:-34 10:19}}",
+				"durationSeconds": 840,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:henk.bsn}}",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:parkeren-henk.id}}",
+				"nature": "new_request",
+				"summary": "Meneer Bakker wil een bewonersvergunning voor het Kerkplein. Hij heeft geen computer. Kenteken en adres samen doorgenomen en de aanvraag voor hem ingevoerd. Hij krijgt het besluit per post.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "kenteken-henk",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "kenteken-wijzigen-parkeervergunning"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Nieuw kenteken op de bewonersvergunning Kerkplein",
+				"description": "Linda Bakker vraagt namens haar vader Henk Bakker het kenteken van zijn nieuwe auto op zijn bewonersvergunning te zetten.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-henk.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:henk.displayName}}",
+				"portalSubject": "{{cast:henk.uid}}",
+				"portalParty": "subject:{{cast:henk.uid}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "intern",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-3 20:41}}",
+				"currentStatusEnteredAt": "{{datetime:-3 20:41}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-3 20:41}}"
+					}
+				],
+				"tags": [
+					"parkeren",
+					"gemachtigde"
+				]
+			}
+		},
+		{
+			"key": "kenteken-henk-gemachtigde",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Gemachtigde"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:linda.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:kenteken-henk.id}}",
+				"participant": "{{cast:linda.uid}}",
+				"representedParty": "{{object:persoon-henk.id}}",
+				"description": "Dochter van de aanvrager. Gemachtigd om namens hem parkeerzaken te regelen."
+			}
+		},
+		{
+			"key": "melding-fatima",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapotte bank en zwerfafval bij de speeltuin Havenstraat",
+				"description": "Mevrouw El-Amrani belde over een kapotte bank en veel afval bij de speeltuin aan de Havenstraat. Zij komt naar de balie om foto's te laten zien.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:persoon-fatima.id}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:fatima.displayName}}",
+				"portalSubject": "{{cast:fatima.uid}}",
+				"portalParty": "subject:{{cast:fatima.uid}}",
+				"intakeChannel": "phone",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:daan.uid}}",
+				"assignedGroup": "zuiddrecht-kcc",
+				"startDate": "{{date:-5}}",
+				"receivedAt": "{{datetime:-5 11:32}}",
+				"currentStatusEnteredAt": "{{datetime:-4 08:50}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-5 11:32}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-4 08:50}}"
+					}
+				],
+				"tags": [
+					"havenstraat",
+					"speeltuin"
+				]
+			}
+		},
+		{
+			"key": "melding-fatima-telefoon",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-5 11:20}}",
+				"endTime": "{{datetime:-5 11:32}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"kccEmployeeId": "{{cast:daan.uid}}",
+				"case": "{{object:melding-fatima.id}}",
+				"nature": "report",
+				"summary": "Melding van een kapotte bank en zwerfafval bij de speeltuin. Mevrouw vindt het formulier op de website lastig. Afspraak aan de balie gemaakt om de melding samen aan te vullen.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true
+			}
+		},
+		{
+			"key": "melding-fatima-afspraak",
+			"register": "dossiq",
+			"schema": "plannedAction",
+			"data": {
+				"case": "{{object:melding-fatima.id}}",
+				"actionType": "{{object:afspraak-balie.identifier}}",
+				"label": "Afspraak aan de balie met mevrouw El-Amrani, 10.30 uur: foto's bekijken en de melding aanvullen",
+				"owner": "{{cast:daan.uid}}",
+				"plannedFor": "{{date:2}}",
+				"state": "planned"
+			}
+		},
+		{
+			"key": "terras-slagerij",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Terrasoverkapping Dorpsstraat 39",
+				"description": "Slagerij Van der Berg wil een vaste overkapping boven het terras voor de winkel, voor de broodjes en soep die zij aan tafels verkoopt. Aangevraagd met eHerkenning.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-slagerij.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:slagerij.name}}",
+				"portalSubject": "{{cast:janwillem.uid}}",
+				"portalParty": "kvk:{{cast:slagerij.kvk}}",
+				"portalBranch": "{{cast:slagerij.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:esra.uid}}",
+				"assignedGroup": "zuiddrecht-vergunningen",
+				"startDate": "{{date:-9}}",
+				"receivedAt": "{{datetime:-9 07:58}}",
+				"currentStatusEnteredAt": "{{datetime:-6 13:15}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-9 07:58}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-6 13:15}}"
+					}
+				],
+				"tags": [
+					"dorpsstraat",
+					"terras",
+					"ondernemer"
+				]
+			}
+		},
+		{
+			"key": "woo-zaaksysteem",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek"
+					}
+				},
+				"ontvangst": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangst"
+					}
+				},
+				"besluit": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluit"
+					}
+				},
+				"publicatie": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Publicatie"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Aanbesteding van het zaaksysteem",
+				"description": "CloudGemeente B.V. vraagt de stukken over de aanbesteding van het zaaksysteem van de gemeente: de leidraad, de opening van de inschrijvingen, het gunningsadvies en de inschrijvingen van de andere partijen.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{object:bedrijf-cloudgemeente.id}}",
+				"initiatorType": "company",
+				"initiatorDisplayName": "{{cast:cloudgemeente.name}}",
+				"portalSubject": "{{cast:mark.uid}}",
+				"portalParty": "kvk:{{cast:cloudgemeente.kvk}}",
+				"portalBranch": "{{cast:cloudgemeente.vestigingsnummer}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "intern",
+				"assignee": "{{cast:thomas.uid}}",
+				"assignedGroup": "behandelaars",
+				"startDate": "{{date:-52}}",
+				"endDate": "{{date:-18}}",
+				"receivedAt": "{{datetime:-52 15:02}}",
+				"currentStatusEnteredAt": "{{datetime:-18 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangst}}",
+						"enteredAt": "{{datetime:-52 15:02}}"
+					},
+					{
+						"status": "{{lookup:besluit}}",
+						"enteredAt": "{{datetime:-22 09:30}}"
+					},
+					{
+						"status": "{{lookup:publicatie}}",
+						"enteredAt": "{{datetime:-20 16:45}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-18 10:00}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Aanbesteding zaaksysteem",
+					"omschrijving": "Alle documenten over de aanbesteding van het nieuwe zaaksysteem: de leidraad, het proces-verbaal van de opening, het gunningsadvies, de inschrijvingen en de interne e-mail daarover.",
+					"periodeVan": "{{date:-240}}",
+					"periodeTot": "{{date:-60}}",
+					"origin": "portal",
+					"documentSoorten": [
+						"besluiten",
+						"rapporten",
+						"correspondentie"
+					],
+					"verzoekerNaam": "{{cast:mark.displayName}}",
+					"verzoekerEmail": "{{cast:mark.email}}",
+					"verzoekerType": "organisatie"
+				},
+				"wooPublicationStatus": "published",
+				"wooWithheldNote": "Twee documenten zijn niet openbaar gemaakt. De publicatie noemt hun nummer op de inventarislijst en de weigeringsgronden.",
+				"tags": [
+					"woo",
+					"inkoop"
+				]
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-resultaat",
+			"register": "dossiq",
+			"schema": "result",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek"
+					}
+				},
+				"resultType": {
+					"schema": "resultType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Deels openbaar gemaakt"
+					}
+				}
+			},
+			"data": {
+				"name": "Deels openbaar gemaakt",
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"resultType": "{{lookup:resultType}}",
+				"description": "Drie documenten openbaar, waarvan een deels. Twee documenten niet openbaar.",
+				"publicExplanation": "Wij hebben de meeste stukken openbaar gemaakt. In het proces-verbaal zijn de prijzen van andere partijen weggelakt. Twee stukken blijven geheim. In het besluit leest u waarom."
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-besluit",
+			"register": "dossiq",
+			"schema": "decision",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek"
+					}
+				},
+				"decisionType": {
+					"schema": "decisionType",
+					"where": {
+						"caseType": "{{lookup:caseType}}"
+					}
+				},
+				"publicatie": {
+					"register": "publication",
+					"schema": "publication",
+					"where": {
+						"title": "Woo-besluit over de aanbesteding van het zaaksysteem"
+					}
+				}
+			},
+			"data": {
+				"title": "Woo-besluit aanbesteding zaaksysteem",
+				"case": "{{object:woo-zaaksysteem.id}}",
+				"description": "Besluit op het Woo-verzoek van CloudGemeente B.V. over de aanbesteding van het zaaksysteem.",
+				"decisionType": "{{lookup:decisionType}}",
+				"responsibleOrganisation": "Gemeente Zuiddrecht",
+				"governingBody": "Het college van burgemeester en wethouders",
+				"decisionDate": "{{date:-20}}",
+				"effectiveDate": "{{date:-20}}",
+				"publicationDate": "{{date:-18}}",
+				"explanation": "Drie documenten zijn openbaar, een daarvan deels. Uit het proces-verbaal van de opening zijn de prijzen van de andere inschrijvers gelakt. De inschrijving van een andere partij en een interne e-mail blijven geheim.",
+				"wooSummary": {
+					"openbaar": 2,
+					"deels_openbaar": 1,
+					"niet_openbaar": 2
+				},
+				"weigeringsgronden": [
+					"5.1.1.c",
+					"5.1.2.e",
+					"5.2.1"
+				],
+				"decidedBy": "{{cast:thomas.uid}}",
+				"wooPublication": {
+					"publicationId": "{{lookup:publicatie}}",
+					"publicationUrl": "/index.php/apps/opencatalogi/zuiddrecht/{{lookup:publicatie}}",
+					"status": "published",
+					"category": "infocat014",
+					"publishedAt": "{{datetime:-18 10:00}}"
+				}
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "parkeren-henk-uitkomst",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "parkeren-henk",
+			"set": {
+				"result": "{{object:parkeren-henk-resultaat.id}}"
+			}
+		},
+		{
+			"key": "woo-zaaksysteem-uitkomst",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "woo-zaaksysteem",
+			"set": {
+				"result": "{{object:woo-zaaksysteem-resultaat.id}}"
+			}
+		}
+	]
+}

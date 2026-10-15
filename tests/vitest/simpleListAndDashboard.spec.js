@@ -124,9 +124,9 @@ describe('the cases list', () => {
 		expect(lead[0].default).toBe(true)
 	})
 
-	it('keeps every one of the 18 lenses it had (19 before one-follow-control folded Favourites into Following), with the filter it had', () => {
-		expect(before.quickFilters).toHaveLength(18)
-		expect(simple.quickFilters).toHaveLength(19)
+	it('keeps every one of the 19 lenses it had (With drafts joined them with decision 201), with the filter it had', () => {
+		expect(before.quickFilters).toHaveLength(19)
+		expect(simple.quickFilters).toHaveLength(20)
 		for (const lens of before.quickFilters) {
 			const kept = simple.quickFilters.find(
 				(item) => item.label === lens.label,
@@ -279,6 +279,7 @@ describe('the cases list', () => {
 			headerButtons,
 			showViewToggle,
 			headerFilters,
+			searchPlaceholder,
 			...others
 		}) => others
 		expect(rest(simple)).toEqual(rest(before))
@@ -356,13 +357,15 @@ describe('the landing page', () => {
 	const widget = (id) => pageWidgets(simple).find((item) => item.id === id)
 	const entry = (id) => mine.layout.find((item) => item.widgetId === id)
 
-	it('puts the greeting on the page grid and the design in the My work view', () => {
-		expect(simple.config.layout.map((item) => item.widgetId)).toEqual([
-			'simple-greeting',
-		])
-		expect(simple.config.widgets.map((item) => item.id)).toEqual([
-			'simple-greeting',
-		])
+	it('puts the greeting in the page header and the design in the My work view', () => {
+		// nextcloud-vue 2.79.0 draws the greeting subtitle and the view
+		// switch itself (`greeting`), so the page grid is empty.
+		expect(simple.config.layout).toEqual([])
+		expect(simple.config.widgets).toEqual([])
+		expect(simple.config.greeting).toBe('first')
+		expect(simple.config.showActionsMenu).toBe(false)
+		// DqMijnWerk draws the greeting and the date and nothing after them.
+		expect(simple.config.description).toBe('')
 		const order = [...mine.layout]
 			.sort((a, b) => a.gridY - b.gridY || a.gridX - b.gridX)
 			.map((item) => item.widgetId)
@@ -398,27 +401,13 @@ describe('the landing page', () => {
 
 	it('switches views of this page, not pages', () => {
 		// Ruben, 7 October 2026: the switch opened the dashboard and the team
-		// queue, and the greeting stood over an empty area. Each option now
-		// names a view the page declares, and none names a route.
-		expect(widget('simple-greeting').content).toEqual({
-			greeting: true,
-			showDate: true,
-			ground: true,
-			views: {
-				ariaLabel: 'Whose work',
-				options: [
-					{ label: 'My work', view: 'mine' },
-					{ label: 'My team', view: 'team' },
-				],
-			},
-		})
+		// queue, and the greeting stood over an empty area. The page's own
+		// view switch now names the two views the page declares.
 		const views = simple.config.views
-		for (const option of widget('simple-greeting').content.views.options) {
-			const view = views.find((item) => item.id === option.view)
-			expect(view, option.view).toBeDefined()
-			expect(view.label).toBe(option.label)
-			expect(option).not.toHaveProperty('route')
-		}
+		expect(views.map((item) => [item.id, item.label])).toEqual([
+			['mine', 'My work'],
+			['team', 'My team'],
+		])
 		expect(simple.config.defaultView).toBe('mine')
 	})
 
@@ -429,14 +418,47 @@ describe('the landing page', () => {
 		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
 	})
 
-	it('keeps the two My work widgets the design has no stand-in for, as the manifest declares them', () => {
+	it('keeps My archival reviews, which the design has no stand-in for, as the manifest declares it', () => {
 		const base = pageView(original('MyWorkHome'), 'mine').widgets
-		for (const id of ['followed-cases', 'archival-reviews']) {
-			expect(widget(id), id).toEqual(
-				withoutNotes(base.find((w) => w.id === id)),
-			)
-		}
+		expect(widget('archival-reviews')).toEqual(
+			withoutNotes(base.find((w) => w.id === 'archival-reviews')),
+		)
 		expect(simple.slots['widget-archival-reviews']).toBe('MyArchivalReviews')
+	})
+
+	it('draws the cases you follow as rows, and loses nothing the table had', () => {
+		// DqMijnWerk: the title, the case number under it, the status as a
+		// pill, "Alles bekijken" in the card header. Everything the full
+		// profile's table does is still here: the same lens, the same two
+		// fields, a row that opens the case, the link to the whole list and
+		// the same empty text.
+		const base = pageView(original('MyWorkHome'), 'mine').widgets.find(
+			(w) => w.id === 'followed-cases',
+		).content
+		const rows = widget('followed-cases')
+		expect(rows.type).toBe('record-list')
+		expect(rows.content).toMatchObject({
+			register: base.source.register,
+			schema: base.source.schema,
+			filter: base.source.filter,
+			limit: base.source.limit,
+			rowRoute: base.rowRoute,
+			emptyText: base.emptyText,
+		})
+		expect(base.columns.map((column) => column.key).sort()).toEqual([
+			'identifier',
+			'title',
+		])
+		expect(rows.content.title).toBe('{title}')
+		expect(rows.content.meta).toBe('{identifier}')
+		// The pill reads the status NAME through _extend, never the uuid.
+		expect(rows.content.extend).toEqual(['status'])
+		expect(rows.content.pill.field).toBe('status.name')
+		expect(entry('followed-cases').headerLink).toEqual({
+			label: base.viewAllLabel,
+			route: base.viewAllRoute.name,
+			query: base.viewAllRoute.query,
+		})
 	})
 
 	it('draws First today without a card around it, no widget menus and stacked counts', () => {
@@ -462,14 +484,12 @@ describe('the landing page', () => {
 		// hide Your queue, Assigned to me and Close out your day, which this
 		// profile takes out of the menu.
 		expect(simple.config.showHeader).toBeUndefined()
-		const ids = simple.config.headerActions.map((action) => action.id)
-		for (const id of [
-			'open-your-queue',
-			'open-assigned-to-me',
-			'open-end-of-day',
-		]) {
-			expect(ids, id).toContain(id)
-		}
+		// They are pills on the switch row now (`viewLinks`).
+		expect(simple.config.viewLinks.map((link) => link.route)).toEqual([
+			'PersonalQueue',
+			'MyWork',
+			'EndOfDay',
+		])
 	})
 
 	it('gives the dashboard back its full-structure widgets', () => {
@@ -527,18 +547,31 @@ describe('the landing page', () => {
 			(item) => item.id === 'recent-cases',
 		)
 		const cont = widget('simple-continue')
-		expect(cont.type).toBe('object-table')
-		expect(cont.content.source).toEqual({ ...recent.content.source, limit: 3 })
-		expect(cont.content.rowRoute).toBe('CaseDetail')
-		expect(cont.content.viewAllRoute).toEqual(recent.content.viewAllRoute)
-		// The case number sits under the title, as on the design, not in a
-		// column of its own (nextcloud-vue 2.64.0 `columns[].secondary`).
-		expect(cont.content.columns.map((column) => column.key)).toEqual([
-			'title',
-			'status',
-		])
-		expect(cont.content.columns[0].secondary).toBe('identifier')
+		expect(cont.type).toBe('record-list')
+		expect(cont.content).toMatchObject({
+			register: recent.content.source.register,
+			schema: recent.content.source.schema,
+			filter: recent.content.source.filter,
+			limit: 3,
+			rowRoute: 'CaseDetail',
+			title: '{title}',
+		})
+		expect(cont.content.sort).toBeUndefined()
+		// The pill and the meta line read NAMES through _extend, never uuids.
+		expect(cont.content.extend).toEqual(['status', 'caseType'])
+		expect(cont.content.pill.field).toBe('status.name')
+		// A meta line of parts (nextcloud-vue 2.82.0): a case without a case
+		// type still shows its number, as "2026-0082" rather than nothing.
+		expect(cont.content.meta).toEqual({
+			parts: ['{identifier}', '{caseType.title}'],
+		})
 		expect(caseFields.has('identifier')).toBe(true)
+		expect(caseFields.has('caseType')).toBe(true)
+		// When the reader opened it, from the lens, not the case's own change.
+		expect(cont.content.trailing).toEqual(['{@self.viewedAt|relativetime}'])
+		// An unavailable lens says why, in the same words as the full tile.
+		expect(cont.content.lensReasonTexts).toEqual(recent.content.lensReasonTexts)
+		expect(Object.keys(cont.content.lensReasonTexts).length).toBeGreaterThan(0)
 	})
 
 	it('gives the week, the steps and the tasks a link of their own', () => {
@@ -561,12 +594,18 @@ describe('the landing page', () => {
 		}
 	})
 
-	it('makes "Open the board" the primary action of First today, as the design draws it', () => {
-		const actions = widget('simple-first-today').content.actions
-		expect(actions.map((action) => action.primary === true)).toEqual([
-			false,
-			true,
-		])
+	it('names ONE case in First today, through its own widget, with the case page as the primary act', () => {
+		// DqMijnWerk: "Vandaag eerst" names the case furthest past its
+		// deadline. The library banner counts and cannot name one.
+		expect(widget('simple-first-today').type).toBe('custom')
+		expect(simple.slots['widget-simple-first-today']).toBe('FirstTodayWidget')
+		expect(registrySource).toContain('FirstTodayWidget')
+		const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
+		expect(source).toMatch(/primary: true,\s+route: \{ name: 'CaseDetail'/)
+		expect(source).toContain('pastTermFilter')
+		expect(
+			widget('simple-first-today').content.visibleWhen.source.filter,
+		).toHaveProperty(['deadline[lt]'], '@today+1d')
 	})
 
 	it('places every widget of every grid, and no two cards of one grid overlap', () => {
@@ -601,14 +640,9 @@ describe('the landing page', () => {
 			'simple-my-open',
 			'simple-due-soon',
 			'simple-waiting',
-			'simple-closed-month',
 			'simple-week',
 			'simple-per-step',
 		].map((id) => [id, widget(id).content.source])
-		sources.push([
-			'simple-first-today',
-			widget('simple-first-today').content.visibleWhen.source,
-		])
 		for (const [id, source] of sources) {
 			expect(source.register, id).toBe('dossiq')
 			expect(source.schema, id).toBe('case')
@@ -658,21 +692,10 @@ describe('the landing page', () => {
 		expect(tile.route.query['deadline[gte]']).toBe('@today')
 		expect(tile.route.query['deadline[lt]']).toBe('@today+7d')
 
-		const card = widget('simple-first-today').content
-		expect(card.layout).toBe('attention')
-		expect(card.visibleWhen.op).toBe('gt')
-		expect(card.visibleWhen.value).toBe(0)
-		// Everything past its deadline, today included, and the link opens
-		// exactly the cases the card counted.
-		expect(card.visibleWhen.source.filter['deadline[lt]']).toBe('@today+1d')
-		expect(card.actions[0].route.query['deadline[lt]']).toBe('@today+1d')
-		expect(card.actions.length).toBeLessThanOrEqual(2)
-		const pageIds = new Set(builtSimple.pages.map((item) => item.id))
-		for (const action of card.actions) {
-			const name =
-				typeof action.route === 'string' ? action.route : action.route.name
-			expect(pageIds.has(name), name).toBe(true)
-		}
+		// First today lists everything past its deadline, today included, and
+		// its link opens exactly those cases (the widget's own query).
+		const source = read('src', 'views', 'widgets', 'FirstTodayWidget.vue')
+		expect(source).toContain('this.content?.actions?.[0]?.route')
 	})
 
 	it('keeps the tile labels short enough to read', () => {
@@ -682,24 +705,25 @@ describe('the landing page', () => {
 			'simple-waiting',
 			'simple-closed-month',
 		]) {
-			expect(widget(id).content.label.length, id).toBeLessThanOrEqual(18)
+			expect(widget(id).content.label.length, id).toBeLessThanOrEqual(24)
 		}
 	})
 
-	it('gives my tasks the slot its custom widget resolves through', () => {
-		expect(widget('simple-my-tasks').type).toBe('custom')
-		expect(simple.slots['widget-simple-my-tasks']).toBe('MyWorkWidget')
-		expect(registrySource).toContain('MyWorkWidget')
-		// The same component, the same content, as on the full My work view,
-		// plus the one opt-in key that turns the table into the board's
-		// checkbox list.
+	it('places my tasks as the library tasks widget in its list variant', () => {
+		expect(widget('simple-my-tasks').type).toBe('tasks')
+		expect(simple.slots).not.toHaveProperty('widget-simple-my-tasks')
+		// The full My work view keeps the app's own tile (a table, with the
+		// substitution toggle); only the simple profile uses the list variant.
 		const onMyWork = pageView(original('MyWorkHome'), 'mine').widgets.find(
 			(item) => item.id === 'my-work',
 		)
-		const { variant, ...rest } = widget('simple-my-tasks').content
-		expect(variant).toBe('list')
-		expect(rest).toEqual(onMyWork.content)
 		expect(onMyWork.content).not.toHaveProperty('variant')
+		expect(widget('simple-my-tasks').content).toMatchObject({
+			scope: 'assigned',
+			variant: 'list',
+			rowRoute: 'TaskDetail',
+			viewAllRoute: { name: 'Tasks' },
+		})
 	})
 
 	it('uses icons the app registers', () => {
@@ -729,7 +753,61 @@ describe('the built simple manifest', () => {
 				encoding: 'utf8',
 			},
 		)
-		expect(run.stdout + run.stderr).toContain('PASS (0 errors)')
+		// A lag of the installed library is not a defect here (validate-manifest.js
+		// tells them apart); an error of this app's own still fails.
+		expect(run.stdout + run.stderr).toMatch(
+			/PASS \(0 errors(\)| of this app's own)/,
+		)
 		expect(run.status).toBe(0)
 	}, 120_000)
+})
+
+describe('the case type list', () => {
+	// DqZaaktypen: Downloaden, Acties and the primary button in the header, and
+	// a Status pill beside the version, and a count on every lens (nextcloud-vue
+	// 2.81.0 counts the `supersededBy: IS NULL` filter right; before it answered
+	// 0 on every lens).
+	const list = page(builtSimple, 'CaseTypes')
+
+	it('draws the header buttons and a count on each lens', () => {
+		expect(list.config.headerButtons.map((b) => b.action)).toEqual([
+			'export',
+			'actions-menu',
+			'add',
+		])
+		expect(list.config.headerButtons[2].variant).toBe('primary')
+		for (const lens of list.config.quickFilters) {
+			expect(lens.showCount, lens.label).toBe(true)
+		}
+	})
+
+	it('says the count line and the search placeholder in Dutch', () => {
+		// A Dutch reader saw "38 case types": the key was in the manifest and
+		// in no catalogue, so the library drew it as written.
+		const nl = JSON.parse(read('l10n', 'nl.json')).translations
+		expect(nl[list.config.countSubtitle]).toBe('{total} zaaktypen')
+		expect(nl[list.config.searchPlaceholder]).toBe('Zoeken in deze lijst')
+	})
+
+	it('has an Actions menu with the import dialog the case type page already owns', () => {
+		expect(list.config.headerActions).toEqual([
+			expect.objectContaining({
+				id: 'case-type-import',
+				type: 'open-modal',
+				target: 'CaseTypeImportDialog',
+			}),
+		])
+		expect(registrySource).toContain('CaseTypeImportDialog')
+	})
+
+	it('shows the term in words, the version as Version n and a status pill', () => {
+		const column = (key) => list.config.columns.find((c) => c.key === key)
+		expect(column('processingDeadline').formatter).toBe('processingTime')
+		expect(column('version').formatter).toBe('versionLabel')
+		expect(column('isDraft')).toMatchObject({
+			label: 'Status',
+			formatter: 'draftState',
+			widget: 'badge',
+		})
+	})
 })

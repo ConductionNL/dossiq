@@ -11,6 +11,8 @@
  * the drift `friendly-case-create-form` exists to prevent.
  */
 
+import { translate as t } from '@nextcloud/l10n'
+
 /**
  * CnIndexPage props for a page whose Add button files a case.
  *
@@ -48,7 +50,12 @@ export function caseCreateFormProps() {
 			// the schema's own referenceType before it reads field.widget, so
 			// until the library mounts `form-field` registry entries this is the
 			// binding waiting for it (see registry.js InitiatorPicker).
-			requester: { widget: 'InitiatorPicker', label: 'Requester' },
+			// Translated here: the library copies an override's label over the
+			// schema title as written, so an English label stays English.
+			requester: {
+				widget: 'InitiatorPicker',
+				label: t('dossiq', 'Requester'),
+			},
 			confidentiality: {
 				enumLabels: {
 					openbaar: 'Public',

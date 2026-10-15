@@ -34,10 +34,10 @@ use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
+use OCA\Dossiq\Service\Intake\ReceiptMoment;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\Term\TermResolution;
 use OCA\Dossiq\Service\TermijnService;
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -68,6 +68,8 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *        starts, on the calendar the term counts on. The term starts there, not at
 	 *        the moment the case row was written (REQ-OTE-02). Optional so a build
 	 *        without it starts the term at creation exactly as before.
+	 * @param ReceiptMoment $receipt Tells a receipt from a draft save: a draft binds no
+	 *        term, and sending it does (decision 180).
 	 *
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
 	 */
@@ -79,6 +81,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		private readonly ?CaseTermsService $caseTerms = null,
 		private readonly ?TermResolution $resolution = null,
 		private readonly ?IntakeTermStart $intake = null,
+		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
 	}//end __construct()
 
@@ -111,13 +114,12 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-statutory-term-counts-from-receipt-req-ote-02
 	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-the-case-create-must-carry-its-term-fields
 	 */
 	public function handle(Event $event): void {
-		if (($event instanceof ObjectCreatedEvent) === false) {
-			return;
-		}
-
-		$payload = $this->extractObject(event: $event);
+		// The create of a case that is not a draft, or the moment a draft is
+		// sent. A draft binds no statutory term (decision 180).
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null) {
 			return;
 		}
@@ -247,33 +249,6 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			);
 		}
 	}//end bindTheOtherClocks()
-
-	/**
-	 * Extract OR object array from an event.
-	 *
-	 * @param Event $event Event.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function extractObject(Event $event): ?array {
-		if (method_exists($event, 'getObject') === false) {
-			return null;
-		}
-
-		$object = $event->getObject();
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$serialized = $object->jsonSerialize();
-			if (is_array($serialized) === true) {
-				return $serialized;
-			}
-		}
-
-		return null;
-	}//end extractObject()
 
 	/**
 	 * Resolve the schema slug.

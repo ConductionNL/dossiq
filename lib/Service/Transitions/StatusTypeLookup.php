@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use Throwable;
 
 /**
@@ -52,10 +53,12 @@ class StatusTypeLookup {
 	 * @param SettingsService  $settingsService   Resolves the object service and configured schemas.
 	 * @param CaseTypeResolver $caseTypeResolver  The effective blueprint, so a child type's
 	 *                                            inherited statuses are found too.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -71,7 +74,7 @@ class StatusTypeLookup {
 	public function nameFor(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
 
-		return (string)($statusType['name'] ?? ($statusType['title'] ?? ''));
+		return $this->text->textOf(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
 	}//end nameFor()
 
 	/**
@@ -234,7 +237,7 @@ class StatusTypeLookup {
 		$resolved = [];
 		foreach ($this->statusRowsFor(caseTypeId: $caseTypeId) as $row) {
 			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
-			$name = (string)($row['name'] ?? ($row['title'] ?? ''));
+			$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 
 			if ($id === '' || $name === '') {
 				continue;

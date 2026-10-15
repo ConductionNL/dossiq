@@ -27,6 +27,8 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -61,6 +63,8 @@ interface ReplayObjectServiceStub {
  * Regression tests for StatusTransitionService::replay().
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Archival\ArchivalBaseDateResolver
  * @uses \OCA\Dossiq\Service\Archival\ArchivalNominationDeriver
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
@@ -106,24 +110,30 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->service = new StatusTransitionService(
-			$this->createMock(WorkflowTemplateLoader::class),
-			$this->createMock(GuardRegistry::class),
-			$this->createMock(SideEffectDispatcher::class),
-			new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $this->logger),
-			new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
-			new TransitionSpecReader(),
-			$this->createMock(IUserSession::class),
-			$this->logger,
-			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $this->logger)),
-			$this->createMock(StatusChecklist::class),
-			$this->undeclaredStatuses(),
-			$this->undeclaredTransitions(),
-			$this->offeredTransitions(
-				guards: $this->createMock(originalClassName: GuardRegistry::class),
-				reader: new TransitionSpecReader(),
-				statuses: $this->undeclaredStatuses(),
-			),
+			templateLoader: $this->createMock(WorkflowTemplateLoader::class),
+			guardRegistry: $this->createMock(GuardRegistry::class),
+			authorizer: new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
+			specReader: new TransitionSpecReader(),
+			userSession: $this->createMock(IUserSession::class),
+			logger: $this->logger,
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
+			declarations: new CaseDeclarations(
+				statuses: $this->undeclaredStatuses(),
+				moves: $this->undeclaredTransitions(),
+				offered: $this->offeredTransitions(
+					guards: $this->createMock(originalClassName: GuardRegistry::class),
+					reader: new TransitionSpecReader(),
+					statuses: $this->undeclaredStatuses(),
+				),
+				checklist: $this->createMock(StatusChecklist::class),
+				store: new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $this->logger),
+			),
+			ledger: new CaseMoveLedger(
+				store: new CaseStatusStore($this->settingsService, new StatusTypeLookup($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService))), $this->logger),
+				resultWriter: new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $this->logger)),
+				dispatcher: $this->createMock(SideEffectDispatcher::class),
+				logger: $this->logger,
+			),
 		);
 
 	}//end setUp()

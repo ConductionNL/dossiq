@@ -11,11 +11,15 @@
   `manifest.d/60-leverancier.json`) once Portaliq renders the contribution; keep
   the API + facades.
 
-- [ ] **T3** (half built 2026-10-09, decision 128: `supplier.contactEmail` is on the schema
-  (supplier 1.2.0, `tests/Unit/Settings/SupplierContactEmailTest.php`). Not run: the four
-  rules wait on openregister's `email` recipient kind that reads an address through a
-  reference (`supplierRef.contactEmail`), filed as a sibling ask. Declaring that kind today
-  would fail OpenRegister's NotificationAnnotationValidator, which refuses an unknown recipient
-  kind and so the whole supplierMessage schema at import.) Wire `x-openregister-notifications` on `supplierMessage` (and the
+- [x] **T3** (built 2026-10-10, lane L2: `lib/Settings/register.d/77-supplier-notices.json` declares
+  `newSupplierMessage` on `supplierMessage` (created, outbound only), `contractExpiring` on
+  `supplierContract` (daily scan, end date within 90 days), `invoiceDue` on `caseSupplierInvoice`
+  (daily scan, due date within 7 days, not yet paid, disputed or rejected) and `tenderPublished` on
+  `supplierTender` (award date set). Each mails `{kind: email, field: supplierRef.contactEmail}`,
+  OpenRegister's new recipient kind (openregister build/dep-dossiq-email-recipient, REQ-ERO-007).
+  Test: `tests/Unit/Settings/SupplierNoticesDeclaredTest.php`. Also checked against
+  OpenRegister's real NotificationAnnotationValidator from that branch: all four schemas return no
+  errors, and a broken control copy is refused. Archive this change only after the openregister PR
+  has landed: on an OpenRegister without the kind, these schemas fail import.) Wire `x-openregister-notifications` on `supplierMessage` (and the
   contractExpiring / invoiceDue / tenderPublished rules) to email the supplier via
-  OpenRegister's notification engine (email channel + `field` recipient kind).
+  OpenRegister's notification engine (email channel + `email` recipient kind through `supplierRef`).

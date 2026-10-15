@@ -2,6 +2,15 @@
 
 All notable changes to Dossiq are documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- UPGRADE NOTE, `a-request-form-opens-the-case-at-once` (decision 236): a case that comes in through a Nextcloud Forms form now gets an acknowledgement of receipt by default. Before this release it got none. After the upgrade every case type bound to a form starts mailing the sender, unless the case type switches it off. To switch it off, open the case type, go to the acknowledgement of receipt and leave `forms` out of the intake channels that owe one. A case type that already keeps its own channel list is not changed: add `forms` there to send one. The mail goes to the address the form's mapping puts on the case. A form that asks for no e-mail address leaves an acknowledgement that cannot be sent, and the case shows it as not sent. A draft is acknowledged when it is sent, never when it is saved.
+- `dossiq-mcp-adoption`: an assistant now reads dossiq through tools OpenRegister derives from the register. Twelve schemas declare a read-only `x-openregister-mcp` block, which gives 20 tools such as `dossiq.case.search` and `dossiq.statusRecord.search`. No tool writes, and none filters on a citizen's BSN or name.
+- `hermiq-ai-tooling`: an assistant can now ask dossiq 6 curated questions (deadline dashboard, lead times, KPI overview, workload, available transitions, overdue complaints without the complainant) and run 9 curated writes (transition, reassign, complete a task, extend, pause or resume a term, book or cancel an appointment, draft a beschikking). Each declares its scope and reach, every write is denied until an operator grants it, and hermiq holds every write the agent was not granted for a person to approve. The derived tools are unchanged.
+- BREAKING (MCP surface): the hand-written tools `dossiq.listProcesses` and `dossiq.getProcessDetails` are removed. Use `dossiq.case.search`, `dossiq.case.get` and `dossiq.statusRecord.search`. OpenRegister RBAC is now the only gate, the same one the dossiq screens use.
+
 ## [0.3.4] - 2026-07-25
 
 ### Changed

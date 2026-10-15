@@ -13,9 +13,11 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
+import { translate as t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
+import { formatDuration } from '../utils/durationHelpers.js'
 import { approvalMarkerLabel } from './approvalMarker.js'
 import { scanVerdictLabel } from './scanVerdict.js'
 
@@ -126,6 +128,76 @@ export default {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	caseTitle: (value) => lookupRelatedName('case', value),
+
+	/**
+	 * Who asked for a case, by name.
+	 *
+	 * Read off the case's `initiatorDisplayName`: the picker writes it beside
+	 * the `requester` row it picked, and a case filed by a resident on the
+	 * portal carries the name they gave, with no register row to point at.
+	 * Empty when the case names nobody.
+	 *
+	 * @param {string} value The `requester` uuid, unused.
+	 * @param {object} row The case.
+	 * @return {string}
+	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
+	 */
+	requesterName: (value, row) => String(row?.initiatorDisplayName ?? '').trim(),
+
+	/**
+	 * An ISO 8601 duration as words ("P56D" reads "8 weeks"), and the value
+	 * itself when it is not one.
+	 *
+	 * @param {string} value The ISO duration.
+	 * @return {string} The words, or the value unchanged.
+	 */
+	isoDuration: (value) => formatDuration(value),
+
+	/**
+	 * A case type's processing time with the extension it allows, as
+	 * DqZaaktypen draws it ("8 weeks, +6 weeks"). The extension shows only
+	 * when the case type allows one and names its length; otherwise this is
+	 * `isoDuration`.
+	 *
+	 * @param {string} value The ISO processing deadline.
+	 * @param {object} [row] The case type row.
+	 * @return {string} The words, or the value unchanged.
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	processingTime: (value, row) => {
+		const base = formatDuration(value)
+		const extension = row?.extensionAllowed === false ? '' : row?.extensionPeriod
+		if (!base || !extension) {
+			return base
+		}
+		return t('dossiq', '{time}, +{extension}', {
+			time: base,
+			extension: formatDuration(extension),
+		})
+	},
+
+	/**
+	 * A version number as words ("1" reads "Version 1"). A manifest cannot
+	 * carry the phrase itself: the library's conditionalPhrase takes it
+	 * pre-translated, and a manifest string is not translated.
+	 *
+	 * @param {number|string|null|undefined} value The version number.
+	 * @return {string} The phrase, or '' when there is no version.
+	 */
+	versionLabel: (value) =>
+		value === null || value === undefined || value === ''
+			? ''
+			: t('dossiq', 'Version {n}', { n: value }),
+
+	/**
+	 * Whether a record is still a draft, as the word a status pill shows.
+	 * A record with no `isDraft` is not a draft.
+	 *
+	 * @param {boolean|null|undefined} value The `isDraft` flag.
+	 * @return {string} Draft or Published.
+	 */
+	draftState: (value) =>
+		value === true ? t('dossiq', 'Draft') : t('dossiq', 'Published'),
 
 	/**
 	 * Human label for a case's `status` UUID reference (statusType).

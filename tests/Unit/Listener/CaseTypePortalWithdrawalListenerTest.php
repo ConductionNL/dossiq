@@ -62,10 +62,11 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	 * @param array<int, array<string, mixed>> $transitions The active template's moves.
 	 * @param bool                             $asString    Store the moves as the authoring page does, as JSON.
 	 * @param array<int, array<string, mixed>> $statuses    The stored statuses.
+	 * @param array<string, array<string, mixed>> $named    Templates readable by id, as a payload names them.
 	 *
 	 * @return CaseTypePortalWithdrawalListener The listener.
 	 */
-	private function listener(array $transitions, bool $asString = false, array $statuses = self::STATUSES): CaseTypePortalWithdrawalListener {
+	private function listener(array $transitions, bool $asString = false, array $statuses = self::STATUSES, array $named = []): CaseTypePortalWithdrawalListener {
 		$template = ['id' => 'tpl', 'caseType' => 'melding', 'isActive' => true];
 		$template['transitions'] = $transitions;
 		if ($asString === true) {
@@ -77,11 +78,12 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 			'workflow-template-schema-id' => ($transitions === [] ? [] : [$template]),
 		];
 
-		$objectService = new class($rows) {
+		$objectService = new class($rows, $named) {
 			/**
-			 * @param array<string, array<int, array<string, mixed>>> $rows Rows by schema.
+			 * @param array<string, array<int, array<string, mixed>>> $rows  Rows by schema.
+			 * @param array<string, array<string, mixed>>             $named Templates by id.
 			 */
-			public function __construct(private array $rows) {
+			public function __construct(private array $rows, private array $named) {
 			}
 
 			/**
@@ -94,6 +96,14 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 			 * @return array<string, mixed> The row.
 			 */
 			public function find(string $id, string $register, string $schema): array {
+				if ($schema === 'workflow-template-schema-id') {
+					if (isset($this->named[$id]) === false) {
+						throw new \RuntimeException('not found');
+					}
+
+					return $this->named[$id];
+				}
+
 				return ($id === 'melding' ? ['id' => 'melding', 'title' => 'Melding'] : []);
 			}
 
@@ -167,12 +177,13 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	 *
 	 * @param CaseTypePortalWithdrawalListener $listener   The listener.
 	 * @param array<string, mixed>             $withdrawal The block.
+	 * @param array<string, mixed>             $extra      More fields of the saved payload.
 	 *
 	 * @return ObjectUpdatingEvent The event, after the listener ran.
 	 */
-	private function save(CaseTypePortalWithdrawalListener $listener, array $withdrawal): ObjectUpdatingEvent {
+	private function save(CaseTypePortalWithdrawalListener $listener, array $withdrawal, array $extra = []): ObjectUpdatingEvent {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['title' => 'Melding', 'portalWithdrawal' => $withdrawal]),
+			$this->entity(array_merge(['title' => 'Melding', 'portalWithdrawal' => $withdrawal], $extra)),
 			$this->entity(['title' => 'Melding'])
 		);
 		$listener->handle($event);
@@ -218,6 +229,35 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 	}//end testAnUnreachableWithdrawalStatusIsRefusedNamingIt()
 
 	/**
+	 * Status names stored as language maps name the statuses, not "Array".
+	 *
+	 * Found live on 11 October 2026: OpenRegister hands a translatable status
+	 * name back as `{"nl": ...}`, the listener cast it, and the import was
+	 * refused with "Een zaak in Array kan niet naar Array" (N-2).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 */
+	public function testStatusNamesStoredAsLanguageMapsAreNamedInTheRefusal(): void {
+		$statuses = array_map(
+			static fn (array $row): array => array_merge($row, ['name' => ['nl' => $row['name'], 'en' => 'EN ' . $row['name']]]),
+			self::STATUSES
+		);
+		$listener = $this->listener(
+			[
+				['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING],
+			],
+			statuses: $statuses
+		);
+
+		$message = $this->save($listener, $this->withdrawal())->getErrors()['message'];
+
+		$this->assertStringNotContainsString('Array', $message);
+		$this->assertStringContainsString('A case in Ontvangen cannot move to Ingetrokken', $message);
+	}//end testStatusNamesStoredAsLanguageMapsAreNamedInTheRefusal()
+
+	/**
 	 * A move straight from Ontvangen to Ingetrokken: the save goes through.
 	 *
 	 * @return void
@@ -235,6 +275,50 @@ class CaseTypePortalWithdrawalListenerTest extends TestCase {
 		$this->assertFalse($event->isPropagationStopped());
 		$this->assertSame([], $event->getErrors());
 	}//end testAReachableWithdrawalStatusSaves()
+
+	/**
+	 * 🔴 Zuiddrecht, 14 Oct: the save is judged by the flow the payload names, not the stored active one.
+	 *
+	 * The upgraded instance held an older active basis flow without the move
+	 * from Ontvangen to Ingetrokken. The shipped case type names its own flow,
+	 * which has that move, and was refused on every upgrade.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 */
+	public function testTheFlowThePayloadNamesIsJudgedNotTheStoredActiveOne(): void {
+		$basis = [['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING]];
+		$shipped = [
+			'id' => 'shipped-flow',
+			'caseType' => 'melding',
+			'isActive' => true,
+			'transitions' => json_encode([['id' => 'withdraw', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::INGETROKKEN]]),
+		];
+		$listener = $this->listener($basis, named: ['shipped-flow' => $shipped]);
+
+		$this->assertTrue(
+			$this->save($listener, $this->withdrawal())->isPropagationStopped(),
+			'control: judged by the stored active basis flow, the save is refused'
+		);
+		$this->assertFalse(
+			$this->save($listener, $this->withdrawal(), ['workflowDefinition' => 'shipped-flow'])->isPropagationStopped(),
+			'the flow the payload names has the move, so the save goes through'
+		);
+	}//end testTheFlowThePayloadNamesIsJudgedNotTheStoredActiveOne()
+
+	/**
+	 * A payload naming a flow the store does not hold is judged by the active one, as before.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 */
+	public function testADanglingFlowNameFallsBackToTheActiveFlow(): void {
+		$listener = $this->listener([['id' => 'pick-up', 'fromStatus' => self::ONTVANGEN, 'toStatus' => self::IN_BEHANDELING]]);
+
+		$this->assertTrue($this->save($listener, $this->withdrawal(), ['workflowDefinition' => 'not-written-yet'])->isPropagationStopped());
+	}//end testADanglingFlowNameFallsBackToTheActiveFlow()
 
 	/**
 	 * Moves stored as a JSON string are still read, and still refuse.

@@ -110,7 +110,9 @@
             "type": "array",
             "title": "Pause Extension Durations",
             "description": "Allowed pause durations in days (e.g. AWB 4:5 hersteltermijn)",
-            "items": { "type": "integer" }
+            "items": {
+              "type": "integer"
+            }
           },
           "deviatingPenaltyPaymentRegime": {
             "type": "object",
@@ -177,6 +179,15 @@
               "type": "string"
             }
           },
+          "tellHandlerAt": {
+            "type": "array",
+            "title": "Tell the handler at",
+            "description": "The escalation rungs, in days before the end of the term, on which the handler of the case gets a notification. 0 is the day the term runs out. Leave it empty and the escalation is recorded without telling anyone, which is how every term behaved before this was declarable.",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
           "escalationLadder": {
             "type": "array",
             "title": "Escalation ladder",
@@ -227,8 +238,30 @@
       },
       "deadlineInstance": {
         "slug": "deadlineInstance",
+        "configuration": {
+          "x-openregister-mcp": {
+            "enabled": true,
+            "tools": {
+              "search": {
+                "description": "Find the statutory deadlines running on cases, for example the ones about to expire.",
+                "scope": "read",
+                "readOnlyHint": true,
+                "filters": [
+                  "case",
+                  "status",
+                  "deadlineDefinition"
+                ]
+              },
+              "get": {
+                "description": "Read one statutory deadline by id: start, calculated end, current end and pauses.",
+                "scope": "read",
+                "readOnlyHint": true
+              }
+            }
+          }
+        },
         "icon": "TimerSandFull",
-        "version": "1.5.0",
+        "version": "1.5.1",
         "x-schema-org": "schema:Action",
         "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
@@ -340,7 +373,9 @@
             "type": "array",
             "title": "Notifications Sent",
             "description": "Threshold bucket numbers already notified (14/7/2/0) to prevent duplicate escalation",
-            "items": { "type": "integer" }
+            "items": {
+              "type": "integer"
+            }
           },
           "engineTimerId": {
             "type": "string",
@@ -551,7 +586,13 @@
           },
           "notificationChannel": {
             "type": "string",
-            "enum": ["post", "email", "portal", "balie", "phone"],
+            "enum": [
+              "post",
+              "email",
+              "portal",
+              "balie",
+              "phone"
+            ],
             "title": "Channel",
             "description": "Receipt channel"
           },
@@ -563,7 +604,12 @@
           },
           "validityStatus": {
             "type": "string",
-            "enum": ["unknown", "valid", "premaat", "ongeldig"],
+            "enum": [
+              "unknown",
+              "valid",
+              "premaat",
+              "ongeldig"
+            ],
             "default": "unknown",
             "title": "Validity Status",
             "description": "Validity classification"
@@ -584,7 +630,7 @@
       "penaltyPaymentCalculation": {
         "slug": "penaltyPaymentCalculation",
         "icon": "Calculator",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "searchable": false,
         "x-schema-org": "schema:MonetaryAmount",
         "title": "Dwangsom Berekening",
@@ -661,17 +707,274 @@
           },
           "regime": {
             "type": "string",
-            "enum": ["awb-default", "afwijkend"],
+            "enum": [
+              "awb-default",
+              "afwijkend"
+            ],
             "default": "awb-default",
             "title": "Tariff Regime",
             "description": "Active tariff regime"
+          },
+          "rateBands": {
+            "type": "array",
+            "title": "Rate bands",
+            "description": "Daily rate per band of days in EUR cents, as {upTo, rate}; empty means the Awb 4:17 bands (23, 35, 45 euro).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "upTo": {
+                  "type": "integer",
+                  "title": "Up to day",
+                  "description": "Last day of the accrual this band covers; leave it out on the final band.",
+                  "minimum": 1
+                },
+                "rate": {
+                  "type": "integer",
+                  "title": "Daily rate",
+                  "description": "Amount added per day inside this band, in EUR cents.",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "rate"
+              ]
+            }
+          },
+          "stoppedOn": {
+            "type": "string",
+            "format": "date",
+            "title": "Stopped on",
+            "description": "The day accrual stopped (decision filed, objection lodged); empty while it runs."
+          }
+        },
+        "configuration": {
+          "x-openregister-calculations": {
+            "currentDag": {
+              "type": "integer",
+              "materialise": true,
+              "description": "Whole days accrued from startDate to stoppedOn, or to today while running.",
+              "expression": {
+                "max": [
+                  0,
+                  {
+                    "diffDays": [
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "stoppedOn"
+                          },
+                          {
+                            "now": []
+                          }
+                        ]
+                      },
+                      {
+                        "prop": "startDate"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "cumulativeAmount": {
+              "type": "integer",
+              "materialise": true,
+              "description": "The amount accrued over rateBands (Awb 4:17 bands when empty), capped at plafondCalculated.",
+              "expression": {
+                "graduated": [
+                  {
+                    "max": [
+                      0,
+                      {
+                        "diffDays": [
+                          {
+                            "coalesce": [
+                              {
+                                "prop": "stoppedOn"
+                              },
+                              {
+                                "now": []
+                              }
+                            ]
+                          },
+                          {
+                            "prop": "startDate"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "rateBands"
+                      },
+                      {
+                        "lit": [
+                          {
+                            "upTo": 14,
+                            "rate": 2300
+                          },
+                          {
+                            "upTo": 28,
+                            "rate": 3500
+                          },
+                          {
+                            "rate": 4500
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "plafondCalculated"
+                      },
+                      144200
+                    ]
+                  }
+                ]
+              }
+            },
+            "dailyRate": {
+              "type": "integer",
+              "materialise": true,
+              "description": "The rate of the band the last accrued day falls in; 0 before the first day.",
+              "expression": {
+                "coalesce": [
+                  {
+                    "bandRate": [
+                      {
+                        "max": [
+                          0,
+                          {
+                            "diffDays": [
+                              {
+                                "coalesce": [
+                                  {
+                                    "prop": "stoppedOn"
+                                  },
+                                  {
+                                    "now": []
+                                  }
+                                ]
+                              },
+                              {
+                                "prop": "startDate"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "rateBands"
+                          },
+                          {
+                            "lit": [
+                              {
+                                "upTo": 14,
+                                "rate": 2300
+                              },
+                              {
+                                "upTo": 28,
+                                "rate": 3500
+                              },
+                              {
+                                "rate": 4500
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  0
+                ]
+              }
+            },
+            "plafondBereikt": {
+              "type": "boolean",
+              "materialise": true,
+              "description": "True once the accrued amount reaches the ceiling.",
+              "expression": {
+                "gte": [
+                  {
+                    "graduated": [
+                      {
+                        "max": [
+                          0,
+                          {
+                            "diffDays": [
+                              {
+                                "coalesce": [
+                                  {
+                                    "prop": "stoppedOn"
+                                  },
+                                  {
+                                    "now": []
+                                  }
+                                ]
+                              },
+                              {
+                                "prop": "startDate"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "rateBands"
+                          },
+                          {
+                            "lit": [
+                              {
+                                "upTo": 14,
+                                "rate": 2300
+                              },
+                              {
+                                "upTo": 28,
+                                "rate": 3500
+                              },
+                              {
+                                "rate": 4500
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "coalesce": [
+                          {
+                            "prop": "plafondCalculated"
+                          },
+                          144200
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "coalesce": [
+                      {
+                        "prop": "plafondCalculated"
+                      },
+                      144200
+                    ]
+                  }
+                ]
+              }
+            }
           }
         }
       },
       "dwangsomUitbetaling": {
         "slug": "dwangsomUitbetaling",
         "icon": "BankTransfer",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "searchable": false,
         "x-schema-org": "schema:PaymentAction",
         "title": "Dwangsom Uitbetaling",
@@ -743,6 +1046,11 @@
             "type": "string",
             "title": "Bank Confirmation Reference",
             "description": "ERP/bank confirmation reference"
+          },
+          "payableId": {
+            "type": "string",
+            "title": "Finance payable",
+            "description": "The payable the finance app answered with when the payout was handed to it; empty while it is not with finance"
           },
           "actualPaymentDate": {
             "type": "string",

@@ -115,6 +115,22 @@ class CaseFlowSeedIndexTest extends TestCase {
 		$this->assertSame('Bouwvergunning', $query['title']);
 	}//end testTheLookupIsScopedToTheRegisterSchemaAndTitle()
 
+	/**
+	 * The slug lookup is scoped in the metadata, where OpenRegister keeps the slug.
+	 *
+	 * @spec openspec/changes/case-type-picker-offers-the-current-version/specs/case-type-seed-data/spec.md
+	 */
+	public function testACaseTypeIsLookedUpBySlugInTheMetadata(): void {
+		$index = $this->index([['id' => 'ct-1', 'title' => ['nl' => 'Bouwvergunning']]]);
+
+		$found = $index->caseTypeBySlug(schemas: self::SCHEMAS, slug: 'bouwvergunning');
+
+		$this->assertSame('ct-1', $found['id']);
+		$query = $this->seen[0];
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'case_type', 'slug' => 'bouwvergunning'], $query['@self']);
+		$this->assertArrayNotHasKey('title', $query, 'A translatable title is no key to look up by.');
+	}//end testACaseTypeIsLookedUpBySlugInTheMetadata()
+
 	public function testAnAbsentCaseTypeIsNull(): void {
 		$this->assertNull($this->index([])->caseTypeByTitle(schemas: self::SCHEMAS, title: 'Nope'));
 	}//end testAnAbsentCaseTypeIsNull()

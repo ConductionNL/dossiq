@@ -16,6 +16,10 @@
             "matchType": "exact",
             "inputControl": "text"
           },
+          "formerReferences": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
           "tags": {
             "matchType": "fuzzy",
             "inputControl": "multiselect"
@@ -380,6 +384,10 @@
             "matchType": "range",
             "inputControl": "date-range"
           },
+          "legalDecisionDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
           "dsoStatus": {
             "matchType": "exact",
             "inputControl": "select"
@@ -403,6 +411,18 @@
           "chasesSent": {
             "matchType": "range",
             "inputControl": "range"
+          },
+          "externalReference": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "contestedCase": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "contestedDecision": {
+            "matchType": "exact",
+            "inputControl": "text"
           }
         }
       }

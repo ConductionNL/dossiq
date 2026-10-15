@@ -33,6 +33,13 @@ use PHPUnit\Framework\TestCase;
 class RefusalGroundsSnapshotTest extends TestCase {
 
 	/**
+	 * The disposable copy of the tool's inputs, removed in tearDown().
+	 *
+	 * @var string|null
+	 */
+	private ?string $copy = null;
+
+	/**
 	 * Every active seeded ground is in the snapshot with the same values, in the list() shape.
 	 *
 	 * @return void
@@ -66,24 +73,116 @@ class RefusalGroundsSnapshotTest extends TestCase {
 	/**
 	 * The check script exits non-zero and names the ground when one label differs.
 	 *
+	 * ## Why it tampers with a copy
+	 *
+	 * This used to overwrite the tracked `woo-refusal-grounds.snapshot.json` in
+	 * place and restore it in a `finally`, which made the test need write access
+	 * to a file the app ships. Two things follow from that, and both have cost
+	 * real time:
+	 *
+	 *  - It fails wherever the suite runs as a user other than the checkout's
+	 *    owner. Measured 2026-10-15 in the dossiq dev container, where phpunit
+	 *    runs as `www-data` against a host-owned bind mount: `file_put_contents()`
+	 *    was refused, the check then read an untampered snapshot and exited 0, and
+	 *    all the suite reported was `Failed asserting that 0 is identical to 1`,
+	 *    a message that sends somebody to look for drift in a snapshot that is
+	 *    correct.
+	 *  - A run killed between the write and the restore leaves the SHIPPED
+	 *    snapshot carrying a label nobody wrote, because a `finally` does not
+	 *    survive SIGKILL.
+	 *
+	 * The tool resolves both its paths from its own location, so a disposable
+	 * copy of the three files it reads puts the tamper somewhere losing it costs
+	 * nothing, and the assertions stay exactly what they were.
+	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/refusal-grounds-check-test-needs-no-writable-tree/proposal.md
 	 */
 	public function testTheCheckNamesAGroundThatDiffers(): void {
 		$root = dirname(__DIR__, 3);
-		$path = $root . '/lib/Settings/woo-refusal-grounds.snapshot.json';
-		$original = (string)file_get_contents($path);
-		$snapshot = json_decode($original, true);
+		$shipped = $root . '/lib/Settings/woo-refusal-grounds.snapshot.json';
+		$before = (string)file_get_contents($shipped);
+
+		$copy = $this->disposableCopy(root: $root);
+		$tool = 'php ' . escapeshellarg($copy . '/tools/refusal-grounds-snapshot.php') . ' --check 2>&1';
+		$snapshotPath = $copy . '/lib/Settings/woo-refusal-grounds.snapshot.json';
+
+		// The control. Without it an unreadable copy produces the same exit 1 as
+		// a ground that differs, and the red would be this test's own failure
+		// dressed as its subject's.
+		exec($tool, $clean, $cleanExit);
+		$this->assertSame(0, $cleanExit, 'the untampered copy must check out: ' . implode("\n", $clean));
+
+		$snapshot = json_decode((string)file_get_contents($snapshotPath), true);
 		$snapshot['grounds'][5]['label'] = 'Een ander label';
 		$code = $snapshot['grounds'][5]['code'];
+		$this->assertNotFalse(file_put_contents($snapshotPath, json_encode($snapshot)));
 
-		file_put_contents($path, json_encode($snapshot));
-		try {
-			exec('php ' . escapeshellarg($root . '/tools/refusal-grounds-snapshot.php') . ' --check 2>&1', $lines, $exit);
-		} finally {
-			file_put_contents($path, $original);
-		}
+		exec($tool, $lines, $exit);
 
 		$this->assertSame(1, $exit);
 		$this->assertStringContainsString($code, implode("\n", $lines));
+		$this->assertSame($before, (string)file_get_contents($shipped), 'the shipped snapshot must not be written to');
 	}//end testTheCheckNamesAGroundThatDiffers()
+
+	/**
+	 * A disposable copy of the files the snapshot tool reads.
+	 *
+	 * The tool takes its root from `dirname(__DIR__)`, so the copy keeps the
+	 * three paths it resolves and nothing else.
+	 *
+	 * @param string $root The app root.
+	 *
+	 * @return string Absolute path to the copy's root.
+	 */
+	private function disposableCopy(string $root): string {
+		$copy = sys_get_temp_dir() . '/dossiq-refusal-grounds-' . bin2hex(random_bytes(6));
+		$files = [
+			'tools/refusal-grounds-snapshot.php',
+			'lib/Settings/woo-refusal-grounds.snapshot.json',
+			'lib/Settings/register.d/84-woo-refusal-grounds.json',
+		];
+
+		foreach ($files as $file) {
+			$target = ($copy . '/' . $file);
+			$directory = dirname($target);
+			if (is_dir($directory) === false) {
+				$this->assertTrue(mkdir($directory, 0700, true), $directory . ' must be creatable');
+			}
+
+			$this->assertTrue(copy($root . '/' . $file, $target), $file . ' must be copyable');
+		}
+
+		$this->copy = $copy;
+
+		return $copy;
+	}//end disposableCopy()
+
+	/**
+	 * Remove the disposable copy.
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		if ($this->copy !== null) {
+			$files = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($this->copy, \FilesystemIterator::SKIP_DOTS),
+				\RecursiveIteratorIterator::CHILD_FIRST
+			);
+			foreach ($files as $file) {
+				if ($file->isDir() === true) {
+					rmdir($file->getPathname());
+					continue;
+				}
+
+				unlink($file->getPathname());
+			}
+
+			rmdir($this->copy);
+			$this->copy = null;
+		}//end if
+
+		parent::tearDown();
+	}//end tearDown()
 }//end class

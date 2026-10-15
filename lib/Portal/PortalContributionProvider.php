@@ -61,8 +61,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Service\Intake\IntakeCaseTypes;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+use OCA\Dossiq\Woo\WooReceivedAnswers;
+use OCA\Dossiq\Woo\WooRequestIntake;
 use Throwable;
 
 /**
@@ -203,8 +206,11 @@ class PortalContributionProvider {
 		'wooPublicationUrl',
 		// THE TERM IN WORDS AND WHERE THE RESULT IS PUBLIC, in the shapes of
 		// portaliq's portalCase (woo-dossier-shared-with-the-requester
-		// REQ-WDS-002 and REQ-WDS-003). Both are written by dossiq only.
+		// REQ-WDS-002 and REQ-WDS-003). All three are written by dossiq only.
+		// `legalDecisionDate` is the day the decision is due, empty while the
+		// term stands still; `termNote` then says why.
 		'termNote',
+		'legalDecisionDate',
 		'resultLink',
 	];
 
@@ -367,6 +373,9 @@ class PortalContributionProvider {
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 * @param PortalCaseMessages|null        $messages   The resident's messages on a case, or null.
+	 * @param WooRequestIntake|null          $wooRequests Opens the case for a Woo request a portal form sent, or null.
+	 * @param IntakeCaseTypes|null           $caseTypes  The case type each case-opening action opens, or
+	 *                                                   null, which leaves those actions out.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
@@ -374,9 +383,38 @@ class PortalContributionProvider {
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 		private readonly ?PortalCaseSteps $steps = null,
 		private readonly ?PortalCaseMessages $messages = null,
+		private readonly ?WooRequestIntake $wooRequests = null,
+		private readonly ?IntakeCaseTypes $caseTypes = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
+
+	/**
+	 * Receive a Woo request a resident sent through a portal form.
+	 *
+	 * The same name, arguments and first five answer keys as opencatalogi's
+	 * `PortalContributionProvider::receiveWooRequest()`, so portaliq's form
+	 * delivery swaps one app id to reach dossiq (REQ-WTO-001). The form
+	 * creates the Woo case directly; nothing is queued in between
+	 * (decision 179).
+	 *
+	 * @param array<string, mixed> $answers    The resident's answers, in opencatalogi's keys.
+	 * @param string               $receivedAt When the resident sent it (ISO 8601).
+	 *
+	 * @return array{outcome: string, requestId: string, reference: string, dueAt: string, message: string, caseUrl: string}
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/woo-request-intake/spec.md#requirement-dossiq-receives-a-woo-request-in-opencatalogis-shape-req-wto-001
+	 */
+	public function receiveWooRequest(array $answers, string $receivedAt = ''): array {
+		if ($this->wooRequests === null) {
+			return array_merge(
+				WooReceivedAnswers::EMPTY_ANSWER,
+				['outcome' => 'unavailable', 'message' => 'The Woo request intake is not available.']
+			);
+		}
+
+		return $this->wooRequests->receive(answers: $answers, receivedAt: $receivedAt, origin: 'portal-form');
+	}//end receiveWooRequest()
 
 	/**
 	 * The identity an inbox message goes to in the resident's government
@@ -454,7 +492,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, string>> The steps, or [] when they cannot be read.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	public function caseSteps(string $caseId): array {
 		if ($this->steps === null) {
@@ -750,7 +788,7 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/site-business-and-authorisation/specs/portal-contribution/spec.md
 	 */
 	private function citizenContribution(string $group=self::CITIZEN_GROUP, array $labels=self::CITIZEN_PAGE_LABELS): array {
-		$manifest = new CitizenManifest();
+		$manifest = new CitizenManifest(caseTypes: $this->filingCaseTypes());
 		$collections = $manifest->collections();
 		$actions = $manifest->actions();
 
@@ -888,4 +926,19 @@ class PortalContributionProvider {
 		return $contribution;
 
 	}//end inspectorContribution()
+
+	/**
+	 * The case type each filing action opens (decision 179, Q8).
+	 *
+	 * @return array<string, string> Action id to case type uuid; an unknown one is left out.
+	 *
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
+	 */
+	private function filingCaseTypes(): array {
+		if ($this->caseTypes === null) {
+			return [];
+		}
+
+		return $this->caseTypes->caseTypes();
+	}//end filingCaseTypes()
 }//end class

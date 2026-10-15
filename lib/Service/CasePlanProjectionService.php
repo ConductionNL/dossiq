@@ -14,11 +14,10 @@
  * what it cannot translate, in the shape of
  * {@see \OCA\Dossiq\Service\Workflow\WorkflowTemplateFlowMigrator}.
  *
- * WHY IT DOES NOT USE `Service\Cmmn\CaseModelLoader`. That whole namespace
- * retires with the engine (retire-cmmn-caseplanstate tasks 3.1), and the
- * structural guard in 4.2 fails on any surviving reference to it. A bridge
- * built on a class scheduled for deletion would have to be rewritten at the
- * moment the removal lands, so it resolves the published model itself.
+ * IT RESOLVES THE PUBLISHED MODEL ITSELF. dossiq holds no case engine: the
+ * local runtime is gone (retire-cmmn-caseplanstate task 3.1) and
+ * `CmmnRetirementTest` refuses a new one. The `caseModel` stays authoring
+ * data that this class reads and hands to OpenRegister.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -119,6 +118,20 @@ class CasePlanProjectionService {
 	 * @var string
 	 */
 	public const OBJECT_WRITE_EVENT = 'object.updated';
+
+	/**
+	 * The app id dossiq acts as when it calls the case layer from its own
+	 * in-process code (a listener, a command, a repair step).
+	 *
+	 * OpenRegister refuses a plan created or read with no acting identity
+	 * ("no acting identity" / "no case plan"), so the bridge's first version,
+	 * which passed `uid: null`, was a silent no-op: every case start logged
+	 * an error and created nothing. The system verbs act as `system:dossiq`
+	 * instead (openregister one-engine-bpmn-and-cmmn, PR #4544).
+	 *
+	 * @var string
+	 */
+	public const SYSTEM_APP = 'dossiq';
 
 	/**
 	 * Constructor.
@@ -294,8 +307,8 @@ class CasePlanProjectionService {
 	 * Project the published caseModel of a CMMN-managed case onto OpenRegister.
 	 *
 	 * Called at case start. Does nothing and says so when the caseType is not
-	 * CMMN-managed, when no model is published (the `CaseModelLoader` rule:
-	 * no published model means an empty plan) or when OpenRegister already
+	 * CMMN-managed, when no model is published (no published model
+	 * means an empty plan) or when OpenRegister already
 	 * holds a plan for this case, so a re-run never mints a second plan.
 	 *
 	 * @param string               $caseId   The case object uuid.
@@ -336,6 +349,31 @@ class CasePlanProjectionService {
 	}//end projectAtCaseStart()
 
 	/**
+	 * The converted definition of a caseType's published caseModel.
+	 *
+	 * The drain of in-flight blobs ({@see CasePlanMigrationService}) needs the
+	 * same definition the projection hands OpenRegister at case start, so both
+	 * read it from here and a case migrated later gets the plan a case
+	 * started now would get.
+	 *
+	 * @param string $caseTypeId The caseType uuid.
+	 *
+	 * @return array{settings: array<string, mixed>, items: array<int, array<string, mixed>>} The definition.
+	 *
+	 * @throws UnexpectedValueException `no_published_case_model`, or the conversion's refusal by name.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	public function definitionForCaseType(string $caseTypeId): array {
+		$model = $this->findPublishedModel(caseTypeId: $caseTypeId);
+		if ($model === null) {
+			throw new UnexpectedValueException('no_published_case_model');
+		}
+
+		return $this->convertModel(caseModel: $model);
+	}//end definitionForCaseType()
+
+	/**
 	 * Hand the converted definition to OpenRegister's case layer.
 	 *
 	 * @param object                                                                       $plans      The resolved CasePlanService.
@@ -357,13 +395,21 @@ class CasePlanProjectionService {
 			$schemaId = (int)$schema;
 		}
 
+		// An OpenRegister from before the system verbs would refuse a plan
+		// with no identity anyway; say which, instead of logging a refusal
+		// that reads like a bad model.
+		if (method_exists($plans, 'createPlanAsSystem') === false) {
+			$this->logger->warning('CasePlanProjectionService: OpenRegister predates createPlanAsSystem', ['caseId' => $caseId]);
+			return ['projected' => false, 'reason' => 'case_layer_lacks_system_verbs'];
+		}
+
 		try {
-			$plans->createPlan(
+			$plans->createPlanAsSystem(
 				objectUuid: $caseId,
 				registerId: $registerId,
 				schemaId: $schemaId,
 				definition: $definition,
-				uid: null,
+				app: self::SYSTEM_APP,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -435,8 +481,8 @@ class CasePlanProjectionService {
 			'type' => $type,
 			'name' => (string)($item['name'] ?? $id),
 			// The mandatory/discretionary split IS OpenRegister's `required`:
-			// PlanItemTree waits for every non-discretionary direct child,
-			// CasePlanTree waits for every required one.
+			// a stage waits for every non-discretionary direct child, and
+			// OpenRegister's CasePlanTree waits for every required one.
 			'required' => ($discretionary === false),
 			'discretionary' => $discretionary,
 			'entryCriteria' => $this->convertCriteria(criteria: ($item['entryCriteria'] ?? []), where: sprintf("plan item '%s' entry", $id)),
@@ -628,9 +674,7 @@ class CasePlanProjectionService {
 	/**
 	 * Find the single published caseModel for a caseType.
 	 *
-	 * Same lookup as the retiring `CaseModelLoader`, restated here rather
-	 * than called: that class goes with the engine (tasks 3.1) and the
-	 * structural guard (4.2) refuses a surviving reference to it.
+	 * Exactly one published model per caseType; none means an empty plan.
 	 *
 	 * @param string $caseTypeId The caseType uuid.
 	 *

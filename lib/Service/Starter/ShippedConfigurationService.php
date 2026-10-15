@@ -66,6 +66,29 @@ class ShippedConfigurationService {
 	public const STATE_LOCAL = 'local';
 
 	/**
+	 * The target schema of a package's version record: one ledger row per
+	 * package, whose target object is the package id. A package that writes
+	 * no rows (settings only) still has a version installed here, and no
+	 * overview reads it, because overviews filter by a real schema slug.
+	 */
+	public const PACKAGE_RECORD = 'package';
+
+	/**
+	 * A refresh wrote the newer shipped version.
+	 */
+	public const REFRESH_DONE = 'refreshed';
+
+	/**
+	 * A refresh found the row already as the set ships it.
+	 */
+	public const REFRESH_UNCHANGED = 'unchanged';
+
+	/**
+	 * A refresh left the row as it is here.
+	 */
+	public const REFRESH_KEPT = 'kept';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param StarterStore       $store       The OpenRegister seam.
@@ -92,13 +115,17 @@ class ShippedConfigurationService {
 	 * @param string               $targetSchema The seeded object's schema slug.
 	 * @param string               $targetObject The seeded object's id.
 	 * @param array<string, mixed> $object       The object as it shipped.
+	 * @param string|null          $version      The set's version, when the caller
+	 *                                           read it from the package itself;
+	 *                                           null to look it up in ShippedSets.
 	 *
 	 * @return boolean True when the stamp was written.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
-	public function stamp(string $set, string $targetSchema, string $targetObject, array $object): bool {
-		$version = $this->sets->versionOf(set: $set);
+	public function stamp(string $set, string $targetSchema, string $targetObject, array $object, ?string $version = null): bool {
+		$version = ($version ?? $this->sets->versionOf(set: $set));
 		if ($version === '' || $targetObject === '' || $targetSchema === '') {
 			// ADR-102: a stamp that cannot name its set is worse than no stamp,
 			// because the screen would report the object as shipped and be
@@ -136,6 +163,63 @@ class ShippedConfigurationService {
 
 		return ($saved !== null);
 	}//end stamp()
+
+	/**
+	 * Record that a package is installed here at a version, whether or not it
+	 * wrote rows. Updated in place: one record per package.
+	 *
+	 * @param string $set     The package id.
+	 * @param string $version The package version.
+	 *
+	 * @return boolean True when the record was written.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function recordPackage(string $set, string $version): bool {
+		return $this->stamp(
+			set: $set,
+			targetSchema: self::PACKAGE_RECORD,
+			targetObject: $set,
+			object: ['package' => $set, 'version' => $version],
+			version: $version,
+		);
+	}//end recordPackage()
+
+	/**
+	 * Whether the ledger can be written at all.
+	 *
+	 * Asked before an install writes a row: a row the ledger cannot record is
+	 * a row an upgrade can never account for.
+	 *
+	 * @return boolean True when the ledger schema is configured and reachable.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function ledgerAvailable(): bool {
+		return $this->store->available(configKey: self::LEDGER);
+	}//end ledgerAvailable()
+
+	/**
+	 * The highest version of a set this instance has recorded any row from.
+	 *
+	 * @param string $set The set name.
+	 *
+	 * @return string The version, or '' when nothing from the set is recorded.
+	 *
+	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 */
+	public function installedVersion(string $set): string {
+		$rows = $this->store->rows(configKey: self::LEDGER, filters: ['set' => $set]);
+		$highest = '';
+		foreach (($rows ?? []) as $row) {
+			$version = (string)($row['setVersion'] ?? '');
+			if (($row['set'] ?? '') === $set && ($highest === '' || version_compare($version, $highest, '>') === true)) {
+				$highest = $version;
+			}
+		}
+
+		return $highest;
+	}//end installedVersion()
 
 	/**
 	 * What an administrator should be told about one object.
@@ -241,10 +325,13 @@ class ShippedConfigurationService {
 	 * @param string               $targetObject The object's id.
 	 * @param string               $set          The set the newer version comes from.
 	 * @param array<string, mixed> $newShipped   The object as the newer set ships it.
+	 * @param string|null          $version      The newer version, when the caller read it
+	 *                                           from the package; null to look it up in ShippedSets.
 	 *
 	 * @return array{adopted: bool, reason: string} What happened, and why not when it did not.
 	 *
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
 	 */
 	public function adopt(
 		string $targetSchema,
@@ -252,6 +339,7 @@ class ShippedConfigurationService {
 		string $targetObject,
 		string $set,
 		array $newShipped,
+		?string $version = null,
 	): array {
 		return $this->take(
 			targetSchema: $targetSchema,
@@ -260,8 +348,115 @@ class ShippedConfigurationService {
 			set: $set,
 			newShipped: $newShipped,
 			overLocalChange: false,
+			version: $version,
 		);
 	}//end adopt()
+
+	/**
+	 * Bring the rows a set already had here up to the version it now ships.
+	 *
+	 * Each row goes through {@see self::refresh()}; a kept row is logged by id.
+	 * A row of a seed file bound for another app's register (`ownRegister`) is
+	 * left as it is, because this ledger reads only dossiq's register.
+	 *
+	 * @param string                           $set     The set, a package id.
+	 * @param string                           $version The set's new version.
+	 * @param array<int, array<string, mixed>> $rows    The rows found already here: schemaKey, schema, id, row
+	 *                                                  and ownRegister.
+	 *
+	 * @return array{refreshed: array<int, string>, kept: array<int, string>} The ids of each.
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	public function refreshRows(string $set, string $version, array $rows): array {
+		$refresh = ['refreshed' => [], 'kept' => []];
+		foreach ($rows as $row) {
+			if (($row['ownRegister'] ?? false) === true) {
+				continue;
+			}
+
+			$rowId = (string)$row['id'];
+			$result = $this->refresh(
+				targetSchema: (string)$row['schema'],
+				objectsKey: (string)$row['schemaKey'],
+				targetObject: $rowId,
+				set: $set,
+				newShipped: (array)$row['row'],
+				version: $version,
+			);
+
+			if ($result['outcome'] === self::REFRESH_DONE) {
+				$refresh['refreshed'][] = $rowId;
+				continue;
+			}
+
+			if ($result['outcome'] === self::REFRESH_KEPT) {
+				$refresh['kept'][] = $rowId;
+				$this->logger->warning(
+					'Dossiq: {set} {version} kept row {row} as this instance holds it ({reason})',
+					['set' => $set, 'version' => $version, 'row' => $rowId, 'reason' => $result['reason']]
+				);
+			}
+		}//end foreach
+
+		return $refresh;
+	}//end refreshRows()
+
+	/**
+	 * Bring one row a set wrote up to the version that set now ships.
+	 *
+	 * A row whose content already is what the set ships writes nothing. A row
+	 * another set or nobody shipped is kept. Otherwise {@see self::adopt()}
+	 * decides: an untouched row takes the new version and is stamped with it,
+	 * a row changed here is kept.
+	 *
+	 * @param string               $targetSchema The row's schema, as the ledger records it.
+	 * @param string               $objectsKey   The app config key naming that schema.
+	 * @param string               $targetObject The row's id.
+	 * @param string               $set          The set that ships it.
+	 * @param array<string, mixed> $newShipped   The row as the set now ships it.
+	 * @param string               $version      The set's new version.
+	 *
+	 * @return array{outcome: string, reason: string} `refreshed`, `unchanged` or `kept`, and why it was kept.
+	 *
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
+	 */
+	private function refresh(
+		string $targetSchema,
+		string $objectsKey,
+		string $targetObject,
+		string $set,
+		array $newShipped,
+		string $version,
+	): array {
+		$current = $this->store->row(configKey: $objectsKey, id: $targetObject);
+		if ($current === null) {
+			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_found'];
+		}
+
+		if ($this->fingerprint->hashOf(object: $current) === $this->fingerprint->hashOf(object: $newShipped)) {
+			return ['outcome' => self::REFRESH_UNCHANGED, 'reason' => ''];
+		}
+
+		$state = $this->stateOf(targetSchema: $targetSchema, targetObject: $targetObject, object: $current);
+		if ($state['set'] !== $set) {
+			return ['outcome' => self::REFRESH_KEPT, 'reason' => 'not_shipped_by_this_set'];
+		}
+
+		$adopted = $this->adopt(
+			targetSchema: $targetSchema,
+			objectsKey: $objectsKey,
+			targetObject: $targetObject,
+			set: $set,
+			newShipped: $newShipped,
+			version: $version,
+		);
+		if ($adopted['adopted'] === true) {
+			return ['outcome' => self::REFRESH_DONE, 'reason' => ''];
+		}
+
+		return ['outcome' => self::REFRESH_KEPT, 'reason' => $adopted['reason']];
+	}//end refresh()
 
 	/**
 	 * Take the newer shipped version over a change somebody made here.
@@ -295,6 +490,7 @@ class ShippedConfigurationService {
 			set: $set,
 			newShipped: $newShipped,
 			overLocalChange: true,
+			version: null,
 		);
 	}//end adoptOverLocalChange()
 
@@ -307,6 +503,7 @@ class ShippedConfigurationService {
 	 * @param string               $set             The set the newer version comes from.
 	 * @param array<string, mixed> $newShipped      The object as the newer set ships it.
 	 * @param boolean              $overLocalChange Whether a local change may go.
+	 * @param string|null          $version         The version to stamp; null to look it up in ShippedSets.
 	 *
 	 * @return array{adopted: bool, reason: string} What happened.
 	 */
@@ -317,6 +514,7 @@ class ShippedConfigurationService {
 		string $set,
 		array $newShipped,
 		bool $overLocalChange,
+		?string $version,
 	): array {
 		$current = $this->store->row(configKey: $objectsKey, id: $targetObject);
 		if ($current === null) {
@@ -350,6 +548,7 @@ class ShippedConfigurationService {
 			targetSchema: $targetSchema,
 			targetObject: $targetObject,
 			object: $saved,
+			version: $version,
 		);
 
 		return ['adopted' => true, 'reason' => ''];

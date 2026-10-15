@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Starter;
 
+use OCA\Dossiq\Service\CaseDefinition\PackageDirectory;
+
 /**
  * Every set dossiq seeds, named once, with the version it is at.
  *
@@ -36,11 +38,6 @@ namespace OCA\Dossiq\Service\Starter;
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 class ShippedSets {
-
-	/**
-	 * The bezwaar and beroep case types seeded from `bezwaar_seed_data.json`.
-	 */
-	public const BEZWAAR_BEROEP = 'bezwaar-beroep';
 
 	/**
 	 * The VTH case types, seeded from the shipped vergunning, toezicht and
@@ -64,10 +61,22 @@ class ShippedSets {
 	 * @var array<string, string>
 	 */
 	public const VERSIONS = [
-		self::BEZWAAR_BEROEP => '1.0.0',
 		self::VTH => '1.0.0',
 		self::MUNICIPAL_ROLES => '1.0.0',
 	];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param PackageDirectory|null $packages The shipped packages, whose
+	 *                                        manifests carry their own
+	 *                                        version; null for the
+	 *                                        constants only.
+	 */
+	public function __construct(
+		private readonly ?PackageDirectory $packages = null,
+	) {
+	}//end __construct()
 
 	/**
 	 * The version of one set.
@@ -88,6 +97,39 @@ class ShippedSets {
 	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
 	public function versionOf(string $set): string {
-		return (self::VERSIONS[$set] ?? '');
+		if (isset(self::VERSIONS[$set]) === true) {
+			return self::VERSIONS[$set];
+		}
+
+		return $this->packageVersion(set: $set);
 	}//end versionOf()
+
+	/**
+	 * The version a shipped package declares, when the set is a package.
+	 *
+	 * A package names itself and its version in its own `package.json`, so
+	 * it needs no line in {@see self::VERSIONS}: the version is still bumped
+	 * by hand, in the manifest, in the commit that changes the package.
+	 *
+	 * @param string $set The set name, which for a package is its id.
+	 *
+	 * @return string The version, or '' when no shipped package has that id.
+	 */
+	private function packageVersion(string $set): string {
+		if ($this->packages === null) {
+			return '';
+		}
+
+		$package = $this->packages->read(id: $set);
+		if ($package === null) {
+			return '';
+		}
+
+		$manifest = json_decode((string)($package['files'][PackageDirectory::MANIFEST] ?? ''), true);
+		if (is_array($manifest) === false || preg_match('/^\d+\.\d+\.\d+$/', (string)($manifest['version'] ?? '')) !== 1) {
+			return '';
+		}
+
+		return (string)$manifest['version'];
+	}//end packageVersion()
 }//end class

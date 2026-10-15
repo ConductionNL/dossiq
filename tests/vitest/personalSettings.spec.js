@@ -10,8 +10,11 @@
  * reopens in, the pinned menu, the held row order — are declared as APP
  * DEFAULTS in the manifest's `personalisation` block, which `CnAppRoot` turns
  * into the preference group every surface then reads. The options that need
- * their own screen (substitution, linking your own mail) are mounted from
- * `src/personalSettings.js` into Nextcloud's own personal settings.
+ * their own screen (substitution, linking your own mail, the work digest,
+ * which notices reach you, the case types in your menu) are sections of the
+ * in-app user settings dialog, drawn by `src/views/settings/UserSettings.vue`.
+ * Nextcloud's personal settings carry no dossiq page (Ruben, 11 Oct 2026:
+ * user configuration goes into the user settings dialog).
  *
  * What must never happen is a third place. A preference offered in two
  * screens is a preference that disagrees with itself, and neither screen will
@@ -28,11 +31,13 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const personalSettings = fs.readFileSync(
-	path.join(ROOT, 'src', 'personalSettings.js'),
+const userSettings = fs.readFileSync(
+	path.join(ROOT, 'src', 'views', 'settings', 'UserSettings.vue'),
 	'utf8',
 )
+const app = fs.readFileSync(path.join(ROOT, 'src', 'App.vue'), 'utf8')
 const webpack = fs.readFileSync(path.join(ROOT, 'webpack.config.js'), 'utf8')
+const infoXml = fs.readFileSync(path.join(ROOT, 'appinfo', 'info.xml'), 'utf8')
 
 describe('the app defaults the personal layer starts from', () => {
 	it('declares every option this cluster names, and no more', () => {
@@ -59,25 +64,53 @@ describe('the app defaults the personal layer starts from', () => {
 })
 
 describe('the one personal settings screen', () => {
-	it('is reachable, because webpack builds it', () => {
-		// An entry point that stops being built is a settings section that
-		// renders an empty div: the PHP still registers the mount point and
-		// the bundle behind it is simply not there.
-		expect(webpack).toContain("'personalSettings.js'")
+	it('is the user settings dialog, which App.vue fills', () => {
+		// Filling CnAppRoot's #user-settings slot is what puts the sections
+		// in the dialog. Without it the dialog shows the library's fallback
+		// and every dossiq preference has nowhere to live.
+		expect(app).toContain('<template #user-settings>')
+		expect(app).toContain('<UserSettings')
 	})
 
-	it('is registered with Nextcloud rather than being an app page', () => {
+	it('is not a Nextcloud personal settings page', () => {
+		expect(infoXml).not.toMatch(/<personal>/)
+		expect(infoXml).not.toMatch(/<personal-section>/)
 		expect(
 			fs.existsSync(
 				path.join(ROOT, 'lib', 'Settings', 'PersonalSettings.php'),
 			),
-			'dossiq registers no personal settings section, so nothing mounts the bundle',
-		).toBe(true)
+		).toBe(false)
+		expect(
+			fs.existsSync(path.join(ROOT, 'lib', 'Sections', 'PersonalSection.php')),
+		).toBe(false)
+		expect(fs.existsSync(path.join(ROOT, 'src', 'personalSettings.js'))).toBe(
+			false,
+		)
+		expect(webpack).not.toContain('personalSettings.js')
 	})
 
-	it('mounts substitution and mail matching, the two options that need a screen', () => {
-		expect(personalSettings).toContain('SubstitutionSettings')
-		expect(personalSettings).toContain('CaseEmailMatchSettings')
+	it.each([
+		'MenuCaseTypesSettings',
+		'SubstitutionSettings',
+		'CaseEmailMatchSettings',
+		'WorkDigestSettings',
+		'NotificationRoutingSettings',
+	])('keeps a home for %s in the dialog', (section) => {
+		expect(userSettings).toContain(`<${section} />`)
+	})
+
+	it('keeps the sections the library draws when the slot is empty', () => {
+		// The slot replaces CnAppRoot's fallback wholesale, credentials and
+		// the walkthrough replay included, and nothing reports the loss.
+		expect(userSettings).toContain('<CnCredentials')
+		expect(userSettings).toContain('id="cn-walkthrough"')
+		expect(app).toContain('continueWalkthroughFromSettings()')
+		expect(app).toContain('restartWalkthroughFromSettings()')
+	})
+
+	it('opens on the hash the My case types pencil links to', () => {
+		expect(app).toContain("const USER_SETTINGS_HASH = '#user-settings'")
+		expect(app).toContain("addEventListener('hashchange'")
 	})
 
 	it('offers no second place to set a per-person preference', () => {

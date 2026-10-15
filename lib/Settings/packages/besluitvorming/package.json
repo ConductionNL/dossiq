@@ -1,0 +1,12 @@
+{
+  "id": "besluitvorming",
+  "title": "Besluitvorming",
+  "version": "1.0.0",
+  "requires": [],
+  "parts": [
+    "case-type",
+    "flows"
+  ],
+  "install": "on-request",
+  "description": "College-besluit, raadsbesluit and mandaatbesluit case types with their statuses, roles, properties, document and result types and published flows. Deprecated: decision types now live in decidiq, so this package installs only on request (decision 190), for instances that still handle these decisions as cases. Converted by scripts/packages/seed-to-package.py from the bundles BesluitvormingTemplateService used to write."
+}

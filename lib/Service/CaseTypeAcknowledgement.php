@@ -57,14 +57,18 @@ class CaseTypeAcknowledgement {
 	 *
 	 * Awb 4:3a is about electronically submitted messages, so these are the
 	 * values of `case.intakeChannel` that owe an acknowledgement by default:
-	 * mail, the portal and an API intake. `manual`, `balie`, `phone`, `post`
-	 * and `other` are not electronic submissions and owe nothing unless a case
-	 * type names them, because mailing somebody about a conversation they just
-	 * had at the desk is worse than not mailing them.
+	 * mail, the portal, a Nextcloud Forms form (decision 236) and an API
+	 * intake. `manual`, `balie`, `phone`, `post` and `other` are not electronic
+	 * submissions and owe nothing unless a case type names them, because
+	 * mailing somebody about a conversation they just had at the desk is worse
+	 * than not mailing them.
+	 *
+	 * A case type switches one off by naming its own `intakeChannels` list
+	 * without it.
 	 *
 	 * @var array<int, string>
 	 */
-	public const ELECTRONIC_CHANNELS = ['email', 'website', 'zgw-api'];
+	public const ELECTRONIC_CHANNELS = ['email', 'website', 'forms', 'zgw-api'];
 
 	/**
 	 * The moment the statutory acknowledgement is declared at.
@@ -95,6 +99,7 @@ class CaseTypeAcknowledgement {
 		'defaultChannel' => 'email',
 		'contentOnPlatform' => false,
 		'language' => 'nl',
+		'addressFields' => [],
 	];
 
 	/**
@@ -137,8 +142,50 @@ class CaseTypeAcknowledgement {
 			$declaration['language'] = (string)self::DEFAULTS['language'];
 		}
 
+		$declaration['addressFields'] = array_values(
+			array_filter(
+				array_map(static fn (mixed $path): string => trim((string)$path), (array)$declaration['addressFields']),
+				static fn (string $path): bool => $path !== ''
+			)
+		);
+
 		return $declaration;
 	}//end declarationFor()
+
+	/**
+	 * The e-mail addresses a case keeps where its case type declares them.
+	 *
+	 * A case type that keeps its sender in an object of its own (the request
+	 * as sent, a form's answers) names the path, so the duty is not refused for
+	 * want of an address the case does carry.
+	 *
+	 * @param array<string, mixed> $case     The case row.
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The addresses, lowercased, in declared order.
+	 *
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/burger-notifications/spec.md#requirement-a-case-type-declares-where-its-senders-address-is-kept-req-ack-addr-001
+	 */
+	public function addressesOn(array $case, array $caseType): array {
+		$addresses = [];
+		foreach ($this->declarationFor(caseType: $caseType)['addressFields'] as $path) {
+			$value = $case;
+			foreach (explode('.', $path) as $key) {
+				$value = ((array)$value)[$key] ?? null;
+			}
+
+			if (is_string($value) === false) {
+				continue;
+			}
+
+			$address = strtolower(trim($value));
+			if (filter_var($address, FILTER_VALIDATE_EMAIL) !== false) {
+				$addresses[] = $address;
+			}
+		}
+
+		return $addresses;
+	}//end addressesOn()
 
 	/**
 	 * Does this case owe its sender an acknowledgement of receipt.

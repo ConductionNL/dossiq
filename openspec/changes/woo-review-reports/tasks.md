@@ -52,29 +52,59 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
 
 ## 3. Mail header fields
 
-- [ ] 3.1 In the gather add, parse mail headers for `.eml` (Nextcloud's or a PHP mime parser already
+- [x] 3.1 In the gather add, parse mail headers for `.eml` (Nextcloud's or a PHP mime parser already
   in `composer.lock`; do not add a new dependency without saying so) and read integriq mail items'
   header fields from its row. Store `provenance.mail`; mark unreadable headers (REQ-WRR-003).
   - **fails today**: `tests/Unit/Controller/WooSourcesControllerTest.php`
     `testAnEmlKeepsItsSenderAndRecipients`, `testUnreadableHeadersAreMarked`, using a real `.eml`
     fixture in `tests/Fixtures/mail/`.
   - Validate the provenance against the real document schema with `RealSchemaValidator`.
+  - Built generic (decision 182): `lib/Service/Zaakdossier/MailHeaderReader.php` reads the headers through
+    OpenRegister's parser (`TextExtractionService::parseEmlStructured`, mail-mime-parser in OpenRegister, no new
+    dependency in dossiq) into bare lower-cased addresses; `.msg`, a parse failure, an absent parser or a mail
+    without sender answer `{unreadable: true}`. `lib/Service/Zaakdossier/CaseFileCollector.php` writes collected
+    bytes as a document with provenance for any case type and adds `provenance.mail` for a mail (by extension or
+    the source's MIME type, so an integriq mail item handed over as `message/rfc822` is read too; integriq's fetch
+    answer carries no separate header row today). The gather add calls it. `provenance.mail` declared on
+    `informatieobject` in `register.d/85-woo-gather-provenance.json` (1.4.2).
+  - Tests: the two named tests are in `tests/Unit/Woo/WooGatherAddTest.php` (through the real store, projection
+    and collector; `WooSourcesControllerTest` mocks the add, so a test there could not fail), over real fixtures
+    `tests/Fixtures/mail/planning-stationsweg.eml` and `headerless.eml`, parsed by
+    `tests/Support/HeaderParsingTextExtraction.php` (PHP's own RFC 822 header parser in OpenRegister's answer shape);
+    both validated with `RealSchemaValidator` and seen red with the mail step removed. Own tests:
+    `MailHeaderReaderTest`, `CaseFileCollectorTest`.
 
 ## 4. The parties report
 
-- [ ] 4.1 Add `lib/Woo/WooPartiesReport.php` and `WooReportController::parties(string $id)` on GET
+- [x] 4.1 Add `lib/Woo/WooPartiesReport.php` and `WooReportController::parties(string $id)` on GET
   `/api/cases/{id}/woo/reports/parties`, case read guard and switch check in the body, CSV beside it
   (REQ-WRR-004).
   - **fails today**: `tests/Unit/Woo/WooPartiesReportTest.php`
     `testCountsPerSenderRecipientAndDomain` (the scenario fixture), `testUnreadableIsCounted`.
   - Through the caller: `WooReportControllerTest::testPartiesRefusesWithoutCaseAccess`,
     `testPartiesOffAnswers403`.
+  - Built generic (decision 182), spec amended: `lib/Service/Zaakdossier/MailPartiesReport.php` over
+    `CaseDocumentProvenance::mailForCase()` (new, lists `mailOf()` per collected mail), CSV by `toCsv()`;
+    `lib/Controller/MailPartiesReportController.php::show()` on GET `/api/cases/{id}/reports/mail-parties`
+    (`#[NoAdminRequired]`; the switch `wooCollectionPartiesReport` and `CaseAccessGuard::hasCaseReadAccess` in the
+    body). Its own controller rather than `WooReportController`, which would pass phpmd's coupling limit.
+    Tests: `tests/Unit/Service/Zaakdossier/MailPartiesReportTest.php` (both named tests plus the CSV, over the real
+    provenance reader), `tests/Unit/Controller/MailPartiesReportControllerTest.php` (both named tests plus the
+    answer and CSV). The parties half of the `Woo reports` screen (board DqWooRapportages) is not built here.
+  - Round 9, the parties half: `src/components/reports/CaseMailPartiesReport.vue` (generic, decision 182), mounted
+    by `src/views/woo/WooReportsView.vue`, which now draws only the halves on offer. `WooReportSwitches::offeredToCurrentUser()`
+    answers `parties` too, and the menu entry reads `woo.reportsOffered` (either report). `?case={id}` fills in the
+    case. Tests: `tests/vitest/wooReports.spec.js` (16), `WooReportsInitialStateListenerTest::testThePartiesReportIsOfferedWhileItIsOn`.
+    The board DqWooRapportages (design-system#184, still open) draws the throughput half only: the parties half
+    follows its card and table, and the case is named in a plain field until a board draws a case chooser.
 
 ## 5. End to end and live
 
-- [ ] 5.1 e2e `tests/e2e/woo-review-reports.spec.ts`: with both switches off the screen is absent;
+- [x] 5.1 e2e `tests/e2e/woo-review-reports.spec.ts`: with both switches off the screen is absent;
   switch on with a reader group; a member sees the throughput table, a non-member gets no screen;
   the parties report lists the fixture mails. Cite REQ-WRR-001 to REQ-WRR-004.
+  - Written, not run (live pass, decision 139). Five tests in one serial block; the signed-in administrator
+    is first the non-member and then, added to the run's reader group, the member.
 - [ ] 5.2 Live check after merge on the dev instance: switch on, read both reports for one Woo case,
   and read the audit entry of the throughput read. Record them.
 

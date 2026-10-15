@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -37,11 +37,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Status;
 
 use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 
 /**
  * Resolves the derived status of a case and the reasons a derivation has not fired.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class DerivedStatusService {
 
@@ -51,11 +52,13 @@ class DerivedStatusService {
 	 * @param CaseTypeResolver      $caseTypes  The effective blueprint, so an inherited status counts too.
 	 * @param StatusDeclaration     $declaration What a status says about itself.
 	 * @param DerivedStatusEvaluator $evaluator  Whether a declaration holds.
+	 * @param LanguageMapText $text A translatable title or name as one string.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypes,
 		private readonly StatusDeclaration $declaration,
 		private readonly DerivedStatusEvaluator $evaluator,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -69,7 +72,7 @@ class DerivedStatusService {
 	 *
 	 * @return array<int, array{statusId: string, name: string, order: int, satisfied: bool, unmet: array<int, string>}>
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function verdictsFor(array $case): array {
 		$caseTypeId = (string)($case['caseType'] ?? '');
@@ -91,7 +94,7 @@ class DerivedStatusService {
 			$verdict = $this->evaluator->evaluate(statusType: $row, case: $case);
 			$verdicts[] = [
 				'statusId' => $statusId,
-				'name' => (string)($row['name'] ?? ($row['title'] ?? '')),
+				'name' => $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null))),
 				'order' => (int)($row['order'] ?? 0),
 				'satisfied' => $verdict['satisfied'],
 				'unmet' => $verdict['unmet'],
@@ -118,7 +121,7 @@ class DerivedStatusService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function isDerivedStatus(string $caseTypeId, string $statusTypeId): bool {
 		if ($caseTypeId === '' || $statusTypeId === '') {
@@ -158,7 +161,7 @@ class DerivedStatusService {
 	 *
 	 * @return string|null The statusType id to move to, or null for no move.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function statusFor(array $case): ?string {
 		$currentId = (string)($case['status'] ?? '');
@@ -192,7 +195,7 @@ class DerivedStatusService {
 	 *
 	 * @return array{statusId: string, name: string, unmet: array<int, string>}|null
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function blockingReasonFor(array $case): ?array {
 		$currentOrder = $this->orderOf(case: $case, statusId: (string)($case['status'] ?? ''));
@@ -220,7 +223,7 @@ class DerivedStatusService {
 	 *
 	 * @return int The order, or 0 when the status does not resolve.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function orderOf(array $case, string $statusId): int {
 		if ($statusId === '') {

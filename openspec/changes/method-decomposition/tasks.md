@@ -122,6 +122,35 @@ baseline-uncovered violations in *untouched* files; zero new ones introduced).
 
 - [ ] **TASK-DECOMP-041**: Move helper methods from ZgwRulesBase to FieldValidator and ZgwReferenceResolver
 - [ ] **TASK-DECOMP-042**: Keep base class lean: only shared error handling, logging, common type resolution
+  - [x] The SSRF guard is out of the base, and out of two more classes that carried a copy of
+        it: `NotificatieService` (subscriber callbacks) and `Ai/AiEndpointGuard` (the model
+        endpoint). One guard replaces the three: `lib/Service/Outbound/OutboundUrlGuard.php`,
+        over `Outbound/HostResolver.php`. It asks two questions that are inverses,
+        `publicAddress()` (https only, no address inside the instance's own network) and
+        `ownNetworkAddress()` (http or https, only an address inside it), answers with the
+        address to connect to, and hands out the request options that pin the name to that
+        address, follow no redirect and verify TLS. `ZgwRulesBase::fetchExternalUrl()` and the
+        notification delivery use `publicAddress()`; `AiEndpointGuard` keeps one decision, which
+        question a model type is asked. Class complexity: ZgwRulesBase 86 to 66,
+        NotificatieService 44 to 19, AiEndpointGuard 38 to 3; the guard is 33, the resolver 6.
+        The base stays above 50 until the uniqueness check moves, so no suppression goes here.
+        Characterisation, green on the three copies first:
+        `tests/Unit/Service/Outbound/OutboundRefusalCasesTest.php`, a table of 38 addresses
+        (every range of every copy with the address on each side of both edges) and 28 URLs
+        (schemes, no host, private and loopback and link-local literals, IPv6, credentials in
+        front, loopback as a decimal). The two tables are unchanged after the merge; the helpers
+        under them now ask the real entry points. `AiEndpointGuardTest` is unchanged and green.
+        The one guard is as strict as the strictest copy on every row, and stricter on purpose
+        in these: plain http is refused for the ZGW fetch (was https only for the other two),
+        IPv6 link-local fe80::/10 is blocked for the ZGW fetch and callbacks (only the model
+        guard had it), a callback no longer follows a redirect (only the ZGW fetch refused
+        them), the ZGW fetch and callbacks connect to the inspected address (only the model call
+        was pinned), and four spellings no copy blocked are blocked: `::ffff:127.0.0.1` and
+        every other IPv4 address written as IPv6, `0.0.0.0/8` and `::`.
+        Own tests: `OutboundUrlGuardTest` (8, names through a table instead of DNS, which no
+        copy could be tested on), `HostResolverTest` (2), `OutboundCallersTest` (6, the request
+        each caller makes: none when refused, one with the guard's options when approved).
+        Twelve mutations of the guard and its call sites each turn tests red (checked).
 
 ### LoadDefaultZgwMappings Repair Step (4 suppressions)
 
@@ -287,7 +316,27 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `is_array()` guards behind `@phpstan-ignore` went (applyInboundMapping returns `array`
         natively). Characterisation: `tests/Unit/Controller/DrcEioLifecycleTest.php` (8 tests,
         green on the old controller first) beside the existing Drc contract tests.
-- [ ] Slice 6c `ZrcController` (12, plus 15 method findings its class-level suppressions hide)
+- [x] Slice 6c `ZrcController` (12 suppressions gone: the class-level CyclomaticComplexity,
+      NPathComplexity and ExcessiveMethodLength, and the method-level ones on destroyCase,
+      checkReopenScope, checkIndicationGebruiksrechtBeforeClose and handleEindstatusEffect; with
+      them gone no Zrc method crosses a threshold, so the 15 hidden findings are gone too).
+      What a new status or resultaat does to its zaak moved to three new classes:
+      `ZrcStatusEffects` (close on eindstatus, reopen, result-time archiving, the zrc-008c
+      reopen test), `ZrcEindstatus` (own flag, else highest volgnummer; it was written out
+      twice) and `ZrcUsageRights` (zrc-007b settle, zrc-007q check). The controller lost
+      `CaseDateNormaliser` and `ArchivalNominationDeriver` and went from 2,562 to about 1,950
+      lines; `create` (CC 20), `destroyCase` (21), `update`/`patch`, the two read-access
+      checks, the body pre-validation and the inbound related-zaken write each lost their
+      sub-steps to private helpers. The `is_array()` guard behind `@phpstan-ignore` on
+      `applyInboundMapping()` went (it returns `array` natively).
+      Characterisation, green on the old code first: `ZrcStatusEffectsTest` (19; also run
+      against the six original controller methods copied verbatim into a scratch harness, same
+      19 green), `ZrcDestroyCaseTest` (9), `ZrcCaseReadAccessTest` (10), `ZrcWritePathTest` (15).
+      Own tests for the new classes: `ZrcEindstatusTest`, `ZrcUsageRightsTest`.
+      `OneDateWritePathTest` lists `Service/Zgw/ZrcStatusEffects.php` under the ZrcController
+      write path; the swallowing-catch ceiling holds at 259. The class-level ExcessiveClassLength,
+      ExcessiveClassComplexity, TooMany(Public)Methods and CouplingBetweenObjects stay: they need
+      the controller split by resource, not by method.
 - [ ] Slice 7, the singletons
   - [x] `ZgwJwtValidator::validate` (2): token decoding, signature check and user binding
         are their own methods. Characterisation: `tests/Unit/Service/ZgwJwtValidatorTest.php`
@@ -295,4 +344,187 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] `PlanItemCascade::cascadePass` (1): one pass loops `evaluateItem()`, which uses
         `criteriaFire()`/`hasCriteria()` and `completeStageIfDone()`. Covered by the existing
         `tests/Unit/Service/Cmmn/` suite (47 tests, green before and after).
-  - [ ] LoadDefaultZgwMappings (2), ZgwRulesBase (1); ContactMomentService waits on #3563
+  - [x] `ZgwRulesBase::checkFieldUniqueness` (1): the per-hit match (including the coerced
+        "000000000" / 0 / "" cases) is `storedValueMatches()`. Characterisation:
+        `tests/Unit/Service/ZgwRulesBaseUniquenessTest.php` (4 tests, green before and after).
+  - [ ] LoadDefaultZgwMappings (2 method length + class length/complexity): NOT split. The
+        three long methods are mapping DATA (ZGW property templates per resource), not logic;
+        cutting an array literal into pieces to pass a length rule hides nothing. Under decision 182
+        the honest fix is to move the default mappings into a configuration file the repair step
+        reads, which is a refactor-programme decision, not a decomposition slice. Left for that.
+  - [x] `ContactMomentService` (2: `mergeUpdate` CyclomaticComplexity and the class-level
+        ExcessiveClassComplexity; #3563 has landed). What a contact moment may hold on create and
+        on update moved to the new `lib/Service/Kcc/ContactMomentPayload.php` (`forCreate()`,
+        `merged()`, one `oneOf()` for the three lists, one `withTags()`, the end and duration of
+        an update in `withUpdatedEnd()`); the service keeps the lookups, the ownership check and
+        the saves, and its constructor is unchanged. Characterisation, green on the old code
+        first: `tests/Unit/Service/Kcc/ContactMomentWritePathTest.php` (10 tests through create,
+        update, get, list and related over a fake ObjectService). Own test for the new class:
+        `ContactMomentPayloadTest` (11). It pins one thing worth knowing: an update stores
+        `endedAt` as sent, without the normaliser a create uses; behaviour kept, not fixed here.
+- [ ] Slice 8, the class-level suppressions. With the method-level ones gone (AcController's
+      four wait on #3298), what is left on the ZGW surface is ExcessiveClassComplexity,
+      ExcessiveClassLength, TooManyMethods and CouplingBetweenObjects. Those need a class split by
+      concern, not a method split. Same method as before: characterisation through the public
+      callers green on the old class first, then the split, then the same tests again.
+  - [x] 8a `ZgwZrcRulesService` (2: ExcessiveClassComplexity 153 against 50, and
+        ExcessiveClassLength; 1,170 lines to about 310). It keeps the three zaak entry rules and
+        builds three rule groups from its own three collaborators, so its constructor, the
+        dispatcher and the container are unchanged: `Zgw/ZrcCaseFieldRules` (the zrc-002 and
+        zrc-010 to zrc-022 sequence; complexity 38), which builds `Zgw/ZrcCaseRelationRules`
+        (hoofdzaak and products, the two rules that read another object; 28),
+        `Zgw/ZrcCaseTypeDefaults` (default handler and zrc-009 confidentiality; 16) and
+        `Zgw/ZrcSubResourceRules` (zrc-016, 018, 019, 020; 25). `setContext()` is forwarded to
+        every group; removing the forward makes four tests fail (checked).
+        Characterisation: the existing `ZgwZrcCaseFieldRulesTest` (30) and
+        `ZgwZrcRulesServiceTest`, plus the new `ZgwZrcCaseEntryRulesTest` (9: create defaults,
+        the refused zaaktype, default assignee, the three confidentiality spellings, the PUT
+        carry-forward, the PATCH fallback), green on the single class first and unchanged after.
+        Own tests: `tests/Unit/Service/Zgw/ZrcCaseFieldRulesTest`, `ZrcCaseRelationRulesTest`,
+        `ZrcCaseTypeDefaultsTest`, `ZrcSubResourceRulesTest` (20 tests).
+        Removed, not moved: `detectEindstatus()` and `filterZakenForConsumer()` (22 points of
+        complexity) had no caller in `lib/`. The live answers are `Zgw/ZrcEindstatus` (slice 6c)
+        and the read-access filter in `ZrcController`, each with its own suite; the eight tests of
+        the two dead methods went with them.
+  - [x] 8b `ZgwBrcRulesService` (1: ExcessiveClassComplexity 89 against 50). It keeps the create
+        rules of a besluit (brc-001, 002, 007; complexity 38) and builds two rule groups the same
+        way 8a does: `Zgw/BrcImmutabilityRules` (update and patch: besluittype, identificatie and
+        verantwoordelijkeOrganisatie may not change, a PUT carries the last two forward; 30) and
+        `Zgw/BrcDocumentLinkRules` (brc-003, 004, 008 for a besluitinformatieobject; 21). The
+        lookup by URL and the list decoding both sides need sit in the trait
+        `Zgw/ReadsLinkedObjects`. `setContext()` is forwarded; removing the forward to the
+        document rules makes four tests fail (checked).
+        Characterisation, green on the single class first: 11 tests added to
+        `ZgwBrcRulesServiceTest` (26 in all), because update and patch had none. They pin two
+        things worth knowing: an empty stored `title` does not fall through to `identifier`, and
+        a PUT that sends an empty identificatie against a stored one is refused instead of
+        filled. Behaviour kept, not fixed here.
+        Own tests: `tests/Unit/Service/Zgw/BrcImmutabilityRulesTest` (8) and
+        `BrcDocumentLinkRulesTest` (5), the second with every lookup keyed on its own schema.
+  - [x] 8c `WorkQueueService` (1: ExcessiveClassComplexity 93 against 50). Its suppression said a
+        split would fragment one responsibility; it held three. `Queue/UrgencyScorer` scores one
+        item and reads no store (the tier, the working days on the administered calendar with
+        the Monday to Friday walk behind it, the priority and idle parts; 21).
+        `Queue/QueueCaseFacts` reads what a case needs before it is scored (its nearest open
+        term or own deadline, its last activity, the profile of its case type; 33). The service
+        reads the cases and tasks, ranks them and counts the open work (42).
+        The two are injected, not built inside: building them inside pushed the service's
+        coupling to 14 against 13. So the constructor changed, from the date normaliser, the
+        journal and the calendar to the scorer and the facts. Nothing registers the service by
+        hand, the container wires it; four test files build it and got the new arguments, no
+        assertion changed. `scoreItem()` stays on the service for `Queue/QueueOrdering`.
+        Characterisation, green on the single class first: 9 tests added to
+        `WorkQueueServiceTest` (41 in all) for the whole answer of a score and of a task item,
+        the walk in both directions, the calendar that does not answer, the nearest of several
+        terms, and every failed read. They pin one thing worth knowing: a deadline on the
+        weekend just past counts zero working days from Monday, so it reads critical, not
+        overdue. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Queue/UrgencyScorerTest` (5) and `QueueCaseFactsTest` (6).
+        The date-arithmetic audit row moved with the arithmetic to `UrgencyScorer`.
+  - [x] 8d `BrcController` (1: ExcessiveClassComplexity 86 against 50). It keeps the token and
+        scope gates, the pass-through to the shared ZGW service, the 405 on a
+        besluitinformatieobject and the besluit's own create and delete (complexity 41).
+        `Zgw/BrcCrossRegisterSync` holds what the Besluiten API keeps in step elsewhere: the
+        zaakbesluit in the Zaken register (brc-006) and the objectinformatieobject in the
+        Documenten register (brc-005, brc-009; 26). `Zgw/BrcDocumentLinkHandler` holds the three
+        besluitinformatieobject routes (21). The controller builds both, so its constructor, the
+        routes and the container are unchanged.
+        Characterisation, green on the single class first: the controller had no behaviour test
+        at all, so `tests/Unit/Controller/BrcControllerTest.php` is new: 21 tests over every
+        route, each write and delete asserted with its register, schema and payload, each log
+        line with its text. Unchanged and green after the split. Removing either sync call from
+        the controller turns two tests red (checked).
+        Own tests: `tests/Unit/Service/Zgw/BrcCrossRegisterSyncTest` (5) and
+        `BrcDocumentLinkHandlerTest` (6), over a shared recording store.
+        The decision-writer allowlist entry moved with the zaakbesluit write to
+        `BrcCrossRegisterSync`; the two StaticAccess suppressions moved with their methods.
+  - [x] 8e `ZgwRulesBase` (1: ExcessiveClassComplexity 66 against 50; TASK-DECOMP-041/042). The
+        base keeps the context, the URL checks and thin wrappers (complexity 40). What it reads
+        from the store is `Zgw/ZgwRuleLookups` (one object by field, all by field, one by uuid
+        and schema key, and whether a pair of values is taken; 33). The shapes a rule answers
+        with are `Zgw/ZgwRuleResults` (valid, refused, the field of a refusal; 5). Neither
+        extends the base: it has 13 children and PHPMD allows 14, which is why two earlier
+        drafts of the DRC and ZTC slices, whose rule groups each extended it, were red on
+        NumberOfChildren in the full run and are not in this stack. A rules class can hand its
+        lookups object to a collaborator it builds, and that collaborator reads in the request's
+        context without a `setContext()` of its own.
+        Characterisation: no new tests were needed. The 351 tests of the fifteen suites that
+        cover the base (the four rules services, the rule groups and `ZgwRulesBaseUniquenessTest`)
+        were green before and are green, unchanged but for two `@uses` lines each, after.
+        Removing the context forward to the lookups turns them red (checked).
+        Own tests: `tests/Unit/Service/Zgw/ZgwRuleLookupsTest` (6) and `ZgwRuleResultsTest` (3).
+        TASK-DECOMP-041 named `FieldValidator` and `ZgwReferenceResolver` as the targets; the
+        field checks already live in `FieldValidator` (TASK-DECOMP-036), and the lookups took the
+        name of what they do.
+  - [x] 8f `ZgwDrcRulesService` (1: ExcessiveClassComplexity 87 against 50). It keeps the rules of
+        the document itself and the check of an informatieobject URL (drc-001, 005, 006, 007,
+        008; complexity 41). The rest of an objectinformatieobject create is
+        `Zgw/DrcObjectLinkRules` (the object URL of drc-002, and drc-004; 26), and what both
+        sides read from the stored relations is `Zgw/DrcDocumentRelations` (the relations of a
+        document for drc-007, the duplicate check for drc-003; 23). Neither extends the base:
+        each is built over the service's own lookups and result builder (8e), so the request
+        context reaches them without a forward. Building the relations over lookups of their
+        own instead turns six tests red (checked).
+        Characterisation, green on the single class first: 10 tests added to
+        `ZgwDrcRulesServiceTest` (20 in all), because the lock rules, the delete rule, the uuid
+        and full-text duplicate searches and both failure modes had none. They pin that drc-003
+        fails closed (a search that cannot answer is a duplicate) while drc-004 and drc-007 fail
+        open. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Zgw/DrcDocumentRelationsTest` (8, every query asserted
+        with its schema) and `DrcObjectLinkRulesTest` (7). One branch is unreachable and was
+        moved as it stood: "De object URL bevat geen geldig UUID", because `isValidUrl()` already
+        refuses a URL whose path does not end in a uuid.
+  - [x] 8g `ZgwZtcRulesService` (1: ExcessiveClassComplexity 106 against 50). It keeps the create
+        rules of a zaaktype, a besluittype and a zaaktype-informatieobjecttype (ztc-001 and the
+        name lookup; complexity 24) and builds three collaborators, none a child of the base:
+        `Zgw/ZtcConceptRules` over the result builder (ztc-009 and ztc-010, the concept default
+        and the kept concept; 30), `Zgw/ZtcTypeReferences` over the lookups (reference lists to
+        uuids, related zaaktypen, `_directFields`; 31) and `Zgw/ZtcPublishAndDeleteChecks` over
+        the lookups (what a case type needs before publish or delete; 30).
+        The public methods, both constants, the constructor signature, `ZgwBusinessRulesService`
+        and the dispatcher are unchanged. Building the two reading collaborators over lookups
+        of their own instead turns the suites red (checked).
+        Characterisation, green on the single class first: the concept rules had no test at all,
+        so `tests/Unit/Service/ZgwZtcConceptRulesTest.php` (7 tests, every resource against every
+        action) is new, and 6 tests joined `ZgwZtcRulesServiceTest` for the failed reads of the
+        publish and delete checks. They pin: a stored `isDraft` wins over a stored `concept`; a
+        type without either field is a concept; a delete check that cannot read the cases lets
+        the delete through, and one that cannot read the final status types counts every case as
+        active. Behaviour kept, not changed here.
+        Own tests: `tests/Unit/Service/Zgw/ZtcConceptRulesTest` (6), `ZtcTypeReferencesTest` (4,
+        every search asserted with its schema) and `ZtcPublishAndDeleteChecksTest` (6).
+  - [x] 8h `StatusTransitionService` (2: CouplingBetweenObjects 18 against 13, and
+        ExcessiveParameterList, 14 constructor arguments against 10). Not a move: the design is in
+        design.md, "StatusTransitionService: two facades". `Transitions/CaseDeclarations` reads
+        what a case declares about its status and its moves (over `StatusDeclarations`,
+        `TransitionDeclarations`, `OfferedTransitions`, `StatusChecklist` and the status row).
+        `Transitions/CaseMoveLedger` holds what a move writes (over `CaseStatusStore`,
+        `CaseResultWriter`, `SideEffectDispatcher`). The engine keeps the decision and the order
+        of the checks, takes nine arguments and couples to 12 classes. Both suppressions are gone
+        (183 to 181). The public methods and their answers are unchanged; the constructor changed.
+        Characterisation, green on the single class first (own commit):
+        `tests/Unit/Service/StatusTransitionServiceOrderTest.php`, 10 tests over the order of the
+        five refusals, the conflict check, the one save of a closing move with the version read,
+        the timer after the save, the record that cannot be written back, the free-form refusals
+        and the shape of the available transitions. Seven mutations of the engine turn it red.
+        Unchanged and green after the split apart from its one constructor helper, as are the
+        five existing engine tests.
+        Own tests: `tests/Unit/Service/Transitions/CaseDeclarationsTest` (4) and
+        `CaseMoveLedgerTest` (6).
+  - [x] 8i `ZtcController` (2: TooManyPublicMethods, 12 public methods against 10, and
+        ExcessiveClassComplexity 79 against 50). The three publish routes go to their own
+        controller, `ZtcPublishController` (`ztcPublish#publish*` in `appinfo/routes.php`, same
+        URLs, verbs, rate limits and auth attributes), with `handlePublish()` and
+        `publishedCopy()`. Two helpers leave as classes of their own: `Zgw/ValidityDateFilter`
+        (the `datumGeldigheid` filter of a list) and `Zgw/ZtcTypeNameResolver` (ztc-010m, an
+        informatieobjecttype named by its omschrijving). Measured after: 9 public methods,
+        complexity under 50, both suppressions gone (phpmd.suppressWarnings minus 2: 180 to 178 on top of 8h). Bodies
+        moved unchanged.
+        Characterisation: the publish contract test existed (`ZtcControllerContractTest`, 6
+        tests) and moves with the routes as `ZtcPublishControllerContractTest`; the rate-limit
+        and middleware tests list the new controller. Own tests: `ValidityDateFilterTest` (1,
+        both bounds inclusive, open bounds) and `ZtcTypeNameResolverTest` (2, name then full
+        text, and every case that leaves the body alone).
+        Seen, not changed: the publish routes run no business rule, so the CT-02b publish guard
+        (`ZgwBusinessRulesService::guardCaseTypePublish`) does not run on them, and they check no
+        ZGW scope (the contract test says so).

@@ -204,8 +204,7 @@ class AssigneeResolver {
 	 * The one reader of a case type's handling switches.
 	 *
 	 * Built here rather than injected so the constructor signature stays put:
-	 * it is stateless, and twenty-five call sites construct this class. Same
-	 * reason `SeedDataService` builds its workflow resolver.
+	 * it is stateless, and twenty-five call sites construct this class.
 	 *
 	 * @return CaseTypeHandling The reader.
 	 */

@@ -750,9 +750,6 @@ class AcController extends ZgwController {
 	 * @return JSONResponse|null Error response or null if valid.
 	 *
 	 * @spec openspec/specs/zgw-autorisaties-api/spec.md
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 */
 	private function validateAutorisatieScopes(array $body): ?JSONResponse {
 		$autorisaties = $body['autorisaties'] ?? [];
