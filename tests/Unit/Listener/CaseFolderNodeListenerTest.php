@@ -16,7 +16,6 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseFolderNodeListener;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Files\Events\Node\NodeCreatedEvent;
@@ -229,10 +228,11 @@ class CaseFolderNodeListenerTest extends TestCase {
 	private function listenerFor(?IUser $user, object $or): CaseFolderNodeListener {
 		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
-		$settings = $this->createMock(originalClassName: SettingsService::class);
-		$settings->method('getObjectService')->willReturn($or);
+		$this->projection->method('asSystem')->willReturnCallback(
+			static fn (callable $operation): mixed => $or->runAsSystem($operation)
+		);
 
-		return new CaseFolderNodeListener(projection: $this->projection, logger: $this->logger, userSession: $session, settingsService: $settings);
+		return new CaseFolderNodeListener(projection: $this->projection, logger: $this->logger, userSession: $session);
 	}//end listenerFor()
 
 	/**

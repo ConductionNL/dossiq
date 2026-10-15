@@ -14,8 +14,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -54,19 +52,15 @@ use Throwable;
  */
 class CaseFolderNodeListener implements IEventListener {
 
-	use SearchesObjects;
-
 	/**
 	 * @param DocumentProjectionService $projection The service that owns the record.
 	 * @param LoggerInterface $logger Where a failed projection is reported.
 	 * @param IUserSession|null $userSession Who wrote the file; nobody means the system.
-	 * @param SettingsService|null $settingsService OpenRegister's object service, to run as the system.
 	 */
 	public function __construct(
 		private readonly DocumentProjectionService $projection,
 		private readonly LoggerInterface $logger,
 		private readonly ?IUserSession $userSession = null,
-		private readonly ?SettingsService $settingsService = null,
 	) {
 	}//end __construct()
 
@@ -80,13 +74,12 @@ class CaseFolderNodeListener implements IEventListener {
 	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
 	 */
 	private function asWriter(callable $operation): void {
-		$objectService = $this->settingsService?->getObjectService();
-		if ($this->userSession?->getUser() !== null || $objectService === null) {
+		if ($this->userSession === null || $this->userSession->getUser() !== null) {
 			$operation();
 			return;
 		}
 
-		$this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+		$this->projection->asSystem(operation: $operation);
 	}//end asWriter()
 
 	/**
