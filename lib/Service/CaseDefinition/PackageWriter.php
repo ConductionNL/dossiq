@@ -150,7 +150,9 @@ class PackageWriter {
 	 *
 	 * A row the instance already holds is left alone and reported as skipped.
 	 * That is what makes a second install of the same package a no-op, and it
-	 * is why nothing here replaces: a replaced row cannot be rolled back.
+	 * is why nothing here replaces: a replaced row cannot be rolled back. Each
+	 * such row is also reported as held, with the row the package ships, so the
+	 * installer can refresh it through the ledger once the write has succeeded.
 	 *
 	 * A row the instance holds under another id, because a seeder wrote it
 	 * before the package existed, is adopted: nothing is written, the existing
@@ -167,12 +169,16 @@ class PackageWriter {
 	 *     message: string,
 	 *     written: array<int, array<string, mixed>>,
 	 *     skipped: array<int, string>,
-	 *     adopted: array<int, array<string, mixed>>
+	 *     adopted: array<int, array<string, mixed>>,
+	 *     held: array<int, array<string, mixed>>
 	 * }
-	 *         Each written and adopted entry carries schemaKey, schema, id and row;
-	 *         an adopted entry's row is the one this instance already held.
+	 *         Each written, adopted and held entry carries schemaKey, schema, id and row;
+	 *         an adopted entry's row is the one this instance already held, a held
+	 *         entry's row is the one the package ships, and a held entry says whether
+	 *         its group names a register of its own (`ownRegister`).
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 * @spec openspec/changes/package-upgrade-refreshes-untouched-rows/specs/case-types/spec.md
 	 */
 	public function writePackage(string $package, array $groups): array {
 		$objectService = $this->settings->getObjectService();
@@ -184,10 +190,11 @@ class PackageWriter {
 				'written' => [],
 				'skipped' => [],
 				'adopted' => [],
+				'held' => [],
 			];
 		}
 
-		$run = ['written' => [], 'skipped' => [], 'adopted' => [], 'ids' => [], 'caseTypes' => []];
+		$run = ['written' => [], 'skipped' => [], 'adopted' => [], 'held' => [], 'ids' => [], 'caseTypes' => []];
 
 		try {
 			foreach ($groups as $group) {
@@ -202,6 +209,7 @@ class PackageWriter {
 				'written' => [],
 				'skipped' => [],
 				'adopted' => [],
+				'held' => [],
 			];
 		}
 
@@ -212,6 +220,7 @@ class PackageWriter {
 			'written' => $run['written'],
 			'skipped' => $run['skipped'],
 			'adopted' => $run['adopted'],
+			'held' => $run['held'],
 		];
 	}//end writePackage()
 
@@ -272,6 +281,13 @@ class PackageWriter {
 			$packageId = $this->existingId(row: $row);
 			if ($packageId !== '' && $this->holds(objectService: $objectService, register: $register, schema: $schema, id: $packageId) === true) {
 				$run['skipped'][] = $packageId;
+				$run['held'][] = [
+					'schemaKey' => $group['schemaKey'],
+					'schema' => $schema,
+					'id' => $packageId,
+					'row' => $this->withoutMetadata(row: $row),
+					'ownRegister' => isset($group['register']),
+				];
 				continue;
 			}
 
