@@ -248,17 +248,28 @@ class CaseAccessGuard {
 			return false;
 		}
 
+		return ($this->isNamedOn(case: $case, uid: $uid) === true || $this->inHandlingTeam(case: $case, uid: $uid) === true);
+	}//end hasCaseReadAccess()
+
+	/**
+	 * Whether the caller is named on the case, as its assignee or in `assignees`.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 * @param string $uid The caller.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function isNamedOn(array $case, string $uid): bool {
 		if ((string)($case['assignee'] ?? '') === $uid) {
 			return true;
 		}
 
 		$assignees = ($case['assignees'] ?? []);
-		if (is_array($assignees) === true && in_array($uid, $assignees, true) === true) {
-			return true;
-		}
 
-		return $this->inHandlingTeam(case: $case, uid: $uid);
-	}//end hasCaseReadAccess()
+		return (is_array($assignees) === true && in_array($uid, $assignees, true) === true);
+	}//end isNamedOn()
 
 	/**
 	 * Whether the caller is in one of the handling teams of the case's case type.
@@ -276,33 +287,7 @@ class CaseAccessGuard {
 	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
 	 */
 	private function inHandlingTeam(array $case, string $uid): bool {
-		$caseTypeId = ($case['caseType'] ?? '');
-		if (is_array($caseTypeId) === true) {
-			$caseTypeId = ($caseTypeId['id'] ?? ($caseTypeId['uuid'] ?? ''));
-		}
-
-		if (is_string($caseTypeId) === false || $caseTypeId === '') {
-			return false;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return false;
-		}
-
-		try {
-			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq CaseAccessGuard: case type lookup failed, no team read: ' . $e->getMessage(),
-				['app' => Application::APP_ID]
-			);
-			return false;
-		}
-
-		foreach ((new CaseTypeHandling())->teams(caseType: ($caseType ?? [])) as $team) {
+		foreach ((new CaseTypeHandling())->teams(caseType: $this->caseTypeOf(case: $case)) as $team) {
 			if ($this->groupManager->isInGroup($uid, $team) === true) {
 				return true;
 			}
@@ -310,6 +295,43 @@ class CaseAccessGuard {
 
 		return false;
 	}//end inHandlingTeam()
+
+	/**
+	 * The case type row of a case, or an empty row when it cannot be read.
+	 *
+	 * @param array<string, mixed> $case The case.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	private function caseTypeOf(array $case): array {
+		$caseTypeId = ($case['caseType'] ?? '');
+		if (is_array($caseTypeId) === true) {
+			$caseTypeId = ($caseTypeId['id'] ?? ($caseTypeId['uuid'] ?? ''));
+		}
+
+		if (is_string($caseTypeId) === false || $caseTypeId === '') {
+			return [];
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		try {
+			return ($this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId) ?? []);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq CaseAccessGuard: case type lookup failed, no team read: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return [];
+		}
+	}//end caseTypeOf()
 
 	/**
 	 * Whether OpenRegister says this caller holds a read grant on this case.
