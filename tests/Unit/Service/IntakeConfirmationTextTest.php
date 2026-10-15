@@ -54,6 +54,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class IntakeConfirmationTextTest extends TestCase {
 

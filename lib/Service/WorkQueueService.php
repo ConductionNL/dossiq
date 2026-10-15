@@ -197,7 +197,7 @@ class WorkQueueService {
 	 *
 	 * @return array{ours: int, applicant: int, thirdParty: int, total: int}
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function countByWaitingOn(?string $userId = null): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -243,7 +243,7 @@ class WorkQueueService {
 	 *
 	 * @return array{ours: int, applicant: int, thirdParty: int, total: int}
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function tallyWaitingOn(array $cases): array {
 		$counts = ['ours' => 0, 'applicant' => 0, 'thirdParty' => 0, 'total' => 0];

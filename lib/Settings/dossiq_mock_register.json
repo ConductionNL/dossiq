@@ -26515,7 +26515,7 @@
           "slug": "stoppingrule-stoppingrule-1-1"
         },
         "case": "00000000-0000-4000-8000-000000000000",
-        "targetRecall": 0.0,
+        "targetRecall": 0.5,
         "confidence": 0.9,
         "declaredBy": "Voorbeeld Declaredby 1",
         "declaredAt": "2026-03-01T09:00:00+00:00"
@@ -26527,7 +26527,7 @@
           "slug": "stoppingrule-stoppingrule-2-2"
         },
         "case": "00000000-0000-4000-8000-000000000001",
-        "targetRecall": 0.0,
+        "targetRecall": 0.99,
         "confidence": 0.95,
         "declaredBy": "Voorbeeld Declaredby 2",
         "declaredAt": "2026-03-02T09:00:00+00:00"
@@ -26539,7 +26539,7 @@
           "slug": "stoppingrule-stoppingrule-3-3"
         },
         "case": "00000000-0000-4000-8000-000000000002",
-        "targetRecall": 0.0,
+        "targetRecall": 0.99,
         "confidence": 0.99,
         "declaredBy": "Voorbeeld Declaredby 3",
         "declaredAt": "2026-03-03T09:00:00+00:00"

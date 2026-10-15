@@ -470,11 +470,13 @@ class ZgwDrcRulesServiceTest extends TestCase {
 	}//end serialisable()
 
 	/**
-	 * Drc-007: no relation, or a relation search that fails, lets the delete through.
+	 * Drc-007: no relation lets the delete through; a relation search that could not run refuses it.
+	 *
+	 * The delete without a relation is the control: the search ran and found none.
 	 *
 	 * @return void
 	 */
-	public function testDestroyPassesWithoutARelationOrWhenTheSearchFails(): void {
+	public function testDestroyPassesWithoutARelationAndRefusesWhenTheSearchFails(): void {
 		$none = $this->buildService(objects: [])
 			->rulesEnkelvoudiginformatieobjectenDestroy(body: ['x' => 1], existingObject: ['id' => self::IO_UUID]);
 
@@ -486,9 +488,13 @@ class ZgwDrcRulesServiceTest extends TestCase {
 
 		$this->assertTrue($none['valid']);
 		$this->assertSame(['x' => 1], $none['enrichedBody']);
-		$this->assertTrue($failed['valid']);
+		$this->assertFalse($failed['valid']);
+		$this->assertSame(503, $failed['status']);
+		$this->assertSame('check-not-completed', $failed['code']);
+		$this->assertStringContainsString('drc-007', $failed['detail']);
+		$this->assertSame([], $failed['invalidParams']);
 
-	}//end testDestroyPassesWithoutARelationOrWhenTheSearchFails()
+	}//end testDestroyPassesWithoutARelationAndRefusesWhenTheSearchFails()
 
 	/**
 	 * Drc-003: a relation stored by uuid, or found only by full text, is a duplicate too.
@@ -545,29 +551,38 @@ class ZgwDrcRulesServiceTest extends TestCase {
 	}//end testRelationInZrcOrBrcIsADuplicate()
 
 	/**
-	 * Drc-003 fails closed: a duplicate search that cannot answer counts as a duplicate.
+	 * Drc-003: a duplicate search that could not run refuses, and claims no duplicate.
+	 *
+	 * Control: testAKnownObjectTypeNeverPassesBothRelationRules runs the same body over a search that answers.
 	 *
 	 * @return void
 	 */
-	public function testFailedDuplicateSearchCountsAsADuplicate(): void {
+	public function testFailedDuplicateSearchRefusesAsNotVerified(): void {
 		$this->searchHandler = static function (array $query): array {
 			throw new \RuntimeException('down');
 		};
 
 		$result = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
 
-		$this->assertSame('unique', $result['invalidParams'][0]['code']);
+		$this->assertSame(503, $result['status']);
+		$this->assertSame('check-not-completed', $result['code']);
+		$this->assertStringContainsString('drc-003', $result['detail']);
+		$this->assertSame([], $result['invalidParams']);
 
-	}//end testFailedDuplicateSearchCountsAsADuplicate()
+	}//end testFailedDuplicateSearchRefusesAsNotVerified()
 
 	/**
-	 * Drc-004 fails open: a cross-register search that cannot answer lets the relation through.
+	 * Drc-004: a cross-register search that could not run refuses the relation.
 	 *
-	 * The cross-register search is the one that names the case before the document.
+	 * The cross-register search is the one that names the case before the document. Control: the
+	 * same search finding the counterpart passes.
 	 *
 	 * @return void
 	 */
-	public function testFailedCrossRegisterSearchPasses(): void {
+	public function testFailedCrossRegisterSearchRefuses(): void {
+		$this->searchHandler = static fn (array $query): array => ['total' => (int)(array_key_first($query) === 'case')];
+		$found = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
+
 		$this->searchHandler = static function (array $query): array {
 			if (array_key_first($query) === 'case') {
 				throw new \RuntimeException('down');
@@ -575,12 +590,15 @@ class ZgwDrcRulesServiceTest extends TestCase {
 
 			return ['total' => 0];
 		};
-
 		$result = $this->buildService(objects: [])->rulesObjectinformatieobjectenCreate(body: $this->caseLink());
 
-		$this->assertTrue($result['valid']);
+		$this->assertTrue($found['valid']);
+		$this->assertFalse($result['valid']);
+		$this->assertSame(503, $result['status']);
+		$this->assertSame('check-not-completed', $result['code']);
+		$this->assertStringContainsString('drc-004', $result['detail']);
 
-	}//end testFailedCrossRegisterSearchPasses()
+	}//end testFailedCrossRegisterSearchRefuses()
 
 	/**
 	 * Drc-003 and drc-004 read the same ZaakInformatieObject: present it is a duplicate, absent it is

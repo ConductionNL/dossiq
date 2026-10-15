@@ -115,8 +115,9 @@ class BrcCrossRegisterSync {
 				'brc-006: Created zaakbesluit for zaak=' . $zaakUuid . ' besluit=' . $decisionUrl
 			);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'brc-006: Failed to create zaakbesluit: ' . $e->getMessage()
+			$this->zgwService->getLogger()->error(
+				'brc-006: the besluit was stored, but its zaakbesluit was not: ' . $e->getMessage(),
+				['rule' => 'brc-006', 'resource' => 'zaakbesluiten', 'case' => $zaakUuid, 'decision' => $decisionUrl, 'exception' => $e]
 			);
 		}
 	}//end syncZaakBesluitToZrc()
@@ -155,8 +156,9 @@ class BrcCrossRegisterSync {
 				object: $oioData
 			);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'brc-005a: Failed to create OIO in DRC: ' . $e->getMessage()
+			$this->zgwService->getLogger()->error(
+				'brc-005a: the besluitinformatieobject was stored, but its objectinformatieobject in the DRC was not: ' . $e->getMessage(),
+				['rule' => 'brc-005a', 'resource' => 'objectinformatieobjecten', 'decision' => $decisionUrl, 'document' => $ioUrl, 'exception' => $e]
 			);
 		}
 	}//end createOioInDrc()
@@ -217,8 +219,9 @@ class BrcCrossRegisterSync {
 				}
 			}
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'BRC: Failed to delete OIOs for besluit: ' . $e->getMessage()
+			$this->zgwService->getLogger()->error(
+				'brc-009: the objectinformatieobjecten of a besluit were not all deleted from the DRC: ' . $e->getMessage(),
+				['rule' => 'brc-009', 'resource' => 'objectinformatieobjecten', 'decision' => $decisionUrl, 'exception' => $e]
 			);
 		}//end try
 	}//end deleteOiosForBesluit()
@@ -280,8 +283,9 @@ class BrcCrossRegisterSync {
 				}
 			}
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->warning(
-				'brc-005b: Failed to delete OIO: ' . $e->getMessage()
+			$this->zgwService->getLogger()->error(
+				'brc-005b: the besluitinformatieobject was deleted, but its objectinformatieobject in the DRC was not: ' . $e->getMessage(),
+				['rule' => 'brc-005b', 'resource' => 'objectinformatieobjecten', 'decision' => $decisionUrl, 'document' => $ioUrl, 'exception' => $e]
 			);
 		}//end try
 	}//end deleteOioByBesluitAndIo()

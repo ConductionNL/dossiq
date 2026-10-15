@@ -78,7 +78,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
- * @uses \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

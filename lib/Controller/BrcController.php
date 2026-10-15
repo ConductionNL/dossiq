@@ -455,13 +455,22 @@ class BrcController extends ZgwController {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
 		}
 
+		$object = $resource . ' ' . $uuid;
 		try {
-			// Validate the besluit exists (will throw if not found).
 			$existingObj = $objectService->find(
 				$uuid,
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema']
 			);
+		} catch (\Throwable $e) {
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
+		}
+
+		if ($existingObj === null) {
+			return $this->zgwService->notFoundResponse();
+		}
+
+		try {
 			$existingData = $this->objectToArray(row: $existingObj);
 
 			// Run destroy business rules.
@@ -493,25 +502,12 @@ class BrcController extends ZgwController {
 
 			// Delete the besluit itself.
 			$objectService->deleteObject(uuid: $uuid);
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $uuid,
-				'destroy'
-			);
-
-			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC delete besluit error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
 		}//end try
+
+		$this->zgwService->notifyDeleted(request: $this->request, zgwApi: self::ZGW_API, resource: $resource, uuid: $uuid);
+
+		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 	}//end destroyBesluit()
 }//end class

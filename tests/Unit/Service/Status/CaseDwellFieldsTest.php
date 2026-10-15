@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 class CaseDwellFieldsTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -74,7 +74,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testAMoveBanksTheTimeSpentInTheStatusItLeaves(): void {
 		// Monday 1 June 2026 to Monday 8 June 2026: five working days between.
@@ -103,7 +103,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testASecondVisitAddsToTheSameStatusTotal(): void {
 		$case = [
@@ -139,7 +139,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testTheCountSkipsTheWeekendAndTheGeneralHoliday(): void {
 		$case = ['status' => 'review', 'currentStatusEnteredAt' => '2026-04-30T09:00:00+02:00'];
@@ -158,7 +158,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testACaseWithNoEntryMomentAndNoStartDateAnswersZero(): void {
 		self::assertSame(
@@ -180,7 +180,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testTheTotalsFoldInTheStatusStillRunning(): void {
 		$case = [
@@ -211,7 +211,7 @@ class CaseDwellFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testTheDwellNeverTouchesTheTerm(): void {
 		$case = [

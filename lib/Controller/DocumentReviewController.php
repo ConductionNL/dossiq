@@ -26,9 +26,9 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Review\BatchSelection;
-use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewSummary;
+use OCA\Dossiq\Review\ReviewWrites;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -52,7 +52,7 @@ class DocumentReviewController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param DocumentRelevance $reviews The relevance store.
+	 * @param ReviewWrites $writes A person's writes on a review.
 	 * @param ReviewSummary $summary The case summary.
 	 * @param ReviewBatches $batches The review batches.
 	 * @param BatchSelection $selection Which documents a batch takes.
@@ -64,7 +64,7 @@ class DocumentReviewController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly DocumentRelevance $reviews,
+		private readonly ReviewWrites $writes,
 		private readonly ReviewSummary $summary,
 		private readonly ReviewBatches $batches,
 		private readonly BatchSelection $selection,
@@ -120,7 +120,7 @@ class DocumentReviewController extends Controller {
 		}
 
 		try {
-			$review = $this->reviews->mark(
+			$review = $this->writes->mark(
 				caseId: $id,
 				documentRef: $documentRef,
 				relevance: (string)$this->request->getParam('relevance', ''),
@@ -234,12 +234,12 @@ class DocumentReviewController extends Controller {
 		}
 
 		try {
-			$review = $this->reviews->pages()->record(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
+			$review = $this->writes->pagesSeen(caseId: $id, documentRef: $documentRef, pages: $pages, pageCount: $pageCount, userId: $user->getUID());
 		} catch (RefusedException $e) {
 			return new JSONResponse(['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())], $e->getStatus());
 		}
 
-		return new JSONResponse($review + ['unseen' => $this->reviews->pages()->unseenPages(review: $review)]);
+		return new JSONResponse($review);
 	}//end pagesSeen()
 
 	/**

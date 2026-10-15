@@ -18,7 +18,7 @@
 // consumer that copies the list renders a blank the day the engine adds a kind;
 // a consumer that reads the endpoint renders a kind it has never seen.
 //
-// @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+// @spec openspec/specs/status-transition-engine/spec.md
 
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -38,7 +38,7 @@ export const RULE_VOCABULARY_URL = generateUrl(
  * @param {string} schema The schema slug.
  * @return {string} The url.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function ruleInventoryUrl(schema) {
 	return generateUrl(
@@ -53,7 +53,7 @@ export function ruleInventoryUrl(schema) {
  * @param {string} ruleId The rule id, `<kind>:<schemaSlug>:<key>`.
  * @return {string} The url.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function ruleEvaluateUrl(schema, ruleId) {
 	return generateUrl(
@@ -67,7 +67,7 @@ export function ruleEvaluateUrl(schema, ruleId) {
  * @param {unknown} data The answer.
  * @return {boolean} True when it carries the three sets.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function isRuleVocabulary(data) {
 	return (
@@ -84,7 +84,7 @@ export function isRuleVocabulary(data) {
  * @param {object} vocabulary The vocabulary answer.
  * @return {object} The descriptors, by kind.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function kindsByName(vocabulary) {
 	const kinds = {}
@@ -111,7 +111,7 @@ export function kindsByName(vocabulary) {
  *
  * @return {Promise<object>} The vocabulary, possibly empty.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export async function fetchRuleVocabulary() {
 	try {
@@ -134,7 +134,7 @@ export async function fetchRuleVocabulary() {
  * @param {string} schema The schema slug.
  * @return {Promise<Array<object>>} The rules.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export async function fetchSchemaRules(schema) {
 	const { data } = await axios.get(ruleInventoryUrl(schema))
@@ -151,7 +151,7 @@ export async function fetchSchemaRules(schema) {
  * @param {string} objectId The object to try it against.
  * @return {Promise<object>} The trial result, carrying `trace`.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export async function evaluateRule(schema, ruleId, register, objectId) {
 	const { data } = await axios.post(ruleEvaluateUrl(schema, ruleId), {
@@ -171,7 +171,7 @@ export async function evaluateRule(schema, ruleId, register, objectId) {
  * @param {object} result The trial result.
  * @return {{verdict: string, operand: string, operandValue: string, message: string}} The trace.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function traceOf(result) {
 	const trace = result?.trace ?? {}

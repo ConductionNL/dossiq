@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\Status;
 /**
  * Evaluates a status's declared conditions against a case.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class DerivedStatusEvaluator {
 
@@ -84,7 +84,7 @@ class DerivedStatusEvaluator {
 	 *         `satisfied` whether every condition holds, and `unmet` names what
 	 *         is missing, in declaration order.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $statusType, array $case): array {
 		$conditions = $this->declaration->derivedWhen(statusType: $statusType);
@@ -112,7 +112,7 @@ class DerivedStatusEvaluator {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function holds(array $condition, array $case): bool {
 		$kind = (string)($condition['kind'] ?? '');
@@ -148,7 +148,7 @@ class DerivedStatusEvaluator {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function hasDocumentOfType(array $case, string $documentType): bool {
 		if ($documentType === '') {
@@ -191,7 +191,7 @@ class DerivedStatusEvaluator {
 	 *
 	 * @return mixed The value, or null when the path resolves to nothing.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function read(array $case, string $path): mixed {
 		$cursor = $case;
@@ -218,7 +218,7 @@ class DerivedStatusEvaluator {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function isPresent(mixed $value): bool {
 		if ($value === null || $value === false) {
@@ -243,7 +243,7 @@ class DerivedStatusEvaluator {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function scalar(mixed $value): string {
 		if (is_bool($value) === true) {
@@ -273,7 +273,7 @@ class DerivedStatusEvaluator {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function reasonFor(array $condition): string {
 		$label = trim((string)($condition['label'] ?? ''));

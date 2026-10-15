@@ -215,7 +215,6 @@ class SchemaAnnotationReconciler {
 	 *   on a case-type store it never reads.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 	 */
 	private function mergeOntoLiveSchema(object $schemaMapper, string $slug, array $annotations): int {
 		// 🔴 RESOLVE INSIDE OUR OWN REGISTER. An unscoped slug lookup here merged

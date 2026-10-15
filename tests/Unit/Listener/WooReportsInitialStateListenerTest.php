@@ -95,11 +95,24 @@ class WooReportsInitialStateListenerTest extends TestCase {
 	public function testOnlyAReaderIsOfferedTheThroughputWhileItIsOn(): void {
 		$on = [WooReportSwitches::THROUGHPUT => 'true', WooReportSwitches::READERS => 'woo-leiding'];
 
-		$this->assertSame(['throughput' => false], $this->provided(stored: [], uid: 'lead'));
-		$this->assertSame(['throughput' => false], $this->provided(stored: $on, uid: 'reviewer-a'));
-		$this->assertSame(['throughput' => false], $this->provided(stored: $on, uid: null));
-		$this->assertSame(['throughput' => true], $this->provided(stored: $on, uid: 'lead'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: [], uid: 'lead'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: $on, uid: 'reviewer-a'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: $on, uid: null));
+		$this->assertSame(['throughput' => true, 'parties' => false], $this->provided(stored: $on, uid: 'lead'));
 	}//end testOnlyAReaderIsOfferedTheThroughputWhileItIsOn()
+
+	/**
+	 * The parties report is offered to a signed-in user while it is on, and to nobody signed out.
+	 *
+	 * @return void
+	 */
+	public function testThePartiesReportIsOfferedWhileItIsOn(): void {
+		$on = [WooReportSwitches::PARTIES => 'true'];
+
+		$this->assertSame(['throughput' => false, 'parties' => true], $this->provided(stored: $on, uid: 'reviewer-a'));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: $on, uid: null));
+		$this->assertSame(['throughput' => false, 'parties' => false], $this->provided(stored: [WooReportSwitches::PARTIES => 'false'], uid: 'reviewer-a'));
+	}//end testThePartiesReportIsOfferedWhileItIsOn()
 
 	/**
 	 * Another app's page, a logged-out page or another event gets nothing.

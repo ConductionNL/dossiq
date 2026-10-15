@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\CasePlanProjectionListener
+ * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses \OCA\Dossiq\Service\CasePlanProjectionService
  * @uses \OCA\Dossiq\Service\ObjectSchemaSlugResolver
  */

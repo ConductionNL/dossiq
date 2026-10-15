@@ -31,7 +31,6 @@ namespace OCA\Dossiq\Service\Zgw;
 
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
-use Psr\Log\LoggerInterface;
 
 /**
  * Create rules of an objectinformatieobject.
@@ -46,7 +45,6 @@ class DrcObjectLinkRules {
 	 * @param ZgwRuleResults $results Builds the answers of a rule.
 	 * @param SettingsService $settingsService The settings service.
 	 * @param FieldValidator $fieldValidator The field validator.
-	 * @param LoggerInterface $logger The logger.
 	 * @param DrcDocumentRelations $relations The stored relations of a document.
 	 */
 	public function __construct(
@@ -54,7 +52,6 @@ class DrcObjectLinkRules {
 		private readonly ZgwRuleResults $results,
 		private readonly SettingsService $settingsService,
 		private readonly FieldValidator $fieldValidator,
-		private readonly LoggerInterface $logger,
 		private readonly DrcDocumentRelations $relations,
 	) {
 	}//end __construct()
@@ -99,7 +96,7 @@ class DrcObjectLinkRules {
 	 * @param mixed $objectUrl The object URL
 	 * @param mixed $objectType The objectType
 	 *
-	 * @return array|null The refusal, or null when acceptable or nothing can be looked up
+	 * @return array|null The refusal, or null when acceptable or when there is nothing to look up
 	 */
 	private function checkOioRelations(mixed $ioUrl, mixed $objectUrl, mixed $objectType): ?array {
 		if ($ioUrl === '' || $objectUrl === '' || $this->lookups->objectService() === null) {
@@ -189,7 +186,7 @@ class DrcObjectLinkRules {
 	 * @param string $objectUrl The object URL (zaak or besluit)
 	 * @param string $objectType The object type (zaak or besluit)
 	 *
-	 * @return array|null Validation error if relation doesn't exist, null if valid
+	 * @return array|null The refusal when the relation does not exist or could not be looked up, null if valid
 	 */
 	private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array {
 		$ioUuid = $this->fieldValidator->extractUuid(url: $ioUrl) ?? '';
@@ -251,8 +248,11 @@ class DrcObjectLinkRules {
 				);
 			}
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Drc-004: Cross-register validation failed: ' . $e->getMessage()
+			// The lookup did not run, so nobody knows whether the counterpart exists. Refuse.
+			return $this->results->notVerified(
+				rule: 'drc-004',
+				object: $objectType . ' ' . $objectUuid . ' with document ' . $ioUuid,
+				cause: $e->getMessage()
 			);
 		}//end try
 

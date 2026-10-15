@@ -34,7 +34,7 @@ export default {
 	// where it is, and a chip when that is longer than the status allows. The
 	// number is held on the case, which is what makes the column sortable on
 	// the server; the flag beside it is its own fact and is NOT the deadline.
-	// @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	// @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	dwellDays: DwellDaysCell,
 
 	// The Priority column on the case lists. The column is keyed on

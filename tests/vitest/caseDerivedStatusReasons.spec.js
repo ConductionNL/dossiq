@@ -26,7 +26,7 @@
  *    answers `null` there, but a shape that arrived with an empty array would
  *    otherwise render a heading over no reasons.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 import axios from '@nextcloud/axios'

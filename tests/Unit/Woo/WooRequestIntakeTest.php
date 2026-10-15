@@ -50,16 +50,16 @@ use RuntimeException;
  * caller either has.
  *
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
- * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
- * @uses \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
- * @uses \OCA\Dossiq\Service\Support\ReadableDay
- * @uses \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
- * @uses \OCA\Dossiq\Service\Intake\CollectionLinkQueue
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses   \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses   \OCA\Dossiq\Service\Intake\CollectionLinkQueue
  */
 class WooRequestIntakeTest extends TestCase {
 

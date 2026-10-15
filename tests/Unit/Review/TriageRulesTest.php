@@ -411,4 +411,54 @@ class TriageRulesTest extends TestCase {
 
 		$this->assertSame(3, $rules->forCase(caseId: 'case-x')[0]['order'], 'a failed reconcile keeps the rule');
 	}//end testACreatedRuleReconcilesTheCase()
+
+	/**
+	 * A review a rule creates is shared with the people on the case; a review it only changes is not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-the-people-on-the-case-are-granted-read-and-nobody-else-req-cra-002
+	 */
+	public function testApplySharesTheReviewsItCreates(): void {
+		$this->document(id: 'doc-new', provenance: ['custodian' => 'A. de Wit']);
+		$this->document(id: 'doc-known', provenance: ['custodian' => 'A. de Wit'], review: ['relevance' => 'unmarked']);
+		$this->document(id: 'doc-other', provenance: ['custodian' => 'B. Jansen']);
+		$rules = $this->rules();
+		$rules->save(caseId: 'case-x', input: ['name' => 'Persoon', 'conditions' => ['custodian' => 'A. de Wit'], 'effect' => 'out-of-scope']);
+		$told = [];
+		$this->access->method('reconcileAfterCreate')->willReturnCallback(
+			static function (string $caseId, int $created) use (&$told): array {
+				$told[] = [$caseId, $created];
+				return ['status' => 'reconciled', 'granted' => 0, 'revoked' => 0, 'refused' => 0];
+			}
+		);
+
+		$this->assertSame(2, $rules->apply(caseId: 'case-x')['marked']);
+		$this->assertSame(0, $rules->apply(caseId: 'case-x')['marked']);
+
+		$this->assertSame([['case-x', 1], ['case-x', 0]], $told, 'one review was created, the other already existed');
+	}//end testApplySharesTheReviewsItCreates()
+
+	/**
+	 * A review is private to the case, so the caller may read none: a reviewer's marking still
+	 * stands against a rule, and a rule makes no second review for a document that has one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
+	 */
+	public function testApplyHonoursReviewsTheCallerCannotRead(): void {
+		$this->document(id: 'doc-in', provenance: ['custodian' => 'A. de Wit'], review: ['relevance' => 'in-scope', 'relevanceSource' => 'reviewer']);
+		$this->document(id: 'doc-open', provenance: ['custodian' => 'A. de Wit'], review: ['relevance' => 'unmarked']);
+		$rules = $this->rules();
+		$rules->save(caseId: 'case-x', input: ['name' => 'Persoon', 'conditions' => ['custodian' => 'A. de Wit'], 'effect' => 'out-of-scope']);
+		$this->store->hiddenFromCaller = ['documentReview'];
+
+		$applied = $rules->apply(caseId: 'case-x');
+
+		$this->assertSame(1, $applied['marked']);
+		$this->assertSame('in-scope', $this->reviewOf(id: 'doc-in')['relevance']);
+		$this->assertCount(2, $this->store->all('documentReview'), 'no second review for a document that has one');
+		$this->assertSame(1, $rules->forCase(caseId: 'case-x')[0]['decided']);
+	}//end testApplyHonoursReviewsTheCallerCannotRead()
 }//end class

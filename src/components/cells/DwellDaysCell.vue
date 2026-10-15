@@ -22,7 +22,7 @@
 	is a claim — it means the case entered its status today — and a case that
 	predates this change has made no such claim.
 
-	Spec: openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	Spec: openspec/specs/doorlooptijd-dashboard/spec.md
 -->
 <template>
 	<span
@@ -73,7 +73,7 @@ export default {
 		 *
 		 * @return {boolean} True when there is something to render.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		hasNumber() {
 			return (
@@ -86,7 +86,7 @@ export default {
 		 *
 		 * @return {string} The cell text.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		label() {
 			const days = Number(this.value)
@@ -108,7 +108,7 @@ export default {
 		 *
 		 * @return {boolean} True when the status maximum is past.
 		 *
-		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		breached() {
 			return this.row?.statusDwellBreached === true

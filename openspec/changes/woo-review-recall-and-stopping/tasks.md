@@ -39,13 +39,13 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
     and `testDeclaringBeforeReviewAnswers201`. `GET /api/cases/{id}/review/recall` answers `{rule, reviewStarted, samples}`.
 ## 2. Sample and estimate
 
-- [x] 2.1 Add `lib/Woo/RecallEstimator.php` with `upperBound(int $k, int $n, float $confidence): float`
+- [x] 2.1 Add `lib/Review/RecallEstimator.php` with `upperBound(int $k, int $n, float $confidence): float`
   and `estimate(int $found, int $nullSetSize, int $k, int $n, float $confidence): array` per the
   proposal's method (REQ-WRS-002).
-  - **fails today** (class absent): `tests/Unit/Woo/RecallEstimatorTest.php`
+  - **fails today** (class absent): `tests/Unit/Review/RecallEstimatorTest.php`
     `testTheFixtureWithTwoInScope` (0.9615 and 0.8892), `testTheFixtureWithTenInScope` (0.8333 and
     0.7500), `testZeroInScopeHasAPositiveUpperBound`, `testTheBoundRisesWithConfidence`.
-  - Class and tests built ahead (`lib/Woo/RecallEstimator.php`, `tests/Unit/Woo/RecallEstimatorTest.php`,
+  - Class and tests built ahead (`lib/Review/RecallEstimator.php`, `tests/Unit/Review/RecallEstimatorTest.php`,
     all four named tests, red first: class absent). Left unticked: its caller is the samples route of 2.2,
     which waits on `woo-review-triage` batches.
   - Ticked with 2.2: `RecallSamples` is its caller. The class stays in `lib/Woo/` where #3596 landed it; moving the

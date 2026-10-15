@@ -68,11 +68,11 @@ class DrcDocumentRelationsTest extends TestCase {
 	private array $queries = [];
 
 	/**
-	 * The warnings the relations logged.
+	 * The errors the relations logged: message and context.
 	 *
-	 * @var array<int, string>
+	 * @var array<int, array>
 	 */
-	private array $warnings = [];
+	private array $errors = [];
 
 	/**
 	 * Build the relations over a search that answers from its query.
@@ -88,9 +88,9 @@ class DrcDocumentRelationsTest extends TestCase {
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($schemas[$key] ?? $key));
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$logger->method('warning')->willReturnCallback(
-			function (string $message): void {
-				$this->warnings[] = $message;
+		$logger->method('error')->willReturnCallback(
+			function (string $message, array $context = []): void {
+				$this->errors[] = [$message, $context];
 			}
 		);
 
@@ -105,15 +105,14 @@ class DrcDocumentRelationsTest extends TestCase {
 			}
 		);
 
-		$lookups = new ZgwRuleLookups(logger: $logger, settingsService: $settings);
+		$lookups = new ZgwRuleLookups(settingsService: $settings);
 		$lookups->setContext(objectService: $search, mappingConfig: $mappingConfig);
 
 		return new DrcDocumentRelations(
 			lookups: $lookups,
-			results: new ZgwRuleResults(),
+			results: new ZgwRuleResults(logger: $logger),
 			settingsService: $settings,
-			fieldValidator: new FieldValidator(),
-			logger: $logger
+			fieldValidator: new FieldValidator()
 		);
 	}//end relations()
 
@@ -157,20 +156,38 @@ class DrcDocumentRelationsTest extends TestCase {
 	}//end testRelationsStoredByUrlAreFoundByPartialMatch()
 
 	/**
-	 * A search that fails answers no relations and says so in the log.
+	 * A relation search that cannot run throws: "could not look" is not "no relations".
+	 *
+	 * Control: the same search answering nothing is an empty list.
 	 *
 	 * @return void
 	 */
-	public function testAFailedRelationSearchAnswersNone(): void {
-		$answer = static function (array $query): array {
+	public function testAFailedRelationSearchThrows(): void {
+		$none = static fn (array $query): array => ['results' => []];
+		$down = static function (array $query): array {
 			throw new \RuntimeException('down');
 		};
+		$partialDown = static function (array $query): array {
+			if (str_starts_with($query['document'], '%') === true) {
+				throw new \RuntimeException('partial down');
+			}
 
-		$ids = $this->relations(answer: $answer)->findOioRelationsForDocument(register: '5', schema: '9', docUuid: self::DOCUMENT);
+			return ['results' => []];
+		};
 
-		$this->assertSame([], $ids);
-		$this->assertSame('Drc-007: OIO relation search with partial match failed: down', $this->warnings[1]);
-	}//end testAFailedRelationSearchAnswersNone()
+		$this->assertSame([], $this->relations(answer: $none)->findOioRelationsForDocument(register: '5', schema: '9', docUuid: self::DOCUMENT));
+
+		$thrown = [];
+		foreach ([$down, $partialDown] as $answer) {
+			try {
+				$this->relations(answer: $answer)->findOioRelationsForDocument(register: '5', schema: '9', docUuid: self::DOCUMENT);
+			} catch (\RuntimeException $e) {
+				$thrown[] = $e->getMessage();
+			}
+		}
+
+		$this->assertSame(['down', 'partial down'], $thrown);
+	}//end testAFailedRelationSearchThrows()
 
 	/**
 	 * A pair nobody stored is unique after the link schema and the besluit's own schema are both read.
@@ -258,18 +275,30 @@ class DrcDocumentRelationsTest extends TestCase {
 	}//end testAMissingRegisterOrSchemaIsNotSearched()
 
 	/**
-	 * A duplicate search that cannot answer counts as a duplicate and is logged.
+	 * Drc-003: a duplicate search that cannot run refuses, and does not claim a duplicate nobody found.
+	 *
+	 * Control: the same search answering nothing passes, so the refusal comes from the failure.
 	 *
 	 * @return void
 	 */
-	public function testAFailedDuplicateSearchFailsClosed(): void {
-		$answer = static function (array $query): array {
+	public function testAFailedDuplicateSearchRefusesAsNotVerified(): void {
+		$none = static fn (array $query): array => ['total' => 0];
+		$down = static function (array $query): array {
 			throw new \RuntimeException('down');
 		};
 
-		$error = $this->relations(answer: $answer)->checkOioUniqueness(ioUrl: self::DOCUMENT_URL, objectUrl: self::BESLUIT_URL, objectType: 'case');
+		$this->assertNull($this->relations(answer: $none)->checkOioUniqueness(ioUrl: self::DOCUMENT_URL, objectUrl: self::BESLUIT_URL, objectType: 'case'));
+		$this->assertSame([], $this->errors);
 
-		$this->assertSame('unique', $error['invalidParams'][0]['code']);
-		$this->assertSame(['Drc-003: Uniqueness check failed for schema {schema}: {message}'], $this->warnings);
-	}//end testAFailedDuplicateSearchFailsClosed()
+		$error = $this->relations(answer: $down)->checkOioUniqueness(ioUrl: self::DOCUMENT_URL, objectUrl: self::BESLUIT_URL, objectType: 'case');
+
+		$this->assertSame(503, $error['status']);
+		$this->assertSame('check-not-completed', $error['code']);
+		$this->assertStringContainsString('drc-003', $error['detail']);
+		$this->assertSame([], $error['invalidParams']);
+		$this->assertSame(
+			['rule' => 'drc-003', 'object' => 'document ' . self::DOCUMENT_URL . ' on ' . self::BESLUIT_URL, 'cause' => 'down'],
+			$this->errors[0][1]
+		);
+	}//end testAFailedDuplicateSearchRefusesAsNotVerified()
 }//end class

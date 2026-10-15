@@ -86,20 +86,31 @@ class DocumentRelevance {
 	}//end isAvailable()
 
 	/**
-	 * Every review of a case, keyed by document.
+	 * Every review of a case, keyed by document, whoever asks.
+	 *
+	 * A review is private to the people on the case, so one person reads only
+	 * a slice of them: a batch reviewer the reviews of their batch. Every
+	 * caller of this method is a rule or a count of the case (what is still
+	 * outstanding, which pages are unseen, which documents a rule may mark,
+	 * whether a document already has a review), and such a rule holds for the
+	 * whole case. So this reads regardless of the caller's own grants, the
+	 * read CaseReviewerAccess::recordsOf() makes. The routes that reach it
+	 * check access to the case first, and none of them hands out a review's
+	 * row: a person lists reviews through OpenRegister, under their own access.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return array<string, array<string, mixed>> The reviews by documentRef.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
 	 */
 	public function forCase(string $caseId): array {
 		if ($this->isAvailable() === false || $caseId === '') {
 			return [];
 		}
 
-		$rows = $this->searchObjectsAsArrays(
+		$rows = $this->searchObjectsAsArraysUnscoped(
 			objectService: $this->settingsService->getObjectService(),
 			register: $this->settingsService->getConfigValue('register'),
 			schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY),
@@ -108,13 +119,30 @@ class DocumentRelevance {
 		$reviews = [];
 		foreach ($rows as $row) {
 			$ref = (string)($row['documentRef'] ?? '');
-			if ($ref !== '') {
+			if ($ref !== '' && $this->isOfCase(row: $row, caseId: $caseId) === true) {
 				$reviews[$ref] = $row;
 			}
 		}
 
 		return $reviews;
 	}//end forCase()
+
+	/**
+	 * Whether a review names this case: an unscoped read never trusts the search filter alone.
+	 *
+	 * @param array<string, mixed> $row    The review row.
+	 * @param string               $caseId The case UUID.
+	 *
+	 * @return bool
+	 */
+	private function isOfCase(array $row, string $caseId): bool {
+		$case = ($row['case'] ?? '');
+		if (is_array($case) === true) {
+			$case = ($case['id'] ?? ($case['uuid'] ?? ''));
+		}
+
+		return trim((string)$case) === $caseId;
+	}//end isOfCase()
 
 	/**
 	 * The relevance of a document as its review holds it, `unmarked` without one.

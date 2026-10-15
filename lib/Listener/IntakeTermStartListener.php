@@ -156,7 +156,7 @@ class IntakeTermStartListener implements IEventListener {
 		// The created event, for a path that stored the case without the
 		// creating event. A draft's own create is not a receipt there either,
 		// and any other event answers null.
-		$payload = $this->receipt->receivedObject(event: $event);
+		$payload = $this->receipt->receivedObject(event: $event, for: self::class);
 		if ($payload === null) {
 			return;
 		}

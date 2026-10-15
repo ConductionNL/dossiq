@@ -23,7 +23,7 @@
  *    the case entered its status today — and every case predating the change
  *    would otherwise sort beside the ones that did.
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 
 import { mount } from '@vue/test-utils'

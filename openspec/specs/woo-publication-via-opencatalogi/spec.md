@@ -243,7 +243,7 @@ MUST pass its arguments by name.
 
 #### Scenario: The OpenRegister objects-API URL is gone from the client
 
-- **GIVEN** the shipped `lib/Service/WooPublication/OpenCatalogiApiClient.php`
+- **GIVEN** the shipped `lib/Service/Publication/OpenCatalogiApiClient.php`
 - **WHEN** its source is read
 - **THEN** it MUST contain no `/apps/openregister/api/objects/` path in executable code
 
