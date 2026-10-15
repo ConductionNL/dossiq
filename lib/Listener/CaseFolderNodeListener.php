@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -23,6 +25,7 @@ use OCP\Files\Events\Node\NodeRenamedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\File;
 use OCP\Files\Node;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -39,21 +42,52 @@ use Throwable;
  * Files app: a failing projection is logged, and the file the handler just
  * saved stays saved.
  *
+ * A file written without a signed-in user (an install, a repair, a
+ * background job) is projected as the system: there is nobody whose rights
+ * the record could be checked against, and the file is already in the case
+ * folder.
+ *
  * @spec openspec/specs/document-projection/spec.md
+ * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
  *
  * @template-implements IEventListener<Event>
  */
 class CaseFolderNodeListener implements IEventListener {
 
+	use SearchesObjects;
+
 	/**
 	 * @param DocumentProjectionService $projection The service that owns the record.
 	 * @param LoggerInterface $logger Where a failed projection is reported.
+	 * @param IUserSession|null $userSession Who wrote the file; nobody means the system.
+	 * @param SettingsService|null $settingsService OpenRegister's object service, to run as the system.
 	 */
 	public function __construct(
 		private readonly DocumentProjectionService $projection,
 		private readonly LoggerInterface $logger,
+		private readonly ?IUserSession $userSession = null,
+		private readonly ?SettingsService $settingsService = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Run a projection as the user who wrote the file, or as the system when nobody is signed in.
+	 *
+	 * @param callable $operation The projection.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	private function asWriter(callable $operation): void {
+		$objectService = $this->settingsService?->getObjectService();
+		if ($this->userSession?->getUser() !== null || $objectService === null) {
+			$operation();
+			return;
+		}
+
+		$this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end asWriter()
 
 	/**
 	 * Hand a file event under the register tree to the projection.
@@ -91,7 +125,7 @@ class CaseFolderNodeListener implements IEventListener {
 		if ($event instanceof NodeDeletedEvent) {
 			$node = $this->fileInTree(node: $event->getNode());
 			if ($node !== null) {
-				$this->projection->retireNode(node: $node);
+				$this->asWriter(operation: fn () => $this->projection->retireNode(node: $node));
 			}
 
 			return;
@@ -100,7 +134,7 @@ class CaseFolderNodeListener implements IEventListener {
 		if ($event instanceof NodeCreatedEvent || $event instanceof NodeWrittenEvent) {
 			$node = $this->fileInTree(node: $event->getNode());
 			if ($node !== null) {
-				$this->projection->projectNode(node: $node);
+				$this->asWriter(operation: fn () => $this->projection->projectNode(node: $node));
 			}
 		}
 	}//end dispatch()
@@ -125,7 +159,7 @@ class CaseFolderNodeListener implements IEventListener {
 			return;
 		}
 
-		$this->projection->rehomeNode(node: $target, sourcePath: $sourcePath);
+		$this->asWriter(operation: fn () => $this->projection->rehomeNode(node: $target, sourcePath: $sourcePath));
 	}//end onRenamed()
 
 	/**
