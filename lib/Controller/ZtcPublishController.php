@@ -82,6 +82,10 @@ class ZtcPublishController extends ZgwController {
 			return $authError;
 		}
 
+		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
+		}
+
 		if ($this->zgwService->getObjectService() === null) {
 			return $this->zgwService->unavailableResponse();
 		}
