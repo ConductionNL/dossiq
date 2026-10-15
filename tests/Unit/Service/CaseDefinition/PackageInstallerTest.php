@@ -725,6 +725,36 @@ class PackageInstallerTest extends TestCase {
 	}//end testANewerVersionAddsNewRowsAndLeavesExistingOnesAlone()
 
 	/**
+	 * 🔴 Zuiddrecht, 14 Oct: an upgraded instance holding the Woo case type at version 1 and no flow.
+	 *
+	 * The shipped `woo-verzoek` package installs on the upgrade and writes the
+	 * flow the shipped case type names, so the register import that follows
+	 * (InstallShippedPackages imports again) can write the case type at 1.4.7.
+	 * A second run on the same version writes nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 */
+	public function testTheShippedWooPackageWritesItsFlowOnAnUpgradedInstance(): void {
+		$caseType = '3c0f5a00-0000-4000-a000-00000000a001';
+		$flow = 'cb967581-3962-5b61-8106-9f75248ffd82';
+		$this->register->rows['caseType'][$caseType] = ['id' => $caseType, 'title' => 'Woo-verzoek', 'handling' => null, 'version' => '1'];
+		$root = __DIR__ . '/../../../../lib/Settings/packages';
+
+		$outcome = $this->installer(root: $root)->install(id: 'woo-verzoek');
+
+		$this->assertSame(PackageInstaller::INSTALLED, $outcome['status'], $outcome['message']);
+		$this->assertSame($caseType, $this->register->row('workflowTemplate', $flow)['caseType']);
+		$writes = $this->register->writes;
+
+		$again = $this->installer(root: $root)->install(id: 'woo-verzoek');
+
+		$this->assertSame(PackageInstaller::CURRENT, $again['status']);
+		$this->assertSame($writes, $this->register->writes);
+	}//end testTheShippedWooPackageWritesItsFlowOnAnUpgradedInstance()
+
+	/**
 	 * A package may carry a family of case types: `caseType` as a list writes
 	 * each one, and a list holding something other than objects is refused.
 	 *
