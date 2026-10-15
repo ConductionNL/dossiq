@@ -84,7 +84,7 @@ class CatalogTransport {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'WooPublicationService::publish failed',
+				'OutcomePublisher::publish failed',
 				['app' => Application::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
 			$reason = 'opencatalogi_api_error';
@@ -124,7 +124,7 @@ class CatalogTransport {
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'WooPublicationService::withdraw failed',
+				'OutcomePublisher::withdraw failed',
 				['app' => Application::APP_ID, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
 			return 'opencatalogi_api_error';

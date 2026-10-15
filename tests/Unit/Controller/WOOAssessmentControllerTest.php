@@ -30,7 +30,7 @@ use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
 use OCA\Dossiq\Review\DocumentRelevance;
@@ -77,9 +77,9 @@ class WOOAssessmentControllerTest extends TestCase {
 	private WOODecisionService $decisionService;
 
 	/**
-	 * @var WooPublicationService|\PHPUnit\Framework\MockObject\MockObject
+	 * @var OutcomePublisher|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private WooPublicationService $publicationService;
+	private OutcomePublisher $publicationService;
 
 	/**
 	 * @var WOOAnonymisationAssistService|\PHPUnit\Framework\MockObject\MockObject
@@ -125,7 +125,7 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->deadlineService = $this->createMock(WOODeadlineService::class);
 		$this->decisionService = $this->createMock(WOODecisionService::class);
-		$this->publicationService = $this->createMock(WooPublicationService::class);
+		$this->publicationService = $this->createMock(OutcomePublisher::class);
 		$this->anonymisationAssist = $this->createMock(WOOAnonymisationAssistService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);

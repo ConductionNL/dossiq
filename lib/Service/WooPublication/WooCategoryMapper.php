@@ -11,7 +11,7 @@
  * en -besluiten", route code `infocat014`). The mapping is kept as a lookup
  * table — not an inline constant at the call site — so a follow-up change can
  * add further entries (e.g. `infocat016` "Beschikkingen" for
- * `subsidie`-domain decisions) without touching {@see WooPublicationService}.
+ * `subsidie`-domain decisions) without touching {@see OutcomePublisher}.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\WooPublication

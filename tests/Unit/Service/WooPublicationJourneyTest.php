@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Service\Publication\SourceCollectionReturn;
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Runs publish and withdraw against an in-memory dossiq register and a recording OpenCatalogi client.
  *
- * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
@@ -73,9 +73,9 @@ class WooPublicationJourneyTest extends TestCase {
 	/**
 	 * The service under test.
 	 *
-	 * @var WooPublicationService
+	 * @var OutcomePublisher
 	 */
-	private WooPublicationService $service;
+	private OutcomePublisher $service;
 
 	/**
 	 * A decided Woo request case started from a dossier, with one public document.
@@ -122,7 +122,7 @@ class WooPublicationJourneyTest extends TestCase {
 		$this->client = $this->createMock(OpenCatalogiApiClient::class);
 		$this->return = $this->createMock(SourceCollectionReturn::class);
 
-		$this->service = new WooPublicationService(
+		$this->service = new OutcomePublisher(
 			$settings,
 			$this->client,
 			new WooCategoryMapper(),

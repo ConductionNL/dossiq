@@ -153,7 +153,7 @@ routes `/api/cases/{id}/review/...`. A case type switches it on with `documentRe
   - **fails today**: `WooPublicationServiceTest::testPublishWaitsForTheLastPage`,
     `WOODecisionServiceTest::testTheDecisionWaitsForTheLastPage`.
   - Built: `WOODecisionService::assembleDecision()` throws `woo-pages-unseen` (409) through
-    `PagesSeen::assertAllSeen()`; `WooPublicationService::publish()` answers `pages_unseen` with `unseen` by
+    `PagesSeen::assertAllSeen()`; `OutcomePublisher::publish()` answers `pages_unseen` with `unseen` by
     document; `WOOAssessmentController` answers both with 409 and the unseen pages
     (`testDecisionAndPublishAnswer409NamingTheUnseenPages`).
 
@@ -186,7 +186,7 @@ record. OpenRegister refuses a parent that references another schema
 - [ ] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
   after the create, in the same request, from every route that creates one of the seven: the gather
   add, the search plan save, the query record, the exclusion route, the rule create, the batch
-  create and `WooPublicationService::publish()`. The repair step of 1.1 does not call it. The
+  create and `OutcomePublisher::publish()`. The repair step of 1.1 does not call it. The
   administrator reconcile route of `woo-request-scoped-access` covers the seven through the same
   method. No background job sets a grant (REQ-WRT-006).
   - **fails today**: `tests/Unit/Woo/WooAssessmentAccessTest.php`

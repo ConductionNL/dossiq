@@ -23,7 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -31,7 +31,7 @@ use Psr\Log\NullLogger;
 /**
  * Pins the publisher's stored values, its availability answers and the payload it builds.
  *
- * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  *
  * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
@@ -47,16 +47,16 @@ class OutcomePublisherTest extends TestCase {
 	 * @param bool $enabled   Whether it is enabled.
 	 * @param bool $register  Whether OpenRegister is there.
 	 *
-	 * @return WooPublicationService
+	 * @return OutcomePublisher
 	 */
-	private function publisher(bool $installed = true, bool $enabled = true, bool $register = true): WooPublicationService {
+	private function publisher(bool $installed = true, bool $enabled = true, bool $register = true): OutcomePublisher {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($register === true ? new \stdClass() : null);
 		$apps = $this->createMock(IAppManager::class);
 		$apps->method('isInstalled')->with('opencatalogi')->willReturn($installed);
 		$apps->method('isEnabledForUser')->with('opencatalogi')->willReturn($enabled);
 
-		return new WooPublicationService(
+		return new OutcomePublisher(
 			$settings,
 			$this->createMock(OpenCatalogiApiClient::class),
 			new WooCategoryMapper(),
@@ -71,10 +71,10 @@ class OutcomePublisherTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheStoredValuesKeepTheirSpelling(): void {
-		$this->assertSame('woo-besluit', WooPublicationService::PUBLICATION_KIND);
-		$this->assertSame('ready', WooPublicationService::STATUS_READY);
-		$this->assertSame('published', WooPublicationService::STATUS_PUBLISHED);
-		$this->assertSame('withdrawn', WooPublicationService::STATUS_WITHDRAWN);
+		$this->assertSame('woo-besluit', OutcomePublisher::PUBLICATION_KIND);
+		$this->assertSame('ready', OutcomePublisher::STATUS_READY);
+		$this->assertSame('published', OutcomePublisher::STATUS_PUBLISHED);
+		$this->assertSame('withdrawn', OutcomePublisher::STATUS_WITHDRAWN);
 	}//end testTheStoredValuesKeepTheirSpelling()
 
 	/**

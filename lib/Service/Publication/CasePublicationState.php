@@ -139,7 +139,7 @@ class CasePublicationState {
 			$this->deliveredSets?->markWithdrawn(caseId: $caseId, publicationId: $publicationId);
 		} catch (Throwable $e) {
 			$this->logger->error(
-				'WooPublicationService: the delivered set could not record the withdraw',
+				'OutcomePublisher: the delivered set could not record the withdraw',
 				['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()]
 			);
 		}
@@ -233,7 +233,7 @@ class CasePublicationState {
 		} catch (Throwable $e) {
 			// The decision holds the truth; the case mirror is corrected by the next write.
 			$this->logger->warning(
-				'WooPublicationService: the case could not show its publication state',
+				'OutcomePublisher: the case could not show its publication state',
 				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
 			);
 		}

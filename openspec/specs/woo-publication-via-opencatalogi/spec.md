@@ -13,7 +13,7 @@ informatiecategorie and including only disclosable documents.
 #### Scenario: Payload includes core besluit metadata
 - **GIVEN** a WOO decision assembled via `WOODecisionService::assembleDecision()`
   for case `caseId` with `decisionDate`, `wooSummary`, and `weigeringsgronden`
-- **WHEN** `WooPublicationService::buildPayload()` is called for that decision
+- **WHEN** `OutcomePublisher::buildPayload()` is called for that decision
 - **THEN** the built payload MUST include title, summary, the decision date,
   and a case reference to `caseId`
 
@@ -38,7 +38,7 @@ NEVER include a document assessed as `niet_openbaar` at all.
 
 #### Scenario: Openbaar document is included as-is
 - **GIVEN** a document assessment with `classification: 'openbaar'`
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST appear in the returned list using its normal
   content reference
 
@@ -46,7 +46,7 @@ NEVER include a document assessed as `niet_openbaar` at all.
 - **GIVEN** a document assessment with `classification: 'deels_openbaar'` that
   has both an original content reference and a finalized redacted-version
   reference
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST appear in the returned list
 - **AND** the content reference used MUST be the redacted version
 - **AND** the original content reference MUST NOT appear anywhere in the
@@ -56,12 +56,12 @@ NEVER include a document assessed as `niet_openbaar` at all.
 - **GIVEN** a document assessment with `classification: 'deels_openbaar'` and
   no finalized redacted-version reference (still `awaiting_manual_redaction`
   or queued at Docudesk)
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST NOT appear in the returned list
 
 #### Scenario: Niet openbaar document is always excluded
 - **GIVEN** a document assessment with `classification: 'niet_openbaar'`
-- **WHEN** `WooPublicationService::selectDisclosableDocuments()` is called
+- **WHEN** `OutcomePublisher::selectDisclosableDocuments()` is called
 - **THEN** the document MUST NOT appear in the returned list regardless of
   any content reference it carries
 
@@ -127,7 +127,7 @@ installed or not enabled, and MUST surface an actionable admin hint instead.
 #### Scenario: OpenRegister unavailable
 - **GIVEN** `SettingsService::getObjectService()` returns null (OpenRegister
   unavailable)
-- **WHEN** `WooPublicationService::checkAvailability()` is called
+- **WHEN** `OutcomePublisher::checkAvailability()` is called
 - **THEN** it MUST return `available: false` with reason
   `openregister_unavailable`
 
@@ -300,7 +300,7 @@ MIME argument.
 
 Every failure of any operation on this client MUST continue to surface as
 `RuntimeException` with message `opencatalogi_api_error`, so
-`WooPublicationService`'s existing `catch (Throwable)` arms — which map it to
+`OutcomePublisher`'s existing `catch (Throwable)` arms — which map it to
 `['available' => false, 'reason' => 'opencatalogi_api_error']` — keep working
 unchanged.
 

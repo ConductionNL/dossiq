@@ -7,7 +7,7 @@ TBD - created by archiving change woo-delivered-set-is-a-record. Update Purpose 
 
 ### Requirement: Every delivery writes a set with its own identity and manifest (REQ-WDS-001)
 
-`WooPublicationService::publish()` SHALL write a `wooDeliveredSet` object in dossiq's register
+`OutcomePublisher::publish()` SHALL write a `wooDeliveredSet` object in dossiq's register
 before it creates the publication, with: `case`, `decision`, `status` (`pending`, then `frozen`),
 `deliveredAt`, `deliveredBy`, `supersedes` (the previous set of the case, or empty), `publication`
 (set when frozen), `items` and `setHash`. Each item SHALL carry `assessment` (the

@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -71,7 +71,7 @@ class WOOAssessmentController extends Controller {
 	 * @param WOODocumentAssessmentService $assessmentService Document assessment service
 	 * @param WOODeadlineService $deadlineService Deadline service
 	 * @param WOODecisionService $decisionService Decision service
-	 * @param WooPublicationService $publicationService WOO publication (via OpenCatalogi) service
+	 * @param OutcomePublisher $publicationService WOO publication (via OpenCatalogi) service
 	 * @param WOOAnonymisationAssistService $anonymisationAssist LLM-assisted redaction-span proposal
 	 *                                                           service (woo-llm-anonymisation)
 	 * @param IUserSession $userSession Current user session
@@ -87,7 +87,7 @@ class WOOAssessmentController extends Controller {
 		private readonly WOODocumentAssessmentService $assessmentService,
 		private readonly WOODeadlineService $deadlineService,
 		private readonly WOODecisionService $decisionService,
-		private readonly WooPublicationService $publicationService,
+		private readonly OutcomePublisher $publicationService,
 		private readonly WOOAnonymisationAssistService $anonymisationAssist,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuard $caseAccessGuard,

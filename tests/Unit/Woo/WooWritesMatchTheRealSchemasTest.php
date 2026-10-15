@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Tests\Support\UuidAnsweringRegister;
@@ -54,7 +54,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WOODecisionService
  * @covers \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
- * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
  * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
@@ -248,7 +248,7 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
-		$service = new WooPublicationService(
+		$service = new OutcomePublisher(
 			$this->settings,
 			$client,
 			new WooCategoryMapper(),

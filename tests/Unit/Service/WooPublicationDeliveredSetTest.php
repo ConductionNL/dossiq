@@ -25,7 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Service\Publication\CasePublicationState;
@@ -37,9 +37,9 @@ use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
- * REQ-WDS-001 and REQ-WDS-002 through WooPublicationService::publish() and withdraw(), over a real store.
+ * REQ-WDS-001 and REQ-WDS-002 through OutcomePublisher::publish() and withdraw(), over a real store.
  *
- * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  * @covers \OCA\Dossiq\Woo\WooDeliveredSetWriter
  * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  *
@@ -110,9 +110,9 @@ class WooPublicationDeliveredSetTest extends TestCase {
 	/**
 	 * The service over the store, with the real writer.
 	 *
-	 * @return WooPublicationService
+	 * @return OutcomePublisher
 	 */
-	private function service(): WooPublicationService {
+	private function service(): OutcomePublisher {
 		$config = [
 			'register' => 'dossiq',
 			'case_schema' => 'case',
@@ -130,7 +130,7 @@ class WooPublicationDeliveredSetTest extends TestCase {
 		$apps->method('isInstalled')->willReturn(true);
 		$apps->method('isEnabledForUser')->willReturn(true);
 
-		return new WooPublicationService(
+		return new OutcomePublisher(
 			settingsService: $settings,
 			apiClient: $this->api,
 			categoryMapper: new WooCategoryMapper(),
