@@ -11,7 +11,7 @@
  * cecc92cc-..." where the case number belonged (Zuiddrecht live round 3).
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Termijn
+ * @package  OCA\Dossiq\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -29,9 +29,8 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Termijn;
+namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;

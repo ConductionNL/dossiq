@@ -520,7 +520,12 @@
         "name": "WOO-besluit",
         "description": "Besluit op een verzoek op grond van de Wet open overheid",
         "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
-        "publicationRequired": true
+        "publicationRequired": true,
+        "publicationCategory": {
+          "code": "infocat014",
+          "label": "Woo-verzoeken en -besluiten",
+          "uri": "https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532"
+        }
       },
       {
         "@self": {

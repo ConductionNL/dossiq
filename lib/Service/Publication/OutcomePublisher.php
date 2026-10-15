@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Dossiq WOO Publication Service
+ * Dossiq outcome publisher
  *
- * Bridges an assembled WOO besluit ({@see WOODecisionService}) to
+ * Bridges an assembled WOO besluit ({@see \OCA\Dossiq\Service\WOODecisionService}) to
  * OpenCatalogi's publication model. Builds a disclosure-safe publication
  * payload (redacted documents only, never unredacted originals or withheld
  * documents), creates/updates the publication via
@@ -18,7 +18,7 @@
  * flow.
  *
  * @category Service
- * @package  OCA\Dossiq\Service
+ * @package  OCA\Dossiq\Service\Publication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -34,29 +34,24 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service;
+namespace OCA\Dossiq\Service\Publication;
 
-use OCA\Dossiq\Service\Publication\CatalogTransport;
-use OCA\Dossiq\Service\Publication\PublicationSources;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
-use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
 use OCA\Dossiq\Review\PagesSeen;
-use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Service for publishing WOO decisions through OpenCatalogi.
+ * Publishes the decision of a case through OpenCatalogi, and withdraws it.
  *
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the threshold. The
  *   last is NothingToDisclose (decision D2), an optional collaborator the container
- *   wires like PagesSeen and WooDossierReturn beside it, so a publish with nothing
+ *   wires like PagesSeen and SourceCollectionReturn beside it, so a publish with nothing
  *   to disclose by record publishes the decision alone. Splitting the publish
  *   step to save one class would put the refusal and its exception in two places.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten, for the same reason: four optional
@@ -64,7 +59,7 @@ use RuntimeException;
  *
  * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
-class WooPublicationService {
+class OutcomePublisher {
 
 	/**
 	 * The OpenCatalogi app identifier.
@@ -94,9 +89,9 @@ class WooPublicationService {
 	/**
 	 * Finds the case's Woo decision and mirrors the publication state onto the case.
 	 *
-	 * @var WooCaseLedger
+	 * @var CasePublicationState
 	 */
-	private readonly WooCaseLedger $caseLedger;
+	private readonly CasePublicationState $caseLedger;
 
 	/**
 	 * Loads the case, the decision and the disclosable documents.
@@ -117,11 +112,11 @@ class WooPublicationService {
 	 *
 	 * @param SettingsService $settingsService Settings service.
 	 * @param OpenCatalogiApiClient $apiClient Thin HTTP client to OpenCatalogi's register.
-	 * @param WooCategoryMapper $categoryMapper DIWOO informatiecategorie mapper.
+	 * @param PublicationCategory $publicationCategory The decision type's information category.
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
-	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
-	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
+	 * @param SourceCollectionReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
+	 * @param CasePublicationState|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
 	 * @param PagesSeen|null $pagesSeen The pages seen per document; publishing waits for the required ones.
 	 * @param NothingToDisclose|null $nothingToDisclose Whether the case records that nothing can be made public,
@@ -130,16 +125,16 @@ class WooPublicationService {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		OpenCatalogiApiClient $apiClient,
-		private readonly WooCategoryMapper $categoryMapper,
+		private readonly PublicationCategory $publicationCategory,
 		private readonly IAppManager $appManager,
 		LoggerInterface $logger,
-		private readonly ?WooDossierReturn $dossierReturn = null,
-		?WooCaseLedger $caseLedger = null,
+		private readonly ?SourceCollectionReturn $dossierReturn = null,
+		?CasePublicationState $caseLedger = null,
 		?WooCaseDocuments $caseDocuments = null,
 		private readonly ?PagesSeen $pagesSeen = null,
 		private readonly ?NothingToDisclose $nothingToDisclose = null,
 	) {
-		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
+		$this->caseLedger = ($caseLedger ?? new CasePublicationState(settingsService: $settingsService, logger: $logger));
 		$this->sources    = new PublicationSources(settingsService: $settingsService, caseDocuments: $caseDocuments);
 		$this->transport  = new CatalogTransport(settingsService: $settingsService, apiClient: $apiClient, logger: $logger, caseLedger: $this->caseLedger);
 	}//end __construct()
@@ -228,7 +223,7 @@ class WooPublicationService {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function buildPayload(array $case, array $decision): array {
-		$category = $this->categoryMapper->forDecision($decision);
+		$category = $this->publicationCategory->forDecision(decision: $decision);
 		$caseId = (string)($case['id'] ?? $case['uuid'] ?? $decision['case'] ?? '');
 
 		$payload = [
@@ -283,7 +278,7 @@ class WooPublicationService {
 		}
 
 		if ($decisionId === '') {
-			$resolved = $this->caseLedger->resolveWooDecision(caseId: $caseId);
+			$resolved = $this->caseLedger->resolveDecision(caseId: $caseId);
 			if ($resolved['decisionId'] === '') {
 				return $resolved['refusal'];
 			}
@@ -405,7 +400,7 @@ class WooPublicationService {
 		}
 
 		if ($decisionId === '') {
-			$resolved = $this->caseLedger->resolveWooDecision(caseId: $caseId);
+			$resolved = $this->caseLedger->resolveDecision(caseId: $caseId);
 			if ($resolved['decisionId'] === '') {
 				return $resolved['refusal'];
 			}

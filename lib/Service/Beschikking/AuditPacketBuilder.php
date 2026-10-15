@@ -55,14 +55,12 @@ class AuditPacketBuilder {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings/config service.
-	 * @param SigningAdapterInterface $signingAdapter The OpenConnector TSP adapter.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly SigningAdapterInterface $signingAdapter,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -81,11 +79,7 @@ class AuditPacketBuilder {
 	 */
 	public function build(string $decisionId, array $decision): string {
 		$logs = $this->findStateMachineLogs(decisionId: $decisionId);
-		$rapportId = (string)(($decision['signature']['validationRapportId'] ?? ''));
-		$validationReport = [];
-		if ($rapportId !== '') {
-			$validationReport = $this->signingAdapter->fetchValidationReport($rapportId);
-		}
+		$validationReport = self::validationReport(decision: $decision);
 
 		$manifest = [
 			'decisionId' => $decisionId,
@@ -116,6 +110,34 @@ class AuditPacketBuilder {
 
 		return $this->buildZip(entries: $entries);
 	}//end build()
+
+	/**
+	 * What the packet says about the signature's validation report.
+	 *
+	 * Filinq holds the signing request and publishes no validation report for
+	 * it, so the packet says plainly that none is included rather than leaving
+	 * the file empty or vouching for a signature nobody validated. A decision
+	 * signed before signing went through filinq names its old report id.
+	 *
+	 * @param array<string, mixed> $decision The beschikking.
+	 *
+	 * @return array<string, mixed> Empty when the decision carries no signature.
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-the-audit-packet-says-when-no-validation-report-is-available
+	 */
+	private static function validationReport(array $decision): array {
+		$signature = (array)($decision['signature'] ?? []);
+		if ($signature === []) {
+			return [];
+		}
+
+		return [
+			'available' => false,
+			'signingRequestId' => (string)($signature['signingRequestId'] ?? ''),
+			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
+			'reason' => 'No validation report is available: filinq holds the signing request and publishes no validation report for it.',
+		];
+	}//end validationReport()
 
 	/**
 	 * Find all stateMachineLog records for a beschikking.

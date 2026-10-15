@@ -660,7 +660,9 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\FlowEmailSentEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/FlowEmailSentEvent.php';
 }
 
-foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stubEvent) {
+// Filinq's signing events (signing-through-filinq): a decision asks filinq for a
+// signature and hears how the request ended. SigningProvenance first: both events take it.
+foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent', 'SigningProvenance', 'DocumentSigningRequestedEvent', 'SigningConcludedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Filinq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Filinq/Event/' . $stubEvent . '.php';
 	}

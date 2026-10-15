@@ -39,7 +39,7 @@ use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
@@ -199,7 +199,7 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 			$this->createMock(WOODocumentAssessmentService::class),
 			$deadlines,
 			$this->createMock(WOODecisionService::class),
-			$this->createMock(WooPublicationService::class),
+			$this->createMock(OutcomePublisher::class),
 			$this->createMock(WOOAnonymisationAssistService::class),
 			$session,
 			new CaseAccessGuard(settingsService: $settings, groupManager: $groups, logger: $logger),

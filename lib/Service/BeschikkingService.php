@@ -49,10 +49,10 @@ use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
 use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\DocumentSeries\DocumentSeriesNumberer;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
-use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
+use OCA\Dossiq\Service\Signing\DocumentSigningRequester;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use RuntimeException;
@@ -101,12 +101,17 @@ class BeschikkingService {
 	public const SUCCESSOR_KINDS = ['amendment', 'withdrawal'];
 
 	/**
+	 * A signing request filinq took and has not concluded.
+	 */
+	public const SIGNING_REQUESTED = 'requested';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param StateMachineService $stateMachine The state-machine guard.
 	 * @param BeschikkingDelivery $delivery Sends the decision notice through a real transport.
 	 * @param TemplateEngineAdapterInterface $templateAdapter The Docudesk template adapter.
-	 * @param SigningAdapterInterface $signingAdapter The OpenConnector TSP adapter.
+	 * @param DocumentSigningRequester $signingRequester Asks filinq for the signature.
 	 * @param ArchivalAdapterInterface $archivalAdapter The OpenRegister archival adapter.
 	 * @param BeschikkingRepository $repository Beschikking persistence.
 	 * @param MandaatVerifier $mandateVerifier Mandaat resolution + verification.
@@ -123,7 +128,7 @@ class BeschikkingService {
 		private readonly StateMachineService $stateMachine,
 		private readonly BeschikkingDelivery $delivery,
 		private readonly TemplateEngineAdapterInterface $templateAdapter,
-		private readonly SigningAdapterInterface $signingAdapter,
+		private readonly DocumentSigningRequester $signingRequester,
 		private readonly ArchivalAdapterInterface $archivalAdapter,
 		private readonly BeschikkingRepository $repository,
 		private readonly MandaatVerifier $mandateVerifier,
@@ -288,17 +293,26 @@ class BeschikkingService {
 	}//end akkoord()
 
 	/**
-	 * Sign the beschikking via the TSP and transition to ondertekend. [T08]
+	 * Ask filinq to have the beschikking signed. [T08]
+	 *
+	 * Nothing is signed here. Filinq takes the request, the signer signs in
+	 * filinq's flow, and filinq concludes the request: SigningConclusionRecorder then
+	 * moves the decision to signed, or marks the request not concluded. Until
+	 * then the decision keeps its status and carries `signing.state = requested`.
+	 * Filinq ends every request it took, at the latest after its expiry
+	 * (`signing_request_expiry_days`, 30 by default), so no decision waits on it
+	 * without end.
 	 *
 	 * @param string $decisionId The beschikking UUID.
-	 * @param string $tspProvider The TSP provider slug.
+	 * @param string $tspProvider The provider the caller named; recorded, filinq chooses its own.
 	 * @param string $signatory The signer's Nextcloud UID.
 	 *
-	 * @return array<string, mixed> The updated beschikking.
+	 * @return array<string, mixed> The beschikking, waiting on the signature.
 	 *
-	 * @throws RuntimeException On a missing beschikking or invalid transition.
+	 * @throws RuntimeException invalid_transition; signing_in_progress while a request is open;
+	 *                          signing_unavailable when filinq is absent or did not take the request.
 	 *
-	 * @spec openspec/changes/beschikking-generatie/tasks.md#T08
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-document-is-signed-through-filinq
 	 */
 	public function onderteken(string $decisionId, string $tspProvider, string $signatory): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
@@ -308,44 +322,39 @@ class BeschikkingService {
 			throw new RuntimeException('invalid_transition');
 		}
 
-		// BEFORE THE TSP IS CALLED, not after. A signature is minted at a
-		// provider and countersigned onto the file; refusing afterwards would
+		if ((string)($decision['signing']['state'] ?? '') === self::SIGNING_REQUESTED) {
+			throw new RuntimeException('signing_in_progress');
+		}
+
+		// BEFORE THE SIGNATURE IS ASKED FOR, not after. A signature is minted at
+		// a provider and countersigned onto the file; refusing afterwards would
 		// leave a signed document behind a refused act, which is worse than
 		// either outcome on its own.
 		$this->coordinator->requireSeatFilled(caseId: (string)($decision['caseId'] ?? ''));
 
 		$fileId = (string)(($decision['compositeContent']['fileId'] ?? ''));
-		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
-
-		$decision['signature'] = [
-			'tspProvider' => $tspProvider,
-			'tspProviderEidasId' => (string)($signature['tspProviderEidasId'] ?? ''),
-			'signatory' => $signatory,
-			'signingMoment' => (string)($signature['signingMoment'] ?? ''),
-			'kind' => 'gekwalificeerde-elektronische-handtekening',
-			'certificateSerialNumber' => (string)($signature['certificateSerialNumber'] ?? ''),
-			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
-		];
-		$decision['compositeContent']['fileId'] = (string)($signature['signedBestandId'] ?? $fileId);
-		$decision['currentStatus'] = 'signed';
-
-		$saved = $this->repository->save(decision: $decision);
-		$this->stateMachine->logTransition(
-			$decisionId,
-			$current,
-			'signed',
-			[
-				'actor' => $signatory,
-				'actorType' => 'employee',
-				'trigger' => 'manual',
-				'evidenceMaterial' => [
-					'kind' => 'tsp-handtekening-rapport',
-					'rapportId' => (string)($signature['validationRapportId'] ?? ''),
-				],
-			],
+		$level = $this->signingRequester->level();
+		$answer = $this->signingRequester->request(
+			subjectId: $decisionId,
+			subjectLabel: (string)($decision['reference'] ?? $decisionId),
+			fileId: $fileId,
+			signerUserIds: [$signatory],
+			signatureLevel: $level,
 		);
+		if ($answer['requested'] === false) {
+			throw new RuntimeException('signing_unavailable');
+		}
 
-		return $saved;
+		$decision['signing'] = [
+			'state' => self::SIGNING_REQUESTED,
+			'requestId' => $answer['requestId'],
+			'requestedAt' => (new DateTimeImmutable())->format('c'),
+			'level' => $level,
+			'tspProvider' => $tspProvider,
+			'signatory' => $signatory,
+		];
+
+		return $this->repository->save(decision: $decision);
 	}//end onderteken()
 
 	/**

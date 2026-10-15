@@ -327,7 +327,7 @@ class ZaakdossierServiceTest extends TestCase {
 			}
 		);
 
-		$this->documents->expects($this->never())->method('storeRaw');
+		$this->documents->expects($this->never())->method('storeBase64');
 
 		$result = $this->service->uploadDocument(
 			caseId: 'case-1',

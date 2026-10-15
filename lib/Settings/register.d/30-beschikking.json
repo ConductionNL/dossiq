@@ -14,7 +14,7 @@
       "beschikking": {
         "slug": "beschikking",
         "icon": "FileCertificateOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:GovernmentPermit",
         "title": "Beschikking",
         "description": "Formal decision (Awb besluit) with full lifecycle: ontwerp -> akkoord-mandaat -> ondertekend -> verzonden -> ontvangen-bevestiging -> gearchiveerd. Immutable once ondertekend. State transitions are guarded by mandaat-verificatie (akkoord) and TSP-handtekening (onderteken) and logged via stateMachineLog.",
@@ -192,7 +192,63 @@
               "signingMoment": { "type": "string", "title": "Signing Timestamp", "description": "Date and time at which the document was signed", "format": "date-time" },
               "kind": { "type": "string", "title": "Signature Type", "description": "Type of electronic signature, e.g. gekwalificeerde-elektronische-handtekening" },
               "certificateSerialNumber": { "type": "string", "title": "Certificate Serial Number", "description": "Serial number of the signing certificate" },
-              "validationRapportId": { "type": "string", "title": "Validation Report ID", "description": "Reference to the signature validation report" }
+              "validationRapportId": { "type": "string", "title": "Validation Report ID", "description": "Reference to the signature validation report" },
+              "level": { "type": "string", "title": "Signature level", "description": "The signature level filinq signed at: SES, AdES or QES." },
+              "signingRequestId": { "type": "string", "title": "Signing request", "description": "Filinq's signing request this signature concluded." }
+            }
+          },
+          "signing": {
+            "type": "object",
+            "title": "Signing request",
+            "description": "The signature asked of filinq: requested while filinq has not concluded it, concluded when signed, not-concluded when it was declined, cancelled or expired. A not-concluded request can be asked again.",
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "requested",
+                  "concluded",
+                  "not-concluded"
+                ],
+                "title": "Signing state",
+                "description": "requested, concluded or not-concluded."
+              },
+              "requestId": {
+                "type": "string",
+                "title": "Signing request ID",
+                "description": "Filinq's id for the signing request."
+              },
+              "requestedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Requested at",
+                "description": "When the signature was asked of filinq."
+              },
+              "concludedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Concluded at",
+                "description": "When filinq concluded the request."
+              },
+              "outcome": {
+                "type": "string",
+                "title": "Outcome",
+                "description": "Filinq's status for the concluded request: signed, declined, cancelled or expired."
+              },
+              "level": {
+                "type": "string",
+                "title": "Signature level",
+                "description": "The signature level asked for: SES, AdES or QES."
+              },
+              "tspProvider": {
+                "type": "string",
+                "title": "Provider named",
+                "description": "The provider the caller named; filinq chooses its own."
+              },
+              "signatory": {
+                "type": "string",
+                "title": "Signatory",
+                "description": "Nextcloud UID of the person asked to sign."
+              }
             }
           },
           "dispatch": {

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * WooPublicationService Unit Tests
+ * OutcomePublisher Unit Tests
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -28,14 +28,14 @@ use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -84,13 +84,13 @@ interface WooPublicationObjectServiceStub {
 }//end interface
 
 /**
- * Unit tests for WooPublicationService.
+ * Unit tests for OutcomePublisher.
  *
- * @covers \OCA\Dossiq\Service\WooPublicationService
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  *
- * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationCategory
+ * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -121,9 +121,9 @@ class WooPublicationServiceTest extends TestCase {
 	private IAppManager $appManager;
 
 	/**
-	 * @var WooPublicationService
+	 * @var OutcomePublisher
 	 */
-	private WooPublicationService $service;
+	private OutcomePublisher $service;
 
 	/**
 	 * Every save the withheld-list fixture saw, as [schema, object].
@@ -142,10 +142,10 @@ class WooPublicationServiceTest extends TestCase {
 		$this->apiClient = $this->createMock(OpenCatalogiApiClient::class);
 		$this->appManager = $this->createMock(IAppManager::class);
 
-		$this->service = new WooPublicationService(
+		$this->service = new OutcomePublisher(
 			$this->settingsService,
 			$this->apiClient,
-			new WooCategoryMapper(),
+			new PublicationCategory(),
 			$this->appManager,
 			$this->createMock(LoggerInterface::class),
 		);
@@ -340,10 +340,10 @@ class WooPublicationServiceTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
 		$logger = $this->createMock(LoggerInterface::class);
-		$service = new WooPublicationService(
+		$service = new OutcomePublisher(
 			settingsService: $settings,
 			apiClient: $this->apiClient,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $this->appManager,
 			logger: $logger,
 			pagesSeen: new PagesSeen(reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), depth: new ReviewDepth()),
@@ -457,10 +457,10 @@ class WooPublicationServiceTest extends TestCase {
 		$documents->method('getDocumentsUnderReview')->willReturn($underReview);
 		$documents->method('getOutstanding')->willReturn(['count' => $outstanding, 'documents' => []]);
 
-		$service = new WooPublicationService(
+		$service = new OutcomePublisher(
 			settingsService: $this->settingsService,
 			apiClient: $this->apiClient,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $this->appManager,
 			logger: $this->createMock(LoggerInterface::class),
 			nothingToDisclose: new NothingToDisclose(assessments: $documents),
@@ -715,9 +715,9 @@ class WooPublicationServiceTest extends TestCase {
 	 * @param bool                      $installed      Whether opencatalogi is installed.
 	 * @param array<int, mixed>         $publications   Collects the publication ids created.
 	 *
-	 * @return WooPublicationService
+	 * @return OutcomePublisher
 	 */
-	private function decidedCase(?WithheldListRecorder $recorder, bool $installed = true): WooPublicationService {
+	private function decidedCase(?WithheldListRecorder $recorder, bool $installed = true): OutcomePublisher {
 		$this->appManager->method('isInstalled')->willReturn($installed);
 		$this->appManager->method('isEnabledForUser')->willReturn($installed);
 
@@ -773,14 +773,14 @@ class WooPublicationServiceTest extends TestCase {
 		$this->apiClient->method('updatePublication')->willReturn(['id' => 'pub-001']);
 		$this->apiClient->method('createPublication')->willReturn(['id' => 'pub-001']);
 
-		return new WooPublicationService(
+		return new OutcomePublisher(
 			$this->settingsService,
 			$this->apiClient,
-			new WooCategoryMapper(),
+			new PublicationCategory(),
 			$this->appManager,
 			$this->createMock(LoggerInterface::class),
 			null,
-			new WooCaseLedger(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
+			new CasePublicationState(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
 		);
 	}//end decidedCase()
 

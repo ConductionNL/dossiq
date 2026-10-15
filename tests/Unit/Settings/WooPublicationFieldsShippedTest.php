@@ -9,7 +9,7 @@
  * schema's DECLARED properties to columns. The `decision` schema declared none
  * of the Woo fields, so:
  *
- *   - `WooPublicationService::publish()` wrote `wooPublication` and the save
+ *   - `OutcomePublisher::publish()` wrote `wooPublication` and the save
  *     dropped it. `withdraw()` then read no `publicationId` and answered
  *     `no_publication`, and a second publish created a second publication
  *     instead of updating the first;
@@ -44,8 +44,8 @@ namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\App\IAppManager;
@@ -55,10 +55,10 @@ use Psr\Log\LoggerInterface;
 /**
  * The decision schema declares the Woo fields, and a publication survives a save.
  *
- * @covers \OCA\Dossiq\Service\WooPublicationService
- * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
+ * @uses \OCA\Dossiq\Service\Publication\PublicationCategory
+ * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -195,7 +195,7 @@ class WooPublicationFieldsShippedTest extends TestCase {
 		$catalogi->method('attachDocument')->willReturn(['id' => 'ocdoc-001']);
 		$catalogi->expects($this->once())->method('updatePublication')->willReturn(['id' => 'pub-001']);
 
-		$service = new WooPublicationService($settings, $catalogi, new WooCategoryMapper(), $apps, $this->createMock(LoggerInterface::class));
+		$service = new OutcomePublisher($settings, $catalogi, new PublicationCategory(), $apps, $this->createMock(LoggerInterface::class));
 
 		$published = $service->publish('case-001', 'decision-001');
 		$this->assertTrue($published['available'], 'the publish itself should succeed');

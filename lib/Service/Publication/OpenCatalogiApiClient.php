@@ -97,7 +97,7 @@ class OpenCatalogiApiClient {
 	/**
 	 * The single domain error every failure of this client surfaces as.
 	 *
-	 * `WooPublicationService` catches `Throwable` around each call and maps it
+	 * `OutcomePublisher` catches `Throwable` around each call and maps it
 	 * to `['available' => false, 'reason' => 'opencatalogi_api_error']`, so
 	 * keeping this exact message keeps that behaviour identical across the
 	 * transport change.
@@ -320,7 +320,7 @@ class OpenCatalogiApiClient {
 	/**
 	 * Resolve OpenRegister's ObjectService, or fail with the domain error.
 	 *
-	 * `WooPublicationService::checkAvailability()` already refuses to call this
+	 * `OutcomePublisher::checkAvailability()` already refuses to call this
 	 * client when OpenRegister is unavailable, so a null here is exceptional
 	 * rather than routine — but it must not be dereferenced, and it must
 	 * surface the same error the transport failures do.

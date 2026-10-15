@@ -52,7 +52,7 @@
         "digest": "30aa210ecb3ff7ef763a8ba27c22bb11c2bc18f27c3d637c8c03805250b9c934"
     },
     "lib/Settings/dossiq_mock_register.json::beschikking": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/dossiq_mock_register.json::besluitinformatieobject": {
@@ -704,7 +704,7 @@
         "digest": "c72f350965a7ed4c34abb5a757cba24da08f6a63e29278a4f34bcf13e8253929"
     },
     "lib/Settings/dossiq_register.json::decisionType": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "d6b6f1b982633639d3bef0eaf7d5c3973d8b562d6189d6eae41836ab647b3aa0"
     },
     "lib/Settings/dossiq_register.json::dispatch": {
@@ -912,7 +912,7 @@
         "digest": "cf10fa72490ba8b0a74088512e2e1b65792dad7229341c047c4446e9645a49ed"
     },
     "lib/Settings/register.d/30-beschikking.json::beschikking": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "329e9dff1c44db3345bc05096cc589c1bd935176dadc5cc6e82e174b0949100e"
     },
     "lib/Settings/register.d/30-beschikking.json::bezwaarTrigger": {
