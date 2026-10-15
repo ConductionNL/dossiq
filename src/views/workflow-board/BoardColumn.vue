@@ -88,7 +88,8 @@
 					@end="$emit('dragend')"
 					@move="onMove">
 					<CaseCard
-						v-for="c in cases"
+						v-for="(c, index) in cases"
+						v-show="expanded || cardLimit <= 0 || index < cardLimit"
 						:key="c.id"
 						:caseItem="c"
 						:caseTypeName="caseTypeName(c.caseType)"
@@ -107,6 +108,22 @@
 				<p v-if="cases.length === 0" class="board-column__empty">
 					{{ t('dossiq', 'No cases') }}
 				</p>
+
+				<button
+					v-if="hiddenCount > 0 || expanded"
+					type="button"
+					class="board-column__more"
+					:aria-expanded="String(expanded)"
+					data-testid="board-column-more"
+					@click="expanded = !expanded">
+					{{
+						expanded
+							? t('dossiq', 'Show less')
+							: t('dossiq', 'Show {count} more', {
+									count: hiddenCount,
+								})
+					}}
+				</button>
 			</template>
 		</div>
 	</div>
@@ -160,6 +177,12 @@ export default {
 		 * @type {(toColumnId: string) => boolean}
 		 */
 		canDrop: { type: Function, default: () => true },
+		/**
+		 * How many cards the column draws before "Show N more" (DqWerkbord).
+		 * The rest stay in the list, hidden, so a drop, a selection and a
+		 * keyboard move see every case; 0 draws them all.
+		 */
+		cardLimit: { type: Number, default: 3 },
 	},
 
 	emits: [
@@ -172,6 +195,13 @@ export default {
 		'toggle-select',
 		'update:cases',
 	],
+
+	data() {
+		return {
+			/** Whether the reader opened the hidden cards of this column. */
+			expanded: false,
+		}
+	},
 
 	computed: {
 		/**
@@ -280,6 +310,19 @@ export default {
 		 *
 		 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
 		 */
+		/**
+		 * How many cards "Show N more" opens.
+		 *
+		 * @return {number} The hidden cards, 0 when the column draws them all.
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		hiddenCount() {
+			if (this.cardLimit <= 0) {
+				return 0
+			}
+			return Math.max(0, this.cases.length - this.cardLimit)
+		},
+
 		countLabel() {
 			return countLabel(this.cases.length, this.capacity)
 		},
@@ -358,9 +401,9 @@ export default {
 .board-column {
 	display: flex;
 	flex-direction: column;
-	min-width: 240px;
-	max-width: 320px;
-	flex: 1;
+	/* A cell of the board's grid (DqWerkbord): it takes the cell's width and
+	   grows with its cards, so the page scrolls and the column never does. */
+	min-width: 0;
 	background: var(--color-background-dark);
 	border-radius: var(--border-radius-large);
 	padding: 8px;
@@ -434,17 +477,33 @@ export default {
 	border-radius: var(--border-radius);
 }
 
-/* The column is stretched to the board's height; the body takes what the
-   header leaves and scrolls its own cards. */
+/* No scroller of its own: the column grows with the cards it draws, and the
+   cards past the limit are behind "Show N more". */
 .board-column__body {
-	flex: 1;
 	min-height: 80px;
-	overflow-y: auto;
 }
 
 /* Tall enough to drop on when empty. */
 .board-column__list {
 	min-height: 64px;
+}
+
+.board-column__more {
+	width: 100%;
+	height: 34px;
+	margin-top: 4px;
+	border: 1px dashed var(--color-border-dark);
+	border-radius: var(--border-radius-large);
+	background: transparent;
+	color: var(--color-main-text);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.board-column__more:hover,
+.board-column__more:focus-visible {
+	background: var(--color-background-hover);
 }
 
 .board-column__empty {
