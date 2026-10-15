@@ -112,7 +112,7 @@ class DwellTimeAnalyzer {
 	 *
 	 * @return array<string, int> Working days, keyed by statusType id.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function heldTotalsByStatus(array $casesById, ?DateTimeImmutable $now = null): array {
 		if ($this->held === null) {

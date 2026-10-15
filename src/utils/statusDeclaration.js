@@ -13,7 +13,7 @@
 // anything, and so the two places that read them (the case panel and the list
 // cell) cannot drift into two readings of the same payload.
 //
-// @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+// @spec openspec/specs/status-transition-engine/spec.md
 
 /**
  * The three values a status may declare about who the case waits on.
@@ -31,7 +31,7 @@ export const WAITING_ON_VALUES = ['us', 'applicant', 'thirdParty']
  * @return {string} The sentence, or the empty string when the case is ours to
  *   move — a case nobody is waiting on needs no line saying so.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function waitingOnLabel(waitingOn) {
 	if (waitingOn === 'applicant') {
@@ -53,7 +53,7 @@ export function waitingOnLabel(waitingOn) {
  * @param {object} dwell The engine's dwell block.
  * @return {string} The sentence, or the empty string when there is nothing to say.
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 export function dwellLabel(dwell) {
 	const days = Number(dwell?.days ?? 0)
@@ -80,7 +80,7 @@ export function dwellLabel(dwell) {
  * @param {object} dwell The engine's dwell block.
  * @return {boolean} True when the status maximum is past.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function isDwellBreached(dwell) {
 	return dwell?.breached === true
@@ -97,7 +97,7 @@ export function isDwellBreached(dwell) {
  * @return {{name: string, unmet: Array<string>}|null} The status and what it
  *   is still waiting for, or null when nothing is pending.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function derivationReasons(derivation) {
 	if (!derivation || typeof derivation !== 'object') {
@@ -187,7 +187,7 @@ export function withheldSentence(entry) {
  * @param {string} name The derived status's name.
  * @return {string} The sentence.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 export function derivationHeading(name) {
 	return t('dossiq', 'This case moves to {status} once these are on file', {

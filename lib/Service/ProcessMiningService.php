@@ -92,7 +92,7 @@ class ProcessMiningService {
 	 * @return array<string, mixed> The structured response body.
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
 		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());

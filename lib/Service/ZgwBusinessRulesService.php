@@ -31,6 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Zgw\LookupNotCompleted;
+use OCA\Dossiq\Service\Zgw\ZgwRuleResults;
 use OCA\Dossiq\Service\Zgw\ZgwRulesDispatcher;
 
 /**
@@ -47,12 +49,14 @@ class ZgwBusinessRulesService {
 	 *
 	 * @param ZgwZtcRulesService $ztcRules ZTC (Catalogi) rules, used by the concept/publish/destroy guards
 	 * @param ZgwRulesDispatcher $dispatcher Routes a validated request to the rules service that owns it
+	 * @param ZgwRuleResults $results Builds the refusal when a rule's read could not run
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ZgwZtcRulesService $ztcRules,
 		private readonly ZgwRulesDispatcher $dispatcher,
+		private readonly ZgwRuleResults $results,
 	) {
 	}//end __construct()
 
@@ -89,73 +93,83 @@ class ZgwBusinessRulesService {
 		?bool $caseClosed = null,
 		bool $hasGeforceerd = true,
 	): array {
-		// Set context on the ZTC rules this service guards with directly, and
-		// on every rules service the dispatcher can route to.
-		$this->ztcRules->setContext($objectService, $mappingConfig);
-		$this->dispatcher->setContext($objectService, $mappingConfig);
+		// A rule that read the store and could not finish the read throws, and every
+		// such read ends here: nothing decided on it is an answer (REQ-ZBR-022).
+		try {
+			// Set context on the ZTC rules this service guards with directly, and
+			// on every rules service the dispatcher can route to.
+			$this->ztcRules->setContext($objectService, $mappingConfig);
+			$this->dispatcher->setContext($objectService, $mappingConfig);
 
-		// ---- ZTC cross-cutting concerns (concept protection) ----
-		if ($zgwApi === 'catalogi') {
-			$draftCheck = $this->applyCatalogiDraftRules(
-				resource: $resource,
-				action: $action,
-				body: $body,
-				existingObject: $existingObject,
-				parentCaseTypeDraft: $parentCaseTypeDraft
-			);
-			if ($draftCheck !== null) {
-				return $draftCheck;
-			}
+			// ---- ZTC cross-cutting concerns (concept protection) ----
+			if ($zgwApi === 'catalogi') {
+				$draftCheck = $this->applyCatalogiDraftRules(
+					resource: $resource,
+					action: $action,
+					body: $body,
+					existingObject: $existingObject,
+					parentCaseTypeDraft: $parentCaseTypeDraft
+				);
+				if ($draftCheck !== null) {
+					return $draftCheck;
+				}
 
-			$publishGuard = $this->guardCaseTypePublish(
-				resource: $resource,
-				action: $action,
-				body: $body,
-				existingObject: $existingObject,
-				mappingConfig: $mappingConfig
-			);
-			if ($publishGuard !== null) {
-				return $publishGuard;
-			}
+				$publishGuard = $this->guardCaseTypePublish(
+					resource: $resource,
+					action: $action,
+					body: $body,
+					existingObject: $existingObject,
+					mappingConfig: $mappingConfig
+				);
+				if ($publishGuard !== null) {
+					return $publishGuard;
+				}
 
-			$destroyGuard = $this->guardCaseTypeDestroy(
-				resource: $resource,
-				action: $action,
-				body: $body,
-				existingObject: $existingObject,
-				mappingConfig: $mappingConfig
-			);
-			if ($destroyGuard !== null) {
-				return $destroyGuard;
-			}
-		}//end if
+				$destroyGuard = $this->guardCaseTypeDestroy(
+					resource: $resource,
+					action: $action,
+					body: $body,
+					existingObject: $existingObject,
+					mappingConfig: $mappingConfig
+				);
+				if ($destroyGuard !== null) {
+					return $destroyGuard;
+				}
+			}//end if
 
-		// ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
-		if ($caseClosed === true && $hasGeforceerd === false) {
-			return [
-				'valid' => false,
-				'status' => 403,
-				'detail' => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
-				'code' => 'permission_denied',
-				'invalidParams' => [
-					[
-						'name' => 'nonFieldErrors',
-						'code' => 'zaak-closed',
-						'reason' => 'De zaak is afgesloten.',
+			// ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
+			if ($caseClosed === true && $hasGeforceerd === false) {
+				return [
+					'valid' => false,
+					'status' => 403,
+					'detail' => 'Zaak is afgesloten. Wijzigingen zijn niet toegestaan zonder scope zaken.geforceerd-bijwerken.',
+					'code' => 'permission_denied',
+					'invalidParams' => [
+						[
+							'name' => 'nonFieldErrors',
+							'code' => 'zaak-closed',
+							'reason' => 'De zaak is afgesloten.',
+						],
 					],
-				],
-				'enrichedBody' => [],
-			];
-		}
+					'enrichedBody' => [],
+				];
+			}
 
-		// ---- Delegate to per-register rule services ----
-		return $this->dispatcher->dispatch(
-			zgwApi: $zgwApi,
-			resource: $resource,
-			action: $action,
-			body: $body,
-			existingObject: $existingObject
-		);
+			// ---- Delegate to per-register rule services ----
+			return $this->dispatcher->dispatch(
+				zgwApi: $zgwApi,
+				resource: $resource,
+				action: $action,
+				body: $body,
+				existingObject: $existingObject
+			);
+		} catch (LookupNotCompleted $e) {
+			return $this->results->notVerified(
+				rule: "{$zgwApi}/{$resource} {$action}",
+				object: $e->lookup,
+				cause: $e->getMessage()
+			);
+		}//end try
 	}//end validate()
 
 	/**
@@ -282,6 +296,17 @@ class ZgwBusinessRulesService {
 		}
 
 		$delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
+		if (($delGuard['unverified'] ?? false) === true) {
+			// The check could not read the cases. Nothing says the request is wrong, so no conflict.
+			return [
+				'valid' => false,
+				'status' => ZgwRuleResults::NOT_VERIFIED_STATUS,
+				'detail' => (string)$delGuard['message'],
+				'code' => 'destroy_check_not_completed',
+				'enrichedBody' => $body,
+			];
+		}
+
 		if ($delGuard['blocked'] === true) {
 			return [
 				'valid' => false,

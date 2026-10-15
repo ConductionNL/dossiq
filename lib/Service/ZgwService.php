@@ -31,6 +31,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCA\Dossiq\Service\Zgw\ZgwParentStateResolver;
+use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\Zgw\ZgwPatchMerger;
 use Psr\Log\LoggerInterface;
 
@@ -171,6 +172,13 @@ class ZgwService {
 	 * @var array|null
 	 */
 	private ?array $cachedRequestBody = null;
+
+	/**
+	 * Sorts a failed store call into its answer (built on first use).
+	 *
+	 * @var StoreFailureAnswer|null
+	 */
+	private ?StoreFailureAnswer $storeFailures = null;
 
 	/**
 	 * The OpenRegister ConsumerMapper (loaded dynamically).
@@ -315,6 +323,48 @@ class ZgwService {
 	public function getLogger(): LoggerInterface {
 		return $this->logger;
 	}//end getLogger()
+
+	/**
+	 * The answer for a store call that failed: 404 not found, 403 not allowed, or 503 not reached.
+	 *
+	 * Every ZGW read, update and delete of a stored object answers its failures through here,
+	 * so a store that was down never reads as an object that is not there (REQ-ZBR-023).
+	 *
+	 * @param \Throwable $error The failure.
+	 * @param string $operation What was asked of the store (`ZGW delete`).
+	 * @param string $object Which object (`besluiten <uuid>`).
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function storeFailureResponse(\Throwable $error, string $operation, string $object): JSONResponse {
+		return $this->storeFailures()->respond(error: $error, operation: $operation, object: $object);
+	}//end storeFailureResponse()
+
+	/**
+	 * The answer for an object the store does not hold.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function notFoundResponse(): JSONResponse {
+		return $this->storeFailures()->notFound();
+	}//end notFoundResponse()
+
+	/**
+	 * The store failure sorter, built on first use.
+	 *
+	 * @return StoreFailureAnswer
+	 */
+	private function storeFailures(): StoreFailureAnswer {
+		if ($this->storeFailures === null) {
+			$this->storeFailures = new StoreFailureAnswer(logger: $this->logger);
+		}
+
+		return $this->storeFailures;
+	}//end storeFailures()
 
 	/**
 	 * Load ZGW mapping configuration.
@@ -1127,7 +1177,15 @@ class ZgwService {
 				schema: $mappingConfig['sourceSchema'],
 				id: $uuid
 			);
+		} catch (\Throwable $e) {
+			return $this->storeFailureResponse(error: $e, operation: 'ZGW show', object: $resource . ' ' . $uuid);
+		}
 
+		if ($object === null) {
+			return $this->notFoundResponse();
+		}
+
+		try {
 			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
 			$outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
 
@@ -1197,6 +1255,11 @@ class ZgwService {
 			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
 		}
 
+		$existingData = $this->readExisting(uuid: $uuid, mappingConfig: $mappingConfig, operation: 'ZGW update', resource: $resource);
+		if ($existingData instanceof JSONResponse) {
+			return $existingData;
+		}
+
 		try {
 			$body = $this->getRequestBody(request: $request);
 
@@ -1210,7 +1273,7 @@ class ZgwService {
 				resource: $resource,
 				action: $action,
 				body: $body,
-				existingObject: $this->findSerialized(uuid: $uuid, mappingConfig: $mappingConfig),
+				existingObject: $existingData,
 				objectService: $this->objectService,
 				mappingConfig: $mappingConfig,
 				parentCaseTypeDraft: $parentZtDraft,
@@ -1226,15 +1289,10 @@ class ZgwService {
 			$englishData = $inbound['data'];
 			$englishData['id'] = $uuid;
 
-			// For partial updates (PATCH), merge with existing object data.
+			// For partial updates (PATCH), merge with the existing object read above.
 			if ($partial === true) {
-				$existing = $this->objectService->find(
-					$uuid,
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
-				);
 				$englishData = (new ZgwPatchMerger())->merge(
-					existingData: $existing->jsonSerialize(),
+					existingData: $existingData,
 					body: $body,
 					englishData: $englishData,
 					mappingConfig: $mappingConfig
@@ -1289,19 +1347,43 @@ class ZgwService {
 	}//end ruleRefusal()
 
 	/**
+	 * The stored object an update or delete acts on, or the answer when it cannot be read.
+	 *
+	 * @param string $uuid The object uuid
+	 * @param array $mappingConfig The ZGW mapping (`sourceRegister`, `sourceSchema`)
+	 * @param string $operation What the request asks (`ZGW delete`), for the log
+	 * @param string $resource The ZGW resource name, for the log
+	 *
+	 * @return array|JSONResponse The object as an array, or the 404, 403 or 503 answer
+	 */
+	private function readExisting(string $uuid, array $mappingConfig, string $operation, string $resource): array|JSONResponse {
+		try {
+			$existing = $this->findSerialized(uuid: $uuid, mappingConfig: $mappingConfig);
+		} catch (\Throwable $e) {
+			return $this->storeFailureResponse(error: $e, operation: $operation, object: $resource . ' ' . $uuid);
+		}
+
+		return $existing ?? $this->notFoundResponse();
+	}//end readExisting()
+
+	/**
 	 * Find a stored object and serialise it.
 	 *
 	 * @param string $uuid The object uuid
 	 * @param array $mappingConfig The ZGW mapping (`sourceRegister`, `sourceSchema`)
 	 *
-	 * @return mixed The object as an array (or whatever the ObjectService returned as one)
+	 * @return array|null The object as an array, or null when the store answered none
 	 */
-	private function findSerialized(string $uuid, array $mappingConfig): mixed {
+	private function findSerialized(string $uuid, array $mappingConfig): ?array {
 		$existingObj = $this->objectService->find(
 			$uuid,
 			register: $mappingConfig['sourceRegister'],
 			schema: $mappingConfig['sourceSchema']
 		);
+		if ($existingObj === null) {
+			return null;
+		}
+
 		if (is_array($existingObj) === false) {
 			return $existingObj->jsonSerialize();
 		}
@@ -1401,18 +1483,12 @@ class ZgwService {
 			return $this->mappingNotFoundResponse(zgwApi: $zgwApi, resource: $resource);
 		}
 
+		$existingData = $this->readExisting(uuid: $uuid, mappingConfig: $mappingConfig, operation: 'ZGW delete', resource: $resource);
+		if ($existingData instanceof JSONResponse) {
+			return $existingData;
+		}
+
 		try {
-			$existingObj = $this->objectService->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-
-			$existingData = $existingObj;
-			if (is_array($existingObj) === false) {
-				$existingData = $existingObj->jsonSerialize();
-			}
-
 			$ruleResult = $this->businessRulesService->validate(
 				zgwApi: $zgwApi,
 				resource: $resource,
@@ -1433,7 +1509,30 @@ class ZgwService {
 			}
 
 			$this->objectService->deleteObject(uuid: $uuid);
+		} catch (\Throwable $e) {
+			return $this->storeFailureResponse(error: $e, operation: 'ZGW delete', object: $resource . ' ' . $uuid);
+		}//end try
 
+		// The object is gone. A notification that fails does not make the delete fail.
+		$this->notifyDeleted(request: $request, zgwApi: $zgwApi, resource: $resource, uuid: $uuid);
+
+		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
+	}//end handleDestroy()
+
+	/**
+	 * Publish the notification of a delete that happened, logging a failure instead of answering it.
+	 *
+	 * @param IRequest $request The request.
+	 * @param string $zgwApi The ZGW API group.
+	 * @param string $resource The ZGW resource name.
+	 * @param string $uuid The deleted object.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/guards-refuse-when-unsure/specs/zgw-business-rules-compliance/spec.md
+	 */
+	public function notifyDeleted(IRequest $request, string $zgwApi, string $resource, string $uuid): void {
+		try {
 			$baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
 			$this->publishNotification(
 				zgwApi: $zgwApi,
@@ -1441,19 +1540,13 @@ class ZgwService {
 				resourceUrl: $baseUrl . '/' . $uuid,
 				action: 'destroy'
 			);
-
-			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'ZGW delete error: ' . $e->getMessage(),
-				['exception' => $e]
+				'ZGW delete of {resource} {uuid} happened, but its notification failed: ' . $e->getMessage(),
+				['resource' => $resource, 'uuid' => $uuid, 'exception' => $e]
 			);
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
-		}//end try
-	}//end handleDestroy()
+		}
+	}//end notifyDeleted()
 
 	/**
 	 * Handle audit trail index — proxies to OpenRegister's audit trail.

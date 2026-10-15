@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class DerivedStatusListener implements IEventListener {
 
@@ -115,7 +115,7 @@ class DerivedStatusListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function handle(Event $event): void {
 		if ($event instanceof ObjectUpdatingEvent === false) {
@@ -171,7 +171,7 @@ class DerivedStatusListener implements IEventListener {
 	 *
 	 * @return array<string, mixed>|null The payload, or null.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function payload(ObjectEntity $entity): ?array {
 		try {
@@ -191,7 +191,7 @@ class DerivedStatusListener implements IEventListener {
 	 *
 	 * @return bool True when this is a case.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function isCaseSchema(array $object): bool {
 		$expected = $this->settingsService->getConfigValue('case_schema');

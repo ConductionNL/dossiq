@@ -41,6 +41,7 @@ use PHPUnit\Framework\TestCase;
  * tests drive it with the id-shaped payload OpenRegister actually emits.
  *
  * @covers \OCA\Dossiq\Listener\CaseNumberListener
+ * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
  */
 class CaseNumberListenerTest extends TestCase {
 

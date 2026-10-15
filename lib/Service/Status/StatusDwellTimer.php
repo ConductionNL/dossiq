@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
 /**
  * Arms and cancels the engine timer behind a status's maximum dwell.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusDwellTimer {
 
@@ -102,7 +102,7 @@ class StatusDwellTimer {
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine is absent or refused.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function arm(string $caseId, string $statusTypeId, int $maximumDwell, string $statusName = ''): ?string {
 		if ($caseId === '' || $maximumDwell < 1) {
@@ -189,7 +189,7 @@ class StatusDwellTimer {
 	 *
 	 * @return int How many timers were cancelled.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function cancel(string $caseId, string $reason = 'status changed'): int {
 		if ($caseId === '') {
@@ -220,7 +220,7 @@ class StatusDwellTimer {
 	 *
 	 * @return object|null The FlowTimerService.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function engine(): ?object {
 		return $this->settingsService->getOpenRegisterClass(TermijnTimerService::ENGINE_CLASS);
@@ -239,7 +239,7 @@ class StatusDwellTimer {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function degraded(string $operation, string $caseId, Throwable $error): void {
 		$this->logger->warning(

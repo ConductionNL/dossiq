@@ -91,12 +91,20 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `ope
     Tests: `tests/Unit/Service/Zaakdossier/MailPartiesReportTest.php` (both named tests plus the CSV, over the real
     provenance reader), `tests/Unit/Controller/MailPartiesReportControllerTest.php` (both named tests plus the
     answer and CSV). The parties half of the `Woo reports` screen (board DqWooRapportages) is not built here.
+  - Round 9, the parties half: `src/components/reports/CaseMailPartiesReport.vue` (generic, decision 182), mounted
+    by `src/views/woo/WooReportsView.vue`, which now draws only the halves on offer. `WooReportSwitches::offeredToCurrentUser()`
+    answers `parties` too, and the menu entry reads `woo.reportsOffered` (either report). `?case={id}` fills in the
+    case. Tests: `tests/vitest/wooReports.spec.js` (16), `WooReportsInitialStateListenerTest::testThePartiesReportIsOfferedWhileItIsOn`.
+    The board DqWooRapportages (design-system#184, still open) draws the throughput half only: the parties half
+    follows its card and table, and the case is named in a plain field until a board draws a case chooser.
 
 ## 5. End to end and live
 
-- [ ] 5.1 e2e `tests/e2e/woo-review-reports.spec.ts`: with both switches off the screen is absent;
+- [x] 5.1 e2e `tests/e2e/woo-review-reports.spec.ts`: with both switches off the screen is absent;
   switch on with a reader group; a member sees the throughput table, a non-member gets no screen;
   the parties report lists the fixture mails. Cite REQ-WRR-001 to REQ-WRR-004.
+  - Written, not run (live pass, decision 139). Five tests in one serial block; the signed-in administrator
+    is first the non-member and then, added to the run's reader group, the member.
 - [ ] 5.2 Live check after merge on the dev instance: switch on, read both reports for one Woo case,
   and read the audit entry of the throughput read. Record them.
 

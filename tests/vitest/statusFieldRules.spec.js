@@ -11,7 +11,7 @@
  * wiped by the editor the first time anybody opened the status. Both of those
  * are asserted here, and neither failure is visible on a screen.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import {

@@ -26,6 +26,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Transitions\CaseDeclarations;
+use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
@@ -47,6 +49,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * A final transition writes a result, or it does not happen.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
+ * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 class StatusTransitionServiceResultTest extends TestCase {
@@ -131,22 +135,28 @@ class StatusTransitionServiceResultTest extends TestCase {
 		$this->service = new StatusTransitionService(
 			templateLoader: $this->templateLoader,
 			guardRegistry: $guardRegistry,
-			sideEffectDispatcher: $dispatcher,
-			store: $this->store,
 			authorizer: $authorizer,
 			specReader: $specReader,
 			userSession: $this->createMock(IUserSession::class),
 			logger: $this->createMock(LoggerInterface::class),
-			resultWriter: $this->resultWriter,
-			statusChecklist: $this->createMock(StatusChecklist::class),
-			declarations: $this->undeclaredStatuses(),
-			declaredMoves: $this->undeclaredTransitions(),
-			offered: $this->offeredTransitions(
-				guards: $guardRegistry,
-				reader: $specReader,
-				statuses: $this->undeclaredStatuses(),
-			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
+			declarations: new CaseDeclarations(
+				statuses: $this->undeclaredStatuses(),
+				moves: $this->undeclaredTransitions(),
+				offered: $this->offeredTransitions(
+					guards: $guardRegistry,
+					reader: $specReader,
+					statuses: $this->undeclaredStatuses(),
+				),
+				checklist: $this->createMock(StatusChecklist::class),
+				store: $this->store,
+			),
+			ledger: new CaseMoveLedger(
+				store: $this->store,
+				resultWriter: $this->resultWriter,
+				dispatcher: $dispatcher,
+				logger: $this->createMock(LoggerInterface::class),
+			),
 		);
 	}//end setUp()
 

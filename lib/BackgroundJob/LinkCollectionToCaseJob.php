@@ -45,8 +45,6 @@ use Psr\Log\LoggerInterface;
 /**
  * Links one dossier to one case, once.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
  */
 class LinkCollectionToCaseJob extends QueuedJob {

@@ -9,105 +9,113 @@
 				{{ t('dossiq', 'Woo reports') }}
 			</h2>
 
-			<NcNoteCard type="info">
-				{{
-					t(
-						'dossiq',
-						'How many documents each reviewer assessed per day, by verdict. Every time you open this report, it is recorded on the Woo cases it counts.',
-					)
-				}}
-			</NcNoteCard>
+			<div
+				v-if="offered.throughput"
+				class="woo-reports__throughput"
+				data-testid="woo-throughput">
+				<NcNoteCard type="info">
+					{{
+						t(
+							'dossiq',
+							'How many documents each reviewer assessed per day, by verdict. Every time you open this report, it is recorded on the Woo cases it counts.',
+						)
+					}}
+				</NcNoteCard>
 
-			<div class="woo-reports__filters">
-				<NcTextField
-					v-model="from"
-					type="date"
-					:label="t('dossiq', 'From')"
-					data-testid="woo-throughput-from" />
-				<NcTextField
-					v-model="to"
-					type="date"
-					:label="t('dossiq', 'Until')"
-					data-testid="woo-throughput-to" />
-				<NcButton
-					:disabled="!canRead"
-					data-testid="woo-throughput-show"
-					@click="load">
-					{{ t('dossiq', 'Show') }}
-				</NcButton>
-				<NcButton
-					v-if="rows.length > 0"
-					:href="csvUrl"
-					data-testid="woo-throughput-csv">
-					{{ t('dossiq', 'Download CSV') }}
-				</NcButton>
+				<div class="woo-reports__filters">
+					<NcTextField
+						v-model="from"
+						type="date"
+						:label="t('dossiq', 'From')"
+						data-testid="woo-throughput-from" />
+					<NcTextField
+						v-model="to"
+						type="date"
+						:label="t('dossiq', 'Until')"
+						data-testid="woo-throughput-to" />
+					<NcButton
+						:disabled="!canRead"
+						data-testid="woo-throughput-show"
+						@click="load">
+						{{ t('dossiq', 'Show') }}
+					</NcButton>
+					<NcButton
+						v-if="rows.length > 0"
+						:href="csvUrl"
+						data-testid="woo-throughput-csv">
+						{{ t('dossiq', 'Download CSV') }}
+					</NcButton>
+				</div>
+
+				<NcNoteCard
+					v-if="refusal"
+					type="error"
+					data-testid="woo-throughput-refusal">
+					{{ refusal }}
+				</NcNoteCard>
+
+				<NcNoteCard v-if="truncated" type="warning">
+					{{
+						t(
+							'dossiq',
+							'This period holds more assessments than one report reads. Choose a shorter period.',
+						)
+					}}
+				</NcNoteCard>
+
+				<NcLoadingIcon v-if="loading" :size="32" />
+
+				<NcEmptyContent
+					v-else-if="loaded && rows.length === 0 && !refusal"
+					:name="t('dossiq', 'No assessments in this period')" />
+
+				<table
+					v-else-if="rows.length > 0"
+					class="woo-reports__table"
+					data-testid="woo-throughput-table">
+					<thead>
+						<tr>
+							<th scope="col">
+								{{ t('dossiq', 'Reviewer') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Day') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Public') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Partly public') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Not public') }}
+							</th>
+							<th scope="col">
+								{{ t('dossiq', 'Total') }}
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="row in rows" :key="row.reviewer + row.day">
+							<td>{{ row.displayName }}</td>
+							<td>{{ row.day }}</td>
+							<td>{{ row.openbaar }}</td>
+							<td>{{ row.deels_openbaar }}</td>
+							<td>{{ row.niet_openbaar }}</td>
+							<td>{{ row.total }}</td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
 
-			<NcNoteCard
-				v-if="refusal"
-				type="error"
-				data-testid="woo-throughput-refusal">
-				{{ refusal }}
-			</NcNoteCard>
-
-			<NcNoteCard v-if="truncated" type="warning">
-				{{
-					t(
-						'dossiq',
-						'This period holds more assessments than one report reads. Choose a shorter period.',
-					)
-				}}
-			</NcNoteCard>
-
-			<NcLoadingIcon v-if="loading" :size="32" />
-
-			<NcEmptyContent
-				v-else-if="loaded && rows.length === 0 && !refusal"
-				:name="t('dossiq', 'No assessments in this period')" />
-
-			<table
-				v-else-if="rows.length > 0"
-				class="woo-reports__table"
-				data-testid="woo-throughput-table">
-				<thead>
-					<tr>
-						<th scope="col">
-							{{ t('dossiq', 'Reviewer') }}
-						</th>
-						<th scope="col">
-							{{ t('dossiq', 'Day') }}
-						</th>
-						<th scope="col">
-							{{ t('dossiq', 'Public') }}
-						</th>
-						<th scope="col">
-							{{ t('dossiq', 'Partly public') }}
-						</th>
-						<th scope="col">
-							{{ t('dossiq', 'Not public') }}
-						</th>
-						<th scope="col">
-							{{ t('dossiq', 'Total') }}
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="row in rows" :key="row.reviewer + row.day">
-						<td>{{ row.displayName }}</td>
-						<td>{{ row.day }}</td>
-						<td>{{ row.openbaar }}</td>
-						<td>{{ row.deels_openbaar }}</td>
-						<td>{{ row.niet_openbaar }}</td>
-						<td>{{ row.total }}</td>
-					</tr>
-				</tbody>
-			</table>
+			<CaseMailPartiesReport v-if="offered.parties" :caseId="startCase" />
 		</div>
 	</NcAppContent>
 </template>
 
 <script>
 import axios from '@nextcloud/axios'
+import { loadState } from '@nextcloud/initial-state'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
@@ -118,6 +126,7 @@ import {
 	NcNoteCard,
 	NcTextField,
 } from '@nextcloud/vue'
+import CaseMailPartiesReport from '../../components/reports/CaseMailPartiesReport.vue'
 
 /**
  * The query string of a throughput read over a period.
@@ -139,17 +148,34 @@ export function throughputUrl(from, to, csv = false) {
 }
 
 /**
- * The Woo reports screen: throughput per reviewer per day, read by the named group only.
+ * Which halves of the reports screen this user is offered.
  *
- * The menu offers this screen only while the report is switched on and the
- * user is in its reader group. The server checks both again on every read,
- * so the screen shows the server's refusal sentence when one comes back.
+ * @return {{throughput: boolean, parties: boolean}} The offer the page controller made.
+ * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ */
+export function offeredReports() {
+	const offered = loadState('dossiq', 'woo_reports', {})
+	return {
+		throughput: offered?.throughput === true,
+		parties: offered?.parties === true,
+	}
+}
+
+/**
+ * The reports screen: throughput per reviewer per day for the named group, and the
+ * parties of a case's collected mail for whoever may read that case.
+ *
+ * The menu offers this screen only while a report is switched on for this
+ * user, and each half is drawn only when it is. The server checks again on
+ * every read, so a half shows the server's refusal sentence when one comes back.
  *
  * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
 export default {
 	name: 'WooReportsView',
 	components: {
+		CaseMailPartiesReport,
 		NcAppContent,
 		NcButton,
 		NcEmptyContent,
@@ -169,10 +195,22 @@ export default {
 			loading: false,
 			loaded: false,
 			refusal: '',
+			offered: offeredReports(),
 		}
 	},
 
 	computed: {
+		/**
+		 * The case the address names (`?case=`), so a link from a case opens its report.
+		 *
+		 * @return {string} The case, or ''.
+		 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+		 */
+		startCase() {
+			const named = this.$route?.query?.case
+			return typeof named === 'string' ? named : ''
+		},
+
 		/**
 		 * Whether both days are filled in.
 		 *
@@ -231,6 +269,12 @@ export default {
 	flex-direction: column;
 	gap: 16px;
 	padding: 16px 24px;
+}
+
+.woo-reports__throughput {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 .woo-reports__filters {

@@ -243,6 +243,58 @@ record. OpenRegister refuses a parent that references another schema
     `CaseReviewerAccessTest::testAReviewerMayUpdateTheRecordsOfTheirOwnBatch`. An administrator runs
     `POST /api/cases/reviewer-access/reconcile` once after the upgrade, so existing batches and rules get the
     assignee's update grant. Still open: (c).
+  - Round 7, `documentReview` private (6.1, and (c) for its writers). The schema carries the private block
+    (1.0.3, register 0.20.40) and the woo-verzoek case type (1.4.6) lists it: `readers: own`,
+    `reviewerRowField: batch`, `assigneeMay: update`, `reviewersMay: update`, the first row of the table. Every
+    rule that reads reviews reads the whole case through `DocumentRelevance::forCase()` (case-reviewer-access
+    REQ-CRA-011), so a batch reviewer's marking never makes a second review and the decision still waits for
+    pages on reviews the caller cannot read. The relevance route, the pages-seen route and the triage apply
+    call `CaseReviewerAccess::reconcileAfterCreate()` when they create a review; the batch create already
+    reconciled. The repair step still calls nothing. Tests: `DocumentRelevanceTest`,
+    `PagesSeenTest::testTheDecisionWaitsForPagesOnReviewsTheCallerCannotRead`,
+    `TriageRulesTest::testApplySharesTheReviewsItCreates` and `testApplyHonoursReviewsTheCallerCannotRead`,
+    `DocumentReviewControllerTest::testAReviewTheCallerCannotReadIsNotMadeTwiceAndStillCounts`, and over the
+    shipped register `tests/Unit/Settings/CaseTypePrivateRecordAccessTest.php` (a colleague off the case is
+    refused, the assignee still reads and updates; red controls in `dq-l8-logs/r7/`). The reviews the repair
+    step made have no owner and no grants; since round 8 the upgrade itself reconciles them (see below), and
+    `POST /api/cases/reviewer-access/reconcile` is the fallback. Still open of (c):
+    the gather add, the search plan save, the query record and the exclusion route, with their three schemas.
+  - Round 8, the reconcile runs on upgrade (case-reviewer-access REQ-CRA-012). The repair step
+    `lib/Repair/ReconcileCaseRecordGrants.php`, last in `post-migration`, runs
+    `lib/Service/Access/CaseRecordGrantsBackfill.php`: every case of every declaring case type, a page at a
+    time, as an administrator account (OpenRegister writes a grant only for a signed-in owner, owning group
+    member or administrator). The administrator route runs the same walk and is now the fallback.
+    `CaseRecordLookup::rowsOf()` reads every page of a case's records instead of the first thousand. What the
+    step could not do is a warning in the upgrade output and an error in the log. Tests:
+    `ReconcileCaseRecordGrantsTest` (the step is built from the name in `appinfo/info.xml` and run with nobody
+    signed in over the shipped register), `CaseRecordGrantsBackfillTest`, `CaseRecordLookupTest`.
+  - Round 8, the three records of the collection (6.1, and the rest of (c)). `wooSearchPlan`, `wooExclusion` and
+    `wooCollectionQuery` (86-woo-corpus.json, each 1.0.1) carry the private block; woo-verzoek 1.4.7 lists them
+    with `readers: assignee`, `assigneeMay: update`; register 0.20.41. Their writers reconcile after a create:
+    `WooSearchPlans::record()` (a new plan only) and `startFrom()`, `WooCollectionQueries::store()`,
+    `WooCollection::record()` (which the exclusion route and the gather add both use). Each read is split:
+    what a person is shown stays under their own access (`planOf()`, `exclusions()`, `forCase()`, and
+    `rerun()`, which answers a search over the query's terms), and a rule reads the whole case
+    (`planOfCase()` behind `recorded()` and the plan lookup of `record()`; the totals of the collection report
+    and the already-excluded check; the excluded documents in `OutstandingDocuments`). Tests: `WooSearchPlansTest`, `WooCollectionReportTest`,
+    `WooCollectionQueryTest`, per schema over the shipped register
+    `CaseTypePrivateRecordAccessTest::testARecordOfTheCollectionIsForTheAssigneeAndTheSupervisors`, and
+    `ReconcileCaseRecordGrantsTest` (the upgrade gives existing plans, exclusions and queries their grants).
+    Red control in `dq-l8-logs/r8/`. Still open of 6.1: `wooDeliveredSet` (lane L10) and the Newman folder.
+    `wooRequestConfiguration` stays as it is (not one of the seven): Q-dossiq-L8-3.
+    The private scope rule the access tests decide with is held to OpenRegister's own:
+    `tests/Unit/Support/PrivateScopeVerdictDriftTest.php` runs the real `PermissionHandler::privateScopeVerdict()`
+    from the sibling checkout over 5,184 cases and fails on the first one `ShippedPrivateRecords::privateVerdict()`
+    answers differently.
+  - Round 10, decisions 222 and 234: the upgrade's walk runs as the background service account
+    (`BackgroundServiceAccount::runAs()`), never an administrator. It first gives `dossiq-background-service`
+    OpenRegister's organisation special right `grant_manage` (openregister #4601), narrowed to this register and
+    to the schemas the case types declare under `reviewerAccess.records`, and `ObjectReadGrants` finds each
+    record by a rule read. No usable account answers `no-service-account`, loud, and writes nothing. The
+    administrator route walks as its caller. Tests: `ReconcileCaseRecordGrantsTest` (as the account, the
+    control that refuses to borrow `root`, the session clean afterwards), `CaseRecordGrantsBackfillTest`,
+    `ObjectReadGrantsTest::testTheRecordIsFoundByARuleReadBecauseTheCallerMayNotReadIt`; red control
+    `dq-l8-logs/r10/red-borrow-admin.log` (8 fail when the walk falls back to an administrator).
   - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
     list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
     assert only the own batch's reviews and no rules are listed.

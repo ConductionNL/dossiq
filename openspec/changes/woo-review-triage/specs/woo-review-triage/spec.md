@@ -73,8 +73,10 @@ grant, which is the safe state. The case page SHALL show the number of records s
 coordinator. Every dossiq route that creates one of the seven SHALL call `reconcile()` for the case
 after the create, in the same request: the gather add, the search plan save, the query record, the
 exclusion route, the rule create, the batch create and `WooPublicationService::publish()`. The
-repair step of REQ-WRT-001 runs without a user and SHALL NOT call it; the records it creates wait
-for the administrator route of REQ-WSA-006, which SHALL reconcile the seven as well.
+repair step of REQ-WRT-001 runs without a user and SHALL NOT call it; the records it creates get
+their grants from the last step of the same upgrade, which reconciles every declaring case as an
+administrator account (case-reviewer-access REQ-CRA-012). The administrator route of REQ-WSA-006
+runs that same walk and is the fallback; both reconcile the seven as well.
 
 Every dossiq route on these records SHALL also check access through `CaseAccessGuard` for the case.
 

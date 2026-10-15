@@ -59,6 +59,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Review\BatchSelection
+ * @uses \OCA\Dossiq\Review\ReviewWrites
  * @uses \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  */
@@ -70,6 +71,13 @@ class DocumentReviewControllerTest extends TestCase {
 	 * @var InMemoryRegister
 	 */
 	private InMemoryRegister $store;
+
+	/**
+	 * How many created records each reconcile after a write was told about.
+	 *
+	 * @var list<int>
+	 */
+	private array $shared = [];
 
 	/**
 	 * Seed the ten-document fixture: 6 in scope, 3 out, 1 unmarked, 4 in-scope ones assessed.
@@ -120,12 +128,19 @@ class DocumentReviewControllerTest extends TestCase {
 		$caseDocuments = new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger);
 		$tasks = $this->createMock(EngineTaskGateway::class);
 		$tasks->method('mirrorImport')->willReturn('engine-task-1');
+		$access = $this->createConfiguredMock(\OCA\Dossiq\Service\Access\CaseReviewerAccess::class, ['isAdmittedReader' => true]);
+		$access->method('reconcileAfterCreate')->willReturnCallback(
+			function (string $caseId, int $created): array {
+				$this->shared[] = $created;
+				return ['status' => 'reconciled', 'granted' => 0, 'revoked' => 0, 'refused' => 0];
+			}
+		);
 		$userManager = $this->createMock(IUserManager::class);
 		$userManager->method('userExists')->willReturn(true);
 
 		return new DocumentReviewController(
 			request: $request,
-			reviews: $reviews,
+			writes: new \OCA\Dossiq\Review\ReviewWrites(reviews: $reviews, reviewerAccess: $access),
 			summary: new ReviewSummary(
 				settingsService: $settings,
 				reviews: $reviews,
@@ -141,7 +156,7 @@ class DocumentReviewControllerTest extends TestCase {
 				tasks: $tasks,
 				userManager: $userManager,
 				l10n: $l10n,
-				reviewerAccess: $this->createConfiguredMock(\OCA\Dossiq\Service\Access\CaseReviewerAccess::class, ['isAdmittedReader' => true]),
+				reviewerAccess: $access,
 				logger: $logger,
 			),
 			selection: new \OCA\Dossiq\Review\BatchSelection(
@@ -205,6 +220,7 @@ class DocumentReviewControllerTest extends TestCase {
 		$this->assertSame('Nieuwsbrieven', $saved['overturnedRule']);
 		$this->assertSame('reviewer-a', $saved['markedBy']);
 		$this->assertCount(10, $this->store->all('documentReview'));
+		$this->assertSame([0], $this->shared, 'a review that already existed keeps the grants it has');
 	}//end testMarkingRecordsTheReviewerAndAnOverturnedRule()
 
 	/**
@@ -219,6 +235,7 @@ class DocumentReviewControllerTest extends TestCase {
 		$created = array_values(array_filter($this->store->all('documentReview'), static fn (array $r): bool => $r['documentRef'] === 'doc-new'));
 		$this->assertSame('out-of-scope', $created[0]['relevance']);
 		$this->assertSame('case-x', $created[0]['case']);
+		$this->assertSame([1], $this->shared, 'the new review is shared with the people on the case in the same request');
 
 		$refused = $this->controller(params: ['relevance' => 'maybe'])->relevance(id: 'case-x', documentRef: 'doc-new');
 		$this->assertSame(422, $refused->getStatus());
@@ -315,4 +332,40 @@ class DocumentReviewControllerTest extends TestCase {
 		$this->assertSame('review-pages-required', $empty->getData()['error']);
 		$this->assertSame(403, $this->controller(read: false, mutate: false, params: ['pages' => [1]])->pagesSeen(id: 'case-x', documentRef: 'doc-4')->getStatus());
 	}//end testPagesSeenAreAppendedWithTheReviewer()
+
+	/**
+	 * A review is private to the case, so the caller may read none of them: marking still finds
+	 * the document's review instead of making a second one, and the summary still counts the case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
+	 */
+	public function testAReviewTheCallerCannotReadIsNotMadeTwiceAndStillCounts(): void {
+		$this->store->hiddenFromCaller = ['documentReview'];
+
+		$summary = $this->controller()->summary(id: 'case-x')->getData();
+		$this->assertSame(['unmarked' => 1, 'inScope' => 6, 'outOfScope' => 3], $summary['relevance']);
+		$this->assertSame(['doc-4', 'doc-5', 'doc-9'], $summary['outstanding']['documents']);
+
+		$this->assertSame(200, $this->controller(params: ['relevance' => 'in-scope'])->relevance(id: 'case-x', documentRef: 'doc-9')->getStatus());
+		$this->assertCount(10, $this->store->all('documentReview'), 'no second review for the same document');
+		$this->assertSame('in-scope', $this->store->rows['documentReview']['review-9']['relevance']);
+		$this->assertSame([0], $this->shared);
+	}//end testAReviewTheCallerCannotReadIsNotMadeTwiceAndStillCounts()
+
+	/**
+	 * Pages seen on a document that has no review yet create one, and it is shared like any other.
+	 *
+	 * @return void
+	 */
+	public function testPagesSeenOnADocumentWithoutAReviewShareTheNewReview(): void {
+		$this->store->seed(schema: 'document', uuid: 'doc-new', row: ['case' => 'case-x']);
+
+		$this->assertSame(200, $this->controller(params: ['pages' => [1]])->pagesSeen(id: 'case-x', documentRef: 'doc-new')->getStatus());
+		$this->assertSame(200, $this->controller(params: ['pages' => [2]])->pagesSeen(id: 'case-x', documentRef: 'doc-new')->getStatus());
+
+		$this->assertSame([1, 0], $this->shared);
+		$this->assertCount(11, $this->store->all('documentReview'));
+	}//end testPagesSeenOnADocumentWithoutAReviewShareTheNewReview()
 }//end class

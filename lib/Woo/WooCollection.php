@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
@@ -66,6 +67,7 @@ class WooCollection {
 	 * @param WOODocumentAssessmentService $assessments     Whether a document is assessed.
 	 * @param WooSearchPlans               $plans           The plan's custodians and systems.
 	 * @param CaseDocumentProvenance       $provenance      Where each document was found.
+	 * @param CaseReviewerAccess           $access          The read a count makes, and the grants of a new exclusion.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -74,6 +76,7 @@ class WooCollection {
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly WooSearchPlans $plans,
 		private readonly CaseDocumentProvenance $provenance,
+		private readonly CaseReviewerAccess $access,
 	) {
 	}//end __construct()
 
@@ -92,16 +95,20 @@ class WooCollection {
 		$custodians = array_fill_keys($this->plans->custodianNames(plan: $plan), $this->zero());
 		$systems = array_fill_keys(array_map('strval', (array)($plan['systems'] ?? [])), $this->zero());
 
+		// The rows a person is shown, and the split per custodian, come from what the caller may read.
 		$exclusions = $this->exclusions(caseId: $caseId);
-		$excludedDocs = [];
-		$neverArrived = 0;
 		foreach ($exclusions as $exclusion) {
 			$custodian = (string)($exclusion['custodian'] ?? '');
 			if ($custodian !== '') {
 				$custodians[$custodian] = ($custodians[$custodian] ?? $this->zero());
 				$custodians[$custodian]['excluded']++;
 			}
+		}
 
+		// The totals hold for the case whoever asks: an exclusion the caller cannot read still counts.
+		$excludedDocs = [];
+		$neverArrived = 0;
+		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
 			$docRef = (string)($exclusion['documentRef'] ?? '');
 			if ($docRef === '') {
 				$neverArrived++;
@@ -163,7 +170,7 @@ class WooCollection {
 			throw new WooCorpusRefused(reason: 'document_assessed', status: 409);
 		}
 
-		foreach ($this->exclusions(caseId: $caseId) as $exclusion) {
+		foreach ($this->exclusionsOfCase(caseId: $caseId) as $exclusion) {
 			if ((string)($exclusion['documentRef'] ?? '') === $documentRef) {
 				throw new WooCorpusRefused(reason: 'document_excluded', status: 409);
 			}
@@ -204,6 +211,8 @@ class WooCollection {
 			$saved = $saved->jsonSerialize();
 		}
 
+		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+
 		return (array)$saved;
 	}//end record()
 
@@ -229,7 +238,7 @@ class WooCollection {
 	}//end duplicateOf()
 
 	/**
-	 * Every exclusion of the case.
+	 * The exclusions of the case as the caller may read them: the rows a person is shown.
 	 *
 	 * @param string $caseId The case uuid.
 	 *
@@ -244,6 +253,17 @@ class WooCollection {
 
 		return array_values(array_filter($rows, static fn (array $row): bool => (string)($row['case'] ?? '') === $caseId));
 	}//end exclusions()
+
+	/**
+	 * Every exclusion of the case whoever asks, for a count or a check; never answered to a person.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return list<array<string, mixed>> The exclusions.
+	 */
+	private function exclusionsOfCase(string $caseId): array {
+		return $this->access->recordsOf(schemaKey: self::EXCLUSION_SCHEMA, caseField: 'case', caseId: $caseId);
+	}//end exclusionsOfCase()
 
 	/**
 	 * Count one document into its custodian and its system.

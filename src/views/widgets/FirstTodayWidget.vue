@@ -38,15 +38,14 @@ export default {
 
 	components: { CnBannerWidget },
 
-	// Declared on purpose: the mount script passes `title`, and the host draws
-	// the heading (hydra#316). See OverdueCasesWidget.
-	props: {
-		// eslint-disable-next-line vue/no-unused-properties
-		title: {
-			type: String,
-			default: '',
-		},
+	// The host binds the whole manifest entry (`title`, `widgetId`, the
+	// content keys) and draws the heading itself (hydra#316). None of it may
+	// fall through onto the banner: a host `title` would override the case
+	// title the banner shows. So the widget takes no attributes at all and
+	// declares only what it reads.
+	inheritAttrs: false,
 
+	props: {
 		/**
 		 * The declaration of what is past term: `visibleWhen.source.filter` is
 		 * what the widget counts on, `actions[0]` the list it links to.

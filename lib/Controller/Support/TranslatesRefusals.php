@@ -128,9 +128,6 @@ trait TranslatesRefusals {
 	 *
 	 * @return IL10N|null The translator.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) `\OCP\Server::get()` is the public
-	 *     service locator, used only where no constructor injection reaches.
-	 *
 	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
 	 */
 	private function refusalTranslator(): ?IL10N {
@@ -140,6 +137,9 @@ trait TranslatesRefusals {
 		}
 
 		try {
+			// The service locator, because a trait takes no constructor
+			// injection. A controller that can inject `IL10N` overrides
+			// refusalL10n() above and never reaches this line.
 			return \OCP\Server::get(IFactory::class)->get(Application::APP_ID);
 		} catch (Throwable) {
 			return null;

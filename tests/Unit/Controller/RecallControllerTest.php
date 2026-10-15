@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\RecallEstimator;
+use OCA\Dossiq\Review\RecallEstimator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
@@ -55,7 +55,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Review\ReviewBatches
  * @uses \OCA\Dossiq\Review\ReviewConfiguration
  * @uses \OCA\Dossiq\Review\ReviewDepth
- * @uses \OCA\Dossiq\Woo\RecallEstimator
+ * @uses \OCA\Dossiq\Review\RecallEstimator
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
