@@ -205,6 +205,11 @@ class AcknowledgementDutyTest extends TestCase {
 		$terms = $this->createMock(originalClassName: TermijnService::class);
 		$terms->method('getTermijnInstanceForZaak')->willReturnCallback(fn (): ?array => $this->term);
 
+		// The sender reads the same term back by its id, the way production does,
+		// so a term whose case link is a UUID reaches the letter the way it does live.
+		$noticeTerms = $this->createMock(originalClassName: TermijnService::class);
+		$noticeTerms->method('getTermijnInstance')->willReturnCallback(fn (): ?array => $this->term);
+
 		return new AcknowledgementService(
 			settingsService: $settings,
 			caseTypeResolver: $resolver,
@@ -212,7 +217,7 @@ class AcknowledgementDutyTest extends TestCase {
 			declaration: new CaseTypeAcknowledgement(),
 			termService: $terms,
 			notifications: new TermijnNotificationService(
-				termService: $this->createMock(originalClassName: TermijnService::class),
+				termService: $noticeTerms,
 				sender: ($sender ?? $this->sentNotices()),
 				logger: $logger,
 				requester: new RequesterNoticeSender(
@@ -527,6 +532,29 @@ class AcknowledgementDutyTest extends TestCase {
 		self::assertStringContainsString(needle: '1 november 2026', haystack: $result['payload']['body']);
 		self::assertStringContainsString(needle: 'Dakkapel Kerkstraat 12', haystack: $result['payload']['body']);
 	}//end testTheMessageCarriesTheKenmerkAndTheDeadline()
+
+	/**
+	 * The receipt names the case by its number, also when the term links the case by UUID.
+	 *
+	 * A term instance points at its case by id. The letter read that link first,
+	 * so a resident's inbox showed "Ontvangstbevestiging zaak cecc92cc-..." for a
+	 * case numbered 2026-0117 (Zuiddrecht live round 3).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/receipt-names-the-case-number/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
+	 */
+	public function testTheReceiptNamesTheCaseNumberNotTheTermsCaseLink(): void {
+		$uuid = 'cecc92cc-6e45-4edd-b38f-908fb543e710';
+		$this->term = ['id' => 'ti-1', 'case' => $uuid, 'endDateCurrent' => '2026-11-01'];
+		$caseId = $this->seedCase(overrides: ['id' => $uuid, 'identifier' => '2026-0117']);
+
+		$result = $this->service()->acknowledge(caseId: $caseId);
+
+		self::assertSame(expected: 'Ontvangstbevestiging zaak 2026-0117', actual: $result['payload']['subject']);
+		self::assertStringContainsString(needle: 'kenmerk 2026-0117', haystack: $result['payload']['body']);
+		self::assertStringNotContainsString(needle: $uuid, haystack: $result['payload']['body']);
+	}//end testTheReceiptNamesTheCaseNumberNotTheTermsCaseLink()
 
 	/**
 	 * REQ-WRN-003: the mail server refused the acknowledgement, so the duty is

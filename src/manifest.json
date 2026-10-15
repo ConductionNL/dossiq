@@ -2476,6 +2476,8 @@
 							"field": "deadline",
 							"icon": "ClockAlertOutline",
 							"showDate": true,
+							"settledField": "isFinalStatus",
+							"settledLabel": "Handled",
 							"thresholds": {
 								"warn": 14,
 								"danger": 5
