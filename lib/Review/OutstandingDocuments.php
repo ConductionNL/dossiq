@@ -264,8 +264,10 @@ class OutstandingDocuments {
 			return [];
 		}
 
+		// An exclusion is private to the people on its case, and what holds up a decision is a rule of
+		// the case: it is read whoever asks, and kept only when it names this case.
 		$excluded = [];
-		$rows = $this->searchObjectsAsArrays(
+		$rows = $this->searchObjectsAsArraysUnscoped(
 			objectService: $objectService,
 			register: $register,
 			schema: $exclusionSchema,

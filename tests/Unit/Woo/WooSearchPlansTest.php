@@ -19,6 +19,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-a-search-plan-is-recorded-before-collection-req-wrc-001
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 
 declare(strict_types=1);
@@ -28,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 use OCA\Dossiq\Service\RecordTemplate\RecordTemplateReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooCorpusRefused;
 use OCA\Dossiq\Woo\WooSearchPlans;
@@ -41,6 +46,8 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Dossiq\Woo\WooSources
  */
 class WooSearchPlansTest extends TestCase {
+
+	use MakesCaseReviewerAccess;
 
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
 	private const EARLIER = '55555555-5555-4555-8555-555555555555';
@@ -92,7 +99,7 @@ class WooSearchPlansTest extends TestCase {
 				'woo_request_configuration_schema' => 'wooRequestConfiguration',
 			][$key] ?? $default
 		);
-		$this->plans = new WooSearchPlans(settingsService: $settings, templates: $this->templates());
+		$this->plans = new WooSearchPlans(settingsService: $settings, templates: $this->templates(), access: $this->caseReviewerAccessOver($settings));
 	}//end setUp()
 
 	/**
@@ -144,6 +151,46 @@ class WooSearchPlansTest extends TestCase {
 		self::assertCount(1, $this->register->all('wooRequestConfiguration'));
 		self::assertSame('abakker', $this->plans->recorded(caseId: self::CASE_ID)['recordedBy']);
 	}//end testRecordingAgainChangesTheSameObject()
+
+	/**
+	 * REQ-CRA-011: the plan is private, so a caller off the plan's readers is not shown it,
+	 * while the rule "was a plan recorded" still holds for the case.
+	 *
+	 * @return void
+	 */
+	public function testAPlanTheCallerCannotReadStillCountsAsRecordedAndIsNotShown(): void {
+		$this->plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen');
+		$this->register->hiddenFromCaller = ['wooSearchPlan'];
+
+		self::assertNull($this->plans->planOf(caseId: self::CASE_ID), 'what a person is shown follows their own access');
+		self::assertNotNull($this->plans->recorded(caseId: self::CASE_ID), 'the gather is not refused for want of a plan that exists');
+		self::assertNull($this->plans->planOfCase(caseId: 'another-case'));
+	}//end testAPlanTheCallerCannotReadStillCountsAsRecordedAndIsNotShown()
+
+	public function testRecordingOverAPlanTheCallerCannotReadMakesNoSecondPlan(): void {
+		$this->plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen');
+		$this->register->hiddenFromCaller = ['wooSearchPlan'];
+
+		$this->plans->record(caseId: self::CASE_ID, input: (['terms' => 'Stationsplein'] + $this->input()), userId: 'colleague');
+
+		self::assertCount(1, $this->register->all('wooSearchPlan'), 'the write addresses the plan that exists; OpenRegister decides whether this caller may');
+	}//end testRecordingOverAPlanTheCallerCannotReadMakesNoSecondPlan()
+
+	public function testANewPlanIsReconciledAndAChangedOneIsNot(): void {
+		$this->plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen');
+		self::assertSame([['case' => self::CASE_ID, 'created' => 1]], $this->reconciledAfterCreate);
+
+		$this->plans->record(caseId: self::CASE_ID, input: $this->input(), userId: 'pjansen');
+		self::assertCount(1, $this->reconciledAfterCreate, 'a changed plan keeps the grants it has');
+	}//end testANewPlanIsReconciledAndAChangedOneIsNot()
+
+	public function testAPlanStartedFromAnEarlierRequestIsReconciled(): void {
+		$this->register->seed('wooRequestConfiguration', 'conf-1', ['case' => 'earlier-case', 'custodians' => [['name' => 'A']], 'systems' => ['files'], 'terms' => 'x']);
+
+		self::assertNotNull($this->plans->startFrom(caseId: self::CASE_ID, from: 'earlier-case'));
+
+		self::assertSame([['case' => self::CASE_ID, 'created' => 1]], $this->reconciledAfterCreate);
+	}//end testAPlanStartedFromAnEarlierRequestIsReconciled()
 
 	public function testADraftPlanCountsAsNone(): void {
 		$this->register->seed('wooSearchPlan', 'draft-1', ['case' => self::CASE_ID, 'terms' => 'x']);

@@ -20,6 +20,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-requests-gather-documents-from-sources/specs/woo-case-type/spec.md#requirement-picked-results-become-documents-on-the-case-req-woo-013
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordReaders
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 
 declare(strict_types=1);
@@ -39,6 +43,7 @@ use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\MailHeaderReader;
 use OCA\Dossiq\Tests\Support\HeaderParsingTextExtraction;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\MakesCaseReviewerAccess;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCollection;
@@ -76,6 +81,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseFileCollector
  */
 class WooGatherAddTest extends TestCase {
+
+	use MakesCaseReviewerAccess;
 
 	private const CASE_ID = '11111111-1111-4111-8111-111111111111';
 	private const OTHER_CASE_ID = '22222222-2222-4222-8222-222222222222';
@@ -276,13 +283,15 @@ class WooGatherAddTest extends TestCase {
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
 		$caseDocuments = new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class));
+		$access = $this->caseReviewerAccessOver($this->settings);
 		$collection = new WooCollection(
 			settingsService: $this->settings,
 			caseDocuments: $caseDocuments,
 			store: $store,
 			assessments: new WOODocumentAssessmentService(settingsService: $this->settings, userSession: $session, logger: $this->createMock(LoggerInterface::class), caseDocuments: $caseDocuments),
-			plans: new WooSearchPlans(settingsService: $this->settings, templates: $this->createMock(RecordTemplateReader::class)),
+			plans: new WooSearchPlans(settingsService: $this->settings, templates: $this->createMock(RecordTemplateReader::class), access: $access),
 			provenance: new CaseDocumentProvenance(store: $store, caseDocuments: $caseDocuments),
+			access: $access,
 		);
 
 		return new WooGatherAdd(

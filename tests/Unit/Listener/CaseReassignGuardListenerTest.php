@@ -98,6 +98,7 @@ class CaseReassignGuardListenerTest extends TestCase {
 			resolver: $resolver,
 			grants: $grants,
 			groupManager: $groups,
+			logger: $this->createMock(\Psr\Log\LoggerInterface::class),
 		);
 
 		$session = $this->createMock(IUserSession::class);

@@ -828,6 +828,21 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 under its key is kept. Not on install: a fresh install has none.
             -->
             <step>OCA\Dossiq\Repair\MoveDecisionTablesToOpenRegister</step>
+            <!--
+                case-reviewer-access REQ-CRA-012: gives the people on each case
+                their grants on the records its case type keeps private. A
+                record made before its schema became private, or before the case
+                type changed who reads it, has no grant or the wrong one, and
+                the handler and the reviewers are refused until this has run.
+                LAST on purpose: it reads the register InitializeSettings
+                imports, the case types the packages install, the reviews
+                CreateDocumentReviews makes and the groups the earlier steps
+                provision. Reads the cases a page at a time, changes nothing on
+                a record that is already right, never throws, and says what it
+                could not do as a warning here and an error in the log.
+                Post-migration only: a fresh install has no records.
+            -->
+            <step>OCA\Dossiq\Repair\ReconcileCaseRecordGrants</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -867,6 +882,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
               CreateDocumentReviews          marks existing assessed Woo documents in scope; a fresh install has none
+              ReconcileCaseRecordGrants      grants the people on existing cases their private records; a fresh install has none
               BackfillWooPublicationState       shows the publication state on existing Woo cases; a fresh install has none
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none

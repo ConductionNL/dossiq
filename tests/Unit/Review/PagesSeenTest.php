@@ -151,4 +151,29 @@ class PagesSeenTest extends TestCase {
 		$pagesSeen->assertAllSeen(caseId: 'case-x');
 		$this->assertSame([], $pagesSeen->unseenInCase(caseId: 'case-x'));
 	}//end testTheDecisionWaitsForTheLastPage()
+
+	/**
+	 * A review is private to the case, so the caller may read none of them: the decision still
+	 * waits for the unseen page, and recording a page makes no second review.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-rule-of-the-case-reads-the-whole-case-req-cra-011
+	 */
+	public function testTheDecisionWaitsForPagesOnReviewsTheCallerCannotRead(): void {
+		$this->store->hiddenFromCaller = ['documentReview'];
+		$pagesSeen = $this->pagesSeen();
+		$before = count($this->store->all('documentReview'));
+
+		try {
+			$pagesSeen->assertAllSeen(caseId: 'case-x');
+			$this->fail('A decision went ahead because the caller reads no review.');
+		} catch (RefusedException $e) {
+			$this->assertSame('review-pages-unseen', $e->getRule());
+		}
+
+		$pagesSeen->record(caseId: 'case-x', documentRef: 'doc-1', pages: [7], pageCount: null, userId: 'a');
+		$pagesSeen->assertAllSeen(caseId: 'case-x');
+		$this->assertCount($before, $this->store->all('documentReview'));
+	}//end testTheDecisionWaitsForPagesOnReviewsTheCallerCannotRead()
 }//end class
