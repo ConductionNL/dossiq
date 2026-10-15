@@ -153,8 +153,10 @@ class CitizenManifest {
 		// in silence (measured through its own resolvers).
 		'documentSoorten' => ['label' => 'Welke documenten zoekt u?', 'widget' => 'choices'],
 		'toelichting' => ['label' => 'Wilt u nog iets toelichten?', 'size' => 'large'],
-		'verzoekerNaam' => ['label' => 'Uw naam'],
-		'verzoekerEmail' => ['label' => 'Uw e-mailadres'],
+		// Portaliq starts these two from the signed-in resident's own name
+		// and e-mail address; the resident can still change them.
+		'verzoekerNaam' => ['label' => 'Uw naam', 'prefill' => 'name'],
+		'verzoekerEmail' => ['label' => 'Uw e-mailadres', 'prefill' => 'email'],
 		'verzoekerType' => ['label' => 'U vraagt dit als', 'widget' => 'choices'],
 	];
 
