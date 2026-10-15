@@ -829,6 +829,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\MoveDecisionTablesToOpenRegister</step>
             <!--
+                Keeps the BAG check on where dossiq's own BAG client was
+                switched on (integration.bag.mode test or live, or
+                integration.bag.source pdok): sets integration.bag.check to on,
+                only while that key does not exist yet. Not on install: a fresh
+                install has no old BAG setting, and the check stays off.
+            -->
+            <step>OCA\Dossiq\Repair\CarryBagCheckSetting</step>
+            <!--
                 case-reviewer-access REQ-CRA-012: gives the people on each case
                 their grants on the records its case type keeps private. A
                 record made before its schema became private, or before the case

@@ -114,6 +114,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'LinkInFlightContractDecisionsRepair' => 'links in-flight contract decisions; none exist yet',
 		'LinkInFlightRemainingDecisionsRepair' => 'links in-flight decisions; none exist yet',
 		'RepairDemoDataSchemaFork' => 'retires a schema fork only an already-enabled app could have made',
+		'CarryBagCheckSetting' => 'carries an old BAG client setting; a fresh install has none, and its BAG check stays off',
 	];
 
 	/**

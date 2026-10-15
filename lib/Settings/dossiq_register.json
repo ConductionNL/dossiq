@@ -7334,6 +7334,15 @@
                         ],
                         "description": "Provenance of this location (bag = validated against BAG; pdok-reverse = reverse-geocoded; gps = field capture; free = manual; geocoded = forward-geocoded; import = CSV importer)",
                         "title": "Source"
+                    },
+                    "bagCheck": {
+                        "type": "string",
+                        "enum": [
+                            "checked",
+                            "not-checked"
+                        ],
+                        "description": "Whether the BAG confirmed the address designation when the location was saved. not-checked means the BAG check was switched off, so nobody verified the address.",
+                        "title": "BAG check"
                     }
                 }
             },
