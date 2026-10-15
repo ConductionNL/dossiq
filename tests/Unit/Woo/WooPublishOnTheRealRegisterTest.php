@@ -32,7 +32,7 @@ use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
@@ -54,7 +54,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
- * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationCategory
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
@@ -208,7 +208,7 @@ class WooPublishOnTheRealRegisterTest extends TestCase {
 		$service = new OutcomePublisher(
 			$this->settings,
 			$client,
-			new WooCategoryMapper(),
+			new PublicationCategory(),
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			null,

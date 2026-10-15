@@ -28,7 +28,7 @@ use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
@@ -88,7 +88,7 @@ interface WooPublicationObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\Publication\OutcomePublisher
  *
- * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Service\Publication\PublicationCategory
  * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
@@ -145,7 +145,7 @@ class WooPublicationServiceTest extends TestCase {
 		$this->service = new OutcomePublisher(
 			$this->settingsService,
 			$this->apiClient,
-			new WooCategoryMapper(),
+			new PublicationCategory(),
 			$this->appManager,
 			$this->createMock(LoggerInterface::class),
 		);
@@ -343,7 +343,7 @@ class WooPublicationServiceTest extends TestCase {
 		$service = new OutcomePublisher(
 			settingsService: $settings,
 			apiClient: $this->apiClient,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $this->appManager,
 			logger: $logger,
 			pagesSeen: new PagesSeen(reviews: new DocumentRelevance(settingsService: $settings, logger: $logger), depth: new ReviewDepth()),
@@ -460,7 +460,7 @@ class WooPublicationServiceTest extends TestCase {
 		$service = new OutcomePublisher(
 			settingsService: $this->settingsService,
 			apiClient: $this->apiClient,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $this->appManager,
 			logger: $this->createMock(LoggerInterface::class),
 			nothingToDisclose: new NothingToDisclose(assessments: $documents),
@@ -776,7 +776,7 @@ class WooPublicationServiceTest extends TestCase {
 		return new OutcomePublisher(
 			$this->settingsService,
 			$this->apiClient,
-			new WooCategoryMapper(),
+			new PublicationCategory(),
 			$this->appManager,
 			$this->createMock(LoggerInterface::class),
 			null,

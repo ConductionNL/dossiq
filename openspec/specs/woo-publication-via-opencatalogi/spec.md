@@ -18,18 +18,23 @@ informatiecategorie and including only disclosable documents.
   and a case reference to `caseId`
 
 #### Scenario: Decision maps to the Woo-verzoeken-en-besluiten informatiecategorie
-- **GIVEN** a WOO decision with `decisionType` "WOO-besluit"
-- **WHEN** `WooCategoryMapper::forDecision()` is called
-- **THEN** it MUST return category code `infocat014` with label
-  "Woo-verzoeken en -besluiten" and the TOOI URI
+- **GIVEN** a WOO decision whose `decisionType` is the seeded Woo decision type
+  `3c0f5a00-0000-4000-a000-00000000d001`, which carries `publicationCategory`
+- **WHEN** `PublicationCategory::forDecision()` is called
+- **THEN** it MUST return the decision type's category: code `infocat014` with
+  label "Woo-verzoeken en -besluiten" and the TOOI URI
   `https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532`
 
+@e2e exclude Needs OpenCatalogi. Covered by `PublicationCategoryTest::testTheDecisionTypeRowNamesTheCategory` and `testTheShippedWooDecisionTypeCarriesItsCategory`.
+
 #### Scenario: Unmapped decision type falls back to the Woo category
-- **GIVEN** a decision whose `decisionType` has no explicit entry in the
-  category mapping table
-- **WHEN** `WooCategoryMapper::forDecision()` is called
+- **GIVEN** a decision whose `decisionType` is not a stored decision type row,
+  or whose row carries no complete `publicationCategory`
+- **WHEN** `PublicationCategory::forDecision()` is called
 - **THEN** it MUST still return the `infocat014` entry rather than throwing or
   returning null
+
+@e2e exclude Needs OpenCatalogi. Covered by `PublicationCategoryTest::testEverythingElseFallsBack`.
 
 ### Requirement: Redacted-only document disclosure
 The system MUST NEVER include an unredacted original document in a

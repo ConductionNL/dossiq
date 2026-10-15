@@ -38,7 +38,6 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Review\PagesSeen;
 use OCP\App\IAppManager;
@@ -113,7 +112,7 @@ class OutcomePublisher {
 	 *
 	 * @param SettingsService $settingsService Settings service.
 	 * @param OpenCatalogiApiClient $apiClient Thin HTTP client to OpenCatalogi's register.
-	 * @param WooCategoryMapper $categoryMapper DIWOO informatiecategorie mapper.
+	 * @param PublicationCategory $publicationCategory The decision type's information category.
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
 	 * @param SourceCollectionReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
@@ -126,7 +125,7 @@ class OutcomePublisher {
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		OpenCatalogiApiClient $apiClient,
-		private readonly WooCategoryMapper $categoryMapper,
+		private readonly PublicationCategory $publicationCategory,
 		private readonly IAppManager $appManager,
 		LoggerInterface $logger,
 		private readonly ?SourceCollectionReturn $dossierReturn = null,
@@ -224,7 +223,7 @@ class OutcomePublisher {
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
 	 */
 	public function buildPayload(array $case, array $decision): array {
-		$category = $this->categoryMapper->forDecision($decision);
+		$category = $this->publicationCategory->forDecision(decision: $decision);
 		$caseId = (string)($case['id'] ?? $case['uuid'] ?? $decision['case'] ?? '');
 
 		$payload = [

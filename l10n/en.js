@@ -5670,6 +5670,8 @@ OC.L10N.register(
         "Publication": "Publication",
         "Publication & documents": "Publication & documents",
         "Publication Date": "Publication Date",
+        "Publication category": "Publication category",
+        "The information category a published decision of this type is filed under in OpenCatalogi: the code, label and URI of a DIWOO category. Without it a decision is filed under Woo-verzoeken en -besluiten.": "The information category a published decision of this type is filed under in OpenCatalogi: the code, label and URI of a DIWOO category. Without it a decision is filed under Woo-verzoeken en -besluiten.",
         "Publication date": "Publication date",
         "Publication id": "Publication id",
         "Publication link": "Publication link",

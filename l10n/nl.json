@@ -5687,6 +5687,8 @@
         "Publication": "Publicatie",
         "Publication & documents": "Publicatie en documenten",
         "Publication Date": "Publicatiedatum",
+        "Publication category": "Publicatiecategorie",
+        "The information category a published decision of this type is filed under in OpenCatalogi: the code, label and URI of a DIWOO category. Without it a decision is filed under Woo-verzoeken en -besluiten.": "De informatiecategorie waaronder een gepubliceerd besluit van dit type in OpenCatalogi staat: de code, het label en de URI van een DIWOO-categorie. Zonder categorie staat een besluit onder Woo-verzoeken en -besluiten.",
         "Publication date": "Publicatiedatum",
         "Publication id": "Publicatie-id",
         "Publication link": "Publicatielink",

@@ -698,6 +698,14 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  non-fatal. Post-migration only: a fresh install has no Woo
                  cases. -->
             <step>OCA\Dossiq\Repair\BackfillWooPublicationState</step>
+            <!-- R8 G3 (decision 182, Q-R8-1): a decision type the app ships
+                 names its publication category in its register fragment; a
+                 stored row from before the property existed gets it, so the
+                 instance keeps the category its decisions were published
+                 under. Writes only a row without a complete category;
+                 idempotent, non-fatal. Post-migration only: a fresh install
+                 imports the rows with their category. -->
+            <step>OCA\Dossiq\Repair\CopyShippedPublicationCategories</step>
             <!-- simple-case-page: existing cases get `statusRole`, the role of
                  the status they sit in. OpenRegister computes it on save, so a
                  case saved before the field existed has none. Writes one field
@@ -868,6 +876,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               MapWooRefusalGroundCodes          rewrites refusal ground codes on existing Woo assessments and decisions
               CreateDocumentReviews          marks existing assessed Woo documents in scope; a fresh install has none
               BackfillWooPublicationState       shows the publication state on existing Woo cases; a fresh install has none
+              CopyShippedPublicationCategories  copies a shipped category onto a stored decision type; a fresh install imports it with the row
               MigrateCaseTeamsToGroups          moves existing cases from a role to its group; a fresh install has none
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none

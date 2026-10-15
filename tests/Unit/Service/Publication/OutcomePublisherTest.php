@@ -22,7 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Publication;
 
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +36,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
- * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Service\Publication\PublicationCategory
  */
 class OutcomePublisherTest extends TestCase {
 
@@ -59,7 +59,7 @@ class OutcomePublisherTest extends TestCase {
 		return new OutcomePublisher(
 			$settings,
 			$this->createMock(OpenCatalogiApiClient::class),
-			new WooCategoryMapper(),
+			new PublicationCategory(),
 			$apps,
 			new NullLogger(),
 		);

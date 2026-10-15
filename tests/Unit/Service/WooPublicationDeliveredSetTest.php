@@ -24,7 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
-use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Service\Publication\PublicationCategory;
 use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
@@ -44,7 +44,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  *
  * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
- * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Service\Publication\PublicationCategory
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
@@ -133,7 +133,7 @@ class WooPublicationDeliveredSetTest extends TestCase {
 		return new OutcomePublisher(
 			settingsService: $settings,
 			apiClient: $this->api,
-			categoryMapper: new WooCategoryMapper(),
+			publicationCategory: new PublicationCategory(),
 			appManager: $apps,
 			logger: new NullLogger(),
 			caseLedger: new CasePublicationState(settingsService: $settings, logger: new NullLogger(), deliveredSets: new WooDeliveredSetWriter(settings: $settings)),
