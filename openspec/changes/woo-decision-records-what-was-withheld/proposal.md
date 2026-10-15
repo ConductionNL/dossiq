@@ -25,9 +25,9 @@ When dossiq publishes a Woo decision, it tells opencatalogi which documents were
 
 opencatalogi's gap spec `woo-decision-shows-what-was-withheld` (opencatalogi spec PR #1752, REQ-WDW-002)
 adds `OCA\OpenCatalogi\Service\Woo\WithheldDocuments::record(string $publicationId, array $entries,
-string $source): array` and says the dossiq side calls it after `WooPublicationService::publish()`.
+string $source): array` and says the dossiq side calls it after `OutcomePublisher::publish()`.
 No dossiq change makes that call. Today, read on dossiq `development` on 2026-10-06,
-`WooPublicationService::publish()` builds the payload in `buildPayload()`, and
+`OutcomePublisher::publish()` builds the payload in `buildPayload()`, and
 `selectDisclosableDocuments()` drops every `niet_openbaar` document, so a published Woo decision
 carries no trace of what was withheld.
 

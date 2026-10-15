@@ -100,6 +100,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'CreateDocumentReviews' => 'marks existing assessed Woo documents in scope; a fresh install has no assessments',
 		'ReconcileCaseRecordGrants' => 'grants the people on existing cases their private records; a fresh install has none',
 		'BackfillWooPublicationState' => 'shows the publication state on existing Woo cases; a fresh install has none',
+		'CopyShippedPublicationCategories' => 'copies a shipped category onto a stored decision type; a fresh install imports it with the row',
 		'MigrateCaseTeamsToGroups' => 'moves existing cases from an organisation role to its group; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',

@@ -45,7 +45,7 @@ use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -115,7 +115,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 	private $decisionService;
 
 	/**
-	 * @var WooPublicationService|\PHPUnit\Framework\MockObject\MockObject
+	 * @var OutcomePublisher|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private $publicationService;
 
@@ -137,7 +137,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->deadlineService = $this->createMock(WOODeadlineService::class);
 		$this->decisionService = $this->createMock(WOODecisionService::class);
-		$this->publicationService = $this->createMock(WooPublicationService::class);
+		$this->publicationService = $this->createMock(OutcomePublisher::class);
 		$this->anonymisationAssist = $this->createMock(WOOAnonymisationAssistService::class);
 
 		$this->settingsService->method('getObjectService')->willReturn($this->objectService);

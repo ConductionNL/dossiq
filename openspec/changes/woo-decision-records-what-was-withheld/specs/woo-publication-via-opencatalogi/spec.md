@@ -2,7 +2,7 @@
 
 ### Requirement: A published Woo decision records its withheld documents in opencatalogi (REQ-WRW-001)
 
-After `WooPublicationService::publish()` has created or updated the publication, dossiq SHALL call
+After `OutcomePublisher::publish()` has created or updated the publication, dossiq SHALL call
 `OCA\OpenCatalogi\Service\Woo\WithheldDocuments::record($publicationId, $entries, 'dossiq')` exactly
 once, with one entry per `niet_openbaar` assessment of the case. Each entry SHALL be
 `{position: int, grounds: list<string>}` and SHALL hold no other key: `position` is the document's

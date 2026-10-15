@@ -194,7 +194,7 @@ class WOODecisionService {
 	 *
 	 * OpenCatalogi shows a publication's `summary` under its title on the
 	 * public site and in search results, and the publication takes it from the
-	 * decision's `description` (WooPublicationService::buildPayload()). It
+	 * decision's `description` (OutcomePublisher::buildPayload()). It
 	 * used to read "WOO besluit voor zaak <uuid>", so a resident read a code.
 	 * It names the request by the case's title instead, and never prints an id.
 	 *

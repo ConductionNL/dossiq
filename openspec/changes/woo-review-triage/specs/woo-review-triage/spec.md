@@ -10,7 +10,7 @@ configuration (decision 182): the seeded `woo-verzoek` case type SHALL set
 document type reads as every page until an administrator names a sampled type on the case type.
 For this case type the verdict of the capability is `wooDocumentAssessment.classification`, its
 bulk route is `bulkAssess`, and its closing steps are `WOODecisionService::assembleDecision()` and
-`WooPublicationService::publish()`.
+`OutcomePublisher::publish()`.
 
 #### Scenario: A Woo-verzoek reviews its documents through the generic capability
 - **GIVEN** the seeded `woo-verzoek` case type and a case of that type with documents
@@ -72,7 +72,7 @@ set SHALL be counted in `refused`, SHALL NOT be retried, and SHALL leave that re
 grant, which is the safe state. The case page SHALL show the number of records still waiting for a
 coordinator. Every dossiq route that creates one of the seven SHALL call `reconcile()` for the case
 after the create, in the same request: the gather add, the search plan save, the query record, the
-exclusion route, the rule create, the batch create and `WooPublicationService::publish()`. The
+exclusion route, the rule create, the batch create and `OutcomePublisher::publish()`. The
 repair step of REQ-WRT-001 runs without a user and SHALL NOT call it; the records it creates get
 their grants from the last step of the same upgrade, which reconciles every declaring case as an
 administrator account (case-reviewer-access REQ-CRA-012). The administrator route of REQ-WSA-006
