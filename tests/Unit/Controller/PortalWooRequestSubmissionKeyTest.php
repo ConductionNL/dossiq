@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\PortalWooRequestController
  * @covers \OCA\Dossiq\Portal\PortalSubmissionLedger
+ * @uses \OCA\Dossiq\Portal\PortalAssertionVerifier
+ * @uses \OCA\Dossiq\Woo\WooRequestRefused
  */
 class PortalWooRequestSubmissionKeyTest extends TestCase {
 
