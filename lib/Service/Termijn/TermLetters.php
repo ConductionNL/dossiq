@@ -76,7 +76,7 @@ class TermLetters {
 			)
 		);
 		$case = ($named[0] ?? '–');
-		$end = $this->shownDay(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')), english: ($locale === 'en'));
+		$end = $this->shownDay(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')), locale: $locale);
 
 		$subject = '';
 		$body = '';
@@ -93,7 +93,7 @@ class TermLetters {
 				$body = $rendered['body'];
 				break;
 			case 'ingebrekestelling-receipt':
-				$graceEnd = $this->shownDay(value: (string)($context['graceEnd'] ?? '–'));
+				$graceEnd = $this->shownDay(value: (string)($context['graceEnd'] ?? '–'), locale: 'nl');
 				$subject = 'Bevestiging ingebrekestelling zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
 					. 'Wij hebben uw ingebrekestelling voor zaak ' . $case . " ontvangen.\n"
@@ -149,7 +149,7 @@ class TermLetters {
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	private function extension(string $case, string $end, array $context): array {
-		$newEnd = $this->shownDay(value: (string)($context['newEinddatum'] ?? $end));
+		$newEnd = $this->shownDay(value: (string)($context['newEinddatum'] ?? $end), locale: 'nl');
 		$body = "Beste aanvrager,\n\n"
 			. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n";
 
@@ -185,7 +185,7 @@ class TermLetters {
 	private function informationRequest(string $case, string $locale, array $context): array {
 		$items = array_values(array_filter(array_map('strval', (array)($context['items'] ?? []))));
 		$english = ($locale === 'en');
-		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), english: $english);
+		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), locale: $locale);
 
 		$list = '';
 		foreach ($items as $item) {
@@ -235,7 +235,7 @@ class TermLetters {
 	 */
 	private function informationReminder(string $case, string $locale, array $context): array {
 		$english = ($locale === 'en');
-		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), english: $english);
+		$due = $this->shownDay(value: (string)($context['pauseDeadline'] ?? '-'), locale: $locale);
 		$declared = trim((string)($context['chaseText'] ?? ''));
 
 		if ($english === true) {
@@ -305,7 +305,7 @@ class TermLetters {
 			return $this->acknowledgementWaiting(english: $english);
 		}
 
-		$start = $this->termStartLines(context: $context, english: false);
+		$start = $this->termStartLines(context: $context, locale: 'nl');
 
 		if ($english === true) {
 			return $this->acknowledgementInEnglish(
@@ -314,7 +314,7 @@ class TermLetters {
 				hasTerm: $hasTerm,
 				subjectOf: $subjectOf,
 				contact: $contact,
-				start: $this->termStartLines(context: $context, english: true),
+				start: $this->termStartLines(context: $context, locale: 'en'),
 			);
 		}
 
@@ -363,15 +363,16 @@ class TermLetters {
 	 * front of a citizen that the term does not count from.
 	 *
 	 * @param array<string, mixed> $context The render context.
-	 * @param bool                 $english Whether the reader asked for English.
+	 * @param string               $locale  The letter's language, `en` or `nl`.
 	 *
 	 * @return string The lines, ending in a newline, or an empty string.
 	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
 	 */
-	private function termStartLines(array $context, bool $english): string {
-		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''), english: $english);
-		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''), english: $english);
+	private function termStartLines(array $context, string $locale): string {
+		$english = ($locale === 'en');
+		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''), locale: $locale);
+		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''), locale: $locale);
 		if ($received === '' || $starts === '') {
 			return '';
 		}
@@ -404,15 +405,15 @@ class TermLetters {
 	 * reason the letters are: the language is the case type's, not the
 	 * signed-in reader's interface.
 	 *
-	 * @param string $value   The stored ISO 8601 date or moment.
-	 * @param bool   $english Whether the letter is in English.
+	 * @param string $value  The stored ISO 8601 date or moment.
+	 * @param string $locale The letter's language: `en` reads English, anything else Dutch.
 	 *
 	 * @return string The day, or an empty string when there is none to read.
 	 *
 	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
-	private function dayOf(string $value, bool $english=false): string {
-		if ($english === true) {
+	private function dayOf(string $value, string $locale): string {
+		if ($locale === 'en') {
 			return (new ReadableDay())->english(value: $value);
 		}
 
@@ -428,15 +429,15 @@ class TermLetters {
 	 * end date as it was stored, so one receipt read "15-06-2026" next to
 	 * "2026-08-10".
 	 *
-	 * @param string $value   The stored date or moment, or a placeholder.
-	 * @param bool   $english Whether the letter is in English.
+	 * @param string $value  The stored date or moment, or a placeholder.
+	 * @param string $locale The letter's language: `en` reads English, anything else Dutch.
 	 *
 	 * @return string The day as printed, or the value itself when it is no date.
 	 *
 	 * @spec openspec/changes/letters-print-every-date-the-same-way/specs/burger-notifications/spec.md#requirement-every-date-in-a-letter-reads-the-same-way-req-lpd-001
 	 */
-	private function shownDay(string $value, bool $english=false): string {
-		$day = $this->dayOf(value: $value, english: $english);
+	private function shownDay(string $value, string $locale): string {
+		$day = $this->dayOf(value: $value, locale: $locale);
 		if ($day === '') {
 			return $value;
 		}
