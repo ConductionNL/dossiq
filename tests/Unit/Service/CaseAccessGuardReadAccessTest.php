@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the per-case read predicate.
  *
  * @covers \OCA\Dossiq\Service\CaseAccessGuard
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class CaseAccessGuardReadAccessTest extends TestCase {
 
