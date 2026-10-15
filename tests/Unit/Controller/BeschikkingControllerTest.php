@@ -333,6 +333,27 @@ class BeschikkingControllerTest extends TestCase {
 	}//end testOndertekenRequiresProvider()
 
 	/**
+	 * A signing request filinq took answers 202, and one it could not take 503.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-document-is-signed-through-filinq
+	 */
+	public function testOndertekenAnswersAcceptedOrUnavailable(): void {
+		$this->authenticate();
+		$this->request->method('getContent')->willReturn('{"tspProvider":"filinq"}');
+		$this->service->method('onderteken')->willReturnOnConsecutiveCalls(
+			['id' => 'besch-1', 'signing' => ['state' => 'requested']],
+			$this->throwException(new RuntimeException('signing_unavailable')),
+			$this->throwException(new RuntimeException('signing_in_progress')),
+		);
+
+		$this->assertSame(Http::STATUS_ACCEPTED, $this->controller->onderteken('besch-1')->getStatus());
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $this->controller->onderteken('besch-1')->getStatus());
+		$this->assertSame(Http::STATUS_CONFLICT, $this->controller->onderteken('besch-1')->getStatus());
+	}//end testOndertekenAnswersAcceptedOrUnavailable()
+
+	/**
 	 * An invalid transition on verzend maps to 409.
 	 *
 	 * @return void

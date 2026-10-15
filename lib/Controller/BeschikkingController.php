@@ -225,7 +225,7 @@ class BeschikkingController extends Controller {
 	}//end akkoord()
 
 	/**
-	 * Sign the beschikking via the TSP. [T08]
+	 * Ask filinq to sign the beschikking. [T08]
 	 *
 	 * @param string $id The beschikking UUID.
 	 *
@@ -248,8 +248,9 @@ class BeschikkingController extends Controller {
 		}
 
 		try {
+			// 202: filinq took the request; the decision is signed when filinq concludes it.
 			$result = $this->decisionService->onderteken($id, $tspProvider, $uid);
-			return new JSONResponse($result);
+			return new JSONResponse($result, Http::STATUS_ACCEPTED);
 		} catch (RefusedException $e) {
 			// The coordinator seat, and anything else that refuses with a rule
 			// rather than a sentinel. Caught BEFORE RuntimeException, which
@@ -421,11 +422,9 @@ class BeschikkingController extends Controller {
 			'immutable' => Http::STATUS_CONFLICT,
 			'invalid_transition' => Http::STATUS_CONFLICT,
 			'zaakId_required' => Http::STATUS_BAD_REQUEST,
-			// LibreSign signing outcomes (libresign-besluit-signing).
-			'libresign_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
-			'libresign_signer_unresolvable' => Http::STATUS_UNPROCESSABLE_ENTITY,
-			'libresign_signing_pending' => Http::STATUS_ACCEPTED,
-			'libresign_signing_declined' => Http::STATUS_CONFLICT,
+			// Signing through filinq (signing-through-filinq).
+			'signing_unavailable' => Http::STATUS_SERVICE_UNAVAILABLE,
+			'signing_in_progress' => Http::STATUS_CONFLICT,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
 
@@ -435,10 +434,8 @@ class BeschikkingController extends Controller {
 			'immutable' => 'Beschikking is immutable in its current status',
 			'invalid_transition' => 'Transition not allowed from the current status',
 			'zaakId_required' => 'zaakId is required',
-			'libresign_unavailable' => 'LibreSign is not available; install and enable the LibreSign app to sign this beschikking',
-			'libresign_signer_unresolvable' => 'The signer could not be resolved to a Nextcloud account with a configured email address',
-			'libresign_signing_pending' => 'Signature request created; awaiting the signer to complete signing in LibreSign',
-			'libresign_signing_declined' => 'The signature request was declined or cancelled in LibreSign',
+			'signing_unavailable' => 'Signing is not available: filinq must be installed, and its signing provider must offer the configured signature level',
+			'signing_in_progress' => 'A signing request for this beschikking is open; wait until filinq concludes it',
 			default => 'Could not complete the request',
 		};
 
