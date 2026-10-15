@@ -377,6 +377,23 @@ class WooRequestIntakeTest extends TestCase {
 	}//end testTheRequestKeepsTheDocumentKindsAndTheRequester()
 
 	/**
+	 * The case names who asked, so its Requester shows the resident rather than a dash.
+	 *
+	 * The control: a request without a name names nobody.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
+	 */
+	public function testTheCaseNamesWhoAsked(): void {
+		$named = $this->intake->start($this->request(['verzoekerNaam' => 'Sanne de Vries', 'verzoekerType' => 'burger']));
+		self::assertSame('Sanne de Vries', $this->store->row(schema: 'case', uuid: $named['caseId'])['initiatorDisplayName']);
+
+		$unnamed = $this->intake->start($this->request(['collectionId' => '', 'origin' => 'pipelinq', 'originReference' => 'ticket-10']));
+		self::assertArrayNotHasKey('initiatorDisplayName', $this->store->row(schema: 'case', uuid: $unnamed['caseId']));
+	}//end testTheCaseNamesWhoAsked()
+
+	/**
 	 * 🔴 An answer outside its list is refused and nothing is written: a
 	 * value the schema's enum would reject must not reach a write that then
 	 * fails halfway, and a kind nobody declared is not a kind.

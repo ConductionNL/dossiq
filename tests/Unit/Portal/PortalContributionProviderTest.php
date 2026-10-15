@@ -384,6 +384,23 @@ class PortalContributionProviderTest extends TestCase {
 	}//end testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice()
 
 	/**
+	 * The requester's name and e-mail address start from the signed-in
+	 * resident's own details, on both doors.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-prefills-the-requester/specs/portal-contribution/spec.md#requirement-the-woo-request-starts-from-the-signed-in-residents-name-and-e-mail-address
+	 */
+	public function testTheWooRequestPrefillsTheRequesterFromTheProfile(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			$this->assertSame('name', ($action['fieldConfigs']['verzoekerNaam']['prefill'] ?? null), $id);
+			$this->assertSame('email', ($action['fieldConfigs']['verzoekerEmail']['prefill'] ?? null), $id);
+		}
+	}//end testTheWooRequestPrefillsTheRequesterFromTheProfile()
+
+	/**
 	 * Two doors, one route: only the dossier variant is attached to a
 	 * dossier, and the other carries the sentence the home tile reads.
 	 *

@@ -117,6 +117,7 @@ import {
 	fetchAttention,
 	raiseAttention,
 } from '../../services/caseAttentionApi.js'
+import { announceCasesChanged } from '../../utils/casesChanged.js'
 
 /**
  * What each panel of the case page is called, for a marker that points at one.
@@ -428,7 +429,7 @@ export default {
 				const act = this.raised ? clearAttention : raiseAttention
 				this.apply(await act(this.caseId, reason))
 				this.reason = ''
-				window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+				announceCasesChanged(this.caseId)
 			} catch (error) {
 				const refusal = String(error?.response?.data?.error ?? '')
 				showError(

@@ -463,4 +463,44 @@ class DocumentProjectionServiceTest extends TestCase {
 		$this->expectException(exception: RuntimeException::class);
 		$this->service->homeDocument(recordId: self::RECORD_ID, caseId: self::CASE_ID);
 	}//end testAJoinToACaseWithoutAFolderIsRefusedBeforeAnythingMoves()
+
+	/**
+	 * A projection for a file written with nobody signed in runs inside OpenRegister's system operation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	public function testAsSystemRunsTheProjectionInsideTheSystemOperation(): void {
+		$objectService = new class {
+			public bool $asSystem = false;
+
+			/**
+			 * Mimic ObjectService::runAsSystem().
+			 *
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed What it returns.
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				$this->asSystem = true;
+				try {
+					return $operation();
+				} finally {
+					$this->asSystem = false;
+				}
+			}
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$service = new DocumentProjectionService(
+			store: $this->store,
+			defaults: $this->createMock(originalClassName: DocumentDefaults::class),
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+
+		$this->assertTrue($service->asSystem(operation: static fn (): bool => $objectService->asSystem));
+		$this->assertFalse($objectService->asSystem, 'the elevation ends with the projection');
+	}//end testAsSystemRunsTheProjectionInsideTheSystemOperation()
 }//end class

@@ -25,6 +25,7 @@
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { isFollowing, objectIdOf, setFollowing } from '../services/watcherApi.js'
+import { announceCasesChanged } from './casesChanged.js'
 
 /**
  * The signal the case lists listen for, so a row that changed repaints.
@@ -32,7 +33,6 @@ import { isFollowing, objectIdOf, setFollowing } from '../services/watcherApi.js
  * Following is not a field of the case, so no object-changed event carries it
  * and the row would keep its old state until the next navigation.
  */
-const CASES_CHANGED = 'dossiq:cases-changed'
 
 /**
  * Follow the row's case, or stop following it, whichever the row says.
@@ -61,7 +61,7 @@ export async function toggleCaseFollow({ item }) {
 				? t('dossiq', 'You follow this case now.')
 				: t('dossiq', 'You no longer follow this case.'),
 		)
-		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
+		announceCasesChanged(caseId)
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
 		showError(

@@ -738,4 +738,92 @@ class WOODocumentAssessmentServiceTest extends TestCase {
 		$store->rows['documentReview']['r-2']['relevance'] = 'out-of-scope';
 		$this->assertTrue($service->allDocumentsAssessed(caseId: 'case-x'));
 	}//end testTheDecisionWaitsForUnmarkedDocuments()
+
+	/**
+	 * A case with document review on, two documents nobody marked, and a signed-in assessor.
+	 *
+	 * @param InMemoryRegister $store The register the case lives in.
+	 *
+	 * @return WOODocumentAssessmentService
+	 */
+	private function reviewedCaseAssessedBy(InMemoryRegister $store): WOODocumentAssessmentService {
+		$store->seed(schema: 'document', uuid: 'doc-1', row: ['case' => 'case-x']);
+		$store->seed(schema: 'document', uuid: 'doc-2', row: ['case' => 'case-x']);
+		$config = ['register' => 'dossiq', 'document_schema' => 'document', 'woo_assessment_schema' => 'wooDocumentAssessment', 'document_review_schema' => 'documentReview'];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key, string $default = ''): string => ($config[$key] ?? $default));
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getUID')->willReturn('thomas');
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		return new WOODocumentAssessmentService($settings, $session, $this->logger, null, new WooRefusalGrounds(settingsService: $settings, logger: $this->logger), reviews: new \OCA\Dossiq\Review\DocumentRelevance(settingsService: $settings, logger: $this->logger));
+	}//end reviewedCaseAssessedBy()
+
+	/**
+	 * A verdict on a document nobody marked marks it in scope, so it stops holding up the case.
+	 *
+	 * The second document gets no verdict and stays outstanding: the control
+	 * that the marking follows the verdict and is not applied to the whole case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
+	 */
+	public function testAVerdictMarksAnUnmarkedDocumentInScope(): void {
+		$store = new InMemoryRegister();
+		$service = $this->reviewedCaseAssessedBy(store: $store);
+		$this->assertSame(2, $service->getOutstanding(caseId: 'case-x')['count']);
+
+		$result = $service->bulkUpsert('case-x', [['documentRef' => 'doc-1', 'classification' => 'openbaar']]);
+
+		$this->assertSame(['count' => 1, 'documents' => ['doc-2']], $result['outstanding']);
+		$reviews = array_values($store->all('documentReview'));
+		$this->assertCount(1, $reviews, 'only the judged document is marked');
+		$this->assertSame('doc-1', $reviews[0]['documentRef']);
+		$this->assertSame('in-scope', $reviews[0]['relevance']);
+		$this->assertSame('reviewer', $reviews[0]['relevanceSource']);
+		$this->assertSame('thomas', $reviews[0]['markedBy']);
+
+		$service->bulkUpsert('case-x', [['documentRef' => 'doc-2', 'classification' => 'openbaar']]);
+		$this->assertTrue($service->allDocumentsAssessed(caseId: 'case-x'));
+	}//end testAVerdictMarksAnUnmarkedDocumentInScope()
+
+	/**
+	 * A verdict leaves a document a reviewer already set aside out of scope.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
+	 */
+	public function testAVerdictKeepsAnOutOfScopeMarking(): void {
+		$store = new InMemoryRegister();
+		$store->seed(schema: 'documentReview', uuid: 'r-1', row: ['case' => 'case-x', 'documentRef' => 'doc-1', 'relevance' => 'out-of-scope', 'markedBy' => 'anna']);
+		$service = $this->reviewedCaseAssessedBy(store: $store);
+
+		$service->bulkUpsert('case-x', [['documentRef' => 'doc-1', 'classification' => 'openbaar']]);
+
+		$this->assertSame('out-of-scope', $store->row('documentReview', 'r-1')['relevance']);
+		$this->assertSame('anna', $store->row('documentReview', 'r-1')['markedBy']);
+		$this->assertCount(1, $store->all('documentReview'));
+	}//end testAVerdictKeepsAnOutOfScopeMarking()
+
+	/**
+	 * A refused verdict marks nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-verdict-marks-its-document-in-scope/specs/document-review/spec.md#requirement-a-verdict-on-an-unmarked-document-marks-it-in-scope-req-wrt-006
+	 */
+	public function testARefusedVerdictMarksNothing(): void {
+		$store = new InMemoryRegister();
+		$service = $this->reviewedCaseAssessedBy(store: $store);
+
+		$result = $service->bulkUpsert('case-x', [['documentRef' => 'doc-1', 'classification' => 'niet_openbaar']]);
+
+		$this->assertNotSame([], $result['errors']);
+		$this->assertSame([], $store->all('documentReview'));
+		$this->assertSame(2, $result['outstanding']['count']);
+	}//end testARefusedVerdictMarksNothing()
 }//end class
