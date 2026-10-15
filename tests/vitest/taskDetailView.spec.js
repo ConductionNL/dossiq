@@ -258,6 +258,21 @@ describe('TaskDetailView', () => {
 		})
 	})
 
+	it('draws the case status as a pill in the status type colour, not as a labelled row (DqTaak)', async () => {
+		const wrapper = await mountPage(TASK)
+		const status = wrapper
+			.findAllComponents({ name: 'CnFactsWidget' })
+			.at(1)
+			.props('content')
+			.fields.find((f) => f.key === 'case-status')
+		expect(status.as).toBe('pill')
+		expect(status.label).toBeUndefined()
+		expect(status.resolve.toneField).toBe('colour')
+		expect(status.variantMap.purple).toBe('purple')
+		expect(status.variantMap['green-light']).toBe('success')
+		expect(status.variantMap.grey).toBe('default')
+	})
+
 	it('names the priority in words, the handler as Handler, and the way back as To the case', async () => {
 		// DqTaak: "Prioriteit Hoog", "Behandelaar", "Naar de zaak". The engine
 		// value "high" stays the value; only the label is worded.

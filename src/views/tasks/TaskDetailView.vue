@@ -253,6 +253,7 @@ import {
 	priorityLabel,
 	priorityPillTone,
 } from '../../utils/priorityValues.js'
+import { STATUS_COLOUR_BADGE_VARIANTS } from '../../utils/statusColour.js'
 import { taskMetaLine } from '../../utils/taskMetaLine.js'
 import { taskStateLabel, taskStateTone } from '../../utils/taskStateLabel.js'
 
@@ -493,8 +494,9 @@ export default {
 		/**
 		 * The case card for the library's facts widget: the title as the way
 		 * back, the number and case type, the handler and the case's own
-		 * deadline, and the status. The case type and the status are references
-		 * the case holds as ids; `resolve` shows their names and never the id.
+		 * deadline, and the status as a pill in its own colour. The case type and
+		 * the status are references the case holds as ids; `resolve` shows their
+		 * names and never the id.
 		 *
 		 * @return {object} The `content` for CnFactsWidget.
 		 * @spec openspec/specs/task-management/spec.md
@@ -543,14 +545,20 @@ export default {
 						],
 					},
 					{
+						// DqTaak draws the status as a pill, not a labelled
+						// row. Its tone is the status type's own colour, the
+						// one the Cases list draws it in.
 						key: 'case-status',
-						label: t('dossiq', 'Status'),
+						as: 'pill',
 						path: 'status',
 						resolve: {
 							register: 'dossiq',
 							schema: 'statusType',
 							labelField: 'name',
+							toneField: 'colour',
 						},
+
+						variantMap: STATUS_COLOUR_BADGE_VARIANTS,
 					},
 				],
 
