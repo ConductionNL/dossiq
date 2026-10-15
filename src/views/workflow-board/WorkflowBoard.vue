@@ -21,6 +21,22 @@
 	drop against, so the two gestures cannot drift apart. Picking one hands
 	onDrop the column name a drop would have passed.
 
+	WHY THIS IS STILL AN APP COMPONENT AND NOT THE LIBRARY BOARD. CnIndexPage's
+	board view (`viewModes: board`) takes its columns from the status field's
+	`enum` or lifecycle `states`. A case's `status` is neither: it is a
+	reference to a statusType row, and each case type has its own rows. So
+	the library board would say the field cannot back a board. This page
+	merges the columns by status name across case types, moves a case
+	through the transition engine's offer for THAT case, and keeps the
+	keyboard move dialog and the bulk transition. A library board over a
+	referenced status (columns from the referenced rows, narrowed by case
+	type) is what would let it go.
+
+	THE COLUMNS WRAP AND DO NOT SCROLL (DqWerkbord). They sit in a grid of
+	at least 240px each, as many to a row as fit, and each draws its first
+	cards with the rest behind "Show N more". Before, every column scrolled
+	on its own and the row of them ran 16,116px to the right.
+
 	Also holds the column-scoped bulk-selection state: a case card's checkbox
 	toggles selection via toggleSelection() (cross-column selection resets),
 	and a bulk-actions bar opens BulkTransitionDialog to preview/execute one
@@ -160,9 +176,7 @@
 			</div>
 
 			<div
-				v-drag-to-scroll
 				class="workflow-board__columns"
-				tabindex="0"
 				role="region"
 				:aria-label="t('dossiq', 'Workflow board columns')">
 				<BoardColumn
@@ -238,7 +252,6 @@ import {
 	transitionBlockReason,
 	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
-import { dragToScroll } from '../../utils/dragToScroll.js'
 import { capacityRefusal } from '../../utils/statusCapacity.js'
 import { mergeColumnColour } from '../../utils/statusColour.js'
 import { failedActionsWarning } from '../../utils/transitionOutcome.js'
@@ -249,7 +262,6 @@ import {
 
 export default {
 	name: 'WorkflowBoard',
-	directives: { dragToScroll },
 	components: {
 		BoardColumn,
 		BulkTransitionDialog,
@@ -1372,11 +1384,10 @@ export default {
 
 <style scoped>
 .workflow-board {
-	/* The page is the board: fill NcAppContent (height 100% of the body) and
-	   hand every row under the header to the columns. */
+	/* The board grows with its columns and the window scrolls it, as every
+	   other page does: no column and no strip scrolls on its own. */
 	display: flex;
 	flex-direction: column;
-	height: 100%;
 	box-sizing: border-box;
 	padding: 16px;
 }
@@ -1446,22 +1457,14 @@ export default {
 }
 
 .workflow-board__columns {
-	display: flex;
-	flex: 1;
-	/* Without this a flex item refuses to shrink below its content, and the
-	   columns would grow the page instead of scrolling inside it. */
-	min-height: 0;
-	gap: 12px;
-	overflow-x: auto;
-	align-items: stretch;
+	/* DqWerkbord: columns side by side, at least 240px each, as many as fit;
+	   the rest wrap to the next row instead of running off to the right. A
+	   strip of every status across every case type was 16,116px wide. */
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 16px;
+	align-items: start;
 	padding-bottom: 8px;
-	/* Empty space can be grabbed to pan the row (v-drag-to-scroll). */
-	cursor: grab;
-}
-
-.workflow-board__columns.is-panning {
-	cursor: grabbing;
-	user-select: none;
 }
 
 .workflow-board__bulk-bar {

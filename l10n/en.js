@@ -6759,6 +6759,7 @@ OC.L10N.register(
         "Show only the tasks on one case.": "Show only the tasks on one case.",
         "Show substituted work": "Show substituted work",
         "Show the settings as they apply to": "Show the settings as they apply to",
+        "Show {count} more": "Show {count} more",
         "Show {group} again": "Show {group} again",
         "Showing {filtered} of {total} located cases": "Showing {filtered} of {total} located cases",
         "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.": "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.",

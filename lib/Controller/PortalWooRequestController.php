@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
+use OCA\Dossiq\Portal\PortalSubmissionLedger;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use OCA\Dossiq\Woo\WooRequestRefused;
 use OCP\AppFramework\Controller;
@@ -88,6 +89,11 @@ class PortalWooRequestController extends Controller {
 	];
 
 	/**
+	 * The ledger scope of this action's submission keys.
+	 */
+	private const SUBMISSION_SCOPE = 'woo-verzoek';
+
+	/**
 	 * The status each refusal answers with.
 	 */
 	private const STATUS = [
@@ -106,6 +112,7 @@ class PortalWooRequestController extends Controller {
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
 	 * @param IFactory|null           $l10n      Gives the translator a refusal is worded in.
+	 * @param PortalSubmissionLedger|null $ledger Makes a submission once (REQ-PSM-001); none when null.
 	 */
 	public function __construct(
 		string $appName,
@@ -115,6 +122,7 @@ class PortalWooRequestController extends Controller {
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
 		private readonly ?IFactory $l10n = null,
+		private readonly ?PortalSubmissionLedger $ledger = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -122,9 +130,12 @@ class PortalWooRequestController extends Controller {
 	/**
 	 * Start a Woo request from the portal.
 	 *
-	 * @return JSONResponse 201 `{caseId, caseUrl}`; 401, 403, 400, 404 or 503 `{error, message}`.
+	 * @return JSONResponse 201 `{caseId, caseUrl}`, also for a resend with the same submission key;
+	 *                      409 `submission_processing` while the first send is busy; 401, 403, 400,
+	 *                      404 or 503 `{error, message}`.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -141,6 +152,31 @@ class PortalWooRequestController extends Controller {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		$request = $this->intakeRequest(claims: $claims);
+
+		// ONE CASE PER SUBMISSION. A resend with the key of a send that made a
+		// case gets that case back; one that comes while the first is still
+		// being made hears so, instead of making a second (REQ-PSM-001).
+		$key = $this->submissionKey();
+		$replay = $this->replay(subjectRef: $request['subjectRef'], key: $key);
+		if ($replay !== null) {
+			return $replay;
+		}
+
+		return $this->open(request: $request, key: $key);
+	}//end start()
+
+	/**
+	 * What the intake reads: the resident and the branch from the verified
+	 * assertion only, the whitelisted fields from the body.
+	 *
+	 * @param array<string, mixed> $claims The verified assertion.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 */
+	private function intakeRequest(array $claims): array {
 		$request = ['subjectRef' => (string)$claims['sub']];
 		// The branch a company session is restricted to comes from the signed
 		// assertion only, like the subject; a branch in the body is never read
@@ -157,15 +193,98 @@ class PortalWooRequestController extends Controller {
 		$request['origin'] = 'portal';
 		$request['originReference'] = null;
 
+		return $request;
+	}//end intakeRequest()
+
+	/**
+	 * The answer to a resend: the first send's case, or 409 while it is still
+	 * being made; null when this send is the first with its key, or has none.
+	 *
+	 * @param string $subjectRef The resident.
+	 * @param string $key        The key, or ''.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
+	 */
+	private function replay(string $subjectRef, string $key): ?JSONResponse {
+		if ($key === '' || $this->ledger === null) {
+			return null;
+		}
+
+		$claim = $this->ledger->claim(scope: self::SUBMISSION_SCOPE, subjectRef: $subjectRef, key: $key);
+		if ($claim['state'] === 'answered') {
+			return new JSONResponse(($claim['answer'] ?? []), Http::STATUS_CREATED);
+		}
+
+		if ($claim['state'] === 'processing') {
+			return new JSONResponse(['error' => 'submission_processing'], Http::STATUS_CONFLICT);
+		}
+
+		return null;
+	}//end replay()
+
+	/**
+	 * Open the case, keep its answer for a resend, and let the key go when nothing was made.
+	 *
+	 * @param array<string, mixed> $request What the intake reads.
+	 * @param string               $key     The key, or ''.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
+	 */
+	private function open(array $request, string $key): JSONResponse {
 		try {
-			return new JSONResponse($this->intake->start($request), Http::STATUS_CREATED);
+			$answer = $this->intake->start($request);
 		} catch (WooRequestRefused $refused) {
+			$this->releaseKey(subjectRef: $request['subjectRef'], key: $key);
 			return new JSONResponse(
 				$this->refusalBody(refused: $refused),
 				(self::STATUS[$refused->getReason()] ?? Http::STATUS_BAD_REQUEST)
 			);
+		} catch (Throwable $failure) {
+			$this->releaseKey(subjectRef: $request['subjectRef'], key: $key);
+			throw $failure;
 		}
-	}//end start()
+
+		if ($key !== '' && $this->ledger !== null) {
+			$this->ledger->remember(scope: self::SUBMISSION_SCOPE, subjectRef: $request['subjectRef'], key: $key, answer: $answer);
+		}
+
+		return new JSONResponse($answer, Http::STATUS_CREATED);
+	}//end open()
+
+	/**
+	 * The submission key portaliq relayed, or '' when there is none or no ledger.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
+	 */
+	private function submissionKey(): string {
+		if ($this->ledger === null) {
+			return '';
+		}
+
+		return $this->ledger->keyOf((string)$this->request->getHeader(PortalSubmissionLedger::HEADER));
+	}//end submissionKey()
+
+	/**
+	 * Let a key go after a send that made no case, so a corrected resend is a first send.
+	 *
+	 * @param string $subjectRef The resident.
+	 * @param string $key        The key, or ''.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
+	 */
+	private function releaseKey(string $subjectRef, string $key): void {
+		if ($key !== '' && $this->ledger !== null) {
+			$this->ledger->release(scope: self::SUBMISSION_SCOPE, subjectRef: $subjectRef, key: $key);
+		}
+	}//end releaseKey()
 
 	/**
 	 * The answer to a refused request: the reason as a code, the sentence in
