@@ -242,6 +242,11 @@ export default {
 	width: 100%;
 	border-collapse: collapse;
 	margin-top: 12px;
+	/* Nextcloud's own stylesheet sets `table { white-space: nowrap }`. Under
+	   it the one-cell "the register holds 47, none of them shipped" sentence
+	   ran 818px wide in a 779px section at a 1100px window and pushed the
+	   admin page sideways. A cell here is a name or a sentence; let it wrap. */
+	white-space: normal;
 }
 
 .shipped-configuration__table th,

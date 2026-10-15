@@ -40,6 +40,7 @@ use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
+use OCA\Dossiq\Service\Termijn\CaseNumberReader;
 use OCA\Dossiq\Service\Termijn\TermLetters;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\BackgroundJob\IJobList;
@@ -79,6 +80,8 @@ class TermijnNotificationService {
 	 *        this service before the letters were split out passes four arguments.
 	 * @param RequesterNoticeSender|null $requester The one sender for requester notices. Absent,
 	 *        a sender over the e-mail transport alone, which is what this service did before.
+	 * @param CaseNumberReader|null $caseNumbers Turns a case UUID into the number a letter names.
+	 *        Absent, a letter names whatever reference its caller handed over.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -87,6 +90,7 @@ class TermijnNotificationService {
 		private readonly ?IJobList $jobList = null,
 		private readonly TermLetters $letters = new TermLetters(),
 		private readonly ?RequesterNoticeSender $requester = null,
+		private readonly ?CaseNumberReader $caseNumbers = null,
 	) {
 	}//end __construct()
 
@@ -184,7 +188,11 @@ class TermijnNotificationService {
 		}
 
 		$instance = $this->termService->getTermijnInstance($termInstanceId);
-		$payload = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
+		$payload = $this->renderTemplate(
+			type: $type,
+			instance: $instance ?? [],
+			context: $this->withCaseNumber(instance: ($instance ?? []), context: $context)
+		);
 
 		$payload['recipient'] = $recipientUserId;
 		$payload['deadlineInstance'] = $termInstanceId;
@@ -253,6 +261,43 @@ class TermijnNotificationService {
 
 		return trim((string)($context['case'] ?? ''));
 	}//end caseRefOf()
+
+	/**
+	 * The caller's context, with the case named by its number.
+	 *
+	 * 🔴 A LETTER NAMES THE CASE BY ITS NUMBER, NEVER BY ITS UUID. The term
+	 * instance links its case by UUID, and the information request and the
+	 * pause reminder hand that same UUID over as `case`, so a requester read
+	 * "Wij hebben nog iets nodig voor zaak 7849aeec-..." for case 2026-0018.
+	 * A reference that is a UUID is looked up here, once, for every letter;
+	 * a reference that is already a number is left as the caller wrote it.
+	 * Only the rendered text changes: the opt-out and the delivery record keep
+	 * the UUID, through caseRefOf().
+	 *
+	 * @param array<string, mixed> $instance The term instance, or [].
+	 * @param array<string, mixed> $context  The caller's context.
+	 *
+	 * @return array<string, mixed> The context the letter is rendered with.
+	 *
+	 * @spec openspec/changes/letters-name-the-case-number/specs/burger-notifications/spec.md#requirement-every-requester-letter-names-the-case-by-its-number
+	 */
+	private function withCaseNumber(array $instance, array $context): array {
+		$reference = trim((string)($context['case'] ?? ''));
+		if ($reference === '') {
+			$reference = trim((string)($instance['case'] ?? ''));
+		}
+
+		if ($this->caseNumbers === null || $this->caseNumbers->isCaseId(reference: $reference) === false) {
+			return $context;
+		}
+
+		$number = $this->caseNumbers->numberOf(caseId: $reference);
+		if ($number !== '') {
+			$context['case'] = $number;
+		}
+
+		return $context;
+	}//end withCaseNumber()
 
 	/**
 	 * Render a template (nl) into a payload with subject + body.

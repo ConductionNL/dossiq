@@ -24,6 +24,7 @@ import {
 	isStatusColour,
 	mergeColumnColour,
 	normaliseStatusColour,
+	STATUS_COLOUR_BADGE_VARIANTS,
 	STATUS_COLOURS,
 	statusBadgeStyle,
 	statusColourStyle,
@@ -244,5 +245,20 @@ describe('mergeColumnColour', () => {
 
 	it('treats grey-light as a chosen hue, because nothing defaults to it', () => {
 		expect(mergeColumnColour('grey', 'grey-light')).toBe('grey-light')
+	})
+})
+
+describe('the badge tone of a status colour', () => {
+	it('gives every colour the schema allows a tone the library badge knows', () => {
+		const tones = ['default', 'info', 'success', 'warning', 'error', 'purple']
+		for (const hue of STATUS_COLOURS) {
+			expect(tones).toContain(STATUS_COLOUR_BADGE_VARIANTS[hue])
+		}
+	})
+
+	it('gives a hue and its light twin the same tone', () => {
+		expect(STATUS_COLOUR_BADGE_VARIANTS['orange-light']).toBe(
+			STATUS_COLOUR_BADGE_VARIANTS.orange,
+		)
 	})
 })

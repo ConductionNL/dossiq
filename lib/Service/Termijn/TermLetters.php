@@ -59,10 +59,23 @@ class TermLetters {
 	 * @return array{subject:string, body:string, locale:string}
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/receipt-names-the-case-number/specs/burger-notifications/spec.md#requirement-a-requester-letter-names-the-case-by-its-number
 	 */
 	public function render(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');
-		$case = (string)($instance['case'] ?? ($context['case'] ?? '–'));
+		// 🔴 THE TERM'S CASE LINK IS A UUID, NOT A KENMERK. A term instance points
+		// at its case by id, so reading it first put "Ontvangstbevestiging zaak
+		// cecc92cc-..." in a resident's inbox while the case carried 2026-0117.
+		// The caller's `case` is the number read from the case itself; the term's
+		// link is the fallback for a caller that knows nothing else. Written
+		// without branches on purpose: this class sits at its complexity limit.
+		$named = array_values(
+			array_filter(
+				[trim((string)($context['case'] ?? '')), trim((string)($instance['case'] ?? ''))],
+				static fn (string $value): bool => ($value !== '')
+			)
+		);
+		$case = ($named[0] ?? '–');
 		$end = $this->shownDay(value: (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–')), english: ($locale === 'en'));
 
 		$subject = '';
