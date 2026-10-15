@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Service\Intake\CollectionCaseLinks;
+use OCA\Dossiq\Service\Intake\CollectionLinkQueue;
 use OCA\Dossiq\Service\Intake\SystemCaseStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IURLGenerator;
@@ -119,6 +120,8 @@ class WooRequestIntake {
 	 * @param SystemCaseStore|null $cases Writes the case as the system and announces it; the
 	 *                                    container hands it the announcer. A store that cannot
 	 *                                    announce when null.
+	 * @param CollectionLinkQueue|null $linkQueue Links a dossier to its case after the case is
+	 *                                            answered (REQ-PSM-002); linked inline when null.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -127,6 +130,7 @@ class WooRequestIntake {
 		private readonly ?WooReceivedTerm $receivedTerm = null,
 		private readonly ?WooReceivedAnswers $receivedAnswers = null,
 		?SystemCaseStore $cases = null,
+		private readonly ?CollectionLinkQueue $linkQueue = null,
 	) {
 		$this->cases       = ($cases ?? new SystemCaseStore(settingsService: $settingsService, logger: $logger));
 		$this->collections = new CollectionCaseLinks(settingsService: $settingsService, urlGenerator: $urlGenerator, logger: $logger);
@@ -146,6 +150,7 @@ class WooRequestIntake {
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-one-service-creates-every-woo-request-req-wri-002
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
 	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
 	 */
 	public function start(array $request): array {
 		$wooRequest = (new WooRequestForm())->normalise(request: $request);
@@ -189,7 +194,7 @@ class WooRequestIntake {
 		$caseId = $saved['id'];
 
 		if ($collection !== null) {
-			$this->collections->link(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
+			$this->linkLater(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection, subjectRef: $subjectRef);
 		}
 
 		// THE CASE NUMBER AND THE DATE, READ BACK FROM WHAT WAS WRITTEN, so
@@ -203,6 +208,33 @@ class WooRequestIntake {
 			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
 		] + $saved['answer'];
 	}//end start()
+
+	/**
+	 * Link the dossier to the case after the case is answered.
+	 *
+	 * The link is one read and one write per dossier item plus a write on the
+	 * dossier; done before answering, it kept the portal's forward waiting
+	 * past its timeout while the case already existed. A background job does
+	 * it right after; without a job list it is done here, as before.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param string               $register      The dossiq register.
+	 * @param string               $caseId        The case.
+	 * @param array<string, mixed> $collection    The dossier, already proven the resident's.
+	 * @param string               $subjectRef    The resident.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-submission-is-made-once/specs/woo-request-intake/spec.md#requirement-the-dossier-is-linked-to-the-case-after-the-case-is-answered-req-psm-002
+	 */
+	private function linkLater(object $objectService, string $register, string $caseId, array $collection, string $subjectRef): void {
+		if ($this->linkQueue === null) {
+			$this->collections->link(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
+			return;
+		}
+
+		$this->linkQueue->queue(register: $register, caseId: $caseId, collectionId: (string)$collection['id'], subjectRef: $subjectRef);
+	}//end linkLater()
 
 	/**
 	 * Receive a Woo request in opencatalogi's shape and open its case.
