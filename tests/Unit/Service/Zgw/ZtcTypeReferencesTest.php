@@ -27,7 +27,6 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zgw\ZgwRuleLookups;
 use OCA\Dossiq\Service\Zgw\ZtcTypeReferences;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * The search half of the ObjectService, as the reference resolution calls it.
@@ -72,7 +71,7 @@ class ZtcTypeReferencesTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => ($schema ?? $key));
 
-		$lookups    = new ZgwRuleLookups(logger: $this->createMock(LoggerInterface::class), settingsService: $settings);
+		$lookups    = new ZgwRuleLookups(settingsService: $settings);
 		$references = new ZtcTypeReferences(lookups: $lookups, settingsService: $settings, fieldValidator: new FieldValidator());
 		if ($answers === null) {
 			return $references;

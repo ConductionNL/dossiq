@@ -38,7 +38,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use Throwable;
 /**
  * Projects a case type's per-status field rules onto the live case schema.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class CaseStateFieldRuleProjector {
 
@@ -133,7 +133,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, array<string, mixed>> The states block.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function statesOf(string $caseTypeId): array {
 		$statusTypes = $this->store->rowsOfType(
@@ -183,7 +183,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return bool True when the schema configuration was rewritten.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function publish(string $caseTypeId): bool {
 		if ($caseTypeId === '') {
@@ -227,7 +227,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, mixed> The lifecycle block.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function lifecycleOf(array $configuration): array {
 		$lifecycle = ($configuration[self::LIFECYCLE_KEY] ?? []);
@@ -245,7 +245,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, mixed> The states.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function statesIn(array $lifecycle): array {
 		$states = ($lifecycle['states'] ?? []);
@@ -268,7 +268,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, mixed> The lifecycle block.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function withStates(array $lifecycle, array $states): array {
 		unset($lifecycle['states']);
@@ -289,7 +289,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return object|null The schema entity.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function liveCaseSchema(): ?object {
 		try {
@@ -318,7 +318,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, mixed> The configuration.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function configurationOf(object $schema): array {
 		$configuration = ($schema->getConfiguration() ?? []);
@@ -342,7 +342,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return bool True when the schema was written.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function write(object $schema, array $configuration, string $caseTypeId): bool {
 		if ($this->schemaMapper === null) {
@@ -387,7 +387,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return mixed The block to write.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public static function carryForwardStates(string $annotationKey, mixed $declared, mixed $live): mixed {
 		if ($annotationKey !== self::LIFECYCLE_KEY || is_array($declared) === false) {
@@ -422,7 +422,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<int, string> The statusType uuids.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function stateKeysOf(string $caseTypeId): array {
 		$keys = [];
@@ -448,7 +448,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, array<int, string>> Field names keyed by statusType uuid.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function requiredByStatus(string $caseTypeId): array {
 		$properties = $this->store->rowsOfType(
@@ -486,7 +486,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> The block.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function foldInRequired(array $fields, array $required): array {
 		if ($required === []) {
@@ -524,7 +524,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @return array<string, mixed> The merged states.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function mergeStates(array $live, array $own, array $ownKeys): array {
 		$merged = $live;

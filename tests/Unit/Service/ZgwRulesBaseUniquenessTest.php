@@ -19,6 +19,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\FieldValidator;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Zgw\LookupNotCompleted;
 use OCA\Dossiq\Service\ZgwRulesBase;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -89,13 +90,16 @@ class ZgwRulesBaseUniquenessTest extends TestCase {
 		$this->assertNotNull($this->check(''), 'no second value matches any hit');
 	}
 
-	public function testNothingToCheckOrAFailedSearchIsUnique(): void {
+	public function testNothingToCheckIsUniqueAndAFailedSearchIsNot(): void {
 		$this->hits = [['sourceOrganisation' => 'a']];
 		$this->assertNull($this->check('a', field1Value: ''));
 		$this->assertNull($this->check('a', mapping: ['sourceRegister' => '', 'sourceSchema' => '2']));
 		$this->assertNull($this->check('a', mapping: null));
 
+		// A duplicate nobody could look for is not a free pair: the lookup throws, and the
+		// entry point of the rules refuses the request for it (REQ-ZBR-022).
 		$this->throws = true;
-		$this->assertNull($this->check('a'));
+		$this->expectException(LookupNotCompleted::class);
+		$this->check('a');
 	}
 }//end class

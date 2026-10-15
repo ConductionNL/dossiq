@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 /**
  * The declarations of the status a case is in, and the dwell bookkeeping.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusDeclarations {
 
@@ -82,7 +82,7 @@ class StatusDeclarations {
 	 *     derivation: array{statusId: string, name: string, unmet: array<int, string>}|null
 	 * }
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function panelFor(array $case, ?DateTimeImmutable $now = null): array {
 		$statusType = $this->lookup->rowFor(statusTypeId: (string)($case['status'] ?? ''));
@@ -106,7 +106,7 @@ class StatusDeclarations {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function isDerivedStatus(string $caseTypeId, string $statusTypeId): bool {
 		return $this->derived->isDerivedStatus(caseTypeId: $caseTypeId, statusTypeId: $statusTypeId);
@@ -121,7 +121,7 @@ class StatusDeclarations {
 	 *
 	 * @return array<string, mixed> The payload.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function applyStatusChange(array $case, string $toStatus, ?DateTimeImmutable $now = null): array {
 		return $this->dwell->applyStatusChange(case: $case, toStatus: $toStatus, now: $now);
@@ -140,7 +140,7 @@ class StatusDeclarations {
 	 *
 	 * @return string|null The armed timer uuid, or null when nothing was armed.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function retime(string $caseId, string $toStatus): ?string {
 		$this->timer->cancel(caseId: $caseId, reason: 'the case left the status this clock was about');

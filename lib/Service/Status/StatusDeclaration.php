@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Dossiq\Service\Status;
 /**
  * Reads the three declarations a statusType may carry.
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class StatusDeclaration {
 
@@ -106,7 +106,7 @@ class StatusDeclaration {
 	 *
 	 * @return array<int, array<string, mixed>> The conditions worth evaluating.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function derivedWhen(array $statusType): array {
 		$declared = ($statusType['derivedWhen'] ?? null);
@@ -148,7 +148,7 @@ class StatusDeclaration {
 	 *
 	 * @return bool True when the status declares at least one condition.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function isDerived(array $statusType): bool {
 		return $this->derivedWhen(statusType: $statusType) !== [];
@@ -161,7 +161,7 @@ class StatusDeclaration {
 	 *
 	 * @return string One of the three values; `us` when the status declares nothing.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function waitingOn(array $statusType): string {
 		$declared = trim((string)($statusType['waitingOn'] ?? ''));
@@ -179,7 +179,7 @@ class StatusDeclaration {
 	 *
 	 * @return int|null The maximum, or null when the status declares none.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function maximumDwell(array $statusType): ?int {
 		$declared = ($statusType['maximumDwell'] ?? null);

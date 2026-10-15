@@ -79,7 +79,7 @@ import CaseProgrammeSection from './components/case/CaseProgrammeSection.vue'
 import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationPanel.vue'
 // What the status this case is in declares: what is still missing before a
 // derived status fires, who the case waits on, and how long it has been here.
-// @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+// @spec openspec/specs/status-transition-engine/spec.md
 import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // The work instruction for this kind of case, from the case type's
 // Collectives page, on the case itself.
@@ -1168,7 +1168,7 @@ const registry = {
 	// A LAYOUT grid item and a widget TYPE, for the reason case-unread is one:
 	// CnDetailPage resolves a grid item's renderer from `cnRegistry[widget.type]`
 	// when the app supplies no `widget-<id>` slot, and dossiq supplies none.
-	// @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	// @spec openspec/specs/status-transition-engine/spec.md
 	'case-status-declaration': {
 		// @custom-widget-ratchet exclude the derivation verdict is not a field of the case and no declarative widget can compute one: what is missing for a derived status is evaluated per case against the status type's declared conditions, and it reaches the page on the transition engine's own answer rather than on the object. A data widget could render `waitingOn` and `currentStatusDwellDays` alone, and that would be two of the three lines with the one that matters left dark
 		kind: 'widget',

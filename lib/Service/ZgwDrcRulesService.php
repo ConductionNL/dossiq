@@ -107,15 +107,13 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 			lookups: $this->lookups,
 			results: $this->results,
 			settingsService: $settingsService,
-			fieldValidator: $fieldValidator,
-			logger: $logger
+			fieldValidator: $fieldValidator
 		);
 		$this->objectLinks = new DrcObjectLinkRules(
 			lookups: $this->lookups,
 			results: $this->results,
 			settingsService: $settingsService,
 			fieldValidator: $fieldValidator,
-			logger: $logger,
 			relations: $this->relations
 		);
 	}//end __construct()
@@ -329,11 +327,17 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		if ($register !== '' && $oioSchema !== '') {
 			// OIO stores the full informatieobject URL in the 'document' field,
 			// so search with both UUID and partial match to find any OIO relations.
-			$relatedIds = $this->relations->findOioRelationsForDocument(
-				register: $register,
-				schema: $oioSchema,
-				docUuid: $existingId
-			);
+			try {
+				$relatedIds = $this->relations->findOioRelationsForDocument(
+					register: $register,
+					schema: $oioSchema,
+					docUuid: $existingId
+				);
+			} catch (\Throwable $e) {
+				// The search did not run, so nobody knows whether relations point here. Refuse.
+				return $this->results->notVerified(rule: 'drc-007', object: 'document ' . $existingId, cause: $e->getMessage());
+			}
+
 			if (empty($relatedIds) === false) {
 				return $this->error(
 					status: 400,

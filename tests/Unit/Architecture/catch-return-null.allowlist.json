@@ -1,8 +1,10 @@
 {
-  "ceiling": 256,
+  "ceiling": 251,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
+    "2026-10-14, Q-dossiq-L11-3 (decision 224, guards refuse when unsure): three sites left. `Zgw/ZgwRuleLookups::findObjectByField`, `findAllObjectsByField` and `findBySchemaKey` throw `LookupNotCompleted` when the store cannot be read, and `ZgwBusinessRulesService::validate` refuses the request with 503 `check-not-completed`. An object the store does not hold, or does not show the caller, still reads as none. The ceiling went 254 to 251.",
+    "2026-10-12, decision 224 (guards refuse when unsure): two sites left. `Zgw/DrcDocumentRelations::findOioRelationsForDocument` (drc-007) and `Zgw/ZtcPublishAndDeleteChecks::loadFinalStatusSlugs` (the case type delete check) throw when the store cannot be read, and their rule refuses with 503 `check-not-completed` instead of reading \"none\". The ceiling went 256 to 254.",
     "2026-10-12, openspec/changes/brp-client-retired: the conflict-of-interest check reads relations through integriq, and `ConflictOfInterestService::lookupRelationViaBrp` left with dossiq's BRP client. A read that gives no answer now blocks instead of answering null. The ceiling went 259 to 258 (263 to 262 before development was merged in).",
     "2026-10-12, openspec/changes/retire-cmmn-caseplanstate task 3.1: the local CMMN runtime retired, taking `Cmmn/CaseModelLoader::getActiveModel` with it. The ceiling went 264 to 263.",
     "2026-10-11, openspec/changes/decision-tables-live-in-openregister: the decision tables moved into OpenRegister's register. DecisionTableService::getTable went with the service; LhsDecisionTableLookup evaluates through Dmn\\StoredDecisionTables and lost evaluator, intervention and tableFor. The ceiling went 257 to 253.",
@@ -1690,39 +1692,11 @@
       "reason": "`contentFor()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/Zgw/DrcDocumentRelations.php",
-      "method": "findOioRelationsForDocument",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findOioRelationsForDocument()` answers `return []` when the read fails; the catch logs at warning (\"Drc-007: OIO relation search with partial match failed\"), so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/ZgwRulesBase.php",
       "method": "fetchExternalUrl",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`fetchExternalUrl()` answers `return null` when the read fails; the catch logs at warning (\"Failed to fetch external URL\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
-      "method": "findAllObjectsByField",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findAllObjectsByField()` answers `return []` when the read fails; the catch logs at warning (\"Reference resolution failed\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
-      "method": "findBySchemaKey",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findBySchemaKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Zgw/ZgwRuleLookups.php",
-      "method": "findObjectByField",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findObjectByField()` answers `return null` when the read fails; the catch logs at warning (\"Reference resolution failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/ZgwService.php",
@@ -1744,13 +1718,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`loadCaseTypeRow()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Zgw/ZtcPublishAndDeleteChecks.php",
-      "method": "loadFinalStatusSlugs",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`loadFinalStatusSlugs()` answers `return []` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Flow/RetiredActionRunner.php",
