@@ -704,7 +704,7 @@
         "digest": "c72f350965a7ed4c34abb5a757cba24da08f6a63e29278a4f34bcf13e8253929"
     },
     "lib/Settings/dossiq_register.json::decisionType": {
-        "version": "1.2.1",
+        "version": "1.3.0",
         "digest": "d6b6f1b982633639d3bef0eaf7d5c3973d8b562d6189d6eae41836ab647b3aa0"
     },
     "lib/Settings/dossiq_register.json::dispatch": {
