@@ -29,7 +29,6 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
-use OCA\Dossiq\Support\FleetAppId;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -145,7 +144,7 @@ class SettingsController extends Controller {
 
 		// Filinq signs decisions (signing-through-filinq); without it a
 		// decision cannot be signed at all, and the settings say so.
-		$signingAvailable = FleetAppId::isEnabledForUser(appManager: $this->appManager, canonical: 'filinq');
+		$signingAvailable = $this->appManager->isEnabledForUser('filinq');
 		$signingHint = null;
 		if ($signingAvailable === false) {
 			$signingHint = $this->l10n->t('Filinq is not installed or enabled, so decisions cannot be signed. Install and enable filinq to sign them.');

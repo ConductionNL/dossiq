@@ -40,6 +40,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
+use OCA\Filinq\Event\SigningConcludedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -82,8 +83,8 @@ class SigningConcludedListener implements IEventListener {
 	 * @spec openspec/changes/signing-through-filinq/specs/libresign-besluit-signing/spec.md#requirement-a-signing-request-that-ends-unsigned-is-shown-as-not-concluded
 	 */
 	public function handle(Event $event): void {
-		$eventClass = self::EVENT;
-		if (($event instanceof $eventClass) === false || $event->getSourceApp() !== Application::APP_ID) {
+		// `instanceof` autoloads nothing: without filinq it is simply false.
+		if (($event instanceof SigningConcludedEvent) === false || $event->getSourceApp() !== Application::APP_ID) {
 			return;
 		}
 
