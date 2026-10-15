@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.94.0",
+	"version": "2.96.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -809,6 +809,11 @@
 			"pattern": "^@row\\.[A-Za-z][A-Za-z0-9_.@]*$",
 			"description": "Row context: a field of the row a row action runs on (@row.<field>, dot path allowed), read by the field-list widget's rowActions request url and payload (payload values resolve at any depth). Mirrors SENTINEL_TOKEN_PATTERNS.row."
 		},
+		"sentinelContextToken": {
+			"type": "string",
+			"pattern": "^@context\\.[A-Za-z][A-Za-z0-9_.]*$",
+			"description": "Detail context: a record a detail page reads beside the loaded one (`config.visibilityContext`), read by a grid widget's or a tab's `visibleWhen` field as @context.<name>.<field> (dot path allowed). Mirrors SENTINEL_TOKEN_PATTERNS.context."
+		},
 		"sentinelSubjectToken": {
 			"type": "string",
 			"pattern": "^@subject\\.[A-Za-z][A-Za-z0-9_.]*$",
@@ -827,6 +832,7 @@
 				{ "$ref": "#/$defs/sentinelAnswerToken" },
 				{ "$ref": "#/$defs/sentinelRowToken" },
 				{ "$ref": "#/$defs/sentinelSubjectToken" },
+				{ "$ref": "#/$defs/sentinelContextToken" },
 				{ "$ref": "#/$defs/sentinelDeprecatedToken" }
 			]
 		},
@@ -4298,7 +4304,7 @@
 						},
 						"headerButtons": {
 							"type": "array",
-							"description": "type='index': buttons beside the page title, as the board's \"Export\" and \"New case\" (zuiddrecht-pixel-gaps-3). `action` is `add` (the Add flow; the label defaults to the Add label), `export` (the export leaf in `format`, else the export dialog; under the board look it reads \"Download\" by default), `actions-menu` (the page's header actions as one labelled menu button, absent when the page has none), `import`, `refresh`, or the id of a `headerActions` entry. Under the board look the buttons render in a fixed order whatever the manifest declares: export, actions-menu, other secondary buttons, the buildiq square, then the primary button. Shown only with `showTitle`; when they show, the actions bar drops its Views and Actions menus, and the Add button and Export menu when a button takes their action. Maps to CnIndexPage `headerButtons`.",
+							"description": "type='index': buttons beside the page title, as the board's \"Export\" and \"New case\" (zuiddrecht-pixel-gaps-3). `action` is `add` (the Add flow; the label defaults to the Add label), `export` (the export leaf in `format`, else the export dialog; under the board look it reads \"Download\" by default), `actions-menu` (the page's header actions as one labelled menu button, absent when the page has none), `import`, `refresh`, or the id of a `headerActions` entry. Under the board look the buttons render in a fixed order whatever the manifest declares: export, actions-menu, other secondary buttons, the buildiq square, then the primary button. Shown only with `showTitle`; when they show, the actions bar drops its Views and Actions menus, and the Add button and Export menu when a button takes their action. Maps to CnIndexPage `headerButtons`. type='reports' (screens-reports-header-buttons, 2.96.0): the same buttons beside the reports page title, as board DcRapportages draws \"Downloaden\". There `label` is required and `action` is the id of a `headerActions` entry (same shape as on an index page), which says what the click does; every click also emits `header-action`. Under the board look the buildiq square sits between the secondary buttons and the primary one. Maps to CnReportsPage `headerButtons`.",
 							"items": {
 								"type": "object",
 								"additionalProperties": false,
@@ -4349,6 +4355,20 @@
 							"type": "string",
 							"minLength": 1,
 							"description": "type='detail': the id of a widget in `widgets` to render inside the header on its own row under the title, without a card of its own, e.g. the stages bars (zuiddrecht-pixel-gaps-2). The widget leaves the body grid. Maps to CnDetailPage `headerWidget`."
+						},
+						"visibilityContext": {
+							"type": "object",
+							"description": "type='detail': records the page reads beside the loaded one, so a widget's or a tab's `visibleWhen` can ask about them (detail-widgets-visible-when). `{ <name>: { field, register, schema } }`: `field` is the property of the loaded record holding the other record's id, and a condition reads that record as `@context.<name>.<path>`, e.g. `{ \"field\": \"@context.caseType.category\", \"op\": \"in\", \"value\": [\"Sociaal domein\"] }`. A record that cannot be read is absent, so its condition fails safe. Maps to CnDetailPage `visibilityContext`.",
+							"additionalProperties": {
+								"type": "object",
+								"required": ["field", "register", "schema"],
+								"additionalProperties": false,
+								"properties": {
+									"field": { "type": "string", "minLength": 1, "description": "Dot-path on the loaded record to the id of the record to read." },
+									"register": { "type": "string", "minLength": 1, "description": "Register slug or id of the record to read." },
+									"schema": { "type": "string", "minLength": 1, "description": "Schema slug or id of the record to read." }
+								}
+							}
 						},
 						"mapConfig": {
 							"type": "object",
