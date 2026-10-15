@@ -74,6 +74,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 
