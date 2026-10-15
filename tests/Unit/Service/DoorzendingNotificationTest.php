@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay

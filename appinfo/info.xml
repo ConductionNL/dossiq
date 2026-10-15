@@ -440,6 +440,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 flow the backfill bound them to (woo-stages-are-guarded-by-their-flow).
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
+            <!--
+                After the package install: an open case filed while its case type
+                had no handling block gets the case type's handling team.
+            -->
+            <step>OCA\Dossiq\Repair\AssignOpenCasesTheirCaseTypeTeam</step>
             <step>OCA\Dossiq\Repair\FoldCasePropertiesOntoCase</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <!--
@@ -1012,6 +1017,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 flow the backfill bound them to (woo-stages-are-guarded-by-their-flow).
             -->
             <step>OCA\Dossiq\Repair\RebindCasesOffTheBasisFlow</step>
+            <!--
+                After the package install: an open case filed while its case type
+                had no handling block gets the case type's handling team.
+            -->
+            <step>OCA\Dossiq\Repair\AssignOpenCasesTheirCaseTypeTeam</step>
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
