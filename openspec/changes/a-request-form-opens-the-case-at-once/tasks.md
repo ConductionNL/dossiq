@@ -15,10 +15,20 @@
   - Routing: dossiq has no create-time routing listener. The case flow `Case behandeling` (trigger `object.created`) sets the intake status and role; skipping drafts there needs an OpenRegister flow trigger that knows the draft status (open point for openregister)
   - Test: a draft create queues no acknowledgement; leaving draft queues exactly one
 
+- [x] 1.5 `CaseNumberListener`, `ReportGroupingOnCreateListener` and `CasePlanProjectionListener` skip a draft and run when it is sent (decisions 180 and 201), through `ReceiptMoment::receivedObject`; each is registered on OpenRegister's `ObjectActivatedEvent` next to its create registration
+  - Test: tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php (from both registrars to the effect, for a draft create, a received create and a sent draft)
+  - Answered by decision 227 (Q-dossiq-d179-3): OpenRegister holds creation side effects for a draft and announces a sent draft as created, then activated. That change is built and not on development yet
+- [x] 1.6 A sent draft does its creation work once on OpenRegister with and without decision 227. `ReceiptMoment::receivedObject` remembers the first receipt of an object per listener, so the second event of the pair answers null. The five listeners on both events ask it: `CaseNumberListener`, `ReportGroupingOnCreateListener`, `CasePlanProjectionListener`, `AcknowledgementOnCreateListener`, `DeadlineCaseCreatedListener`
+  - Test: tests/Unit/AppInfo/DraftIsNotReceivedRegistrationTest.php `testASentDraftDoesItsCreationWorkOnceUnderBothEventModels` (the list of listeners on both events is read from the registrars, so a sixth cannot be added without the test), tests/Unit/Service/Intake/ReceiptMomentTest.php
+  - To delete once every instance runs OpenRegister with decision 227: the five `DRAFT_SENT_EVENT` registrations in `WorkflowListenerRegistrar` and `IntakeListenerRegistrar`, the activation and draft branches of `ReceiptMoment::receivedObject`, and `ReceiptMoment::firstReceipt` with its `$for` argument. The listeners then read `ObjectCreatedEvent` alone
+
 ## 2. Intake requirement D-5 (intake-says-when-the-term-starts task 2.1)
 
 - [x] 2.1 Amend D-5 in `intake-says-when-the-term-starts/design.md` (done in this change's pull request)
 - [ ] 2.2 Close task 2.1 of `intake-says-when-the-term-starts` once portaliq's `submit-creates-the-case-directly` renders the four fields from the response; run its e2e scenario "the citizen is told on screen"
+  - [x] 2.2a Checked on portaliq development (7b7ae1fd, its task 2.4): the confirmation page shows the case number and, from the submit response, the received moment, the term start and the deadline (`src/site/components/forms/confirmation.js` `momentLines`; the mail in `lib/Service/Intake/FormConfirmationMailer.php`). Task 2.1 of `intake-says-when-the-term-starts` is updated with this
+  - [ ] 2.2b The sentence about the first working day is not on that screen. The scenario asks for it, the response does not carry `receivedOutsideWorkingHours` (it is not a confirmation field), and `momentLines` has no line for it. Either portaliq derives it (the term starts on a later day than the request came in) or the case schema marks the field as a confirmation field; question Q-dossiq-d179-2
+  - [ ] 2.2c (live pass, decision 139) Run `tests/e2e/intake-says-when-the-term-starts.spec.ts`, scenario "the citizen is told on screen"
 
 ## 3. Bezwaar and klacht
 
@@ -31,8 +41,27 @@
 ## 4. Other intake paths
 
 - [x] 4.1 `WooRequestIntake::writeCase` returns `receivedAt` and `termStartsAt` with the identifier and deadline; the confirmation template gains the term start
-- [ ] 4.2 `FormsIntakeService`: binding maps answers to typed properties, checked at bind time through OpenRegister's validator (decision 181)
-- [ ] 4.3 Case-type publish re-checks bound forms (`caseType.intakeFormRef` and portaliq bindings), including `requiredBeforeCreation`
+- [x] 4.2 `FormsIntakeService`: binding maps answers to typed properties, checked at bind time through OpenRegister's validator (decision 181)
+  - `caseType.intakeFormMapping` (`fields`, `fixed`; caseType 1.21.0). `IntakeFormBinding` turns the binding into the mapping, `IntakeFormBindingCheck` hands it to OpenRegister's `FormDestinationValidator` with the live case schema, `IntakeFormBindingListener` refuses the case type save on findings (pre-persist, registered in `IntakeListenerRegistrar`). The submit goes through `FormSubmitService::submit` with the same mapping; without it the object service saves the same object
+  - The service no longer writes `startDate`: the receipt listener sets it by the one rule (decision 218). REQ-LEAF-103 amended in this change
+  - Files: lib/Service/Intake/IntakeFormBinding.php, lib/Service/Intake/IntakeFormBindingCheck.php, lib/Listener/IntakeFormBindingListener.php, lib/Service/FormsIntakeService.php
+  - Test: tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php (from the registrar to the refusal), tests/Unit/Service/Intake/IntakeFormBindingTest.php, tests/Unit/Service/Intake/IntakeFormBindingCheckTest.php, tests/Unit/Service/FormsIntakeServiceTest.php
+  - Open: a multiple-choice question arrives as several answers under one question and `FormSubmittedListener` keeps the last one. dossiq answers OpenRegister's `FormDestinationDependentsEvent` for these bindings since 4.3c
+  - [x] 4.2a The case schema lists `forms` as an intake channel (case 1.45.0, and the case type's acknowledgement channel list, caseType 1.20.0). The service wrote that value from the start, as `leaf-integrations` asks, and the schema refused it
+    - Test: tests/Unit/Service/FormsIntakeServiceTest.php, `testTheRealCaseSchemaAcceptsTheCaseAsWritten` (the written payload against the real case schema)
+  - [x] 4.2b A forms case owes an acknowledgement of receipt by default (decision 236, the opposite of what 4.2a shipped). `forms` joins `CaseTypeAcknowledgement::ELECTRONIC_CHANNELS` and the schema default of `caseType.acknowledgement.intakeChannels` (caseType 1.22.0, register 0.20.43). A case type switches it off by naming its own channel list without `forms`. `AcknowledgementService::acknowledge` leaves a draft alone
+    - Spec ref: specs/burger-notifications/spec.md, REQ-TERM-020 (modified)
+    - Test: tests/Unit/Service/CaseTypeAcknowledgementTest.php (`testAFormsCaseOwesOneUnlessTheCaseTypeSwitchesItOff`, `testTheShippedSchemaDefaultIsTheListTheCodeApplies`), tests/Unit/Service/AcknowledgementDutyTest.php (`testACaseTypeSwitchesTheFormsAcknowledgementOff`, `testADraftIsNotConfirmedUntilItIsSent`, `testAnAddressThatFailsValidationIsNeverMailed`)
+    - Upgrade: existing instances start sending acknowledgements for forms intake. See CHANGELOG.md
+    - [ ] (live pass, decision 139) Check a case type saved before this change: when its stored `acknowledgement.intakeChannels` holds the old default list, it keeps sending none for forms until `forms` is added
+- [x] 4.3 Case-type publish re-checks bound forms (`caseType.intakeFormRef` and portaliq bindings), including `requiredBeforeCreation`
+  - [x] 4.3a The case type's own intake form: `IntakeFormBindingCheck::unmetRequirements` adds a `required-unmapped` finding for every `requiredBeforeCreation` property the mapping does not fill, on a case type that is not a draft; the save is refused by the same listener
+    - Test: tests/Unit/AppInfo/IntakeFormBindingRegistrationTest.php `testPublishingReChecksTheFormAgainstTheIntakeRequirements`, tests/Unit/Service/Intake/IntakeFormBindingCheckTest.php
+  - [x] 4.3b Forms of other apps. portaliq answers OpenRegister's `FormDestinationDependentsEvent` with one `FormDependent` per published `portalFormBinding` (portaliq #1538, merged). On every case type save that is not a draft, `CaseTypeBoundFormsListener` asks for the case schema's forms through `BoundFormsCheck::assess`, keeps those whose fixed `caseType` names this type (id, uuid or slug), and judges each with OpenRegister's validator plus `IntakeFormBindingCheck::unmetRequirements` (`findingsOfMapping`). An owning app whose `formDestinationBreak` is `refuse` refuses the save before it is stored (`bound-form-invalid`, each form with its findings); otherwise the saved case type hands the assessment to OpenRegister's `FormDependentsCheck::apply`, which unpublishes the form and tells its author
+    - Files: lib/Service/Intake/BoundFormsCheck.php, lib/Service/Intake/IntakeFormBindings.php, lib/Listener/CaseTypeBoundFormsListener.php, lib/Listener/IntakeFormDependentsListener.php, lib/AppInfo/Registrar/IntakeFormListenerRegistrar.php (the form listeners, moved out of IntakeListenerRegistrar)
+    - Test: tests/Unit/AppInfo/BoundFormsRegistrationTest.php (from the registrar, with OpenRegister's real event, `FormDependent` and `FormDependentsCheck` as test copies)
+  - [x] 4.3c dossiq answers the same event for its own Forms bindings: `IntakeFormDependentsListener` adds one form per published case type with `intakeFormRef` when the schema is the case schema; its unpublish takes `intakeFormRef` off the case type and keeps the mapping. A failed read of the case types is logged as an error and the schema save goes on
+    - Test: tests/Unit/AppInfo/BoundFormsRegistrationTest.php `testDossiqAnnouncesItsOwnFormsBindingsForTheCaseSchema`, `testAFailedReadOfTheCaseTypesIsLoggedAsAnError`
 
 ## 5. Verification
 
