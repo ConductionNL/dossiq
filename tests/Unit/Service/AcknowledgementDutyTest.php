@@ -105,6 +105,7 @@ class AcknowledgementCaseStore {
  * Confirming receipt, recording it, and refusing when there is nowhere to send.
  *
  * @covers \OCA\Dossiq\Service\AcknowledgementService
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
@@ -128,6 +129,7 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Woo\WooReceivedAnswers
  * @uses \OCA\Dossiq\Woo\WooRequestForm
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  */
 class AcknowledgementDutyTest extends TestCase {
 	use MakesRealTermNoticeSender;

@@ -135,16 +135,16 @@ describe('the simple profile', () => {
 		}
 	})
 
-	it('keeps relocations out of the file, because any relocation step drops the captions', () => {
-		// The library's relocation step ends by filtering out every entry with
-		// no route, href, action or children. That is a caption. `{}` is enough
-		// to run it, so the key has to be absent.
-		expect(Object.hasOwn(simpleFile, 'relocations')).toBe(false)
+	it('keeps its captions through the relocation step', () => {
+		// The library's relocation step drops entries with no route, href,
+		// action or children, but keeps a caption unless the relocations
+		// emptied it. So a `relocations` key would not cost the captions.
 		const withRelocations = build({ ...simpleFile, relocations: {} })
 		expect(
-			withRelocations.menu.filter((entry) => entry.type === 'caption'),
-			'the library now keeps captions through relocations; the note in the profile file is stale',
-		).toEqual([])
+			withRelocations.menu
+				.filter((entry) => entry.type === 'caption')
+				.map((entry) => entry.id),
+		).toEqual(['CasesCaption', 'MyCaseTypesCaption', 'RelationsCaption'])
 	})
 
 	it('gives every entry a label, an icon the app registers and a page that exists', () => {

@@ -265,8 +265,6 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array<string, array> Mapping configurations keyed by resource key
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getDefaultMappings(string $registerId): array {

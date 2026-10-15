@@ -38,9 +38,11 @@ use Psr\Log\LoggerInterface;
  * Who is told a case moved, and who is deliberately not.
  *
  * @covers \OCA\Dossiq\Service\Transfer\DoorzendingNotifier
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */

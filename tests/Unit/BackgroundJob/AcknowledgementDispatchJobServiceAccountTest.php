@@ -53,6 +53,7 @@ use Psr\Log\NullLogger;
  * The acknowledgement is recorded as the configured account, or the job waits.
  *
  * @covers \OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\AcknowledgementService
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
@@ -77,6 +78,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
  */
 class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;
