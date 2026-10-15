@@ -48,6 +48,7 @@ use PHPUnit\Framework\TestCase;
  * The ontvangstbevestiging, and what the citizen may be told.
  *
  * @covers \OCA\Dossiq\Service\Termijn\TermLetters::render
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  * @uses \OCA\Dossiq\Service\Support\ReadableDay

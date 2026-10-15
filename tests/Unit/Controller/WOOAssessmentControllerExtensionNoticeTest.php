@@ -57,6 +57,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  * @covers \OCA\Dossiq\Service\Termijn\ExtensionNotice
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
