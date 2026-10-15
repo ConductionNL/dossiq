@@ -252,12 +252,19 @@ describe('the row handler posts the claim and says what came back', () => {
 		window.removeEventListener('cn:objects-changed', onChanged)
 		unsubscribe('cn:page:refresh', onRefresh)
 
-		expect(changed).toEqual([{ register: 'dossiq', schema: 'case', id: 'case-7' }])
+		expect(changed).toEqual([
+			{ register: 'dossiq', schema: 'case', id: 'case-7' },
+		])
 		expect(refreshes).toHaveLength(1)
 	})
 
 	it('announces nothing when the claim is refused', async () => {
-		axios.post.mockRejectedValue({ response: { status: 409, data: { error: 'Someone else is already handling this case.' } } })
+		axios.post.mockRejectedValue({
+			response: {
+				status: 409,
+				data: { error: 'Someone else is already handling this case.' },
+			},
+		})
 		const changed = []
 		const onChanged = (e) => changed.push(e.detail)
 		window.addEventListener('cn:objects-changed', onChanged)

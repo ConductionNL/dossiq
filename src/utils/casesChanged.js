@@ -27,6 +27,10 @@ export const CASES_CHANGED = 'dossiq:cases-changed'
  */
 export function announceCasesChanged(caseId) {
 	window.dispatchEvent(new CustomEvent(CASES_CHANGED))
-	dispatchObjectsChanged({ register: 'dossiq', schema: 'case', id: caseId || null })
+	dispatchObjectsChanged({
+		register: 'dossiq',
+		schema: 'case',
+		id: caseId || null,
+	})
 	emit('cn:page:refresh')
 }
