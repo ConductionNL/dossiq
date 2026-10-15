@@ -56,6 +56,8 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses \OCA\Dossiq\Service\Intake\CollectionLinkQueue
  */
 class WooRequestIntakeTest extends TestCase {
 
