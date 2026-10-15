@@ -130,6 +130,21 @@ export default {
 	caseTitle: (value) => lookupRelatedName('case', value),
 
 	/**
+	 * Who asked for a case, by name.
+	 *
+	 * Read off the case's `initiatorDisplayName`: the picker writes it beside
+	 * the `requester` row it picked, and a case filed by a resident on the
+	 * portal carries the name they gave, with no register row to point at.
+	 * Empty when the case names nobody.
+	 *
+	 * @param {string} value The `requester` uuid, unused.
+	 * @param {object} row The case.
+	 * @return {string}
+	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
+	 */
+	requesterName: (value, row) => String(row?.initiatorDisplayName ?? '').trim(),
+
+	/**
 	 * An ISO 8601 duration as words ("P56D" reads "8 weeks"), and the value
 	 * itself when it is not one.
 	 *

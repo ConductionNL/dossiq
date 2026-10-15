@@ -371,6 +371,8 @@ class WooRequestIntake {
 	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when the write fails.
+	 *
+	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
 	 */
 	private function writeCase(
 		object $objectService,
@@ -417,6 +419,13 @@ class WooRequestIntake {
 		);
 		if ($properties !== []) {
 			$case['properties'] = $properties;
+		}
+
+		// WHO ASKED, BY NAME. The case's Requester reads `initiatorDisplayName`
+		// when no register row was picked; a resident on the portal is not one.
+		$requester = trim((string)($wooRequest['verzoekerNaam'] ?? ''));
+		if ($requester !== '' && trim((string)($case['initiatorDisplayName'] ?? '')) === '') {
+			$case['initiatorDisplayName'] = $requester;
 		}
 
 		$initial = trim((string)($caseType['initialStatus'] ?? ''));
