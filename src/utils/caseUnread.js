@@ -21,6 +21,7 @@
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { markRead, markUnread } from '../services/readStateApi.js'
+import { announceCasesChanged } from './casesChanged.js'
 
 /**
  * The case uuid of a list row.
@@ -38,7 +39,6 @@ function caseIdOf(item) {
  * The read state is not a field of the case, so no object-changed event
  * carries it and the row would keep its old badge until the next navigation.
  */
-const CASES_CHANGED = 'dossiq:cases-changed'
 
 /**
  * Row-action handler: put this case back to unread.
@@ -57,7 +57,7 @@ export async function markCaseUnread({ item }) {
 	try {
 		await markUnread(caseId)
 		showSuccess(t('dossiq', 'You will see this as unread again.'))
-		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
+		announceCasesChanged(caseId)
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
 		showError(
@@ -89,7 +89,7 @@ export async function markCaseRead({ item }) {
 	try {
 		await markRead(caseId)
 		showSuccess(t('dossiq', 'You have marked this case read.'))
-		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
+		announceCasesChanged(caseId)
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
 		showError(

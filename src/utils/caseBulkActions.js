@@ -15,6 +15,7 @@ import { createApp } from 'vue'
 import BulkTransitionDialog from '../dialogs/BulkTransitionDialog.vue'
 import ReassignSelectionDialog from '../dialogs/ReassignSelectionDialog.vue'
 import { countMatchingCases } from '../services/bulkJobApi.js'
+import { announceCasesChanged } from './casesChanged.js'
 import { readLocationFilters } from './selectionScope.js'
 
 /**
@@ -84,7 +85,7 @@ export async function reassignSelection({ selectedIds }) {
 			// The index has to re-read: the rows the user just moved are no
 			// longer theirs, and leaving them on screen invites a second
 			// reassignment of cases that already moved.
-			window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+			announceCasesChanged()
 		},
 	})
 	app.mount(host)
@@ -138,9 +139,7 @@ async function openBulkDialog(mode, selectedIds) {
 			// Same signal `reassignSelection` sends: the rows the user just
 			// moved may no longer belong on the active lens, and leaving them
 			// on screen invites a second gesture on cases that already moved.
-			// The list's own refresh comes from its live-collection
-			// subscription; this event is the app-level notice beside it.
-			window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+			announceCasesChanged()
 		},
 	})
 	app.mount(host)

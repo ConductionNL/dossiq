@@ -1371,6 +1371,7 @@ OC.L10N.register(
         "City/town of the bezoekadres (or the country for foreign fixtures).": "City/town of the bezoekadres (or the country for foreign fixtures).",
         "City/town of the residence.": "City/town of the residence.",
         "Claim": "Claim",
+        "Claim this case first: only its handler acts on it.": "Claim this case first: only its handler acts on it.",
         "Classification": "Classification",
         "Classification failed": "Classification failed",
         "Classification scheme": "Classification scheme",
