@@ -56,6 +56,9 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Support\FleetAppId
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 class WooSourcesControllerTest extends TestCase {
 

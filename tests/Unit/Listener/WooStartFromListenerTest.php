@@ -44,6 +44,9 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\WooStartFromListener
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 class WooStartFromListenerTest extends TestCase {
 

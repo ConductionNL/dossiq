@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class TermLettersTest extends TestCase {
 

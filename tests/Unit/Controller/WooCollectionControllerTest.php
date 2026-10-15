@@ -68,6 +68,9 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooSources
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 class WooCollectionControllerTest extends TestCase {
 

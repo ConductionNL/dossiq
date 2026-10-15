@@ -48,6 +48,9 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Woo\WooSources
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 class WooCollectionQueryTest extends TestCase {
 

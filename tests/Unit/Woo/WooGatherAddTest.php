@@ -79,6 +79,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
  * @uses   \OCA\Dossiq\Service\Zaakdossier\MailHeaderReader
  * @uses   \OCA\Dossiq\Service\Zaakdossier\CaseFileCollector
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 class WooGatherAddTest extends TestCase {
 

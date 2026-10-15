@@ -59,6 +59,9 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
+ * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
+ * @uses   \OCA\Dossiq\Service\CaseTypeStore
  */
 class WooCollectionReportTest extends TestCase {
 
