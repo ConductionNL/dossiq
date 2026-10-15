@@ -200,4 +200,88 @@ class WooDossierReturnTest extends TestCase {
 		self::assertFalse($return->tellTheResident(case: $this->case() + ['wooPublicationUrl' => 'https://gemeente.test/p'], caseId: 'case-1', publicationId: 'pub-new'));
 		self::assertFalse($this->return->tellTheResident(case: $this->case(), caseId: 'case-1', publicationId: 'pub-new'));
 	}//end testOnlyTheFirstPublishTellsTheResident()
+
+	/**
+	 * Without a publication id or without OpenRegister nothing is written.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 *
+	 * @return void
+	 */
+	public function testNothingIsWrittenWithoutAPublicationOrOpenRegister(): void {
+		self::assertFalse($this->return->append(case: $this->case(), publicationId: '', title: 'Besluit'));
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
+		$return = new WooDossierReturn(settingsService: $settings, random: $this->createMock(ISecureRandom::class), logger: $this->createMock(LoggerInterface::class));
+		self::assertFalse($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit'));
+
+		self::assertCount(1, $this->store->row(schema: 'collection', uuid: self::COLLECTION)['items']);
+	}//end testNothingIsWrittenWithoutAPublicationOrOpenRegister()
+
+	/**
+	 * A write that fails answers false and is logged, never thrown.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 *
+	 * @return void
+	 */
+	public function testAFailedWriteAnswersFalseAndIsLogged(): void {
+		$store = new class () {
+			/**
+			 * The dossier, as OpenRegister finds it.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function find(): array {
+				return ['id' => 'c', 'items' => []];
+			}//end find()
+
+			/**
+			 * The write OpenRegister refuses.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function saveObject(): array {
+				throw new \RuntimeException('refused');
+			}//end saveObject()
+		};
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getWooPublicationConfigValue')->willReturn('x');
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects(self::once())->method('warning');
+
+		$return = new WooDossierReturn(settingsService: $settings, random: $random, logger: $logger);
+
+		self::assertFalse($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit'));
+	}//end testAFailedWriteAnswersFalseAndIsLogged()
+
+	/**
+	 * The dossier is looked up under the two stored config keys.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 *
+	 * @return void
+	 */
+	public function testTheDossierIsFoundUnderTheStoredConfigKeys(): void {
+		$asked = [];
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getWooPublicationConfigValue')->willReturnCallback(
+			static function (string $key) use (&$asked): string {
+				$asked[] = $key;
+				return SettingsService::WOO_PUBLICATION_DEFAULTS[$key] ?? '';
+			}
+		);
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
+
+		$return = new WooDossierReturn(settingsService: $settings, random: $random, logger: $this->createMock(LoggerInterface::class));
+
+		self::assertTrue($return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit'));
+		self::assertSame(['woo_collection_register', 'woo_collection_schema'], $asked);
+	}//end testTheDossierIsFoundUnderTheStoredConfigKeys()
 }//end class
