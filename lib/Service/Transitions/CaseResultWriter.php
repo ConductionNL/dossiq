@@ -159,6 +159,38 @@ class CaseResultWriter {
 	}//end archivalFuture()
 
 	/**
+	 * The result types a case of this type can close with, as a picker reads them.
+	 *
+	 * The same list `resolveClosingResult()` refuses against, read through the
+	 * same resolver, so a picker offering these can never offer a result the
+	 * close then refuses, nor miss one a parent case type contributes.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<int, array{id: string, name: string}> The choices, empty when none or unreadable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function resultTypeChoices(string $caseTypeId): array {
+		$choices = [];
+		foreach ($this->caseTypeResolver->resultTypesFor(caseTypeId: $caseTypeId) as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			if ($id === '') {
+				continue;
+			}
+
+			$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
+			if ($name === '') {
+				$name = $id;
+			}
+
+			$choices[] = ['id' => $id, 'name' => $name];
+		}
+
+		return $choices;
+	}//end resultTypeChoices()
+
+	/**
 	 * List the result type UUIDs a case type offers.
 	 *
 	 * 🔴 THROUGH THE RESOLVER. Asking the store for `resultType where caseType
