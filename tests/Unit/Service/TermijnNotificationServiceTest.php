@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\NoticeNotSentException;
-use OCA\Dossiq\Service\Termijn\CaseNumberReader;
+use OCA\Dossiq\Service\CaseNumberReader;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
 use OCA\Dossiq\Service\SettingsService;
@@ -54,8 +54,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
  * @uses \OCA\Dossiq\Service\OptOutGate
- * @uses   \OCA\Dossiq\Service\Support\ReadableDay
- * @uses   \OCA\Dossiq\Service\Termijn\CaseNumberReader
+ * @uses \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\CaseNumberReader
  */
 class TermijnNotificationServiceTest extends TestCase {
 	use MakesRealTermNoticeSender;

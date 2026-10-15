@@ -13,23 +13,24 @@
               "type": "object",
               "required": ["key"],
               "properties": {
-                "key": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9-]*$", "description": "The session key, written on each session as `sessionKey`."},
-                "label": {"type": "string", "description": "What the session is called on screen and in the calendar."},
-                "inviteeRoles": {"type": "array", "items": {"type": "string"}, "default": [], "description": "The party roles that may be invited. Empty means any role."},
-                "minInvitees": {"type": "integer", "minimum": 0, "default": 1, "description": "How many invitees a session needs at least."},
-                "inspectionFloorDays": {"type": "integer", "minimum": 0, "default": 0, "description": "Days before the session that the file is open for inspection. A session cannot be planned closer than this."},
-                "waivable": {"type": "boolean", "default": false, "description": "Whether a party may waive the session."},
-                "minutesRequired": {"type": "boolean", "default": true, "description": "Whether a session can only be closed with minutes (a summary or a document)."},
-                "recordingConsentRequired": {"type": "boolean", "default": true, "description": "Whether an audio recording is accepted only with recording consent granted."},
-                "attendanceGraceHours": {"type": "integer", "minimum": 0, "default": 1, "description": "Hours after the session start during which attendance can be added without a correction reason."},
+                "key": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9-]*$", "title": "Session key", "description": "The session key, written on each session as `sessionKey`."},
+                "label": {"type": "string", "title": "Label", "description": "What the session is called on screen and in the calendar."},
+                "inviteeRoles": {"type": "array", "items": {"type": "string"}, "default": [], "title": "Invitee roles", "description": "The party roles that may be invited. Empty means any role."},
+                "minInvitees": {"type": "integer", "minimum": 0, "default": 1, "title": "Minimum invitees", "description": "How many invitees a session needs at least."},
+                "inspectionFloorDays": {"type": "integer", "minimum": 0, "default": 0, "title": "Inspection days before the session", "description": "Days before the session that the file is open for inspection. A session cannot be planned closer than this."},
+                "waivable": {"type": "boolean", "default": false, "title": "Can be waived", "description": "Whether a party may waive the session."},
+                "minutesRequired": {"type": "boolean", "default": true, "title": "Minutes required", "description": "Whether a session can only be closed with minutes (a summary or a document)."},
+                "recordingConsentRequired": {"type": "boolean", "default": true, "title": "Recording consent required", "description": "Whether an audio recording is accepted only with recording consent granted."},
+                "attendanceGraceHours": {"type": "integer", "minimum": 0, "default": 1, "title": "Attendance grace hours", "description": "Hours after the session start during which attendance can be added without a correction reason."},
                 "statuses": {
                   "type": "object",
+                  "title": "Status names",
                   "description": "The session status written at each step, when the case type uses other names than the defaults.",
                   "properties": {
-                    "planned": {"type": "string", "default": "planned"},
-                    "waived": {"type": "string", "default": "afgezien"},
-                    "executed": {"type": "string", "default": "executed"},
-                    "cancelled": {"type": "string", "default": "cancelled"}
+                    "planned": {"type": "string", "default": "planned", "title": "Planned", "description": "The status written when the session is planned."},
+                    "waived": {"type": "string", "default": "afgezien", "title": "Waived", "description": "The status written when a party waives the session."},
+                    "executed": {"type": "string", "default": "executed", "title": "Held", "description": "The status written when the session has been held."},
+                    "cancelled": {"type": "string", "default": "cancelled", "title": "Cancelled", "description": "The status written when the session is cancelled."}
                   }
                 }
               }
