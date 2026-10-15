@@ -58,6 +58,8 @@ class CaseReviewerAccessTest extends TestCase {
 
 	private bool $available = true;
 
+	private bool $sharingDown = false;
+
 	private CaseTypeStore&MockObject $caseTypes;
 
 	private CaseReviewerAccess $access;
@@ -84,7 +86,15 @@ class CaseReviewerAccessTest extends TestCase {
 		$resolver->method('effectiveCaseType')->willReturnCallback(fn (string $id): array => $id === self::CASE_TYPE ? $this->caseType : []);
 
 		$grants = $this->createMock(ObjectReadGrants::class);
-		$grants->method('available')->willReturnCallback(fn (): bool => $this->available);
+		$grants->method('available')->willReturnCallback(
+			function (): bool {
+				if ($this->sharingDown === true) {
+					throw new \RuntimeException('sharing down');
+				}
+
+				return $this->available;
+			}
+		);
 		$grants->method('reconcile')->willReturnCallback(
 			function (string $schema, string $uuid, array $readers, string $group): array {
 				$this->calls[] = ['schema' => $schema, 'uuid' => $uuid, 'readers' => array_map('strval', array_keys($readers)), 'grants' => $readers, 'group' => $group];
@@ -105,6 +115,7 @@ class CaseReviewerAccessTest extends TestCase {
 			resolver: $resolver,
 			grants: $grants,
 			groupManager: $groups,
+			logger: $this->createMock(\Psr\Log\LoggerInterface::class),
 		);
 
 		$this->register->seed('case', self::CASE_ID, ['caseType' => self::CASE_TYPE, 'assignee' => 'handler']);
@@ -228,6 +239,19 @@ class CaseReviewerAccessTest extends TestCase {
 		);
 	}//end testTheAssigneeMayUpdateARecordWhenItsEntrySaysSo()
 
+	public function testAReconcileThatCannotRunAfterAWriteIsAnsweredAsFailedAndKeepsTheWrite(): void {
+		$this->declare();
+		$this->sharingDown = true;
+
+		self::assertSame(
+			['status' => 'failed', 'granted' => 0, 'revoked' => 0, 'refused' => 2],
+			$this->access->reconcileAfterCreate(caseId: self::CASE_ID, created: 2),
+			'the writer already stored its records, so it gets an answer and no exception'
+		);
+		self::assertSame([], $this->calls, 'nothing was granted: the records wait for an administrator');
+		self::assertSame('nothing-created', $this->access->reconcileAfterCreate(caseId: self::CASE_ID, created: 0)['status']);
+	}//end testAReconcileThatCannotRunAfterAWriteIsAnsweredAsFailedAndKeepsTheWrite()
+
 	public function testOnlyStaffAndAdministratorsCanBeNamedAsReaders(): void {
 		self::assertTrue($this->access->isAdmittedReader(userId: 'reviewer1'), 'a member of the staff group');
 		self::assertTrue($this->access->isAdmittedReader(userId: 'admin'));
@@ -257,7 +281,6 @@ class CaseReviewerAccessTest extends TestCase {
 		$this->available = false;
 
 		self::assertSame('unavailable', $this->access->reconcile(caseId: self::CASE_ID)['status']);
-		self::assertSame('unavailable', $this->access->reconcileAll()['status']);
 		self::assertSame([], $this->calls);
 	}//end testWithoutSharingItIsUnavailableAndWritesNothing()
 
@@ -275,17 +298,6 @@ class CaseReviewerAccessTest extends TestCase {
 	public function testAnUndeclaredCaseTypeKeepsEveryRecordChangeable(): void {
 		self::assertTrue($this->access->mayChange(caseId: self::CASE_ID, record: $this->register->row('assessment', 'a-1'), userId: 'reviewer2'));
 	}//end testAnUndeclaredCaseTypeKeepsEveryRecordChangeable()
-
-	public function testReconcileAllRunsEveryCaseOfADeclaringCaseType(): void {
-		$this->declare();
-		$this->caseTypes->method('everyCaseType')->willReturn([['id' => self::CASE_TYPE], ['id' => 'undeclared-type']]);
-
-		$answer = $this->access->reconcileAll();
-
-		self::assertSame(1, $answer['cases']);
-		self::assertSame(6, $answer['granted']);
-		self::assertSame([], $answer['failed']);
-	}//end testReconcileAllRunsEveryCaseOfADeclaringCaseType()
 
 	public function testTheDeclarationIsNormalised(): void {
 		$declaration = $this->access->declarationFor(caseType: ['reviewerAccess' => ['records' => [['schemaKey' => ' k '], ['schemaKey' => '']], 'supervisorGroup' => 'woo-leads']]);

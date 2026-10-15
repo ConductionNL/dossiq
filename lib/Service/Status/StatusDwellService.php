@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use OCA\Dossiq\Service\WorkingDayCalculator;
 /**
  * Writes and reads the dwell numbers the case carries.
  *
- * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+ * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
 class StatusDwellService {
 
@@ -83,7 +83,7 @@ class StatusDwellService {
 	 *
 	 * @return array<string, mixed> The payload, with the dwell fields settled.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function applyStatusChange(array $case, string $toStatus, ?DateTimeImmutable $now = null): array {
 		$moment = ($now ?? new DateTimeImmutable());
@@ -118,7 +118,7 @@ class StatusDwellService {
 	 *
 	 * @return int Working days, never negative.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function elapsedWorkingDays(array $case, ?DateTimeImmutable $now = null): int {
 		$entered = $this->enteredAt(case: $case);
@@ -146,7 +146,7 @@ class StatusDwellService {
 	 *
 	 * @return bool False whenever the status declares no maximum.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function isBreached(array $case, ?int $maximum, ?DateTimeImmutable $now = null): bool {
 		if ($maximum === null || $maximum < 1) {
@@ -165,7 +165,7 @@ class StatusDwellService {
 	 *
 	 * @return array{days: int, maximum: int|null, breached: bool, enteredAt: string}
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function snapshot(array $case, ?int $maximum, ?DateTimeImmutable $now = null): array {
 		$entered = $this->enteredAt(case: $case);
@@ -195,7 +195,7 @@ class StatusDwellService {
 	 *
 	 * @return array<string, int> Working days, keyed by statusType id.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function totalsFor(array $case, ?DateTimeImmutable $now = null): array {
 		$totals = [];
@@ -230,7 +230,7 @@ class StatusDwellService {
 	 *
 	 * @return DateTimeImmutable|null The moment, or null when nothing recorded one.
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function enteredAt(array $case): ?DateTimeImmutable {
 		$recorded = $this->dates->tryParse(value: ($case['currentStatusEnteredAt'] ?? null));
@@ -250,7 +250,7 @@ class StatusDwellService {
 	 *
 	 * @return array<int, array{statusType: string, workingDays: int}>
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function addTo(mixed $totals, string $statusTypeId, int $workingDays): array {
 		$rebuilt = [];

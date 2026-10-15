@@ -9,14 +9,16 @@
  * That direction matters: a listener that guessed would turn every form on the
  * instance, including the staff lunch poll, into work somebody is measured on.
  *
- * 🔴 THE CASE IS WRITTEN HERE AND NOT BY THE FRONTEND. `startDate` is the day
- * the submission came in, and the materialised `deadline` is computed from it
- * and the case type's `processingDeadline`, so the statutory clock starts when
- * the citizen pressed send rather than when a handler noticed. A raw object
- * insert would skip the status and the date, and the case would land with no
- * status, off every lens, with no clock at all. That is exactly what happened
- * to every copied case before dossiq#2109; the comment in `CaseCopyService`
- * records it.
+ * 🔴 THE CASE IS WRITTEN HERE AND NOT BY THE FRONTEND. The case goes through
+ * OpenRegister's form submit with the mapping the case type was saved with
+ * (`intakeFormMapping`, judged against the case schema at that save), so the
+ * payload is validated against the case schema and written in one request. A
+ * raw object insert would skip the status, and the case would land with no
+ * status, off every lens. That is what happened to every copied case before
+ * dossiq#2109; the comment in `CaseCopyService` records it. The receipt and
+ * start dates are set by the receipt listener, by the one rule every case
+ * follows, so the statutory clock starts when the citizen pressed send, or on
+ * the later day the term starts.
  *
  * 🔴 IT NEVER NAMES A FORMS CLASS. `forms` is an optional app, and a type hint
  * on a class the instance does not have is a fatal at container build time,
@@ -42,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Intake\IntakeFormBinding;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -59,39 +62,41 @@ class FormsIntakeService {
 	 *
 	 * @var string
 	 */
-	public const CHANNEL = 'forms';
+	public const CHANNEL = IntakeFormBinding::CHANNEL;
 
 	/**
-	 * The title a submission with nothing to name it gets.
+	 * OpenRegister's form submit: one request, validated against the destination, answered with its reference.
 	 *
 	 * @var string
 	 */
-	private const UNTITLED = 'Aanvraag via formulier';
+	public const FORM_SUBMIT = 'OCA\\OpenRegister\\Service\\Form\\FormSubmitService';
 
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param SettingsService   $settingsService Bridge to OpenRegister and the configured schemas.
+	 * @param LoggerInterface   $logger          Logger.
+	 * @param IntakeFormBinding $binding         Reads the case type's binding as a form mapping.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly IntakeFormBinding $binding = new IntakeFormBinding(),
 	) {
 	}//end __construct()
 
 	/**
 	 * Open a case for one submission, when a case type asked for it.
 	 *
-	 * @param string               $formHash  The submitted form's hash.
-	 * @param array<string, mixed> $answers   The submitted answers, question to value.
-	 * @param string               $submitted The submission date, `Y-m-d`. Today when empty.
+	 * @param string               $formHash The submitted form's hash.
+	 * @param array<string, mixed> $answers  The submitted answers, question to value.
 	 *
 	 * @return string|null The new case's id, or `null` when nothing was created.
 	 *
 	 * @spec openspec/specs/leaf-integrations/spec.md
+	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-case-types-intake-form-must-be-checked-against-the-case-schema-when-it-is-bound
 	 */
-	public function caseFor(string $formHash, array $answers, string $submitted = ''): ?string {
+	public function caseFor(string $formHash, array $answers): ?string {
 		$formHash = trim($formHash);
 		if ($formHash === '') {
 			return null;
@@ -122,36 +127,23 @@ class FormsIntakeService {
 			return null;
 		}
 
-		$payload = [
-			'title' => $this->titleFor(answers: $answers),
-			'description' => $this->descriptionFor(answers: $answers),
-			'caseType' => (string)($caseType['id'] ?? ''),
-			'intakeChannel' => self::CHANNEL,
-			// The statutory clock starts the day it came in. The materialised
-			// `deadline` is dateAdd(startDate, caseType.processingDeadline),
-			// so a startDate left out means no deadline at all.
-			'startDate' => $this->submissionDate(submitted: $submitted),
-		];
-
-		// A case with no status is off every status-filtered lens, has no
-		// available transitions and reads as Unknown in the header. The
-		// case type's prefill block fills a FORM and does not run on a write,
-		// so the status is written here or it is never written.
-		$initial = trim((string)($caseType['initialStatus'] ?? ''));
-		if ($initial !== '') {
-			$payload['status'] = $initial;
-		}
+		// The mapping the case type was saved with is the mapping the case is
+		// written with. The receipt and start dates are not written here: the
+		// receipt listener sets them for every case by one rule (decision 218).
+		$mapping = $this->binding->mappingFor(caseType: $caseType, answers: $answers);
 
 		try {
-			$created = $objectService->saveObject(
-				object: $payload,
-				register: $register,
-				schema: $caseSchema,
+			$created = $this->write(
+				objectService: $objectService,
+				destination: ['register' => $register, 'schema' => $caseSchema],
+				mapping: $mapping,
+				answers: $answers,
+				formHash: $formHash
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'FormsIntakeService: could not open a case for a form submission',
-				['form' => $formHash, 'error' => $e->getMessage()]
+				['form' => $formHash, 'error' => $e->getMessage(), 'findings' => $this->findingsOf(refusal: $e)]
 			);
 			return null;
 		}
@@ -229,77 +221,64 @@ class FormsIntakeService {
 	}//end caseTypeBoundTo()
 
 	/**
-	 * The date the case starts its clock from.
+	 * Write the case: through OpenRegister's form submit, or as a plain save without it.
 	 *
-	 * @param string $submitted The submission date, or '' for today.
+	 * The form submit validates the payload against the case schema and writes
+	 * it in one request. An OpenRegister without it gets the same object
+	 * through the object service.
 	 *
-	 * @return string The date as `Y-m-d`.
+	 * @param object                                                                       $objectService OpenRegister's object service.
+	 * @param array{register: string, schema: string}                                      $destination   The case register and schema.
+	 * @param array{fields: array<int, array<string, mixed>>, fixed: array<string, mixed>} $mapping       The binding's mapping.
+	 * @param array<string, mixed>                                                         $answers       The submitted answers.
+	 * @param string                                                                       $formHash      The form, as the scope of the submit.
+	 *
+	 * @return mixed The written case, or the submit's answer; both name its id.
 	 */
-	private function submissionDate(string $submitted): string {
-		$submitted = trim($submitted);
-		if ($submitted === '') {
-			return date('Y-m-d');
+	private function write(object $objectService, array $destination, array $mapping, array $answers, string $formHash): mixed {
+		$submitter = $this->settingsService->getOpenRegisterClass(self::FORM_SUBMIT);
+		if ($submitter !== null && method_exists($submitter, 'submit') === true) {
+			return $submitter->submit(
+				destination: $destination,
+				mapping: $mapping,
+				payload: $answers,
+				scope: $formHash
+			);
 		}
 
-		$parsed = date_create($submitted);
-		if ($parsed === false) {
-			return date('Y-m-d');
+		$object = $mapping['fixed'];
+		foreach ($mapping['fields'] as $field) {
+			if (array_key_exists($field['field'], $answers) === true) {
+				$object[$field['property']] = $answers[$field['field']];
+			}
 		}
 
-		return $parsed->format('Y-m-d');
-	}//end submissionDate()
+		return $objectService->saveObject(
+			object: $object,
+			register: $destination['register'],
+			schema: $destination['schema'],
+		);
+	}//end write()
 
 	/**
-	 * What the case is called.
+	 * The findings a refused submit names, for the log.
 	 *
-	 * The first answer that reads like a sentence, because a citizen filling
-	 * in a form has already said what they want in it.
+	 * @param Throwable $refusal What the write threw.
 	 *
-	 * @param array<string, mixed> $answers The submitted answers.
-	 *
-	 * @return string The title, within the schema's 255.
+	 * @return array<int, mixed> The findings, or an empty list when it names none.
 	 */
-	private function titleFor(array $answers): string {
-		foreach ($answers as $value) {
-			if (is_string($value) === false) {
-				continue;
-			}
-
-			$value = trim($value);
-			if ($value !== '') {
-				return mb_substr($value, 0, 255);
-			}
+	private function findingsOf(Throwable $refusal): array {
+		if (method_exists($refusal, 'getFindings') === false) {
+			return [];
 		}
 
-		return self::UNTITLED;
-	}//end titleFor()
-
-	/**
-	 * What the case says the citizen filled in.
-	 *
-	 * Every answer, question first, because a handler opening a case that
-	 * appeared on its own asks what it says before anything else.
-	 *
-	 * @param array<string, mixed> $answers The submitted answers.
-	 *
-	 * @return string The description.
-	 */
-	private function descriptionFor(array $answers): string {
-		$lines = [];
-		foreach ($answers as $question => $value) {
-			if (is_array($value) === true) {
-				$value = implode(', ', array_map('strval', $value));
-			}
-
-			$lines[] = sprintf('%s: %s', (string)$question, trim((string)$value));
+		$findings = $refusal->getFindings();
+		if (is_array($findings) === false) {
+			return [];
 		}
 
-		if ($lines === []) {
-			return '';
-		}
-
-		return implode("\n", $lines);
-	}//end descriptionFor()
+		return array_values($findings);
+	}//end findingsOf()
 
 	/**
 	 * The rows out of whatever shape the store answered with.

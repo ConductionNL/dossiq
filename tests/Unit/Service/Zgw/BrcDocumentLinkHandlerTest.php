@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zgw;
 
 use OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync;
 use OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler;
+use OCA\Dossiq\Service\Zgw\StoreFailureAnswer;
 use OCA\Dossiq\Service\ZgwBusinessRulesService;
 use OCA\Dossiq\Service\ZgwService;
 use OCP\AppFramework\Http\JSONResponse;
@@ -36,6 +37,7 @@ use Psr\Log\LoggerInterface;
  * The besluitinformatieobject routes, with the cross-register sync as a double.
  *
  * @covers \OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler
+ * @uses \OCA\Dossiq\Service\Zgw\StoreFailureAnswer
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows
  *
  * @spec openspec/changes/method-decomposition/tasks.md
@@ -151,6 +153,16 @@ final class BrcDocumentLinkHandlerTest extends TestCase {
 				$this->notifications[] = [$resource, $resourceUrl, $action];
 			}
 		);
+		$answers = new StoreFailureAnswer(logger: $logger);
+		$zgw->method('storeFailureResponse')->willReturnCallback(
+			static fn (\Throwable $error, string $operation, string $object): JSONResponse => $answers->respond(error: $error, operation: $operation, object: $object)
+		);
+		$zgw->method('notFoundResponse')->willReturnCallback(static fn (): JSONResponse => $answers->notFound());
+		$zgw->method('notifyDeleted')->willReturnCallback(
+			function (IRequest $request, string $zgwApi, string $resource, string $uuid): void {
+				$this->notifications[] = [$resource, 'https://nc.example.com/' . $zgwApi . '/v1/' . $resource . '/' . $uuid, 'destroy'];
+			}
+		);
 
 		$sync = $this->createMock(BrcCrossRegisterSync::class);
 		foreach (['createOioInDrc', 'deleteOioByDecisionAndIo'] as $method) {
@@ -260,8 +272,37 @@ final class BrcDocumentLinkHandlerTest extends TestCase {
 		$missing = $this->handler()->destroy(request: $this->request, uuid: 'gone');
 		$this->assertSame(404, $missing->getStatus());
 		$this->assertSame(['detail' => 'Not found'], $missing->getData());
-		$this->assertSame(['BRC delete BIO error: not found'], $this->errors);
+		$this->assertSame([], $this->errors, 'a link that is not there is an answer, not an error');
 	}//end testADeleteWithoutABesluitOrWithoutALink()
+
+	/**
+	 * A delete the store could not complete answers 503 and is logged; one the store refuses to the
+	 * caller answers 403; neither reads as "not found", and neither takes the mirror along.
+	 *
+	 * @return void
+	 */
+	public function testADeleteThatDidNotHappenIsNotANotFound(): void {
+		$this->store->objects[self::BIO] = ['decision' => 'b-1', 'document' => 'io-url'];
+
+		foreach (['find', 'deleteObject'] as $method) {
+			$this->store->failOn = [$method];
+			$down = $this->handler()->destroy(request: $this->request, uuid: self::BIO);
+			$this->assertSame(503, $down->getStatus(), $method);
+			$this->assertSame(StoreFailureAnswer::NOT_COMPLETED_CODE, $down->getData()['code'], $method);
+		}
+
+		$this->assertCount(2, $this->errors);
+		$this->assertStringContainsString($method . ' is down', $this->errors[1]);
+
+		$this->store->failOn   = [];
+		$this->store->refuseOn = ['deleteObject'];
+		$refused = $this->handler()->destroy(request: $this->request, uuid: self::BIO);
+		$this->assertSame(403, $refused->getStatus());
+		$this->assertSame('permission_denied', $refused->getData()['code']);
+
+		$this->assertSame([], $this->synced, 'the mirror goes only with the link');
+		$this->assertSame([], $this->notifications);
+	}//end testADeleteThatDidNotHappenIsNotANotFound()
 
 	/**
 	 * Every route answers 503 without a store and 404 without the mapping, and touches nothing.

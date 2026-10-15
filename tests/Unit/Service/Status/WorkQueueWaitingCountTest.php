@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Queue\UrgencyScorer
  * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 class WorkQueueWaitingCountTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -104,7 +104,7 @@ class WorkQueueWaitingCountTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testTheQueueIsCountedByWhoIsWaitedOn(): void {
 		self::assertSame(
@@ -121,7 +121,7 @@ class WorkQueueWaitingCountTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAnUndeclaredCaseCountsAsOursToMove(): void {
 		$counts = $this->queue->tallyWaitingOn(
@@ -147,7 +147,7 @@ class WorkQueueWaitingCountTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testAClosedCaseIsInNoneOfTheThree(): void {
 		$counts = $this->queue->tallyWaitingOn(

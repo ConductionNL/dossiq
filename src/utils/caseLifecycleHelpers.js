@@ -139,7 +139,6 @@ export function extensionNotice(body, translate) {
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {string} What to show the handler.
  * @spec openspec/specs/status-transition-engine/spec.md
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  * @spec openspec/changes/dutch-copy-on-the-case-page/specs/frontend-locale-completeness/spec.md
  */
 export function refusalMessage(body, translate) {

@@ -223,7 +223,7 @@ class CitizenManifest {
 	 * What the resident reads once the request is in. `{identifier}`,
 	 * `{termStartsDay}` and `{deadlineDay}` come from the answer the route
 	 * gives (decision 179: the case is stamped inside its create), the dates as
-	 * a letter writes them ("14 oktober 2026", WooWrittenCase). A sentence whose
+	 * a letter writes them ("14 oktober 2026", WrittenCase). A sentence whose
 	 * placeholder has no value is left out, so a case whose deadline is not
 	 * computed yet promises no date.
 	 */

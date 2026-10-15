@@ -53,6 +53,14 @@ class InMemoryRegister {
 	public array $hiddenFromCaller = [];
 
 	/**
+	 * Whether a search honours `_limit` and `_offset`, as OpenRegister does.
+	 * Off by default: most tests pass a limit they never reach.
+	 *
+	 * @var bool
+	 */
+	public bool $pages = false;
+
+	/**
 	 * How many times a row was saved, so a test can say a write happened once.
 	 *
 	 * @var int
@@ -151,6 +159,10 @@ class InMemoryRegister {
 			if ($this->matches(row: $row, filters: $filters) === true) {
 				$matches[] = $row;
 			}
+		}
+
+		if ($this->pages === true) {
+			return array_slice($matches, (int)($filters['_offset'] ?? 0), (int)($filters['_limit'] ?? count($matches)));
 		}
 
 		return $matches;

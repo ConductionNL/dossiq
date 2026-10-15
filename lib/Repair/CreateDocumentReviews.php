@@ -41,8 +41,8 @@ use Throwable;
  * alone: it is unmarked, which is what nobody having looked at it means.
  *
  * Idempotent: a document that has a review keeps it, whatever it says. It runs
- * without a user, so it sets no grant (REQ-WRT-006): the reviews wait for the
- * administrator reconcile route.
+ * without a user, so it sets no grant (REQ-WRT-006): ReconcileCaseRecordGrants,
+ * the last step of the same upgrade, gives the reviews their grants.
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
  */

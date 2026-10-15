@@ -45,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\ReadableDay
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class DoorzendingNotificationTest extends TestCase {
 

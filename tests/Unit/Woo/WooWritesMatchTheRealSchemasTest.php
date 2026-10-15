@@ -32,7 +32,7 @@ use OCA\Dossiq\Service\Settings\SchemaSlugMap;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -57,7 +57,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses   \OCA\Dossiq\Woo\WooCaseLedger
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
@@ -74,9 +74,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
- * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
- * @uses \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
- * @uses \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class WooWritesMatchTheRealSchemasTest extends TestCase {
 

@@ -346,7 +346,7 @@ class DwellTimeAnalyzerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testHeldTotalsAreReadOffTheCasesRatherThanRecomputed(): void {
 		$analyzer = new DwellTimeAnalyzer(
@@ -385,7 +385,7 @@ class DwellTimeAnalyzerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testACaseHoldingNoDwellContributesNothing(): void {
 		$analyzer = new DwellTimeAnalyzer(
@@ -409,7 +409,7 @@ class DwellTimeAnalyzerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function testWithoutTheHeldReaderTheTotalsAreEmpty(): void {
 		self::assertSame(
