@@ -164,11 +164,7 @@ class WOODocumentAssessmentService {
 				objectService: $objectService,
 				register: $register,
 				schema: $assessmentSchema,
-				filters: [
-					'caseRef' => $caseId,
-					'documentRef' => $assessment['documentRef'],
-					'_limit' => 1,
-				],
+				filters: ['caseRef' => $caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
 			);
 
 			if (count($existing) > 0) {
