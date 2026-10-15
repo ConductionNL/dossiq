@@ -289,4 +289,96 @@ class CaseAccessGuardReadAccessTest extends TestCase {
 
 		$this->assertTrue($guard->hasCaseReadAccess('case-1', $this->user('admin')));
 	}//end testAdminMayRead()
+
+	/**
+	 * A guard over an unclaimed case of a case type whose handling teams are given.
+	 *
+	 * @param array<string, mixed> $handling The case type's `handling` block.
+	 * @param list<string>         $groups   The groups `alice` is in.
+	 *
+	 * @return CaseAccessGuard
+	 */
+	private function guardForTeamCase(array $handling, array $groups): CaseAccessGuard {
+		$objectService = new class($handling) {
+
+			/**
+			 * @param array<string, mixed> $handling The case type's handling block.
+			 */
+			public function __construct(
+				private readonly array $handling,
+			) {
+			}
+
+			/**
+			 * Mimic ObjectService::find() over one case and one case type.
+			 *
+			 * @param string $id The object id.
+			 * @param mixed $register The register.
+			 * @param mixed $schema The schema.
+			 * @return array<string, mixed>|null The object.
+			 */
+			public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+				if ($schema === 'case') {
+					return ['id' => $id, 'assignee' => null, 'assignedGroup' => 'elsewhere', 'caseType' => 'type-1'];
+				}
+
+				return ['id' => 'type-1', 'handling' => $this->handling];
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ['register' => 'dossiq', 'case_schema' => 'case', 'case_type_schema' => 'caseType'][$key] ?? $default
+		);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isAdmin')->willReturn(false);
+		$groupManager->method('isInGroup')->willReturnCallback(
+			static fn (string $uid, string $group): bool => in_array($group, $groups, true)
+		);
+
+		return new CaseAccessGuard(settingsService: $settings, groupManager: $groupManager, logger: $this->logger);
+	}//end guardForTeamCase()
+
+	/**
+	 * A member of the case type's handling team reads an unclaimed case of it, and cannot change it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	public function testAHandlingTeamMemberReadsAnUnclaimedCase(): void {
+		$guard = $this->guardForTeamCase(handling: ['defaultGroup' => 'behandelaars'], groups: ['behandelaars']);
+
+		$this->assertTrue($guard->hasCaseReadAccess('case-1', $this->user('alice')));
+		$this->assertFalse($guard->hasCaseMutationAccess('case-1', $this->user('alice')), 'reading is not acting: only the handler acts');
+	}//end testAHandlingTeamMemberReadsAnUnclaimedCase()
+
+	/**
+	 * A declared team beside the default group reads too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	public function testADeclaredHandlingTeamReads(): void {
+		$guard = $this->guardForTeamCase(handling: ['defaultGroup' => 'behandelaars', 'teams' => ['toezicht']], groups: ['toezicht']);
+
+		$this->assertTrue($guard->hasCaseReadAccess('case-1', $this->user('alice')));
+	}//end testADeclaredHandlingTeamReads()
+
+	/**
+	 * Being in the case's own assignedGroup, or in no handling team, reads nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	public function testSomeoneOutsideTheHandlingTeamsReadsNothing(): void {
+		$guard = $this->guardForTeamCase(handling: ['defaultGroup' => 'behandelaars'], groups: ['elsewhere', 'toezicht']);
+		$this->assertFalse($guard->hasCaseReadAccess('case-1', $this->user('alice')));
+
+		$noTeams = $this->guardForTeamCase(handling: [], groups: ['behandelaars']);
+		$this->assertFalse($noTeams->hasCaseReadAccess('case-1', $this->user('alice')), 'a case type without teams grants nobody');
+	}//end testSomeoneOutsideTheHandlingTeamsReadsNothing()
 }//end class

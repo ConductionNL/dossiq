@@ -330,3 +330,4 @@ export {
 	splitRouteName,
 	splitRoutePath,
 } from '@conduction/nextcloud-vue/src/utils/buildManifestRoutes.js'
+export { dispatchObjectsChanged, OBJECTS_CHANGED_EVENT } from '@conduction/nextcloud-vue/src/utils/objectSignals.js'

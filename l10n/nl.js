@@ -1368,6 +1368,7 @@ OC.L10N.register(
         "City/town of the bezoekadres (or the country for foreign fixtures).": "Plaats van het bezoekadres (of het land bij een buitenlandse fixture).",
         "City/town of the residence.": "Plaats van de woonlocatie.",
         "Claim": "Oppakken",
+        "Claim this case first: only its handler acts on it.": "Pak deze zaak eerst op: alleen de behandelaar kan erop handelen.",
         "Classification": "Rubricering",
         "Classification failed": "Classificatie mislukt",
         "Classification scheme": "Rubriceringsschema",
