@@ -188,8 +188,30 @@ function transitionEntries(transitions) {
 			disabled: transitionIsBlocked(row),
 			reason: transitionBlockReason(row),
 			toStatus: String(row.toStatus ?? ''),
+			// Copied from the engine's answer, never derived here: whether
+			// the move closes the case, and the results it may close with.
+			closesCase: row.closesCase === true,
+			resultTypes: resultChoices(row.resultTypes),
 		}))
 		.filter((entry) => entry.id !== '')
+}
+
+/**
+ * The result types a closing move offers, as id and name.
+ *
+ * @param {Array<object>|undefined} rows The engine's `resultTypes`.
+ * @return {Array<{id: string, name: string}>} The choices, without blank ids.
+ * @spec openspec/specs/status-transition-engine/spec.md
+ */
+function resultChoices(rows) {
+	return (Array.isArray(rows) ? rows : [])
+		.filter(
+			(row) => row && typeof row === 'object' && String(row.id ?? '') !== '',
+		)
+		.map((row) => ({
+			id: String(row.id),
+			name: String(row.name ?? '') || String(row.id),
+		}))
 }
 
 /**
@@ -433,7 +455,16 @@ export function inputsFor(entry) {
 		// rather than changing one, and asking for a reason would be a field
 		// nobody can fill in honestly.
 		reason: id !== 'promote',
-		result: id === 'finish' || id === 'abort',
+		// A transition into a closing status asks for its result too, when
+		// the case type has results to pick from. Without this the close was
+		// refused with "pick a result" by a form that offered nothing to pick.
+		result:
+			id === 'finish'
+			|| id === 'abort'
+			|| (entry?.kind === 'transition'
+				&& entry?.closesCase === true
+				&& Array.isArray(entry?.resultTypes)
+				&& entry.resultTypes.length > 0),
 		until: id === 'hold',
 		days: id === 'suspend',
 	}

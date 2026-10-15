@@ -130,8 +130,24 @@
 				data-testid="case-act-reason-input"
 				:label="t('dossiq', 'Reason')" />
 
+			<!--
+				A closing move picks from the case type's own result types,
+				which the engine publishes on the move. Typing an id was never
+				something a handler could do, so a picker is offered whenever
+				there are choices, and the free field only where there are none.
+			-->
+			<NcSelect
+				v-if="inputs.result && resultOptions.length > 0"
+				v-model="selectedResult"
+				:options="resultOptions"
+				label="name"
+				:inputLabel="t('dossiq', 'Result')"
+				:clearable="false"
+				:disabled="busy"
+				data-testid="case-act-result-picker" />
+
 			<NcTextField
-				v-if="inputs.result"
+				v-else-if="inputs.result"
 				v-model="resultTypeId"
 				data-testid="case-act-result-input"
 				:label="t('dossiq', 'Result type')" />
@@ -163,12 +179,20 @@
 			<NcButton data-testid="case-acts-cancel" @click="back">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
+			<!--
+				Busy while the act posts: a transition can take seconds, and a
+				button that only greys out reads as one that did nothing.
+			-->
 			<NcButton
 				v-if="chosen !== null"
 				data-testid="case-acts-confirm"
 				variant="primary"
 				:disabled="!canConfirm"
+				:aria-busy="busy ? 'true' : null"
 				@click="confirm">
+				<template v-if="busy" #icon>
+					<NcLoadingIcon :size="20" data-testid="case-acts-confirm-busy" />
+				</template>
 				{{ t('dossiq', 'Confirm') }}
 			</NcButton>
 		</template>
@@ -183,6 +207,8 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import TemplatePicker from '../components/TemplatePicker.vue'
@@ -204,7 +230,15 @@ const PAGE_REFRESH = 'cn:page:refresh'
 export default {
 	name: 'CaseLifecycleMenuDialog',
 
-	components: { NcButton, NcDialog, NcTextArea, NcTextField, TemplatePicker },
+	components: {
+		NcButton,
+		NcDialog,
+		NcLoadingIcon,
+		NcSelect,
+		NcTextArea,
+		NcTextField,
+		TemplatePicker,
+	},
 
 	props: {
 		/**
@@ -246,12 +280,48 @@ export default {
 			return inputsFor(this.chosen ?? {})
 		},
 
+		/**
+		 * The result types the chosen act may close with, as the engine sent them.
+		 *
+		 * @return {Array<{id: string, name: string}>} The choices, empty when none.
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
+		resultOptions() {
+			return Array.isArray(this.chosen?.resultTypes)
+				? this.chosen.resultTypes
+				: []
+		},
+
+		/** @spec openspec/specs/status-transition-engine/spec.md */
+		selectedResult: {
+			get() {
+				return (
+					this.resultOptions.find(
+						(option) => option.id === this.resultTypeId,
+					) ?? null
+				)
+			},
+
+			set(option) {
+				this.resultTypeId = option ? String(option.id) : ''
+			},
+		},
+
 		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
 		canConfirm() {
 			if (this.busy || this.chosen === null) {
 				return false
 			}
 			if (this.inputs.reason && this.reason.trim().length === 0) {
+				return false
+			}
+			// A closing move with results to pick from waits for one: the
+			// engine refuses the close without it.
+			if (
+				this.inputs.result
+				&& this.resultOptions.length > 0
+				&& this.resultTypeId === ''
+			) {
 				return false
 			}
 
@@ -513,6 +583,8 @@ export default {
 			}
 			this.chosen = entry
 			this.error = ''
+			// A result picked for one act is not an answer for another.
+			this.resultTypeId = ''
 		},
 
 		/**

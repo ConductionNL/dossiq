@@ -109,7 +109,7 @@ class OfferedTransitions {
 				continue;
 			}
 
-			$offered[] = $this->offeredEntry(transition: $transition, eval: $eval);
+			$offered[] = $this->offeredEntry(transition: $transition, eval: $eval, case: $case);
 		}//end foreach
 
 		return ['transitions' => $offered, 'withheld' => $withheld];
@@ -182,12 +182,13 @@ class OfferedTransitions {
 	 *
 	 * @param array<string, mixed>             $transition The transition definition.
 	 * @param array<int, array<string, mixed>> $eval       The guard evaluation snapshots.
+	 * @param array<string, mixed>             $case       The case, for the results a closing move offers.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
 	 */
-	private function offeredEntry(array $transition, array $eval): array {
+	private function offeredEntry(array $transition, array $eval, array $case): array {
 		$failed = array_values(
 			array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false)
 		);
@@ -208,6 +209,10 @@ class OfferedTransitions {
 			'toStatus' => (string)($transition['toStatus'] ?? ''),
 			'guardsPassed' => count($failed) === 0,
 			'failedGuards' => $failed,
+			// Whether the move closes the case and the results it may close
+			// with, so the form asks for one before the post instead of the
+			// engine refusing a close nobody was asked a result for.
+			...$this->moves->closingChoice(transition: $transition, case: $case),
 		];
 	}//end offeredEntry()
 }//end class
