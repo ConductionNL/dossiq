@@ -143,8 +143,16 @@ describe('the case type list formatters', () => {
 
 describe('the requesterName formatter', () => {
 	it('names who asked, from the name the case carries', () => {
-		expect(formatters.requesterName('', { initiatorDisplayName: 'Repetitie Inwoner' })).toBe('Repetitie Inwoner')
-		expect(formatters.requesterName('person-1', { initiatorDisplayName: ' CloudGemeente B.V. ' })).toBe('CloudGemeente B.V.')
+		expect(
+			formatters.requesterName('', {
+				initiatorDisplayName: 'Repetitie Inwoner',
+			}),
+		).toBe('Repetitie Inwoner')
+		expect(
+			formatters.requesterName('person-1', {
+				initiatorDisplayName: ' CloudGemeente B.V. ',
+			}),
+		).toBe('CloudGemeente B.V.')
 	})
 
 	it('is empty when the case names nobody, so the field reads as empty', () => {
@@ -155,7 +163,9 @@ describe('the requesterName formatter', () => {
 	it('is what the case page shows under Requester', async () => {
 		const { readFileSync } = await import('fs')
 		const { resolve } = await import('path')
-		const manifest = JSON.parse(readFileSync(resolve(__dirname, '../../src/manifest.json'), 'utf8'))
+		const manifest = JSON.parse(
+			readFileSync(resolve(__dirname, '../../src/manifest.json'), 'utf8'),
+		)
 		const found = []
 		const walk = (node) => {
 			if (Array.isArray(node)) {
