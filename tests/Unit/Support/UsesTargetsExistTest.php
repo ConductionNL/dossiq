@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Every `@uses` target names a class this app still has.
+ * Every coverage `uses` target names a class this app still has.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -22,8 +22,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * `phpunit.xml` sets `beStrictAboutCoverageMetadata`, so PHPUnit refuses an
- * `@uses` whose target does not exist: every test carrying one turns risky, and
- * `failOnRisky` turns that into a red suite. A rename is what breaks it. The
+ * `uses` annotation whose target does not exist: every test carrying one turns
+ * risky, and `failOnRisky` turns that into a red suite. A rename breaks it. The
  * class moves, its callers and imports move with it, and the annotation in a
  * docblock is the one reference no compiler, IDE or static analyser follows.
  *
@@ -40,7 +40,11 @@ use PHPUnit\Framework\TestCase;
 class UsesTargetsExistTest extends TestCase {
 
 	/**
-	 * Every `@uses \OCA\Dossiq\…` in the suite resolves to a file.
+	 * Every `uses` target in the suite resolves to a file.
+	 *
+	 * This docblock spells the annotation without its at-sign on purpose: PHPUnit
+	 * reads one anywhere in a docblock, so naming it here would make this very
+	 * test the thing it refuses.
 	 *
 	 * @return void
 	 */
