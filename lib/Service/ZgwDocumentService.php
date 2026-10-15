@@ -117,25 +117,6 @@ class ZgwDocumentService {
 	}//end storeBase64()
 
 	/**
-	 * Store a document file from raw binary content.
-	 *
-	 * @param string $uuid The document UUID
-	 * @param string $fileName The file name
-	 * @param string $content The raw binary content
-	 *
-	 * @return int The file size in bytes
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function storeRaw(string $uuid, string $fileName, string $content): int {
-		$folder = $this->getDocumentFolder(uuid: $uuid);
-		$file = $folder->newFile(path: $fileName);
-		$file->putContent(data: $content);
-
-		return strlen(string: $content);
-	}//end storeRaw()
-
-	/**
 	 * Get the binary content of a stored document.
 	 *
 	 * @param string $uuid The document UUID
@@ -154,7 +135,7 @@ class ZgwDocumentService {
 	/**
 	 * Get the Nextcloud file id of a stored document.
 	 *
-	 * Additive read accessor alongside {@see storeRaw()}/{@see getContent()} — callers that
+	 * Additive read accessor alongside {@see storeBase64()}/{@see getContent()} — callers that
 	 * need the raw Nextcloud file id (e.g. to persist it on a domain object) resolve it here
 	 * instead of duplicating this service's storage-path convention.
 	 *

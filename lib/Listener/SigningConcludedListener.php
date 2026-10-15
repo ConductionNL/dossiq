@@ -11,9 +11,16 @@
  *
  * Filinq's event is named by string, registered by name in
  * CrossAppListenerRegistrar, and read through its getters; only conclusions
- * dossiq asked for (source app dossiq) are taken. A conclusion that arrives
- * from a background job (filinq's expiry) writes as dossiq's background
- * service account.
+ * dossiq asked for (source app dossiq) are taken.
+ *
+ * A CONCLUSION IS A SYSTEM EVENT, so it is always recorded as dossiq's
+ * background service account (decision 242), never as whoever happened to be
+ * signed in: the signer may not be allowed to write the decision, and filinq's
+ * expiry runs with nobody signed in. With no usable service account the
+ * conclusion is NOT written (no `_rbac: false`, no admin fallback). The
+ * decision then still reads `signing.state: requested`, the nearest state it
+ * can show without a write, and an error naming the decision and the signing
+ * request is logged so the conclusion can be reconciled by hand.
  *
  * @category Listener
  * @package  OCA\Dossiq\Listener
@@ -63,7 +70,7 @@ class SigningConcludedListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SigningConclusionRecorder $recorder Records the conclusion on the decision.
-	 * @param BackgroundServiceAccount $serviceAccount The identity a conclusion from a background job writes as.
+	 * @param BackgroundServiceAccount $serviceAccount The identity every conclusion is written as.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
@@ -95,7 +102,7 @@ class SigningConcludedListener implements IEventListener {
 		}
 
 		try {
-			$taken = $this->serviceAccount->runAsWhenNobodyIsSignedIn(
+			$taken = $this->serviceAccount->runAs(
 				operation: fn (): bool => $this->recorder->record(
 					decisionId: $decisionId,
 					requestId: $requestId,
@@ -105,7 +112,12 @@ class SigningConcludedListener implements IEventListener {
 				)
 			);
 		} catch (ServiceAccountUnavailableException $e) {
-			// Already logged and told to the administrators. Nothing was written.
+			// The account's own refusal already told the administrators; this
+			// line names what is left to reconcile.
+			$this->logger->error(
+				'Dossiq: a signing conclusion was not recorded, because the background service account is not usable; the decision still reads requested',
+				['decision' => $decisionId, 'signingRequest' => $requestId, 'status' => $event->getStatus(), 'error' => $e->getMessage()]
+			);
 			return;
 		} catch (Throwable $e) {
 			$this->logger->error(

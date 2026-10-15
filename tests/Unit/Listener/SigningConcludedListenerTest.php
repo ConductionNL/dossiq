@@ -26,12 +26,14 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\SigningConcludedListener;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Signing\SigningConclusionRecorder;
 use OCA\Filinq\Event\SigningConcludedEvent;
 use OCA\Filinq\Event\SigningProvenance;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -46,16 +48,26 @@ final class SigningConcludedListenerTest extends TestCase {
 	private SigningConclusionRecorder&MockObject $decisions;
 
 	/**
+	 * The service account double.
+	 *
+	 * @var BackgroundServiceAccount&MockObject
+	 */
+	private BackgroundServiceAccount&MockObject $account;
+
+	/**
 	 * The listener, with a service account that runs the operation as given.
+	 *
+	 * @param LoggerInterface|null $logger The logger; a null logger when not given.
 	 *
 	 * @return SigningConcludedListener
 	 */
-	private function listener(): SigningConcludedListener {
+	private function listener(?LoggerInterface $logger = null): SigningConcludedListener {
 		$this->decisions = $this->createMock(SigningConclusionRecorder::class);
-		$account = $this->createMock(BackgroundServiceAccount::class);
-		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+		$this->account = $this->createMock(BackgroundServiceAccount::class);
+		$this->account->method('runAs')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+		$this->account->expects($this->never())->method('runAsWhenNobodyIsSignedIn');
 
-		return new SigningConcludedListener($this->decisions, $account, new NullLogger());
+		return new SigningConcludedListener($this->decisions, $this->account, ($logger ?? new NullLogger()));
 	}//end listener()
 
 	/**
@@ -109,4 +121,37 @@ final class SigningConcludedListenerTest extends TestCase {
 		$listener->handle(self::concluded(sourceApp: 'shillinq', status: 'signed'));
 		$listener->handle(new Event());
 	}//end testAnotherAppsConclusionIsIgnored()
+
+	/**
+	 * Every conclusion is written as the service account, never as the signed-in user (decision 242).
+	 *
+	 * @return void
+	 */
+	public function testTheConclusionIsWrittenAsTheServiceAccount(): void {
+		$listener = $this->listener();
+		$this->account->expects($this->once())->method('runAs');
+		$this->decisions->expects($this->once())->method('record')->willReturn(true);
+
+		$listener->handle(self::concluded(sourceApp: 'dossiq', status: 'signed'));
+	}//end testTheConclusionIsWrittenAsTheServiceAccount()
+
+	/**
+	 * Without a usable service account nothing is written, and an error names the decision.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAServiceAccountNothingIsWrittenAndTheDecisionIsNamed(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')->with(
+			$this->stringContains('not recorded'),
+			$this->callback(static fn (array $context): bool => $context['decision'] === 'decision-1' && $context['signingRequest'] === 'sr-1' && $context['status'] === 'expired')
+		);
+		$this->decisions = $this->createMock(SigningConclusionRecorder::class);
+		$this->decisions->expects($this->never())->method('record');
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAs')->willThrowException(new ServiceAccountUnavailableException('no service account configured'));
+		$account->expects($this->never())->method('runAsWhenNobodyIsSignedIn');
+
+		(new SigningConcludedListener($this->decisions, $account, $logger))->handle(self::concluded(sourceApp: 'dossiq', status: 'expired'));
+	}//end testWithoutAServiceAccountNothingIsWrittenAndTheDecisionIsNamed()
 }//end class

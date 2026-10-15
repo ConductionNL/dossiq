@@ -110,7 +110,7 @@ class ZgwDocumentStorageOwnerTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testStoreRawWritesToTheOpenRegisterObjectFolder(): void {
+	public function testAWriteGoesToTheOpenRegisterObjectFolder(): void {
 		$file = $this->createMock(File::class);
 		$file->expects($this->once())->method('putContent')->with('the bytes');
 
@@ -126,12 +126,12 @@ class ZgwDocumentStorageOwnerTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$this->assertSame(9, $service->storeRaw(
+		$this->assertSame(9, $service->storeBase64(
 			uuid: 'info-uuid',
 			fileName: 'report.pdf',
-			content: 'the bytes',
+			content: base64_encode('the bytes'),
 		));
-	}//end testStoreRawWritesToTheOpenRegisterObjectFolder()
+	}//end testAWriteGoesToTheOpenRegisterObjectFolder()
 
 	/**
 	 * The folder is asked for by the informatieobject UUID and the register.
@@ -162,7 +162,7 @@ class ZgwDocumentStorageOwnerTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$service->storeRaw(uuid: 'info-uuid', fileName: 'report.pdf', content: 'x');
+		$service->storeBase64(uuid: 'info-uuid', fileName: 'report.pdf', content: base64_encode('x'));
 	}//end testTheFolderIsResolvedByObjectUuidAndRegister()
 
 	/**
@@ -253,6 +253,6 @@ class ZgwDocumentStorageOwnerTest extends TestCase {
 		);
 
 		$this->expectException(RuntimeException::class);
-		$service->storeRaw(uuid: 'info-uuid', fileName: 'report.pdf', content: 'x');
+		$service->storeBase64(uuid: 'info-uuid', fileName: 'report.pdf', content: base64_encode('x'));
 	}//end testAWriteIsRefusedWhenOpenRegisterIsUnavailable()
 }//end class
