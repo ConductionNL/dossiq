@@ -276,6 +276,7 @@ import {
 } from './utils/caseBulkActions.js'
 import { claimCase } from './utils/caseClaim.js'
 import { toggleCaseFollow } from './utils/caseFollow.js'
+import { caseStatusTargets, moveCaseStatus } from './utils/caseStatusBoardMoves.js'
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
 import { openCaseOfDocument } from './utils/contactDocuments.js'
 import { openIntegriqConnections } from './utils/integriqConnections.js'
@@ -1485,6 +1486,17 @@ const registry = {
 	// the declarative path cannot express what it does — the reason is on each
 	// entry.
 	// @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	// @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	moveCaseStatus: {
+		kind: 'handler',
+		handler: moveCaseStatus,
+		_note: "The Cases board view's `board.moveHandler`. A status is the output of a transition, so a drop asks the status-transition engine for the offered transition that ends on the dropped status and posts it, the same write path the case page uses. A PATCH of `status` would skip every guard, side effect and statusRecord.",
+	},
+	caseStatusTargets: {
+		kind: 'handler',
+		handler: caseStatusTargets,
+		_note: "The Cases board view's `board.moveTargetsHandler`: the statuses one case can reach, from /available-transitions, so the board fades the others during a drag and marks them not allowed in the card menu.",
+	},
 	claimCase: {
 		kind: 'handler',
 		handler: claimCase,

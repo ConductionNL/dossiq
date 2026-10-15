@@ -69,6 +69,8 @@
         "ZGW API Mapping",
         "items",
         "max {n}",
+        "status",
+        "type",
         "wijken",
         "{count} items",
         "{count} document",
