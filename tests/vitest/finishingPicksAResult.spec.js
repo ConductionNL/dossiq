@@ -61,7 +61,9 @@ async function formFor(id, resultTypes) {
 		if (url.endsWith('/acts')) {
 			return Promise.resolve({ data: { acts: VERDICTS, resultTypes } })
 		}
-		return Promise.resolve({ data: url.endsWith('/lifecycle') ? {} : { transitions: [] } })
+		return Promise.resolve({
+			data: url.endsWith('/lifecycle') ? {} : { transitions: [] },
+		})
 	})
 	const wrapper = shallowMount(CaseLifecycleMenuDialog, {
 		props: { caseId: 'case-1' },
@@ -75,7 +77,9 @@ async function formFor(id, resultTypes) {
 
 describe('the ending acts carry the case type results', () => {
 	it('copies the results onto finish and abort, and not onto archive', () => {
-		const menu = buildActsMenu({ acts: { acts: VERDICTS, resultTypes: RESULTS } })
+		const menu = buildActsMenu({
+			acts: { acts: VERDICTS, resultTypes: RESULTS },
+		})
 		const byId = Object.fromEntries(menu.map((entry) => [entry.id, entry]))
 
 		expect(byId.finish.resultTypes).toEqual(RESULTS)
@@ -95,7 +99,9 @@ describe('Afronden in the lifecycle dialog', () => {
 		const picker = wrapper.findComponent({ name: 'NcSelect' })
 		expect(picker.exists()).toBe(true)
 		expect(picker.props('options')).toEqual(RESULTS)
-		expect(wrapper.find('[data-testid="case-act-result-input"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-act-result-input"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('sends the picked id, not a name', async () => {
@@ -105,7 +111,9 @@ describe('Afronden in the lifecycle dialog', () => {
 		await wrapper.vm.$nextTick()
 		expect(wrapper.vm.canConfirm).toBe(false)
 
-		wrapper.findComponent({ name: 'NcSelect' }).vm.$emit('update:modelValue', RESULTS[1])
+		wrapper
+			.findComponent({ name: 'NcSelect' })
+			.vm.$emit('update:modelValue', RESULTS[1])
 		await wrapper.vm.$nextTick()
 		await wrapper.vm.confirm()
 
@@ -119,7 +127,9 @@ describe('Afronden in the lifecycle dialog', () => {
 		const wrapper = await formFor('finish', [])
 
 		expect(wrapper.findComponent({ name: 'NcSelect' }).exists()).toBe(false)
-		expect(wrapper.find('[data-testid="case-act-result-input"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-act-result-input"]').exists()).toBe(
+			false,
+		)
 		wrapper.vm.reason = 'Klaar.'
 		await wrapper.vm.$nextTick()
 		expect(wrapper.vm.canConfirm).toBe(true)
