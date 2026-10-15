@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Dossiq Woo review: the recall estimate of an elusion sample.
+ * Dossiq document review: the recall estimate of an elusion sample.
  *
- * @category Woo
- * @package  OCA\Dossiq\Woo
+ * @category Review
+ * @package  OCA\Dossiq\Review
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -20,12 +20,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Woo;
+namespace OCA\Dossiq\Review;
 
 use InvalidArgumentException;
 
 /**
- * Estimates how complete a Woo review is from an elusion sample of the documents set aside.
+ * Estimates how complete a document review is from an elusion sample of the documents set aside.
  *
  * The method is the one the proposal names, so no building agent chooses
  * another. `found` documents are in scope; the null set (out of scope or

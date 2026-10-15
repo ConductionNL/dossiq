@@ -25,7 +25,6 @@ namespace OCA\Dossiq\Review;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Woo\RecallEstimator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use Psr\Log\LoggerInterface;
 use Throwable;

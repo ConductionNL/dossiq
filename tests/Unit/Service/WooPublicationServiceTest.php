@@ -27,7 +27,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Review\DocumentRelevance;
 use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\ReviewDepth;
-use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
+use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\Publication\WithheldListRecorder;
 use OCA\Dossiq\Service\Assessment\NothingToDisclose;

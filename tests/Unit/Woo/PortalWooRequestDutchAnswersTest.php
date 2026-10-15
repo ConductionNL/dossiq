@@ -34,7 +34,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Unit\Portal\PortalAssertionVerifierTest;
 use OCA\Dossiq\Woo\WooRequestIntake;
-use OCA\Dossiq\Woo\WooWrittenCase;
+use OCA\Dossiq\Service\Intake\WrittenCase;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -247,7 +247,7 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-the-confirmation-names-its-dates-as-days-req-wdi-003
 	 */
 	public function testTheConfirmationNamesItsDatesAsDays(): void {
-		$answer = (new WooWrittenCase())->read(
+		$answer = (new WrittenCase())->read(
 			saved: [
 				'id' => 'case-1',
 				'identifier' => '2026-0101',

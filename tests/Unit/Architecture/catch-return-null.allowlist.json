@@ -1580,7 +1580,7 @@
       "reason": "`fetchMatrices()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: could not list LHS matrices\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/WooPublication/OpenCatalogiApiClient.php",
+      "file": "lib/Service/Publication/OpenCatalogiApiClient.php",
       "method": "resolveCatalog",
       "occurrence": 1,
       "class": "degradation",

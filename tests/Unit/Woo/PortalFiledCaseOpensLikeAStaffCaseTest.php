@@ -61,7 +61,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Woo\WooRequestIntake
  * @uses \OCA\Dossiq\Woo\WooRequestForm
  * @uses \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader

@@ -41,7 +41,7 @@
  * and is therefore outside ADR-080 D2/D3.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\WooPublication
+ * @package  OCA\Dossiq\Service\Publication
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -59,7 +59,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\WooPublication;
+namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
