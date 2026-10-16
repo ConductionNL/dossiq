@@ -124,10 +124,11 @@ export default {
 		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		emptyText() {
-			return String(
-				this.content.emptyText
-					|| t('dossiq', 'No locations linked to this case yet'),
-			)
+			// A configured text is authored in English as its catalogue key,
+			// like every manifest label, so it is read through t() too.
+			return this.content.emptyText
+				? t('dossiq', String(this.content.emptyText))
+				: t('dossiq', 'No locations linked to this case yet')
 		},
 
 		/**
