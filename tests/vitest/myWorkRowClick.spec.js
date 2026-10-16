@@ -32,6 +32,7 @@ import { defineComponent, h } from 'vue'
 const indexPageProps = {}
 
 vi.mock('@conduction/nextcloud-vue', () => ({
+	CnQuickFilterBar: defineComponent({ name: 'CnQuickFilterBar', render: () => null }),
 	CnIndexPage: defineComponent({
 		name: 'CnIndexPage',
 		props: {
@@ -97,6 +98,21 @@ async function mountMyWork() {
 }
 
 describe('My Work row click', () => {
+	it('opens a colleague\'s open cases from the workload chips and stays put on the reader\'s own', async () => {
+		const { wrapper, push } = await mountMyWork()
+
+		wrapper.vm.openHandlerWork('admin')
+		expect(push).not.toHaveBeenCalled()
+
+		wrapper.vm.openHandlerWork('anouk')
+		expect(push).toHaveBeenCalledWith({
+			name: 'Cases',
+			query: { assignee: 'anouk', isFinalStatus: 'false', statusHiddenInLists: 'false', isDraft: 'false' },
+		})
+
+		wrapper.unmount()
+	})
+
 	it('asks the index page for navigation on a row click, not only for selection', async () => {
 		const { wrapper } = await mountMyWork()
 
