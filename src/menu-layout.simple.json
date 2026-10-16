@@ -1469,24 +1469,93 @@
 						"label": "Actions"
 					}
 				],
-				"showViewToggle": true
+				"showViewToggle": true,
+				"columns": [
+					{
+						"key": "title",
+						"width": "150px",
+						"label": "Task",
+						"cellClass": "cn-cell--strong"
+					},
+					{
+						"key": "subjectLabel",
+						"width": "170px",
+						"label": "Subject"
+					},
+					{
+						"key": "stateLabel",
+						"label": "Status",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"Ready to claim": "info",
+								"Klaar om op te pakken": "info",
+								"In progress": "primary",
+								"In behandeling": "primary",
+								"Completed": "success",
+								"Afgerond": "success",
+								"Terminated": "error",
+								"Beëindigd": "error"
+							}
+						}
+					},
+					{
+						"key": "priorityLabel",
+						"label": "Priority",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"High": "warning",
+								"Hoog": "warning",
+								"Urgent": "error"
+							}
+						}
+					},
+					{
+						"key": "dueAt",
+						"label": "Deadline",
+						"widget": "date",
+						"widgetProps": {
+							"due": {
+								"todayLabel": "Today",
+								"emptyText": "No deadline"
+							}
+						}
+					},
+					{
+						"key": "assignee",
+						"label": "Handler",
+						"widget": "avatar",
+						"widgetProps": {
+							"user": true
+						}
+					}
+				]
 			},
 			"configPatch": {
 				"quickFilters": {
+					"All": {
+						"showCount": true
+					},
 					"Mine": {
-						"label": "My tasks"
+						"label": "My tasks",
+						"showCount": true
 					},
 					"Unclaimed": {
-						"label": "Not claimed"
+						"label": "Not claimed",
+						"showCount": true
 					},
 					"Closed": {
-						"label": "Finished"
+						"label": "Finished",
+						"showCount": true
 					},
 					"Overdue": {
-						"label": "Late"
+						"label": "Late",
+						"showCount": true
 					},
 					"Due this week": {
-						"label": "This week"
+						"label": "This week",
+						"showCount": true
 					}
 				}
 			}
