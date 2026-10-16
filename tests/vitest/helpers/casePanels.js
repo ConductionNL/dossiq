@@ -70,13 +70,16 @@ function caseTabOf(id) {
 	const cfg = pageConfig()
 	const strip = cfg.widgets.find((entry) => entry.id === 'case-panels')
 	for (const tab of strip.content.tabs) {
-		if (tab.widgetId === id) return { tab: tab.label, label: null }
-		const group = cfg.widgets.find((entry) => entry.id === tab.widgetId)
-		if (group?.type !== 'sections') continue
-		const section = (group.content?.sections ?? []).find(
-			(entry) => entry.widget.id === id,
-		)
-		if (section) return { tab: tab.label, label: section.label }
+		const ids = Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]
+		if (ids.includes(id)) return { tab: tab.label, label: null }
+		for (const groupId of ids) {
+			const group = cfg.widgets.find((entry) => entry.id === groupId)
+			if (group?.type !== 'sections') continue
+			const section = (group.content?.sections ?? []).find(
+				(entry) => entry.widget.id === id,
+			)
+			if (section) return { tab: tab.label, label: section.label }
+		}
 	}
 	return null
 }

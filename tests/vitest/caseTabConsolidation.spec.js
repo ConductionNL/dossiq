@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds FIFTEEN tabs, and keeps holding fifteen.
+ * The case page strip holds the board's five tabs; the other panels go under Acties.
  *
  * The strip grew from ten tabs to fifteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -59,83 +59,45 @@ function widget(id) {
 const tabs = () => widget('case-panels').content.tabs
 
 /**
- * The ceiling the placement work set, and the number the strip holds today.
+ * The board's strip (DqZaak, DqZaakMeer): five tabs a handler sees, and every
+ * other panel flagged `overflow`, which the board lists under Acties beside
+ * the strip. The ceiling counts the five, because the strip is what grows
+ * unwatched; a panel that goes under Acties adds no width to it.
  *
- * Six was not a round number picked for tidiness: it was the count row A33
- * asked for, and the same ceiling the app menu is held to. It has moved twice,
- * both times on purpose, and this is the record of both:
- *
- *   6 -> 7  2026-09-12  the Notes tab joined the strip beside Files
- *   7 -> 9  2026-09-13  Communication left People, and Email and Decisions
- *                       left the SIDEBAR
- *   9 -> 10 2026-09-15  the Archiving tab arrived with #2850
- *   10 -> 11 2026-09-16 the Timeline tab arrived with #2846
- *   11 -> 13 2026-09-19 Custody arrived with #2940 and Knowledge with #2995
- *
- * The second move is not the growth this ceiling guards against. Nothing was
- * added to the page: the sidebar lost exactly the three tabs the strip gained
- * (notes, email, besluitvorming), so counted together the page holds what it
- * held. What the ceiling is for is UNWATCHED growth, the strip going from ten
- * to fourteen with nothing counting it, and an exact assertion somebody has to
- * edit on purpose is the thing that stops that.
- *
- * The third and fourth moves ARE growth, and they are recorded as such rather
- * than waved through. Archiving is a surface the case did not have: what
- * happens to it when its business use ends, as openregister decided. Timeline
- * is the second: every note, call and message on the case in one order. Both
- * came in with this file left at nine, so the strip and the ceiling disagreed
- * and the suite was red on development until these lines were edited. That is
- * the mechanism working, two PRs late.
- *
- * The fifth move is growth too, and Ruben took it on 2026-09-19 with both
- * tabs already on the strip and this file still red at eleven. Custody is who
- * has held the case and who is asking for it, which no other tab answers: the
- * timeline says what changed, not who was accountable while it changed.
- * Knowledge is the work instruction for this kind of case, drawn from the
- * collectives leaf, and it belongs beside the case rather than in a second
- * app a handler has to go and find. Neither folds into an existing tab
- * without burying it, so the ceiling moves to thirteen instead.
- *
- * Thirteen is a decision, not a surrender. A fourteenth tab still reddens
- * this line, and whoever wants it writes down here what it answers that the
- * thirteen do not. That is the whole job of the number.
- *
- * Proposals is the fourteenth (portal-change-proposals-on-the-case). It
- * answers what a resident asked to change through the portal and what became
- * of the request, which Communication cannot say (it holds messages, not
- * requests that wait for a handler's yes or no) and Work does not hold (those
- * are tasks the handler made, not changes the resident asked for). It sits
- * after Work because deciding on a proposal is work. The ceiling is fourteen.
- *
- * Review is the fifteenth (woo-review-triage, woo-review-recall-and-stopping).
- * It answers where a document review stands: which documents are in or out
- * of scope, the stopping rule and its samples, the batches and what is still
- * open. Files holds the documents themselves and Work holds the tasks a
- * handler made; neither says how far through a large collection a review has
- * got, or whether it may stop. It sits after Files because the documents are
- * what it reviews, and it shows only on a case type that enables review.
- * The ceiling is fifteen on that reason, and the next tab writes its own.
+ * Fourteen panels in all. Review is no longer a tab of its own: it stands
+ * under the files on the Files tab, since the documents are what it reviews.
  */
-const TAB_CEILING = 15
+const STRIP_CEILING = 5
 
-/** The fifteen labels, in the order a handler reads them. */
-const EXPECTED_TABS = [
-	['case-data-panel', 'Data'],
+/** The tabs in the strip, in the order the board draws them. */
+const EXPECTED_STRIP = [
+	['case-data-panel', 'Overview'],
 	['case-files', 'Files'],
-	['case-document-review', 'Review'],
+	['case-communication-panel', 'Contact'],
+	['case-work-panel', 'Tasks'],
+	['case-timeline-panel', 'Case history'],
+]
+
+/** The panels under Acties, in the order the board lists them. */
+const EXPECTED_OVERFLOW = [
 	['case-notes-panel', 'Notes'],
-	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
-	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
-	['case-work-panel', 'Work'],
-	['case-change-proposals', 'Proposals'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
 	['case-custody-panel', 'Custody'],
 	['case-archival-panel', 'Archiving'],
 	['case-knowledge-panel', 'Knowledge'],
+	['case-change-proposals', 'Proposals'],
 ]
+
+/**
+ * The widget ids a tab renders: a stack's `widgetIds`, else its `widgetId`.
+ *
+ * @param {object} tab A tab entry.
+ * @return {string[]} The ids.
+ */
+const tabWidgetIds = (tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId])
 
 /**
  * Every panel that used to be a tab of its own, and where it lives now.
@@ -188,12 +150,23 @@ const SINGLE_HOME = [
 ]
 
 describe('the case page tab strip', () => {
-	it(`holds no more than ${TAB_CEILING} tabs`, () => {
-		expect(tabs()).toHaveLength(TAB_CEILING)
+	it(`holds no more than ${STRIP_CEILING} tabs in the strip`, () => {
+		expect(tabs().filter((tab) => tab.overflow !== true)).toHaveLength(STRIP_CEILING)
 	})
 
-	it('names the fifteen tabs, in order', () => {
-		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
+	it('names the strip tabs, in order', () => {
+		const strip = tabs().filter((tab) => tab.overflow !== true)
+		expect(strip.map((tab) => [tabWidgetIds(tab)[0], tab.label])).toEqual(EXPECTED_STRIP)
+	})
+
+	it('puts every other panel under Acties, in order', () => {
+		const overflow = tabs().filter((tab) => tab.overflow === true)
+		expect(overflow.map((tab) => [tabWidgetIds(tab)[0], tab.label])).toEqual(EXPECTED_OVERFLOW)
+	})
+
+	it('keeps the document review on the Files tab', () => {
+		const files = tabs().find((tab) => tab.label === 'Files')
+		expect(tabWidgetIds(files)).toEqual(['case-files', 'case-document-review'])
 	})
 
 	it('labels every tab in sentence case, with no em-dash', () => {
@@ -217,7 +190,7 @@ describe('the case page tab strip', () => {
 
 	it('gives every tab a widget that exists on the page', () => {
 		const ids = caseDetail().widgets.map((entry) => entry.id)
-		for (const { widgetId } of tabs()) {
+		for (const widgetId of tabs().flatMap(tabWidgetIds)) {
 			expect(ids, `tab widget ${widgetId} is not declared`).toContain(widgetId)
 		}
 	})
@@ -245,7 +218,7 @@ describe('the folds', () => {
 
 	it('lays out no group widget, because the strip renders it', () => {
 		const laidOut = caseDetail().layout.map((item) => item.widgetId)
-		for (const { widgetId } of tabs()) {
+		for (const widgetId of tabs().flatMap(tabWidgetIds)) {
 			if (widgetId === 'case-core') continue
 			expect(laidOut).not.toContain(widgetId)
 		}
@@ -396,7 +369,7 @@ describe('the container type this change depends on', () => {
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 
-		for (const { widgetId } of tabs()) {
+		for (const widgetId of tabs().flatMap(tabWidgetIds)) {
 			if (LEAVES[widgetId]) {
 				expect(widget(widgetId).type).toBe('integration')
 				expect(widget(widgetId).integrationId).toBe(LEAVES[widgetId])

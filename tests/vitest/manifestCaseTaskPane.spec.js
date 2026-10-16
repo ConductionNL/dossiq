@@ -207,7 +207,7 @@ describe('the case-tasks widget after the retype', () => {
 		// and a fifth moves the complexity rather than removing it.
 		const where = panels.caseTabOf('case-tasks')
 		expect(where, 'case-tasks is not reachable from the strip').toBeTruthy()
-		expect(where.tab).toBe('Work')
+		expect(where.tab).toBe('Tasks')
 		expect(where.label).toBe('Tasks')
 
 		// A tab child in `layout` renders twice: once in the grid and once in

@@ -103,7 +103,7 @@ describe('the Communication widget', () => {
 		)
 	})
 
-	it('is the Communication tab, never a layout cell of its own', () => {
+	it('is on the Contact tab, never a layout cell of its own', () => {
 		const detail = caseDetail()
 		const where = panels.caseTabOf('case-communication')
 
@@ -116,7 +116,7 @@ describe('the Communication widget', () => {
 			where,
 			'case-communication is not reachable from the strip',
 		).toBeTruthy()
-		expect(where.tab).toBe('Communication')
+		expect(where.tab).toBe('Contact')
 		expect(where.label).toBe('Communication')
 		expect(panels.caseTabOf('case-parties').tab).toBe('People')
 

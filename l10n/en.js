@@ -1184,6 +1184,7 @@ OC.L10N.register(
         "Case File Items": "Case File Items",
         "Case handler": "Case handler",
         "Case Handler ID": "Case Handler ID",
+        "Case history": "Case history",
         "Case ID": "Case ID",
         "Case ID if escalated to a bailiff": "Case ID if escalated to a bailiff",
         "Case ID strategy": "Case ID strategy",
