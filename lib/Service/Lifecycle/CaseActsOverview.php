@@ -77,6 +77,7 @@ class CaseActsOverview {
 	 * @throws RefusedException When the case cannot be read.
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
 	 */
 	public function overview(string $caseId): array {
 		$case = $this->store->loadCase(caseId: $caseId);
@@ -111,6 +112,7 @@ class CaseActsOverview {
 				'missingFields' => $missing,
 				'endingAct' => (string)($case[CaseEndingActs::ENDING_FIELD] ?? ''),
 				'ending' => $this->endings->endingOf(case: $case),
+				'resultTypes' => $this->endings->resultChoicesOn(case: $case),
 				'statusIsHandSettable' => $this->processStatus->allowsHandSet(
 					caseTypeId: (string)($case['caseType'] ?? '')
 				),
