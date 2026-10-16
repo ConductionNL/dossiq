@@ -1495,7 +1495,7 @@ const registry = {
 	caseStatusTargets: {
 		kind: 'handler',
 		handler: caseStatusTargets,
-		_note: "The Cases board view's `board.moveTargetsHandler`: the statuses one case can reach, from /available-transitions, so the board fades the others during a drag and marks them not allowed in the card menu.",
+		_note: "The Cases board view's `board.moveTargetsHandler`: every status the engine offers one case, from /available-transitions. One a guard holds comes back as not allowed with the guard's sentence, so the board fades it during a drag and the card menu says what holds the case.",
 	},
 	claimCase: {
 		kind: 'handler',
