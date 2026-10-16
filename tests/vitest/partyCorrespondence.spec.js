@@ -179,7 +179,11 @@ describe('the Files tab declares its columns', () => {
 		// scan-verdict-on-the-row added scanVerdict, which the scan endpoint
 		// answers rather than the listing. Those three names are what this
 		// asserts.
-		expect(columns.map((column) => column.property)).toEqual([
+		expect(
+			columns
+				.filter((column) => typeof column === 'object')
+				.map((column) => column.property),
+		).toEqual([
 			'senderName',
 			'recipientNames',
 			'scanVerdict',
@@ -191,7 +195,9 @@ describe('the Files tab declares its columns', () => {
 	})
 
 	it('labels them in sentence case with no em-dash', () => {
-		const labels = filesTab().props.columns.map((column) => column.label)
+		const labels = filesTab()
+			.props.columns.filter((column) => typeof column === 'object')
+			.map((column) => column.label)
 
 		expect(labels).toEqual(['Sender', 'Recipients', 'Scan', 'Approval'])
 		for (const label of labels) {

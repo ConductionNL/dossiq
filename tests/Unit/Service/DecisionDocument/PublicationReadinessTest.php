@@ -31,6 +31,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  */
 class PublicationReadinessTest extends TestCase {
 
