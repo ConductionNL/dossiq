@@ -91,9 +91,13 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * requests, mentions, covered work and calendar items, and the end-of-day
  * screen reads OpenRegister's per-reader read state. No manifest key names
  * either set.
+ *
+ * Moved 15 -> 14 by the retirement of the WorkflowBoard page, which gives a
+ * unit back: the workflow board is the Cases index page in board view. Both
+ * numbers drop, for the same reason as above.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 14
-const CUSTOM_PAGE_COUNT_AFTER = 15
+const CUSTOM_PAGE_COUNT_BEFORE = 13
+const CUSTOM_PAGE_COUNT_AFTER = 14
 
 /**
  * One page as the manifest declares it.
