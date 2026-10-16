@@ -1401,10 +1401,18 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": [
+							"header-actions",
+							"import",
+							"refresh",
+							"copy-selected",
+							"delete-selected",
+							"documentation"
+						]
 					},
 					{
-						"action": "add",
+						"action": "new-case",
 						"label": "New case",
 						"variant": "primary",
 						"icon": "Plus"
@@ -1429,6 +1437,61 @@
 				}
 			},
 			"configAppend": {
+				"headerActions": [
+					{
+						"id": "new-case",
+						"type": "open-form",
+						"label": "New case",
+						"icon": "Plus",
+						"formEyebrow": "All cases",
+						"formTitle": "New case",
+						"formSubtitle": "Fields marked * are required. The case starts in the first status of its case type. The system fills in the receipt date and the start date itself, from the moment the request came in.",
+						"size": "large",
+						"columns": 2,
+						"includeFields": [
+							"caseType",
+							"title",
+							"requester",
+							"intakeChannel",
+							"description",
+							"plannedEndDate",
+							"assignee",
+							"confidentiality",
+							"impact",
+							"urgency"
+						],
+						"fieldOverrides": {
+							"description": {
+								"widget": "textarea"
+							},
+							"requester": {
+								"widget": "InitiatorPicker",
+								"label": "Requester"
+							},
+							"confidentiality": {
+								"enumLabels": {
+									"openbaar": "Public",
+									"beperkt_openbaar": "Restricted public",
+									"intern": "Internal",
+									"zaakvertrouwelijk": "Case confidential",
+									"vertrouwelijk": "Confidential",
+									"confidentieel": "Classified confidential",
+									"geheim": "Secret",
+									"zeer_geheim": "Top secret"
+								}
+							}
+						},
+						"register": "dossiq",
+						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
+						"onSuccessRoute": "CaseDetail",
+						"successMessage": "Case created.",
+						"props": {
+							"assignee": "@me",
+							"confidentiality": "vertrouwelijk"
+						}
+					}
+				],
 				"quickFilters": [
 					{
 						"label": "Woo requests",

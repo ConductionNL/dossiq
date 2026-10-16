@@ -442,7 +442,8 @@ describe('the simple profile', () => {
 		// Each link names a page that exists and an icon the app registers.
 		const pageIds = new Set(built.pages.map((page) => page.id))
 		for (const overlay of simpleFile.pages) {
-			for (const action of overlay.configAppend?.headerActions ?? []) {
+			const links = (overlay.configAppend?.headerActions ?? []).filter((action) => action.type === 'open-page')
+			for (const action of links) {
 				expect(pageIds.has(action.target), action.id).toBe(true)
 				expect(iconsSource).toContain(`\n\t${action.icon},\n`)
 			}
