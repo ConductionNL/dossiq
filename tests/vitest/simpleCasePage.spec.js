@@ -249,7 +249,9 @@ describe('the actions', () => {
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
 		}
-		expect(simple.headerActions.map((action) => action.id)).toEqual(ids)
+		// Every action is still there; the simple page orders them as DqZaakMeer lists them.
+		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids].sort())
+		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
 			if (simple.quickActions.includes(action.id)) {
@@ -352,16 +354,49 @@ describe('the actions', () => {
 describe('the tabs', () => {
 	const tabsOf = (config) =>
 		config.widgets.find((widget) => widget.id === 'case-panels').content
+	const find = (config, id) =>
+		config.widgets.find((widget) => widget.id === id)
 
-	it('shows five and keeps the other ten under More, losing none', () => {
+	it('shows the five the board draws and keeps the other panels under Acties, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow).map((tab) => tab.label),
-		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'History'])
-		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(10)
-		const widgetIds = (content) => content.tabs.map((tab) => tab.widgetId).sort()
-		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
+		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
+		// The order DqZaakMeer lists them in under Acties.
+		expect(
+			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals', 'Publication', 'Review'])
+		const widgetIds = (content) => content.tabs
+			.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
+		// Every panel of the full strip is still on it, except the Data panel,
+		// whose sections became the Overview stack's own cards.
+		const shown = widgetIds(strip)
+		for (const id of widgetIds(tabsOf(original)).filter((id) => id !== 'case-data-panel')) {
+			expect(shown, id).toContain(id)
+		}
+		const card = (id) => simple.widgets.find((widget) => widget.id === id)
+		const dataSections = find(original, 'case-data-panel').content.sections.map((section) => section.widget.id)
+		const movedTo = {
+			'case-core': 'case-details',
+			'case-priority': 'case-priority-card',
+			'case-location-map': 'case-locations-card',
+		}
+		for (const id of dataSections) {
+			if (movedTo[id]) {
+				expect(shown, `${id} moved to ${movedTo[id]}`).toContain(movedTo[id])
+				continue
+			}
+			const publication = card('case-publication').content.sections.map((section) => section.widget.id)
+			expect(publication, `${id} is lost from the Overview`).toContain(id)
+		}
+		expect(shown).toContain('case-publication')
+		// The fields case-core showed are on the Overview, as Case details or in their own card.
+		const core = find(original, 'case-data-panel').content.sections[0].widget.content.include
+		const onOverview = [...card('case-details').content.include, 'title', 'description', 'priority']
+		for (const field of core) {
+			expect(onOverview, field).toContain(field)
+		}
 	})
 
 	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
@@ -396,10 +431,17 @@ describe('the tabs', () => {
 
 		// The deadline tile only loses its own label in the side column, where
 		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline']
+		// The terms, flows and hours are cards of the Overview stack, titled as
+		// DqZaak titles them; the cards the simple page adds are its own.
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-work-panel']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication']
 		const others = (config) =>
-			config.widgets.filter((widget) => !patched.includes(widget.id))
+			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
+		// The Tasks tab holds the same sections, in DqZaakTaken's order.
+		const sectionIds = (config) => find(config, 'case-work-panel').content.sections.map((section) => section.widget.id)
+		expect(sectionIds(simple)).toEqual(['case-tasks', 'case-planned-actions', 'case-incidents', 'case-calendar', 'case-deck'])
+		expect([...sectionIds(simple)].sort()).toEqual([...sectionIds(original)].sort())
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})
 
@@ -435,19 +477,21 @@ describe('the tabs', () => {
 		}
 	})
 
-	it('draws the progress as bars and the tabs as a segmented control, with a way back to the list', () => {
+	it('draws the progress as bars and the tabs as the board strip, with a way back to the list', () => {
 		// DqZaak draws one bar per step with the label under it, the tab strip
-		// as a segmented control, and "All cases / <number>" above the card
+		// as folder tabs (the board look's own strip, no variant), and
+		// "All cases / <number>" above the card
 		// instead of a CASE eyebrow. All three are nextcloud-vue 2.64.0 opt-ins,
 		// so the full profile keeps drawing what it drew.
 		const find = (config, id) =>
 			config.widgets.find((widget) => widget.id === id)
 		expect(find(simple, 'case-stages').content.variant).toBe('bars')
 		expect(find(original, 'case-stages').content.variant).toBeUndefined()
-		expect(find(simple, 'case-panels').content.variant).toBe('segmented')
+		expect(find(simple, 'case-panels').content.variant).toBeUndefined()
 		expect(find(original, 'case-panels').content.variant).toBeUndefined()
 		expect(simple.showTypeEyebrow).toBe(false)
-		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases' })
+		// The trail ends in the case number, as DqZaak draws "Alle zaken / 2026-0082".
+		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases', currentField: 'identifier', separator: '/' })
 		expect(original.showTypeEyebrow).toBeUndefined()
 		expect(original.breadcrumb).toBeUndefined()
 		expect(casePage(simpleFile).route).toBeDefined()
@@ -463,7 +507,9 @@ describe('the tabs', () => {
 		// deadline drew as three full-width cards under each other.
 		// The stages (`3`) sit in the header card (`config.headerWidget`) and the
 		// banner stack in the side column, so neither keeps a grid cell.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners']
+		// The plan, terms, flows and hours are cards of the Overview tab now, as
+		// DqZaak draws them, so they keep no grid cell either.
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -490,7 +536,7 @@ describe('the tabs', () => {
 			// Taller where the cell would scroll inside: the tabs card (Overview
 			// measured 784px over its 720; since nextcloud-vue 2.82.0 its sixteen
 			// tabs wrap to three rows, 72px more), the flow runs and hours booked.
-			const taller = { 5: 20, 7: 7, 6: 3 }
+			const taller = { 5: 20 }
 			expect(entry.gridHeight, entry.id).toBe(
 				taller[entry.id] ?? was.gridHeight,
 			)
@@ -498,14 +544,7 @@ describe('the tabs', () => {
 		const order = [...simple.layout]
 			.sort((a, b) => a.gridY - b.gridY)
 			.map((entry) => entry.id)
-		expect(order.slice(0, 6)).toEqual([
-			'presence-strip',
-			'5',
-			'12',
-			'11',
-			'7',
-			'6',
-		])
+		expect(order.slice(0, 2)).toEqual(['presence-strip', '5'])
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {
@@ -519,10 +558,11 @@ describe('the tabs', () => {
 				}
 			}
 		}
-		// None of the three is lost: the number is the pill above the title,
+		// None of the three is lost: the number ends the breadcrumb,
 		// the deadline is the first card of the side column, and neither
 		// widget is still placed in the grid, so nothing renders twice.
-		expect(simple.typePill).toEqual({ field: 'identifier' })
+		expect(simple.breadcrumb.currentField).toBe('identifier')
+		expect(simple.typePill).toBeUndefined()
 		expect(simple.sideColumn[0]).toBe('case-tile-deadline')
 		const placed = simple.layout.map((entry) => entry.widgetId)
 		expect(placed).not.toContain('case-tile-deadline')
@@ -535,18 +575,26 @@ describe('the tabs', () => {
 describe('the header and the side column', () => {
 	it('reads the pills and the cards from fields the case carries', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
-		expect(onTheCase(simple.typePill.field)).toBe(true)
+		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object')
-		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling'])
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
 		const shown = []
 		for (const card of cards) {
-			expect(card.type).toBe('data')
-			expect(card.content.editable).toBe(false)
-			for (const field of card.content.include) {
+			// The requester is a facts card (a lead, as DqZaak draws it), the
+			// handling a read-only data card, the work instruction its own pane.
+			const fields = card.type === 'facts'
+				? card.content.fields.map((entry) => entry.path)
+				: card.type === 'data' ? card.content.include : []
+			if (card.type === 'data') {
+				expect(card.content.editable).toBe(false)
+			}
+			for (const field of fields) {
 				expect(onTheCase(field), `${card.title}: ${field}`).toBe(true)
 				shown.push(field)
 			}
 		}
+		// Nothing the requester card showed before is gone.
+		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeChannel']))
 		// The deadline has its own card, so no data card repeats it.
 		expect(shown).not.toContain('deadline')
 	})

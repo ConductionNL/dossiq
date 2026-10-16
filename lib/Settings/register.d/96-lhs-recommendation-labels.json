@@ -1,0 +1,65 @@
+{
+  "_note": "screens-round12-enforcement-advice, board DqHandhaving: the advice page shows the matrix inputs and the intervention in words, not as stored codes. Labels only; the stored values do not change. Version moves so an existing instance re-imports the schema.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "schemas": {
+      "lhsRecommendation": {
+        "version": "1.1.0",
+        "properties": {
+          "severity": {
+            "x-enum-labels": {
+              "gering": "minor",
+              "aanzienlijk": "considerable",
+              "ernstig": "serious"
+            }
+          },
+          "behaviour": {
+            "x-enum-labels": {
+              "goedwillend": "well-meaning",
+              "onverschillig": "indifferent",
+              "calculerend": "calculating",
+              "crimineel": "criminal"
+            }
+          },
+          "actorType": {
+            "x-enum-labels": {
+              "burger": "Resident",
+              "bedrijf": "Company",
+              "overheid": "Government",
+              "recidivist": "Repeat offender"
+            }
+          },
+          "recommendedIntervention": {
+            "x-enum-labels": {
+              "warning": "Warning",
+              "herstelactie": "Remedial action",
+              "last_under_penaltypayment": "Order subject to a penalty",
+              "last_plus_pv": "Order and official report",
+              "bestuursdwang": "Administrative enforcement",
+              "pv_plus_bestuursdwang": "Official report and administrative enforcement"
+            }
+          },
+          "finalIntervention": {
+            "x-enum-labels": {
+              "warning": "Warning",
+              "herstelactie": "Remedial action",
+              "last_under_penaltypayment": "Order subject to a penalty",
+              "last_plus_pv": "Order and official report",
+              "bestuursdwang": "Administrative enforcement",
+              "pv_plus_bestuursdwang": "Official report and administrative enforcement"
+            }
+          },
+          "overrideAuthority": {
+            "x-enum-labels": {
+              "inspector": "Inspector",
+              "manager": "Manager"
+            }
+          }
+        }
+      }
+    }
+  }
+}
