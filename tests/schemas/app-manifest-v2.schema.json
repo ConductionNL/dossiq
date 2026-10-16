@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.99.0",
+	"version": "2.100.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1176,6 +1176,7 @@
 									"orderField": { "type": "string", "description": "The referenced row's numeric field the columns are ordered by." },
 									"colorField": { "type": "string", "description": "The referenced row's field that holds the column's dot colour (a badge variant or a CSS colour)." },
 									"filter": { "type": "object", "description": "Equality filters on the referenced rows, e.g. `{ \"isFinal\": false }` to leave out end states.", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+									"capacityField": { "type": "string", "minLength": 1, "description": "board-column-capacity (2.100.0): the referenced row's numeric field that holds the column's limit. The header reads \"count / capacity\" and turns full at the limit, and a move into a full row is refused before it is written (the server still guards). A column merged from several rows shows no limit, but each row's own limit still refuses a move into it. A row without a number above 0 has no limit." },
 									"mergeBy": { "type": "string", "description": "Merge referenced rows with the same value of this field into one column (statuses of every case type by `name`). A drop then writes the row of the card's own parent (`narrowBy`), and is refused when that parent has none." },
 									"narrowBy": {
 										"type": "object",

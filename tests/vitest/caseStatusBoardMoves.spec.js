@@ -64,8 +64,38 @@ describe('caseStatusBoardMoves', () => {
 		expect(axios.post).not.toHaveBeenCalled()
 	})
 
-	it('answers only the statuses no guard holds', async () => {
-		expect(await caseStatusTargets({ card: { id: 'c1' } })).toEqual(['s2'])
+	it('answers each target once, a held one not allowed with its reason', async () => {
+		axios.get.mockResolvedValue({
+			data: {
+				transitions: [
+					{ id: 't1', toStatus: 's2' },
+					{
+						id: 't2',
+						toStatus: 's3',
+						guardsPassed: false,
+						failedGuards: [
+							{ failureMessage: 'Add the decision first.' },
+						],
+					},
+					{ id: 't3', toStatus: 's3' },
+					{
+						id: 't4',
+						toStatus: 's4',
+						guardsPassed: false,
+						failedGuards: [],
+					},
+				],
+			},
+		})
+		expect(await caseStatusTargets({ card: { id: 'c1' } })).toEqual([
+			{ key: 's2', allowed: true, reason: '' },
+			{ key: 's3', allowed: false, reason: 'Add the decision first.' },
+			{
+				key: 's4',
+				allowed: false,
+				reason: 'Something is holding this case here.',
+			},
+		])
 	})
 
 	it('the Cases board names both handlers and the registry exposes them', () => {
@@ -75,6 +105,9 @@ describe('caseStatusBoardMoves', () => {
 		const board = manifest.pages.find((page) => page.id === 'Cases').config.board
 		expect(board.moveHandler).toBe('moveCaseStatus')
 		expect(board.moveTargetsHandler).toBe('caseStatusTargets')
+		const status = board.columnFields.find((column) => column.field === 'status')
+		expect(status.source.capacityField).toBe('capacity')
+		expect(status.source.filter).toEqual({ isFinal: false })
 		const registry = fs.readFileSync(
 			path.join(ROOT, 'src', 'registry.js'),
 			'utf8',

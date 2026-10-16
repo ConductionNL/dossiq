@@ -95,18 +95,38 @@ export async function moveCaseStatus({ card, value, toKey }) {
 }
 
 /**
- * The statuses one case can reach: the targets of the transitions on offer
- * that no guard holds.
+ * The statuses one case can reach, and why a guard holds the others.
+ *
+ * Each target status is answered once, from the first transition that ends
+ * on it, because that is the one `moveCaseStatus` posts. A transition a guard
+ * holds stays on the list as not allowed, carrying the guard's sentence, so
+ * the board can say what holds the case instead of only that it cannot move.
  *
  * @param {object} query The board's question.
  * @param {object} query.card The case row.
- * @return {Promise<Array<string>>} statusType ids.
+ * @return {Promise<Array<{key: string, allowed: boolean, reason: string}>>} One entry per target statusType id.
+ * @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
  */
 export async function caseStatusTargets({ card }) {
 	const caseId = card?.id ?? card?.['@self']?.id
 	const offered = await offeredTransitions(caseId)
-	return offered
-		.filter((transition) => transition && !transitionIsBlocked(transition))
-		.map((transition) => String(transition.toStatus ?? ''))
-		.filter((id) => id !== '')
+	const targets = []
+	const seen = new Set()
+	for (const transition of offered) {
+		const key = String(transition?.toStatus ?? '')
+		if (key === '' || seen.has(key)) {
+			continue
+		}
+		seen.add(key)
+		const allowed = !transitionIsBlocked(transition)
+		targets.push({
+			key,
+			allowed,
+			reason: allowed
+				? ''
+				: transitionBlockReason(transition)
+					|| t('dossiq', 'Something is holding this case here.'),
+		})
+	}
+	return targets
 }
