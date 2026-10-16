@@ -38,7 +38,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldConfigMissing(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u');
 
 		self::assertFalse($result->passed);
@@ -49,7 +49,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldIsNull(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['id' => 'c'],
@@ -64,7 +64,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldIsEmptyString(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['result' => ''],
@@ -78,7 +78,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsWhenFieldIsEmptyArray(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'tags'],
 			case: ['tags' => []],
@@ -92,7 +92,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testPassesWhenFieldHasValue(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['result' => 'toegewezen'],
@@ -108,7 +108,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 */
 	public function testPassesForZeroNumericValue(): void {
 		// 0 is a legitimate value, not "empty".
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'amount'],
 			case: ['amount' => 0],
@@ -131,7 +131,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testPassesOnAnAnsweredCaseTypeProperty(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'stemuitslag'],
 			case: ['properties' => [['propertyDefinition' => 'pd-1', 'name' => 'stemuitslag', 'value' => 'Unaniem']]],
@@ -147,7 +147,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsOnAnUnansweredCaseTypeProperty(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'stemuitslag'],
 			case: ['properties' => [['propertyDefinition' => 'pd-1', 'name' => 'stemuitslag', 'value' => '']]],
@@ -155,7 +155,7 @@ class RequiredFieldGuardTest extends TestCase {
 		);
 
 		self::assertFalse($result->passed);
-		self::assertSame('Vereist veld ontbreekt: stemuitslag', $result->failureMessage);
+		self::assertSame('Required field missing: stemuitslag', $result->failureMessage);
 	}//end testFailsOnAnUnansweredCaseTypeProperty()
 
 	/**
@@ -164,7 +164,7 @@ class RequiredFieldGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testATopLevelValueStillWins(): void {
-		$guard = new RequiredFieldGuard();
+		$guard = new RequiredFieldGuard(l10n: new SourceL10n());
 		$result = $guard->evaluate(
 			guardConfig: ['field' => 'result'],
 			case: ['result' => 'toegewezen', 'properties' => [['name' => 'result', 'value' => '']]],

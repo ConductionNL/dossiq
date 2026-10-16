@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\Assessment\DocumentSearchOutcome;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -65,11 +66,13 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param WOODocumentAssessmentService $assessments The documents under review and the outstanding ones.
 	 * @param LoggerInterface              $logger      Where an unreadable register is reported.
+	 * @param IL10N                        $l10n        Translates the refusals.
 	 * @param DocumentSearchOutcome        $searchOutcome Whether the case records that its search found nothing.
 	 */
 	public function __construct(
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 		private readonly DocumentSearchOutcome $searchOutcome = new DocumentSearchOutcome(),
 	) {
 	}//end __construct()
@@ -90,7 +93,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 		if (in_array($require, [self::REQUIRE_GATHERED, self::REQUIRE_ASSESSED], true) === false) {
 			return new GuardResult(
 				passed: false,
-				failureMessage: 'Documentbeoordelingsguard met onbekende eis: ' . $require,
+				failureMessage: $this->l10n->t('Document assessment guard with an unknown requirement: %s', [$require]),
 				details: ['require' => $require],
 			);
 		}
@@ -103,7 +106,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ($case['@self']['id'] ?? '')));
 		if ($caseId === '') {
-			return new GuardResult(passed: false, failureMessage: 'Zaak niet herkend voor de documentcontrole');
+			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Case not recognised for the document check'));
 		}
 
 		try {
@@ -120,7 +123,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 
 			return new GuardResult(
 				passed: false,
-				failureMessage: 'De documenten van deze zaak konden niet worden gelezen',
+				failureMessage: $this->l10n->t('The documents of this case could not be read'),
 				details: ['require' => $require, 'unreadable' => true],
 			);
 		}
@@ -128,7 +131,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 		if ($underReview === []) {
 			return new GuardResult(
 				passed: false,
-				failureMessage: 'Er zijn nog geen documenten verzameld. Niets gevonden? Leg dat vast met een toelichting',
+				failureMessage: $this->l10n->t('No documents have been collected yet. Found nothing? Record that with an explanation'),
 				details: ['require' => $require, 'documents' => 0],
 			);
 		}
@@ -137,7 +140,7 @@ class DocumentAssessmentGuard implements GuardEvaluatorInterface {
 		if ($waiting > 0) {
 			return new GuardResult(
 				passed: false,
-				failureMessage: sprintf('%d van %d documenten wachten nog op een beoordeling', $waiting, count($underReview)),
+				failureMessage: $this->l10n->t('%1$s of %2$s documents are still waiting for an assessment', [(string)$waiting, (string)count($underReview)]),
 				details: ['require' => $require, 'documents' => count($underReview), 'outstanding' => $waiting],
 			);
 		}
