@@ -174,7 +174,7 @@
 				data-testid="document-assess-save"
 				:disabled="!canSave"
 				@click="save">
-				{{ t('dossiq', 'Save assessment') }}
+				{{ busy ? t('dossiq', 'Saving…') : t('dossiq', 'Save assessment') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -273,6 +273,7 @@ export default {
 			error: '',
 			notice: '',
 			refusals: {},
+			stored: [],
 		}
 	},
 
@@ -385,10 +386,14 @@ export default {
 			this.loadError = ''
 			try {
 				const { data } = await axios.get(this.urlOf(this.outstandingUrl))
-				this.documents = (data?.documents || []).map((row) => ({
-					id: String(row?.id ?? ''),
-					title: String(row?.title ?? ''),
-				}))
+				// A document the server answered as saved is not outstanding,
+				// even when the list is read before the search sees the save.
+				this.documents = (data?.documents || [])
+					.map((row) => ({
+						id: String(row?.id ?? ''),
+						title: String(row?.title ?? ''),
+					}))
+					.filter((document) => this.stored.includes(document.id) === false)
 				const still = this.documents.map((document) => document.id)
 				this.selected = this.selected.filter((id) => still.includes(id))
 			} catch (failure) {
@@ -507,6 +512,20 @@ export default {
 		},
 
 		/**
+		 * The documents an answer says were saved.
+		 *
+		 * @param {object} answer The server's answer, with `saved`.
+		 * @param {string} fieldOfDocument What the document field of an assessment is called.
+		 * @return {Array<string>} Their ids.
+		 * @spec openspec/changes/woo-screens-follow-the-case/specs/document-assessment/spec.md
+		 */
+		savedIdsOf(answer, fieldOfDocument) {
+			return (Array.isArray(answer?.saved) ? answer.saved : [])
+				.map((row) => String(row?.[fieldOfDocument] ?? row?.documentRef ?? ''))
+				.filter((id) => id !== '')
+		},
+
+		/**
 		 * Post the assessment of the selection once, and show what the server said.
 		 *
 		 * @return {Promise<void>}
@@ -554,8 +573,12 @@ export default {
 				answer = data
 			}
 
+			const saved = this.savedIdsOf(answer, names.document)
 			const stored = Array.isArray(answer?.saved) ? answer.saved.length : 0
 			if (stored > 0) {
+				this.stored = [...new Set([...this.stored, ...saved])]
+				this.documents = this.documents.filter((document) => saved.includes(document.id) === false)
+				this.selected = this.selected.filter((id) => saved.includes(id) === false)
 				this.notice = n(
 					'dossiq',
 					'%n document assessed.',
@@ -594,6 +617,16 @@ export default {
 		span {
 			color: var(--color-text-maxcontrast);
 		}
+	}
+
+	// A label breaks between words, and a long word at a hyphenation point of
+	// the page language; "Deels openbaar" and a ground's name never split
+	// inside a word.
+	:deep(.vs__selected),
+	&__table td {
+		overflow-wrap: break-word;
+		word-break: normal;
+		hyphens: auto;
 	}
 
 	&__table-wrap {
