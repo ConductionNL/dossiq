@@ -3216,6 +3216,7 @@ OC.L10N.register(
         "Goal in the family plan": "Goal in the family plan",
         "Goals": "Goals",
         "Goedgekeurd": "Goedgekeurd",
+        "Goes on the timeline above, internal unless you make it visible": "Goes on the timeline above, internal unless you make it visible",
         "Governance body": "Governance body",
         "Governance decisions raised for this case (advice, objection rulings, permit decisions). References decidesk Decision objects (ADR-066); Decidesk owns the making and eIDAS signing.": "Governance decisions raised for this case (advice, objection rulings, permit decisions). References decidesk Decision objects (ADR-066); Decidesk owns the making and eIDAS signing.",
         "Governing Body": "Governing Body",

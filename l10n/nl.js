@@ -3216,6 +3216,7 @@ OC.L10N.register(
         "Goal in the family plan": "Doel in het gezinsplan",
         "Goals": "Doelen",
         "Goedgekeurd": "Goedgekeurd",
+        "Goes on the timeline above, internal unless you make it visible": "Komt op de tijdlijn hierboven, intern tenzij u hem zichtbaar maakt",
         "Governance body": "Bestuursorgaan",
         "Governance decisions raised for this case (advice, objection rulings, permit decisions). References decidesk Decision objects (ADR-066); Decidesk owns the making and eIDAS signing.": "Bestuurlijke besluiten die voor deze zaak zijn opgeworpen (adviezen, beslissingen op bezwaar, vergunningbesluiten). Verwijst naar Decision-objecten in decidesk (ADR-066); Decidesk gaat over het nemen en het eIDAS-ondertekenen.",
         "Governing Body": "Bestuursorgaan",
