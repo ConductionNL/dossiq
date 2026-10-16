@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Woo;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\UnscopedObjectReader;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -59,19 +60,29 @@ class WooDossierReturn {
 	public const ADDED_BY = 'dossiq';
 
 	/**
+	 * Reads the resident's collection as the system, unscoped.
+	 *
+	 * @var UnscopedObjectReader
+	 */
+	private readonly UnscopedObjectReader $reader;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService        $settingsService Where OpenRegister and the collection schema are.
-	 * @param ISecureRandom          $random          Makes the item id.
-	 * @param LoggerInterface        $logger          Logger.
-	 * @param WooDecisionNotice|null $decisionNotice  Tells the resident the decision is published.
+	 * @param SettingsService           $settingsService Where OpenRegister and the collection schema are.
+	 * @param ISecureRandom             $random          Makes the item id.
+	 * @param LoggerInterface           $logger          Logger.
+	 * @param WooDecisionNotice|null    $decisionNotice  Tells the resident the decision is published.
+	 * @param UnscopedObjectReader|null $reader          Reads unscoped; a fresh one when null.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ISecureRandom $random,
 		private readonly LoggerInterface $logger,
 		private readonly ?WooDecisionNotice $decisionNotice = null,
+		?UnscopedObjectReader $reader = null,
 	) {
+		$this->reader = ($reader ?? new UnscopedObjectReader());
 	}//end __construct()
 
 	/**
@@ -100,7 +111,14 @@ class WooDossierReturn {
 	/**
 	 * Append the publication to the case's source dossier.
 	 *
-	 * @param array<string, mixed> $case          The case, with `wooRequest`.
+	 * The dossier is the resident's, in another app's register and tenant:
+	 * read under the handler's own scope it is not there, and the decision
+	 * never came back to it (rehearsal R3, "the source dossier is gone"). So
+	 * it is read and written unscoped, and only this one collection: the one
+	 * the case names, and only while its owner is still the case's requester,
+	 * the check the intake made (REQ-WRI-003).
+	 *
+	 * @param array<string, mixed> $case          The case, with `wooRequest` and `portalSubject`.
 	 * @param string               $publicationId The publication uuid.
 	 * @param string               $title         What the item's note says.
 	 *
@@ -119,12 +137,14 @@ class WooDossierReturn {
 		$schema = $this->settingsService->getWooPublicationConfigValue('woo_collection_schema');
 
 		try {
-			$collection = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $collectionId)
-			);
+			$collection = $this->reader->find(objectService: $objectService, register: $register, schema: $schema, id: $collectionId);
 			if (is_array($collection) === false) {
 				$this->logger->warning('WooDossierReturn: the source dossier is gone', ['collection' => $collectionId]);
+				return false;
+			}
+
+			if ($this->isTheRequesters(case: $case, collection: $collection) === false) {
+				$this->logger->warning('WooDossierReturn: the source dossier is not the requester\'s', ['collection' => $collectionId]);
 				return false;
 			}
 
@@ -147,16 +167,13 @@ class WooDossierReturn {
 				'addedBy' => self::ADDED_BY,
 			];
 
-			// Only `items` changes, through the PATCH seam, so a field another
-			// app wrote meanwhile (a share, a note) is not saved away.
 			$this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): ?array => $this->patchObjectAsArray(
+				operation: fn (): mixed => $this->writeItems(
 					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $collectionId,
-					changes: ['items' => $items],
+					target: ['register' => $register, 'schema' => $schema, 'id' => $collectionId],
+					collection: $collection,
+					items: $items,
 				)
 			);
 		} catch (Throwable $e) {
@@ -169,6 +186,60 @@ class WooDossierReturn {
 
 		return true;
 	}//end append()
+
+	/**
+	 * Whether the collection is still owned by the case's requester.
+	 *
+	 * @param array<string, mixed> $case       The case, with `portalSubject`.
+	 * @param array<string, mixed> $collection The collection as it was read.
+	 *
+	 * @return bool
+	 */
+	private function isTheRequesters(array $case, array $collection): bool {
+		$requester = trim((string)($case['portalSubject'] ?? ''));
+
+		return $requester !== '' && (string)($collection['owner'] ?? '') === $requester;
+	}//end isTheRequesters()
+
+	/**
+	 * Write the collection's items, unscoped, and nothing else of it.
+	 *
+	 * Through the PATCH seam when OpenRegister offers it, so a field another
+	 * app wrote meanwhile (a share, a note) is not saved away; otherwise the
+	 * collection as it was just read, with the new items.
+	 *
+	 * @param object                           $objectService The OpenRegister ObjectService.
+	 * @param array{register: string, schema: string, id: string} $target The collection's register, schema and uuid.
+	 * @param array<string, mixed>             $collection    The collection as it was read.
+	 * @param array<int, array<string, mixed>> $items         Its items, with the publication.
+	 *
+	 * @return mixed What OpenRegister answered.
+	 */
+	private function writeItems(object $objectService, array $target, array $collection, array $items): mixed {
+		if (method_exists($objectService, 'patchObject') === true) {
+			return $objectService->patchObject(
+				objectId: $target['id'],
+				data: ['items' => $items],
+				register: $target['register'],
+				schema: $target['schema'],
+				_rbac: false,
+				_multitenancy: false,
+			);
+		}
+
+		$data = $collection;
+		unset($data['@self'], $data['id']);
+		$data['items'] = $items;
+
+		return $objectService->saveObject(
+			object: $data,
+			register: $target['register'],
+			schema: $target['schema'],
+			uuid: $target['id'],
+			_rbac: false,
+			_multitenancy: false,
+		);
+	}//end writeItems()
 
 	/**
 	 * A random version 4 uuid, the format the collection schema gives `items[].id`.

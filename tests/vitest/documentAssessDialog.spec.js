@@ -226,6 +226,34 @@ describe('DocumentAssessDialog', () => {
 		)
 	})
 
+	it('drops a saved document at once, even when the next read still lists it', async () => {
+		// Rehearsal R3: the saved document stayed under "Nog geen oordeel" until
+		// the page was reloaded, because the list was read again before the
+		// search answered the new assessment.
+		const { wrapper, axios } = await mountDialog([THREE, THREE])
+		axios.post.mockResolvedValue({
+			data: {
+				saved: [{ documentRef: 'io-1', classification: 'openbaar' }],
+				errors: [],
+			},
+		})
+
+		await wrapper
+			.find('[data-testid="document-assess-select-io-1"]')
+			.setValue(true)
+		await classify(wrapper, 'openbaar')
+		await wrapper.find('[data-testid="document-assess-save"]').trigger('click')
+		await flushPromises()
+
+		expect(
+			wrapper.find('[data-testid="document-assess-row-io-1"]').exists(),
+		).toBe(false)
+		expect(
+			wrapper.find('[data-testid="document-assess-row-io-2"]').exists(),
+		).toBe(true)
+		expect(wrapper.vm.selected).toEqual([])
+	})
+
 	it('testARefusalKeepsTheDocumentsOutstanding', async () => {
 		const { wrapper, axios } = await mountDialog([THREE, THREE])
 		axios.post.mockRejectedValue({
