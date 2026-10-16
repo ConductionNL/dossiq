@@ -38,6 +38,8 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 		props: {
 			selectable: { type: Boolean, default: true },
 			rowClickToView: { type: Boolean, default: false },
+			breadcrumb: { type: Object, default: null },
+			headerMeta: { type: String, default: '' },
 		},
 		emits: ['row-click', 'view'],
 		setup(props) {
@@ -98,6 +100,15 @@ async function mountMyWork() {
 }
 
 describe('My Work row click', () => {
+	it('names My work as the way back and says how many cases are in the reader\'s name (DqAanMijToegewezen)', async () => {
+		const { wrapper } = await mountMyWork()
+
+		expect(indexPageProps.current.breadcrumb).toEqual({ label: 'My work', route: 'MyWorkHome' })
+		expect(indexPageProps.current.headerMeta).toBe('{total} cases in your name · most urgent first')
+
+		wrapper.unmount()
+	})
+
 	it('opens a colleague\'s open cases from the workload chips and stays put on the reader\'s own', async () => {
 		const { wrapper, push } = await mountMyWork()
 

@@ -22,7 +22,8 @@
 		:title="t('dossiq', 'Assigned to me')"
 		:showTitle="true"
 		:headerButtons="headerButtons"
-		:countText="t('dossiq', '{total} cases in your name, most urgent first')"
+		:breadcrumb="{ label: t('dossiq', 'My work'), route: 'MyWorkHome' }"
+		:headerMeta="t('dossiq', '{total} cases in your name · most urgent first')"
 		:footerNote="
 			t(
 				'dossiq',

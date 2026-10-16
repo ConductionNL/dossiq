@@ -10173,6 +10173,7 @@ OC.L10N.register(
         "{title}, version {version}": "{title}, version {version}",
         "{total} case types": "{total} case types",
         "{total} cases": "{total} cases",
+        "{total} cases in your name · most urgent first": "{total} cases in your name · most urgent first",
         "{total} cases in your name, most urgent first": "{total} cases in your name, most urgent first",
         "{total} in total": "{total} in total",
         "{translated} of {total}": "{translated} of {total}",
