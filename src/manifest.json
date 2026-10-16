@@ -2656,7 +2656,8 @@
 												},
 												"requester": {
 													"widget": "InitiatorPicker",
-													"label": "Requester"
+													"label": "Requester",
+													"formatter": "requesterName"
 												},
 												"confidentiality": {
 													"enumLabels": {

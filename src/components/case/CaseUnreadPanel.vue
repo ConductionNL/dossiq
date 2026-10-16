@@ -66,6 +66,7 @@ import { showError } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import { fetchReadState, markRead, markUnread } from '../../services/readStateApi.js'
+import { announceCasesChanged } from '../../utils/casesChanged.js'
 
 /**
  * What each sub-resource OpenRegister counts is called on this page.
@@ -264,7 +265,7 @@ export default {
 			try {
 				await markUnread(this.caseId)
 				this.wasUnread = true
-				window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
+				announceCasesChanged(this.caseId)
 			} catch (error) {
 				const refusal = String(error?.response?.data?.message ?? '')
 				showError(

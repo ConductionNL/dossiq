@@ -39,6 +39,8 @@ use RuntimeException;
  * Runs the intake against an in-memory register holding the seeded type and a C1-shaped dossier.
  *
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
+ * @uses \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses \OCA\Dossiq\Service\Intake\CollectionLinkQueue
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
  * @covers \OCA\Dossiq\Woo\WooRequestForm
  *
@@ -48,11 +50,16 @@ use RuntimeException;
  * caller either has.
  *
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses   \OCA\Dossiq\BackgroundJob\LinkCollectionToCaseJob
+ * @uses   \OCA\Dossiq\Service\Intake\CollectionLinkQueue
  */
 class WooRequestIntakeTest extends TestCase {
 
@@ -368,6 +375,23 @@ class WooRequestIntakeTest extends TestCase {
 			$case['properties']
 		);
 	}//end testTheRequestKeepsTheDocumentKindsAndTheRequester()
+
+	/**
+	 * The case names who asked, so its Requester shows the resident rather than a dash.
+	 *
+	 * The control: a request without a name names nobody.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-portal-request-names-its-requester/specs/woo-request-intake/spec.md#requirement-a-case-filed-for-a-resident-names-who-asked-req-wri-006
+	 */
+	public function testTheCaseNamesWhoAsked(): void {
+		$named = $this->intake->start($this->request(['verzoekerNaam' => 'Sanne de Vries', 'verzoekerType' => 'burger']));
+		self::assertSame('Sanne de Vries', $this->store->row(schema: 'case', uuid: $named['caseId'])['initiatorDisplayName']);
+
+		$unnamed = $this->intake->start($this->request(['collectionId' => '', 'origin' => 'pipelinq', 'originReference' => 'ticket-10']));
+		self::assertArrayNotHasKey('initiatorDisplayName', $this->store->row(schema: 'case', uuid: $unnamed['caseId']));
+	}//end testTheCaseNamesWhoAsked()
 
 	/**
 	 * 🔴 An answer outside its list is refused and nothing is written: a

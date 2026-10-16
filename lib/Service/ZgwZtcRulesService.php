@@ -117,7 +117,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 		parent::__construct(logger: $logger, settingsService: $settingsService, fieldValidator: $fieldValidator);
 		$this->concept = new ZtcConceptRules(results: $this->results);
 		$this->references = new ZtcTypeReferences(lookups: $this->lookups, settingsService: $settingsService, fieldValidator: $fieldValidator);
-		$this->lifecycle = new ZtcPublishAndDeleteChecks(lookups: $this->lookups, settingsService: $settingsService);
+		$this->lifecycle = new ZtcPublishAndDeleteChecks(lookups: $this->lookups, results: $this->results, settingsService: $settingsService);
 	}//end __construct()
 
 	/**

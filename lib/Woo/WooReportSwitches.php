@@ -142,21 +142,23 @@ class WooReportSwitches {
 	 * Which reports the signed-in user is offered, for the menu.
 	 *
 	 * The throughput report is offered only while it is on AND the user is
-	 * in its reader group. The parties report is not offered yet: its route
-	 * waits on the corpus collection (woo-review-reports, section 4).
+	 * in its reader group. The parties report is offered to every signed-in
+	 * user while it is on: it is read per case, and whether this user may read
+	 * a case is asked when they name one.
 	 *
-	 * @return array{throughput: bool} What the user is offered.
+	 * @return array{throughput: bool, parties: bool} What the user is offered.
 	 *
 	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function offeredToCurrentUser(): array {
 		$user = $this->userSession?->getUser();
 		if ($user === null) {
-			return ['throughput' => false];
+			return ['throughput' => false, 'parties' => false];
 		}
 
 		return [
 			'throughput' => $this->isOn(switch: self::THROUGHPUT) && $this->maySeeThroughput(userId: $user->getUID()),
+			'parties' => $this->isOn(switch: self::PARTIES),
 		];
 	}//end offeredToCurrentUser()
 

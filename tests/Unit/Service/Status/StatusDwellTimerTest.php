@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Status\StatusDwellService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  *
- * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ * @spec openspec/specs/status-transition-engine/spec.md
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class StatusDwellTimerTest extends TestCase {
@@ -138,7 +138,7 @@ class StatusDwellTimerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testTheMaximumIsArmedInWorkingDaysOnTheEngineCalendar(): void {
 		$uuid = $this->timer()->arm(
@@ -168,7 +168,7 @@ class StatusDwellTimerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testADwellTimerIsNotAStatutoryTerm(): void {
 		$this->timer()->arm(caseId: 'case-1', statusTypeId: 'review', maximumDwell: 5);
@@ -187,7 +187,7 @@ class StatusDwellTimerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testLeavingTheStatusCancelsTheTimer(): void {
 		$declarations = $this->declarations(statusTypes: [
@@ -211,7 +211,7 @@ class StatusDwellTimerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testEnteringAStatusWithAMaximumArmsAfterCancelling(): void {
 		$declarations = $this->declarations(statusTypes: [
@@ -234,7 +234,7 @@ class StatusDwellTimerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function testARefusingEngineDoesNotHoldTheCase(): void {
 		$this->engine->refuse = true;

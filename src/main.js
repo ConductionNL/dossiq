@@ -237,6 +237,9 @@ const profiledManifest = {
 		woo: {
 			throughputReader:
 				loadState('dossiq', 'woo_reports', {}).throughput === true,
+			reportsOffered:
+				loadState('dossiq', 'woo_reports', {}).throughput === true
+				|| loadState('dossiq', 'woo_reports', {}).parties === true,
 		},
 	},
 }

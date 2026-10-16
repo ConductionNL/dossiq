@@ -50,7 +50,7 @@ use stdClass;
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
  *
  * @uses \OCA\Dossiq\Woo\WooRequesterProperties
- * @uses \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses \OCA\Dossiq\Service\Intake\WrittenCase
  * @uses \OCA\Dossiq\Service\TermKind
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
@@ -58,6 +58,9 @@ use stdClass;
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class WooRequestIntakeReceiveTest extends TestCase {
 

@@ -24,6 +24,7 @@
  */
 
 import axios from '@nextcloud/axios'
+import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -236,5 +237,41 @@ describe('the row handler posts the claim and says what came back', () => {
 		window.removeEventListener('dossiq:cases-changed', listener)
 
 		expect(seen).toEqual(['dossiq:cases-changed'])
+	})
+
+	it('tells the lists on screen to read the cases again, so the claimed case leaves the queue', async () => {
+		axios.post.mockResolvedValue({ data: { mine: true } })
+		const changed = []
+		const onChanged = (e) => changed.push(e.detail)
+		window.addEventListener('cn:objects-changed', onChanged)
+		const refreshes = []
+		const onRefresh = () => refreshes.push(true)
+		subscribe('cn:page:refresh', onRefresh)
+
+		await claimCase({ actionId: 'claim', item: { id: 'case-7' } })
+		window.removeEventListener('cn:objects-changed', onChanged)
+		unsubscribe('cn:page:refresh', onRefresh)
+
+		expect(changed).toEqual([
+			{ register: 'dossiq', schema: 'case', id: 'case-7' },
+		])
+		expect(refreshes).toHaveLength(1)
+	})
+
+	it('announces nothing when the claim is refused', async () => {
+		axios.post.mockRejectedValue({
+			response: {
+				status: 409,
+				data: { error: 'Someone else is already handling this case.' },
+			},
+		})
+		const changed = []
+		const onChanged = (e) => changed.push(e.detail)
+		window.addEventListener('cn:objects-changed', onChanged)
+
+		await claimCase({ actionId: 'claim', item: { id: 'case-7' } })
+		window.removeEventListener('cn:objects-changed', onChanged)
+
+		expect(changed).toEqual([])
 	})
 })

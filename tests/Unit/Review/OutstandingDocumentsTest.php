@@ -76,6 +76,23 @@ class OutstandingDocumentsTest extends TestCase {
 	}//end testOnlyUnassessedDocumentsThatWereNotSetAsideAreOutstanding()
 
 	/**
+	 * REQ-CRA-011: an exclusion the caller cannot read still takes its document off the outstanding list.
+	 *
+	 * @return void
+	 */
+	public function testADocumentSetAsideOutOfTheCallersSightIsNotOutstanding(): void {
+		$register = new InMemoryRegister();
+		$register->seed(schema: 'document', uuid: 'doc-1', row: ['case' => 'case-1']);
+		$register->seed(schema: 'document', uuid: 'doc-2', row: ['case' => 'case-1']);
+		$register->seed(schema: 'wooExclusion', uuid: 'x-1', row: ['case' => 'case-1', 'documentRef' => 'doc-2']);
+		$register->hiddenFromCaller = ['wooExclusion'];
+
+		$outstanding = (new OutstandingDocuments(settingsService: $this->settings(register: $register)))->forCase(caseId: 'case-1');
+
+		self::assertSame(['count' => 1, 'documents' => ['doc-1']], $outstanding);
+	}//end testADocumentSetAsideOutOfTheCallersSightIsNotOutstanding()
+
+	/**
 	 * Without OpenRegister, a register or any document, nothing is outstanding.
 	 *
 	 * @return void

@@ -15,6 +15,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Lock\LockedException;
@@ -39,6 +40,8 @@ use RuntimeException;
  * @spec openspec/specs/document-projection/spec.md
  */
 class DocumentProjectionService {
+
+	use SearchesObjects;
 
 	/**
 	 * The folder OpenRegister keeps every register under, in every user's files.
@@ -68,6 +71,26 @@ class DocumentProjectionService {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * Run a projection as the system, for a file written with nobody signed in.
+	 *
+	 * Without OpenRegister the operation runs as it is.
+	 *
+	 * @param callable $operation The projection.
+	 *
+	 * @return mixed What the projection returns.
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	public function asSystem(callable $operation): mixed {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return $operation();
+		}
+
+		return $this->runAsSystemIfAvailable(objectService: $objectService, operation: $operation);
+	}//end asSystem()
 
 	/**
 	 * Whether a node path lies under the register tree at all.

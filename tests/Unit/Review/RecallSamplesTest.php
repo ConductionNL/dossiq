@@ -29,7 +29,7 @@ use OCA\Dossiq\Review\StoppingRuleMet;
 use OCA\Dossiq\Review\StoppingRules;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\RecallEstimator;
+use OCA\Dossiq\Review\RecallEstimator;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\ReviewDepth
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\StoppingRules
- * @uses \OCA\Dossiq\Woo\RecallEstimator
+ * @uses \OCA\Dossiq\Review\RecallEstimator
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
  *

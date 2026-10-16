@@ -37,13 +37,13 @@ test.describe('The corpus of a Woo request', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/specs/woo-case-type/spec.md#no-plan-no-collection
-	// @e2e openspec/specs/woo-case-type/spec.md#the-plan-is-held-with-the-request
-	// @e2e openspec/specs/woo-case-type/spec.md#volumes-per-custodian
-	// @e2e openspec/specs/woo-case-type/spec.md#a-duplicate-is-listed-not-silently-dropped
-	// @e2e openspec/specs/woo-case-type/spec.md#what-arrived-reconciles-with-what-was-reviewed
-	// @e2e openspec/specs/woo-case-type/spec.md#a-colleague-re-runs-the-query-and-sees-what-is-new
-	// @e2e openspec/specs/woo-case-type/spec.md#start-from-the-last-request
+	// @e2e openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#no-plan-no-collection
+	// @e2e openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#the-plan-is-held-with-the-request
+	// @e2e openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#volumes-per-custodian
+	// @e2e openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#a-duplicate-is-listed-not-silently-dropped
+	// @e2e openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#what-arrived-reconciles-with-what-was-reviewed
+	// @e2e openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#a-colleague-re-runs-the-query-and-sees-what-is-new
+	// @e2e openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#start-from-the-last-request
 	test('plan, gather, exclude, reconcile, re-run and start again', async ({
 		request,
 	}) => {

@@ -31,7 +31,9 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses   \OCA\Dossiq\Service\Support\UnscopedObjectReader
- * @uses   \OCA\Dossiq\Woo\WooWrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
+ * @uses   \OCA\Dossiq\Service\Intake\CaseOpeningDefaults
+ * @uses   \OCA\Dossiq\Service\Support\ReadableDay
  */
 class SystemCaseStoreTest extends TestCase {
 

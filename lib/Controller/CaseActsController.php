@@ -118,19 +118,73 @@ class CaseActsController extends Controller {
 	 * the answer carries every act, each with `allowed` and, when it is not,
 	 * the sentence naming the role or the state that refuses it.
 	 *
+	 * Anyone who may read the case reads it; a reader who is not its handler
+	 * gets every act refused with the sentence that says to claim it first.
+	 *
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
 	 */
 	#[NoAdminRequired]
 	public function acts(string $caseId): JSONResponse {
-		return $this->guarded(
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Sign in first.', 'error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['message' => 'You do not work on this case.', 'error' => 'not-authorized'],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
+
+		$mayAct = $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user);
+
+		return $this->answered(
 			caseId: $caseId,
-			run: fn (): array => $this->overview->overview(caseId: $caseId),
+			run: fn (): array => $this->refusedUnlessHandler(overview: $this->overview->overview(caseId: $caseId), mayAct: $mayAct),
 		);
 	}//end acts()
+
+	/**
+	 * The overview as a reader who may not act sees it: every act listed, none allowed.
+	 *
+	 * A handling team member reads an unclaimed case of their team, but only
+	 * its handler acts on it, so each act carries the sentence that says so.
+	 *
+	 * @param array<string, mixed> $overview The overview for the handler.
+	 * @param bool $mayAct Whether the caller may act on the case.
+	 *
+	 * @return array<string, mixed> The overview the caller is answered.
+	 *
+	 * @spec openspec/changes/a-handling-team-opens-its-unclaimed-cases/specs/case-access-control/spec.md#requirement-a-handling-team-member-opens-a-case-of-its-case-type-before-it-is-claimed-req-acc-11
+	 */
+	private function refusedUnlessHandler(array $overview, bool $mayAct): array {
+		if ($mayAct === true) {
+			return $overview;
+		}
+
+		$sentence = 'Claim this case first: only its handler acts on it.';
+		$sentence = ($this->refusalTranslator()?->t($sentence) ?? $sentence);
+		foreach (['acts', 'alwaysAvailable'] as $list) {
+			if (is_array($overview[$list] ?? null) === false) {
+				continue;
+			}
+
+			foreach ($overview[$list] as $index => $act) {
+				if (is_array($act) === true && array_key_exists('allowed', $act) === true) {
+					$overview[$list][$index]['allowed'] = false;
+					$overview[$list][$index]['reason'] = $sentence;
+				}
+			}
+		}
+
+		return $overview;
+	}//end refusedUnlessHandler()
 
 	/**
 	 * Finish the case: it reached its result.
@@ -339,6 +393,22 @@ class CaseActsController extends Controller {
 			);
 		}
 
+		return $this->answered(caseId: $caseId, run: $run);
+	}//end guarded()
+
+	/**
+	 * Answer what a call computes, turning a refusal or a failure into its response.
+	 *
+	 * Callers run their own guard first.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param callable(): array<string, mixed> $run The call.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 */
+	private function answered(string $caseId, callable $run): JSONResponse {
 		try {
 			return new JSONResponse($run());
 		} catch (RefusedException $e) {
@@ -349,10 +419,12 @@ class CaseActsController extends Controller {
 				['caseId' => $caseId, 'exception' => $e->getMessage()],
 			);
 
+			$sentence = 'The case could not be changed.';
+
 			return new JSONResponse(
-				['message' => 'The case could not be changed.', 'error' => 'act-failed'],
+				['message' => ($this->refusalTranslator()?->t($sentence) ?? $sentence), 'error' => 'act-failed'],
 				Http::STATUS_INTERNAL_SERVER_ERROR,
 			);
 		}//end try
-	}//end guarded()
+	}//end answered()
 }//end class

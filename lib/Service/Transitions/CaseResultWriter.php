@@ -91,7 +91,8 @@ class CaseResultWriter {
 	 * Returns null when nothing is to be written: the case type declares no
 	 * result types, so there is no question to ask. Refuses when it declares
 	 * some and the caller picked none — a case that closes with an unanswered
-	 * result is one no archivist, citizen or WOO request can read later.
+	 * result is one no archivist, citizen or WOO request can read later — and
+	 * when the caller named a result that is not one of the case type's own.
 	 *
 	 * @param string $caseId Case UUID.
 	 * @param string $caseTypeId The case's caseType UUID.
@@ -99,8 +100,9 @@ class CaseResultWriter {
 	 *
 	 * @return string|null The written result's UUID, or null when none is needed.
 	 *
-	 * @throws RuntimeException When a result is required and none was given, or
-	 *                          when the result row cannot be written.
+	 * @throws RefusedException When a result is required and none was given, or
+	 *                          the given one is not one of the case type's results.
+	 * @throws RuntimeException When the result row cannot be written.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
@@ -113,6 +115,17 @@ class CaseResultWriter {
 			throw new RefusedException(
 				rule: 'result-type-required',
 				sentence: 'Pick a result before closing this case.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		// A value that is not one of the case type's results is the handler's
+		// mistake, not the store's: written through, it fails the result
+		// schema's uuid format and the handler reads a 500.
+		if (in_array($resultTypeId, $this->listResultTypeIds(caseTypeId: $caseTypeId), true) === false) {
+			throw new RefusedException(
+				rule: 'result-type-unknown',
+				sentence: 'Pick one of the results this case type can close with.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}

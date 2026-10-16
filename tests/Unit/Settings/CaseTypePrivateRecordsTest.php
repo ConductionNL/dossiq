@@ -105,7 +105,7 @@ class CaseTypePrivateRecordsTest extends TestCase {
 	 */
 	public function testNoListedRecordIsReadableByAllUsers(): void {
 		$listed = ($this->privateRecordSchemas()['woo-verzoek'] ?? []);
-		foreach (['wooDocumentAssessment', 'reviewBatch', 'triageRule'] as $slug) {
+		foreach (['wooDocumentAssessment', 'reviewBatch', 'triageRule', 'documentReview', 'wooSearchPlan', 'wooExclusion', 'wooCollectionQuery'] as $slug) {
 			self::assertContains($slug, $listed);
 		}
 

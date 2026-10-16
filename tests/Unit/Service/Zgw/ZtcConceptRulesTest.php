@@ -41,7 +41,7 @@ class ZtcConceptRulesTest extends TestCase {
 	 * @return ZtcConceptRules
 	 */
 	private function rules(): ZtcConceptRules {
-		return new ZtcConceptRules(results: new ZgwRuleResults());
+		return new ZtcConceptRules(results: new ZgwRuleResults(logger: $this->createMock(\Psr\Log\LoggerInterface::class)));
 	}//end rules()
 
 	/**

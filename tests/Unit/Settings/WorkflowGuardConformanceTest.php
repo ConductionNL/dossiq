@@ -71,6 +71,14 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
  * @uses \OCA\Dossiq\Service\Transitions\DelegatedAuthorityGuard
+ * @uses   \OCA\Dossiq\Review\DisclosureAssessmentValidator
+ * @uses   \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses   \OCA\Dossiq\Service\Assessment\DocumentSearchOutcome
+ * @uses   \OCA\Dossiq\Service\Transitions\DocumentAssessmentGuard
+ * @uses   \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses   \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses   \OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks
+ * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  */
 class WorkflowGuardConformanceTest extends TestCase {
 

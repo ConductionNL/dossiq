@@ -112,7 +112,7 @@
         "@self": {
           "register": "dossiq",
           "schema": "caseType",
-          "version": "1.4.7",
+          "version": "1.4.9",
           "slug": "woo-verzoek"
         },
         "title": "Woo-verzoek",
@@ -155,6 +155,32 @@
             },
             {
               "schemaKey": "triage_rule_schema",
+              "caseField": "case",
+              "readers": "assignee",
+              "assigneeMay": "update"
+            },
+            {
+              "schemaKey": "document_review_schema",
+              "caseField": "case",
+              "readers": "own",
+              "reviewerRowField": "batch",
+              "assigneeMay": "update",
+              "reviewersMay": "update"
+            },
+            {
+              "schemaKey": "woo_search_plan_schema",
+              "caseField": "case",
+              "readers": "assignee",
+              "assigneeMay": "update"
+            },
+            {
+              "schemaKey": "woo_exclusion_schema",
+              "caseField": "case",
+              "readers": "assignee",
+              "assigneeMay": "update"
+            },
+            {
+              "schemaKey": "woo_collection_query_schema",
               "caseField": "case",
               "readers": "assignee",
               "assigneeMay": "update"

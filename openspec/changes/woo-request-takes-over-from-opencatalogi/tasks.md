@@ -123,7 +123,7 @@ are where local stubs lie).
     `testARefusedStampIsAFailureNotAMigration`, `testOpencatalogisTimerIsNeverTouched`,
     `testWithoutOpencatalogiNothingIsImported`, `testEveryWrittenCaseFitsTheCaseSchema` (real schema). Plus
     `RecordCaseMappingTest`, `RecordImportStoreTest`, `tests/Unit/Service/Term/TermCarryOverTest.php`.
-  - `lib/Woo/OpenCatalogiWooCase.php` (#3608) is now unused by the import: the refactor programme removes it.
+  - `lib/Woo/OpenCatalogiWooCase.php` (#3608) was unused by the import and is removed, with its test (refactor lane R8).
 - [x] 4.3 The command, generic: `lib/Command/ImportCaseRecordsCommand.php`
   (`dossiq:case:import-records <caseType> [--import=<key>] [--dry-run]`), registered in `appinfo/info.xml`.
   - Through the caller: `tests/Unit/Command/ImportCaseRecordsCommandTest.php`

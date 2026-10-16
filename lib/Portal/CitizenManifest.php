@@ -153,8 +153,10 @@ class CitizenManifest {
 		// in silence (measured through its own resolvers).
 		'documentSoorten' => ['label' => 'Welke documenten zoekt u?', 'widget' => 'choices'],
 		'toelichting' => ['label' => 'Wilt u nog iets toelichten?', 'size' => 'large'],
-		'verzoekerNaam' => ['label' => 'Uw naam'],
-		'verzoekerEmail' => ['label' => 'Uw e-mailadres'],
+		// Portaliq starts these two from the signed-in resident's own name
+		// and e-mail address; the resident can still change them.
+		'verzoekerNaam' => ['label' => 'Uw naam', 'prefill' => 'name'],
+		'verzoekerEmail' => ['label' => 'Uw e-mailadres', 'prefill' => 'email'],
 		'verzoekerType' => ['label' => 'U vraagt dit als', 'widget' => 'choices'],
 	];
 
@@ -223,7 +225,7 @@ class CitizenManifest {
 	 * What the resident reads once the request is in. `{identifier}`,
 	 * `{termStartsDay}` and `{deadlineDay}` come from the answer the route
 	 * gives (decision 179: the case is stamped inside its create), the dates as
-	 * a letter writes them ("14 oktober 2026", WooWrittenCase). A sentence whose
+	 * a letter writes them ("14 oktober 2026", WrittenCase). A sentence whose
 	 * placeholder has no value is left out, so a case whose deadline is not
 	 * computed yet promises no date.
 	 */

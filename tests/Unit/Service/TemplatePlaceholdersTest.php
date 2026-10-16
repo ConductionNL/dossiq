@@ -60,7 +60,6 @@ use ReflectionClass;
  *
  * @covers \OCA\Dossiq\Service\EmailTemplateService
  * @uses \OCA\Dossiq\Service\Email\EmailTemplateRepository
- * @uses \OCA\Dossiq\Service\IntakeConfirmation
  * @uses \OCA\Dossiq\Service\IntegrationStatusService
  */
 class TemplatePlaceholdersTest extends TestCase {

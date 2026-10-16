@@ -182,7 +182,8 @@ class PackageInstaller {
 	 *
 	 * @return array<string, mixed> status, package, version and message; errors
 	 *         when refused as invalid, missing when a capability is missing,
-	 *         written and skipped counts when installed.
+	 *         written, skipped and refreshed counts and the ids of the kept rows
+	 *         when installed.
 	 *
 	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
 	 */
@@ -279,21 +280,34 @@ class PackageInstaller {
 			);
 		}
 
+		// After the write and the ledger record: a refreshed row replaces what
+		// was there and cannot be taken back with the rest of a failed install.
+		$refresh = $this->ledger->refreshRows(set: $id, version: $version, rows: $result['held']);
+
 		$this->applySettings(settings: $settings);
 
 		$this->logger->info(
-			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted, {skipped} already present',
+			'Installed package {id} {version}: {written} row(s) written, {adopted} adopted, {skipped} already present'
+			. ' ({refreshed} refreshed, {kept} kept as this instance holds them)',
 			[
 				'id' => $id,
 				'version' => $version,
 				'written' => count($result['written']),
 				'adopted' => count($result['adopted']),
 				'skipped' => count($result['skipped']),
+				'refreshed' => count($refresh['refreshed']),
+				'kept' => count($refresh['kept']),
 			]
 		);
 
 		return $this->outcome(status: self::INSTALLED, id: $id, version: $version, message: $result['message'])
-			+ ['written' => count($result['written']), 'adopted' => count($result['adopted']), 'skipped' => count($result['skipped'])];
+			+ [
+				'written' => count($result['written']),
+				'adopted' => count($result['adopted']),
+				'skipped' => count($result['skipped']),
+				'refreshed' => count($refresh['refreshed']),
+				'kept' => $refresh['kept'],
+			];
 	}//end write()
 
 	/**

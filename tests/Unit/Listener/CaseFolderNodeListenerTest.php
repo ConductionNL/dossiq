@@ -24,6 +24,8 @@ use OCP\Files\Events\Node\NodeRenamedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\File;
 use OCP\Files\Folder;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -185,4 +187,110 @@ class CaseFolderNodeListenerTest extends TestCase {
 		sort($expected);
 		$this->assertSame(expected: $expected, actual: $seen);
 	}//end testTheRegistrarWiresAllFourNodeEvents()
+
+	/**
+	 * An object service double that records whether the callable ran as the system.
+	 *
+	 * @return object The double, with a public `$asSystem` flag and `$elevations` count.
+	 */
+	private function objectService(): object {
+		return new class {
+			public bool $asSystem = false;
+			public int $elevations = 0;
+
+			/**
+			 * Mimic ObjectService::runAsSystem().
+			 *
+			 * @param callable $operation The operation.
+			 *
+			 * @return mixed What it returns.
+			 */
+			public function runAsSystem(callable $operation): mixed {
+				$this->elevations++;
+				$this->asSystem = true;
+				try {
+					return $operation();
+				} finally {
+					$this->asSystem = false;
+				}
+			}
+		};
+	}//end objectService()
+
+	/**
+	 * A listener over this projection double, with a session holding the given user.
+	 *
+	 * @param IUser|null $user   The signed-in user, null for none.
+	 * @param object     $or     The object service double.
+	 *
+	 * @return CaseFolderNodeListener
+	 */
+	private function listenerFor(?IUser $user, object $or): CaseFolderNodeListener {
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+		$this->projection->method('asSystem')->willReturnCallback(
+			static fn (callable $operation): mixed => $or->runAsSystem($operation)
+		);
+
+		return new CaseFolderNodeListener(projection: $this->projection, logger: $this->logger, userSession: $session);
+	}//end listenerFor()
+
+	/**
+	 * A file written with nobody signed in (an install, a job) is projected as the system.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	public function testAFileWrittenWithoutAUserIsProjectedAsTheSystem(): void {
+		$or = $this->objectService();
+		$node = $this->file(path: self::IN_TREE);
+		$ranAsSystem = null;
+		$this->projection->expects($this->once())->method('projectNode')->willReturnCallback(
+			static function () use ($or, &$ranAsSystem): ?array {
+				$ranAsSystem = $or->asSystem;
+				return null;
+			}
+		);
+
+		$this->listenerFor(user: null, or: $or)->handle(event: new NodeCreatedEvent(node: $node));
+
+		$this->assertTrue($ranAsSystem);
+	}//end testAFileWrittenWithoutAUserIsProjectedAsTheSystem()
+
+	/**
+	 * A file a signed-in user writes is projected as that user, never elevated.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	public function testAFileAUserWritesIsProjectedAsThatUser(): void {
+		$or = $this->objectService();
+		$node = $this->file(path: self::IN_TREE);
+		$this->projection->expects($this->once())->method('projectNode');
+		$this->projection->expects($this->once())->method('retireNode');
+
+		$listener = $this->listenerFor(user: $this->createMock(originalClassName: IUser::class), or: $or);
+		$listener->handle(event: new NodeWrittenEvent(node: $node));
+		$listener->handle(event: new NodeDeletedEvent(node: $node));
+
+		$this->assertSame(0, $or->elevations);
+	}//end testAFileAUserWritesIsProjectedAsThatUser()
+
+	/**
+	 * A file outside the tree is not elevated either: it is not projected at all.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 */
+	public function testAFileOutsideTheTreeIsNeverElevated(): void {
+		$or = $this->objectService();
+		$this->projection->expects($this->never())->method('projectNode');
+
+		$this->listenerFor(user: null, or: $or)->handle(event: new NodeCreatedEvent(node: $this->file(path: self::OUTSIDE)));
+
+		$this->assertSame(0, $or->elevations);
+	}//end testAFileOutsideTheTreeIsNeverElevated()
 }//end class

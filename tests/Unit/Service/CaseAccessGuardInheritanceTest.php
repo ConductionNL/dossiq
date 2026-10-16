@@ -60,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class CaseAccessGuardInheritanceTest extends TestCase {
 

@@ -257,6 +257,7 @@ class BrcDocumentLinkHandler {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
 		}
 
+		$object = $resource . ' ' . $uuid;
 		try {
 			// Read the BIO to get besluit URL before deletion.
 			$bioObj = $objectService->find(
@@ -264,6 +265,15 @@ class BrcDocumentLinkHandler {
 				register: $mappingConfig['sourceRegister'],
 				schema: $mappingConfig['sourceSchema']
 			);
+		} catch (\Throwable $e) {
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
+		}
+
+		if ($bioObj === null) {
+			return $this->zgwService->notFoundResponse();
+		}
+
+		try {
 			$bioData = $this->objectToArray(row: $bioObj);
 
 			// Build the besluit URL from the stored decision UUID.
@@ -281,30 +291,18 @@ class BrcDocumentLinkHandler {
 
 			// Delete the BIO.
 			$objectService->deleteObject(uuid: $uuid);
-
-			// Brc-005b: Delete matching OIO in DRC.
-			if ($decisionUrl !== '' && $ioUrl !== '') {
-				$this->sync->deleteOioByDecisionAndIo(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
-			}
-
-			$baseUrl = $this->zgwService->buildBaseUrl($request, self::ZGW_API, $resource);
-			$this->zgwService->publishNotification(
-				self::ZGW_API,
-				$resource,
-				$baseUrl . '/' . $uuid,
-				'destroy'
-			);
-
-			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'BRC delete BIO error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-			return new JSONResponse(
-				data: ['detail' => 'Not found'],
-				statusCode: Http::STATUS_NOT_FOUND
-			);
+			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete BIO', object: $object);
 		}//end try
+
+		// The BIO is gone. Brc-005b: delete the matching OIO in the DRC; a failure there is
+		// logged at error by the sync, and the delete still answers 204.
+		if ($decisionUrl !== '' && $ioUrl !== '') {
+			$this->sync->deleteOioByDecisionAndIo(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
+		}
+
+		$this->zgwService->notifyDeleted(request: $request, zgwApi: self::ZGW_API, resource: $resource, uuid: $uuid);
+
+		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 	}//end destroyBesluitInformatieObject()
 }//end class
