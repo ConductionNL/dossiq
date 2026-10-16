@@ -205,12 +205,20 @@ class ConnectionsDeclarationTest extends TestCase {
 			}
 
 			$url = (string)$connection['settingsUrl'];
-			$this->assertStringStartsWith(prefix: '/settings/admin/dossiq#section-', string: $url, message: $connection['key']);
+			$this->assertMatchesRegularExpression(
+				pattern: '#^/settings/admin/dossiq\\?tab=[a-z-]+\\#section-[a-z-]+$#',
+				string: $url,
+				message: $connection['key']
+			);
+			$tab    = substr($url, strpos($url, '=') + 1, strpos($url, '#') - strpos($url, '=') - 1);
 			$anchor = substr($url, strpos($url, '#') + 1);
+			$start  = strpos($adminRoot, '<template #tab-' . $tab . '>');
+			$this->assertNotFalse($start, $connection['key'] . ' links to a missing tab');
+			$panel = substr($adminRoot, $start, strpos($adminRoot, "\n\t\t</template>", $start) - $start);
 			$this->assertStringContainsString(
 				needle: 'id="' . $anchor . '"',
-				haystack: $adminRoot,
-				message: $connection['key'] . ' links to a missing section'
+				haystack: $panel,
+				message: $connection['key'] . ' links to a section that is not on its tab'
 			);
 			$linked++;
 		}
