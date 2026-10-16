@@ -4954,6 +4954,7 @@ OC.L10N.register(
         "Notify when a document is added.": "Notify when a document is added.",
         "November": "November",
         "now": "now",
+        "Now with {team}. The new team picks its own handler.": "Now with {team}. The new team picks its own handler.",
         "Nu publiceren": "Publish now",
         "Null set": "Null set",
         "Number": "Number",

@@ -44,7 +44,7 @@
 					data-testid="case-handover-team"
 					@search="searchTeams" />
 				<span class="case-handover-dialog__hint">
-					{{ t('dossiq', 'The new team picks its own handler.') }}
+					{{ currentTeam ? t('dossiq', 'Now with {team}. The new team picks its own handler.', { team: currentTeam }) : t('dossiq', 'The new team picks its own handler.') }}
 				</span>
 			</div>
 
@@ -174,6 +174,14 @@ export default {
 		 */
 		eyebrow() {
 			return caseEyebrow(t('dossiq', 'Hand over'), this.kase)
+		},
+
+		/**
+		 * @return {string} The team the case is with now, by its public name.
+		 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+		 */
+		currentTeam() {
+			return String(this.kase?.assignedGroupPublicName || this.kase?.assignedGroup || '')
 		},
 
 		/** @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md */

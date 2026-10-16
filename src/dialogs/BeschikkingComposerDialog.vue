@@ -34,6 +34,10 @@
 							<dt>{{ t('dossiq', 'Case') }}</dt>
 							<dd>{{ [kase.identifier, kase.title].filter(Boolean).join(', ') }}</dd>
 						</div>
+						<div v-if="kase.resultPublicLabel">
+							<dt>{{ t('dossiq', 'Decision') }}</dt>
+							<dd>{{ kase.resultPublicLabel }}</dd>
+						</div>
 					</dl>
 				</section>
 
