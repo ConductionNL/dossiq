@@ -28,8 +28,7 @@
 						"label": "Data subject requests",
 						"route": "PrivacyRequests",
 						"countFrom": {
-							"showTitle": true,
-				"register": "dossiq",
+							"register": "dossiq",
 							"schema": "case",
 							"filter": {
 								"dataSubjectRequestType": ["inzage", "correctie", "verwijdering"],
@@ -41,8 +40,7 @@
 						"label": "Data breaches",
 						"route": "AvgIncidents",
 						"countFrom": {
-							"showTitle": true,
-				"register": "dossiq",
+							"register": "dossiq",
 							"schema": "avgIncident",
 							"filter": {}
 						}
@@ -161,8 +159,7 @@
 						"label": "Contracts",
 						"route": "Contracts",
 						"countFrom": {
-							"showTitle": true,
-				"register": "dossiq",
+							"register": "dossiq",
 							"schema": "supplierContract",
 							"filter": {}
 						}
@@ -171,8 +168,7 @@
 						"label": "Suppliers",
 						"route": "Suppliers",
 						"countFrom": {
-							"showTitle": true,
-				"register": "dossiq",
+							"register": "dossiq",
 							"schema": "supplier",
 							"filter": {}
 						}
@@ -222,8 +218,7 @@
 						"label": "Supplier",
 						"widget": "fkResolve",
 						"widgetProps": {
-							"showTitle": true,
-				"register": "dossiq",
+							"register": "dossiq",
 							"schema": "supplier",
 							"labelField": "legalName"
 						}
@@ -284,8 +279,7 @@
 						"label": "Contracts",
 						"route": "Contracts",
 						"countFrom": {
-							"showTitle": true,
-				"register": "dossiq",
+							"register": "dossiq",
 							"schema": "supplierContract",
 							"filter": {}
 						}
@@ -294,8 +288,7 @@
 						"label": "Suppliers",
 						"route": "Suppliers",
 						"countFrom": {
-							"showTitle": true,
-				"register": "dossiq",
+							"register": "dossiq",
 							"schema": "supplier",
 							"filter": {}
 						}
