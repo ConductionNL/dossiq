@@ -1233,12 +1233,14 @@
 							"hideEmpty": false,
 							"overrides": {
 								"status": {
-									"editable": false
+									"editable": false,
+									"order": 3
 								},
 								"identifier": {
 									"readOnly": false,
 									"editable": false,
-									"label": "Case number"
+									"label": "Case number",
+									"order": 1
 								},
 								"priority": {
 									"editable": false
@@ -1246,7 +1248,8 @@
 								"requester": {
 									"widget": "InitiatorPicker",
 									"label": "Requester",
-									"formatter": "requesterName"
+									"formatter": "requesterName",
+									"order": 4
 								},
 								"confidentiality": {
 									"enumLabels": {
@@ -1258,43 +1261,64 @@
 										"confidentieel": "Classified confidential",
 										"geheim": "Secret",
 										"zeer_geheim": "Top secret"
-									}
+									},
+									"order": 11
 								},
 								"caseType": {
-									"label": "Case type"
+									"label": "Case type",
+									"order": 2
 								},
 								"intakeChannel": {
-									"label": "Channel"
+									"label": "Channel",
+									"order": 5
 								},
 								"receivedAt": {
 									"label": "Registration date",
-									"editable": false
+									"editable": false,
+									"order": 6
 								},
 								"startDate": {
-									"label": "Start date"
+									"label": "Start date",
+									"order": 7
 								},
 								"deadline": {
-									"label": "Decide by"
+									"label": "Decide by",
+									"order": 8
 								},
 								"assignee": {
-									"label": "Handler"
+									"label": "Handler",
+									"order": 9
 								},
 								"assignedGroup": {
-									"label": "Team"
+									"label": "Team",
+									"order": 10
 								},
 								"legalBasis": {
-									"label": "Legal ground"
+									"label": "Legal ground",
+									"order": 13
 								},
 								"archiveStatus": {
 									"label": "Archive status",
-									"editable": false
+									"editable": false,
+									"order": 14
 								},
 								"parentCase": {
-									"label": "Parent case"
+									"label": "Parent case",
+									"order": 15
 								},
 								"externalApplication": {
 									"label": "Handled elsewhere",
-									"editable": false
+									"editable": false,
+									"order": 18
+								},
+								"result": {
+									"order": 12
+								},
+								"impact": {
+									"order": 16
+								},
+								"urgency": {
+									"order": 17
 								}
 							}
 						}
