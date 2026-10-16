@@ -262,7 +262,6 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 import FirstTodayWidget from './views/widgets/FirstTodayWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WooReportsView from './views/woo/WooReportsView.vue'
-import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
 // Ask whether this case already exists, before it does.
 // @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
@@ -431,14 +430,6 @@ const registry = {
 		kind: 'page',
 		component: CasesOnMapView,
 		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
-	},
-
-	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
-	// @spec openspec/specs/dashboard/spec.md
-	WorkflowBoardView: {
-		kind: 'page',
-		component: WorkflowBoardView,
-		_note: 'Kanban board: column per non-final status, drag-to-advance via saveObject (RBAC-enforced). No declarative board page type in lib yet.',
 	},
 
 	// --- Flows (ADR-110 Decision 4). ---
