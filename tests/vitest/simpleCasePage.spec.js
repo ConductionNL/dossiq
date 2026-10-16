@@ -486,7 +486,8 @@ describe('the tabs', () => {
 		expect(find(simple, 'case-panels').content.variant).toBeUndefined()
 		expect(find(original, 'case-panels').content.variant).toBeUndefined()
 		expect(simple.showTypeEyebrow).toBe(false)
-		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases' })
+		// The trail ends in the case number, as DqZaak draws "Alle zaken / 2026-0082".
+		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases', currentField: 'identifier', separator: '/' })
 		expect(original.showTypeEyebrow).toBeUndefined()
 		expect(original.breadcrumb).toBeUndefined()
 		expect(casePage(simpleFile).route).toBeDefined()
@@ -553,10 +554,11 @@ describe('the tabs', () => {
 				}
 			}
 		}
-		// None of the three is lost: the number is the pill above the title,
+		// None of the three is lost: the number ends the breadcrumb,
 		// the deadline is the first card of the side column, and neither
 		// widget is still placed in the grid, so nothing renders twice.
-		expect(simple.typePill).toEqual({ field: 'identifier' })
+		expect(simple.breadcrumb.currentField).toBe('identifier')
+		expect(simple.typePill).toBeUndefined()
 		expect(simple.sideColumn[0]).toBe('case-tile-deadline')
 		const placed = simple.layout.map((entry) => entry.widgetId)
 		expect(placed).not.toContain('case-tile-deadline')
@@ -569,7 +571,7 @@ describe('the tabs', () => {
 describe('the header and the side column', () => {
 	it('reads the pills and the cards from fields the case carries', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
-		expect(onTheCase(simple.typePill.field)).toBe(true)
+		expect(onTheCase(simple.breadcrumb.currentField)).toBe(true)
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object')
 		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
 		const shown = []

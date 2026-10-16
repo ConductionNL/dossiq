@@ -875,13 +875,12 @@
 					},
 					"case-banner-stack"
 				],
-				"typePill": {
-					"field": "identifier"
-				},
 				"showTypeEyebrow": false,
 				"breadcrumb": {
 					"label": "All cases",
-					"route": "Cases"
+					"route": "Cases",
+					"currentField": "identifier",
+					"separator": "/"
 				},
 				"headerCard": true,
 				"headerWidget": "case-stages"
