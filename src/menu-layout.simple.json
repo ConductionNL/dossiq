@@ -932,6 +932,9 @@
 					"document-assess": {
 						"group": "Dossier"
 					},
+					"document-redact": {
+						"group": "Dossier"
+					},
 					"assessment-decide": {
 						"group": "Publication"
 					},
