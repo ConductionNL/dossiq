@@ -1,61 +1,43 @@
 <template>
-	<NcDialog
+	<CnDialog
 		v-if="isOpen"
-		:name="t('dossiq', 'Send Mijn Overheid Message')"
-		size="normal"
-		@close="$emit('close')">
+		:name="t('dossiq', 'Message to the Berichtenbox')"
+		:eyebrow="eyebrow"
+		:subtitle="t('dossiq', 'Digital post to the applicant, in MijnOverheid. Only when the applicant is a person.')"
+		width="form"
+		:noClose="sending"
+		@closing="$emit('close')">
 		<div class="compose-dialog">
-			<div class="form-group">
-				<NcTextField
-					:modelValue="form.bsn"
-					:label="t('dossiq', 'BSN (burgerservicenummer)')"
-					:error="!!errors.bsn"
-					@update:modelValue="(v) => (form.bsn = v)" />
-				<p v-if="errors.bsn" class="form-error">
-					{{ errors.bsn }}
-				</p>
+			<div class="compose-dialog__row">
+				<div class="compose-dialog__field">
+					<NcTextField
+						:modelValue="form.bsn"
+						:label="t('dossiq', 'BSN')"
+						:labelOutside="true"
+						:error="!!errors.bsn"
+						@update:modelValue="(v) => (form.bsn = v)" />
+					<span v-if="errors.bsn" class="form-error">{{ errors.bsn }}</span>
+					<span v-else-if="recipientName" class="compose-dialog__hint">
+						{{ t('dossiq', '{name}, from the case. Not shown to anyone.', { name: recipientName }) }}
+					</span>
+				</div>
+				<div class="compose-dialog__field">
+					<label class="compose-dialog__label" for="berichtenbox-compose-type">
+						{{ t('dossiq', 'Kind of message') }}
+						<span class="compose-dialog__optional">{{ t('dossiq', '(optional)') }}</span>
+					</label>
+					<NcSelect
+						v-model="form.berichtTypeCode"
+						inputId="berichtenbox-compose-type"
+						:options="typeCodes"
+						:inputLabel="t('dossiq', 'Kind of message')"
+						:labelOutside="true"
+						label="label"
+						trackBy="code" />
+				</div>
 			</div>
 
-			<div class="form-group">
-				<NcTextField
-					:modelValue="form.subject"
-					:label="t('dossiq', 'Subject')"
-					:error="!!errors.subject"
-					@update:modelValue="(v) => (form.subject = v)" />
-				<p v-if="errors.subject" class="form-error">
-					{{ errors.subject }}
-				</p>
-			</div>
-
-			<div class="form-group">
-				<label for="berichtenbox-compose-body">{{
-					t('dossiq', 'Message (plain text only)')
-				}}</label>
-				<textarea
-					id="berichtenbox-compose-body"
-					v-model="form.body"
-					class="compose-dialog__body"
-					rows="8"
-					:placeholder="t('dossiq', 'Enter your message…')" />
-				<small class="compose-dialog__char-count">
-					{{ form.body.length }} {{ t('dossiq', 'characters') }}
-				</small>
-				<p v-if="errors.body" class="form-error">
-					{{ errors.body }}
-				</p>
-			</div>
-
-			<div class="form-group">
-				<label>{{ t('dossiq', 'Bericht type') }}</label>
-				<NcSelect
-					v-model="form.berichtTypeCode"
-					:options="typeCodes"
-					:aria-label-combobox="t('dossiq', 'Bericht type')"
-					label="label"
-					trackBy="code" />
-			</div>
-
-			<div class="form-group">
+			<div class="compose-dialog__check">
 				<NcCheckboxRadioSwitch
 					:modelValue="form.isBesluit"
 					type="checkbox"
@@ -67,16 +49,41 @@
 						)
 					}}
 				</NcCheckboxRadioSwitch>
+				<span class="compose-dialog__hint compose-dialog__check-note">
+					{{ t('dossiq', 'On for the kind Decision. A resident who unsubscribed from messages still receives a decision.') }}
+				</span>
 			</div>
 
-			<div class="compose-dialog__actions">
-				<NcButton variant="primary" :disabled="sending" @click="send">
-					{{ sending ? t('dossiq', 'Sending…') : t('dossiq', 'Send') }}
-				</NcButton>
-				<NcButton @click="$emit('close')">
-					{{ t('dossiq', 'Cancel') }}
-				</NcButton>
+			<div class="compose-dialog__field">
+				<NcTextField
+					:modelValue="form.subject"
+					:label="t('dossiq', 'Subject')"
+					:labelOutside="true"
+					:error="!!errors.subject"
+					@update:modelValue="(v) => (form.subject = v)" />
+				<span v-if="errors.subject" class="form-error">{{ errors.subject }}</span>
 			</div>
+
+			<div class="compose-dialog__field">
+				<label class="compose-dialog__label" for="berichtenbox-compose-body">{{
+					t('dossiq', 'Message, plain text only')
+				}}</label>
+				<textarea
+					id="berichtenbox-compose-body"
+					v-model="form.body"
+					class="compose-dialog__body"
+					rows="8"
+					:maxlength="maxBody"
+					:placeholder="t('dossiq', 'Enter your message…')" />
+				<span class="compose-dialog__hint compose-dialog__char-count">
+					{{ t('dossiq', '{count} of {max} characters', { count: form.body.length, max: maxBody }) }}
+				</span>
+				<span v-if="errors.body" class="form-error">{{ errors.body }}</span>
+			</div>
+
+			<NcNoteCard type="info">
+				{{ t('dossiq', 'The message goes through integriq to the Berichtenbox of MijnOverheid. Delivered and read come back on the case, under Contact and History.') }}
+			</NcNoteCard>
 
 			<div v-if="sendError" role="alert">
 				<NcNoteCard type="error">
@@ -84,7 +91,19 @@
 				</NcNoteCard>
 			</div>
 		</div>
-	</NcDialog>
+
+		<template #actions>
+			<NcButton :disabled="sending" @click="$emit('close')">
+				{{ t('dossiq', 'Cancel') }}
+			</NcButton>
+			<NcButton variant="primary" :disabled="sending" @click="send">
+				<template #icon>
+					<SendIcon :size="20" />
+				</template>
+				{{ sending ? t('dossiq', 'Sending…') : t('dossiq', 'Send the message') }}
+			</NcButton>
+		</template>
+	</CnDialog>
 </template>
 
 <script>
@@ -94,12 +113,14 @@ import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
-	NcDialog,
 	NcNoteCard,
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import SendIcon from 'vue-material-design-icons/Send.vue'
+import CnDialog from '../components/CnDialogShell.js'
 import { sendMessage } from '../services/berichtenboxApi.js'
+import { caseEyebrow } from '../services/caseSummary.js'
 
 /**
  * Compose one letter to a citizen's digital post, from the case.
@@ -122,7 +143,8 @@ import { sendMessage } from '../services/berichtenboxApi.js'
 export default {
 	name: 'BerichtenboxComposeDialog',
 	components: {
-		NcDialog,
+		CnDialog,
+		SendIcon,
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcTextField,
@@ -171,6 +193,8 @@ export default {
 				{ code: 'informatie', label: t('dossiq', 'Information') },
 			],
 
+			kase: null,
+			maxBody: 4000,
 			errors: {},
 			sending: false,
 			sendError: null,
@@ -198,6 +222,14 @@ export default {
 		 *
 		 * @return {boolean} True when either prop says so.
 		 */
+		eyebrow() {
+			return caseEyebrow(t('dossiq', 'Message'), this.kase)
+		},
+
+		recipientName() {
+			return String(this.kase?.initiatorDisplayName || '')
+		},
+
 		isOpen() {
 			return this.show === true || this.open === true
 		},
@@ -251,10 +283,13 @@ export default {
 						`/apps/openregister/api/objects/dossiq/case/${encodeURIComponent(this.resolvedCaseId)}`,
 					),
 				)
+				this.kase = data || null
 				if (String(data?.initiatorType || '') !== 'person') {
 					return
 				}
-				this.form.bsn = String(data?.initiatorSourceId || '')
+				if (this.form.bsn === '') {
+					this.form.bsn = String(data?.initiatorSourceId || '')
+				}
 			} catch {
 				this.form.bsn = ''
 			}
@@ -354,33 +389,65 @@ export default {
 </script>
 
 <style scoped>
+.compose-dialog {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.compose-dialog__row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+}
+
+.compose-dialog__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.compose-dialog__label {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.compose-dialog__optional {
+	font-weight: 400;
+	color: var(--color-text-maxcontrast);
+}
+
+.compose-dialog__hint {
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.compose-dialog__check {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.compose-dialog__check-note {
+	padding-inline-start: 44px;
+}
+
 .compose-dialog__body {
+	box-sizing: border-box;
 	width: 100%;
-	padding: 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	font-family: inherit;
+	min-height: 200px;
+	padding: 10px 12px;
+	border: 1px solid var(--color-border-dark);
+	border-radius: 8px;
+	font: inherit;
+	font-size: 15px;
+	line-height: 1.5;
 	resize: vertical;
 }
 
-.compose-dialog__char-count {
-	color: var(--color-text-maxcontrast);
-	float: right;
-}
-
-.compose-dialog__actions {
-	display: flex;
-	gap: 8px;
-	margin-top: 16px;
-}
-
-.form-group {
-	margin-bottom: 12px;
-}
-
 .form-error {
-	color: var(--color-error);
-	font-size: 12px;
-	margin-top: 4px;
+	font-size: 13px;
+	color: var(--color-error-text, var(--color-error));
 }
 </style>
