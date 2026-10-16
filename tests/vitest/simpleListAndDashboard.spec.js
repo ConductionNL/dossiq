@@ -338,12 +338,13 @@ describe('the landing page', () => {
 			'simple-my-tasks',
 			'simple-per-step',
 			'simple-continue',
+			'simple-recent-activity',
 			'followed-cases',
 			'archival-reviews',
 		])
 		// The design (DqDashboard) draws two columns under the counts: the
 		// week, the steps and "continue working" take two thirds on the left,
-		// my tasks the right third beside all three.
+		// my tasks and recent activity under it the right third beside all three.
 		for (const id of ['simple-week', 'simple-per-step', 'simple-continue']) {
 			expect(entry(id).gridX, id).toBe(0)
 			expect(entry(id).gridWidth, id).toBe(8)
@@ -353,8 +354,13 @@ describe('the landing page', () => {
 			gridY: 4,
 			gridWidth: 4,
 		})
+		expect(entry('simple-recent-activity')).toMatchObject({
+			gridX: 8,
+			gridY: entry('simple-my-tasks').gridY + entry('simple-my-tasks').gridHeight,
+			gridWidth: 4,
+		})
 		expect(
-			entry('simple-my-tasks').gridY + entry('simple-my-tasks').gridHeight,
+			entry('simple-recent-activity').gridY + entry('simple-recent-activity').gridHeight,
 		).toBe(entry('simple-continue').gridY + entry('simple-continue').gridHeight)
 	})
 

@@ -432,9 +432,10 @@ describe('the simple profile', () => {
 				.find((page) => page.id === 'MyWorkHome')
 				.config.viewLinks.map((link) => link.route),
 		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
+		// DqDashboard: Close out your day leads, the primary New case ends the row.
 		expect(actionIds(built, 'Dashboard')).toEqual([
-			'new-case',
 			'open-end-of-day',
+			'new-case',
 		])
 		expect(actionIds(build(fullFile), 'MyWorkHome')).toEqual(['new-case'])
 		expect(actionIds(build(fullFile), 'Dashboard')).toEqual(['new-case'])
