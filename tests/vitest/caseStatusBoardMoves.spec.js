@@ -25,6 +25,9 @@ vi.mock('@nextcloud/dialogs', () => ({
 }))
 
 const axios = (await import('@nextcloud/axios')).default
+const { showWarning } = await import('@nextcloud/dialogs')
+const { DEFAULT_STATUS_COLOUR, STATUS_COLOURS, statusColourToken } =
+	await import('../../src/utils/statusColour.js')
 const { caseStatusTargets, moveCaseStatus } =
 	await import('../../src/utils/caseStatusBoardMoves.js')
 
@@ -38,6 +41,7 @@ describe('caseStatusBoardMoves', () => {
 	beforeEach(() => {
 		axios.get.mockReset()
 		axios.post.mockReset()
+		showWarning.mockReset()
 		axios.get.mockResolvedValue({ data: { transitions: OFFER } })
 		axios.post.mockResolvedValue({ data: { success: true } })
 	})
@@ -55,6 +59,25 @@ describe('caseStatusBoardMoves', () => {
 			'/apps/dossiq/api/case/c1/transition',
 			expect.objectContaining({ transitionId: 't1' }),
 		)
+	})
+
+	it('tells the handler when automatic actions did not run', async () => {
+		axios.post.mockResolvedValue({
+			data: {
+				status: 'partial',
+				failedActions: [
+					{ type: 'createTask', error: 'no_actor' },
+					{ type: 'sendEmail', error: 'no_address' },
+				],
+			},
+		})
+		await moveCaseStatus({
+			card: { id: 'c1' },
+			value: 's2',
+			toKey: 'In behandeling',
+		})
+		expect(showWarning).toHaveBeenCalledTimes(1)
+		expect(showWarning.mock.calls[0][0]).toContain('2')
 	})
 
 	it('refuses a status nothing on offer ends on, without a write', async () => {
@@ -107,6 +130,15 @@ describe('caseStatusBoardMoves', () => {
 		expect(board.moveTargetsHandler).toBe('caseStatusTargets')
 		const status = board.columnFields.find((column) => column.field === 'status')
 		expect(status.source.capacityField).toBe('capacity')
+		// A stored grey is the schema default, not a choice, so it never wins
+		// a merged column over a chosen hue; each hue draws as the same token
+		// the status badge uses.
+		expect(status.source.neutralColor).toBe(DEFAULT_STATUS_COLOUR)
+		expect(status.source.colorMap).toEqual(
+			Object.fromEntries(
+				STATUS_COLOURS.map((hue) => [hue, statusColourToken(hue)]),
+			),
+		)
 		expect(status.source.filter).toEqual({ isFinal: false })
 		const registry = fs.readFileSync(
 			path.join(ROOT, 'src', 'registry.js'),

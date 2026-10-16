@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Behavioural UI coverage for the operational views that sit alongside the
- * case lists: the Workflow Board (kanban of statuses), the Case Map, the
+ * case lists: the workflow board (the Cases list in board view), the Case Map, the
  * Transfers index, the Subsidies / Grant-schemes intake lists and the
  * Features & roadmap page. Each is reached via its sidebar nav entry and
  * asserted on its distinct rendered surface (heading / empty-state /
  * primary control) independently of seeded data.
  */
+
+import type { Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
@@ -17,71 +19,56 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from '../helpers/fixtures.ts'
-import { navToRoute, trackDossiqErrors } from '../helpers/nav.ts'
+import {
+	dismissSupportDialog,
+	navToRoute,
+	trackDossiqErrors,
+} from '../helpers/nav.ts'
 // Routes named after the component that renders them, so this spec states
 // WHICH screen it covers in executable code rather than in a comment.
-import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components.ts'
+import { CasesOnMapView } from '../helpers/page-components.ts'
 
-test.describe('Workflow Board page', () => {
-	// @e2e exclude The citation this carried was taken down rather than
-	// strengthened. DASH-V1-006a names three columns in status order with a
-	// per-column case count, and the assertion below is
-	// `.board-column, .workflow-board__empty`, an `or` that a board rendering
-	// zero columns satisfies. The scenario is proven in full by
-	// `tests/e2e/workflows/case-lifecycle.spec.ts`, which seeds four status
-	// types out of creation order and asserts the column NAMES and the counts
-	// `['2', '1', '0']`. Rebuilding that here would duplicate it without
-	// adding a claim, and leaving the citation in place would credit the
-	// scenario twice, once for a check that cannot fail. This stays what it
-	// is: the board's shell, on the route, without a 500.
-	test('workflow board renders its heading and a status/empty surface', async ({
+test.describe('Workflow board', () => {
+	/**
+	 * Open the workflow board: the Cases list in board view.
+	 *
+	 * @param page The page.
+	 */
+	async function openBoard(page: Page): Promise<void> {
+		await page.goto('/index.php/apps/dossiq/cases?_view=board')
+		await dismissSupportDialog(page)
+	}
+
+	// @e2e exclude DASH-V1-006a (columns in status order, with counts) is
+	// proven by `tests/e2e/workflows/case-lifecycle.spec.ts`, which seeds its
+	// own status types. This is the board's shell, on its route, without a
+	// 500: a status column or the library's "cannot back a board" notice.
+	test('workflow board renders a status column or its notice', async ({
 		page,
 	}) => {
-		// The nav label is "Workflow board" (lower-case b) and it sits inside
-		// the collapsed "Work queue" group — navigate by route instead.
-		await navToRoute(page, WorkflowBoard)
-		// The board view renders its own header h2 inside `.workflow-board__header`
-		// (the page also has a dashboard-wrapper title + widget title with the
-		// same text, so scope to the board's own header).
-		await expect(page.locator('.workflow-board__header h2')).toBeVisible({
-			timeout: 15000,
+		await openBoard(page)
+		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+			timeout: 30000,
 		})
-		// With no status types configured the board shows its guidance
-		// empty-state; with statuses it renders one `.board-column` per status
-		// type (the seeded register uses the Dutch ZGW status names —
-		// "Received", … — each with a per-column "No cases" surface). Assert
-		// the data- and locale-independent kanban surface: a status column or
-		// the no-statuses guidance, never an error render.
 		await expect(
-			page.locator('.board-column, .workflow-board__empty').first(),
-		).toBeVisible({ timeout: 10000 })
+			page
+				.locator(
+					'[data-testid="cn-board-column"], [data-testid="cn-board-unusable"]',
+				)
+				.first(),
+		).toBeVisible({ timeout: 30000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// FIXED: WorkflowBoard.load() calls objectStore.fetchCollection('statusType')
-	// / ('caseType'). Those types are registered in initializeStores()
-	// (src/store/store.js), but the registration used to be skipped when the
-	// app-config schema id (case_type_schema / status_type_schema) was blank —
-	// which it is on a fresh OR register — leaving the types unregistered and
-	// logging two dossiq-origin "Object type is not registered" console errors
-	// per load while the kanban columns stayed empty. The same defect hit the
-	// Doorlooptijd analytics view (caseType). store.js now falls back to the
-	// canonical schema slug ('caseType' / 'statusType') when the config id is
-	// empty, so the types are always registered and this contract holds.
-	// @e2e exclude A console-error check cannot prove one column per non-final
-	// status type, their order or their case counts. The same DASH-V1-006a
-	// citation was carried here and on the shell test above, so the scenario
-	// was credited twice over by two load checks while
-	// `tests/e2e/workflows/case-lifecycle.spec.ts` did the actual proving. The
-	// regression this guards is real and is described above it, so the test
-	// stays; the citation does not.
+	// @e2e exclude A console-error check cannot prove the columns, their
+	// order or their counts; case-lifecycle.spec.ts does. The board reads
+	// the statusType and caseType collections, and an unregistered object
+	// type used to log dossiq console errors on every load.
 	test('workflow board loads without dossiq console errors', async ({ page }) => {
 		const errors = trackDossiqErrors(page)
-		// The nav label is "Workflow board" (lower-case b) and it sits inside
-		// the collapsed "Work queue" group — navigate by route instead.
-		await navToRoute(page, WorkflowBoard)
-		await expect(page.locator('.workflow-board__header h2')).toBeVisible({
-			timeout: 15000,
+		await openBoard(page)
+		await expect(page.locator('[data-testid="cn-board-view"]')).toBeVisible({
+			timeout: 30000,
 		})
 		await page.waitForTimeout(1500)
 		expect(errors, errors.join('\n')).toEqual([])
