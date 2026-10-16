@@ -160,6 +160,7 @@ import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
 import DocumentAssessDialog from './dialogs/DocumentAssessDialog.vue'
+import DocumentRedactionDialog from './dialogs/DocumentRedactionDialog.vue'
 import GatherDocumentsDialog from './dialogs/GatherDocumentsDialog.vue'
 import LogContactDialog from './dialogs/LogContactDialog.vue'
 import PortalMessageDialog from './dialogs/PortalMessageDialog.vue'
@@ -615,6 +616,14 @@ const registry = {
 		component: DocumentAssessDialog,
 		propsSchema: {},
 		_note: "Assess documents from the case page (document-assessment REQ-DAS-002), built to the Wat nog openstaat table of board DqWooReview. Generic (decision 182): the header action that opens it carries the configuration in its props, namely where the outstanding list is read, where the assessment is posted, the classifications and which of them need a ground, the schema the grounds are read from, and the names of the posted fields. The Woo request case type configures it as `document-assess`; no code names the procedure. The selection is posted once. A refusal keeps the dialog open with the server's sentence beside the document, and the list is read again, so nothing reads as saved that the server did not store. The manifest carries no _note because $defs/action refuses one.",
+	},
+
+	// @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005
+	DocumentRedactionDialog: {
+		kind: 'modal',
+		component: DocumentRedactionDialog,
+		propsSchema: {},
+		_note: "Redact the partly public documents of a case (document-redaction REQ-DRD-005), built to board DqLakken: the document text with the passages marked, and the proposal with a verdict per passage (Agreed, Adjust, Do not redact) and Add passage. Generic (decision 182): the header action carries the routes and the passage type labels in its props; the Woo request case type configures it as `document-redact`. Record redaction is enabled only when every passage has a verdict, and records the officer's check before it asks filinq for the copy. Upload redacted version records a version made elsewhere. A refusal shows the server's sentence. The manifest carries no _note because $defs/action refuses one.",
 	},
 
 	// @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
