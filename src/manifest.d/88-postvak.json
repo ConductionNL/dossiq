@@ -94,7 +94,7 @@
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"params": {
-							"id": "@object.suggestion.case"
+							"id": "@row.suggestion.case"
 						}
 					},
 					{
