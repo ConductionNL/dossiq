@@ -16,9 +16,6 @@
 				"schema": "mailIntakeEntry",
 				"collectionUrl": "/apps/dossiq/api/intake/triage",
 				"showTitle": true,
-				"breadcrumb": {
-					"label": "Mailbox"
-				},
 				"headerMeta": "messages for the whole organisation that belong to no case yet",
 				"countText": "{shown} of {total} messages",
 				"footerNote": "{shown} of {total} · 20 per page",
