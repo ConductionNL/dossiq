@@ -19,12 +19,23 @@ const ROOT = path.resolve(__dirname, '../..')
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'))
 
 describe('the wording of an optional field', () => {
-	it('is the library\'s, everywhere in the Dutch catalogue', () => {
-		const library = read(path.join(ROOT, 'node_modules', '@conduction', 'nextcloud-vue', 'l10n', 'nl.json'))
+	it("is the library's, everywhere in the Dutch catalogue", () => {
+		const library = read(
+			path.join(
+				ROOT,
+				'node_modules',
+				'@conduction',
+				'nextcloud-vue',
+				'l10n',
+				'nl.json',
+			),
+		)
 		expect(library.translations.optional).toBe('niet verplicht')
 
 		const nl = read(path.join(ROOT, 'l10n', 'nl.json')).translations
-		const off = Object.entries(nl).filter(([, value]) => /\(optioneel\)/i.test(value))
+		const off = Object.entries(nl).filter(([, value]) =>
+			/\(optioneel\)/i.test(value),
+		)
 		expect(off).toEqual([])
 	})
 })
