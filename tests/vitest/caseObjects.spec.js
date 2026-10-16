@@ -208,7 +208,7 @@ describe('the Objects tab on the case page', () => {
 		const map = panels.caseWidget('case-location-map')
 		expect(map, 'the locations map is not on the page').toBeTruthy()
 		expect(map.type).toBe('case-location-map')
-		expect(panels.caseTabOf('case-location-map').tab).toBe('Overview')
+		expect(panels.caseTabOf('case-location-map').tab).toBe('Data')
 	})
 
 	it('stays out of layout, or the strip would render it twice', () => {

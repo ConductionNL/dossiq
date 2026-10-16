@@ -331,7 +331,7 @@ describe('The Related cases tab', () => {
 
 	it('is not type custom, which resolves to nothing inside a tab panel', () => {
 		const tabs = widgets().find((w) => w.id === 'case-panels').content.tabs
-		const children = tabs.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
+		const children = tabs.map((tab) => tab.widgetId)
 		const byId = Object.fromEntries(
 			panels.allCaseWidgets().map((w) => [w.id, w]),
 		)

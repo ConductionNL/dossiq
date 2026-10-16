@@ -44,7 +44,7 @@ const manifest = JSON.parse(
 const caseDetail = manifest.pages.find((p) => p.id === 'CaseDetail')
 const panelIds = caseDetail.config.widgets
 	.find((w) => w.id === 'case-panels')
-	.content.tabs.flatMap((t) => (Array.isArray(t.widgetIds) ? t.widgetIds : [t.widgetId]))
+	.content.tabs.map((t) => t.widgetId)
 
 const stubs = {
 	NcButton: { template: '<button v-bind="$attrs"><slot /></button>' },

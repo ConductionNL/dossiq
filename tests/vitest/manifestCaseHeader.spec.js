@@ -283,36 +283,58 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		return widget('case-panels').content.tabs
 	}
 
-	/**
-	 * @param {object} tab A tab entry.
-	 * @return {string[]} The widget ids it renders: a stack's `widgetIds`, else its `widgetId`.
-	 */
-	function tabIds(tab) {
-		return Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]
-	}
-
 	it('is the work a handler does, in order, and nothing else', () => {
-		// The board's strip (DqZaak, DqZaakMeer): Overview, Files, Contact,
-		// Tasks and Case history, then the other panels flagged `overflow`,
-		// listed under Acties in the order the board draws them. Files is a
-		// stack that also holds the document review.
-		expect(tabs().map(tabIds)).toEqual([
-			['case-data-panel'],
-			['case-files', 'case-document-review'],
-			['case-communication-panel'],
-			['case-work-panel'],
-			['case-timeline-panel'],
-			['case-notes-panel'],
-			['case-people-panel'],
-			['case-email-panel'],
-			['case-decisions-panel'],
-			['case-related-panel'],
-			['case-custody-panel'],
-			['case-archival-panel'],
-			['case-knowledge-panel'],
-			['case-change-proposals'],
+		// Task 4.1 asked for the work tabs to LEAD the strip, because there were
+		// nine more behind them. There are none behind them now: this is the
+		// whole strip, so what was a prefix assertion is an exact one. Timeline
+		// is deliberately absent: the timeline is the sidebar History tab
+		// (change case-timeline), and a body panel over the same log would be
+		// the duplication that change exists to retire.
+		//
+		// Communication, Email and Besluiten joined on 2026-09-13. The sidebar
+		// lost the three tabs that carried the last two, so the page gained no
+		// surface; `case-core` became a section of `case-data-panel`, which also
+		// holds the locations map.
+		//
+		// Timeline joined on 2026-09-16 (one-timeline-on-the-case, #2846) and
+		// does NOT contradict the paragraph above: that one is about the AUDIT
+		// log, which stays in the sidebar. This is OpenRegister's timeline of
+		// every note, logged call and message, the one place they are read in
+		// one order. Archiving joined with it (#2850): what happens to the
+		// case when its business use ends, as openregister decided it. It
+		// comes last because it is the only tab about a case that is over.
+		//
+		// Custody joined on 2026-09-14 (#2940): the dated chain of who held the
+		// case, beside Related because both answer "what else is attached to
+		// this one" rather than "what do I do next".
+		//
+		// Knowledge joined on 2026-09-17 (#2995): the work instruction for this
+		// kind of case. 🔴 IT SITS AFTER ARCHIVING, WHICH CONTRADICTS THE
+		// PARAGRAPH ABOVE. Archiving was placed last on the grounds that it is
+		// the only tab about a case that is over, and a work instruction is the
+		// opposite: reference material for a case still being worked. The order
+		// here matches the manifest, so the strip and this assertion agree, but
+		// the placement is a product question somebody should answer rather
+		// than a rule this test is enforcing. Recorded here rather than quietly
+		// accepted, because the next person to add a tab will read this list
+		// as the intent.
+		expect(tabs().map((tab) => tab.widgetId)).toEqual([
+			'case-data-panel',
+			'case-files',
+			'case-document-review',
+			'case-notes-panel',
+			'case-timeline-panel',
+			'case-people-panel',
+			'case-communication-panel',
+			'case-email-panel',
+			'case-work-panel',
+			'case-change-proposals',
+			'case-decisions-panel',
+			'case-related-panel',
+			'case-custody-panel',
+			'case-archival-panel',
+			'case-knowledge-panel',
 		])
-		expect(tabs().filter((tab) => tab.overflow !== true)).toHaveLength(5)
 	})
 
 	it('still renders every collection that used to close the strip', () => {
@@ -324,7 +346,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// would leave a shorter strip and a passing count.
 		const stillOnThePage = {
 			'case-sub-cases': 'Related',
-			'case-calendar': 'Tasks',
+			'case-calendar': 'Work',
 			'case-objects': 'Related',
 		}
 		for (const [id, tab] of Object.entries(stillOnThePage)) {
@@ -339,7 +361,7 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// tab is what makes that a replacement instead of a deletion, so the
 		// map is what gets asserted.
 		expect(panels.caseWidget('case-locaties')).toBeUndefined()
-		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Overview')
+		expect(panels.caseTabOf('case-location-map')?.tab).toBe('Data')
 
 		// `case-decidesk-decisions` is the fourth. It left the body when it
 		// duplicated the Besluitvorming sidebar tab; on 2026-09-13 that
@@ -354,8 +376,8 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 
 	it('names a declared widget in every tab', () => {
 		const declared = new Set(caseDetail().config.widgets.map((w) => w.id))
-		for (const id of tabs().flatMap(tabIds)) {
-			expect(declared, `tab ${id}`).toContain(id)
+		for (const tab of tabs()) {
+			expect(declared, `tab ${tab.widgetId}`).toContain(tab.widgetId)
 		}
 	})
 
@@ -363,11 +385,11 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// A tab child that also has a layout cell renders TWICE: once in the
 		// grid and once in its panel.
 		const placed = new Set(caseDetail().config.layout.map((c) => c.widgetId))
-		for (const id of tabs().flatMap(tabIds)) {
+		for (const tab of tabs()) {
 			expect(
 				placed,
-				`${id} is both a tab and a grid cell`,
-			).not.toContain(id)
+				`${tab.widgetId} is both a tab and a grid cell`,
+			).not.toContain(tab.widgetId)
 		}
 	})
 
@@ -376,8 +398,8 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// slot, which CnDetailPage renders for LAYOUT items only. As a tab
 		// child it renders nothing and logs nothing: CnTabsWidget dispatches
 		// through CnDetailWidgetHost, which resolves by widget TYPE.
-		for (const id of tabs().flatMap(tabIds)) {
-			expect(widget(id).type, `tab ${id}`).not.toBe(
+		for (const tab of tabs()) {
+			expect(widget(tab.widgetId).type, `tab ${tab.widgetId}`).not.toBe(
 				'custom',
 			)
 		}

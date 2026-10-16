@@ -85,7 +85,7 @@ describe('the externally homed declaration', () => {
 
 	it('sits on the case page, so the central list leads to it', () => {
 		expect(panels.caseTabOf('case-external-home')).toEqual({
-			tab: 'Overview',
+			tab: 'Data',
 			label: 'Handled elsewhere',
 		})
 	})

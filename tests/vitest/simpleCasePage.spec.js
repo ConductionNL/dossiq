@@ -353,14 +353,21 @@ describe('the tabs', () => {
 	const tabsOf = (config) =>
 		config.widgets.find((widget) => widget.id === 'case-panels').content
 
-	it('shows five and keeps the other ten under More, losing none', () => {
+	it('shows the five the board draws and keeps the other nine under Acties, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
 		expect(
 			strip.tabs.filter((tab) => !tab.overflow).map((tab) => tab.label),
-		).toEqual(['Overview', 'Documents', 'Contact', 'Tasks', 'History'])
-		expect(strip.tabs.filter((tab) => tab.overflow)).toHaveLength(10)
-		const widgetIds = (content) => content.tabs.map((tab) => tab.widgetId).sort()
+		).toEqual(['Overview', 'Files', 'Contact', 'Tasks', 'Case history'])
+		// The order DqZaakMeer lists them in under Acties.
+		expect(
+			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals'])
+		// The document review stands under the files on the Files tab.
+		expect(strip.tabs.find((tab) => tab.label === 'Files').widgetIds).toEqual(['case-files', 'case-document-review'])
+		const widgetIds = (content) => content.tabs
+			.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
+			.sort()
 		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
 	})
 
@@ -435,16 +442,17 @@ describe('the tabs', () => {
 		}
 	})
 
-	it('draws the progress as bars and the tabs as a segmented control, with a way back to the list', () => {
+	it('draws the progress as bars and the tabs as the board strip, with a way back to the list', () => {
 		// DqZaak draws one bar per step with the label under it, the tab strip
-		// as a segmented control, and "All cases / <number>" above the card
+		// as folder tabs (the board look's own strip, no variant), and
+		// "All cases / <number>" above the card
 		// instead of a CASE eyebrow. All three are nextcloud-vue 2.64.0 opt-ins,
 		// so the full profile keeps drawing what it drew.
 		const find = (config, id) =>
 			config.widgets.find((widget) => widget.id === id)
 		expect(find(simple, 'case-stages').content.variant).toBe('bars')
 		expect(find(original, 'case-stages').content.variant).toBeUndefined()
-		expect(find(simple, 'case-panels').content.variant).toBe('segmented')
+		expect(find(simple, 'case-panels').content.variant).toBeUndefined()
 		expect(find(original, 'case-panels').content.variant).toBeUndefined()
 		expect(simple.showTypeEyebrow).toBe(false)
 		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases' })

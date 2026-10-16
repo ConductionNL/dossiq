@@ -1005,12 +1005,22 @@
 									"label": "Overview"
 								},
 								{
-									"widgetId": "case-files",
-									"label": "Documents"
+									"widgetIds": [
+										"case-files",
+										"case-document-review"
+									],
+									"label": "Files"
 								},
 								{
 									"widgetId": "case-communication-panel",
-									"label": "Contact"
+									"label": "Contact",
+									"countFrom": {
+										"register": "dossiq",
+										"schema": "contactmoment",
+										"filter": {
+											"case": "@objectId"
+										}
+									}
 								},
 								{
 									"widgetId": "case-work-panel",
@@ -1018,7 +1028,7 @@
 								},
 								{
 									"widgetId": "case-timeline-panel",
-									"label": "History"
+									"label": "Case history"
 								},
 								{
 									"widgetId": "case-notes-panel",
@@ -1033,11 +1043,6 @@
 								{
 									"widgetId": "case-email-panel",
 									"label": "Email",
-									"overflow": true
-								},
-								{
-									"widgetId": "case-change-proposals",
-									"label": "Proposals",
 									"overflow": true
 								},
 								{
@@ -1066,12 +1071,11 @@
 									"overflow": true
 								},
 								{
-									"widgetId": "case-document-review",
-									"label": "Review",
+									"widgetId": "case-change-proposals",
+									"label": "Proposals",
 									"overflow": true
 								}
-							],
-							"variant": "segmented"
+							]
 						}
 					}
 				},
