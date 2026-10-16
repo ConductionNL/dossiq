@@ -169,6 +169,7 @@ class AcknowledgementService {
 	 *
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-acknowledgement-duty-is-met-only-when-the-acknowledgement-went-out-req-wrn-003
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function acknowledge(string $caseId, int $attempt = 1): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -205,6 +206,7 @@ class AcknowledgementService {
 			'templateVersion' => self::TEMPLATE_VERSION,
 			'contentWithheld' => $withheld,
 		];
+		$context['emailCopy'] = $this->declaration->sendsEmailCopy(caseType: $caseType);
 
 		// The sender picks the channel (portal inbox, digital post, e-mail),
 		// calls its transport and records the result on the case. A notice no

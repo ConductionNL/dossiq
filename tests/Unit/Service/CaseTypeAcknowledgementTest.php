@@ -374,6 +374,19 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	}//end testContentOnThePlatformIsACaseTypeDecision()
 
 	/**
+	 * REQ-ACK-COPY-001: an e-mail copy is off unless the case type declares it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function testAnEmailCopyIsACaseTypeDecision(): void {
+		self::assertTrue(condition: $this->declaration->sendsEmailCopy(caseType: ['acknowledgement' => ['emailCopy' => true]]));
+		self::assertFalse(condition: $this->declaration->sendsEmailCopy(caseType: ['acknowledgement' => ['emailCopy' => 'yes']]));
+		self::assertFalse(condition: $this->declaration->sendsEmailCopy(caseType: []));
+	}//end testAnEmailCopyIsACaseTypeDecision()
+
+	/**
 	 * The language is Dutch unless the case type declares another.
 	 *
 	 * @return void

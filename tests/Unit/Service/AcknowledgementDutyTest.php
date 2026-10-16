@@ -177,11 +177,12 @@ class AcknowledgementDutyTest extends TestCase {
 	/**
 	 * The service, wired against the in-memory store.
 	 *
-	 * @param TermNoticeSender|null $sender The e-mail transport; a mock that always sends when null.
+	 * @param TermNoticeSender|null      $sender    The e-mail transport; a mock that always sends when null.
+	 * @param RequesterNoticeSender|null $requester The channel picker; the real one over the store when null.
 	 *
 	 * @return AcknowledgementService The service under test.
 	 */
-	private function service(?TermNoticeSender $sender = null): AcknowledgementService {
+	private function service(?TermNoticeSender $sender = null, ?RequesterNoticeSender $requester = null): AcknowledgementService {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
@@ -222,11 +223,11 @@ class AcknowledgementDutyTest extends TestCase {
 				termService: $noticeTerms,
 				sender: ($sender ?? $this->sentNotices()),
 				logger: $logger,
-				requester: new RequesterNoticeSender(
+				requester: ($requester ?? new RequesterNoticeSender(
 					email: ($sender ?? $this->sentNotices()),
 					settings: $settings,
 					writer: new CaseFieldWriter(),
-				),
+				)),
 			),
 			contacts: new CaseContactDirectory(),
 			portal: new PortalContributionProvider(),
@@ -311,6 +312,34 @@ class AcknowledgementDutyTest extends TestCase {
 			'the API case creation' => ['zgw-api'],
 		];
 	}//end electronicIntakePaths()
+
+	/**
+	 * REQ-ACK-COPY-001: a case type that declares `emailCopy` asks the
+	 * sender for a copy by e-mail; one that does not, does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function testACaseTypeDeclaresAnEmailCopy(): void {
+		$asked = [];
+		$requester = $this->createMock(originalClassName: RequesterNoticeSender::class);
+		$requester->method('momentFor')->willReturn('acknowledgement');
+		$requester->method('send')->willReturnCallback(
+			static function (array $case, string $template, array $rendered, string $moment, array $options) use (&$asked): array {
+				$asked[] = $options['emailCopy'];
+				return ['status' => 'sent', 'channel' => 'portal-inbox', 'messageId' => 'm-1', 'sentAt' => '2026-10-16T10:00:00+02:00', 'record' => []];
+			}
+		);
+
+		$this->caseType = ['acknowledgement' => ['emailCopy' => true]];
+		$this->service(requester: $requester)->acknowledge(caseId: $this->seedCase());
+
+		$this->caseType = [];
+		$this->service(requester: $requester)->acknowledge(caseId: $this->seedCase(overrides: ['id' => 'case-2']));
+
+		self::assertSame(expected: [true, false], actual: $asked);
+	}//end testACaseTypeDeclaresAnEmailCopy()
 
 	/**
 	 * A case typed at the balie is not mailed.
