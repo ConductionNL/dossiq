@@ -91,17 +91,19 @@ class OutstandingDocuments {
 			return ['count' => 0, 'documents' => []];
 		}
 
-		// Collect all assessed document IDs.
-		$assessedDocIds = $this->collectAssessedDocumentIds(
+		$assessments = $this->assessmentRows(
 			objectService: $objectService,
 			register: $register,
 			assessmentSchema: $assessmentSchema,
 			caseId: $caseId,
 		);
+		$assessedDocIds = $this->refsOf(assessments: $assessments, field: 'documentRef');
 
 		// A document set aside before review is not waiting for assessment
-		// (woo-request-corpus-collection, REQ-WRC-003).
-		$excludedDocIds = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+		// (woo-request-corpus-collection, REQ-WRC-003), and the redacted copy
+		// of a partly public document is part of that document's assessment.
+		$excludedDocIds = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+			+ $this->refsOf(assessments: $assessments, field: 'redactedDocumentRef');
 
 		$outstanding = $this->outstandingOf(caseId: $caseId, allDocs: array_diff_key($allDocs, $excludedDocIds), assessedDocIds: $assessedDocIds);
 
@@ -141,7 +143,16 @@ class OutstandingDocuments {
 			return [];
 		}
 
-		$excluded = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId);
+		$excluded = $this->collectExcludedDocumentIds(objectService: $objectService, register: $register, caseId: $caseId)
+			+ $this->refsOf(
+				assessments: $this->assessmentRows(
+					objectService: $objectService,
+					register: $register,
+					assessmentSchema: $this->settingsService->getConfigValue('woo_assessment_schema'),
+					caseId: $caseId,
+				),
+				field: 'redactedDocumentRef'
+			);
 
 		return array_map('strval', array_keys(array_diff_key($allDocs, $excluded)));
 	}//end underReview()
@@ -212,42 +223,51 @@ class OutstandingDocuments {
 	}//end collectCaseDocumentIds()
 
 	/**
-	 * Collect the identifiers of every document of a case that already carries an assessment.
+	 * Every assessment of a case.
 	 *
 	 * @param object $objectService OpenRegister object service
 	 * @param mixed $register Configured register identifier
 	 * @param mixed $assessmentSchema Configured assessment schema identifier
 	 * @param string $caseId The case UUID
 	 *
-	 * @return array<string, bool> Assessed document identifiers as keys, empty when the schema is not configured
+	 * @return array<int, array<string, mixed>> The assessments, empty when the schema is not configured
 	 */
-	private function collectAssessedDocumentIds(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
+	private function assessmentRows(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array {
 		if (empty($assessmentSchema) === true) {
 			return [];
 		}
 
 		// Read regardless of the caller (REQ-WSA-004): a document assessed by a
 		// reviewer whose assessment this caller may not read is still assessed,
-		// not outstanding. Only the document reference is used; nothing of the
+		// not outstanding. Only document references are used; nothing of the
 		// assessment itself is answered.
-		$assessed = $this->searchObjectsAsArraysUnscoped(
+		return $this->searchObjectsAsArraysUnscoped(
 			objectService: $objectService,
 			register: $register,
 			schema: $assessmentSchema,
 			filters: ['caseRef' => $caseId, '_limit' => 500],
 		);
+	}//end assessmentRows()
 
-		// No is_array() guard: $assessed is already typed as an array.
-		$assessedDocIds = [];
-		foreach ($assessed as $item) {
-			$docRef = $item['documentRef'] ?? null;
-			if ($docRef !== null) {
-				$assessedDocIds[$docRef] = true;
+	/**
+	 * The document references one field of the assessments names.
+	 *
+	 * @param array<int, array<string, mixed>> $assessments The assessments.
+	 * @param string                           $field       `documentRef`, or `redactedDocumentRef` for the redacted copies.
+	 *
+	 * @return array<string, bool> The references as keys.
+	 */
+	private function refsOf(array $assessments, string $field): array {
+		$refs = [];
+		foreach ($assessments as $item) {
+			$ref = (string)($item[$field] ?? '');
+			if ($ref !== '') {
+				$refs[$ref] = true;
 			}
 		}
 
-		return $assessedDocIds;
-	}//end collectAssessedDocumentIds()
+		return $refs;
+	}//end refsOf()
 
 	/**
 	 * Collect the identifiers of every document of a case that was set aside before review.

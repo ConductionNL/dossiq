@@ -34,7 +34,6 @@ use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WOORedactionService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -65,11 +64,6 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 	private WOODocumentAssessmentService $assessmentService;
 
 	/**
-	 * @var WOORedactionService|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private WOORedactionService $redactionService;
-
-	/**
 	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	private LoggerInterface $logger;
@@ -84,7 +78,6 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 		$this->auditService = $this->createMock(AiAuditService::class);
 		$this->hermiqClient = $this->createMock(HermiqAnonymisationClient::class);
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
-		$this->redactionService = $this->createMock(WOORedactionService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		// findAssessment()/saveRedactionProposal() must see an existing,
@@ -117,7 +110,6 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 			$this->auditService,
 			$this->hermiqClient,
 			$this->assessmentService,
-			$this->redactionService,
 			$this->logger,
 		);
 	}//end service()
@@ -412,13 +404,12 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 	}//end testReviewProposalThrowsWhenNoPendingProposal()
 
 	/**
-	 * On approve, the reviewed spans are handed to the EXISTING, unchanged
-	 * WOORedactionService pipeline — this assist never performs redaction
-	 * itself.
+	 * On approve, the reviewed spans are recorded on the proposal; the
+	 * assist never writes a redacted copy itself.
 	 *
 	 * @return void
 	 */
-	public function testApproveHandsOffToExistingRedactionService(): void {
+	public function testApproveRecordsTheReviewedSpans(): void {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->assessmentService->method('findAssessment')->willReturn([
 			'id' => 'assessment-1',
@@ -435,14 +426,6 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 			]
 		);
 
-		$this->redactionService->expects($this->once())->method('queueForRedaction')->with(
-			$this->equalTo('case-1'),
-			$this->callback(function (array $documents): bool {
-				return $documents[0]['id'] === 'doc-1'
-					&& isset($documents[0]['redactionProposal']['spans']);
-			})
-		);
-
 		$result = $this->service()->reviewProposal(
 			caseId: 'case-1',
 			documentRef: 'doc-1',
@@ -452,16 +435,15 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 
 		$this->assertSame('approved', $result['status']);
 		$this->assertSame('bob', $result['reviewedBy']);
-	}//end testApproveHandsOffToExistingRedactionService()
+		$this->assertSame([['start' => 0, 'end' => 9, 'category' => 'bsn', 'source' => 'rule']], $result['approvedSpans']);
+	}//end testApproveRecordsTheReviewedSpans()
 
 	/**
-	 * On reject, the redaction pipeline is NEVER invoked — the proposal is
-	 * simply discarded and the pre-existing manual/Docudesk fallback is
-	 * unaffected.
+	 * On reject, the proposal is marked rejected and carries no approved spans.
 	 *
 	 * @return void
 	 */
-	public function testRejectNeverInvokesRedactionService(): void {
+	public function testRejectRecordsNoApprovedSpans(): void {
 		$this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
 		$this->assessmentService->method('findAssessment')->willReturn([
 			'id' => 'assessment-1',
@@ -475,8 +457,6 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 			]
 		);
 
-		$this->redactionService->expects($this->never())->method('queueForRedaction');
-
 		$result = $this->service()->reviewProposal(
 			caseId: 'case-1',
 			documentRef: 'doc-1',
@@ -485,5 +465,6 @@ class WOOAnonymisationAssistServiceTest extends TestCase {
 		);
 
 		$this->assertSame('rejected', $result['status']);
-	}//end testRejectNeverInvokesRedactionService()
+		$this->assertArrayNotHasKey('approvedSpans', $result);
+	}//end testRejectRecordsNoApprovedSpans()
 }//end class
