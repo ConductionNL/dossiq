@@ -46,6 +46,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
@@ -57,6 +58,8 @@ use Psr\Log\LoggerInterface;
  * Dashboard KPI aggregation.
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — one payload for every count tile, the team queue's included, so the open cases are read once.
  */
 class KpiAggregationService {
 	/**
@@ -107,6 +110,7 @@ class KpiAggregationService {
 	 * @param ContainerInterface $container The DI container.
 	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
 	 * @param EngineTaskInbox $engineTasks The engine's task counter.
+	 * @param QueueFigures $queueFigures Folds the team queue's figures.
 	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
 	 *
@@ -117,6 +121,7 @@ class KpiAggregationService {
 		private ContainerInterface $container,
 		private IAppManager $appManager,
 		private EngineTaskInbox $engineTasks,
+		private QueueFigures $queueFigures,
 		private IL10N $l10n,
 		private LoggerInterface $logger,
 	) {
@@ -153,7 +158,7 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		return ($this->queueKpis(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids)) + [
+		return ($this->queueFigures->fold(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids)) + [
 			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
 			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
 			'overdueCount' => $this->countCases(
@@ -212,72 +217,6 @@ class KpiAggregationService {
 
 		return $titles;
 	}//end caseTypeTitles()
-
-	/**
-	 * The figures the team queue shows above and beside its list.
-	 *
-	 * Folded from the open cases already read, so the queue costs no extra
-	 * request. A case is in the queue while it has no handler.
-	 *
-	 * @param array<int, array> $openCases The open cases.
-	 * @param DateTimeImmutable $today Today, at midnight.
-	 * @param array<string, string> $typeTitles Case type titles by id.
-	 *
-	 * @return array<string, mixed> The queue figures.
-	 */
-	private function queueKpis(array $openCases, DateTimeImmutable $today, array $typeTitles): array {
-		$todayText = $today->format('Y-m-d');
-		$weekEnd = $today->modify('+7 days')->format('Y-m-d');
-		$waiting = 0;
-		$newToday = 0;
-		$dueSoon = 0;
-		$oldestDays = null;
-		$byType = [];
-
-		foreach ($openCases as $case) {
-			$type = (string)($case['caseType'] ?? '');
-			$unassigned = ((string)($case['assignee'] ?? '') === '');
-			if ($type !== '') {
-				$byType[$type] = ($byType[$type] ?? ['open' => 0, 'waiting' => 0]);
-				$byType[$type]['open']++;
-				$byType[$type]['waiting'] += (int)$unassigned;
-			}
-
-			if ($unassigned === false) {
-				continue;
-			}
-
-			$waiting++;
-			$start = substr((string)($case['startDate'] ?? ''), 0, 10);
-			$deadline = substr((string)($case['deadline'] ?? ''), 0, 10);
-			$newToday += (int)($start === $todayText);
-			$dueSoon += (int)($deadline !== '' && $deadline >= $todayText && $deadline < $weekEnd);
-			$days = $this->daysBetween(from: $start, to: $todayText);
-			if ($days !== null && ($oldestDays === null || $days > $oldestDays)) {
-				$oldestDays = $days;
-			}
-		}
-
-		uasort(
-			$byType,
-			static function (array $a, array $b): int {
-				return ($b['open'] <=> $a['open']);
-			}
-		);
-
-		$rows = [];
-		foreach ($byType as $type => $counts) {
-			$rows[] = ['caseType' => (string)$type, 'title' => ($typeTitles[$type] ?? (string)$type)] + $counts;
-		}
-
-		return [
-			'queueCount' => $waiting,
-			'queueNewToday' => $newToday,
-			'queueDueSoon' => $dueSoon,
-			'queueOldestDays' => ($oldestDays ?? 0),
-			'queueByType' => $rows,
-		];
-	}//end queueKpis()
 
 	/**
 	 * The shape returned when the app is not configured against a register.
