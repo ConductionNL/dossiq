@@ -86,6 +86,9 @@ async function mountDialog({ outstanding = [], assessed = ASSESSED } = {}) {
 		global: {
 			stubs: {
 				NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+				CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+				CnChoiceCards: true,
+				NcNoteCard: { template: '<div><slot /></div>' },
 				NcButton: {
 					props: ['disabled'],
 					emits: ['click'],

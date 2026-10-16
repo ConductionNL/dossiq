@@ -21,8 +21,12 @@
 	@spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
 -->
 <template>
-	<NcDialog
-		:name="heading"
+	<CnDialog
+		:name="t('dossiq', 'Record the decision')"
+		:eyebrow="eyebrow"
+		:subtitle="subtitle"
+		width="form"
+		:noClose="busy"
 		data-testid="assessment-decision-dialog"
 		@closing="$emit('close')">
 		<div v-if="decided === null" class="assessment-decision">
@@ -41,27 +45,45 @@
 					{{ loadError }}
 				</p>
 
-				<dl
+				<CnChoiceCards
+					v-if="counts.length"
+					:modelValue="proposedOutcome"
+					:label="t('dossiq', 'Decision')"
+					:options="outcomeOptions"
+					:disabled="true"
+					:descriptionLines="1" />
+
+				<p
 					v-if="countsError === ''"
-					class="assessment-decision__counts"
+					class="assessment-decision__hint"
 					data-testid="assessment-decision-counts">
-					<template v-for="row in counts" :key="row.value">
-						<dt>{{ row.label }}</dt>
-						<dd :data-testid="'assessment-decision-count-' + row.value">
-							{{ row.count }}
-						</dd>
+					{{ t('dossiq', 'From the assessment:') }}
+					<template v-for="(row, index) in counts" :key="row.value">
+						<span :data-testid="'assessment-decision-count-' + row.value">{{ row.count }}</span>
+						{{ row.label.toLowerCase() }}{{ index < counts.length - 1 ? ',' : '' }}
 					</template>
-					<dt>{{ t('dossiq', 'No assessment yet') }}</dt>
-					<dd data-testid="assessment-decision-count-outstanding">
-						{{ outstanding.length }}
-					</dd>
-				</dl>
+					· {{ t('dossiq', 'not assessed yet') }}
+					<span data-testid="assessment-decision-count-outstanding">{{ outstanding.length }}</span>.
+					{{ t('dossiq', 'The decision follows the assessment; you change it per document.') }}
+				</p>
 				<p
 					v-else
 					role="status"
 					data-testid="assessment-decision-counts-error">
 					{{ countsError }}
 				</p>
+
+				<div v-if="grounds.length" class="assessment-decision__field">
+					<span class="assessment-decision__label">{{ t('dossiq', 'Refusal grounds') }}</span>
+					<span class="assessment-decision__chips">
+						<span v-for="ground in grounds" :key="ground.code" class="assessment-decision__chip">
+							{{ n('dossiq', '{ground} · %n document', '{ground} · %n documents', ground.count, { ground: ground.code }) }}
+						</span>
+					</span>
+					<span class="assessment-decision__hint">
+						{{ t('dossiq', 'Taken over from the assessment. You change them per document.') }}
+					</span>
+				</div>
 
 				<div
 					v-if="outstanding.length > 0"
@@ -84,11 +106,46 @@
 					</ul>
 				</div>
 
-				<NcTextArea
-					v-else-if="loadError === ''"
-					v-model="description"
-					data-testid="assessment-decision-description"
-					:label="t('dossiq', 'Summary of the decision (optional)')" />
+				<template v-else-if="loadError === ''">
+					<div class="assessment-decision__row">
+						<div class="assessment-decision__field">
+							<label class="assessment-decision__label" for="assessment-decision-date">
+								{{ t('dossiq', 'Decision date') }}
+							</label>
+							<input
+								id="assessment-decision-date"
+								v-model="decisionDate"
+								class="assessment-decision__date"
+								type="date"
+								data-testid="assessment-decision-date">
+							<span v-if="kase && kase.deadline" class="assessment-decision__hint">
+								{{ t('dossiq', 'At the latest {date}', { date: formatDate(kase.deadline) }) }}
+							</span>
+						</div>
+						<div v-if="daysLeft !== null" class="assessment-decision__field">
+							<span class="assessment-decision__label">{{ t('dossiq', 'Term') }}</span>
+							<span class="assessment-decision__term">
+								{{ daysLeft >= 0 ? n('dossiq', '%n day left', '%n days left', daysLeft) : n('dossiq', '%n day late', '%n days late', -daysLeft) }}
+							</span>
+						</div>
+					</div>
+
+					<div class="assessment-decision__field">
+						<NcTextArea
+							v-model="description"
+							data-testid="assessment-decision-description"
+							:label="t('dossiq', 'Reasons for the decision')"
+							:labelOutside="true"
+							resize="vertical" />
+						<span class="assessment-decision__hint">
+							{{ t('dossiq', 'Goes into the decision and into the reason of this step.') }}
+						</span>
+					</div>
+				</template>
+
+				<NcNoteCard v-if="note" type="info">
+					{{ t('dossiq', note) }}
+				</NcNoteCard>
 
 				<p
 					v-if="error"
@@ -116,20 +173,27 @@
 				data-testid="assessment-decision-save"
 				:disabled="!canSave"
 				@click="save">
+				<template #icon>
+					<Gavel :size="20" />
+				</template>
 				{{ t('dossiq', 'Record the decision') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnChoiceCards } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
-import { translate as t } from '@nextcloud/l10n'
+import { getCanonicalLocale, translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import Gavel from 'vue-material-design-icons/Gavel.vue'
+import CnDialog from '../components/CnDialogShell.js'
+import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -149,8 +213,11 @@ export default {
 	name: 'AssessmentDecisionDialog',
 
 	components: {
+		CnChoiceCards,
+		CnDialog,
+		Gavel,
 		NcButton,
-		NcDialog,
+		NcNoteCard,
 		NcTextArea,
 	},
 
@@ -194,6 +261,18 @@ export default {
 			type: Array,
 			default: () => [],
 		},
+
+		/** The classification the decision takes when the documents were classified differently. */
+		mixedOutcome: {
+			type: String,
+			default: '',
+		},
+
+		/** An i18n key shown as a note under the form: what follows the decision. */
+		note: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -204,6 +283,9 @@ export default {
 			loadError: '',
 			outstanding: [],
 			tally: {},
+			groundTally: {},
+			kase: null,
+			decisionDate: new Date().toISOString().slice(0, 10),
 			countsError: '',
 			description: '',
 			busy: false,
@@ -213,6 +295,52 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
+		eyebrow() {
+			return caseEyebrow(t('dossiq', this.title), this.kase)
+		},
+
+		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
+		subtitle() {
+			const total = Object.values(this.tally).reduce((sum, count) => sum + count, 0)
+			return n('dossiq', 'The decision is built from the %n assessed document.', 'The decision is built from the %n assessed documents.', total)
+		},
+
+		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
+		outcomeOptions() {
+			return this.counts.map((row) => ({
+				value: row.value,
+				label: row.label,
+				description: n('dossiq', '%n document assessed this way', '%n documents assessed this way', row.count),
+			}))
+		},
+
+		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
+		proposedOutcome() {
+			const used = this.counts.filter((row) => row.count > 0)
+			if (used.length === 1) {
+				return used[0].value
+			}
+			return used.length > 1 ? this.mixedOutcome : ''
+		},
+
+		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
+		grounds() {
+			return Object.entries(this.groundTally).map(([code, count]) => ({ code, count }))
+		},
+
+		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
+		daysLeft() {
+			const deadline = String(this.kase?.deadline ?? '').slice(0, 10)
+			if (deadline === '') {
+				return null
+			}
+			const end = new Date(deadline + 'T00:00:00')
+			const today = new Date()
+			today.setHours(0, 0, 0, 0)
+			return Number.isNaN(end.getTime()) ? null : Math.round((end - today) / 86400000)
+		},
+
 		/** @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003 */
 		targetCaseId() {
 			const given = String(this.caseId || '')
@@ -253,12 +381,24 @@ export default {
 		},
 	},
 
-	mounted() {
+	async mounted() {
 		this.load()
+		this.kase = await fetchCaseSummary(this.targetCaseId)
 	},
 
 	methods: {
 		t,
+		n,
+
+		/**
+		 * @param {string} value A date.
+		 * @return {string} The date written out in the reader's language.
+		 * @spec openspec/changes/woo-case-screens-and-objections/specs/document-assessment/spec.md#requirement-a-case-is-decided-from-its-assessments-in-one-dialog-req-das-003
+		 */
+		formatDate(value) {
+			const date = new Date(String(value).slice(0, 10) + 'T00:00:00')
+			return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(getCanonicalLocale() || undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+		},
 
 		/**
 		 * A configured url with the case filled in.
@@ -343,11 +483,19 @@ export default {
 					},
 				)
 				const tally = {}
+				const grounds = {}
 				for (const row of data?.results || []) {
 					const value = String(row?.[field] ?? '')
 					tally[value] = (tally[value] ?? 0) + 1
+					for (const ground of Array.isArray(row?.weigeringsgronden) ? row.weigeringsgronden : []) {
+						const code = String(ground?.code ?? ground ?? '')
+						if (code !== '') {
+							grounds[code] = (grounds[code] ?? 0) + 1
+						}
+					}
 				}
 				this.tally = tally
+				this.groundTally = grounds
 			} catch {
 				this.countsError = t(
 					'dossiq',
@@ -366,6 +514,9 @@ export default {
 			const decision = {}
 			if (this.description.trim() !== '') {
 				decision.description = this.description.trim()
+			}
+			if (this.decisionDate !== '' && this.decisionDate !== new Date().toISOString().slice(0, 10)) {
+				decision.decisionDate = this.decisionDate
 			}
 
 			this.busy = true
@@ -397,27 +548,63 @@ export default {
 .assessment-decision {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 18px;
 
 	p {
 		margin: 0;
 	}
 
-	&__counts {
-		margin: 0;
+	&__row {
 		display: grid;
-		grid-template-columns: 1fr max-content;
-		gap: 6px 16px;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 16px;
+	}
 
-		dt {
-			color: var(--color-text-maxcontrast);
-		}
+	&__field {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		min-width: 0;
+	}
 
-		dd {
-			margin: 0;
-			font-weight: 600;
-			text-align: end;
-		}
+	&__label {
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	&__hint {
+		font-size: 13px;
+		color: var(--color-text-maxcontrast);
+	}
+
+	&__date {
+		box-sizing: border-box;
+		height: 40px;
+		padding: 0 12px;
+		border: 1px solid var(--color-border-dark);
+		border-radius: 8px;
+		font: inherit;
+	}
+
+	&__term {
+		display: flex;
+		align-items: center;
+		min-height: 40px;
+		font-size: 15px;
+	}
+
+	&__chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	&__chip {
+		padding: 3px 10px;
+		border-radius: 12px;
+		background: var(--color-background-dark);
+		font-size: 13px;
+		font-weight: 600;
 	}
 
 	&__blocked {

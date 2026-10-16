@@ -79,6 +79,7 @@
         "{percent}%",
         "Relevant",
         "{title}",
-        "{time}, +{extension}"
+        "{time}, +{extension}",
+        "{ground} · %n document"
     ]
 }
