@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -50,11 +51,13 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	 * @param EngineTaskInbox $engineTasks The engine's task reader.
 	 * @param EngineTaskGateway $engineTask The seam that reads one task.
 	 * @param LoggerInterface $logger Logger
+	 * @param IL10N $l10n Translates the refusals.
 	 */
 	public function __construct(
 		private readonly EngineTaskInbox $engineTasks,
 		private readonly EngineTaskGateway $engineTask,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -105,7 +108,7 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 				['task' => $taskId, 'engine' => $this->engineTask->lastError()]
 			);
 
-			return new GuardResult(passed: false, failureMessage: 'Gekoppelde taak niet gevonden');
+			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Linked task not found'));
 		}
 
 		return $this->verdict(tasks: [$task], requiredItems: $requiredItems);
@@ -123,7 +126,7 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	private function evaluateCaseTasks(array $case, string $userId, mixed $requiredItems): GuardResult {
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 		if ($caseId === '') {
-			return new GuardResult(passed: false, failureMessage: 'Zaak niet herkend voor checklistcontrole');
+			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Case not recognised for the checklist check'));
 		}
 
 		$tasks = $this->engineTasks->forCase(caseId: $caseId, actor: $userId);
@@ -140,7 +143,7 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 				['case' => $caseId, 'engine' => $failure]
 			);
 
-			return new GuardResult(passed: false, failureMessage: 'Taken van de zaak niet gevonden');
+			return new GuardResult(passed: false, failureMessage: $this->l10n->t('Tasks of the case not found'));
 		}
 
 		return $this->verdict(tasks: $tasks, requiredItems: $requiredItems);
@@ -162,7 +165,7 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 
 		return new GuardResult(
 			passed: false,
-			failureMessage: sprintf("%d checklistitem niet afgevinkt: '%s'", count($missing), $missing[0]),
+			failureMessage: $this->l10n->t('%1$s checklist item not ticked: \'%2$s\'', [(string)count($missing), $missing[0]]),
 			details: ['missing' => $missing],
 		);
 	}//end verdict()

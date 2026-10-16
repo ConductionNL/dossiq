@@ -25,6 +25,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\WOOAssessmentController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
+use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
@@ -50,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
  *
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
+ * @uses \OCA\Dossiq\Service\Cases\HandlerActsAsSystem
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -155,8 +158,27 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$this->untranslated(),
+			$this->handlerActs(),
 		);
 	}//end setUp()
+
+	/**
+	 * The handler gate over this test's guard, on a case whose decision is published.
+	 *
+	 * @param array<string, mixed> $case The case the store answers.
+	 *
+	 * @return HandlerActsAsSystem The gate.
+	 */
+	private function handlerActs(array $case = ['wooPublicationStatus' => 'published']): HandlerActsAsSystem {
+		$store = $this->createMock(CaseStatusStore::class);
+		$store->method('loadCase')->willReturn($case);
+
+		return new HandlerActsAsSystem(
+			guard: $this->caseAccessGuard,
+			store: $store,
+			settings: $this->createMock(SettingsService::class),
+		);
+	}//end handlerActs()
 
 	/**
 	 * Translations that hand every source sentence back unchanged.
@@ -253,6 +275,7 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$this->untranslated(),
+			$this->handlerActs(),
 		);
 	}//end controllerOverTheRealList()
 
@@ -313,6 +336,7 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$this->untranslated(),
+			$this->handlerActs(),
 		);
 
 		$response = $controller->bulkAssess('case-uuid-001');
@@ -550,6 +574,7 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->caseAccessGuard,
 			$this->logger,
 			$dutch,
+			$this->handlerActs(),
 		);
 
 		$response = $controller->publishDecision('case-uuid-001');

@@ -109,6 +109,7 @@ class RoleGuardTest extends TestCase {
 			groupManager: $groupManager,
 			userManager: $userManager,
 			logger: new NullLogger(),
+			l10n: new SourceL10n(),
 		);
 
 		$result = $guard->evaluate(
@@ -160,6 +161,7 @@ class RoleGuardTest extends TestCase {
 			groupManager: $groupManager,
 			userManager: $userManager,
 			logger: new NullLogger(),
+			l10n: new SourceL10n(),
 		);
 	}//end buildGuard()
 }//end class
