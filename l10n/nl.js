@@ -10009,6 +10009,7 @@ OC.L10N.register(
         "Your own stage": "Je eigen fase",
         "Your own work": "Je eigen werk",
         "Your queue": "Uw wachtrij",
+        "Your queue · own task": "Uw wachtrij · eigen taak",
         "Your recent cases are not available right now.": "Je recente zaken zijn nu niet beschikbaar.",
         "Your request {ref} is handled together with this one.": "Uw verzoek {ref} wordt samen met dit verzoek behandeld.",
         "Your tasks could not be read just now.": "Je taken konden nu niet worden gelezen.",
