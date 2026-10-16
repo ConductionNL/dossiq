@@ -1167,7 +1167,8 @@
 						"gridX": 0,
 						"gridY": 1,
 						"gridWidth": 12,
-						"gridHeight": 20
+						"gridHeight": 20,
+						"sizeToContent": true
 					},
 					"12": null,
 					"11": null,
