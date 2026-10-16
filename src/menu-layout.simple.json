@@ -1551,10 +1551,129 @@
 		{
 			"id": "Queue",
 			"title": "Team queue",
+			"_note": "DqTeamwachtrij: three counts above the list, a chip per case type, the list with how long each case has waited in front, and two cards beside it. The counts and the per-type card read the queue figures of /api/dashboard/kpis, which folds the open cases once. Team today reads the coordinator workload, so a reader who is not a coordinator sees its error text, never someone else's numbers. A chip per case type needs the case type ids, which differ per instance except the seeded Woo request; the strip carries All types and Woo requests until the library can draw one chip per value of a field.",
 			"config": {
 				"folderSidebar": null,
 				"searchPlaceholder": "Search by case, number or requester",
+				"statRow": [
+					{
+						"id": "queue-unassigned",
+						"type": "stat",
+						"title": "Without a handler",
+						"content": {
+							"label": "Without a handler",
+							"caption": "{queueNewToday} came in today",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "queueCount",
+							"layout": "stacked"
+						}
+					},
+					{
+						"id": "queue-oldest",
+						"type": "stat",
+						"title": "Waiting longest",
+						"content": {
+							"label": "Waiting longest",
+							"caption": "the oldest case in the queue",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " days"
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "queueOldestDays",
+							"layout": "stacked"
+						}
+					},
+					{
+						"id": "queue-due-soon",
+						"type": "stat",
+						"title": "Deadline within 7 days",
+						"content": {
+							"label": "Deadline within 7 days",
+							"caption": "pick these up first",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis"
+							},
+							"valueField": "queueDueSoon",
+							"layout": "stacked"
+						}
+					}
+				],
+				"quickFilters": [
+					{
+						"label": "All types",
+						"filter": {},
+						"default": true,
+						"showCount": true
+					},
+					{
+						"label": "Woo request",
+						"filter": {
+							"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+						},
+						"showCount": true
+					}
+				],
+				"sidePanel": [
+					{
+						"id": "queue-team-today",
+						"type": "record-list",
+						"title": "Team today",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/work-queue/workload",
+								"responsePath": "handlers"
+							},
+							"presentation": "rows",
+							"avatar": "{displayName}",
+							"title": "{displayName}",
+							"meta": "{handler}",
+							"trailing": [
+								"{openCaseCount} cases"
+							],
+							"limit": 6,
+							"emptyText": "Nobody in your teams has open cases",
+							"errorText": "Only a coordinator sees the team's workload"
+						}
+					},
+					{
+						"id": "queue-by-type",
+						"type": "record-list",
+						"title": "Work in stock per case type",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/dashboard/kpis",
+								"responsePath": "queueByType"
+							},
+							"presentation": "rows",
+							"title": "{title}",
+							"trailing": [
+								"{open} open · {waiting} waiting"
+							],
+							"emptyText": "No open cases"
+						}
+					}
+				],
 				"columns": [
+					{
+						"key": "startDate",
+						"width": "96px",
+						"label": "Waiting",
+						"widget": "age"
+					},
 					{
 						"key": "title",
 						"width": "328px",
@@ -1566,7 +1685,11 @@
 						"key": "caseType",
 						"width": "179px",
 						"label": "Type",
-						"formatter": "caseTypeName"
+						"formatter": "caseTypeName",
+						"widget": "badge",
+						"widgetProps": {
+							"variant": "info"
+						}
 					},
 					{
 						"key": "deadline",
@@ -1590,7 +1713,7 @@
 					}
 				],
 				"showTitle": true,
-				"countText": "{shown} of {total} open cases without a handler, oldest first",
+				"countText": "{shown} of {total} open cases without a handler · oldest first",
 				"footerNote": "a case leaves the queue as soon as someone picks it up",
 				"headerButtons": [
 					{

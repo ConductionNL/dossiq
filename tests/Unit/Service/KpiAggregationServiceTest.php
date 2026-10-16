@@ -228,6 +228,36 @@ final class KpiAggregationServiceTest extends TestCase {
 	}
 
 	/**
+	 * The queue figures count the open cases without a handler, and group every open case by type.
+	 *
+	 * @return void
+	 */
+	public function testQueueFiguresFoldTheUnassignedCases(): void {
+		$today = new \DateTimeImmutable($this->today);
+		$rows = [
+			['caseType' => 'woo', 'assignee' => '', 'startDate' => $today->modify('-6 days')->format('Y-m-d'), 'deadline' => $today->modify('+4 days')->format('Y-m-d')],
+			['caseType' => 'woo', 'assignee' => '', 'startDate' => $this->today, 'deadline' => $today->modify('+20 days')->format('Y-m-d')],
+			['caseType' => 'woo', 'assignee' => 'pieter', 'startDate' => $today->modify('-30 days')->format('Y-m-d')],
+			['caseType' => 'bezwaar', 'startDate' => $today->modify('-2 days')->format('Y-m-d'), 'deadline' => $this->today],
+		];
+
+		$kpis = $this->service(objectService: $this->objectService(openRows: $rows))->computeKpis('admin');
+
+		$this->assertSame(3, $kpis['queueCount'], 'a case without a handler is in the queue.');
+		$this->assertSame(1, $kpis['queueNewToday']);
+		$this->assertSame(2, $kpis['queueDueSoon'], 'due today and due in four days fall in the coming week.');
+		$this->assertSame(6, $kpis['queueOldestDays'], 'the oldest case IN the queue, not the oldest open case.');
+		$this->assertSame(
+			[
+				['caseType' => 'woo', 'title' => 'Woo-verzoek', 'open' => 3, 'waiting' => 2],
+				['caseType' => 'bezwaar', 'title' => 'Bezwaar', 'open' => 1, 'waiting' => 1],
+			],
+			$kpis['queueByType'],
+			'every open case counts per type under its title, the unassigned ones also as waiting.'
+		);
+	}
+
+	/**
 	 * A failing count reports 0 for that metric and lets the rest through.
 	 *
 	 * This is the path the old implementation lived on permanently: every query
@@ -433,6 +463,7 @@ final class KpiAggregationServiceTest extends TestCase {
 					'register' => self::IDS['register'],
 					'case_schema' => self::IDS['case'],
 					'task_schema' => self::IDS['caseTask'],
+					'case_type_schema' => '174',
 					default => $default,
 				};
 			}
@@ -635,6 +666,10 @@ final class KpiAggregationServiceTest extends TestCase {
 				$rows = $this->open;
 				if (isset($f['endDate']) === true) {
 					$rows = $this->closed;
+				}
+
+				if ($this->schema === '174') {
+					$rows = [['id' => 'woo', 'title' => 'Woo-verzoek'], ['@self' => ['id' => 'bezwaar'], 'title' => 'Bezwaar'], ['title' => 'No id']];
 				}
 
 				if ($this->malformedEnvelope === true) {

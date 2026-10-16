@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\WorkQueueService;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -67,6 +68,11 @@ class WorkQueueControllerTest extends TestCase {
 	 */
 	private LoggerInterface $logger;
 
+	/**
+	 * @var IUserManager|MockObject
+	 */
+	private IUserManager $userManager;
+
 	private WorkQueueController $controller;
 
 	/**
@@ -78,6 +84,7 @@ class WorkQueueControllerTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->workQueueService = $this->createMock(WorkQueueService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->userManager = $this->createMock(IUserManager::class);
 
 		$this->controller = new WorkQueueController(
 			$this->request,
@@ -85,6 +92,7 @@ class WorkQueueControllerTest extends TestCase {
 			$this->groupManager,
 			$this->workQueueService,
 			$this->logger,
+			$this->userManager,
 		);
 	}//end setUp()
 
@@ -179,15 +187,22 @@ class WorkQueueControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn($user);
 		$this->groupManager->method('isAdmin')->with('admin-alice')->willReturn(true);
 
-		$fixture = [['handler' => 'jan', 'openCaseCount' => 4]];
+		$fixture = [['handler' => 'jan', 'openCaseCount' => 4], ['handler' => 'gone', 'openCaseCount' => 1]];
 		$this->workQueueService->expects($this->once())
 			->method('computeWorkload')
 			->willReturn($fixture);
+		$this->userManager->method('getDisplayName')->willReturnMap([['jan', 'Jan de Vries'], ['gone', null]]);
 
 		$response = $this->controller->workload();
 
 		self::assertSame(200, $response->getStatus());
-		self::assertSame($fixture, $response->getData()['handlers']);
+		self::assertSame(
+			[
+				['handler' => 'jan', 'openCaseCount' => 4, 'displayName' => 'Jan de Vries'],
+				['handler' => 'gone', 'openCaseCount' => 1, 'displayName' => 'gone'],
+			],
+			$response->getData()['handlers']
+		);
 	}//end testWorkloadReturns200ForCoordinator()
 
 	/**

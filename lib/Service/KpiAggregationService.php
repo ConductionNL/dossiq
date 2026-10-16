@@ -153,7 +153,7 @@ class KpiAggregationService {
 			filters: self::OPEN_WORK
 		);
 
-		return [
+		return ($this->queueKpis(openCases: $openCases, today: $now, typeTitles: $this->caseTypeTitles(ids: $ids)) + [
 			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
 			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
 			'overdueCount' => $this->countCases(
@@ -186,8 +186,98 @@ class KpiAggregationService {
 			'typeBreakdown' => $this->breakdown(rows: $openCases, field: 'caseType', label: 'type'),
 			'avgProcessingDays' => $this->averageProcessingDays(closed: $closed),
 			'slaCompliance' => $this->slaCompliance(closed: $closed),
-		];
+		]);
 	}//end computeKpis()
+
+	/**
+	 * Every case type's title, by id.
+	 *
+	 * @param array<string, string> $ids The register and schema ids.
+	 *
+	 * @return array<string, string> The titles; empty when the case type schema is not configured.
+	 */
+	private function caseTypeTitles(array $ids): array {
+		$schema = $this->appConfig->getValueString(Application::APP_ID, 'case_type_schema', '');
+		if ($schema === '') {
+			return [];
+		}
+
+		$titles = [];
+		foreach ($this->rows(ids: $ids, schema: $schema, filters: []) as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			if ($id !== '') {
+				$titles[$id] = (string)($row['title'] ?? $id);
+			}
+		}
+
+		return $titles;
+	}//end caseTypeTitles()
+
+	/**
+	 * The figures the team queue shows above and beside its list.
+	 *
+	 * Folded from the open cases already read, so the queue costs no extra
+	 * request. A case is in the queue while it has no handler.
+	 *
+	 * @param array<int, array> $openCases The open cases.
+	 * @param DateTimeImmutable $today Today, at midnight.
+	 * @param array<string, string> $typeTitles Case type titles by id.
+	 *
+	 * @return array<string, mixed> The queue figures.
+	 */
+	private function queueKpis(array $openCases, DateTimeImmutable $today, array $typeTitles): array {
+		$todayText = $today->format('Y-m-d');
+		$weekEnd = $today->modify('+7 days')->format('Y-m-d');
+		$waiting = 0;
+		$newToday = 0;
+		$dueSoon = 0;
+		$oldestDays = null;
+		$byType = [];
+
+		foreach ($openCases as $case) {
+			$type = (string)($case['caseType'] ?? '');
+			$unassigned = ((string)($case['assignee'] ?? '') === '');
+			if ($type !== '') {
+				$byType[$type] = ($byType[$type] ?? ['open' => 0, 'waiting' => 0]);
+				$byType[$type]['open']++;
+				$byType[$type]['waiting'] += (int)$unassigned;
+			}
+
+			if ($unassigned === false) {
+				continue;
+			}
+
+			$waiting++;
+			$start = substr((string)($case['startDate'] ?? ''), 0, 10);
+			$deadline = substr((string)($case['deadline'] ?? ''), 0, 10);
+			$newToday += (int)($start === $todayText);
+			$dueSoon += (int)($deadline !== '' && $deadline >= $todayText && $deadline < $weekEnd);
+			$days = $this->daysBetween(from: $start, to: $todayText);
+			if ($days !== null && ($oldestDays === null || $days > $oldestDays)) {
+				$oldestDays = $days;
+			}
+		}
+
+		uasort(
+			$byType,
+			static function (array $a, array $b): int {
+				return ($b['open'] <=> $a['open']);
+			}
+		);
+
+		$rows = [];
+		foreach ($byType as $type => $counts) {
+			$rows[] = ['caseType' => (string)$type, 'title' => ($typeTitles[$type] ?? (string)$type)] + $counts;
+		}
+
+		return [
+			'queueCount' => $waiting,
+			'queueNewToday' => $newToday,
+			'queueDueSoon' => $dueSoon,
+			'queueOldestDays' => ($oldestDays ?? 0),
+			'queueByType' => $rows,
+		];
+	}//end queueKpis()
 
 	/**
 	 * The shape returned when the app is not configured against a register.
@@ -214,6 +304,11 @@ class KpiAggregationService {
 			'typeBreakdown' => [],
 			'avgProcessingDays' => null,
 			'slaCompliance' => null,
+			'queueCount' => 0,
+			'queueNewToday' => 0,
+			'queueDueSoon' => 0,
+			'queueOldestDays' => 0,
+			'queueByType' => [],
 		];
 	}//end emptyKpis()
 

@@ -79,6 +79,7 @@
         "{percent}%",
         "Relevant",
         "{title}",
+        "{displayName}",
         "{time}, +{extension}"
     ]
 }
