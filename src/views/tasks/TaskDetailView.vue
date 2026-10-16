@@ -890,7 +890,7 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: calc(var(--default-grid-baseline) * 4);
-	padding: calc(var(--default-grid-baseline) * 4);
+	padding: calc(var(--default-grid-baseline) * 7);
 	max-width: 1200px;
 
 	&__header {
