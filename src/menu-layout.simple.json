@@ -1697,6 +1697,21 @@
 						"label": "Deadline",
 						"widget": "date",
 						"widgetProps": {
+							"due": {
+								"todayLabel": "Today",
+								"overdueLabel": {
+									"one": "{count} day overdue",
+									"other": "{count} days overdue"
+								},
+								"upcomingLabel": {
+									"one": "{count} day left",
+									"other": "{count} days left"
+								},
+								"upcomingWeeksLabel": {
+									"one": "{count} week left",
+									"other": "{count} weeks left"
+								}
+							},
 							"variantWhen": [
 								{
 									"op": "lt",
