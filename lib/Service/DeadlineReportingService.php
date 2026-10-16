@@ -460,7 +460,12 @@ class DeadlineReportingService {
 				continue;
 			}
 
-			$labels[] = ($row['title'] !== '' ? $row['title'] : (string)$key);
+			$label = (string)$key;
+			if ($row['title'] !== '') {
+				$label = $row['title'];
+			}
+
+			$labels[] = $label;
 			$shares[] = (float)$row['binnenTermijnPct'];
 		}
 
