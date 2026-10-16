@@ -48,6 +48,7 @@ use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
+use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
@@ -206,7 +207,6 @@ class AcknowledgementService {
 			'templateVersion' => self::TEMPLATE_VERSION,
 			'contentWithheld' => $withheld,
 		];
-		$context['emailCopy'] = $this->declaration->sendsEmailCopy(caseType: $caseType);
 
 		// The sender picks the channel (portal inbox, digital post, e-mail),
 		// calls its transport and records the result on the case. A notice no
@@ -239,6 +239,10 @@ class AcknowledgementService {
 
 		$this->write(caseId: $caseId, changes: ['acknowledgementDuty' => $met]);
 
+		if ($met['channel'] !== RequesterNoticeSender::CHANNEL_EMAIL && $this->declaration->sendsEmailCopy(caseType: $caseType) === true) {
+			$this->sendEmailCopy(case: $case, term: $term, recipient: $recipient, context: $context);
+		}
+
 		// PUBLIC, because the acknowledgement is the one message on this path
 		// the applicant has already received. Withholding its own line from
 		// the timeline the portal reads would tell a citizen nothing was sent
@@ -264,6 +268,39 @@ class AcknowledgementService {
 
 		return ['sent' => true, 'duty' => $met, 'record' => $record, 'payload' => $payload];
 	}//end acknowledge()
+
+	/**
+	 * The same acknowledgement by e-mail as well, when the case type asks for it.
+	 *
+	 * The sender records the copy on the case as a message of its own. A copy
+	 * no transport took is recorded as not sent there and leaves the duty,
+	 * which the first channel already met, as it is.
+	 *
+	 * @param array<string, mixed>      $case      The case row.
+	 * @param array<string, mixed>|null $term      The bound statutory term.
+	 * @param string                    $recipient The address on the case.
+	 * @param array<string, mixed>      $context   The acknowledgement's context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	private function sendEmailCopy(array $case, ?array $term, string $recipient, array $context): void {
+		try {
+			$this->notifications->sendTermijnNotification(
+				CaseTypeAcknowledgement::TEMPLATE,
+				(string)($term['id'] ?? ($term['uuid'] ?? '')),
+				$recipient,
+				$context + ['channels' => [RequesterNoticeSender::CHANNEL_EMAIL]],
+				$case,
+			);
+		} catch (NoticeNotSentException $e) {
+			$this->logger->warning(
+				'Dossiq acknowledgement: the e-mail copy for case {case} was not sent: {reason}',
+				['case' => (string)($case['id'] ?? ''), 'reason' => $e->getMessage()],
+			);
+		}
+	}//end sendEmailCopy()
 
 	/**
 	 * The answer for a case that gets no acknowledgement now, or null when one is due.

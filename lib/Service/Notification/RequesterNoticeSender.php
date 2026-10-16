@@ -150,10 +150,10 @@ class RequesterNoticeSender {
 	 * @param string               $moment   The moment (REQ-WRN-006).
 	 * @param array<string, mixed> $options  `recipient` (an address the caller holds), `instanceId`,
 	 *                                       `dedupeKey`, `recordExtras` (more keys for the record),
-	 *                                       `emailCopy` (also mail it when another channel took it).
+	 *                                       `channels` (the channels to try, in the declared order;
+	 *                                       all of them when absent).
 	 *
-	 * @return array<string, mixed> The delivery result, with the `record` it appended, and the
-	 *                              `emailCopy` result when one was asked for.
+	 * @return array<string, mixed> The delivery result, with the `record` it appended.
 	 *
 	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-channel-follows-the-requester-in-a-declared-order-req-wrn-002
 	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
@@ -172,7 +172,8 @@ class RequesterNoticeSender {
 
 		$tried = [];
 		$sent = null;
-		foreach ([self::CHANNEL_PORTAL, self::CHANNEL_DIGITAL_POST, self::CHANNEL_EMAIL] as $channel) {
+		$order = [self::CHANNEL_PORTAL, self::CHANNEL_DIGITAL_POST, self::CHANNEL_EMAIL];
+		foreach (array_intersect($order, (array)($options['channels'] ?? $order)) as $channel) {
 			$answer = $this->through(channel: $channel, case: $case, notice: $notice);
 			if ($answer === null) {
 				continue;
@@ -189,10 +190,6 @@ class RequesterNoticeSender {
 		$result = $this->result(sent: $sent, tried: $tried, moment: $moment, template: $template, attemptedAt: $attemptedAt);
 		$result['record'] = $this->record(case: $case, result: $result, extras: (array)($options['recordExtras'] ?? []));
 
-		if (($options['emailCopy'] ?? false) === true && $sent !== null && $sent['channel'] !== self::CHANNEL_EMAIL) {
-			$result['emailCopy'] = $this->emailCopy(case: $case, notice: $notice, extras: (array)($options['recordExtras'] ?? []));
-		}
-
 		$this->logger->info(
 			'Dossiq requester notice: {template} is {status}',
 			[
@@ -205,44 +202,6 @@ class RequesterNoticeSender {
 
 		return $result;
 	}//end send()
-
-	/**
-	 * The same notice by e-mail as well, recorded as a message of its own.
-	 *
-	 * A copy that cannot go out is recorded as not sent and changes nothing
-	 * about the notice another channel already delivered.
-	 *
-	 * @param array<string, mixed> $case   The case row.
-	 * @param array<string, mixed> $notice The notice.
-	 * @param array<string, mixed> $extras More keys for the record.
-	 *
-	 * @return array<string, mixed> The copy's delivery result, with its `record`.
-	 *
-	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
-	 */
-	private function emailCopy(array $case, array $notice, array $extras): array {
-		$answer = $this->emailTo(case: $case, notice: $notice);
-		$sent = null;
-		$tried = [];
-		if ($answer !== null && $answer['sent'] === true) {
-			$sent = $answer + ['channel' => self::CHANNEL_EMAIL];
-		}
-
-		if ($answer !== null && $answer['sent'] !== true) {
-			$tried[] = ['channel' => self::CHANNEL_EMAIL, 'reasonCode' => $answer['reasonCode'], 'reason' => $answer['reason']];
-		}
-
-		$copy = $this->result(
-			sent: $sent,
-			tried: $tried,
-			moment: $notice['moment'],
-			template: $notice['template'],
-			attemptedAt: (new DateTimeImmutable())->format('c')
-		);
-		$copy['record'] = $this->record(case: $case, result: $copy, extras: $extras);
-
-		return $copy;
-	}//end emailCopy()
 
 	/**
 	 * Ask one channel, or null when the channel is not offered for this requester.

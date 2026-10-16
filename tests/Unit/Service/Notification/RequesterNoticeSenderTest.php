@@ -238,45 +238,21 @@ class RequesterNoticeSenderTest extends TestCase {
 	}//end testAPortalRequesterGetsAPortalMessageAndNoDigitalPost()
 
 	/**
-	 * REQ-ACK-COPY-001: with `emailCopy` the portal notice is mailed as well,
-	 * and each message is recorded on its own.
+	 * REQ-ACK-COPY-001: a caller may name the channels to try; e-mail only
+	 * mails a portal requester, and records the message.
 	 *
 	 * @return void
 	 */
-	public function testAnEmailCopyGoesOutBesideThePortalMessage(): void {
+	public function testACallerMayAskForEmailOnly(): void {
 		$case = $this->seedCase(fields: ['portalSubject' => 'ps-abc', 'email' => 'verzoeker@example.nl']);
 
-		$result = $this->sender(portaliq: true)->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement', ['emailCopy' => true]);
+		$result = $this->sender(portaliq: true)->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement', ['channels' => ['email']]);
 
-		self::assertSame('portal-inbox', $result['channel']);
-		self::assertSame('sent', $result['emailCopy']['status']);
-		self::assertSame('email', $result['emailCopy']['channel']);
+		self::assertSame('email', $result['channel']);
 		self::assertCount(1, $this->mailed);
-
-		$stored = $this->store->get('case', 'case-1')['outboundCommunications'];
-		self::assertSame(['portal-inbox', 'email'], array_column($stored, 'channel'));
-	}//end testAnEmailCopyGoesOutBesideThePortalMessage()
-
-	/**
-	 * Without `emailCopy` the portal message is the only one, and a copy
-	 * without an address is recorded as not sent without touching the notice.
-	 *
-	 * @return void
-	 */
-	public function testAPortalNoticeIsMailedOnlyWhenACopyIsAskedAndAnAddressIsKnown(): void {
-		$case = $this->seedCase(fields: ['portalSubject' => 'ps-abc', 'email' => 'verzoeker@example.nl']);
-		$result = $this->sender(portaliq: true)->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement');
-		self::assertArrayNotHasKey('emailCopy', $result);
-		self::assertSame([], $this->mailed);
-
-		$this->store = new FakeTermijnStore();
-		$case = $this->seedCase(fields: ['portalSubject' => 'ps-abc']);
-		$result = $this->sender(portaliq: true)->send($case, 'ontvangstbevestiging', $this->rendered(), 'acknowledgement', ['emailCopy' => true]);
-		self::assertSame('sent', $result['status']);
-		self::assertSame('not-sent', $result['emailCopy']['status']);
-		self::assertSame('no-channel', $result['emailCopy']['reasonCode']);
-		self::assertSame([], $this->mailed);
-	}//end testAPortalNoticeIsMailedOnlyWhenACopyIsAskedAndAnAddressIsKnown()
+		self::assertSame([], $this->store->findObjects('dossiq', 'portaalBericht'));
+		self::assertSame(['email'], array_column($this->store->get('case', 'case-1')['outboundCommunications'], 'channel'));
+	}//end testACallerMayAskForEmailOnly()
 
 	/**
 	 * Without portaliq the inbox is not offered, and the notice goes on to the next channel.

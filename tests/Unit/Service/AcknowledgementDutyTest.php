@@ -327,19 +327,52 @@ class AcknowledgementDutyTest extends TestCase {
 		$requester->method('momentFor')->willReturn('acknowledgement');
 		$requester->method('send')->willReturnCallback(
 			static function (array $case, string $template, array $rendered, string $moment, array $options) use (&$asked): array {
-				$asked[] = $options['emailCopy'];
+				$asked[] = [(string)$case['id'], $options['channels']];
+				$channel = 'portal-inbox';
+				if ($options['channels'] !== null) {
+					$channel = 'email';
+				}
+
+				return ['status' => 'sent', 'channel' => $channel, 'messageId' => 'm-1', 'sentAt' => '2026-10-16T10:00:00+02:00', 'record' => []];
+			}
+		);
+
+		$this->caseType = ['acknowledgement' => ['emailCopy' => true]];
+		$met = $this->service(requester: $requester)->acknowledge(caseId: $this->seedCase());
+
+		$this->caseType = [];
+		$this->service(requester: $requester)->acknowledge(caseId: $this->seedCase(overrides: ['id' => 'case-2']));
+
+		self::assertSame(expected: [['case-1', null], ['case-1', ['email']], ['case-2', null]], actual: $asked);
+		self::assertSame(expected: 'portal-inbox', actual: $met['duty']['channel'], message: 'the duty stays met by the first channel');
+	}//end testACaseTypeDeclaresAnEmailCopy()
+
+	/**
+	 * REQ-ACK-COPY-001: a copy that does not go out leaves the duty met.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-receipt-also-by-email/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
+	 */
+	public function testACopyThatIsNotSentLeavesTheDutyMet(): void {
+		$requester = $this->createMock(originalClassName: RequesterNoticeSender::class);
+		$requester->method('momentFor')->willReturn('acknowledgement');
+		$requester->method('send')->willReturnCallback(
+			static function (array $case, string $template, array $rendered, string $moment, array $options): array {
+				if ($options['channels'] !== null) {
+					return ['status' => 'not-sent', 'channel' => '', 'reasonCode' => 'no-channel', 'reason' => 'No address.', 'record' => []];
+				}
+
 				return ['status' => 'sent', 'channel' => 'portal-inbox', 'messageId' => 'm-1', 'sentAt' => '2026-10-16T10:00:00+02:00', 'record' => []];
 			}
 		);
 
 		$this->caseType = ['acknowledgement' => ['emailCopy' => true]];
-		$this->service(requester: $requester)->acknowledge(caseId: $this->seedCase());
+		$result = $this->service(requester: $requester)->acknowledge(caseId: $this->seedCase());
 
-		$this->caseType = [];
-		$this->service(requester: $requester)->acknowledge(caseId: $this->seedCase(overrides: ['id' => 'case-2']));
-
-		self::assertSame(expected: [true, false], actual: $asked);
-	}//end testACaseTypeDeclaresAnEmailCopy()
+		self::assertTrue(condition: $result['sent']);
+		self::assertSame(expected: AcknowledgementService::STATUS_MET, actual: $this->store->cases['case-1']['acknowledgementDuty']['status']);
+	}//end testACopyThatIsNotSentLeavesTheDutyMet()
 
 	/**
 	 * A case typed at the balie is not mailed.

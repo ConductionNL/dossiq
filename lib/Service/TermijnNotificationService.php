@@ -216,7 +216,7 @@ class TermijnNotificationService {
 				'instanceId' => $termInstanceId,
 				'dedupeKey' => (string)($context['dedupeKey'] ?? ''),
 				'recordExtras' => (array)($context['recordExtras'] ?? []),
-				'emailCopy' => (($context['emailCopy'] ?? false) === true),
+				'channels' => ($context['channels'] ?? null),
 			],
 		);
 
