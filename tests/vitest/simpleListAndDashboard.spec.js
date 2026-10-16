@@ -291,6 +291,7 @@ describe('the cases list', () => {
 			bulkHint,
 			headerButtons,
 			headerActions,
+			showAdd,
 			showViewToggle,
 			headerFilters,
 			searchPlaceholder,
