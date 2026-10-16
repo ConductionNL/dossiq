@@ -703,6 +703,27 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testAnUnrecordedSetRefusesThePublish()
 
 	/**
+	 * A disclosable document whose file cannot be read refuses the publish with 409, naming it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-woo-publication-carries-its-documents/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testAnUnreadableDocumentRefusesThePublish(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->publicationService->method('publish')->willReturn(['available' => false, 'reason' => 'documents_unreadable', 'documents' => ['nota.pdf']]);
+
+		$response = $this->controller->publishDecision('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertStringContainsString('could not be read', $response->getData()['message']);
+		$this->assertSame(['nota.pdf'], $response->getData()['documents']);
+	}//end testAnUnreadableDocumentRefusesThePublish()
+
+	/**
 	 * WithdrawPublication returns 401 when user is not authenticated.
 	 *
 	 * @return void
