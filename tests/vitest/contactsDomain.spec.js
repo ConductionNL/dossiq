@@ -198,6 +198,9 @@ describe.each([
 			// The tab strip the board draws (DqContact): the four above are
 			// its panels.
 			'contact-panels',
+			// History, last as on pipelinq's relation pages: a tab and the
+			// last side card.
+			'contact-history',
 		])
 		expect(widget(p, 'contact-card').content.editable).toBe(false)
 	})
@@ -246,7 +249,9 @@ describe.each([
 			'contact-cases',
 			'contact-moments',
 			'contact-documents',
+			'contact-history',
 		])
+		expect(p.config.sideColumn[p.config.sideColumn.length - 1]).toBe('contact-history')
 	})
 
 	it('names the page the way the board does: breadcrumb, two quick acts, no follow', () => {
