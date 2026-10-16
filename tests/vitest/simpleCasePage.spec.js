@@ -353,7 +353,7 @@ describe('the tabs', () => {
 	const tabsOf = (config) =>
 		config.widgets.find((widget) => widget.id === 'case-panels').content
 
-	it('shows the five the board draws and keeps the other nine under Acties, losing none', () => {
+	it('shows the five the board draws and keeps the other ten under Acties, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
 		expect(
@@ -362,9 +362,7 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals'])
-		// The document review stands under the files on the Files tab.
-		expect(strip.tabs.find((tab) => tab.label === 'Files').widgetIds).toEqual(['case-files', 'case-document-review'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals', 'Review'])
 		const widgetIds = (content) => content.tabs
 			.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
 			.sort()

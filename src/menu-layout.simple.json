@@ -1005,10 +1005,7 @@
 									"label": "Overview"
 								},
 								{
-									"widgetIds": [
-										"case-files",
-										"case-document-review"
-									],
+									"widgetId": "case-files",
 									"label": "Files"
 								},
 								{
@@ -1073,6 +1070,11 @@
 								{
 									"widgetId": "case-change-proposals",
 									"label": "Proposals",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-document-review",
+									"label": "Review",
 									"overflow": true
 								}
 							]
