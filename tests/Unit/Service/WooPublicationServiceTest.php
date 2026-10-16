@@ -35,7 +35,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Unit\Service\Publication\EnglishL10n;
 use OCA\Dossiq\Tests\Unit\Service\Publication\FakeWithheldDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use Psr\Container\ContainerInterface;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -89,8 +89,8 @@ interface WooPublicationObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WooPublicationService
  *
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooCaseLedger
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\CasePublicationState
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -780,7 +780,7 @@ class WooPublicationServiceTest extends TestCase {
 			$this->appManager,
 			$this->createMock(LoggerInterface::class),
 			null,
-			new WooCaseLedger(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
+			new CasePublicationState(settingsService: $this->settingsService, logger: $this->createMock(LoggerInterface::class), withheldRecorder: $recorder),
 		);
 	}//end decidedCase()
 
