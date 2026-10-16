@@ -77,6 +77,13 @@ class WooFlowGuardsTest extends TestCase {
 	private array $outstanding = [];
 
 	/**
+	 * The partly public documents still waiting for a redacted copy.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $waitingForCopy = [];
+
+	/**
 	 * Whether the register cannot be read.
 	 *
 	 * @var bool
@@ -128,6 +135,9 @@ class WooFlowGuardsTest extends TestCase {
 		);
 		$assessments->method('getOutstanding')->willReturnCallback(
 			fn (): array => ['count' => count($this->outstanding), 'documents' => $this->outstanding]
+		);
+		$assessments->method('partlyPublicWithoutCopy')->willReturnCallback(
+			fn (): array => ['partlyPublic' => max(1, count($this->waitingForCopy)), 'waiting' => $this->waitingForCopy]
 		);
 
 		$passing = new GuardResult(passed: true);
@@ -313,6 +323,27 @@ class WooFlowGuardsTest extends TestCase {
 		$this->underReview = ['doc-1', 'doc-2'];
 		$this->assertTrue(condition: $this->moveTo(answer: $this->answerIn(order: 3), to: 4)['guardsPassed']);
 	}//end testAssessingWaitsForGatheredDocuments()
+
+	/**
+	 * The decision waits until every partly public document has a redacted copy.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 */
+	public function testTheDecisionWaitsForEveryRedactedCopy(): void {
+		$this->underReview = ['doc-1', 'doc-2'];
+		$this->waitingForCopy = ['doc-2'];
+		$move = $this->moveTo(answer: $this->answerIn(order: 5), to: 6);
+		$this->assertFalse(condition: $move['guardsPassed']);
+		$this->assertSame(
+			expected: '1 of 1 partly public documents are still waiting for a redacted version',
+			actual: $move['failedGuards'][0]['failureMessage']
+		);
+
+		$this->waitingForCopy = [];
+		$this->assertTrue(condition: $this->moveTo(answer: $this->answerIn(order: 5), to: 6)['guardsPassed']);
+	}//end testTheDecisionWaitsForEveryRedactedCopy()
 
 	/**
 	 * Redaction waits until every gathered document is assessed.
