@@ -16,5 +16,5 @@ Rehearsal R2 (15 Oct, Woo case): after the handler recorded the decision (Meer >
 
 ## Impact
 
-- `lib/Service/DecisionDocument/CaseDecisionLink.php` (new), `lib/Service/WOODecisionService.php`.
+- `lib/Service/DecisionDocument/CaseDecisionLink.php` (new), `lib/Service/DecisionDocument/PublicationReadiness.php`, `lib/Service/WOODecisionService.php`.
 - Decisions recorded before this change are not back-filled.

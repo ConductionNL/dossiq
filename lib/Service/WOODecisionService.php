@@ -29,7 +29,6 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink;
 use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
 use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
@@ -87,13 +86,6 @@ class WOODecisionService {
 	private readonly PublicationReadiness $readiness;
 
 	/**
-	 * Lists the recorded decision on its case.
-	 *
-	 * @var CaseDecisionLink
-	 */
-	private readonly CaseDecisionLink $decisionLink;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -114,7 +106,6 @@ class WOODecisionService {
 	) {
 		$this->composer  = new DecisionRecordComposer(settingsService: $settingsService, logger: $logger);
 		$this->readiness = new PublicationReadiness(settingsService: $settingsService, logger: $logger);
-		$this->decisionLink = new CaseDecisionLink(settingsService: $settingsService, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -180,13 +171,12 @@ class WOODecisionService {
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
-		$this->decisionLink->link(
+		$this->readiness->markCaseReady(
 			objectService: $objectService,
 			register: $register,
 			caseId: $caseId,
 			decisionId: (string)$decision->getUuid(),
 		);
-		$this->readiness->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
 
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
