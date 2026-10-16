@@ -373,7 +373,7 @@ describe('the tabs', () => {
 		// Communication panels, whose sections became the Overview and Contact
 		// stacks' own cards.
 		const shown = widgetIds(strip)
-		const unfolded = ['case-data-panel', 'case-communication-panel']
+		const unfolded = ['case-data-panel', 'case-communication-panel', 'case-work-panel']
 		for (const id of widgetIds(tabsOf(original)).filter((id) => !unfolded.includes(id))) {
 			expect(shown, id).toContain(id)
 		}
@@ -445,15 +445,16 @@ describe('the tabs', () => {
 		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours', 'case-work-panel']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card']
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
-		// The Tasks tab holds the same sections, in DqZaakTaken's order.
-		const sectionIds = (config) => find(config, 'case-work-panel').content.sections.map((section) => section.widget.id)
-		expect(sectionIds(simple)).toEqual(['case-tasks', 'case-planned-actions', 'case-incidents', 'case-calendar', 'case-deck'])
-		expect([...sectionIds(simple)].sort()).toEqual([...sectionIds(original)].sort())
+		// The Tasks tab holds the work panel's sections as cards, in DqZaakTaken's order.
+		const workSections = find(original, 'case-work-panel').content.sections.map((section) => section.widget.id)
+		const tasksTab = tabsOf(simple).tabs.find((tab) => tab.label === 'Tasks')
+		expect(tasksTab.widgetIds).toEqual(['case-tasks', 'case-planned-actions', 'case-incidents', 'case-calendar', 'case-deck'].map((id) => `${id}-card`))
+		expect(tasksTab.widgetIds.map((id) => id.replace(/-card$/, '')).sort()).toEqual([...workSections].sort())
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})
 
