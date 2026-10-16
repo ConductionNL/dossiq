@@ -491,6 +491,10 @@ class WOOAssessmentController extends Controller {
 			'several_woo_decisions' => [Http::STATUS_CONFLICT, $this->l10n->t('This case has more than one Woo decision. Publish one by its decision id.')],
 			'pages_unseen' => [Http::STATUS_CONFLICT, $this->l10n->t('Publishing waits until every required page has been seen.')],
 			'no_publishable_documents' => [Http::STATUS_CONFLICT, $this->l10n->t('Nothing can be published yet: no document is assessed as public.')],
+			'documents_unreadable' => [
+				Http::STATUS_CONFLICT,
+				$this->l10n->t('A document that may be made public could not be read, so nothing was published. Check its file on the case and try again.'),
+			],
 			'no_publication' => [Http::STATUS_CONFLICT, $this->l10n->t('This decision has not been published.')],
 			'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi is not installed, so nothing can be published.')],
 			'openregister_unavailable' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenRegister is not available.')],

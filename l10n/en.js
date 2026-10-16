@@ -134,6 +134,7 @@ OC.L10N.register(
         "a document is on the case": "a document is on the case",
         "A document on this case was addressed to them.": "A document on this case was addressed to them.",
         "A document picked here gets its own link. The holder of that link sees the document and nothing else of the case.": "A document picked here gets its own link. The holder of that link sees the document and nothing else of the case.",
+        "A document that may be made public could not be read, so nothing was published. Check its file on the case and try again.": "A document that may be made public could not be read, so nothing was published. Check its file on the case and try again.",
         "A document without extracted text never matches a text condition, and a mail whose headers were not read never matches a sender domain.": "A document without extracted text never matches a text condition, and a mail whose headers were not read never matches a sender domain.",
         "A DPIA is required before using AI features with personal data. This must be acknowledged before AI features can be activated.": "A DPIA is required before using AI features with personal data. This must be acknowledged before AI features can be activated.",
         "A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.": "A DPIA is required before you use AI features with personal data. Until you acknowledge it here, every AI feature stays off.",

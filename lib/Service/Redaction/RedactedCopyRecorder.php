@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Redaction;
 
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FindsFilesById;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -41,6 +43,8 @@ use RuntimeException;
  */
 class RedactedCopyRecorder {
 
+	use FindsFilesById;
+
 	/**
 	 * Fields the copy takes over from the original's record.
 	 *
@@ -51,12 +55,14 @@ class RedactedCopyRecorder {
 	/**
 	 * Constructor.
 	 *
-	 * @param DocumentRecordStore $store      Reads and writes informatieobjecten and their case joins.
-	 * @param IRootFolder         $rootFolder Reads the copy's file by its id.
+	 * @param DocumentRecordStore  $store           Reads and writes informatieobjecten and their case joins.
+	 * @param IRootFolder          $rootFolder      Reads the copy's file by its id, outside OpenRegister's tree.
+	 * @param SettingsService|null $settingsService OpenRegister's file service, which reads the copy on the case.
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
 		private readonly IRootFolder $rootFolder,
+		private readonly ?SettingsService $settingsService = null,
 	) {
 	}//end __construct()
 
@@ -160,12 +166,11 @@ class RedactedCopyRecorder {
 	 * @throws RuntimeException When no file has that id.
 	 */
 	private function file(int $fileId): File {
-		foreach ($this->rootFolder->getById($fileId) as $node) {
-			if ($node instanceof File) {
-				return $node;
-			}
+		$file = $this->fileById(fileService: $this->settingsService?->getFileService(), rootFolder: $this->rootFolder, fileId: $fileId);
+		if ($file === null) {
+			throw new RuntimeException('copy_file_missing: no file ' . $fileId);
 		}
 
-		throw new RuntimeException('copy_file_missing: no file ' . $fileId);
+		return $file;
 	}//end file()
 }//end class

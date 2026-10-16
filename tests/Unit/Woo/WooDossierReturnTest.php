@@ -58,7 +58,51 @@ class WooDossierReturnTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->store = new InMemoryRegister();
+		// The resident's dossier lives in another app's register and tenant: a
+		// read or write under the handler's own scope does not reach it, the way
+		// OpenRegister answered in rehearsal R3.
+		$this->store = new class extends InMemoryRegister {
+			/**
+			 * Find one object; a scoped read does not see the collection.
+			 *
+			 * @param int|string $id            The uuid.
+			 * @param mixed      $_extend       Ignored.
+			 * @param bool       $files         Ignored.
+			 * @param int|string $register      Ignored.
+			 * @param int|string $schema        The schema slug.
+			 * @param bool       $_rbac         Whether the read is scoped by access rules.
+			 * @param bool       $_multitenancy Whether the read is scoped to the caller's tenant.
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+				if ((string)$schema === 'collection' && ($_rbac === true || $_multitenancy === true)) {
+					return null;
+				}
+
+				return parent::find(id: $id, register: $register, schema: $schema);
+			}
+
+			/**
+			 * Save one object; a scoped write to the collection is refused.
+			 *
+			 * @param array<string, mixed> $object        The object.
+			 * @param int|string           $register      Ignored.
+			 * @param int|string           $schema        The schema slug.
+			 * @param string|null          $uuid          The uuid.
+			 * @param bool                 $_rbac         Whether the write is scoped by access rules.
+			 * @param bool                 $_multitenancy Whether the write is scoped to the caller's tenant.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				if ((string)$schema === 'collection' && ($_rbac === true || $_multitenancy === true)) {
+					throw new \RuntimeException('not permitted');
+				}
+
+				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			}
+		};
 		$this->store->seed(
 			schema: 'collection',
 			uuid: self::COLLECTION,
@@ -90,7 +134,7 @@ class WooDossierReturnTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function case(): array {
-		return ['id' => 'case-1', 'wooRequest' => ['collectionId' => self::COLLECTION]];
+		return ['id' => 'case-1', 'portalSubject' => 'subject-ref-anna', 'wooRequest' => ['collectionId' => self::COLLECTION]];
 	}//end case()
 
 	/**
@@ -168,6 +212,19 @@ class WooDossierReturnTest extends TestCase {
 		self::assertFalse($this->return->append(case: ['id' => 'case-2'], publicationId: 'pub-new', title: 'x'));
 		self::assertSame(0, $this->store->writes);
 	}//end testARequestWithoutADossierWritesNothing()
+
+	/**
+	 * A dossier that is no longer the requester's gets nothing, though it exists.
+	 *
+	 * @return void
+	 */
+	public function testADossierOfSomebodyElseGetsNothing(): void {
+		$case = ['portalSubject' => 'subject-ref-bert'] + $this->case();
+
+		self::assertFalse($this->return->append(case: $case, publicationId: 'pub-new', title: 'x'));
+		self::assertSame(0, $this->store->writes);
+		self::assertCount(1, $this->store->row(schema: 'collection', uuid: self::COLLECTION)['items']);
+	}//end testADossierOfSomebodyElseGetsNothing()
 
 	/**
 	 * A dossier that is gone is logged and answered false, never thrown.
