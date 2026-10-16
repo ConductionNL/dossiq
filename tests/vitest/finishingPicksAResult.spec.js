@@ -30,6 +30,11 @@ const CaseLifecycleMenuDialog = (
 ).default
 
 const DIALOG_RENDERS_ITS_SLOT = {
+	CnChoiceCards: {
+		props: ['options', 'modelValue'],
+		template:
+			'<div><div v-for="option in options" :key="option.value"><slot name="option-actions" :option="option" :selected="option.value === modelValue" /></div></div>',
+	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 	NcButton: {
 		props: ['disabled'],
@@ -91,6 +96,18 @@ describe('the ending acts carry the case type results', () => {
 describe('Afronden in the lifecycle dialog', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
+	})
+
+	it('draws every act as a card, a refused one disabled with its reason, and confirms under the act\'s name (DqVolgendeStap)', async () => {
+		const wrapper = await formFor('finish', RESULTS)
+		const archive = wrapper.vm.choiceOptions.find((option) => option.value.endsWith(':archive'))
+
+		expect(archive).toMatchObject({ disabled: true, disabledReason: 'Not ended.', description: 'Not ended.' })
+		expect(wrapper.vm.chosenKey.endsWith(':finish')).toBe(true)
+		expect(wrapper.find('[data-testid="case-acts-confirm"]').text()).toBe('Finish')
+
+		wrapper.vm.chooseByKey(archive.value)
+		expect(wrapper.vm.chosenKey.endsWith(':finish'), 'a refused act cannot be chosen').toBe(true)
 	})
 
 	it('offers the results in a picker and no free field', async () => {

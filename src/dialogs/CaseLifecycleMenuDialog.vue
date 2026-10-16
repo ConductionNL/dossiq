@@ -39,7 +39,7 @@
 		size="normal"
 		data-testid="case-acts-dialog"
 		@closing="$emit('close')">
-		<div v-if="chosen === null" class="case-acts">
+		<div class="case-acts">
 			<p v-if="loading" data-testid="case-acts-loading">
 				{{ t('dossiq', 'Reading what this case allows.') }}
 			</p>
@@ -79,90 +79,75 @@
 			</ul>
 
 			<p
-				v-if="error"
+				v-if="error && chosen === null"
 				class="case-acts__error"
 				data-testid="case-awaiting-error"
 				role="alert">
 				{{ error }}
 			</p>
 
-			<ul v-else class="case-acts__list" data-testid="case-acts-list">
-				<li
-					v-for="entry in entries"
-					:key="entry.kind + ':' + entry.id"
-					class="case-acts__item"
-					:class="{ 'case-acts__item--disabled': entry.disabled }"
-					:data-testid="'case-act-' + entry.id">
-					<NcButton
-						:disabled="entry.disabled"
-						:data-testid="'case-act-button-' + entry.id"
-						@click="choose(entry)">
-						{{ label(entry) }}
-					</NcButton>
-					<span
-						v-if="entry.disabled && entry.reason"
-						class="case-acts__reason"
-						:data-testid="'case-act-reason-' + entry.id">
-						{{ refusalOn(entry) }}
-					</span>
-					<span v-else-if="entry.explainer" class="case-acts__explainer">
-						{{ explainer(entry) }}
-					</span>
-				</li>
-			</ul>
-		</div>
+			<CnChoiceCards
+				v-if="!loading"
+				:modelValue="chosenKey"
+				layout="rows"
+				:options="choiceOptions"
+				:label="t('dossiq', 'What you can do with this case')"
+				data-testid="case-acts-list"
+				@update:modelValue="chooseByKey">
+				<template #option-actions="{ option, selected }">
+					<div
+						v-if="selected && chosen !== null && option.value === entryKey(chosen)"
+						class="case-acts__fields"
+						:data-testid="'case-act-fields-' + chosen.id">
+						<TemplatePicker
+							v-if="inputs.result"
+							kind="result"
+							:caseType="caseType"
+							:caseId="targetCaseId"
+							:label="t('dossiq', 'Result template')"
+							@apply="applyTemplate" />
 
-		<div v-else class="case-acts">
-			<p class="case-acts__explainer">
-				{{ explainer(chosen) }}
-			</p>
+						<NcTextArea
+							v-if="inputs.reason"
+							v-model="reason"
+							data-testid="case-act-reason-input"
+							:label="t('dossiq', 'Reason')" />
 
-			<TemplatePicker
-				v-if="inputs.result"
-				kind="result"
-				:caseType="caseType"
-				:caseId="targetCaseId"
-				:label="t('dossiq', 'Result template')"
-				@apply="applyTemplate" />
+						<!--
+							A closing move or ending act picks from the case type's own
+							result types, which the server publishes on the move and on
+							`/acts`. There is no free field: a typed name is not an id, and
+							a case type with no results needs none.
+						-->
+						<NcSelect
+							v-if="inputs.result && resultOptions.length > 0"
+							v-model="selectedResult"
+							:options="resultOptions"
+							label="name"
+							:inputLabel="t('dossiq', 'Result')"
+							:clearable="false"
+							:disabled="busy"
+							data-testid="case-act-result-picker" />
 
-			<NcTextArea
-				v-if="inputs.reason"
-				v-model="reason"
-				data-testid="case-act-reason-input"
-				:label="t('dossiq', 'Reason')" />
+						<NcTextField
+							v-if="inputs.until"
+							v-model="until"
+							type="date"
+							data-testid="case-act-until-input"
+							:label="t('dossiq', 'The case comes back on')" />
 
-			<!--
-				A closing move or ending act picks from the case type's own
-				result types, which the server publishes on the move and on
-				`/acts`. There is no free field: a typed name is not an id, and
-				a case type with no results needs none.
-			-->
-			<NcSelect
-				v-if="inputs.result && resultOptions.length > 0"
-				v-model="selectedResult"
-				:options="resultOptions"
-				label="name"
-				:inputLabel="t('dossiq', 'Result')"
-				:clearable="false"
-				:disabled="busy"
-				data-testid="case-act-result-picker" />
-
-			<NcTextField
-				v-if="inputs.until"
-				v-model="until"
-				type="date"
-				data-testid="case-act-until-input"
-				:label="t('dossiq', 'The case comes back on')" />
-
-			<NcTextField
-				v-if="inputs.days"
-				v-model="days"
-				type="number"
-				data-testid="case-act-days-input"
-				:label="t('dossiq', 'Days the applicant is given')" />
+						<NcTextField
+							v-if="inputs.days"
+							v-model="days"
+							type="number"
+							data-testid="case-act-days-input"
+							:label="t('dossiq', 'Days the applicant is given')" />
+					</div>
+				</template>
+			</CnChoiceCards>
 
 			<p
-				v-if="error"
+				v-if="error && chosen !== null"
 				class="case-acts__error"
 				data-testid="case-act-error"
 				role="alert">
@@ -171,7 +156,7 @@
 		</div>
 
 		<template #actions>
-			<NcButton data-testid="case-acts-cancel" @click="back">
+			<NcButton data-testid="case-acts-cancel" @click="$emit('close')">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<!--
@@ -188,13 +173,14 @@
 				<template v-if="busy" #icon>
 					<NcLoadingIcon :size="20" data-testid="case-acts-confirm-busy" />
 				</template>
-				{{ t('dossiq', 'Confirm') }}
+				{{ chosen ? label(chosen) : t('dossiq', 'Confirm') }}
 			</NcButton>
 		</template>
 	</NcDialog>
 </template>
 
 <script>
+import { CnChoiceCards } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess, showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -226,6 +212,7 @@ export default {
 	name: 'CaseLifecycleMenuDialog',
 
 	components: {
+		CnChoiceCards,
 		NcButton,
 		NcDialog,
 		NcLoadingIcon,
@@ -268,6 +255,32 @@ export default {
 		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
+		},
+
+		/**
+		 * The acts as choice cards: what each does, or why the case does not allow it now.
+		 *
+		 * @return {Array<object>} CnChoiceCards options.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		choiceOptions() {
+			return this.entries.map((entry) => ({
+				value: this.entryKey(entry),
+				label: this.label(entry),
+				description: entry.disabled ? this.refusalOn(entry) : this.explainer(entry),
+				disabled: Boolean(entry.disabled),
+				disabledReason: this.refusalOn(entry),
+			}))
+		},
+
+		/**
+		 * The chosen act's card, or null.
+		 *
+		 * @return {string|null} The card value.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		chosenKey() {
+			return this.chosen === null ? null : this.entryKey(this.chosen)
 		},
 
 		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
@@ -566,7 +579,32 @@ export default {
 		},
 
 		/**
-		 * Open one act's form.
+		 * The card value of one act: its kind and id, since a transition and a gesture may share an id.
+		 *
+		 * @param {object} entry A menu entry.
+		 * @return {string} The value.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		entryKey(entry) {
+			return `${entry.kind}:${entry.id}`
+		},
+
+		/**
+		 * Choose the act behind a card.
+		 *
+		 * @param {string} key The card value.
+		 * @return {void}
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		chooseByKey(key) {
+			const entry = this.entries.find((candidate) => this.entryKey(candidate) === key)
+			if (entry) {
+				this.choose(entry)
+			}
+		},
+
+		/**
+		 * Choose one act, which opens its fields under its card.
 		 *
 		 * @param {object} entry The entry the handler pressed.
 		 * @return {void}
@@ -601,21 +639,6 @@ export default {
 			}
 
 			this.reason = text
-		},
-
-		/**
-		 * Go back to the list, or close when already on it.
-		 *
-		 * @return {void}
-		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-		 */
-		back() {
-			if (this.chosen === null) {
-				this.$emit('close')
-				return
-			}
-			this.chosen = null
-			this.error = ''
 		},
 
 		/**
@@ -722,19 +745,11 @@ export default {
 	padding: 8px 16px 16px;
 }
 
-.case-acts__list {
+.case-acts__fields {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-.case-acts__item {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	gap: 12px;
+	padding: 12px 16px 16px 48px;
 }
 
 .case-acts__reason,
