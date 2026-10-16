@@ -23,7 +23,13 @@
 			<h1 class="end-of-day__title">
 				{{ t('dossiq', 'Close out your day') }}
 			</h1>
-			<CnBreadcrumbs class="end-of-day__crumbs" :crumbs="crumbs" />
+			<nav class="end-of-day__crumbs" :aria-label="t('dossiq', 'Breadcrumb')">
+				<router-link :to="{ name: 'MyWorkHome' }">
+					{{ t('dossiq', 'My work') }}
+				</router-link>
+				<span aria-hidden="true">/</span>
+				<span aria-current="page">{{ todayCrumb }}</span>
+			</nav>
 		</header>
 
 		<NcNoteCard
@@ -227,6 +233,27 @@
 					</dl>
 				</section>
 
+				<section
+					v-if="tomorrowFirst.length"
+					class="end-of-day__card end-of-day__card--side"
+					data-testid="end-of-day-tomorrow">
+					<h2 class="end-of-day__side-title">
+						{{ t('dossiq', 'First thing tomorrow') }}
+					</h2>
+					<component
+						:is="item.route ? 'router-link' : 'div'"
+						v-for="item in tomorrowFirst"
+						:key="item.id"
+						class="end-of-day__next"
+						:to="item.route || undefined">
+						<strong>{{ item.title }}</strong>
+						<span class="end-of-day__due" :class="`end-of-day__due--${dueTone(item)}`">{{ dueText(item) }}</span>
+					</component>
+					<router-link class="end-of-day__more" :to="{ name: 'MyWorkHome' }">
+						{{ t('dossiq', 'To My work') }}
+					</router-link>
+				</section>
+
 				<section class="end-of-day__card end-of-day__card--side">
 					<h2 class="end-of-day__side-title">
 						{{ t('dossiq', 'How this works') }}
@@ -241,7 +268,6 @@
 </template>
 
 <script>
-import { CnBreadcrumbs } from '@conduction/nextcloud-vue'
 import { getCanonicalLocale, translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard, NcTextField } from '@nextcloud/vue'
 import CheckIcon from 'vue-material-design-icons/Check.vue'
@@ -263,7 +289,6 @@ export default {
 	components: {
 		CheckIcon,
 		ClipboardCheckOutline,
-		CnBreadcrumbs,
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
@@ -274,6 +299,7 @@ export default {
 		return {
 			loading: false,
 			items: [],
+			candidates: [],
 			unavailable: [],
 			updates: {},
 			recorded: [],
@@ -283,20 +309,29 @@ export default {
 
 	computed: {
 		/**
-		 * @return {Array<object>} The trail back to My work, ending on today.
+		 * @return {string} The current crumb: today, written out.
 		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 		 */
-		crumbs() {
+		todayCrumb() {
 			let today
 			try {
 				today = new Intl.DateTimeFormat(getCanonicalLocale() || undefined, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
 			} catch {
 				today = new Date().toDateString()
 			}
-			return [
-				{ label: t('dossiq', 'My work'), to: { name: 'MyWorkHome' } },
-				{ label: t('dossiq', 'Close out your day, {date}', { date: today }) },
-			]
+			return t('dossiq', 'Close out your day, {date}', { date: today })
+		},
+
+		/**
+		 * @return {Array<object>} The two most pressing items not opened today: late first, then due soonest.
+		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+		 */
+		tomorrowFirst() {
+			const opened = new Set(this.items.map((item) => item.id))
+			return this.candidates
+				.filter((item) => !opened.has(item.id) && this.daysLeft(item) !== null && this.daysLeft(item) <= 1)
+				.sort((left, right) => this.daysLeft(left) - this.daysLeft(right))
+				.slice(0, 2)
 		},
 
 		/**
@@ -377,6 +412,7 @@ export default {
 					states[id] = state
 				}
 
+				this.candidates = items
 				this.items = touchedToday(items, states, todayOf())
 			} finally {
 				this.loading = false
@@ -517,6 +553,35 @@ export default {
 	font-size: 28px;
 	font-weight: 700;
 	line-height: 1.2;
+}
+
+.end-of-day__crumbs {
+	display: flex;
+	gap: 8px;
+	font-size: 14px;
+	color: var(--color-text-maxcontrast);
+}
+
+.end-of-day__crumbs a {
+	color: var(--color-primary-element-text-dark, var(--color-primary-element));
+	text-decoration: underline;
+}
+
+.end-of-day__next {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	color: var(--color-main-text);
+}
+
+.end-of-day__next strong {
+	font-size: 15px;
+}
+
+.end-of-day__more {
+	font-weight: 600;
+	color: var(--color-primary-element-text-dark, var(--color-primary-element));
+	text-decoration: underline;
 }
 
 .end-of-day__columns {
