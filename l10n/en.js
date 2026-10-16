@@ -7,6 +7,7 @@ OC.L10N.register(
         "%1$s checklist item not ticked: '%2$s'": "%1$s checklist item not ticked: '%2$s'",
         "%1$s is still open. %2$s": "%1$s is still open. %2$s",
         "%1$s of %2$s documents are still waiting for an assessment": "%1$s of %2$s documents are still waiting for an assessment",
+        "%1$s of %2$s partly public documents are still waiting for a redacted version": "%1$s of %2$s partly public documents are still waiting for a redacted version",
         "%1$s, due %2$s": "%1$s, due %2$s",
         "%n checklist item": "%n checklist item",
         "%n checklist items": "%n checklist items",

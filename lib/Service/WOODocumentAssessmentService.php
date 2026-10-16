@@ -380,6 +380,55 @@ class WOODocumentAssessmentService {
 	}//end partlyPublicAssessments()
 
 	/**
+	 * The partly public documents of a case that have no redacted copy yet.
+	 *
+	 * Read regardless of the caller, like the outstanding list (REQ-WSA-004):
+	 * an assessment the caller may not read still holds up the stage it is in.
+	 * Only document references are answered.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array{partlyPublic: int, waiting: list<string>} How many documents are partly public, and which still wait.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 *
+	 * @spec openspec/changes/the-redaction-stage-waits-for-every-redacted-copy/specs/status-transition-engine/spec.md#requirement-a-move-may-require-every-partly-public-document-redacted
+	 */
+	public function partlyPublicWithoutCopy(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+		if (empty($assessmentSchema) === true) {
+			return ['partlyPublic' => 0, 'waiting' => []];
+		}
+
+		$rows = $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $this->settingsService->getConfigValue('register'),
+			schema: $assessmentSchema,
+			filters: ['caseRef' => $caseId, 'classification' => 'deels_openbaar', '_limit' => 500],
+		);
+
+		$partlyPublic = 0;
+		$waiting = [];
+		foreach ($rows as $row) {
+			if ((string)($row['caseRef'] ?? '') !== $caseId || (string)($row['classification'] ?? '') !== 'deels_openbaar') {
+				continue;
+			}
+
+			$partlyPublic++;
+			if ((string)($row['redactedDocumentRef'] ?? '') === '') {
+				$waiting[] = (string)($row['documentRef'] ?? '');
+			}
+		}
+
+		return ['partlyPublic' => $partlyPublic, 'waiting' => $waiting];
+	}//end partlyPublicWithoutCopy()
+
+	/**
 	 * Attach (or update) a `redactionProposal` on an EXISTING wooAssessment
 	 * record — the document must already have a disclosure classification
 	 * (business rule: assess first, then request redaction assistance).
