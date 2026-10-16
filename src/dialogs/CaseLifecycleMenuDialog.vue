@@ -34,8 +34,10 @@
   @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'What you can do with this case')"
+		:eyebrow="t('dossiq', 'Next step')"
+		:subtitle="t('dossiq', 'Only what this case allows now is active. The rest is greyed out, with the reason.')"
 		size="normal"
 		data-testid="case-acts-dialog"
 		@closing="$emit('close')">
@@ -91,7 +93,6 @@
 				:modelValue="chosenKey"
 				layout="rows"
 				:options="choiceOptions"
-				:label="t('dossiq', 'What you can do with this case')"
 				data-testid="case-acts-list"
 				@update:modelValue="chooseByKey">
 				<template #option-actions="{ option, selected }">
@@ -176,18 +177,17 @@
 				{{ chosen ? label(chosen) : t('dossiq', 'Confirm') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
-import { CnChoiceCards } from '@conduction/nextcloud-vue'
+import { CnChoiceCards, CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess, showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
@@ -213,8 +213,8 @@ export default {
 
 	components: {
 		CnChoiceCards,
+		CnDialog,
 		NcButton,
-		NcDialog,
 		NcLoadingIcon,
 		NcSelect,
 		NcTextArea,
