@@ -4761,6 +4761,7 @@ OC.L10N.register(
         "No redaction candidates found.": "Geen lak-kandidaten gevonden.",
         "No related cases": "Geen gerelateerde zaken",
         "No relevant information found": "Geen relevante informatie gevonden",
+        "No requester yet": "Nog geen aanvrager",
         "No required documents for this case type": "Geen verplichte documenten voor dit zaaktype",
         "No required properties for this case type": "Geen verplichte eigenschappen voor dit zaaktype",
         "No result recorded yet": "Nog geen resultaat vastgelegd",

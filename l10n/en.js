@@ -4761,6 +4761,7 @@ OC.L10N.register(
         "No redaction candidates found.": "No redaction candidates found.",
         "No related cases": "No related cases",
         "No relevant information found": "No relevant information found",
+        "No requester yet": "No requester yet",
         "No required documents for this case type": "No required documents for this case type",
         "No required properties for this case type": "No required properties for this case type",
         "No result recorded yet": "No result recorded yet",

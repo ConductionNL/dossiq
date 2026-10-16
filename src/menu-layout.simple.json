@@ -824,18 +824,31 @@
 					"case-tile-deadline",
 					{
 						"id": "side-requester",
-						"type": "data",
+						"type": "facts",
 						"title": "Requester",
+						"_note": "DqZaak Verzoeker: the requester as a lead (initials and name), then what kind of requester and the channel, read from the projection the requester picker writes.",
 						"content": {
-							"title": "Requester",
-							"columns": 1,
-							"include": [
-								"initiatorDisplayName",
-								"initiatorType",
-								"intakeChannel"
+							"fields": [
+								{
+									"as": "lead",
+									"path": "initiatorDisplayName",
+									"initialsPath": "initiatorDisplayName"
+								},
+								{
+									"path": "initiatorType",
+									"label": "Initiator type",
+									"map": {
+										"person": "Person",
+										"company": "Company",
+										"contact": "Contact"
+									}
+								},
+								{
+									"path": "intakeChannel",
+									"label": "Intake channel"
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"emptyText": "No requester yet"
 						}
 					},
 					{
@@ -853,6 +866,12 @@
 							"hideEmpty": true,
 							"editable": false
 						}
+					},
+					{
+						"id": "side-work-instruction",
+						"type": "case-work-instruction",
+						"title": "Work instruction",
+						"_note": "DqZaak Werkinstructie: the case type's work instruction beside the case; the Knowledge tab keeps it with the linked pages."
 					},
 					"case-banner-stack"
 				],
@@ -952,6 +971,12 @@
 					},
 					"case-inspect-runs": {
 						"adminOnly": true
+					},
+					"send-digital-post": {
+						"label": "Message"
+					},
+					"generate-document": {
+						"label": "Document"
 					}
 				},
 				"widgets": {

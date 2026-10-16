@@ -571,16 +571,24 @@ describe('the header and the side column', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
 		expect(onTheCase(simple.typePill.field)).toBe(true)
 		const cards = simple.sideColumn.filter((card) => typeof card === 'object')
-		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling'])
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling', 'Work instruction'])
 		const shown = []
 		for (const card of cards) {
-			expect(card.type).toBe('data')
-			expect(card.content.editable).toBe(false)
-			for (const field of card.content.include) {
+			// The requester is a facts card (a lead, as DqZaak draws it), the
+			// handling a read-only data card, the work instruction its own pane.
+			const fields = card.type === 'facts'
+				? card.content.fields.map((entry) => entry.path)
+				: card.type === 'data' ? card.content.include : []
+			if (card.type === 'data') {
+				expect(card.content.editable).toBe(false)
+			}
+			for (const field of fields) {
 				expect(onTheCase(field), `${card.title}: ${field}`).toBe(true)
 				shown.push(field)
 			}
 		}
+		// Nothing the requester card showed before is gone.
+		expect(shown).toEqual(expect.arrayContaining(['initiatorDisplayName', 'initiatorType', 'intakeChannel']))
 		// The deadline has its own card, so no data card repeats it.
 		expect(shown).not.toContain('deadline')
 	})
