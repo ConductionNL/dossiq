@@ -52,6 +52,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseType\ApprovalGateDeclaration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -104,11 +105,13 @@ class ApprovalGate {
 	 * @param CaseTypeResolver                  $caseTypes The effective case type, parents included.
 	 * @param ContractDecisionDelegationService $decisions The one read seam onto decidiq.
 	 * @param LoggerInterface                   $logger    Says why a verdict could not be reached.
+	 * @param IL10N                             $l10n      Translates the sentences.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypes,
 		private readonly ContractDecisionDelegationService $decisions,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 	}//end __construct()
 
@@ -139,8 +142,7 @@ class ApprovalGate {
 			// ADR-102, and the same reading the unreadable outcome gets below.
 			return $this->refused(
 				rule: self::RULE_UNREADABLE,
-				sentence: 'We could not read this case type, so we cannot tell whether this act '
-					. 'needs an approval. Try again shortly.',
+				sentence: $this->l10n->t('We could not read this case type, so we cannot tell whether this act needs an approval. Try again shortly.'),
 				status: RefusedException::STATUS_INDETERMINATE,
 			);
 		}
@@ -154,8 +156,7 @@ class ApprovalGate {
 		if ($reference === '') {
 			return $this->refused(
 				rule: self::RULE_OUTSTANDING,
-				sentence: $gate['label'] . ' has not been asked for yet. Start it in decidiq, '
-					. 'then come back to this act.',
+				sentence: $this->l10n->t('%s has not been asked for yet. Start it in decidiq, then come back to this act.', [$gate['label']]),
 				status: RefusedException::STATUS_UNPROCESSABLE,
 				label: $gate['label'],
 			);
@@ -231,7 +232,7 @@ class ApprovalGate {
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_OPEN) {
 			return $this->refused(
 				rule: self::RULE_OUTSTANDING,
-				sentence: $gate['label'] . ' is still open. ' . $this->onWhom(approvers: $approvers),
+				sentence: $this->l10n->t('%1$s is still open. %2$s', [$gate['label'], $this->onWhom(approvers: $approvers)]),
 				status: RefusedException::STATUS_UNPROCESSABLE,
 				label: $gate['label'],
 				reference: $reference,
@@ -242,7 +243,7 @@ class ApprovalGate {
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_WITHDRAWN) {
 			return $this->refused(
 				rule: self::RULE_OUTSTANDING,
-				sentence: $gate['label'] . ' was withdrawn without an answer. Ask for it again in decidiq.',
+				sentence: $this->l10n->t('%s was withdrawn without an answer. Ask for it again in decidiq.', [$gate['label']]),
 				status: RefusedException::STATUS_UNPROCESSABLE,
 				label: $gate['label'],
 				reference: $reference,
@@ -282,7 +283,7 @@ class ApprovalGate {
 
 		return $this->refused(
 			rule: self::RULE_REJECTED,
-			sentence: $gate['label'] . ' was refused. This act stays closed while that stands.',
+			sentence: $this->l10n->t('%s was refused. This act stays closed while that stands.', [$gate['label']]),
 			status: RefusedException::STATUS_REFUSED,
 			label: $gate['label'],
 			reference: $reference,
@@ -305,17 +306,17 @@ class ApprovalGate {
 			['decisionRef' => $reference, 'state' => $state, 'act' => $gate['act']],
 		);
 
-		$sentence = 'We could not reach the approval service, so ' . $gate['label']
-			. ' could not be checked. This act stays closed until it answers.';
+		$sentence = $this->l10n->t(
+			'We could not reach the approval service, so %s could not be checked. This act stays closed until it answers.',
+			[$gate['label']]
+		);
 
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_REFUSED) {
-			$sentence = 'You may not read the outcome of ' . $gate['label']
-				. ', so this act stays closed. Ask somebody who may.';
+			$sentence = $this->l10n->t('You may not read the outcome of %s, so this act stays closed. Ask somebody who may.', [$gate['label']]);
 		}
 
 		if ($state === ContractDecisionDelegationService::DECISION_STATE_GONE) {
-			$sentence = $gate['label'] . ' no longer exists in decidiq. Ask for it again, '
-				. 'then come back to this act.';
+			$sentence = $this->l10n->t('%s no longer exists in decidiq. Ask for it again, then come back to this act.', [$gate['label']]);
 		}
 
 		return $this->refused(
@@ -339,10 +340,10 @@ class ApprovalGate {
 	 */
 	private function onWhom(array $approvers): string {
 		if ($approvers === []) {
-			return 'decidiq did not say who it is waiting on. Open the approval there to see.';
+			return $this->l10n->t('decidiq did not say who it is waiting on. Open the approval there to see.');
 		}
 
-		return 'It is waiting on ' . implode(', ', $approvers) . '.';
+		return $this->l10n->t('It is waiting on %s.', [implode(', ', $approvers)]);
 	}//end onWhom()
 
 	/**
