@@ -1640,6 +1640,9 @@
 							"presentation": "rows",
 							"avatar": "{displayName}",
 							"title": "{displayName}",
+							"bar": {
+								"valueField": "openCaseCount"
+							},
 							"trailing": [
 								"{openCaseCount} cases"
 							],
