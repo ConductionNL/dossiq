@@ -357,7 +357,7 @@ describe('the tabs', () => {
 	const find = (config, id) =>
 		config.widgets.find((widget) => widget.id === id)
 
-	it('shows the five the board draws and keeps the other ten under Acties, losing none', () => {
+	it('shows the five the board draws and keeps the other panels under Acties, losing none', () => {
 		const strip = tabsOf(simple)
 		expect(strip.maxVisibleTabs).toBe(5)
 		expect(
@@ -366,7 +366,7 @@ describe('the tabs', () => {
 		// The order DqZaakMeer lists them in under Acties.
 		expect(
 			strip.tabs.filter((tab) => tab.overflow).map((tab) => tab.label),
-		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals', 'Review'])
+		).toEqual(['Notes', 'People', 'Email', 'Decisions', 'Related', 'Custody', 'Archiving', 'Knowledge', 'Proposals', 'Publication', 'Review'])
 		const widgetIds = (content) => content.tabs
 			.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
 		// Every panel of the full strip is still on it, except the Data panel,

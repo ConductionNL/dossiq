@@ -1040,8 +1040,7 @@
 										"case-plan-card",
 										"case-terms",
 										"case-flow-runs",
-										"case-kpis-hours",
-										"case-publication"
+										"case-kpis-hours"
 									],
 									"label": "Overview",
 									"layout": [
@@ -1124,6 +1123,11 @@
 									"overflow": true
 								},
 								{
+									"widgetId": "case-publication",
+									"label": "Publication",
+									"overflow": true
+								},
+								{
 									"widgetId": "case-document-review",
 									"label": "Review",
 									"overflow": true
@@ -1145,7 +1149,7 @@
 								"paymentIndication",
 								"lastPaymentDate"
 							],
-							"hideEmpty": false,
+							"hideEmpty": true,
 							"overrides": {
 								"statutoryTerm": {
 									"readOnly": false,
@@ -1533,7 +1537,7 @@
 								"priorityFloor",
 								"priorityRaisedBy"
 							],
-							"hideEmpty": false,
+							"hideEmpty": true,
 							"overrides": {
 								"priorityDerived": {
 									"readOnly": false,
