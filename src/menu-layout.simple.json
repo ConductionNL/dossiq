@@ -1418,7 +1418,8 @@
 						"icon": "Plus"
 					}
 				],
-				"showViewToggle": true
+				"showViewToggle": true,
+				"showAdd": false
 			},
 			"configPatch": {
 				"quickFilters": {
@@ -1462,11 +1463,13 @@
 						],
 						"fieldOverrides": {
 							"description": {
-								"widget": "textarea"
+								"widget": "textarea",
+								"order": 5
 							},
 							"requester": {
 								"widget": "InitiatorPicker",
-								"label": "Requester"
+								"label": "Requester",
+								"order": 3
 							},
 							"confidentiality": {
 								"enumLabels": {
@@ -1478,7 +1481,29 @@
 									"confidentieel": "Classified confidential",
 									"geheim": "Secret",
 									"zeer_geheim": "Top secret"
-								}
+								},
+								"order": 8
+							},
+							"caseType": {
+								"order": 1
+							},
+							"title": {
+								"order": 2
+							},
+							"intakeChannel": {
+								"order": 4
+							},
+							"plannedEndDate": {
+								"order": 6
+							},
+							"assignee": {
+								"order": 7
+							},
+							"impact": {
+								"order": 9
+							},
+							"urgency": {
+								"order": 10
 							}
 						},
 						"register": "dossiq",
