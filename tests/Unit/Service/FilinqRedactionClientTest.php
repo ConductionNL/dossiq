@@ -1,15 +1,14 @@
 <?php
 
 /**
- * The Woo redaction hand-off reaches filinq, or refuses.
+ * The redaction hand-off to filinq: detect, mark checked, anonymise.
  *
- * WHAT THIS GUARDS. `WOORedactionService::queueViaDocuDesk()` reported every
- * document `queued` and made no call: there was no client, no request, and no
- * filinq method named anywhere in the file. Any test written against it would
- * have asserted a string the method wrote itself. So the assertions here are
- * about the two filinq methods that must be invoked, in order, with the file
- * id this app resolved. Remove the call and they fail on the recording, not on
- * a return value.
+ * WHAT THIS GUARDS. The hand-off used to detect and then anonymise with no
+ * review mark in between, and filinq refuses every run nobody checked, so no
+ * copy was ever written. These cases run the client against a filinq that
+ * applies filinq's own review gate (tests/Support/FakeFilinq.php), so the
+ * control (no mark, refused) and the case (mark, copy) differ only in the call
+ * this client must make.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -23,705 +22,188 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\FilinqRedactionClient;
-use OCA\Dossiq\Service\ZgwDocumentService;
-use OCP\IUser;
-use OCP\IUserSession;
+use OCA\Dossiq\Tests\Support\FakeFilinq;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
- * Unit tests for the filinq anonymisation hand-off.
- *
  * @covers \OCA\Dossiq\Service\FilinqRedactionClient
- * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class FilinqRedactionClientTest extends TestCase {
 
 	/**
-	 * The FQCN filinq's anonymisation service answers to on a renamed instance.
+	 * The entity list the cases redact.
 	 *
-	 * @var string
+	 * @var array<int, array<string, mixed>>
 	 */
-	private const FILINQ_ANONYMIZATION = 'OCA\Filinq\Service\AnonymizationService';
+	private const ENTITIES = [
+		['type' => 'PERSON', 'value' => 'Sanne de Vries', 'source' => 'filinq'],
+		['type' => 'PHONE', 'value' => '06 1234 5678', 'source' => 'filinq'],
+	];
 
 	/**
-	 * The FQCN OpenRegister's backend-state service actually answers to.
+	 * The filinq the client talks to.
 	 *
-	 * The `Anonymisation` segment is the point. Filinq's own client asks for
-	 * `OCA\OpenRegister\Service\AnonymisationBackendService`, which is not a
-	 * class, catches the miss and returns a hardcoded `regex`.
-	 *
-	 * @var string
+	 * @var FakeFilinq
 	 */
-	private const OR_BACKEND_STATE = 'OCA\OpenRegister\Service\Anonymisation\AnonymisationBackendService';
+	private FakeFilinq $filinq;
 
 	/**
-	 * @var ContainerInterface|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private ContainerInterface $container;
-
-	/**
-	 * @var ZgwDocumentService|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private ZgwDocumentService $documents;
-
-	/**
-	 * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
-	 */
-	private IUserSession $userSession;
-
-	/**
-	 * Set up the shared collaborators.
+	 * A fresh filinq per case.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->container = $this->createMock(ContainerInterface::class);
-		$this->documents = $this->createMock(ZgwDocumentService::class);
-		$this->userSession = $this->createMock(IUserSession::class);
-
-		$user = $this->createMock(IUser::class);
-		$user->method('getUID')->willReturn('alice');
-		$this->userSession->method('getUser')->willReturn($user);
+		$this->filinq = new FakeFilinq();
+		$this->filinq->entities = self::ENTITIES;
 	}//end setUp()
 
 	/**
-	 * Build the client under test.
+	 * The client over the given container, or over the fake filinq.
 	 *
-	 * @return FilinqRedactionClient The client.
+	 * @param ContainerInterface|null $container The container.
+	 *
+	 * @return FilinqRedactionClient
 	 */
-	private function client(): FilinqRedactionClient {
-		return new FilinqRedactionClient(
-			$this->container,
-			$this->documents,
-			$this->userSession,
-			$this->createMock(LoggerInterface::class)
-		);
+	private function client(?ContainerInterface $container = null): FilinqRedactionClient {
+		return new FilinqRedactionClient(container: ($container ?? $this->filinq->container()), logger: new NullLogger());
 	}//end client()
 
 	/**
-	 * Point the container at a recording filinq anonymisation service.
-	 *
-	 * @param object|null $backendState OpenRegister's backend-state double, or
-	 *                                  null when OpenRegister cannot be asked.
-	 *
-	 * @return object The double; its `$calls` holds every invocation, in order.
-	 */
-	private function givenFilinq(?object $backendState = null): object {
-		$service = new class {
-
-			/**
-			 * Every invocation, in order.
-			 *
-			 * @var array<int, array<string, mixed>>
-			 */
-			public array $calls = [];
-
-			/**
-			 * Filinq's entity extraction.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 *
-			 * @return array<string, mixed> The extraction result.
-			 */
-			public function extractAndDetectEntities(int $fileId): array {
-				$this->calls[] = ['method' => 'extractAndDetectEntities', 'fileId' => $fileId];
-				return ['entities' => [['type' => 'PERSON'], ['type' => 'BSN']]];
-			}
-
-			/**
-			 * Filinq's anonymisation.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 * @param array<int, mixed> $entities The entities to redact.
-			 * @param string $outputFormat The output format.
-			 * @param array<int, mixed> $unredacted Entities published unredacted.
-			 * @param array<int, mixed> $overrides Acknowledged overrides.
-			 * @param string $userId The acting user.
-			 *
-			 * @return array<string, mixed> The anonymisation result.
-			 */
-			public function anonymizeDocument(
-				int $fileId,
-				array $entities,
-				string $outputFormat = 'pdf-only',
-				array $unredacted = [],
-				array $overrides = [],
-				string $userId = '',
-			): array {
-				$this->calls[] = [
-					'method' => 'anonymizeDocument',
-					'fileId' => $fileId,
-					'entityCount' => count($entities),
-					'userId' => $userId,
-				];
-				return ['anonymizedFileId' => 991];
-			}
-		};
-
-		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($service, $backendState): object {
-				if ($id === self::FILINQ_ANONYMIZATION) {
-					return $service;
-				}
-
-				if ($id === self::OR_BACKEND_STATE && $backendState !== null) {
-					return $backendState;
-				}
-
-				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
-				};
-			}
-		);
-
-		return $service;
-	}//end givenFilinq()
-
-	/**
-	 * An OpenRegister backend-state service reporting one effective method.
-	 *
-	 * Shaped like the real one: `getState()` returns a `BackendState` value
-	 * object with a public readonly `effectiveMethod`, not an array.
-	 *
-	 * @param string $effectiveMethod The method OpenRegister reports.
-	 *
-	 * @return object The double.
-	 */
-	private function backendStateDouble(string $effectiveMethod): object {
-		return new class($effectiveMethod) {
-
-			/**
-			 * Constructor.
-			 *
-			 * @param string $effectiveMethod The method to report.
-			 */
-			public function __construct(private string $effectiveMethod) {
-			}
-
-			/**
-			 * OpenRegister's backend state.
-			 *
-			 * @return object The state value object.
-			 */
-			public function getState(): object {
-				return new class($this->effectiveMethod) {
-
-					/**
-					 * Constructor.
-					 *
-					 * @param string $effectiveMethod The method in force.
-					 */
-					public function __construct(public readonly string $effectiveMethod) {
-					}
-				};
-			}
-		};
-	}//end backendStateDouble()
-
-	/**
-	 * Filinq is asked to extract, then to anonymise, the resolved file.
+	 * Detection answers filinq's entities.
 	 *
 	 * @return void
 	 */
-	public function testRedactExtractsThenAnonymisesTheFile(): void {
-		$filinq = $this->givenFilinq();
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame(
-			[
-				['method' => 'extractAndDetectEntities', 'fileId' => 55],
-				['method' => 'anonymizeDocument', 'fileId' => 55, 'entityCount' => 2, 'userId' => 'alice'],
-			],
-			$filinq->calls,
-			'both filinq steps must run, on the file this app resolved, as the acting user'
-		);
-		$this->assertSame('redacted', $outcome['status']);
-		$this->assertSame(2, $outcome['entityCount']);
-		$this->assertSame(991, $outcome['anonymizedFileId']);
-	}//end testRedactExtractsThenAnonymisesTheFile()
+	public function testDetectAnswersFilinqsEntities(): void {
+		self::assertSame(self::ENTITIES, $this->client()->detect(fileId: 42));
+	}//end testDetectAnswersFilinqsEntities()
 
 	/**
-	 * A document without a file id is looked up by its uuid and file name.
+	 * CONTROL: without a review mark filinq refuses, and that is the outcome `not_checked`.
 	 *
 	 * @return void
 	 */
-	public function testRedactResolvesTheFileIdFromTheDocumentRecord(): void {
-		$filinq = $this->givenFilinq();
-		$this->documents->expects($this->once())
-			->method('getFileId')
-			->with('doc-9', 'besluit.pdf')
-			->willReturn(123);
+	public function testWithoutAMarkFilinqRefusesAndNothingIsWritten(): void {
+		$outcome = $this->client()->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'pjansen');
 
-		$this->client()->redact('case-1', ['id' => 'doc-9', 'fileName' => 'besluit.pdf']);
-
-		$this->assertSame(123, $filinq->calls[0]['fileId']);
-	}//end testRedactResolvesTheFileIdFromTheDocumentRecord()
+		self::assertSame('not_checked', $outcome['status']);
+		self::assertSame('never_checked', $outcome['notChecked']);
+		self::assertNull($outcome['anonymizedFileId']);
+		self::assertSame([], $this->filinq->anonymised);
+	}//end testWithoutAMarkFilinqRefusesAndNothingIsWritten()
 
 	/**
-	 * A document whose bytes cannot be found is refused, not reported redacted.
+	 * With the officer's mark on the same list, filinq writes the copy.
 	 *
 	 * @return void
 	 */
-	public function testRedactRefusesWhenNoFileCanBeResolved(): void {
-		$this->givenFilinq();
+	public function testAMarkOnTheSameListLetsFilinqWriteTheCopy(): void {
+		$client = $this->client();
+		$client->markChecked(fileId: 42, entities: self::ENTITIES, checkedBy: 'pjansen');
 
+		$outcome = $client->anonymize(fileId: 42, entities: array_reverse(self::ENTITIES), userId: 'pjansen');
+
+		self::assertSame('redacted', $outcome['status']);
+		self::assertSame(9001, $outcome['anonymizedFileId']);
+		self::assertSame('regex', $outcome['detectionBackend']);
+		self::assertSame('pjansen', $this->filinq->marks->marks[0]['checkedBy']);
+		self::assertCount(1, $this->filinq->anonymised);
+	}//end testAMarkOnTheSameListLetsFilinqWriteTheCopy()
+
+	/**
+	 * A mark on a different list does not cover this one.
+	 *
+	 * @return void
+	 */
+	public function testAMarkOnAnotherListDoesNotCoverThisOne(): void {
+		$client = $this->client();
+		$client->markChecked(fileId: 42, entities: [self::ENTITIES[0]], checkedBy: 'pjansen');
+
+		$outcome = $client->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'pjansen');
+
+		self::assertSame('not_checked', $outcome['status']);
+		self::assertSame('checked_an_older_run', $outcome['notChecked']);
+	}//end testAMarkOnAnotherListDoesNotCoverThisOne()
+
+	/**
+	 * A check names a person.
+	 *
+	 * @return void
+	 */
+	public function testAMarkWithoutAPersonIsRefused(): void {
 		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessageMatches('/file_unresolved/');
+		$this->expectExceptionMessage('checked_by_missing');
 
-		$this->client()->redact('case-1', ['id' => 'doc-1']);
-	}//end testRedactRefusesWhenNoFileCanBeResolved()
+		$this->client()->markChecked(fileId: 42, entities: self::ENTITIES, checkedBy: ' ');
+	}//end testAMarkWithoutAPersonIsRefused()
 
 	/**
-	 * A run that detected nothing is not called redacted.
-	 *
-	 * Filinq happily writes an output file when its detector returns no
-	 * entities, and that file's content is the input's. Reporting `redacted`
-	 * there would close a Woo task over a document that still names everybody
-	 * in it, which is the `queued` lie one step further down the pipeline.
+	 * A run with no live detector is its own outcome, with filinq's reason (dossiq#3191).
 	 *
 	 * @return void
 	 */
-	public function testARunThatDetectedNothingIsNotCalledRedacted(): void {
-		$service = new class {
+	public function testNoLiveDetectorIsReportedWithFilinqsReason(): void {
+		$this->filinq->detectorLive = false;
+		$client = $this->client();
+		$client->markChecked(fileId: 42, entities: self::ENTITIES, checkedBy: 'pjansen');
 
-			/**
-			 * A detector that finds nothing, as an unconfigured backend does.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 *
-			 * @return array<string, mixed> An empty extraction.
-			 */
-			public function extractAndDetectEntities(int $fileId): array {
-				return ['entities' => []];
+		$outcome = $client->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'pjansen');
+
+		self::assertSame('detection_unavailable', $outcome['status']);
+		self::assertSame('detection_disabled', $outcome['detectionUnavailable']);
+		self::assertNull($outcome['detectionBackend']);
+		self::assertSame([], $this->filinq->anonymised);
+	}//end testNoLiveDetectorIsReportedWithFilinqsReason()
+
+	/**
+	 * An empty list redacts nothing, so it is not called redacted.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyListIsNotCalledRedacted(): void {
+		$client = $this->client();
+		$client->markChecked(fileId: 42, entities: [], checkedBy: 'pjansen');
+
+		self::assertSame('no_entities_detected', $client->anonymize(fileId: 42, entities: [], userId: 'pjansen')['status']);
+	}//end testAnEmptyListIsNotCalledRedacted()
+
+	/**
+	 * A run that names no output file is not called redacted.
+	 *
+	 * @return void
+	 */
+	public function testARunWithoutAnOutputFileIsNotCalledRedacted(): void {
+		$this->filinq->outputFileId = null;
+		$client = $this->client();
+		$client->markChecked(fileId: 42, entities: self::ENTITIES, checkedBy: 'pjansen');
+
+		self::assertSame('no_output_produced', $client->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'pjansen')['status']);
+	}//end testARunWithoutAnOutputFileIsNotCalledRedacted()
+
+	/**
+	 * Without filinq every call says so.
+	 *
+	 * @return void
+	 */
+	public function testWithoutFilinqEveryCallRefuses(): void {
+		$empty = (new FakeFilinq())->container();
+		$none = $this->createMock(ContainerInterface::class);
+		$none->method('get')->willReturnCallback(static fn (string $id): mixed => $empty->get($id . '\Missing'));
+		$client = $this->client(container: $none);
+
+		foreach ([
+			static fn () => $client->detect(fileId: 42),
+			static fn () => $client->markChecked(fileId: 42, entities: self::ENTITIES, checkedBy: 'pjansen'),
+			static fn () => $client->anonymize(fileId: 42, entities: self::ENTITIES, userId: 'pjansen'),
+		] as $call) {
+			try {
+				$call();
+				self::fail('A call without filinq must refuse.');
+			} catch (RuntimeException $e) {
+				self::assertStringStartsWith('filinq_unavailable', $e->getMessage());
 			}
-
-			/**
-			 * Filinq still writes a file.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 * @param array<int, mixed> $entities The entities to redact.
-			 * @param string $outputFormat The output format.
-			 * @param array<int, mixed> $unredacted Entities published unredacted.
-			 * @param array<int, mixed> $overrides Acknowledged overrides.
-			 * @param string $userId The acting user.
-			 *
-			 * @return array<string, mixed> The anonymisation result.
-			 */
-			public function anonymizeDocument(
-				int $fileId,
-				array $entities,
-				string $outputFormat = 'pdf-only',
-				array $unredacted = [],
-				array $overrides = [],
-				string $userId = '',
-			): array {
-				return ['anonymizedFileId' => 4321];
-			}
-		};
-
-		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($service): object {
-				if ($id === self::FILINQ_ANONYMIZATION) {
-					return $service;
-				}
-
-				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
-				};
-			}
-		);
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('no_entities_detected', $outcome['status']);
-		$this->assertSame(0, $outcome['entityCount']);
-	}//end testARunThatDetectedNothingIsNotCalledRedacted()
-
-	/**
-	 * Entities found and no file produced is not called redacted either.
-	 *
-	 * 🔴 THE TRAP THIS PINS. The status was computed from the entity count
-	 * alone, so filinq detecting a BSN and then naming no output file reported
-	 * `redacted` on a document whose bytes are untouched. A status that says
-	 * redacted looks identical whether or not anything was redacted, so the
-	 * assertion here is on the effect: an anonymised file id came back, or the
-	 * document is not redacted.
-	 *
-	 * @return void
-	 */
-	public function testEntitiesWithoutAnOutputFileAreNotCalledRedacted(): void {
-		$service = new class {
-
-			/**
-			 * A detector that finds something.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 *
-			 * @return array<string, mixed> Two entities.
-			 */
-			public function extractAndDetectEntities(int $fileId): array {
-				return ['entities' => [['type' => 'BSN'], ['type' => 'PERSON']]];
-			}
-
-			/**
-			 * An anonymisation that names no output.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 * @param array<int, mixed> $entities The entities to redact.
-			 * @param string $outputFormat The output format.
-			 * @param array<int, mixed> $unredacted Entities published unredacted.
-			 * @param array<int, mixed> $overrides Acknowledged overrides.
-			 * @param string $userId The acting user.
-			 *
-			 * @return array<string, mixed> A result with no file in it.
-			 */
-			public function anonymizeDocument(
-				int $fileId,
-				array $entities,
-				string $outputFormat = 'pdf-only',
-				array $unredacted = [],
-				array $overrides = [],
-				string $userId = '',
-			): array {
-				return ['warning' => 'the redaction pass produced no document'];
-			}
-		};
-
-		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($service): object {
-				if ($id === self::FILINQ_ANONYMIZATION) {
-					return $service;
-				}
-
-				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
-				};
-			}
-		);
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('no_output_produced', $outcome['status']);
-		$this->assertNull($outcome['anonymizedFileId'], 'nothing came back to point a Woo officer at');
-		$this->assertSame(2, $outcome['entityCount'], 'the detection itself did happen');
-	}//end testEntitiesWithoutAnOutputFileAreNotCalledRedacted()
-
-	/**
-	 * The outcome names the detection backend OpenRegister actually reports.
-	 *
-	 * Not filinq's status. Filinq's `AnonymiserBackendStateClient` resolves
-	 * `OCA\OpenRegister\Service\AnonymisationBackendService`, one namespace
-	 * segment short of the class that exists, so it catches and answers
-	 * `regex` on every instance whatever is configured. Reading OpenRegister
-	 * directly is what makes a regex-only run visible on the case instead of
-	 * being buried under an admin banner that is on everywhere.
-	 *
-	 * @return void
-	 */
-	public function testTheOutcomeNamesTheBackendOpenRegisterReports(): void {
-		$this->givenFilinq($this->backendStateDouble('presidio'));
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('presidio', $outcome['detectionBackend']);
-	}//end testTheOutcomeNamesTheBackendOpenRegisterReports()
-
-	/**
-	 * A backend that cannot be read is unknown, never assumed.
-	 *
-	 * The upstream defect is precisely an unreadable state answered with a
-	 * confident constant, so this one reports null and says so.
-	 *
-	 * @return void
-	 */
-	public function testAnUnreadableBackendIsReportedAsUnknown(): void {
-		$this->givenFilinq();
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertNull($outcome['detectionBackend'], 'an unread backend must not be guessed');
-	}//end testAnUnreadableBackendIsReportedAsUnknown()
-
-	/**
-	 * An absent filinq is refused rather than answered.
-	 *
-	 * @return void
-	 */
-	public function testRedactRefusesWhenFilinqIsAbsent(): void {
-		$this->container->method('get')->willThrowException(
-			new class('absent') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
-			}
-		);
-
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessageMatches('/filinq_unavailable/');
-
-		$this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-	}//end testRedactRefusesWhenFilinqIsAbsent()
-	/**
-	 * A file id arriving as a numeric string is accepted as a file id.
-	 *
-	 * Document records come out of OpenRegister, where a number can arrive as
-	 * a string. Rejecting it would send a perfectly resolvable document to
-	 * manual redaction.
-	 *
-	 * @return void
-	 */
-	public function testRedactAcceptsANumericStringFileId(): void {
-		$filinq = $this->givenFilinq();
-
-		$this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => '77']);
-
-		$this->assertSame(77, $filinq->calls[0]['fileId']);
-	}//end testRedactAcceptsANumericStringFileId()
-
-	/**
-	 * A document whose file lookup throws is refused, carrying the reason.
-	 *
-	 * @return void
-	 */
-	public function testRedactRefusesWhenTheFileLookupThrows(): void {
-		$this->givenFilinq();
-		$this->documents->method('getFileId')->willThrowException(new RuntimeException('gone from storage'));
-
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessageMatches('/file_unresolved: gone from storage/');
-
-		$this->client()->redact('case-1', ['id' => 'doc-9', 'fileName' => 'besluit.pdf']);
-	}//end testRedactRefusesWhenTheFileLookupThrows()
-
-	/**
-	 * With no session, filinq is still called, with an empty acting user.
-	 *
-	 * A background job has no session. Filinq's override audit takes an empty
-	 * uid, so the redaction still runs rather than being refused for the want
-	 * of a name to record.
-	 *
-	 * @return void
-	 */
-	public function testRedactRunsWithoutASessionAndRecordsNoActingUser(): void {
-		$filinq = $this->givenFilinq();
-		$session = $this->createMock(IUserSession::class);
-		$session->method('getUser')->willReturn(null);
-
-		$client = new FilinqRedactionClient(
-			$this->container,
-			$this->documents,
-			$session,
-			$this->createMock(LoggerInterface::class)
-		);
-
-		$client->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('', $filinq->calls[1]['userId']);
-	}//end testRedactRunsWithoutASessionAndRecordsNoActingUser()
-
-	/**
-	 * A filinq that throws mid-run is reported as a refusal, not a redaction.
-	 *
-	 * @return void
-	 */
-	public function testRedactRefusesWhenFilinqThrows(): void {
-		$service = new class {
-
-			/**
-			 * Filinq's extraction, which fails here.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 *
-			 * @return array<string, mixed> Never returns.
-			 */
-			public function extractAndDetectEntities(int $fileId): array {
-				throw new \RuntimeException('detector unavailable');
-			}
-		};
-
-		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($service): object {
-				if ($id === self::FILINQ_ANONYMIZATION) {
-					return $service;
-				}
-
-				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
-				};
-			}
-		);
-
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessageMatches('/filinq_redaction_failed: detector unavailable/');
-
-		$this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-	}//end testRedactRefusesWhenFilinqThrows()
-
-	/**
-	 * Point the container at a filinq whose anonymisation answers or throws as given.
-	 *
-	 * @param callable     $anonymize    What anonymizeDocument does: returns the result or throws.
-	 * @param array<mixed> $entities     What extraction detected.
-	 * @param object|null  $backendState OpenRegister's backend-state double, or null.
-	 *
-	 * @return void
-	 */
-	private function givenFilinqThat(callable $anonymize, array $entities, ?object $backendState = null): void {
-		$service = new class($anonymize, $entities) {
-
-			/**
-			 * Constructor.
-			 *
-			 * @param mixed        $anonymize What anonymizeDocument does.
-			 * @param array<mixed> $entities  What extraction detected.
-			 */
-			public function __construct(private $anonymize, private array $entities) {
-			}
-
-			/**
-			 * Filinq's entity extraction.
-			 *
-			 * @param int $fileId The Nextcloud file id.
-			 *
-			 * @return array<string, mixed> The extraction result.
-			 */
-			public function extractAndDetectEntities(int $fileId): array {
-				return ['entities' => $this->entities];
-			}
-
-			/**
-			 * Filinq's anonymisation, filinq fix/anonymisation-fails-closed 44d5fc0c signature.
-			 *
-			 * @param int               $fileId       The Nextcloud file id.
-			 * @param array<int, mixed> $entities     The entities to redact.
-			 * @param string            $outputFormat The output format.
-			 * @param array<int, mixed> $unredacted   Entities published unredacted.
-			 * @param array<int, mixed> $overrides    Acknowledged overrides.
-			 * @param string            $userId       The acting user.
-			 *
-			 * @return array<string, mixed> The anonymisation result.
-			 */
-			public function anonymizeDocument(
-				int $fileId,
-				array $entities,
-				string $outputFormat = 'pdf-only',
-				array $unredacted = [],
-				array $overrides = [],
-				string $userId = '',
-			): array {
-				return ($this->anonymize)();
-			}
-		};
-
-		$this->container->method('get')->willReturnCallback(
-			static function (string $id) use ($service, $backendState): object {
-				if ($id === self::FILINQ_ANONYMIZATION) {
-					return $service;
-				}
-
-				if ($id === self::OR_BACKEND_STATE && $backendState !== null) {
-					return $backendState;
-				}
-
-				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
-				};
-			}
-		);
-	}//end givenFilinqThat()
-
-	/**
-	 * A run filinq refuses for want of a live detector is its own outcome (dossiq#3191).
-	 *
-	 * Filinq throws its real DetectionUnavailableException and writes no file.
-	 * That is not a document with nothing to remove and not a broken filinq:
-	 * the repair is to switch detection on. So it is reported, not thrown, with
-	 * filinq's reason and the backend it named.
-	 *
-	 * @return void
-	 */
-	public function testARunWithNoLiveDetectorIsReportedWithFilinqsReason(): void {
-		$this->givenFilinqThat(
-			static function (): array {
-				throw new \OCA\Filinq\Exception\DetectionUnavailableException(
-					\OCA\Filinq\Exception\DetectionUnavailableException::REASON_UNAVAILABLE,
-					'The entity detector presidio is unavailable.',
-					'presidio'
-				);
-			},
-			[]
-		);
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('detection_unavailable', $outcome['status']);
-		$this->assertSame('detection_backend_unavailable', $outcome['detectionUnavailable']);
-		$this->assertSame('presidio', $outcome['detectionBackend']);
-		$this->assertNull($outcome['anonymizedFileId']);
-	}//end testARunWithNoLiveDetectorIsReportedWithFilinqsReason()
-
-	/**
-	 * A refusal that names no backend reports it as unknown.
-	 *
-	 * @return void
-	 */
-	public function testARefusalWithoutABackendReportsItAsUnknown(): void {
-		$this->givenFilinqThat(
-			static function (): array {
-				throw new \OCA\Filinq\Exception\DetectionUnavailableException(
-					\OCA\Filinq\Exception\DetectionUnavailableException::REASON_DISABLED,
-					'Entity detection is disabled.'
-				);
-			},
-			[['type' => 'PERSON']]
-		);
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('detection_unavailable', $outcome['status']);
-		$this->assertSame('detection_disabled', $outcome['detectionUnavailable']);
-		$this->assertNull($outcome['detectionBackend']);
-	}//end testARefusalWithoutABackendReportsItAsUnknown()
-
-	/**
-	 * The backend that looked is read from filinq's result when it names one.
-	 *
-	 * Filinq now reports the detector its own gate found live for this run,
-	 * which is closer to the truth than a second read of OpenRegister's state.
-	 *
-	 * @return void
-	 */
-	public function testTheBackendThatLookedIsReadFromFilinqsResult(): void {
-		$this->givenFilinqThat(
-			static fn (): array => [
-				'anonymizedFileId' => 991,
-				'detection' => ['ran' => true, 'backend' => 'presidio', 'entitiesRedacted' => 2, 'outcome' => 'redacted'],
-			],
-			[['type' => 'PERSON'], ['type' => 'BSN']],
-			$this->backendStateDouble('regex')
-		);
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('redacted', $outcome['status']);
-		$this->assertSame('presidio', $outcome['detectionBackend']);
-		$this->assertSame('redacted', $outcome['detectionOutcome']);
-	}//end testTheBackendThatLookedIsReadFromFilinqsResult()
-
-	/**
-	 * Filinq's `nothing_found` is not a redaction, whatever the entity list said.
-	 *
-	 * @return void
-	 */
-	public function testFilinqsNothingFoundIsNotCalledRedacted(): void {
-		$this->givenFilinqThat(
-			static fn (): array => [
-				'anonymizedFileId' => 991,
-				'detection' => ['ran' => true, 'backend' => 'presidio', 'entitiesRedacted' => 0, 'outcome' => 'nothing_found'],
-			],
-			[['type' => 'PERSON']]
-		);
-
-		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
-
-		$this->assertSame('no_entities_detected', $outcome['status']);
-		$this->assertSame('presidio', $outcome['detectionBackend']);
-	}//end testFilinqsNothingFoundIsNotCalledRedacted()
-
+		}
+	}//end testWithoutFilinqEveryCallRefuses()
 }//end class
