@@ -621,20 +621,5 @@
     "no-console": {
       "count": 1
     }
-  },
-  "src/views/workflow-board/BoardColumn.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 2
-    }
-  },
-  "src/views/workflow-board/CaseCard.vue": {
-    "vue/custom-event-name-casing": {
-      "count": 1
-    }
-  },
-  "src/views/workflow-board/WorkflowBoard.vue": {
-    "no-console": {
-      "count": 3
-    }
   }
 }

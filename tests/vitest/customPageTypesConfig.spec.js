@@ -55,11 +55,4 @@ describe('custom page register/schema pairs', () => {
 			expect(halfDeclared(overlays)).toEqual([])
 		}
 	})
-
-	it('the Workflow board declares neither, because it loads three schemas', () => {
-		const board = manifest.pages.find((page) => page.id === 'WorkflowBoard')
-		expect(board.type).toBe('custom')
-		expect(board.config?.register).toBeUndefined()
-		expect(board.config?.schema).toBeUndefined()
-	})
 })
