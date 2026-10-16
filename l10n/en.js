@@ -5469,6 +5469,7 @@ OC.L10N.register(
         "Pick at least one result to add.": "Pick at least one result to add.",
         "Pick at least one system to search.": "Pick at least one system to search.",
         "Pick how often the follow-up comes back.": "Pick how often the follow-up comes back.",
+        "Pick one of the results this case type can close with.": "Pick one of the results this case type can close with.",
         "Pick the mailbox intake reads": "Pick the mailbox intake reads",
         "Pick the parties this document went to": "Pick the parties this document went to",
         "Pick the party this document came from": "Pick the party this document came from",
