@@ -53,9 +53,6 @@ use Throwable;
  * Detects, checks and redacts a partly public document, or records an uploaded redacted version.
  *
  * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The step joins the assessment, filinq, Hermiq,
- *     the document text and the document store; each collaborator owns one of them.
  */
 class DocumentRedactionService {
 

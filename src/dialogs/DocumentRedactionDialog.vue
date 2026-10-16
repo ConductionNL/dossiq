@@ -42,14 +42,31 @@
 				v-else-if="documents.length === 0"
 				role="status"
 				data-testid="document-redaction-empty">
-				{{ t('dossiq', 'No document on this case is assessed as disclosed in part.') }}
+				{{
+					t(
+						'dossiq',
+						'No document on this case is assessed as disclosed in part.',
+					)
+				}}
 			</p>
 			<template v-else>
 				<div class="document-redaction__bar">
-					<span class="document-redaction__meta" data-testid="document-redaction-position">
-						{{ t('dossiq', 'document {index} of {count}', { index: index + 1, count: documents.length }) }}
+					<span
+						class="document-redaction__meta"
+						data-testid="document-redaction-position">
+						{{
+							t('dossiq', 'document {index} of {count}', {
+								index: index + 1,
+								count: documents.length,
+							})
+						}}
 						<template v-if="current.redactedDocumentRef">
-							· <span class="document-redaction__pill document-redaction__pill--done" data-testid="document-redaction-done">{{ t('dossiq', 'Redacted copy recorded') }}</span>
+							·
+							<span
+								class="document-redaction__pill document-redaction__pill--done"
+								data-testid="document-redaction-done"
+								>{{ t('dossiq', 'Redacted copy recorded') }}</span
+							>
 						</template>
 					</span>
 					<div class="document-redaction__buttons">
@@ -77,7 +94,7 @@
 							class="hidden-visually"
 							data-testid="document-redaction-upload-input"
 							:aria-label="t('dossiq', 'Upload redacted version')"
-							@change="upload($event.target.files)">
+							@change="upload($event.target.files)" />
 						<NcButton
 							variant="primary"
 							data-testid="document-redaction-redact"
@@ -104,19 +121,33 @@
 				</p>
 
 				<div class="document-redaction__columns">
-					<div class="document-redaction__document" data-testid="document-redaction-text">
-						<strong>{{ current.title || t('dossiq', 'Document without a title') }}</strong>
+					<div
+						class="document-redaction__document"
+						data-testid="document-redaction-text">
+						<strong>{{
+							current.title || t('dossiq', 'Document without a title')
+						}}</strong>
 						<p v-if="detecting" role="status">
 							{{ t('dossiq', 'Finding the passages to redact…') }}
 						</p>
 						<p v-else-if="text === ''" class="document-redaction__muted">
-							{{ t('dossiq', 'No text was extracted from this document.') }}
+							{{
+								t(
+									'dossiq',
+									'No text was extracted from this document.',
+								)
+							}}
 						</p>
 						<p v-else class="document-redaction__body">
 							<template v-for="(segment, at) in segments" :key="at">
 								<span
 									v-if="segment.verdict"
-									:class="'document-redaction__mark document-redaction__mark--' + segment.verdict">{{ segment.text }}</span>
+									:class="
+										'document-redaction__mark document-redaction__mark--'
+										+ segment.verdict
+									"
+									>{{ segment.text }}</span
+								>
 								<template v-else>
 									{{ segment.text }}
 								</template>
@@ -126,8 +157,17 @@
 
 					<aside class="document-redaction__proposal">
 						<h2>{{ t('dossiq', 'Proposal') }}</h2>
-						<span class="document-redaction__muted" data-testid="document-redaction-count">
-							{{ n('dossiq', '%n passage found. Review each passage; the ground goes into the decision.', '%n passages found. Review each passage; the ground goes into the decision.', passages.length) }}
+						<span
+							class="document-redaction__muted"
+							data-testid="document-redaction-count">
+							{{
+								n(
+									'dossiq',
+									'%n passage found. Review each passage; the ground goes into the decision.',
+									'%n passages found. Review each passage; the ground goes into the decision.',
+									passages.length,
+								)
+							}}
 						</span>
 						<ul class="document-redaction__list">
 							<li
@@ -136,26 +176,55 @@
 								class="document-redaction__passage"
 								:data-testid="'document-redaction-passage-' + at">
 								<span class="document-redaction__line">
-									<strong>{{ labelOf(passage.type) }}: "{{ passage.value }}"</strong>
+									<strong
+										>{{ labelOf(passage.type) }}: "{{
+											passage.value
+										}}"</strong
+									>
 									<span
 										v-if="passage.verdict"
-										:class="'document-redaction__pill document-redaction__pill--' + passage.verdict">{{ verdictLabel(passage.verdict) }}</span>
+										:class="
+											'document-redaction__pill document-redaction__pill--'
+											+ passage.verdict
+										"
+										>{{ verdictLabel(passage.verdict) }}</span
+									>
 								</span>
-								<span v-if="grounds" class="document-redaction__muted">{{ grounds }}</span>
-								<div class="document-redaction__verdicts" role="group" :aria-label="t('dossiq', 'Verdict for {passage}', { passage: passage.value })">
+								<span
+									v-if="grounds"
+									class="document-redaction__muted"
+									>{{ grounds }}</span
+								>
+								<div
+									class="document-redaction__verdicts"
+									role="group"
+									:aria-label="
+										t('dossiq', 'Verdict for {passage}', {
+											passage: passage.value,
+										})
+									">
 									<NcButton
 										v-for="verdict in VERDICTS"
 										:key="verdict"
 										size="small"
 										:pressed="passage.verdict === verdict"
-										:data-testid="'document-redaction-verdict-' + at + '-' + verdict"
+										:data-testid="
+											'document-redaction-verdict-'
+											+ at
+											+ '-'
+											+ verdict
+										"
 										@update:pressed="setVerdict(at, verdict)">
 										{{ verdictLabel(verdict) }}
 									</NcButton>
 								</div>
 								<NcSelect
 									v-if="passage.entity.source === 'officer'"
-									:modelValue="typeOptions.find((option) => option.id === passage.type) || null"
+									:modelValue="
+										typeOptions.find(
+											(option) => option.id === passage.type,
+										) || null
+									"
 									:options="typeOptions"
 									:inputLabel="t('dossiq', 'Passage type')"
 									:clearable="false"
@@ -243,7 +312,10 @@ export function segmentsOf(text, passages) {
 		if (range.from > at) {
 			segments.push({ text: text.slice(at, range.from), verdict: null })
 		}
-		segments.push({ text: text.slice(range.from, range.to), verdict: range.verdict })
+		segments.push({
+			text: text.slice(range.from, range.to),
+			verdict: range.verdict,
+		})
 		at = range.to
 	}
 	if (at < text.length) {
@@ -282,22 +354,26 @@ export default {
 		/** The routes of one document; `{caseId}` and `{documentRef}` are filled in. */
 		detectUrl: {
 			type: String,
-			default: '/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect',
+			default:
+				'/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect',
 		},
 
 		checkUrl: {
 			type: String,
-			default: '/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check',
+			default:
+				'/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check',
 		},
 
 		redactUrl: {
 			type: String,
-			default: '/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact',
+			default:
+				'/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact',
 		},
 
 		uploadUrl: {
 			type: String,
-			default: '/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload',
+			default:
+				'/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload',
 		},
 
 		/** What a passage type is called: `{ PERSON: 'Name', ... }`. */
@@ -352,7 +428,10 @@ export default {
 
 		/** @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005 */
 		typeOptions() {
-			return Object.keys(this.typeLabels || {}).map((type) => ({ id: type, label: this.labelOf(type) }))
+			return Object.keys(this.typeLabels || {}).map((type) => ({
+				id: type,
+				label: this.labelOf(type),
+			}))
 		},
 
 		/** @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005 */
@@ -363,8 +442,14 @@ export default {
 		/** @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005 */
 		toRedact() {
 			return this.passages
-				.filter((passage) => passage.verdict === 'accept' || passage.verdict === 'adjust')
-				.map((passage) => ({ ...passage.entity, value: passage.value.trim() }))
+				.filter(
+					(passage) =>
+						passage.verdict === 'accept' || passage.verdict === 'adjust',
+				)
+				.map((passage) => ({
+					...passage.entity,
+					value: passage.value.trim(),
+				}))
 				.filter((entity) => entity.value !== '')
 		},
 
@@ -404,7 +489,10 @@ export default {
 			return generateUrl(
 				String(template)
 					.replace('{caseId}', encodeURIComponent(this.targetCaseId))
-					.replace('{documentRef}', encodeURIComponent(String(this.current.documentRef || ''))),
+					.replace(
+						'{documentRef}',
+						encodeURIComponent(String(this.current.documentRef || '')),
+					),
 			)
 		},
 
@@ -428,11 +516,13 @@ export default {
 		 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-follows-board-dqlakken-req-drd-005
 		 */
 		verdictLabel(verdict) {
-			return {
-				accept: t('dossiq', 'Agreed'),
-				adjust: t('dossiq', 'Adjust'),
-				skip: t('dossiq', 'Do not redact'),
-			}[verdict] || ''
+			return (
+				{
+					accept: t('dossiq', 'Agreed'),
+					adjust: t('dossiq', 'Adjust'),
+					skip: t('dossiq', 'Do not redact'),
+				}[verdict] || ''
+			)
 		},
 
 		/**
@@ -449,7 +539,10 @@ export default {
 				this.documents = data?.documents || []
 			} catch (failure) {
 				this.documents = []
-				this.loadError = sentenceOf(failure, t('dossiq', 'The documents of this case could not be read.'))
+				this.loadError = sentenceOf(
+					failure,
+					t('dossiq', 'The documents of this case could not be read.'),
+				)
 			} finally {
 				this.loading = false
 			}
@@ -473,7 +566,10 @@ export default {
 			this.text = ''
 			this.passages = []
 			if (this.current.redactedDocumentRef) {
-				this.passages = this.passagesOf(this.current.redaction?.entities || [], 'accept')
+				this.passages = this.passagesOf(
+					this.current.redaction?.entities || [],
+					'accept',
+				)
 				return
 			}
 
@@ -481,9 +577,18 @@ export default {
 			try {
 				const { data } = await axios.post(this.urlOf(this.detectUrl))
 				this.text = String(data?.text || '')
-				this.passages = this.passagesOf(data?.redaction?.entities || [], null)
+				this.passages = this.passagesOf(
+					data?.redaction?.entities || [],
+					null,
+				)
 			} catch (failure) {
-				this.error = sentenceOf(failure, t('dossiq', 'The passages of this document could not be found. Upload a redacted version instead.'))
+				this.error = sentenceOf(
+					failure,
+					t(
+						'dossiq',
+						'The passages of this document could not be found. Upload a redacted version instead.',
+					),
+				)
 			} finally {
 				this.detecting = false
 			}
@@ -541,7 +646,11 @@ export default {
 		retype(at, option) {
 			const type = String(option?.id || 'UNKNOWN')
 			const passage = this.passages[at]
-			this.passages[at] = { ...passage, type, entity: { ...passage.entity, type } }
+			this.passages[at] = {
+				...passage,
+				type,
+				entity: { ...passage.entity, type },
+			}
 		},
 
 		/**
@@ -574,11 +683,19 @@ export default {
 			this.error = ''
 			this.notice = ''
 			try {
-				await axios.post(this.urlOf(this.checkUrl), { entities: this.toRedact })
+				await axios.post(this.urlOf(this.checkUrl), {
+					entities: this.toRedact,
+				})
 				const { data } = await axios.post(this.urlOf(this.redactUrl))
 				this.recorded(data)
 			} catch (failure) {
-				this.error = sentenceOf(failure, t('dossiq', 'The redacted copy could not be made. Upload a redacted version instead.'))
+				this.error = sentenceOf(
+					failure,
+					t(
+						'dossiq',
+						'The redacted copy could not be made. Upload a redacted version instead.',
+					),
+				)
 			} finally {
 				this.busy = false
 			}
@@ -606,7 +723,13 @@ export default {
 				const { data } = await axios.post(this.urlOf(this.uploadUrl), form)
 				this.recorded(data)
 			} catch (failure) {
-				this.error = sentenceOf(failure, t('dossiq', 'The redacted version could not be stored. Try again.'))
+				this.error = sentenceOf(
+					failure,
+					t(
+						'dossiq',
+						'The redacted version could not be stored. Try again.',
+					),
+				)
 			} finally {
 				this.busy = false
 				if (this.$refs.upload) {
@@ -628,7 +751,10 @@ export default {
 				redactedDocumentRef: String(data?.redactedDocumentRef || ''),
 				redaction: data?.redaction || {},
 			}
-			this.notice = t('dossiq', 'The redacted copy is recorded. Only this copy will be published.')
+			this.notice = t(
+				'dossiq',
+				'The redacted copy is recorded. Only this copy will be published.',
+			)
 			emit(PAGE_REFRESH, { reason: 'document-redaction' })
 		},
 	},

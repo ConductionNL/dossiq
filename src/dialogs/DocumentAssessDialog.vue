@@ -393,7 +393,9 @@ export default {
 						id: String(row?.id ?? ''),
 						title: String(row?.title ?? ''),
 					}))
-					.filter((document) => this.stored.includes(document.id) === false)
+					.filter(
+						(document) => this.stored.includes(document.id) === false,
+					)
 				const still = this.documents.map((document) => document.id)
 				this.selected = this.selected.filter((id) => still.includes(id))
 			} catch (failure) {
@@ -521,7 +523,9 @@ export default {
 		 */
 		savedIdsOf(answer, fieldOfDocument) {
 			return (Array.isArray(answer?.saved) ? answer.saved : [])
-				.map((row) => String(row?.[fieldOfDocument] ?? row?.documentRef ?? ''))
+				.map((row) =>
+					String(row?.[fieldOfDocument] ?? row?.documentRef ?? ''),
+				)
 				.filter((id) => id !== '')
 		},
 
@@ -577,8 +581,12 @@ export default {
 			const stored = Array.isArray(answer?.saved) ? answer.saved.length : 0
 			if (stored > 0) {
 				this.stored = [...new Set([...this.stored, ...saved])]
-				this.documents = this.documents.filter((document) => saved.includes(document.id) === false)
-				this.selected = this.selected.filter((id) => saved.includes(id) === false)
+				this.documents = this.documents.filter(
+					(document) => saved.includes(document.id) === false,
+				)
+				this.selected = this.selected.filter(
+					(id) => saved.includes(id) === false,
+				)
 				this.notice = n(
 					'dossiq',
 					'%n document assessed.',
