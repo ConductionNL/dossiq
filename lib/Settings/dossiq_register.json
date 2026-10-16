@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.47"
+        "version": "0.20.48"
     },
     "x-openregister": {
         "type": "application",
@@ -12618,12 +12618,92 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
-                    "version": "1.1.0",
+                    "version": "1.2.0",
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
                 "category": "Klachten en meldingen",
                 "identifier": "klacht-behandeling",
+                "x-index": {
+                    "title": "Complaints",
+                    "breadcrumb": {
+                        "label": "All cases",
+                        "route": "Cases"
+                    },
+                    "headerMeta": "Awb chapter 9 · handle within 6 weeks, hear where needed",
+                    "addLabel": "Register a complaint",
+                    "searchFields": [
+                        "title",
+                        "identifier",
+                        "initiatorDisplayName"
+                    ],
+                    "footerNote": "20 per page",
+                    "columns": [
+                        "title",
+                        "identifier",
+                        "initiatorDisplayName",
+                        "deadline",
+                        "status"
+                    ],
+                    "defaultSort": [
+                        {
+                            "key": "deadline",
+                            "order": "asc"
+                        }
+                    ],
+                    "quickFilters": [
+                        {
+                            "label": "All",
+                            "filter": {},
+                            "default": true
+                        },
+                        {
+                            "label": "Running",
+                            "filter": {
+                                "isFinalStatus": false
+                            }
+                        },
+                        {
+                            "label": "Due this week",
+                            "filter": {
+                                "deadline": {
+                                    "gte": "@today",
+                                    "lte": "@today+7d"
+                                },
+                                "isFinalStatus": false
+                            }
+                        },
+                        {
+                            "label": "Handled",
+                            "filter": {
+                                "isFinalStatus": true
+                            }
+                        }
+                    ],
+                    "widgets": [
+                        {
+                            "id": "complaints-per-subject",
+                            "type": "chart",
+                            "title": "Complaints per subject, this year",
+                            "content": {
+                                "chartKind": "bar",
+                                "dataSource": {
+                                    "register": "dossiq",
+                                    "schema": "complaint",
+                                    "filter": {
+                                        "receiptDate": {
+                                            "gte": "@yearStart"
+                                        }
+                                    },
+                                    "aggregate": {
+                                        "groupBy": "category",
+                                        "metric": "count"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
                 "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9.",
                 "purpose": "Behandeling van klachten van burgers en bedrijven",
                 "trigger": "Klacht ingediend door burger of bedrijf",
