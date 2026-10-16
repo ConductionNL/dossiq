@@ -201,6 +201,34 @@ class DeadlineReportingServiceTest extends TestCase {
 	}
 
 	/**
+	 * The running figures count only terms that still run, read against the
+	 * given day, and the share per case type comes from that day's quarter.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testKpiCarriesTheRunningFiguresOfTheDay(): void {
+		$this->objects->seed('case', ['id' => 'case-due', 'caseType' => 'ct-woo']);
+		$this->objects->seed('deadlineInstance', [
+			'id' => 'ti-due',
+			'case' => 'case-due',
+			'startDate' => '2026-06-20T10:00:00+00:00',
+			'endDateCurrent' => '2026-06-30',
+			'status' => 'verlengd',
+		]);
+
+		$k = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-07-02'));
+
+		self::assertSame(2, $k['runningCount']);
+		self::assertSame(2, $k['runningCaseTypeCount']);
+		self::assertSame(1, $k['dueThisWeekCount']);
+		self::assertSame(1, $k['overdueCount']);
+		self::assertSame(0.0, $k['penaltyRunningEuros']);
+		self::assertSame([], $k['onTimeByCaseType']['labels']);
+	}
+
+	/**
 	 * With nothing decided the dashboard has no share to show, and the CSV
 	 * leaves the cell empty rather than writing 0.
 	 *

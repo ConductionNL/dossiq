@@ -132,6 +132,51 @@ class CaseTypeThroughputCalculator {
 	}//end computeCaseTypeBreakdown()
 
 	/**
+	 * The share of closed cases per case type that ended on or before their
+	 * deadline, as parallel arrays a chart reads directly. A case without a
+	 * deadline has no norm to meet and is left out.
+	 *
+	 * @param array<int, array<string, mixed>> $cases     Enriched cases.
+	 * @param array<int, array<string, mixed>> $caseTypes Case types.
+	 *
+	 * @return array{labels: array<int, string>, shares: array<int, int>}
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function computeWithinNormByCaseType(array $cases, array $caseTypes): array {
+		$titles = [];
+		foreach ($caseTypes as $caseType) {
+			$id = (string)($caseType['id'] ?? '');
+			if ($id !== '') {
+				$titles[$id] = $this->text->textOf(value: ($caseType['title'] ?? $id));
+			}
+		}
+
+		$tally = [];
+		foreach ($cases as $caseData) {
+			$caseTypeId = (string)($caseData['caseType'] ?? '');
+			if ($caseData['_isOpen'] === true || $caseData['_endDate'] === null || $caseData['_deadline'] === null || $caseTypeId === '') {
+				continue;
+			}
+
+			$tally[$caseTypeId] ??= ['met' => 0, 'total' => 0];
+			$tally[$caseTypeId]['total']++;
+			if ($caseData['_endDate'] <= $caseData['_deadline']) {
+				$tally[$caseTypeId]['met']++;
+			}
+		}
+
+		$labels = [];
+		$shares = [];
+		foreach ($tally as $caseTypeId => $counts) {
+			$labels[] = ($titles[$caseTypeId] ?? $caseTypeId);
+			$shares[] = (int)round(($counts['met'] / $counts['total']) * 100);
+		}
+
+		return ['labels' => $labels, 'shares' => $shares];
+	}//end computeWithinNormByCaseType()
+
+	/**
 	 * Sum and count closed-case throughput days per case-type id.
 	 *
 	 * @param array<int, array<string, mixed>> $cases Enriched cases.

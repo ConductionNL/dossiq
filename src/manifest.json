@@ -5028,13 +5028,13 @@
 			"route": "/doorlooptijd",
 			"type": "dashboard",
 			"title": "Processing time",
-			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
+			"_note": "Processing time as drawn on the DqDoorlooptijd board: four figures, the average per month and the share within the norm per case type, read from /api/doorlooptijd/metrics (its `summary` block), then the compliance charts, the Woo deadlines, the cases at risk and the breakdown, which read the shared store (src/store/modules/doorlooptijd.js). The period and case type filters write the workspace, which both halves read.",
 			"config": {
 				"userLayout": true,
 				"allowEdit": true,
 				"appId": "dossiq",
 				"pageId": "Doorlooptijd",
-				"description": "SLA adherence and processing time analysis",
+				"description": "All case types",
 				"headerActions": [
 					{
 						"id": "back-to-dashboard",
@@ -5075,17 +5075,217 @@
 				],
 				"widgets": [
 					{
-						"id": "dt-kpis",
+						"id": "dt-avg",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.dt-kpis",
+							"field": "visible.dt-avg",
 							"op": "eq",
 							"value": true
 						},
 						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
-						"title": "Overview",
-						"type": "custom"
+						"type": "stat",
+						"title": "Average processing time",
+						"content": {
+							"label": "Average processing time",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "summary.avgDays",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " days"
+							},
+							"caption": "Closed cases, last twelve months"
+						}
+					},
+					{
+						"id": "dt-within-norm",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-within-norm",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "stat",
+						"title": "Within the norm",
+						"content": {
+							"label": "Within the norm",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "kpi.onTimePercent",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " %"
+							},
+							"caption": "Norm per case type"
+						}
+					},
+					{
+						"id": "dt-over-norm",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-over-norm",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "stat",
+						"title": "Longer than the norm",
+						"content": {
+							"label": "Longer than the norm",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "kpi.overdue",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "Running cases",
+							"captionVariant": "error"
+						}
+					},
+					{
+						"id": "dt-closed",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-closed",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "stat",
+						"title": "Handled",
+						"content": {
+							"label": "Handled",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								}
+							},
+							"valueField": "summary.closedThisYear",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "This year"
+						}
+					},
+					{
+						"id": "dt-monthly",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-monthly",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "chart",
+						"title": "Average processing time per month",
+						"content": {
+							"chartKind": "line",
+							"height": 260,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								},
+								"labelsPath": "summary.monthlyAvgDays.labels",
+								"series": [
+									{
+										"name": "Average processing time",
+										"path": "summary.monthlyAvgDays.values"
+									}
+								]
+							},
+							"options": {
+								"stroke": {
+									"width": 3
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": false
+								}
+							}
+						}
+					},
+					{
+						"id": "dt-within-by-type",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-within-by-type",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
+						"type": "chart",
+						"title": "Within the norm per case type",
+						"content": {
+							"chartKind": "bar",
+							"height": 220,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/doorlooptijd/metrics",
+								"params": {
+									"period": "@workspace.period?",
+									"caseType": "@workspace.caseType?"
+								},
+								"labelsPath": "summary.withinNormByCaseType.labels",
+								"series": [
+									{
+										"name": "Within the norm",
+										"path": "summary.withinNormByCaseType.shares"
+									}
+								]
+							},
+							"options": {
+								"plotOptions": {
+									"bar": {
+										"horizontal": true,
+										"barHeight": "40%"
+									}
+								},
+								"xaxis": {
+									"max": 100
+								},
+								"legend": {
+									"show": false
+								},
+								"dataLabels": {
+									"enabled": false
+								}
+							}
+						}
 					},
 					{
 						"id": "dt-charts",
@@ -5143,50 +5343,58 @@
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "dt-kpis",
+						"widgetId": "dt-monthly",
 						"gridX": 0,
 						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": 2,
+						"widgetId": "dt-within-by-type",
+						"gridX": 0,
+						"gridY": 4,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
 					{
-						"id": 2,
+						"id": 3,
 						"widgetId": "dt-charts",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 8
 					},
 					{
-						"id": 3,
+						"id": 4,
 						"widgetId": "dt-woo",
 						"gridX": 0,
-						"gridY": 11,
+						"gridY": 15,
 						"gridWidth": 12,
 						"gridHeight": 5
 					},
 					{
-						"id": 4,
+						"id": 5,
 						"widgetId": "dt-atrisk",
 						"gridX": 0,
-						"gridY": 16,
+						"gridY": 20,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
 					{
-						"id": 5,
+						"id": 6,
 						"widgetId": "dt-breakdown",
 						"gridX": 6,
-						"gridY": 16,
+						"gridY": 20,
 						"gridWidth": 6,
 						"gridHeight": 6
 					}
 				],
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"kpiRow": ["dt-avg", "dt-within-norm", "dt-over-norm", "dt-closed"]
 			},
 			"slots": {
 				"header-actions": "DtCaseTypeFilter",
-				"widget-dt-kpis": "DtKpiWidget",
 				"widget-dt-charts": "DtChartsWidget",
 				"widget-dt-woo": "DtWooWidget",
 				"widget-dt-atrisk": "DtAtRiskWidget",
@@ -6786,26 +6994,235 @@
 			"route": "/termijn-dashboard",
 			"type": "dashboard",
 			"title": "Deadline monitoring",
-			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
+			"_note": "Deadline monitoring as drawn on the DqTermijnen board: five figures, the share decided on time per case type, the notices of default, then the quarterly report and the annual penalty audit. The figures come from /api/termijn/dashboard/kpi, which counts the running terms and penalties server side; the notices are a register list.",
 			"config": {
 				"userLayout": true,
 				"allowEdit": true,
 				"appId": "dossiq",
 				"pageId": "TermijnDashboard",
-				"description": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
+				"description": "Running terms, all teams",
 				"widgets": [
 					{
-						"id": "td-kpis",
+						"id": "td-running",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
 							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
-							"field": "visible.td-kpis",
+							"field": "visible.td-running",
 							"op": "eq",
 							"value": true
 						},
-						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
-						"title": "Overview",
-						"type": "custom"
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Running terms",
+						"content": {
+							"label": "Running terms",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "runningCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "in {runningCaseTypeCount} case types"
+						}
+					},
+					{
+						"id": "td-due-week",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-due-week",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Ending this week",
+						"content": {
+							"label": "Ending this week",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "dueThisWeekCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "within the next seven days"
+						}
+					},
+					{
+						"id": "td-overdue",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-overdue",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Overdue",
+						"content": {
+							"label": "Overdue",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "overdueCount",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"caption": "Decide today or extend",
+							"captionVariant": "error"
+						}
+					},
+					{
+						"id": "td-penalty",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-penalty",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Penalty running",
+						"content": {
+							"label": "Penalty running",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "penaltyRunningEuros",
+							"format": {
+								"style": "currency",
+								"currency": "EUR",
+								"decimals": 0
+							},
+							"caption": "Cases: {penaltyRunningCount}",
+							"captionVariant": "error"
+						}
+					},
+					{
+						"id": "td-on-time",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-on-time",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "stat",
+						"title": "Decided on time",
+						"content": {
+							"label": "Decided on time",
+							"layout": "stacked",
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi"
+							},
+							"valueField": "withinTermijnPercent",
+							"format": {
+								"style": "decimal",
+								"decimals": 0,
+								"suffix": " %"
+							},
+							"caption": "Decided within the term"
+						}
+					},
+					{
+						"id": "td-on-time-by-type",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-on-time-by-type",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "chart",
+						"title": "Decided on time per case type",
+						"content": {
+							"chartKind": "bar",
+							"height": 220,
+							"endpointSource": {
+								"url": "/apps/dossiq/api/termijn/dashboard/kpi",
+								"labelsPath": "onTimeByCaseType.labels",
+								"series": [
+									{
+										"name": "Decided on time",
+										"path": "onTimeByCaseType.shares"
+									}
+								]
+							},
+							"options": {
+								"plotOptions": {
+									"bar": {
+										"horizontal": true,
+										"barHeight": "40%"
+									}
+								},
+								"xaxis": {
+									"max": 100
+								},
+								"dataLabels": {
+									"enabled": false
+								},
+								"legend": {
+									"show": false
+								}
+							}
+						}
+					},
+					{
+						"id": "td-notices",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-notices",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Running terms, the penalty exposure and the share decided on time are the gemeente's figures about its own timeliness. They belong to whoever answers for that, which is not everyone who can open a case.",
+						"type": "table",
+						"title": "Notices of default and penalty payments",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "noticeOfDefault",
+								"filter": {},
+								"limit": 10
+							},
+							"columns": [
+								{
+									"key": "receiptDate",
+									"label": "Notice of default",
+									"format": "date"
+								},
+								{
+									"key": "validityStatus",
+									"label": "Assessment",
+									"widget": "badge"
+								},
+								{
+									"key": "decisionRegisteredDate",
+									"label": "Decision registered",
+									"format": "date"
+								},
+								{
+									"key": "notificationChannel",
+									"label": "Received via"
+								}
+							],
+							"borderless": true,
+							"emptyText": "No notice of default has been received"
+						}
 					},
 					{
 						"id": "td-quarterly",
@@ -6837,34 +7254,62 @@
 				"layout": [
 					{
 						"id": 1,
-						"widgetId": "td-kpis",
+						"widgetId": "td-on-time-by-type",
 						"gridX": 0,
 						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 3
+					},
+					{
+						"id": 2,
+						"widgetId": "td-notices",
+						"gridX": 0,
+						"gridY": 3,
 						"gridWidth": 12,
 						"gridHeight": 4
 					},
 					{
-						"id": 2,
+						"id": 3,
 						"widgetId": "td-quarterly",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 7
 					},
 					{
-						"id": 3,
+						"id": 4,
 						"widgetId": "td-annual",
 						"gridX": 0,
-						"gridY": 11,
+						"gridY": 14,
 						"gridWidth": 12,
 						"gridHeight": 4
 					}
 				],
-				"documentationUrl": "https://dossiq.conduction.nl"
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"kpiRow": ["td-running", "td-due-week", "td-overdue", "td-penalty", "td-on-time"],
+				"headerActions": [
+					{
+						"id": "td-reports",
+						"type": "navigate",
+						"label": "Quarterly report",
+						"icon": "Download",
+						"target": "/reports"
+					},
+					{
+						"id": "td-register-notice",
+						"type": "open-form",
+						"label": "Register notice of default",
+						"icon": "Plus",
+						"variant": "primary",
+						"formTitle": "Register notice of default",
+						"register": "dossiq",
+						"schema": "noticeOfDefault",
+						"includeFields": ["deadlineInstance", "receiptDate", "notificationChannel", "documentLink"],
+						"successMessage": "Notice of default registered."
+					}
+				]
 			},
 			"slots": {
-				"header-actions": "TdCaseTypeFilter",
-				"widget-td-kpis": "TdKpiWidget",
 				"widget-td-quarterly": "TdQuarterlyWidget",
 				"widget-td-annual": "TdAnnualWidget"
 			}

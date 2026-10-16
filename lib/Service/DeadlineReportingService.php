@@ -316,13 +316,14 @@ class DeadlineReportingService {
 	/**
 	 * Compute a snapshot KPI summary for the dashboard widget.
 	 *
-	 * @param array<string, mixed> $filters Optional filters (afdeling, zaaktype).
+	 * @param array<string, mixed>   $filters Optional filters (afdeling, zaaktype).
+	 * @param DateTimeImmutable|null $today   The day the running figures are read on; now when absent.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
-	public function getTermijnKpi(array $filters = []): array {
+	public function getTermijnKpi(array $filters = [], ?DateTimeImmutable $today = null): array {
 		$rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
 
 		$dwTotal = 0;
@@ -348,8 +349,123 @@ class DeadlineReportingService {
 			'overrunCount' => $overrun,
 			'dwangsomTotalCents' => $dwTotal,
 			'lastUpdated' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			...$this->collectRunningFigures(rows: $rows, today: ($today ?? new DateTimeImmutable())),
+			...$this->collectRunningPenalties(),
+			'onTimeByCaseType' => $this->onTimeByCaseType(today: ($today ?? new DateTimeImmutable())),
 		];
 	}//end getTermijnKpi()
+
+	/**
+	 * Count the terms that still run: all of them, those ending within seven
+	 * days, those already past their end date, and the case types they span.
+	 *
+	 * @param array<int, array<string, mixed>> $rows  Instance rows.
+	 * @param DateTimeImmutable                $today The day the figures are read on.
+	 *
+	 * @return array{runningCount:int,runningCaseTypeCount:int,dueThisWeekCount:int,overdueCount:int}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function collectRunningFigures(array $rows, DateTimeImmutable $today): array {
+		$todayDate = $today->format('Y-m-d');
+		$weekEnd = $today->modify('+7 days')->format('Y-m-d');
+		$running = array_values(
+			array_filter(
+				$rows,
+				static fn (array $row): bool => in_array((string)($row['status'] ?? ''), ['lopend', 'paused', 'verlengd'], true)
+			)
+		);
+
+		$dueThisWeek = 0;
+		$overdue = 0;
+		foreach ($running as $row) {
+			$end = substr((string)($row['endDateCurrent'] ?? ''), 0, 10);
+			if ($end === '') {
+				continue;
+			}
+
+			if ($end < $todayDate) {
+				$overdue++;
+				continue;
+			}
+
+			if ($end <= $weekEnd) {
+				$dueThisWeek++;
+			}
+		}
+
+		$types = $this->caseTypes->resolve(rows: $running);
+		$keys = array_unique(array_map(static fn (array $type): string => $type['key'], $types['byRow']));
+
+		return [
+			'runningCount' => count($running),
+			'runningCaseTypeCount' => count($keys),
+			'dueThisWeekCount' => $dueThisWeek,
+			'overdueCount' => $overdue,
+		];
+	}//end collectRunningFigures()
+
+	/**
+	 * Sum the penalty payments that are still accruing, in whole euros.
+	 *
+	 * @return array{penaltyRunningEuros:float,penaltyRunningCount:int}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function collectRunningPenalties(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
+		$rows = [];
+		if ($objectService !== null && $register !== '' && $schema !== '') {
+			try {
+				$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
+			} catch (\Throwable $e) {
+				$rows = [];
+			}
+		}
+
+		$cents = 0;
+		$count = 0;
+		foreach ($rows as $row) {
+			if ((string)($row['status'] ?? '') !== 'lopend') {
+				continue;
+			}
+
+			$cents += (int)($row['cumulativeAmount'] ?? 0);
+			$count++;
+		}
+
+		return ['penaltyRunningEuros' => round($cents / 100, 2), 'penaltyRunningCount' => $count];
+	}//end collectRunningPenalties()
+
+	/**
+	 * The share of decided terms met per case type in the quarter that holds
+	 * the given day, as parallel arrays a chart reads directly.
+	 *
+	 * @param DateTimeImmutable $today The day whose quarter is reported.
+	 *
+	 * @return array{labels:array<int,string>,shares:array<int,float>}
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	private function onTimeByCaseType(DateTimeImmutable $today): array {
+		$quarter = (int)ceil(((int)$today->format('n')) / 3);
+		$report = $this->generateQuarterlyReport(period: $today->format('Y') . '-Q' . $quarter);
+
+		$labels = [];
+		$shares = [];
+		foreach ($report['perType'] as $key => $row) {
+			if ($row['binnenTermijnPct'] === null) {
+				continue;
+			}
+
+			$labels[] = ($row['title'] !== '' ? $row['title'] : (string)$key);
+			$shares[] = (float)$row['binnenTermijnPct'];
+		}
+
+		return ['labels' => $labels, 'shares' => $shares];
+	}//end onTimeByCaseType()
 
 	/**
 	 * Tally the dashboard KPI counters over the instance rows.
