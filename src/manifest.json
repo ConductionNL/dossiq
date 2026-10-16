@@ -8035,7 +8035,7 @@
 								},
 								{
 									"widgetId": "contact-history",
-									"label": "History"
+									"label": "Record history"
 								}
 							]
 						}
@@ -8142,7 +8142,28 @@
 							}
 						}
 					},
-					"contact-history"
+					{
+						"id": "side-history",
+						"type": "facts",
+						"title": "Record history",
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"parts": [
+										{
+											"text": "Last changed on"
+										},
+										{
+											"path": "@self.updated",
+											"format": "date-long"
+										}
+									],
+									"separator": " "
+								}
+							]
+						}
+					}
 				],
 				"layout": [
 					{
@@ -8576,7 +8597,7 @@
 								},
 								{
 									"widgetId": "contact-history",
-									"label": "History"
+									"label": "Record history"
 								}
 							]
 						}
@@ -8675,7 +8696,28 @@
 							"emptyText": "No open cases"
 						}
 					},
-					"contact-history"
+					{
+						"id": "side-history",
+						"type": "facts",
+						"title": "Record history",
+						"content": {
+							"fields": [
+								{
+									"as": "text",
+									"parts": [
+										{
+											"text": "Last changed on"
+										},
+										{
+											"path": "@self.updated",
+											"format": "date-long"
+										}
+									],
+									"separator": " "
+								}
+							]
+						}
+					}
 				],
 				"layout": [
 					{
