@@ -50,6 +50,7 @@ namespace OCA\Dossiq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Dossiq\Service\ProcessMining\PhaseSummary;
 use OCA\Dossiq\Service\ProcessMining\ProcessMiningDataLoader;
 use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
@@ -70,6 +71,7 @@ class ProcessMiningService {
 	 * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param PhaseSummary $phases The phase matrix and the stuck list the page leads with.
 	 *
 	 * @return void
 	 */
@@ -80,6 +82,7 @@ class ProcessMiningService {
 		private readonly ThroughputTrendCalculator $throughputCalculator,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly PhaseSummary $phases = new PhaseSummary(),
 	) {
 	}//end __construct()
 
@@ -187,6 +190,11 @@ class ProcessMiningService {
 			'caseTypeFilter' => $caseTypeFilter,
 			'caseTypes' => $caseTypeReports,
 			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
+			'phaseDays' => [
+				'mean' => $this->phases->matrix(caseTypes: $caseTypeReports, measure: 'meanHours'),
+				'median' => $this->phases->matrix(caseTypes: $caseTypeReports, measure: 'medianHours'),
+			],
+			'stuck' => $this->phases->stuck(caseTypes: $caseTypeReports),
 		];
 	}//end getReport()
 

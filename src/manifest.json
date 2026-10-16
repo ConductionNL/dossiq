@@ -5440,6 +5440,42 @@
 				],
 				"widgets": [
 					{
+						"id": "pm-stuck",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-stuck",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
+						"type": "record-list",
+						"title": "Where cases get stuck",
+						"content": {
+							"endpointSource": {
+								"url": "/apps/dossiq/api/reports/process-mining",
+								"params": {
+									"caseType": "@workspace.caseType?"
+								},
+								"responsePath": "stuck"
+							},
+							"title": "{caseType}, phase {phase}",
+							"text": "Median {days} days, {visits} visits",
+							"pill": {
+								"field": "level",
+								"labels": {
+									"bottleneck": "Bottleneck",
+									"watch": "Watch"
+								},
+								"colorMap": {
+									"bottleneck": "error",
+									"watch": "warning"
+								}
+							},
+							"emptyText": "No phase stands out in this period"
+						}
+					},
+					{
 						"id": "pm-kpis",
 						"roles": ["controllers", "beheerders", "admin"],
 						"visibleWhen": {
@@ -5507,10 +5543,18 @@
 				],
 				"layout": [
 					{
+						"id": 0,
+						"widgetId": "pm-stuck",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
 						"id": 1,
 						"widgetId": "pm-kpis",
 						"gridX": 0,
-						"gridY": 0,
+						"gridY": 4,
 						"gridWidth": 12,
 						"gridHeight": 3
 					},
@@ -5518,7 +5562,7 @@
 						"id": 2,
 						"widgetId": "pm-dwell",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 7,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -5526,7 +5570,7 @@
 						"id": 3,
 						"widgetId": "pm-throughput",
 						"gridX": 6,
-						"gridY": 3,
+						"gridY": 7,
 						"gridWidth": 6,
 						"gridHeight": 6
 					},
@@ -5534,7 +5578,7 @@
 						"id": 4,
 						"widgetId": "pm-bottlenecks",
 						"gridX": 0,
-						"gridY": 9,
+						"gridY": 13,
 						"gridWidth": 12,
 						"gridHeight": 6
 					},
@@ -5542,7 +5586,7 @@
 						"id": 5,
 						"widgetId": "pm-dwell-by-assignee",
 						"gridX": 0,
-						"gridY": 15,
+						"gridY": 19,
 						"gridWidth": 12,
 						"gridHeight": 6
 					}
