@@ -79,6 +79,9 @@
         "{percent}%",
         "Relevant",
         "{title}",
-        "{time}, +{extension}"
+        "{time}, +{extension}",
+        "{name}",
+        "Privacy",
+        "Schema"
     ]
 }
