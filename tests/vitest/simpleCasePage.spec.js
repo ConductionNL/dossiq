@@ -352,6 +352,8 @@ describe('the actions', () => {
 describe('the tabs', () => {
 	const tabsOf = (config) =>
 		config.widgets.find((widget) => widget.id === 'case-panels').content
+	const find = (config, id) =>
+		config.widgets.find((widget) => widget.id === id)
 
 	it('shows the five the board draws and keeps the other nine under Acties, losing none', () => {
 		const strip = tabsOf(simple)
@@ -367,8 +369,34 @@ describe('the tabs', () => {
 		expect(strip.tabs.find((tab) => tab.label === 'Files').widgetIds).toEqual(['case-files', 'case-document-review'])
 		const widgetIds = (content) => content.tabs
 			.flatMap((tab) => (Array.isArray(tab.widgetIds) ? tab.widgetIds : [tab.widgetId]))
-			.sort()
-		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
+		// Every panel of the full strip is still on it, except the Data panel,
+		// whose sections became the Overview stack's own cards.
+		const shown = widgetIds(strip)
+		for (const id of widgetIds(tabsOf(original)).filter((id) => id !== 'case-data-panel')) {
+			expect(shown, id).toContain(id)
+		}
+		const card = (id) => simple.widgets.find((widget) => widget.id === id)
+		const dataSections = find(original, 'case-data-panel').content.sections.map((section) => section.widget.id)
+		const movedTo = {
+			'case-core': 'case-details',
+			'case-priority': 'case-priority-card',
+			'case-location-map': 'case-locations-card',
+		}
+		for (const id of dataSections) {
+			if (movedTo[id]) {
+				expect(shown, `${id} moved to ${movedTo[id]}`).toContain(movedTo[id])
+				continue
+			}
+			const publication = card('case-publication').content.sections.map((section) => section.widget.id)
+			expect(publication, `${id} is lost from the Overview`).toContain(id)
+		}
+		expect(shown).toContain('case-publication')
+		// The fields case-core showed are on the Overview, as Case details or in their own card.
+		const core = find(original, 'case-data-panel').content.sections[0].widget.content.include
+		const onOverview = [...card('case-details').content.include, 'title', 'description', 'priority']
+		for (const field of core) {
+			expect(onOverview, field).toContain(field)
+		}
 	})
 
 	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
@@ -403,9 +431,12 @@ describe('the tabs', () => {
 
 		// The deadline tile only loses its own label in the side column, where
 		// the card title already heads it (casePageLabelsHistoryAndTourFirst).
-		const patched = ['case-panels', 'case-stages', 'case-tile-deadline']
+		// The terms, flows and hours are cards of the Overview stack, titled as
+		// DqZaak titles them; the cards the simple page adds are its own.
+		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication']
 		const others = (config) =>
-			config.widgets.filter((widget) => !patched.includes(widget.id))
+			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})
@@ -471,7 +502,9 @@ describe('the tabs', () => {
 		// deadline drew as three full-width cards under each other.
 		// The stages (`3`) sit in the header card (`config.headerWidget`) and the
 		// banner stack in the side column, so neither keeps a grid cell.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners']
+		// The plan, terms, flows and hours are cards of the Overview tab now, as
+		// DqZaak draws them, so they keep no grid cell either.
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners', '12', '11', '7', '6']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -498,7 +531,7 @@ describe('the tabs', () => {
 			// Taller where the cell would scroll inside: the tabs card (Overview
 			// measured 784px over its 720; since nextcloud-vue 2.82.0 its sixteen
 			// tabs wrap to three rows, 72px more), the flow runs and hours booked.
-			const taller = { 5: 20, 7: 7, 6: 3 }
+			const taller = { 5: 20 }
 			expect(entry.gridHeight, entry.id).toBe(
 				taller[entry.id] ?? was.gridHeight,
 			)
@@ -506,14 +539,7 @@ describe('the tabs', () => {
 		const order = [...simple.layout]
 			.sort((a, b) => a.gridY - b.gridY)
 			.map((entry) => entry.id)
-		expect(order.slice(0, 6)).toEqual([
-			'presence-strip',
-			'5',
-			'12',
-			'11',
-			'7',
-			'6',
-		])
+		expect(order.slice(0, 2)).toEqual(['presence-strip', '5'])
 		// No two cards share a cell.
 		const cells = new Set()
 		for (const entry of simple.layout) {
