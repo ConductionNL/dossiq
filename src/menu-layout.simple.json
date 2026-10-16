@@ -1723,7 +1723,15 @@
 					},
 					{
 						"action": "actions-menu",
-						"label": "Actions"
+						"label": "Actions",
+						"items": [
+							"header-actions",
+							"import",
+							"refresh",
+							"copy-selected",
+							"delete-selected",
+							"documentation"
+						]
 					},
 					{
 						"action": "add",
