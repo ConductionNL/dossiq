@@ -1640,11 +1640,10 @@
 							"presentation": "rows",
 							"avatar": "{displayName}",
 							"title": "{displayName}",
-							"meta": "{handler}",
 							"trailing": [
 								"{openCaseCount} cases"
 							],
-							"limit": 6,
+							"limit": 5,
 							"emptyText": "Nobody in your teams has open cases",
 							"errorText": "Only a coordinator sees the team's workload"
 						}
