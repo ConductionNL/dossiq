@@ -13,6 +13,7 @@
 			"type": "index",
 			"title": "Data subject requests",
 			"config": {
+				"showTitle": true,
 				"register": "dossiq",
 				"schema": "case",
 				"filter": {
@@ -27,7 +28,8 @@
 						"label": "Data subject requests",
 						"route": "PrivacyRequests",
 						"countFrom": {
-							"register": "dossiq",
+							"showTitle": true,
+				"register": "dossiq",
 							"schema": "case",
 							"filter": {
 								"dataSubjectRequestType": ["inzage", "correctie", "verwijdering"],
@@ -39,7 +41,8 @@
 						"label": "Data breaches",
 						"route": "AvgIncidents",
 						"countFrom": {
-							"register": "dossiq",
+							"showTitle": true,
+				"register": "dossiq",
 							"schema": "avgIncident",
 							"filter": {}
 						}
@@ -146,6 +149,7 @@
 			"type": "index",
 			"title": "Contracts",
 			"config": {
+				"showTitle": true,
 				"register": "dossiq",
 				"schema": "supplierContract",
 				"breadcrumb": {
@@ -157,7 +161,8 @@
 						"label": "Contracts",
 						"route": "Contracts",
 						"countFrom": {
-							"register": "dossiq",
+							"showTitle": true,
+				"register": "dossiq",
 							"schema": "supplierContract",
 							"filter": {}
 						}
@@ -166,7 +171,8 @@
 						"label": "Suppliers",
 						"route": "Suppliers",
 						"countFrom": {
-							"register": "dossiq",
+							"showTitle": true,
+				"register": "dossiq",
 							"schema": "supplier",
 							"filter": {}
 						}
@@ -216,7 +222,8 @@
 						"label": "Supplier",
 						"widget": "fkResolve",
 						"widgetProps": {
-							"register": "dossiq",
+							"showTitle": true,
+				"register": "dossiq",
 							"schema": "supplier",
 							"labelField": "legalName"
 						}
@@ -265,6 +272,7 @@
 			"type": "index",
 			"title": "Suppliers",
 			"config": {
+				"showTitle": true,
 				"register": "dossiq",
 				"schema": "supplier",
 				"breadcrumb": {
@@ -276,7 +284,8 @@
 						"label": "Contracts",
 						"route": "Contracts",
 						"countFrom": {
-							"register": "dossiq",
+							"showTitle": true,
+				"register": "dossiq",
 							"schema": "supplierContract",
 							"filter": {}
 						}
@@ -285,7 +294,8 @@
 						"label": "Suppliers",
 						"route": "Suppliers",
 						"countFrom": {
-							"register": "dossiq",
+							"showTitle": true,
+				"register": "dossiq",
 							"schema": "supplier",
 							"filter": {}
 						}
