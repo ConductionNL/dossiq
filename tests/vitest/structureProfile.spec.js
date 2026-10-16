@@ -183,9 +183,11 @@ describe('the simple profile', () => {
 			label: 'Team queue',
 			route: 'Queue',
 		})
+		// The Werkbord is the Cases list in its board view (board DqWerkbord).
 		expect(main.find((entry) => entry.id === 'WorkflowBoard')).toMatchObject({
 			label: 'Board',
-			route: 'WorkflowBoard',
+			route: 'Cases',
+			query: { _view: 'board' },
 		})
 	})
 

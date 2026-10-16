@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.96.0",
+	"version": "2.99.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1116,7 +1116,12 @@
 							"additionalProperties": { "type": "string", "enum": ["default", "primary", "success", "warning", "error", "info", "purple", "teal"] }
 						},
 						"due": { "type": "string", "description": "The date field of the footer's due text, marked by `dueRule`." },
-						"owner": { "type": "string", "description": "The field of the owner shown as an avatar (initials) at the footer's end." }
+						"owner": { "type": "string", "description": "The field of the owner shown as an avatar (initials) at the footer's end." },
+						"formatters": {
+							"type": "object",
+							"description": "screens-board-reference-columns (2.97.0): a card field (one of the role fields above) to the id of a formatter in the app's `cnFormatters` registry, the one table columns name in `formatter`. The card shows the formatted text, so a reference reads as its name (`{ \"caseType\": \"caseTypeName\" }`).",
+							"additionalProperties": { "type": "string", "minLength": 1 }
+						}
 					}
 				},
 				"colorField": {
@@ -1145,6 +1150,95 @@
 				"dueRule": {
 					"$ref": "#/$defs/dueRule",
 					"description": "Marks late cards. A card whose date is before today gets an error edge and the label 'Overdue'; one due within `soonDays` gets 'Due soon'. Omitted, no card is marked."
+				},
+				"columnFields": {
+					"type": "array",
+					"minItems": 1,
+					"description": "screens-board-reference-columns (2.97.0): the fields the columns can come from, offered in a \"Columns:\" switch after the search when there are two or more (\"status | type | assignee\"). The entry on `statusField` is the default. An entry with a `source` takes its columns from the rows the field REFERENCES (a case's status pointing at statusType rows), fetched, not from the values on the cards; `kind: \"values\"` (a user id, which references no schema) takes the values present plus a column for no value. Without a `source` or `kind` the field's enum or lifecycle states are read as before. A drop writes the reference: through `moveHandler` when named, else a PATCH of the field on the row.",
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["field"],
+						"properties": {
+							"field": { "type": "string", "minLength": 1, "description": "The row field the columns come from." },
+							"label": { "type": "string", "description": "Its name in the column switch (an i18n key). Defaults to the field." },
+							"kind": { "type": "string", "enum": ["values"], "description": "`values`: the field references no schema (a Nextcloud user id); the columns are the values present on the rows, by `valueLabels` or the value itself, then one column for no value (`emptyLabel`)." },
+							"valueLabels": { "type": "object", "additionalProperties": { "type": "string" }, "description": "`kind: values`: raw value to the column label." },
+							"emptyLabel": { "type": "string", "description": "`kind: values`: the label of the column for no value (an i18n key). Defaults to \"Nobody\"." },
+							"source": {
+								"type": "object",
+								"additionalProperties": false,
+								"description": "The referenced rows that are the columns: one list request to `register`/`schema` (defaults: the page's register and the property's `$ref`).",
+								"properties": {
+									"register": { "type": "string", "minLength": 1 },
+									"schema": { "type": "string", "minLength": 1 },
+									"labelField": { "type": "string", "description": "The referenced row's field that names a column. Defaults to `name`, then `title`." },
+									"orderField": { "type": "string", "description": "The referenced row's numeric field the columns are ordered by." },
+									"colorField": { "type": "string", "description": "The referenced row's field that holds the column's dot colour (a badge variant or a CSS colour)." },
+									"filter": { "type": "object", "description": "Equality filters on the referenced rows, e.g. `{ \"isFinal\": false }` to leave out end states.", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+									"mergeBy": { "type": "string", "description": "Merge referenced rows with the same value of this field into one column (statuses of every case type by `name`). A drop then writes the row of the card's own parent (`narrowBy`), and is refused when that parent has none." },
+									"narrowBy": {
+										"type": "object",
+										"additionalProperties": false,
+										"required": ["field", "rowField"],
+										"description": "The parent link: the referenced row's `field` equals the card's `rowField` (statusType.caseType = case.caseType). While the page filters on `rowField` with one value, the columns are that parent's rows only.",
+										"properties": {
+											"field": { "type": "string", "minLength": 1 },
+											"rowField": { "type": "string", "minLength": 1 }
+										}
+									}
+								}
+							},
+							"readOnly": { "type": "boolean", "default": false, "description": "No drag and no Move to while the columns come from this field." },
+							"moveHandler": { "type": "string", "minLength": 1, "description": "A handler in the app's registry that makes the move: it gets `{ card, toKey, field, value, target }` (value: the referenced id to write; target: its row) and returns a promise; a rejection shows its message as the refusal. Absent, the field is written with a PATCH." },
+							"moveTargetsHandler": { "type": "string", "minLength": 1, "description": "A handler in the app's registry that answers where one card may go: it gets `{ card, field }` and returns the values (referenced ids) it can reach. Columns out of reach fade during a drag, read \"not allowed\" in the card menu, and refuse a drop." }
+						}
+					}
+				},
+				"moveHandler": {
+					"type": "string",
+					"minLength": 1,
+					"description": "screens-board-reference-columns (2.97.0): a handler in the app's registry that moves a card on `statusField` (the app's transition), with the `columnFields[].moveHandler` call shape. Lets a manifest-only page run the host's transition, which the `runTransition` prop could not."
+				},
+				"moveTargetsHandler": {
+					"type": "string",
+					"minLength": 1,
+					"description": "screens-board-reference-columns (2.97.0): where a card on `statusField` may go, with the `columnFields[].moveTargetsHandler` call shape."
+				},
+				"narrow": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["field"],
+					"description": "screens-board-reference-columns (2.97.0): a select after the search (\"Case type: All case types | Woo-verzoek | ...\") that sets the page filter on `field`. With a reference column's `narrowBy.rowField` on the same field, the columns narrow to that parent's rows.",
+					"properties": {
+						"field": { "type": "string", "minLength": 1, "description": "The row field the select filters on." },
+						"label": { "type": "string", "description": "The select's label (an i18n key), shown with a colon. Defaults to the property's title." },
+						"allLabel": { "type": "string", "description": "The option for no narrowing (an i18n key). Defaults to \"All\"." },
+						"source": {
+							"type": "object",
+							"additionalProperties": false,
+							"description": "Where the options come from (defaults: the page's register and the property's `$ref`).",
+							"properties": {
+								"register": { "type": "string", "minLength": 1 },
+								"schema": { "type": "string", "minLength": 1 },
+								"labelField": { "type": "string", "description": "The option row's label field. Defaults to `title`." },
+								"filter": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } }
+							}
+						}
+					}
+				},
+				"columnSwitchLabel": {
+					"type": "string",
+					"description": "screens-board-reference-columns (2.97.0): the column switch's label (an i18n key), shown with a colon. Defaults to \"Columns\"."
+				},
+				"hint": {
+					"type": "string",
+					"description": "screens-board-reference-columns (2.97.0): one sentence after the board's controls, in the secondary colour (an i18n key), e.g. how a move works."
+				},
+				"wrap": {
+					"type": "boolean",
+					"default": false,
+					"description": "screens-board-reference-columns (2.97.0): wrap the columns onto more rows, as many to a row as fit at 240px, instead of one row that scrolls sideways. For a board with more stages than fit."
 				}
 			}
 		},
@@ -3533,7 +3627,7 @@
 						},
 						"titleField": {
 							"type": "string",
-							"description": "type='wiki': property on the article object holding the page title. Defaults to 'title'. Maps to CnWikiPage `titleField` prop."
+							"description": "type='wiki': property on the article object holding the page title. Defaults to 'title'. Maps to CnWikiPage `titleField` prop. type='detail' (detail-title-field): the record field (a dotted path, for example `number`) the header names the record by, as an invoice page names the invoice number instead of the schema title; an empty value falls back to the display name, and the breadcrumb's current crumb and the type eyebrow follow. Maps to CnDetailPage `titleField`."
 						},
 						"idParam": {
 							"type": "string",
@@ -4177,8 +4271,19 @@
 							"description": "type='index': show the page header (icon, title, description) inline. Default false: the title renders visually hidden and the sidebar names the page. Maps to CnIndexPage `showTitle`."
 						},
 						"countSubtitle": {
-							"type": "string",
-							"description": "type='index': an i18n key for the description line with `{total}` replaced by the collection's total, e.g. \"{total} open cases\" (zuiddrecht-pixel-gaps). Shown in place of `description` once a total is known. Maps to CnIndexPage `countSubtitle`."
+							"anyOf": [
+								{ "type": "string" },
+								{
+									"type": "object",
+									"additionalProperties": false,
+									"required": ["singular", "plural"],
+									"properties": {
+										"singular": { "type": "string", "minLength": 1, "description": "i18n key of the line for a total of one, e.g. \"{total} invoice\"." },
+										"plural": { "type": "string", "minLength": 1, "description": "i18n key of the line for any other total, e.g. \"{total} invoices\"." }
+									}
+								}
+							],
+							"description": "type='index': an i18n key for the description line with `{total}` replaced by the collection's total, e.g. \"{total} open cases\" (zuiddrecht-pixel-gaps). Shown in place of `description` once a total is known. `{ singular, plural }` picks the form by the total through the app's plural translation (`translatePlural`), so \"1 factuur\" and \"12 facturen\" each read right (index-count-plural). Maps to CnIndexPage `countSubtitle`."
 						},
 						"showTitleIcon": {
 							"type": "boolean",
@@ -4530,6 +4635,11 @@
 							}
 						}
 					}
+				},
+				{
+					"description": "screens-board-reference-columns (2.97.0): config.board on an index page, the block CnPageRenderer hands to CnIndexPage's `board` prop, is typed by boardView like pages[].board.",
+					"if": { "properties": { "type": { "const": "index" } }, "required": ["type"] },
+					"then": { "properties": { "config": { "properties": { "board": { "$ref": "#/$defs/boardView" } } } } }
 				},
 				{
 					"description": "index-calendar-view-mode: config.calendar on an index page is typed by calendarView.",

@@ -282,7 +282,8 @@
 			"id": "WorkflowBoard",
 			"label": "Workflow board",
 			"icon": "ViewColumnOutline",
-			"route": "WorkflowBoard",
+			"route": "Cases",
+			"query": { "_view": "board" },
 			"order": 35
 		},
 		{
@@ -1922,7 +1923,24 @@
 				"createSuccessMessage": "Case created.",
 				"formSize": "normal",
 				"formColumns": 1,
-				"viewModes": ["table", "cards", "map"],
+				"viewModes": ["table", "cards", "board", "map"],
+				"_boardNote": "dqwerkbord-as-the-cases-board. The Werkbord is this list in board view (board DqWerkbord), not a page of its own. A case's status references a statusType row and every case type has its own rows, so the columns come from those rows, merged by name and narrowed to one case type while the list is filtered on one. A drop resolves to the statusType row of the case's own case type and moves the case through `moveCaseStatus`, the status-transition engine, never a PATCH of `status`; `caseStatusTargets` asks the engine where a case may go, so the board fades the rest. The case type and handler columns are read-only: a drag does not change a case type, and handing a case over asks for the reason the bulk Reassign collects.",
+				"board": {
+					"statusField": "status",
+					"wrap": true,
+					"columnLimit": 3,
+					"columnSwitchLabel": "Columns",
+					"hint": "One column per value of the property. Drag a card to change its status.",
+					"moveHandler": "moveCaseStatus",
+					"moveTargetsHandler": "caseStatusTargets",
+					"narrow": { "field": "caseType", "label": "Case type", "allLabel": "All case types", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } } },
+					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
+					"columnFields": [
+						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
+						{ "field": "caseType", "label": "type", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } }, "readOnly": true },
+						{ "field": "assignee", "label": "assignee", "kind": "values", "emptyLabel": "Nobody", "readOnly": true }
+					]
+				},
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
