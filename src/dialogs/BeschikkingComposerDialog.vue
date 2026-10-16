@@ -72,7 +72,7 @@
 </template>
 
 <script>
-import { CnChoiceCards } from '@conduction/nextcloud-vue'
+import { CnChoiceCards, CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -81,7 +81,6 @@ import {
 	NcNoteCard,
 } from '@nextcloud/vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
-import CnDialog from '../components/CnDialogShell.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
 /**

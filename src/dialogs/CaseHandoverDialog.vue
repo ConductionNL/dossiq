@@ -102,6 +102,7 @@
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
@@ -111,7 +112,6 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
-import CnDialog from '../components/CnDialogShell.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { searchTeams } from '../services/teamSearch.js'
 

@@ -183,7 +183,7 @@
 </template>
 
 <script>
-import { CnChoiceCards } from '@conduction/nextcloud-vue'
+import { CnChoiceCards, CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { getCanonicalLocale, translatePlural as n, translate as t } from '@nextcloud/l10n'
@@ -192,7 +192,6 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
-import CnDialog from '../components/CnDialogShell.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'

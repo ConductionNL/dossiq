@@ -238,6 +238,7 @@
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showSuccess, showWarning } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
@@ -252,7 +253,6 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import TemplatePicker from '../components/TemplatePicker.vue'
-import CnDialog from '../components/CnDialogShell.js'
 import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
 import {

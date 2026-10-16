@@ -107,6 +107,7 @@
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -118,7 +119,6 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import SendIcon from 'vue-material-design-icons/Send.vue'
-import CnDialog from '../components/CnDialogShell.js'
 import { sendMessage } from '../services/berichtenboxApi.js'
 import { caseEyebrow } from '../services/caseSummary.js'
 
