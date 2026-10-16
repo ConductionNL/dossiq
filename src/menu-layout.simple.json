@@ -636,7 +636,8 @@
 								"showTitle": true,
 								"headerLink": {
 									"label": "To the board",
-									"route": "WorkflowBoard"
+									"route": "Cases",
+									"query": { "_view": "board" }
 								}
 							},
 							{
@@ -1447,28 +1448,6 @@
 				]
 			},
 			"title": "All cases"
-		},
-		{
-			"id": "WorkflowBoard",
-			"_note": "The board is dossiq's own component, not the library's board, so the library's `dueRule` does not reach it by itself. CaseCard reads this rule and decides with it. A card is late from the day after its deadline (`lt 0`) and amber from three days before it, today included (one-term-engine, REQ-OTE-05). Without a rule, which is the full structure, a card is late only after its deadline too.",
-			"config": {
-				"dueRule": {
-					"field": "deadline",
-					"variantWhen": [
-						{
-							"op": "lt",
-							"value": 0,
-							"variant": "error"
-						},
-						{
-							"op": "lte",
-							"value": 3,
-							"variant": "warning"
-						}
-					]
-				},
-				"showDashboardLink": false
-			}
 		},
 		{
 			"id": "Tasks",

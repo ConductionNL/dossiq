@@ -1936,7 +1936,7 @@
 					"narrow": { "field": "caseType", "label": "Case type", "allLabel": "All case types", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } } },
 					"card": { "title": "title", "sub": ["identifier", "initiatorDisplayName"], "pill": "caseType", "due": "deadline", "owner": "assignee", "formatters": { "caseType": "caseTypeName" } },
 					"columnFields": [
-						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "capacityField": "capacity", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
+						{ "field": "status", "label": "status", "source": { "schema": "statusType", "labelField": "name", "orderField": "order", "colorField": "colour", "neutralColor": "grey", "colorMap": {"blue": "var(--nl-color-blue, #0b71ab)", "blue-light": "var(--nl-color-blue-light, #e5f1f8)", "green": "var(--nl-color-green, #39870c)", "green-light": "var(--nl-color-green-light, #eaf5e4)", "orange": "var(--nl-color-orange, #e17000)", "orange-light": "var(--nl-color-orange-light, #fdf2e5)", "red": "var(--nl-color-red, #d52b1e)", "red-light": "var(--nl-color-red-light, #fbe9e8)", "purple": "var(--nl-color-purple, #762f8e)", "purple-light": "var(--nl-color-purple-light, #f2eaf5)", "grey": "var(--nl-color-grey, #696969)", "grey-light": "var(--nl-color-grey-light, #f0f0f0)"}, "capacityField": "capacity", "mergeBy": "name", "filter": { "isFinal": false }, "narrowBy": { "field": "caseType", "rowField": "caseType" } } },
 						{ "field": "caseType", "label": "type", "source": { "schema": "caseType", "labelField": "title", "filter": { "isDraft": false } }, "readOnly": true },
 						{ "field": "assignee", "label": "assignee", "kind": "values", "emptyLabel": "Nobody", "readOnly": true }
 					]
@@ -5316,15 +5316,6 @@
 				"widget-pm-bottlenecks": "PmBottleneckTableWidget",
 				"widget-pm-dwell-by-assignee": "PmDwellByAssigneeWidget"
 			}
-		},
-		{
-			"id": "WorkflowBoard",
-			"route": "/workflow-board",
-			"type": "custom",
-			"title": "Workflow board",
-			"component": "WorkflowBoardView",
-			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title. The config names no `register` and no `schema`: the board reads three schemas (statusType, caseType, case) through the object types initializeStores() registers before it fetches, so one register/schema pair names nothing it loads. `register` alone made CnPageRenderer warn on every visit that the page declares only one of the pair, and register nothing. The note lives here and not in `config`, because every config key reaches the board as a fallthrough attribute on its root element.",
-			"config": {}
 		},
 		{
 			"id": "WmsLayers",

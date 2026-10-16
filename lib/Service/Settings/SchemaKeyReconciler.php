@@ -11,7 +11,7 @@
  *
  * That second path is not a nicety: without it the per-schema config keys were
  * never written on a fresh deploy of an existing instance, and the status-name
- * lookup and the WorkflowBoard silently broke.
+ * lookup and the workflow board silently broke.
  *
  * Split out of {@see \OCA\Dossiq\Service\SettingsService}.
  *

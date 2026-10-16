@@ -122,3 +122,22 @@ describe('the personal layer', () => {
 		expect(manifest.personalisation.dateDisplay).toBe('absolute')
 	})
 })
+
+describe('the retired workflow board address', () => {
+	it('opens the Cases list in board view', async () => {
+		const { createMemoryHistory, createRouter } = await import('vue-router')
+		const router = createRouter({
+			history: createMemoryHistory(),
+			routes: routesFromManifest(manifest, STUB),
+		})
+		await router.push('/workflow-board')
+		expect(router.currentRoute.value.name).toBe('Cases')
+		expect(router.currentRoute.value.query).toEqual({ _view: 'board' })
+	})
+
+	it('is no page of its own any more', () => {
+		expect((manifest.pages || []).map((entry) => entry.id)).not.toContain(
+			'WorkflowBoard',
+		)
+	})
+})
