@@ -1654,6 +1654,7 @@ OC.L10N.register(
         "Contact Moment Reference": "Contact Moment Reference",
         "Contact moments": "Contact moments",
         "Contact moments in the customer record": "Contact moments in the customer record",
+        "Contact moments on this case": "Contact moments on this case",
         "Contact name or email": "Contact name or email",
         "Contact Person": "Contact Person",
         "Contact Person Name": "Contact Person Name",

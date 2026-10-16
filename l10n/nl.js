@@ -1654,6 +1654,7 @@ OC.L10N.register(
         "Contact Moment Reference": "Verwijzing naar het contactmoment",
         "Contact moments": "Contactmomenten",
         "Contact moments in the customer record": "Contactmomenten in het klantbeeld",
+        "Contact moments on this case": "Contactmomenten op deze zaak",
         "Contact name or email": "Contactnaam of e-mailadres",
         "Contact Person": "Contactpersoon",
         "Contact Person Name": "Naam van de contactpersoon",
