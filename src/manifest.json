@@ -5939,6 +5939,99 @@
 				"register": "dossiq",
 				"schema": "lhsRecommendation",
 				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) paired with the Related panel (parent case and inspection), and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority) full-width below. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
+				"typePill": {
+					"field": "finalIntervention",
+					"labels": {
+						"warning": "Warning",
+						"herstelactie": "Remedial action",
+						"last_under_penaltypayment": "Order subject to a penalty",
+						"last_plus_pv": "Order and official report",
+						"bestuursdwang": "Administrative enforcement",
+						"pv_plus_bestuursdwang": "Official report and administrative enforcement"
+					},
+					"variant": "error"
+				},
+				"breadcrumb": {
+					"label": "Enforcement",
+					"route": "LhsRecommendations"
+				},
+				"headerMeta": "calculated {@self.created|date}",
+				"sideColumn": [
+					{
+						"id": "side-case",
+						"type": "facts",
+						"title": "Case",
+						"content": {
+							"fields": [
+								{
+									"label": "Case",
+									"path": "case",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "case",
+										"labelField": "title"
+									},
+									"route": "CaseDetail"
+								},
+								{
+									"label": "Inspection",
+									"path": "inspection",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "inspectieRapport",
+										"labelField": "title"
+									}
+								},
+								{
+									"label": "Handler",
+									"path": "recommendedBy"
+								}
+							]
+						}
+					},
+					{
+						"id": "side-classification",
+						"type": "facts",
+						"title": "Violation class",
+						"content": {
+							"fields": [
+								{
+									"label": "Behaviour",
+									"path": "behaviour",
+									"map": {
+										"goedwillend": "well-meaning",
+										"onverschillig": "indifferent",
+										"calculerend": "calculating",
+										"crimineel": "criminal"
+									}
+								},
+								{
+									"label": "Consequence",
+									"path": "severity",
+									"map": {
+										"gering": "minor",
+										"aanzienlijk": "considerable",
+										"ernstig": "serious"
+									}
+								},
+								{
+									"label": "Matrix version",
+									"path": "matrixVersion"
+								},
+								{
+									"as": "line",
+									"text": "Deviating from the advice is possible, with a reason in the history."
+								}
+							]
+						}
+					},
+					{
+						"id": "side-history",
+						"type": "audit-trail",
+						"title": "History",
+						"icon": "History"
+					}
+				],
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
 					{
@@ -5987,12 +6080,6 @@
 								}
 							}
 						}
-					},
-					{
-						"id": "lhsrecommendation-related",
-						"type": "related",
-						"title": "Case & inspection",
-						"icon": "LinkVariant"
 					}
 				],
 				"layout": [
@@ -6001,17 +6088,9 @@
 						"widgetId": "lhsrecommendation-data",
 						"gridX": 0,
 						"gridY": 0,
-						"gridWidth": 8,
+						"gridWidth": 12,
 						"gridHeight": 5,
 						"showTitle": false
-					},
-					{
-						"id": "2",
-						"widgetId": "lhsrecommendation-related",
-						"gridX": 8,
-						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 5
 					},
 					{
 						"id": "3",
