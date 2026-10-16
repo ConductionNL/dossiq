@@ -31,7 +31,6 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Woo\WooCaseLedger;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -48,13 +47,13 @@ class CatalogTransport {
 	 * @param SettingsService       $settingsService The catalog register and publication schema.
 	 * @param OpenCatalogiApiClient $apiClient       Thin HTTP client to the catalog's register.
 	 * @param LoggerInterface       $logger          Logger.
-	 * @param WooCaseLedger         $caseLedger      Writes the delivered set around the send.
+	 * @param CasePublicationState  $caseLedger      Writes the delivered set around the send.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly OpenCatalogiApiClient $apiClient,
 		private readonly LoggerInterface $logger,
-		private readonly WooCaseLedger $caseLedger,
+		private readonly CasePublicationState $caseLedger,
 	) {
 	}//end __construct()
 
@@ -89,7 +88,7 @@ class CatalogTransport {
 				['app' => Application::APP_ID, 'caseId' => $caseId, 'decisionId' => $decisionId, 'error' => $e->getMessage()],
 			);
 			$reason = 'opencatalogi_api_error';
-			if ($e->getMessage() === WooCaseLedger::SET_NOT_WRITTEN) {
+			if ($e->getMessage() === CasePublicationState::SET_NOT_WRITTEN) {
 				$reason = 'delivered_set_not_written';
 			}
 

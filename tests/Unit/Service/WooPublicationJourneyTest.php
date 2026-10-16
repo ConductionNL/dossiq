@@ -26,7 +26,7 @@ use OCA\Dossiq\Service\Publication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use OCP\IURLGenerator;
@@ -38,9 +38,9 @@ use Psr\Log\LoggerInterface;
  * Runs publish and withdraw against an in-memory dossiq register and a recording OpenCatalogi client.
  *
  * @covers \OCA\Dossiq\Service\WooPublicationService
- * @covers \OCA\Dossiq\Woo\WooCaseLedger
+ * @covers \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Publication\PublicationSources
  * @uses \OCA\Dossiq\Service\Publication\CatalogTransport
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -129,7 +129,7 @@ class WooPublicationJourneyTest extends TestCase {
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			$this->return,
-			new WooCaseLedger(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			new CasePublicationState(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
 		);
 	}//end setUp()
 

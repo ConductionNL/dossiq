@@ -39,7 +39,7 @@ use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCA\Dossiq\Tests\Support\UuidAnsweringRegister;
 use OCA\Dossiq\Woo\WooCaseDocuments;
-use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Service\Publication\CasePublicationState;
 use OCA\Dossiq\Woo\WooRequestIntake;
 use OCP\App\IAppManager;
 use OCP\Files\IRootFolder;
@@ -59,12 +59,12 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
  * @uses   \OCA\Dossiq\Service\Intake\WrittenCase
- * @uses   \OCA\Dossiq\Woo\WooCaseLedger
+ * @uses   \OCA\Dossiq\Service\Publication\CasePublicationState
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Woo\WooRequestForm
  * @uses   \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses \OCA\Dossiq\Woo\WooResultLink
+ * @uses \OCA\Dossiq\Service\Publication\PublicationResultLink
  * @uses \OCA\Dossiq\Service\Intake\CollectionCaseLinks
  * @uses \OCA\Dossiq\Service\Intake\SystemCaseStore
  * @uses \OCA\Dossiq\Service\Support\UnscopedObjectReader
@@ -259,7 +259,7 @@ class WooWritesMatchTheRealSchemasTest extends TestCase {
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			null,
-			new WooCaseLedger(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
+			new CasePublicationState(settingsService: $this->settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
 			new WooCaseDocuments(settingsService: $this->settings, rootFolder: $this->createMock(IRootFolder::class), logger: $this->createMock(LoggerInterface::class)),
 		);
 
