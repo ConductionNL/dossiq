@@ -6,7 +6,7 @@
  *
  * `openspec/specs/realtime-updates-ui/spec.md` has required this since it was
  * written, and the page did not do it: `liveUpdatesPlugin` was reached from
- * `WorkflowBoard` and `DeelzaakDetail` and from nowhere else, so the one page
+ * the old workflow board and `DeelzaakDetail` and from nowhere else, so the one page
  * a handler keeps open all day was the one that refreshed when they did.
  *
  * WHY THIS IS A ROUTER SUBSCRIPTION AND NOT A COMPONENT'S `mounted()`.

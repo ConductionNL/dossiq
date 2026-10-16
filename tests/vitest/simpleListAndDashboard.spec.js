@@ -22,7 +22,6 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { cardDueSeverity } from '../../src/utils/cardDueSeverity.js'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
 import { pageGrids, pageView, pageWidgets } from './helpers/pageViews.js'
 
@@ -40,7 +39,6 @@ const fullFile = readJson('src', 'menu-layout.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const iconsSource = read('src', 'icons.js')
 const registrySource = read('src', 'registry.js')
-const cardSource = read('src', 'views', 'workflow-board', 'CaseCard.vue')
 
 const WOO = '3c0f5a00-0000-4000-a000-00000000a001'
 
@@ -97,8 +95,8 @@ function filterFields(filter) {
 }
 
 describe('the full structure', () => {
-	it('keeps the list, the board, the dashboard and the landing page exactly as the manifest declares them', () => {
-		for (const id of ['Cases', 'WorkflowBoard', 'Dashboard', 'MyWorkHome']) {
+	it('keeps the list, the dashboard and the landing page exactly as the manifest declares them', () => {
+		for (const id of ['Cases', 'Dashboard', 'MyWorkHome']) {
 			expect(page(builtFull, id), id).toEqual(original(id))
 		}
 	})
@@ -287,64 +285,25 @@ describe('the cases list', () => {
 })
 
 describe('the board', () => {
-	const rule = page(builtSimple, 'WorkflowBoard').config.dueRule
+	const board = (built) => page(built, 'Cases').config.board
 
-	it('drops the Dashboard button in the simple structure only, read from the board page', () => {
-		// DqWerkbord's header holds the title and the case type select; the
-		// dashboard is in the navigation already.
-		expect(page(builtSimple, 'WorkflowBoard').config.showDashboardLink).toBe(
-			false,
-		)
-		expect(
-			page(builtFull, 'WorkflowBoard').config.showDashboardLink,
-		).toBeUndefined()
-		const boardSource = read(
-			'src',
-			'views',
-			'workflow-board',
-			'WorkflowBoard.vue',
-		)
-		expect(boardSource).toContain('v-if="showDashboardLink"')
-		expect(boardSource).toContain(
-			'return board?.config?.showDashboardLink !== false',
-		)
+	it('is the Cases list in board view in both structures, with no page of its own', () => {
+		for (const built of [builtSimple, builtFull]) {
+			expect(page(built, 'Cases').config.viewModes).toContain('board')
+			expect(
+				(built.pages || []).some((entry) => entry.id === 'WorkflowBoard'),
+			).toBe(false)
+		}
 	})
 
-	it('declares a due rule in the simple structure and none in the full one', () => {
-		expect(rule).toEqual({
-			field: 'deadline',
-			variantWhen: [
-				{ op: 'lt', value: 0, variant: 'error' },
-				{ op: 'lte', value: 3, variant: 'warning' },
-			],
-		})
-		expect(page(builtFull, 'WorkflowBoard').config.dueRule).toBeUndefined()
-	})
-
-	it('counts only yesterday as late, with the rule and without it', () => {
-		expect(cardDueSeverity(-1, rule)).toBe('overdue')
-		expect(cardDueSeverity(0, rule)).toBe('warning')
-		expect(cardDueSeverity(1, rule)).toBe('warning')
-		expect(cardDueSeverity(3, rule)).toBe('warning')
-		expect(cardDueSeverity(4, rule)).toBe('ok')
-		expect(cardDueSeverity(null, rule)).toBeNull()
-
-		// The full structure: the card's rule as it always was.
-		expect(cardDueSeverity(-1, null)).toBe('overdue')
-		expect(cardDueSeverity(0, null)).toBe('warning')
-		expect(cardDueSeverity(3, null)).toBe('warning')
-		expect(cardDueSeverity(4, null)).toBe('ok')
-	})
-
-	it('is read by the card from the board page, which is the caller that matters', () => {
-		// A rule nothing reads is a rule that does nothing.
-		expect(cardSource).toContain('cnManifest: { default: null }')
-		expect(cardSource).toContain(
-			"pages.find((page) => page.id === 'WorkflowBoard')",
-		)
-		expect(cardSource).toContain(
-			'return cardDueSeverity(this.daysRemaining, this.dueRule)',
-		)
+	it('marks the deadline by the library rule in both structures', () => {
+		// No `dueRule` override: the library's default (late from the day after
+		// the deadline, soon from three days before) is the rule the simple
+		// structure declared for the old board (REQ-OTE-05).
+		for (const built of [builtSimple, builtFull]) {
+			expect(board(built).card.due).toBe('deadline')
+			expect(board(built).dueRule).toBeUndefined()
+		}
 	})
 })
 
@@ -586,7 +545,8 @@ describe('the landing page', () => {
 		})
 		expect(link('simple-per-step')).toEqual({
 			label: 'To the board',
-			route: 'WorkflowBoard',
+			route: 'Cases',
+			query: { _view: 'board' },
 		})
 		const pageIds = new Set(builtSimple.pages.map((item) => item.id))
 		for (const item of mine.layout.filter((cell) => cell.headerLink)) {
