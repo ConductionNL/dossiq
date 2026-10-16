@@ -1677,6 +1677,7 @@
 						"key": "title",
 						"width": "328px",
 						"label": "Case",
+						"link": true,
 						"cellClass": "cn-cell--strong",
 						"secondary": "{identifier} · {initiatorDisplayName}"
 					},
