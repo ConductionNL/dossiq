@@ -24,5 +24,7 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 The redaction dialog per board DqLakken, opened from the case header, with the upload action
+- [x] 2.1 The redaction dialog per board DqLakken, opened from the case header, with the upload action
+  - Files: src/dialogs/DocumentRedactionDialog.vue, src/registry.js, src/manifest.json (`document-redact`), l10n
+  - Test: tests/vitest/documentRedactionDialog.spec.js
   - Spec ref: REQ-DRD-005

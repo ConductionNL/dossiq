@@ -4103,6 +4103,39 @@
 						}
 					},
 					{
+						"id": "document-redact",
+						"type": "open-modal",
+						"label": "Redact documents",
+						"icon": "FileDocumentEditOutline",
+						"target": "DocumentRedactionDialog",
+						"props": {
+							"caseId": "@objectId",
+							"listUrl": "/apps/dossiq/api/cases/{caseId}/redactions",
+							"detectUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/detect",
+							"checkUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/check",
+							"redactUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/redact",
+							"uploadUrl": "/apps/dossiq/api/cases/{caseId}/redactions/{documentRef}/upload",
+							"typeLabels": {
+								"PERSON": "Name",
+								"PHONE": "Phone number",
+								"EMAIL": "Email address",
+								"BSN": "BSN",
+								"IBAN": "Bank account",
+								"ADDRESS": "Address",
+								"POSTCODE": "Postcode",
+								"AMOUNT": "Amount",
+								"ORGANIZATION": "Organisation",
+								"UNKNOWN": "Other passage"
+							}
+						},
+						"visibleWhen": {
+							"all": [
+								{ "field": "caseType", "op": "eq", "value": "3c0f5a00-0000-4000-a000-00000000a001" },
+								{ "field": "@self.archived", "op": "empty" }
+							]
+						}
+					},
+					{
 						"id": "assessment-decide",
 						"type": "open-modal",
 						"label": "Woo decision",
