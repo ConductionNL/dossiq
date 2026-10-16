@@ -170,7 +170,14 @@ class DeadlineReportingController extends Controller {
 		}
 
 		try {
-			$row = $this->service->getTermijnKpi();
+			$from = $this->request->getParam('from');
+			$until = $this->request->getParam('to');
+			$row = $this->service->getTermijnKpi(
+				filters: [],
+				today: null,
+				from: is_string($from) === true ? $from : null,
+				until: is_string($until) === true ? $until : null
+			);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			$this->logger->error('Termijn dashboard failed', ['error' => $e->getMessage()]);

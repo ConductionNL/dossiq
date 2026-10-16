@@ -229,6 +229,22 @@ class DeadlineReportingServiceTest extends TestCase {
 	}
 
 	/**
+	 * A window given by the page decides which terms the share per case type covers.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-reporting/spec.md
+	 */
+	public function testShareOnTimeFollowsTheGivenWindow(): void {
+		$inWindow = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-10-16'), '2026-04-01', '2026-06-30');
+		self::assertSame(['Omgevingsvergunning (regulier)'], $inWindow['onTimeByCaseType']['labels']);
+		self::assertSame([75.0], $inWindow['onTimeByCaseType']['shares']);
+
+		$currentQuarter = $this->service->getTermijnKpi([], new \DateTimeImmutable('2026-10-16'));
+		self::assertSame([], $currentQuarter['onTimeByCaseType']['labels']);
+	}
+
+	/**
 	 * With nothing decided the dashboard has no share to show, and the CSV
 	 * leaves the cell empty rather than writing 0.
 	 *

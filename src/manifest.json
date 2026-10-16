@@ -5237,7 +5237,8 @@
 									"enabled": false
 								}
 							}
-						}
+						},
+						"subtitle": "Chart from the OpenRegister analysis layer. Dossiq works out the norm and what counts as within it."
 					},
 					{
 						"id": "dt-within-by-type",
@@ -5282,7 +5283,7 @@
 									"show": false
 								},
 								"dataLabels": {
-									"enabled": false
+									"enabled": true
 								}
 							}
 						}
@@ -7203,7 +7204,11 @@
 										"name": "Decided on time",
 										"path": "onTimeByCaseType.shares"
 									}
-								]
+								],
+								"params": {
+									"from": "@workspace.dateFrom?",
+									"to": "@workspace.dateTo?"
+								}
 							},
 							"options": {
 								"plotOptions": {
@@ -7216,13 +7221,14 @@
 									"max": 100
 								},
 								"dataLabels": {
-									"enabled": false
+									"enabled": true
 								},
 								"legend": {
 									"show": false
 								}
 							}
-						}
+						},
+						"subtitle": "Decided within the statutory or extended term"
 					},
 					{
 						"id": "td-notices",
@@ -7266,7 +7272,8 @@
 							],
 							"borderless": true,
 							"emptyText": "No notice of default has been received"
-						}
+						},
+						"subtitle": "Awb 4:17 and 4:18"
 					},
 					{
 						"id": "td-quarterly",
@@ -7351,7 +7358,33 @@
 						"includeFields": ["deadlineInstance", "receiptDate", "notificationChannel", "documentLink"],
 						"successMessage": "Notice of default registered."
 					}
-				]
+				],
+				"dateRange": {
+					"enabled": true,
+					"control": "segmented",
+					"placement": "description",
+					"persistKey": "dossiq-termijn-range",
+					"default": {
+						"preset": "quarter"
+					},
+					"presets": [
+						{
+							"id": "week",
+							"label": "This week",
+							"period": "week"
+						},
+						{
+							"id": "quarter",
+							"label": "This quarter",
+							"period": "quarter"
+						},
+						{
+							"id": "year",
+							"label": "This year",
+							"period": "year"
+						}
+					]
+				}
 			},
 			"slots": {
 				"widget-td-quarterly": "TdQuarterlyWidget",

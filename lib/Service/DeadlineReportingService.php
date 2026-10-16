@@ -318,12 +318,14 @@ class DeadlineReportingService {
 	 *
 	 * @param array<string, mixed>   $filters Optional filters (afdeling, zaaktype).
 	 * @param DateTimeImmutable|null $today   The day the running figures are read on; now when absent.
+	 * @param string|null            $from    First day (YYYY-MM-DD) of the window the share per case type covers; the current quarter when absent.
+	 * @param string|null            $until   Last day (YYYY-MM-DD) of that window.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
-	public function getTermijnKpi(array $filters = [], ?DateTimeImmutable $today = null): array {
+	public function getTermijnKpi(array $filters = [], ?DateTimeImmutable $today = null, ?string $from = null, ?string $until = null): array {
 		$rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
 
 		$dwTotal = 0;
@@ -351,7 +353,7 @@ class DeadlineReportingService {
 			'lastUpdated' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 			...$this->collectRunningFigures(rows: $rows, today: ($today ?? new DateTimeImmutable())),
 			...$this->collectRunningPenalties(),
-			'onTimeByCaseType' => $this->onTimeByCaseType(today: ($today ?? new DateTimeImmutable())),
+			'onTimeByCaseType' => $this->onTimeByCaseType(today: ($today ?? new DateTimeImmutable()), from: $from, until: $until),
 		];
 	}//end getTermijnKpi()
 
@@ -440,18 +442,29 @@ class DeadlineReportingService {
 	}//end collectRunningPenalties()
 
 	/**
-	 * The share of decided terms met per case type in the quarter that holds
-	 * the given day, as parallel arrays a chart reads directly.
+	 * The share of decided terms met per case type over a window, as parallel
+	 * arrays a chart reads directly. Without a window it is the quarter that
+	 * holds the given day.
 	 *
-	 * @param DateTimeImmutable $today The day whose quarter is reported.
+	 * @param DateTimeImmutable $today The day whose quarter is reported when no window is given.
+	 * @param string|null       $from  First day of the window (YYYY-MM-DD).
+	 * @param string|null       $until Last day of the window (YYYY-MM-DD).
 	 *
 	 * @return array{labels:array<int,string>,shares:array<int,float>}
 	 *
 	 * @spec openspec/specs/termijn-reporting/spec.md
 	 */
-	private function onTimeByCaseType(DateTimeImmutable $today): array {
+	private function onTimeByCaseType(DateTimeImmutable $today, ?string $from = null, ?string $until = null): array {
 		$quarter = (int)ceil(((int)$today->format('n')) / 3);
-		$report = $this->generateQuarterlyReport(period: $today->format('Y') . '-Q' . $quarter);
+		$bounds = $this->resolveQuarter(period: $today->format('Y') . '-Q' . $quarter);
+		if ($from !== null && $from !== '') {
+			$bounds['from'] = substr($from, 0, 10);
+			$bounds['until'] = substr((string)($until ?? '2999-12-31'), 0, 10);
+		}
+
+		$rows = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
+		$types = $this->caseTypes->resolve(rows: $rows);
+		$report = ['perType' => $this->reducePerType(byType: $this->aggregateByType(rows: $rows, department: null, types: $types['byRow']))];
 
 		$labels = [];
 		$shares = [];
