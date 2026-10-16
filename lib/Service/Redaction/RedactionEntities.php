@@ -145,16 +145,17 @@ class RedactionEntities {
 	}//end fromOfficer()
 
 	/**
-	 * Lists merged, the first one's entries winning a duplicate.
+	 * Two lists merged, the first one's entries winning a duplicate.
 	 *
-	 * @param array<int, array<string, mixed>> ...$lists The lists, in order of precedence.
+	 * @param array<int, array<string, mixed>> $first  The list that wins.
+	 * @param array<int, array<string, mixed>> $second The list added to it.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/partly-public-documents-get-a-redacted-copy/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
 	 */
-	public function merge(array ...$lists): array {
-		return $this->unique(entities: array_merge(...$lists));
+	public function merge(array $first, array $second): array {
+		return $this->unique(entities: array_merge($first, $second));
 	}//end merge()
 
 	/**
