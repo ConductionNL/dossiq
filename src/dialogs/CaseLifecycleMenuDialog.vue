@@ -31,6 +31,7 @@
   @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
   @spec openspec/changes/the-close-form-keeps-its-template/specs/template-library/spec.md
   @spec openspec/changes/lifecycle-dialog-title-clears-the-close-button/specs/case-management/spec.md
+  @spec openspec/changes/finishing-picks-a-result/specs/case-management/spec.md
 -->
 <template>
 	<NcDialog
@@ -131,10 +132,10 @@
 				:label="t('dossiq', 'Reason')" />
 
 			<!--
-				A closing move picks from the case type's own result types,
-				which the engine publishes on the move. Typing an id was never
-				something a handler could do, so a picker is offered whenever
-				there are choices, and the free field only where there are none.
+				A closing move or ending act picks from the case type's own
+				result types, which the server publishes on the move and on
+				`/acts`. There is no free field: a typed name is not an id, and
+				a case type with no results needs none.
 			-->
 			<NcSelect
 				v-if="inputs.result && resultOptions.length > 0"
@@ -145,12 +146,6 @@
 				:clearable="false"
 				:disabled="busy"
 				data-testid="case-act-result-picker" />
-
-			<NcTextField
-				v-else-if="inputs.result"
-				v-model="resultTypeId"
-				data-testid="case-act-result-input"
-				:label="t('dossiq', 'Result type')" />
 
 			<NcTextField
 				v-if="inputs.until"
