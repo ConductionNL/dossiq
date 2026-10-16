@@ -12680,7 +12680,7 @@
                             }
                         }
                     ],
-                    "widgets": [
+                    "afterList": [
                         {
                             "id": "complaints-per-subject",
                             "type": "chart",

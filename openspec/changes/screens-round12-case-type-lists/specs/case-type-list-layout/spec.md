@@ -4,7 +4,7 @@
 
 `caseType.x-index` SHALL accept, beside `columns`, `defaultSort` and
 `searchFields`, the keys `title`, `countText`, `addLabel`, `footerNote`,
-`breadcrumb`, `headerMeta`, `quickFilters` and `widgets`. While the Cases list
+`breadcrumb`, `headerMeta`, `quickFilters` and `afterList`. While the Cases list
 is narrowed to that case type it SHALL show them in place of the page's own.
 
 #### Scenario: The complaints list reads as Complaints

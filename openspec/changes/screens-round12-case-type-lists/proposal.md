@@ -13,7 +13,7 @@ case type where it edits the case type.
 ## What changes
 
 - `caseType.x-index` declares `title`, `countText`, `addLabel`, `footerNote`,
-  `breadcrumb`, `headerMeta`, `quickFilters` and `widgets` beside `columns`,
+  `breadcrumb`, `headerMeta`, `quickFilters` and `afterList` beside `columns`,
   `defaultSort` and `searchFields`.
 - The seeded Woo request and complaint case types fill the block in.
 
