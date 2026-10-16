@@ -140,6 +140,7 @@ import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
+import CasePublishDialog from './dialogs/CasePublishDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
@@ -576,6 +577,13 @@ const registry = {
 		component: CaseProgrammeSection,
 		...PANEL_WIDGET_META,
 		_note: "CaseDetail Related tab, the Programme section (board DqZaakPartijen): the pipelinq programme the case hangs under, its progress with the mode, an uncomputable figure said rather than drawn as zero, and the link dialog with pipelinq's refusal naming the holder.",
+	},
+
+	CasePublishDialog: {
+		kind: 'modal',
+		component: CasePublishDialog,
+		propsSchema: {},
+		_note: 'CaseDetail More menu, Publication group: what a decided case publishes, counted per assessment, then one press (board DqPubliceren). The groups, their notes and the group that never goes along come from the action props.',
 	},
 
 	CaseHandoverDialog: {

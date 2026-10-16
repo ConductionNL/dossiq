@@ -46,6 +46,7 @@
 				</p>
 
 				<CnChoiceCards
+					layout="rows"
 					v-if="counts.length"
 					:modelValue="proposedOutcome"
 					:label="t('dossiq', 'Decision')"

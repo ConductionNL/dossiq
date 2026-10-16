@@ -80,6 +80,7 @@
         "Relevant",
         "{title}",
         "{time}, +{extension}",
-        "{ground} · %n document"
+        "{ground} · %n document",
+        "%n document"
     ]
 }

@@ -12,6 +12,7 @@
 		<div class="generate-document">
 			<div v-if="!generated" class="generate-document__form">
 				<CnChoiceCards
+					layout="rows"
 					v-model="templateId"
 					data-testid="generate-document-template"
 					:label="t('dossiq', 'Template')"
