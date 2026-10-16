@@ -13,9 +13,8 @@
  * @spec openspec/changes/case-page-reads-in-dutch/specs/case-management/spec.md
  */
 
-import { describe, expect, it } from 'vitest'
 import { normaliseFileColumns } from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/filesBrowserColumns.js'
-
+import { describe, expect, it } from 'vitest'
 const panels = require('./helpers/casePanels.js')
 
 /**
