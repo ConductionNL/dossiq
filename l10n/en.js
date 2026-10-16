@@ -3995,6 +3995,7 @@ OC.L10N.register(
         "Lifecycle status of the legacy tenant row. Access is enforced on the OpenRegister Organisation's own status, by MandateValidationMiddleware": "Lifecycle status of the legacy tenant row. Access is enforced on the OpenRegister Organisation's own status, by MandateValidationMiddleware",
         "Lifecycle status of this checklist version": "Lifecycle status of this checklist version",
         "Lifecycle status of this template version": "Lifecycle status of this template version",
+        "Lifecycle: what this case can do": "Lifecycle: what this case can do",
         "Light blue": "Light blue",
         "Light green": "Light green",
         "Light grey": "Light grey",

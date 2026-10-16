@@ -976,6 +976,9 @@
 					},
 					"generate-document": {
 						"label": "Document"
+					},
+					"case-lifecycle-menu": {
+						"label": "Lifecycle: what this case can do"
 					}
 				},
 				"widgets": {
@@ -1693,6 +1696,39 @@
 							]
 						}
 					}
+				]
+			},
+			"configOrder": {
+				"headerActions": [
+					"case-lifecycle-menu",
+					"case-claim",
+					"case-release",
+					"case-hand-over",
+					"add-party",
+					"link-object",
+					"case-acknowledgement-met",
+					"plan-follow-up",
+					"case-remind",
+					"start-flow",
+					"case-split",
+					"case-merge",
+					"copy-case",
+					"case-rebind",
+					"case-version-move",
+					"cross-domain-lookup",
+					"message-applicant",
+					"remedy-lodge",
+					"woo-publish",
+					"woo-withdraw",
+					"woo-publication-open",
+					"assessment-decide",
+					"export-dossier",
+					"woo-search-plan",
+					"woo-gather-documents",
+					"document-assess",
+					"document-redact",
+					"case-inspect-raw",
+					"case-inspect-runs"
 				]
 			}
 		},

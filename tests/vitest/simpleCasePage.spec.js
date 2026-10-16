@@ -249,7 +249,9 @@ describe('the actions', () => {
 		for (const id of patched) {
 			expect(ids, id).toContain(id)
 		}
-		expect(simple.headerActions.map((action) => action.id)).toEqual(ids)
+		// Every action is still there; the simple page orders them as DqZaakMeer lists them.
+		expect([...simple.headerActions.map((action) => action.id)].sort()).toEqual([...ids].sort())
+		expect(simple.headerActions.map((action) => action.id).slice(0, overlay.configOrder.headerActions.length)).toEqual(overlay.configOrder.headerActions)
 
 		const placed = simple.headerActions.map((action) => {
 			if (simple.quickActions.includes(action.id)) {
