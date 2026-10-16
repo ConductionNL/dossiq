@@ -5951,6 +5951,7 @@
 					},
 					"variant": "error"
 				},
+				"editLabel": "Deviate with a reason",
 				"breadcrumb": {
 					"label": "Enforcement",
 					"route": "LhsRecommendations"
