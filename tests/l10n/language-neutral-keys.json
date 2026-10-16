@@ -19,6 +19,9 @@
         "Circuit open",
         "Cloud",
         "Code",
+        "Privacy",
+        "Schema",
+        "{name}",
         "Contact",
         "Contract",
         "DKIM",
@@ -79,9 +82,6 @@
         "{percent}%",
         "Relevant",
         "{title}",
-        "{time}, +{extension}",
-        "{name}",
-        "Privacy",
-        "Schema"
+        "{time}, +{extension}"
     ]
 }
