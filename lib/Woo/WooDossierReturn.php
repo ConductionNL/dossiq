@@ -143,8 +143,7 @@ class WooDossierReturn {
 				return false;
 			}
 
-			$requester = trim((string)($case['portalSubject'] ?? ''));
-			if ($requester === '' || (string)($collection['owner'] ?? '') !== $requester) {
+			if ($this->isTheRequesters(case: $case, collection: $collection) === false) {
 				$this->logger->warning('WooDossierReturn: the source dossier is not the requester\'s', ['collection' => $collectionId]);
 				return false;
 			}
@@ -187,6 +186,20 @@ class WooDossierReturn {
 
 		return true;
 	}//end append()
+
+	/**
+	 * Whether the collection is still owned by the case's requester.
+	 *
+	 * @param array<string, mixed> $case       The case, with `portalSubject`.
+	 * @param array<string, mixed> $collection The collection as it was read.
+	 *
+	 * @return bool
+	 */
+	private function isTheRequesters(array $case, array $collection): bool {
+		$requester = trim((string)($case['portalSubject'] ?? ''));
+
+		return $requester !== '' && (string)($collection['owner'] ?? '') === $requester;
+	}//end isTheRequesters()
 
 	/**
 	 * Write the collection's items, unscoped, and nothing else of it.
