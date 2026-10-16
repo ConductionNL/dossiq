@@ -1,11 +1,11 @@
 ## RENAMED Requirements
 
 - FROM: `### Requirement: A team is a Nextcloud group, and being the team grants nothing (REQ-ACC-10)`
-- TO: `### Requirement: A team is a Nextcloud group, and a case type's handling team reads its cases (REQ-ACC-10)`
+- TO: `### Requirement: A team is a Nextcloud group, a case type's handling team reads its cases, and the handler acts after claiming (REQ-ACC-10)`
 
 ## MODIFIED Requirements
 
-### Requirement: A team is a Nextcloud group, and a case type's handling team reads its cases (REQ-ACC-10)
+### Requirement: A team is a Nextcloud group, a case type's handling team reads its cases, and the handler acts after claiming (REQ-ACC-10)
 
 dossiq SHALL have one team model: a team is a Nextcloud group, and who belongs
 to it is Nextcloud's answer (`IGroupManager`), never a member list dossiq
@@ -26,6 +26,19 @@ The rule SHALL be declared on the case schema as OpenRegister conditional
 entries and evaluated by OpenRegister (REQ-ACC-01): one entry per handling
 team, `{"group": <team>, "match": {"caseType": {"$in": [<case type uuids>]}}}`,
 and one assignee entry, `{"group": "authenticated", "match": {"assignee": "$userId"}}`.
+
+Amended by Ruben on 2026-10-16, "claim before acting", keeping the behaviour
+#3966 shipped: the handling team READS the cases of its case type; the case's
+HANDLER (its `assignee`) EDITS it. A team member who wants to act on a case
+claims it first, which makes them its handler. dossiq's own per-case checks
+SHALL enforce this: every act on a case (a status move, an ending, a gesture,
+a document, a publication) SHALL be refused with 403 to a reader who is not
+its handler, with the sentence that says to claim it first, and the acts read
+SHALL list every act as refused for such a reader rather than hide it
+(REQ-ACC-11 of a-handling-team-opens-its-unclaimed-cases). The update right
+the team entries carry at the register level is what lets a team member write
+the claim itself; it SHALL NOT be read by dossiq as leave to act on the case.
+Administrators keep their bypass.
 `CaseTeamAccessProjector` SHALL compute the team entries from every case type
 row and write them onto the live case schema after every register import, when
 a case type is published and when a case type row is saved.
@@ -50,13 +63,20 @@ and reaches a team only through its `ncGroupId`. The rights matrix
 - **THEN** it SHALL declare `referenceType` `nextcloud-group`
 - **AND** it SHALL declare no `$ref` and no `format`
 
-#### Scenario: A handling team member reads and updates the cases of its case type
+#### Scenario: A handling team member reads the cases of its case type and may claim one
 @e2e exclude The rule is OpenRegister's evaluation of a block dossiq writes. The block is pinned in tests/Unit/Service/Access/CaseTeamAccessRulesTest.php and its evaluation in openregister's PermissionHandlerHandlingTeamRuleTest; the live proof on the review instance is in the PR body.
 - **GIVEN** a case type whose handling teams are `["vergunningen"]`
 - **AND** a case of that type, owned and assigned by somebody else
-- **WHEN** a member of `vergunningen` reads and updates it
+- **WHEN** a member of `vergunningen` reads it, and claims it
 - **THEN** both SHALL be allowed
 - **AND** a delete by that member SHALL be refused
+
+#### Scenario: A team member acts only after claiming
+@e2e exclude dossiq's per-case check; asserted in tests/Unit/Controller/CaseActsControllerContractTest.php and tests/Unit/Controller/WOOAssessmentControllerAuthorizationTest.php.
+- **GIVEN** a case of a type handled by `vergunningen`, assigned to `bea`
+- **WHEN** `jan`, a member of `vergunningen`, tries to move, end or publish it
+- **THEN** each act SHALL be refused with 403 and "Claim this case first: only its handler acts on it."
+- **AND** once `jan` has claimed the case, the same acts SHALL be allowed
 
 #### Scenario: A user in no team and not assigned is refused the case and its files
 @e2e exclude Same block and evaluation as above; the files endpoint reads the object's update rule (openregister ObjectFileAccess::mayUpdate), asserted in openregister's PermissionHandlerHandlingTeamRuleTest.
