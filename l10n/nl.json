@@ -7000,6 +7000,7 @@
         "Status": "Status",
         "status": "status",
         "Status \"{name}\" has no transitions connecting it to the rest of the workflow": "Status \"{name}\" heeft geen overgangen die deze verbinden met de rest van de workflow",
+        "Status %1$s is full: %2$s of %3$s cases.": "Status %1$s is vol: %2$s van %3$s zaken.",
         "Status & Progress": "Status & Voortgang",
         "Status & Voortgang": "Status & Voortgang",
         "Status '{status}' is not defined for this case type": "Status '{status}' is niet gedefinieerd voor dit zaaktype",
