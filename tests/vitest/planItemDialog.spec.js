@@ -32,7 +32,7 @@ const { default: PlanItemDialog } = await import('../../src/dialogs/PlanItemDial
 
 describe('PlanItemDialog', () => {
 	it('names where the item lands above the title and explains it below', () => {
-		const wrapper = shallowMount(PlanItemDialog, { global: { renderStubDefaultSlot: true } })
+		const wrapper = shallowMount(PlanItemDialog, { global: { stubs: { CnDialog: false } } })
 		const dialog = wrapper.findComponent({ name: 'CnDialog' })
 
 		expect(dialog.props('name')).toBe('Plan an item')
@@ -44,6 +44,7 @@ describe('PlanItemDialog', () => {
 		const wrapper = shallowMount(PlanItemDialog, {
 			global: {
 				stubs: {
+					CnDialog: false,
 					NcButton: defineComponent({
 						name: 'NcButton',
 						emits: ['click'],
