@@ -713,9 +713,13 @@
 					"closed": {
 						"type": "open-modal",
 						"target": "CaseLifecycleMenuDialog",
-						"label": "Next step",
-						"icon": "PlayCircleOutline",
-						"id": "stage-next-step"
+						"label": "Archive it",
+						"icon": "ArchiveOutline",
+						"id": "stage-archive",
+						"props": {
+							"caseId": "@objectId",
+							"act": "archive"
+						}
 					}
 				},
 				"quickActions": [

@@ -720,6 +720,7 @@ OC.L10N.register(
         "Archive action due": "Archive action due",
         "Archive Date": "Archive Date",
         "Archive ID": "Archive ID",
+        "Archive it": "Archive it",
         "Archive nomination": "Archive nomination",
         "Archive status": "Archive status",
         "Archive the case": "Archive the case",
