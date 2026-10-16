@@ -76,6 +76,7 @@ interface WOODecisionObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WOODecisionService
  * @uses \OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer
  * @uses \OCA\Dossiq\Service\DecisionDocument\PublicationReadiness
+ * @uses \OCA\Dossiq\Service\DecisionDocument\CaseDecisionLink
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
