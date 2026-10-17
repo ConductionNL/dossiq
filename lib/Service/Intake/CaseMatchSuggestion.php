@@ -165,8 +165,9 @@ class CaseMatchSuggestion {
 					filters: [$field => $reference, 'isFinalStatus' => false, '_limit' => 1]
 				);
 			} catch (\Throwable $e) {
+				// No suggestion is a fair answer: the handler links the message by hand, as before suggestions existed.
 				$this->logger->warning('Dossiq: case match lookup failed', ['field' => $field, 'error' => $e->getMessage()]);
-				return null;
+				$cases = [];
 			}
 
 			$case = ($cases[0] ?? null);
