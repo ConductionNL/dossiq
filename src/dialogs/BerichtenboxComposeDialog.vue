@@ -10,7 +10,9 @@
 		<div class="compose-dialog">
 			<div class="compose-dialog__row">
 				<div class="compose-dialog__field">
+					<label class="compose-dialog__label" for="berichtenbox-compose-bsn">{{ t('dossiq', 'BSN') }}</label>
 					<NcTextField
+						id="berichtenbox-compose-bsn"
 						:modelValue="form.bsn"
 						:label="t('dossiq', 'BSN')"
 						:labelOutside="true"
@@ -55,7 +57,9 @@
 			</div>
 
 			<div class="compose-dialog__field">
+				<label class="compose-dialog__label" for="berichtenbox-compose-subject">{{ t('dossiq', 'Subject') }}</label>
 				<NcTextField
+					id="berichtenbox-compose-subject"
 					:modelValue="form.subject"
 					:label="t('dossiq', 'Subject')"
 					:labelOutside="true"
