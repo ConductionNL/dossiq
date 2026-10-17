@@ -919,13 +919,15 @@
 						"group": "Case"
 					},
 					"start-flow": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Start a flow"
 					},
 					"case-split": {
 						"group": "Case"
 					},
 					"case-merge": {
-						"group": "Case"
+						"group": "Case",
+						"label": "Merge with another case"
 					},
 					"copy-case": {
 						"group": "Case"
