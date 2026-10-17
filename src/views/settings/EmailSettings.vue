@@ -700,11 +700,18 @@ export default {
 </script>
 
 <style scoped>
+/* Two columns of fields, as board DqBeheerinstellingen draws the section;
+   notes, switches, long text and the actions take the whole width. */
 .email-settings {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-	max-width: 600px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px 16px;
+}
+
+.email-settings > :not(.setting-row),
+.setting-row:has(textarea),
+.setting-row:has(.checkbox-radio-switch) {
+	grid-column: 1 / -1;
 }
 
 .setting-row {
@@ -721,6 +728,7 @@ export default {
 
 .email-settings__actions {
 	display: flex;
+	justify-content: flex-end;
 	gap: 8px;
 }
 </style>
