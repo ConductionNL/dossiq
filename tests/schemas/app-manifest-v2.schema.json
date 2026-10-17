@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.102.0",
+	"version": "2.108.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1649,6 +1649,59 @@
 					"type": "string",
 					"description": "Property name in the response items to use as the menu entry route."
 				}
+			}
+		},
+		"linkModule": {
+			"type": "object",
+			"required": ["id", "label"],
+			"additionalProperties": false,
+			"description": "One module on a type='links' page. The app decides whether it is in the menu (`enabled`, or `enabledIf` against runtime). Every card opens; a module that is off links to the admin settings (`settings`).",
+			"properties": {
+				"id": { "type": "string", "minLength": 1, "description": "Unique within the page's modules." },
+				"label": { "type": "string", "minLength": 1, "description": "i18n key / the module's title." },
+				"description": { "type": "string", "description": "i18n key / one or two lines under the title." },
+				"icon": { "type": "string", "description": "MDI icon name." },
+				"enabled": { "type": "boolean", "description": "Whether the module is in the menu. Wins over enabledIf." },
+				"enabledIf": { "$ref": "#/$defs/visibleIfCondition", "description": "Condition, evaluated like visibleIf, that says the module is in the menu." },
+				"route": { "type": "string", "minLength": 1, "description": "Where Open goes: a route name or a path starting with '/'. Defaults to the first page." },
+				"params": { "type": "object", "additionalProperties": { "type": ["string", "number"] } },
+				"query": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+				"pages": {
+					"type": "array",
+					"description": "The module's pages, drawn as links and named in the 'N pages' line.",
+					"items": {
+						"type": "object",
+						"required": ["label"],
+						"additionalProperties": false,
+						"anyOf": [{ "required": ["route"] }, { "required": ["href"] }],
+						"properties": {
+							"label": { "type": "string", "minLength": 1 },
+							"route": { "type": "string", "minLength": 1 },
+							"params": { "type": "object", "additionalProperties": { "type": ["string", "number"] } },
+							"query": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+							"href": { "type": "string", "minLength": 1 },
+							"highlight": { "type": "boolean", "description": "Named in the line of a module with more than four pages ('15 pages, including ...')." }
+						}
+					}
+				},
+				"settings": {
+					"type": "object",
+					"additionalProperties": false,
+					"anyOf": [{ "required": ["route"] }, { "required": ["href"] }],
+					"description": "Where an admin puts a module that is off in the menu (the admin settings), shown on its card as '<prefix> <label>'.",
+					"properties": {
+						"label": { "type": "string", "description": "i18n key / link text. Defaults to 'Admin settings'." },
+						"prefix": { "type": "string", "description": "i18n key / text before the link. Defaults to 'Put it in the menu:'." },
+						"route": { "type": "string", "minLength": 1 },
+						"params": { "type": "object", "additionalProperties": { "type": ["string", "number"] } },
+						"query": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+						"href": { "type": "string", "minLength": 1 },
+						"permission": { "type": "string" },
+						"visibleIf": { "$ref": "#/$defs/visibleIfCondition" }
+					}
+				},
+				"permission": { "type": "string", "description": "Permission the user must hold for the module to render." },
+				"visibleIf": { "$ref": "#/$defs/visibleIfCondition", "description": "Display condition, evaluated the way a menu entry's is." }
 			}
 		},
 		"linkCard": {
@@ -4751,7 +4804,11 @@
 									"description": { "type": "string" },
 									"emptyLabel": { "type": "string" },
 									"categories": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
-									"cards": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/linkCard" } }
+									"cards": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/linkCard" } },
+									"modules": { "type": "array", "items": { "$ref": "#/$defs/linkModule" }, "description": "Module cards drawn above the link cards (board PqModules): per module an icon, title, in-the-menu/off badge, description, its pages, an Open button and, when off, a link to the admin settings." },
+									"modulesTitle": { "type": "string", "description": "i18n key / heading of the modules section. Defaults to 'Modules'." },
+									"footnote": { "type": "string", "description": "i18n key / a note under the module cards." },
+									"groupStyle": { "type": "string", "enum": ["cards", "list"], "default": "cards", "description": "cards: a grid of link cards per group. list: one card per group with a row per link (icon, label, description, chevron or external-link icon)." }
 								}
 							}
 						},

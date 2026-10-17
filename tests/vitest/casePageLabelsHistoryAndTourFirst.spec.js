@@ -134,7 +134,7 @@ describe('N-6: the case page names every tab once', () => {
 			).content.tabs
 			const sidebar = config.sidebar.tabs
 			const ids = [
-				...strip.map((tab) => `strip:${tab.widgetId}`),
+				...strip.map((tab) => `strip:${Array.isArray(tab.widgetIds) ? tab.widgetIds[0] : tab.widgetId}`),
 				...sidebar.map((tab) => `sidebar:${tab.id}`),
 			]
 			expect(new Set(ids).size).toBe(ids.length)
