@@ -927,18 +927,27 @@
 					},
 					{
 						"id": "side-handling",
-						"type": "data",
+						"type": "facts",
 						"title": "Handling",
+						"_note": "DqZaak Behandeling: who handles the case, in which team and since when, as label and value rows; the handler reads as the user's display name (facts format user).",
 						"content": {
-							"title": "Handling",
-							"columns": 1,
-							"include": [
-								"assignee",
-								"assignedGroupPublicName",
-								"startDate"
+							"fields": [
+								{
+									"path": "assignee",
+									"label": "Handler",
+									"format": "user"
+								},
+								{
+									"path": "assignedGroupPublicName",
+									"label": "Team"
+								},
+								{
+									"path": "startDate",
+									"label": "Started",
+									"format": "date"
+								}
 							],
-							"hideEmpty": true,
-							"editable": false
+							"emptyText": "Nobody handles this case yet"
 						}
 					},
 					{
