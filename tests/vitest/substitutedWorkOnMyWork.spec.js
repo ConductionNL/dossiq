@@ -88,6 +88,7 @@ vi.mock('@nextcloud/axios', () => ({
  * renders, so the stub renders exactly the slots the view fills.
  */
 vi.mock('@conduction/nextcloud-vue', () => ({
+	CnQuickFilterBar: defineComponent({ name: 'CnQuickFilterBar', render: () => null }),
 	CnIndexPage: defineComponent({
 		name: 'CnIndexPage',
 		render() {

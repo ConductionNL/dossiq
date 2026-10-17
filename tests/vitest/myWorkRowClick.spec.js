@@ -32,11 +32,14 @@ import { defineComponent, h } from 'vue'
 const indexPageProps = {}
 
 vi.mock('@conduction/nextcloud-vue', () => ({
+	CnQuickFilterBar: defineComponent({ name: 'CnQuickFilterBar', render: () => null }),
 	CnIndexPage: defineComponent({
 		name: 'CnIndexPage',
 		props: {
 			selectable: { type: Boolean, default: true },
 			rowClickToView: { type: Boolean, default: false },
+			breadcrumb: { type: Object, default: null },
+			headerMeta: { type: String, default: '' },
 		},
 		emits: ['row-click', 'view'],
 		setup(props) {
@@ -97,6 +100,30 @@ async function mountMyWork() {
 }
 
 describe('My Work row click', () => {
+	it('names My work as the way back and says how many cases are in the reader\'s name (DqAanMijToegewezen)', async () => {
+		const { wrapper } = await mountMyWork()
+
+		expect(indexPageProps.current.breadcrumb).toEqual({ label: 'My work', route: 'MyWorkHome' })
+		expect(indexPageProps.current.headerMeta).toBe('{total} cases in your name · most urgent first')
+
+		wrapper.unmount()
+	})
+
+	it('opens a colleague\'s open cases from the workload chips and stays put on the reader\'s own', async () => {
+		const { wrapper, push } = await mountMyWork()
+
+		wrapper.vm.openHandlerWork('admin')
+		expect(push).not.toHaveBeenCalled()
+
+		wrapper.vm.openHandlerWork('anouk')
+		expect(push).toHaveBeenCalledWith({
+			name: 'Cases',
+			query: { assignee: 'anouk', isFinalStatus: 'false', statusHiddenInLists: 'false', isDraft: 'false' },
+		})
+
+		wrapper.unmount()
+	})
+
 	it('asks the index page for navigation on a row click, not only for selection', async () => {
 		const { wrapper } = await mountMyWork()
 
