@@ -26,7 +26,8 @@
   @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:subtitle="t('dossiq', 'The case as OpenRegister stores it, nothing left out and nothing renamed.')"
 		:name="t('dossiq', 'Raw data')"
 		size="large"
 		data-testid="case-raw-data-dialog"
@@ -63,21 +64,21 @@
 				{{ t('dossiq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
 export default {
 	name: 'CaseRawDataDialog',
 
-	components: { NcButton, NcDialog, NcLoadingIcon },
+	components: { NcButton, CnDialog, NcLoadingIcon },
 
 	props: {
 		/**

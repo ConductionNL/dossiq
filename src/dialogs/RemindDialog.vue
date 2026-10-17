@@ -33,8 +33,8 @@
   @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
 -->
 <template>
-	<NcDialog
-		:name="t('dossiq', 'Set a reminder')"
+	<CnDialog
+		:name="t('dossiq', 'Remind')"
 		data-testid="case-remind-dialog"
 		@closing="$emit('close')">
 		<div class="remind">
@@ -85,16 +85,16 @@
 				{{ t('dossiq', 'Set reminder') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { useEngineTaskStore } from '../store/modules/engineTask.js'
 import {
@@ -111,7 +111,7 @@ export default {
 	components: {
 		NcButton,
 		NcDateTimePicker,
-		NcDialog,
+		CnDialog,
 		NcTextField,
 	},
 

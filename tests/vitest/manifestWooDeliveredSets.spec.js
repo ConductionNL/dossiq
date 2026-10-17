@@ -60,7 +60,7 @@ describe('the delivered sets of a Woo request', () => {
 		const publish = widgetsWithId(manifest, 'woo-publish')
 		expect(publish).toHaveLength(1)
 		expect(publish[0].label).toBe('Publish (Woo)')
-		expect(publish[0].url).toBe('/apps/dossiq/api/cases/@objectId/woo/publish')
+		expect(publish[0].props.publishUrl).toBe('/apps/dossiq/api/cases/{caseId}/woo/publish')
 	})
 
 	it("shows its dates in the reader's locale and its state in words", () => {

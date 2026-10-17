@@ -35,13 +35,13 @@
 -->
 <template>
 	<CnDialog
-		:name="t('dossiq', 'What you can do with this case')"
-		:eyebrow="t('dossiq', 'Next step')"
-		:subtitle="t('dossiq', 'Only what this case allows now is active. The rest is greyed out, with the reason.')"
-		size="normal"
+		:name="menuMode ? t('dossiq', 'What you can do with this case') : actTitle(chosen)"
+		:eyebrow="eyebrow"
+		:subtitle="menuMode ? t('dossiq', 'Only what this case allows now is active. The rest is greyed out, with the reason.') : explainer(chosen)"
+		width="form"
 		data-testid="case-acts-dialog"
 		@closing="$emit('close')">
-		<div class="case-acts">
+		<div v-if="menuMode" class="case-acts">
 			<p v-if="loading" data-testid="case-acts-loading">
 				{{ t('dossiq', 'Reading what this case allows.') }}
 			</p>
@@ -96,54 +96,10 @@
 				data-testid="case-acts-list"
 				@update:modelValue="chooseByKey">
 				<template #option-actions="{ option, selected }">
-					<div
+					<CaseActFields
 						v-if="selected && chosen !== null && option.value === entryKey(chosen)"
-						class="case-acts__fields"
-						:data-testid="'case-act-fields-' + chosen.id">
-						<TemplatePicker
-							v-if="inputs.result"
-							kind="result"
-							:caseType="caseType"
-							:caseId="targetCaseId"
-							:label="t('dossiq', 'Result template')"
-							@apply="applyTemplate" />
-
-						<NcTextArea
-							v-if="inputs.reason"
-							v-model="reason"
-							data-testid="case-act-reason-input"
-							:label="t('dossiq', 'Reason')" />
-
-						<!--
-							A closing move or ending act picks from the case type's own
-							result types, which the server publishes on the move and on
-							`/acts`. There is no free field: a typed name is not an id, and
-							a case type with no results needs none.
-						-->
-						<NcSelect
-							v-if="inputs.result && resultOptions.length > 0"
-							v-model="selectedResult"
-							:options="resultOptions"
-							label="name"
-							:inputLabel="t('dossiq', 'Result')"
-							:clearable="false"
-							:disabled="busy"
-							data-testid="case-act-result-picker" />
-
-						<NcTextField
-							v-if="inputs.until"
-							v-model="until"
-							type="date"
-							data-testid="case-act-until-input"
-							:label="t('dossiq', 'The case comes back on')" />
-
-						<NcTextField
-							v-if="inputs.days"
-							v-model="days"
-							type="number"
-							data-testid="case-act-days-input"
-							:label="t('dossiq', 'Days the applicant is given')" />
-					</div>
+						v-bind="fieldProps"
+						v-on="fieldEvents" />
 				</template>
 			</CnChoiceCards>
 
@@ -156,8 +112,20 @@
 			</p>
 		</div>
 
+		<div v-else class="case-acts">
+			<CaseActFields v-bind="fieldProps" v-on="fieldEvents" />
+
+			<p
+				v-if="error"
+				class="case-acts__error"
+				data-testid="case-act-error"
+				role="alert">
+				{{ error }}
+			</p>
+		</div>
+
 		<template #actions>
-			<NcButton data-testid="case-acts-cancel" @click="$emit('close')">
+			<NcButton data-testid="case-acts-cancel" @click="back">
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<!--
@@ -171,10 +139,11 @@
 				:disabled="!canConfirm"
 				:aria-busy="busy ? 'true' : null"
 				@click="confirm">
-				<template v-if="busy" #icon>
-					<NcLoadingIcon :size="20" data-testid="case-acts-confirm-busy" />
+				<template v-if="busy || chosen.id === 'archive'" #icon>
+					<NcLoadingIcon v-if="busy" :size="20" data-testid="case-acts-confirm-busy" />
+					<ArchiveOutline v-else :size="20" />
 				</template>
-				{{ chosen ? label(chosen) : t('dossiq', 'Confirm') }}
+				{{ chosen.id === 'archive' ? t('dossiq', 'Archive it') : label(chosen) }}
 			</NcButton>
 		</template>
 	</CnDialog>
@@ -189,10 +158,9 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import NcSelect from '@nextcloud/vue/components/NcSelect'
-import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
-import TemplatePicker from '../components/TemplatePicker.vue'
+import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
+import CaseActFields from '../components/case/CaseActFields.vue'
+import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
 import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
 import {
 	approvalHeading,
@@ -212,14 +180,12 @@ export default {
 	name: 'CaseLifecycleMenuDialog',
 
 	components: {
+		ArchiveOutline,
+		CaseActFields,
 		CnChoiceCards,
 		CnDialog,
 		NcButton,
 		NcLoadingIcon,
-		NcSelect,
-		NcTextArea,
-		NcTextField,
-		TemplatePicker,
 	},
 
 	props: {
@@ -231,6 +197,12 @@ export default {
 			type: String,
 			default: '',
 		},
+
+		/** An act to open on directly, such as `archive`, when the case allows it. */
+		act: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -238,6 +210,7 @@ export default {
 	data() {
 		return {
 			entries: [],
+			kase: null,
 			awaiting: [],
 			chosen: null,
 			loading: true,
@@ -252,9 +225,45 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {string} The context line above the title.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		eyebrow() {
+			return caseEyebrow(this.menuMode ? t('dossiq', 'Next step') : this.label(this.chosen), this.kase)
+		},
+
 		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
+		},
+
+		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
+		inputs() {
+			return inputsFor(this.chosen ?? {})
+		},
+
+		/**
+		 * The result types the chosen act may close with, as the engine sent them.
+		 *
+		 * @return {Array<{id: string, name: string}>} The choices, empty when none.
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
+		resultOptions() {
+			return Array.isArray(this.chosen?.resultTypes)
+				? this.chosen.resultTypes
+				: []
+		},
+
+		/**
+		 * Whether the dialog lists every act (the case's Lifecycle menu), rather
+		 * than opening on one act the manifest named (`act`).
+		 *
+		 * @return {boolean} True for the list.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		menuMode() {
+			return this.act === '' || this.chosen === null
 		},
 
 		/**
@@ -283,36 +292,42 @@ export default {
 			return this.chosen === null ? null : this.entryKey(this.chosen)
 		},
 
-		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
-		inputs() {
-			return inputsFor(this.chosen ?? {})
+		/**
+		 * What the chosen act's fields read.
+		 *
+		 * @return {object} CaseActFields props.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		fieldProps() {
+			return {
+				act: this.chosen,
+				inputs: this.inputs,
+				kase: this.kase,
+				caseType: this.caseType,
+				caseId: this.targetCaseId,
+				resultOptions: this.resultOptions,
+				busy: this.busy,
+				reason: this.reason,
+				resultTypeId: this.resultTypeId,
+				until: this.until,
+				days: this.days,
+			}
 		},
 
 		/**
-		 * The result types the chosen act may close with, as the engine sent them.
+		 * What the chosen act's fields write back.
 		 *
-		 * @return {Array<{id: string, name: string}>} The choices, empty when none.
-		 * @spec openspec/specs/status-transition-engine/spec.md
+		 * @return {object} CaseActFields listeners.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 		 */
-		resultOptions() {
-			return Array.isArray(this.chosen?.resultTypes)
-				? this.chosen.resultTypes
-				: []
-		},
-
-		/** @spec openspec/specs/status-transition-engine/spec.md */
-		selectedResult: {
-			get() {
-				return (
-					this.resultOptions.find(
-						(option) => option.id === this.resultTypeId,
-					) ?? null
-				)
-			},
-
-			set(option) {
-				this.resultTypeId = option ? String(option.id) : ''
-			},
+		fieldEvents() {
+			return {
+				'update:reason': (value) => { this.reason = value },
+				'update:resultTypeId': (value) => { this.resultTypeId = value },
+				'update:until': (value) => { this.until = value },
+				'update:days': (value) => { this.days = value },
+				applyTemplate: (chosen) => this.applyTemplate(chosen),
+			}
 		},
 
 		/** @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md */
@@ -513,6 +528,13 @@ export default {
 						: null,
 				acts: actsBody,
 			})
+			fetchCaseSummary(this.targetCaseId).then((kase) => {
+				this.kase = kase
+			})
+			const preset = this.entries.find((entry) => entry.id === this.act && !entry.disabled)
+			if (this.act !== '' && preset !== undefined) {
+				this.choose(preset)
+			}
 			this.awaiting = awaitingApprovals(actsBody)
 			// The case type scopes the result templates. '' is a real answer:
 			// the picker then offers the templates meant for every case type.
@@ -579,6 +601,15 @@ export default {
 		},
 
 		/**
+		 * @param {object} entry A menu entry.
+		 * @return {string} The dialog title while that act is open.
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		actTitle(entry) {
+			return entry?.id === 'archive' ? t('dossiq', 'Archive this case') : this.label(entry)
+		},
+
+		/**
 		 * The card value of one act: its kind and id, since a transition and a gesture may share an id.
 		 *
 		 * @param {object} entry A menu entry.
@@ -604,7 +635,7 @@ export default {
 		},
 
 		/**
-		 * Choose one act, which opens its fields under its card.
+		 * Open one act's form.
 		 *
 		 * @param {object} entry The entry the handler pressed.
 		 * @return {void}
@@ -639,6 +670,21 @@ export default {
 			}
 
 			this.reason = text
+		},
+
+		/**
+		 * Go back to the list, or close when already on it.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+		 */
+		back() {
+			if (this.chosen === null || this.menuMode) {
+				this.$emit('close')
+				return
+			}
+			this.chosen = null
+			this.error = ''
 		},
 
 		/**
@@ -743,13 +789,6 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 	padding: 8px 16px 16px;
-}
-
-.case-acts__fields {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 12px 16px 16px 48px;
 }
 
 .case-acts__reason,

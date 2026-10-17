@@ -49,6 +49,7 @@ const DIALOG_RENDERS_ITS_SLOT = {
 	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
 	CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+	CaseActFields: false,
 }
 
 /**
