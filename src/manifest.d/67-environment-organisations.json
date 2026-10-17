@@ -1,0 +1,375 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"board": "DqTenant",
+		"why": "The organisations on this environment. A tenant is an OpenRegister organisation (tenancy-onto-openregister-organisation), so the list and the page read OpenRegister's organisations through the library's organisations entity source and keep no tenant store of their own; the tabs list the dossiq satellites that point at the organisation by tenantRef. Not the retired Tenants pages: those administered dossiq's own tenant store."
+	},
+	"menu": [
+		{
+			"id": "EnvironmentOrganisationsMenu",
+			"label": "Organisations on this environment",
+			"icon": "DomainSwitch",
+			"route": "EnvironmentOrganisations",
+			"section": "settings",
+			"order": 98,
+			"permission": "admin"
+		}
+	],
+	"pages": [
+		{
+			"id": "EnvironmentOrganisations",
+			"route": "/settings/organisations",
+			"type": "index",
+			"title": "Organisations on this environment",
+			"permission": "admin",
+			"config": {
+				"entitySource": "organisations",
+				"rowRoute": "EnvironmentOrganisationDetail",
+				"showTitle": true,
+				"breadcrumb": {
+					"label": "Settings",
+					"href": "/index.php/settings/admin/dossiq"
+				},
+				"headerMeta": "{total} organisations",
+				"columns": [
+					{
+						"key": "name",
+						"label": "Organisation",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{slug}"
+					},
+					{
+						"key": "status",
+						"label": "Status"
+					},
+					{
+						"key": "type",
+						"label": "Type"
+					},
+					{
+						"key": "created",
+						"label": "Since"
+					}
+				],
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "EnvironmentOrganisationDetail",
+			"route": "/settings/organisations/:id",
+			"type": "detail",
+			"title": "Organisation",
+			"permission": "admin",
+			"config": {
+				"entitySource": "organisations",
+				"titleField": "name",
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "Organisations on this environment",
+					"route": "EnvironmentOrganisations"
+				},
+				"statusPill": {
+					"field": "status",
+					"labels": {
+						"active": "Active",
+						"suspended": "Suspended",
+						"provisioning": "Setting up",
+						"deprovisioned": "Ended"
+					},
+					"colorMap": {
+						"active": "success",
+						"suspended": "warning",
+						"provisioning": "info",
+						"deprovisioned": "neutral"
+					}
+				},
+				"headerFields": [
+					{
+						"key": "slug"
+					}
+				],
+				"actionsMenu": {
+					"showRefresh": false,
+					"showHelpLinks": false,
+					"label": "More"
+				},
+				"documentationUrl": "https://dossiq.conduction.nl",
+				"sideColumn": [
+					{
+						"id": "organisation-side-status",
+						"type": "facts",
+						"title": "Status",
+						"content": {
+							"fields": [
+								{
+									"as": "pill",
+									"path": "status",
+									"map": {
+										"active": "Active",
+										"suspended": "Suspended",
+										"provisioning": "Setting up",
+										"deprovisioned": "Ended"
+									}
+								},
+								{
+									"label": "Since",
+									"path": "created",
+									"format": "date"
+								},
+								{
+									"label": "Identifier",
+									"path": "slug"
+								},
+								{
+									"as": "line",
+									"text": "Suspending blocks signing in; the data stays. Ending is under More."
+								}
+							]
+						}
+					},
+					{
+						"id": "organisation-side-admin",
+						"type": "facts",
+						"title": "Administrator",
+						"content": {
+							"fields": [
+								{
+									"label": "Owner",
+									"path": "owner"
+								},
+								{
+									"label": "Email",
+									"path": "contactEmail",
+									"format": "email"
+								}
+							],
+							"emptyText": "No administrator named yet"
+						}
+					}
+				],
+				"widgets": [
+					{
+						"id": "organisation-panels",
+						"type": "tabs",
+						"title": "Organisation parts",
+						"content": {
+							"ariaLabel": "Organisation parts",
+							"variant": "segmented",
+							"tabs": [
+								{
+									"label": "Overview",
+									"widgetIds": [
+										"organisation-quota",
+										"organisation-mandates",
+										"organisation-billing"
+									]
+								},
+								{
+									"label": "Users",
+									"widgetId": "organisation-users",
+									"countFrom": "widget"
+								},
+								{
+									"label": "Mandates",
+									"widgetId": "organisation-mandates-list",
+									"countFrom": "widget"
+								},
+								{
+									"label": "Billing",
+									"widgetId": "organisation-billing-list",
+									"countFrom": "widget"
+								}
+							]
+						}
+					},
+					{
+						"id": "organisation-quota",
+						"type": "facts",
+						"title": "Quota",
+						"content": {
+							"fields": [
+								{
+									"label": "Users",
+									"path": "usage.users"
+								}
+							],
+							"emptyText": "No usage recorded for this organisation"
+						}
+					},
+					{
+						"id": "organisation-mandates",
+						"type": "object-list",
+						"title": "Mandates",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantMandate",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"limit": 5,
+							"columns": [
+								{
+									"key": "mandateMatrixRef",
+									"label": "Mandate"
+								},
+								{
+									"key": "effectiveFrom",
+									"label": "From"
+								},
+								{
+									"key": "signedBy",
+									"label": "Signed by"
+								}
+							],
+							"emptyText": "No mandates for this organisation yet"
+						}
+					},
+					{
+						"id": "organisation-billing",
+						"type": "object-list",
+						"title": "Billing",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantBillingEvent",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"sort": {
+								"field": "occurredAt",
+								"dir": "desc"
+							},
+							"limit": 5,
+							"columns": [
+								{
+									"key": "occurredAt",
+									"label": "Date"
+								},
+								{
+									"key": "eventType",
+									"label": "Event"
+								},
+								{
+									"key": "unitPrice",
+									"label": "Amount"
+								}
+							],
+							"emptyText": "No billing events yet. Events never change afterwards; a correction is a new line."
+						}
+					},
+					{
+						"id": "organisation-users",
+						"type": "object-list",
+						"title": "Users",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantUser",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "userRef",
+									"label": "User"
+								},
+								{
+									"key": "role",
+									"label": "Role"
+								},
+								{
+									"key": "lastActiveAt",
+									"label": "Last active"
+								},
+								{
+									"key": "mfaEnabled",
+									"label": "Two-step sign-in"
+								}
+							],
+							"emptyText": "No users in this organisation yet"
+						}
+					},
+					{
+						"id": "organisation-mandates-list",
+						"type": "object-list",
+						"title": "Mandates",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantMandate",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "mandateMatrixRef",
+									"label": "Mandate"
+								},
+								{
+									"key": "effectiveFrom",
+									"label": "From"
+								},
+								{
+									"key": "effectiveTo",
+									"label": "Until"
+								},
+								{
+									"key": "signedBy",
+									"label": "Signed by"
+								}
+							],
+							"emptyText": "No mandates for this organisation yet"
+						}
+					},
+					{
+						"id": "organisation-billing-list",
+						"type": "object-list",
+						"title": "Billing",
+						"content": {
+							"register": "dossiq",
+							"schema": "tenantBillingEvent",
+							"filter": {
+								"tenantRef": "@objectId"
+							},
+							"sort": {
+								"field": "occurredAt",
+								"dir": "desc"
+							},
+							"limit": 50,
+							"columns": [
+								{
+									"key": "occurredAt",
+									"label": "Date"
+								},
+								{
+									"key": "eventType",
+									"label": "Event"
+								},
+								{
+									"key": "quantity",
+									"label": "Quantity"
+								},
+								{
+									"key": "unitPrice",
+									"label": "Amount"
+								}
+							],
+							"emptyText": "No billing events yet"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "organisation-panels",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 24,
+						"showTitle": false
+					}
+				]
+			}
+		}
+	]
+}

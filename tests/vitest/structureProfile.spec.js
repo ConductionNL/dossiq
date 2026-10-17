@@ -90,14 +90,14 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 36 entries: 13 main, 5 footer, 15 settings, 3 integrations', () => {
+	it('still counts 37 entries: 13 main, 5 footer, 16 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(36)
+		expect(flat(menu)).toHaveLength(37)
 		expect(count('main')).toBe(13)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(15)
+		expect(count('settings')).toBe(16)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -456,10 +456,11 @@ describe('the simple profile', () => {
 	// 68 -> 67: the Workflow board page retires; `/workflow-board` redirects to the Cases board.
 	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
 	// 70 -> 71: the Postvak (board DqPostvak) adds one page.
-	it('builds the same 71 pages as the full profile, so every route stays', () => {
+	// 71 -> 73: the organisations on this environment get a list and a page (DqTenant).
+	it('builds the same 73 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(71)
+		expect(built.pages).toHaveLength(73)
 	})
 })
 
