@@ -16,6 +16,7 @@ import { generateUrl } from '@nextcloud/router'
  *
  * @param {object|null} result A PDOK lookup result.
  * @return {{kadastraleGemeenteCode: string, sectie: string, perceelnummer: string, label: string}|null} The parcel, or null when the result names none.
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 export function parcelOf(result) {
 	const linked = result?.gekoppeld_perceel
@@ -41,6 +42,7 @@ export function parcelOf(result) {
  * @param {string} caseId The case the location belongs to.
  * @param {{result: object, coordinates: object|null, address: string}} chosen What AddressSearch emitted.
  * @return {object} The record to save.
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 export function caseLocationRecord(caseId, chosen) {
 	const result = chosen?.result || {}
@@ -63,6 +65,7 @@ export function caseLocationRecord(caseId, chosen) {
  *
  * @param {object} record The `case-location` record.
  * @return {Promise<object>} The saved object.
+ * @spec openspec/specs/case-dashboard-view/spec.md
  */
 export async function saveCaseLocation(record) {
 	const { data } = await axios.post(generateUrl('/apps/openregister/api/objects/dossiq/case-location'), record)

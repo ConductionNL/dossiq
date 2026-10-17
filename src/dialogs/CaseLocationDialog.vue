@@ -157,7 +157,11 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The case id, from the prop or the route. */
+		/**
+		 * @return {string} The case id, from the prop or the route.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		targetCaseId() {
 			const given = String(this.caseId || '')
 			if (given !== '' && given.startsWith('@') === false) {
@@ -166,23 +170,39 @@ export default {
 			return String(this.$route?.params?.id ?? '')
 		},
 
-		/** @return {number[]} The map centre: the chosen address, else the country. */
+		/**
+		 * @return {number[]} The map centre: the chosen address, else the country.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		center() {
 			const c = this.chosen?.coordinates
 			return c && Number.isFinite(c.lat) && Number.isFinite(c.lng) ? [c.lat, c.lng] : DEFAULT_CENTER
 		},
 
-		/** @return {string} Rebuilds the map when the address or the layers change. */
+		/**
+		 * @return {string} Rebuilds the map when the address or the layers change.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		mapKey() {
 			return `${this.center.join(',')}|${this.shown.join(',')}`
 		},
 
-		/** @return {object|null} One pin on the chosen address. */
+		/**
+		 * @return {object|null} One pin on the chosen address.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		markers() {
 			return this.chosen ? { centerMarker: true } : null
 		},
 
-		/** @return {Array<object>} The checked layers in the shape CnMapWidget reads. */
+		/**
+		 * @return {Array<object>} The checked layers in the shape CnMapWidget reads.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		activeLayers() {
 			return this.layers
 				.filter((layer) => this.shown.includes(layer.id))
@@ -193,24 +213,40 @@ export default {
 				}))
 		},
 
-		/** @return {string} The cadastral reference of the chosen address. */
+		/**
+		 * @return {string} The cadastral reference of the chosen address.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		parcelLabel() {
 			return this.parcel?.kadastraleAanduiding || parcelOf(this.chosen?.result)?.label || ''
 		},
 
-		/** @return {number|null} How many hold a right on the parcel. */
+		/**
+		 * @return {number|null} How many hold a right on the parcel.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		holders() {
 			const list = this.parcel?.zakelijkGerechtigden
 			return Array.isArray(list) ? list.length : null
 		},
 
-		/** @return {string} What the WOZ object is used for. */
+		/**
+		 * @return {string} What the WOZ object is used for.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		useLabel() {
 			const uses = this.woz?.gebruiksdoel
 			return Array.isArray(uses) ? uses.join(', ') : ''
 		},
 
-		/** @return {string} The WOZ value with its reference date. */
+		/**
+		 * @return {string} The WOZ value with its reference date.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		wozLabel() {
 			const value = this.woz?.value
 			if (!Number.isFinite(value)) {
@@ -228,7 +264,11 @@ export default {
 	methods: {
 		t,
 
-		/** Read the active map layers the organisation configured. */
+		/**
+		 * Read the active map layers the organisation configured.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		async loadLayers() {
 			try {
 				const { data } = await axios.get(generateUrl('/apps/openregister/api/objects/dossiq/wmsLayer'), { params: { _limit: 20 } })
@@ -247,6 +287,7 @@ export default {
 		 *
 		 * @param {string} id The layer id.
 		 * @param {boolean} on Whether it is drawn.
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		toggleLayer(id, on) {
 			this.shown = on ? [...new Set([...this.shown, id])] : this.shown.filter((entry) => entry !== id)
@@ -256,6 +297,7 @@ export default {
 		 * An address was chosen: look up what the registers say about it.
 		 *
 		 * @param {{result: object, coordinates: object|null, address: string}} chosen What AddressSearch emitted.
+		 * @spec openspec/specs/case-dashboard-view/spec.md
 		 */
 		async onSelect(chosen) {
 			this.chosen = chosen
@@ -272,7 +314,11 @@ export default {
 			this.parcel = brk.status === 'fulfilled' ? (brk.value?.parcel || null) : null
 		},
 
-		/** Save the chosen address on the case. */
+		/**
+		 * Save the chosen address on the case.
+		 *
+		 * @spec openspec/specs/case-dashboard-view/spec.md
+		 */
 		async save() {
 			if (!this.chosen || this.saving) {
 				return
