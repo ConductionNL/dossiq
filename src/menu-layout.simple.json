@@ -2670,6 +2670,7 @@
 								"aggregate": {
 									"groupBy": "status",
 									"metric": "count",
+									"topN": 5,
 									"labelResolve": {
 										"schema": "statusType",
 										"labelField": "name"
@@ -2697,6 +2698,7 @@
 								"aggregate": {
 									"groupBy": "caseType",
 									"metric": "count",
+									"topN": 5,
 									"labelResolve": {
 										"schema": "caseType",
 										"labelField": "title"
