@@ -247,8 +247,10 @@ class CaseSharingService {
 	 * @param string $partnerId The UUID of the partner organization
 	 * @param string $permissionLevel The permission level slug
 	 * @param string $createdBy User ID of the creator
+	 * @param string $message An optional note to the receiving organisation
+	 * @param array<string> $fieldExclusions Case fields the partner does not see, from FEDERATION_ALLOWED_FIELDS
 	 *
-	 * @return array The created share data
+	 * @return array The created share data, or an error array
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -257,10 +259,20 @@ class CaseSharingService {
 		string $partnerId,
 		string $permissionLevel,
 		string $createdBy,
+		string $message='',
+		array $fieldExclusions=[],
 	): array {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
+		}
+
+		// A field the allow-list does not name is refused, never dropped: a
+		// handler who meant to hide it must not find it shared after all.
+		$excluded = array_values(array_unique(array_map('strval', $fieldExclusions)));
+		$unknown  = array_values(array_diff($excluded, self::FEDERATION_ALLOWED_FIELDS));
+		if ($unknown !== []) {
+			return ['error' => 'Unknown case field: '.implode(', ', $unknown)];
 		}
 
 		// 🔴 NO SHARE WITHOUT A SCOPE (REQ-CST-02). A partner share crosses the
@@ -295,6 +307,13 @@ class CaseSharingService {
 			'consentScope' => $verdict['scope'],
 			'consentUntil' => $verdict['until'],
 		];
+		if (trim($message) !== '') {
+			$shareData['message'] = trim($message);
+		}
+
+		if ($excluded !== []) {
+			$shareData['fieldExclusions'] = json_encode($excluded);
+		}
 
 		$result = $objectService->saveObject(
 			object: $shareData,

@@ -13,6 +13,7 @@
         "#",
         "1 week",
         "AVG",
+        "BAG",
         "BSN",
         "Chat",
         "Checklist",
@@ -86,6 +87,8 @@
         "{operationType} · {queuedAt|datetime}",
         "{caseRef.title}",
         "{targetEntity}",
-        "{templateSnapshot.name}"
+        "{templateSnapshot.name}",
+        "{ground} · %n document",
+        "%n document"
     ]
 }
