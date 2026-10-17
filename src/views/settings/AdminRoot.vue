@@ -11,6 +11,8 @@
 		:tabs="adminTabs"
 		tabStorageKey="dossiq.admin.activeTab"
 		tabsVariant="underline"
+		:compact="true"
+		:sectionColumns="1"
 		lazyTabs
 		@tabChange="onTabChange"
 		@reimported="onReimported">
