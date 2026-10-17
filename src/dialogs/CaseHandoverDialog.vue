@@ -49,7 +49,9 @@
 			</div>
 
 			<div class="case-handover-dialog__field">
+				<label class="case-handover-dialog__label" for="case-handover-reason">{{ t('dossiq', 'Why it is moving') }}</label>
 				<NcTextArea
+					id="case-handover-reason"
 					v-model="reason"
 					:label="t('dossiq', 'Why it is moving')"
 					:labelOutside="true"
