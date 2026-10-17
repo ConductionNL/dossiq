@@ -212,9 +212,14 @@ class ConnectionsDeclarationTest extends TestCase {
 			);
 			$tab    = substr($url, strpos($url, '=') + 1, strpos($url, '#') - strpos($url, '=') - 1);
 			$anchor = substr($url, strpos($url, '#') + 1);
-			$start  = strpos($adminRoot, '<template #tab-' . $tab . '>');
-			$this->assertNotFalse($start, $connection['key'] . ' links to a missing tab');
-			$panel = substr($adminRoot, $start, strpos($adminRoot, "\n\t\t</template>", $start) - $start);
+			// The first tab's panel is the shell's default slot: everything before the first named tab.
+			if ($tab === 'general') {
+				$panel = substr($adminRoot, 0, (int)strpos($adminRoot, '<template #tab-'));
+			} else {
+				$start = strpos($adminRoot, '<template #tab-' . $tab . '>');
+				$this->assertNotFalse($start, $connection['key'] . ' links to a missing tab');
+				$panel = substr($adminRoot, (int)$start, strpos($adminRoot, "\n\t\t</template>", (int)$start) - (int)$start);
+			}
 			$this->assertStringContainsString(
 				needle: 'id="' . $anchor . '"',
 				haystack: $panel,

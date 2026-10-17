@@ -37,7 +37,7 @@
             "title": "Shared mailbox",
             "description": "The IMAP mailbox case email is read from and linked to a case.",
             "order": 50,
-            "settingsUrl": "/settings/admin/dossiq?tab=mail#section-mailbox"
+            "settingsUrl": "/settings/admin/dossiq?tab=general#section-mailbox"
         },
         {
             "key": "store",
