@@ -13,6 +13,8 @@
 		tabsVariant="underline"
 		:compact="true"
 		:sectionColumns="1"
+		:showSetup="true"
+		:setupSteps="setupSteps"
 		lazyTabs
 		@tabChange="onTabChange"
 		@reimported="onReimported">
@@ -401,6 +403,7 @@ import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import WooReportsSettingsTab from './tabs/WooReportsSettingsTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
+import manifest from '../../manifest.json'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -526,6 +529,17 @@ export default {
 				'dossiq',
 				'applies to the whole organisation; case types, flows and departments are in the app under Settings',
 			)
+		},
+
+		/**
+		 * The first-run wizard's steps, as the app's manifest declares them,
+		 * so the version card can start the wizard again.
+		 *
+		 * @return {Array<object>} The steps.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		setupSteps() {
+			return manifest.setup?.steps ?? []
 		},
 
 		/**
