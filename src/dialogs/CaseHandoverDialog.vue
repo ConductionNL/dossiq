@@ -19,42 +19,62 @@
   @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Hand this case to another team')"
+		:eyebrow="eyebrow"
+		:subtitle="t('dossiq', 'The case keeps its number, its history and its term. Only the team changes.')"
+		width="form"
 		data-testid="case-handover-dialog"
 		@closing="$emit('close')">
 		<div class="case-handover-dialog">
-			<p class="case-handover-dialog__explainer">
-				{{
-					t(
-						'dossiq',
-						'The case keeps its number, its history and its term. Only the team changes.',
-					)
-				}}
-			</p>
+			<div class="case-handover-dialog__field">
+				<label class="case-handover-dialog__label" for="case-handover-team">
+					{{ t('dossiq', 'New team') }}
+				</label>
+				<NcSelect
+					v-model="teamOption"
+					inputId="case-handover-team"
+					:inputLabel="t('dossiq', 'New team')"
+					:labelOutside="true"
+					:options="teamOptions"
+					:loading="searching"
+					:filterable="false"
+					:taggable="true"
+					:placeholder="t('dossiq', 'The group that handles it from here')"
+					data-testid="case-handover-team"
+					@search="searchTeams" />
+				<span class="case-handover-dialog__hint">
+					{{ currentTeam ? t('dossiq', 'Now with {team}. The new team picks its own handler.', { team: currentTeam }) : t('dossiq', 'The new team picks its own handler.') }}
+				</span>
+			</div>
 
-			<NcTextField
-				v-model="team"
-				data-testid="case-handover-team"
-				:label="t('dossiq', 'Team')"
-				:placeholder="t('dossiq', 'The group that handles it from here')" />
+			<div class="case-handover-dialog__field">
+				<label class="case-handover-dialog__label" for="case-handover-reason">{{ t('dossiq', 'Why it is moving') }}</label>
+				<NcTextArea
+					id="case-handover-reason"
+					v-model="reason"
+					:label="t('dossiq', 'Why it is moving')"
+					:labelOutside="true"
+					resize="vertical"
+					data-testid="case-handover-reason" />
+				<span class="case-handover-dialog__hint">
+					{{ t('dossiq', 'Required. The receiving team reads this before it accepts the case or sends it back.') }}
+				</span>
+			</div>
 
-			<NcTextArea
-				v-model="reason"
-				data-testid="case-handover-reason"
-				:label="t('dossiq', 'Why it is moving')" />
-
-			<NcCheckboxRadioSwitch
-				:modelValue="doorzending"
-				data-testid="case-handover-doorzending"
-				@update:modelValue="doorzending = $event">
-				{{
-					t(
-						'dossiq',
-						'Tell the applicant, this is a doorzending (Awb 2:3)',
-					)
-				}}
-			</NcCheckboxRadioSwitch>
+			<div class="case-handover-dialog__check" :class="{ 'case-handover-dialog__check--on': doorzending }">
+				<NcCheckboxRadioSwitch
+					:modelValue="doorzending"
+					data-testid="case-handover-doorzending"
+					@update:modelValue="doorzending = $event">
+					<span class="case-handover-dialog__check-title">
+						{{ t('dossiq', 'Tell the applicant, this is a doorzending (Awb 2:3)') }}
+					</span>
+				</NcCheckboxRadioSwitch>
+				<span class="case-handover-dialog__check-note">
+					{{ t('dossiq', 'The applicant then gets a message that the case moves to another team, and to which. Leave it off for a move inside the organisation.') }}
+				</span>
+			</div>
 
 			<p
 				v-if="error"
@@ -74,22 +94,28 @@
 				variant="primary"
 				:disabled="!canConfirm"
 				@click="confirm">
+				<template #icon>
+					<SwapHorizontal :size="20" />
+				</template>
 				{{ t('dossiq', 'Hand it over') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { emit } from '@nextcloud/event-bus'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
+import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
+import { caseEyebrow, fetchCaseSummary } from '../services/caseSummary.js'
+import { searchTeams } from '../services/teamSearch.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -97,11 +123,12 @@ export default {
 	name: 'CaseHandoverDialog',
 
 	components: {
+		CnDialog,
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcDialog,
+		NcSelect,
 		NcTextArea,
-		NcTextField,
+		SwapHorizontal,
 	},
 
 	props: {
@@ -119,7 +146,10 @@ export default {
 
 	data() {
 		return {
-			team: '',
+			kase: null,
+			teamOption: null,
+			teamOptions: [],
+			searching: false,
 			reason: '',
 			doorzending: false,
 			error: '',
@@ -128,6 +158,34 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {string} The group id the case moves to, or a typed name.
+		 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+		 */
+		team() {
+			const option = this.teamOption
+			if (option === null || option === undefined) {
+				return ''
+			}
+			return String(typeof option === 'object' ? (option.id ?? option.label ?? '') : option)
+		},
+
+		/**
+		 * @return {string} The context line above the title: the act and the case number.
+		 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+		 */
+		eyebrow() {
+			return caseEyebrow(t('dossiq', 'Hand over'), this.kase)
+		},
+
+		/**
+		 * @return {string} The team the case is with now, by its public name.
+		 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+		 */
+		currentTeam() {
+			return String(this.kase?.assignedGroupPublicName || this.kase?.assignedGroup || '')
+		},
+
 		/** @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
@@ -143,8 +201,30 @@ export default {
 		},
 	},
 
+	async mounted() {
+		this.kase = await fetchCaseSummary(this.targetCaseId)
+	},
+
 	methods: {
 		t,
+
+		/**
+		 * Look up the groups whose name matches what was typed.
+		 *
+		 * @param {string} query What was typed.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
+		 */
+		async searchTeams(query) {
+			this.searching = true
+			try {
+				this.teamOptions = await searchTeams(query)
+			} catch {
+				this.teamOptions = []
+			} finally {
+				this.searching = false
+			}
+		},
 
 		/**
 		 * Hand the case on, and keep the dialog open on a refusal.
@@ -195,11 +275,51 @@ export default {
 .case-handover-dialog {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-	padding: 8px 16px 16px;
+	gap: 18px;
+}
+
+.case-handover-dialog__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.case-handover-dialog__label {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.case-handover-dialog__hint,
+.case-handover-dialog__check-note {
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.case-handover-dialog__check {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 12px 14px;
+	border: 1px solid var(--color-border-dark);
+	border-radius: 8px;
+}
+
+.case-handover-dialog__check--on {
+	border: 2px solid var(--color-primary-element);
+	background: var(--color-primary-element-light);
+}
+
+.case-handover-dialog__check-title {
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.case-handover-dialog__check-note {
+	padding-inline-start: 44px;
 }
 
 .case-handover-dialog__error {
+	margin: 0;
 	color: var(--color-error-text, var(--color-error));
 }
 </style>

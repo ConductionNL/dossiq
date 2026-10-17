@@ -1,0 +1,334 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "screens-round12-domain-lists",
+		"boards": "DqPrivacy, DqContracten",
+		"why": "Two lists the boards draw that no page showed. Data subject requests are CASES (the AVG case type writes `dataSubjectRequestType` on them), so that page is an index over `case` narrowed to the cases that carry the field, not a page of its own kind. Contracts are `supplierContract` rows and suppliers are `supplier` rows, both already in the register. The sibling-page tab strip, the breadcrumb and the notice band are nextcloud-vue keys in flight (lane L25); until that release lands the pages render without them."
+	},
+	"pages": [
+		{
+			"id": "PrivacyRequests",
+			"route": "/privacy/requests",
+			"type": "index",
+			"title": "Data subject requests",
+			"config": {
+				"showTitle": true,
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"dataSubjectRequestType": ["inzage", "correctie", "verwijdering"]
+				},
+				"breadcrumb": {
+					"label": "Privacy",
+					"route": "PrivacyRequests"
+				},
+				"pageTabs": [
+					{
+						"label": "Data subject requests",
+						"route": "PrivacyRequests",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "case",
+							"filter": {
+								"dataSubjectRequestType": ["inzage", "correctie", "verwijdering"],
+								"isFinalStatus": false
+							}
+						}
+					},
+					{
+						"label": "Data breaches",
+						"route": "AvgIncidents",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "avgIncident",
+							"filter": {}
+						}
+					}
+				],
+				"headerMeta": "{total} open · term one month, extendable by two",
+				"addLabel": "New data subject request",
+				"searchPlaceholder": "Search by case or person involved",
+				"footerNote": "20 per page",
+				"notice": {
+					"variant": "info",
+					"text": "A data subject request is a case with a handler, a legal month and a history. The search, the preview of what gets erased and the export are done by OpenRegister."
+				},
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Subject access",
+						"filter": {
+							"dataSubjectRequestType": "inzage"
+						}
+					},
+					{
+						"label": "Correction",
+						"filter": {
+							"dataSubjectRequestType": "correctie"
+						}
+					},
+					{
+						"label": "Erasure",
+						"filter": {
+							"dataSubjectRequestType": "verwijdering"
+						}
+					}
+				],
+				"columns": [
+					{
+						"key": "title",
+						"label": "Data subject request",
+						"secondary": "{identifier} · {initiatorDisplayName}"
+					},
+					{
+						"key": "dataSubjectRequestType",
+						"label": "Kind"
+					},
+					{
+						"key": "startDate",
+						"label": "Received",
+						"formatter": "date"
+					},
+					{
+						"key": "deadline",
+						"label": "Term",
+						"widget": "deadlineCountdown"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName",
+						"widget": "statusBadge"
+					},
+					"assignee"
+				],
+				"defaultSort": [
+					{
+						"field": "deadline",
+						"order": "asc"
+					}
+				],
+				"includeFields": ["caseType", "title", "requester", "dataSubjectRequestType", "description", "assignee"],
+				"fieldOverrides": {
+					"description": {
+						"widget": "textarea"
+					},
+					"requester": {
+						"widget": "InitiatorPicker",
+						"label": "Requester"
+					}
+				},
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "EyeOutline",
+						"handler": "navigate",
+						"route": "CaseDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "Contracts",
+			"route": "/procurement/contracts",
+			"type": "index",
+			"title": "Contracts",
+			"config": {
+				"showTitle": true,
+				"register": "dossiq",
+				"schema": "supplierContract",
+				"breadcrumb": {
+					"label": "Procurement",
+					"route": "Contracts"
+				},
+				"pageTabs": [
+					{
+						"label": "Contracts",
+						"route": "Contracts",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplierContract",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Suppliers",
+						"route": "Suppliers",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplier",
+							"filter": {}
+						}
+					}
+				],
+				"headerMeta": "{total} contracts",
+				"addLabel": "New contract",
+				"searchPlaceholder": "Search a contract or supplier",
+				"footerNote": "20 per page",
+				"notice": {
+					"variant": "info",
+					"text": "Renewing and terminating are decisions. dossiq asks decidiq for them, which checks the mandate; the outcome comes back onto the contract. The expiry signal runs in dossiq."
+				},
+				"quickFilters": [
+					{
+						"label": "All",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Active",
+						"filter": {
+							"status": "active"
+						}
+					},
+					{
+						"label": "Expires within 6 months",
+						"filter": {
+							"renewalWarning": true
+						}
+					},
+					{
+						"label": "Decision needed",
+						"filter": {
+							"status": ["renewal-decision", "termination-decision"]
+						}
+					}
+				],
+				"columns": [
+					{
+						"key": "subject",
+						"label": "Contract",
+						"secondary": "{number}"
+					},
+					{
+						"key": "supplierRef",
+						"label": "Supplier",
+						"widget": "fkResolve",
+						"widgetProps": {
+							"register": "dossiq",
+							"schema": "supplier",
+							"labelField": "legalName"
+						}
+					},
+					{
+						"key": "value",
+						"label": "Value",
+						"formatter": "currency"
+					},
+					{
+						"key": "endDate",
+						"label": "End date",
+						"formatter": "date"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"widget": "badge",
+						"widgetProps": {
+							"colorMap": {
+								"active": "success",
+								"renewal-decision": "warning",
+								"termination-decision": "warning",
+								"ending": "neutral"
+							}
+						}
+					}
+				],
+				"defaultSort": [
+					{
+						"field": "endDate",
+						"order": "asc"
+					}
+				],
+				"showViewAction": true,
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "Suppliers",
+			"route": "/procurement/suppliers",
+			"type": "index",
+			"title": "Suppliers",
+			"config": {
+				"showTitle": true,
+				"register": "dossiq",
+				"schema": "supplier",
+				"breadcrumb": {
+					"label": "Procurement",
+					"route": "Contracts"
+				},
+				"pageTabs": [
+					{
+						"label": "Contracts",
+						"route": "Contracts",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplierContract",
+							"filter": {}
+						}
+					},
+					{
+						"label": "Suppliers",
+						"route": "Suppliers",
+						"countFrom": {
+							"register": "dossiq",
+							"schema": "supplier",
+							"filter": {}
+						}
+					}
+				],
+				"headerMeta": "{total} suppliers",
+				"addLabel": "New supplier",
+				"rowIcon": "OfficeBuildingOutline",
+				"columns": [
+					{
+						"key": "legalName",
+						"label": "Name",
+						"secondary": "{kvkNumber}"
+					},
+					"contactPerson",
+					"contactEmail",
+					{
+						"key": "status",
+						"label": "Status",
+						"widget": "badge"
+					},
+					{
+						"key": "qualityStatus",
+						"label": "Quality",
+						"widget": "badge"
+					}
+				],
+				"defaultSort": [
+					{
+						"field": "legalName",
+						"order": "asc"
+					}
+				],
+				"showViewAction": true,
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		}
+	]
+}

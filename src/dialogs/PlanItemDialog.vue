@@ -16,20 +16,13 @@
   @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
 		:name="t('dossiq', 'Plan an item')"
+		:eyebrow="t('dossiq', 'Your queue · own task')"
+		:subtitle="t('dossiq', 'This goes on your own calendar and on your queue. It is not a case.')"
 		data-testid="plan-item-dialog"
 		@closing="$emit('close')">
 		<div class="plan-item">
-			<p class="plan-item__explainer">
-				{{
-					t(
-						'dossiq',
-						'This goes on your own calendar and on your queue. It is not a case.',
-					)
-				}}
-			</p>
-
 			<NcSelect
 				v-model="template"
 				:options="templateOptions"
@@ -55,17 +48,24 @@
 		</div>
 
 		<template #actions>
+			<NcButton data-testid="plan-item-cancel" @click="$emit('close')">
+				{{ t('dossiq', 'Cancel') }}
+			</NcButton>
 			<NcButton variant="primary" :disabled="saving || !canSave" @click="save">
+				<template #icon>
+					<CalendarClockOutline :size="20" />
+				</template>
 				{{ t('dossiq', 'Plan it') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
+import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
 import { planItem } from '../services/personalQueueApi.js'
 
 /** The templates the backend declares, with what each one is called here. */
@@ -80,8 +80,9 @@ export default {
 	name: 'PlanItemDialog',
 
 	components: {
+		CalendarClockOutline,
+		CnDialog,
 		NcButton,
-		NcDialog,
 		NcNoteCard,
 		NcSelect,
 		NcTextField,
@@ -172,8 +173,4 @@ export default {
 	padding: 8px 0;
 }
 
-.plan-item__explainer {
-	color: var(--color-text-maxcontrast);
-	margin: 0;
-}
 </style>

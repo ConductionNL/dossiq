@@ -80,7 +80,10 @@ vi.mock('@nextcloud/l10n', () => ({
 vi.mock('@nextcloud/router', () => ({ generateUrl: (path) => path }))
 vi.mock('@nextcloud/event-bus', () => ({ emit: vi.fn() }))
 
-vi.mock('@nextcloud/vue/components/NcDialog', () => ({ default: box('NcDialog') }))
+vi.mock('@conduction/nextcloud-vue', async (importOriginal) => ({
+	...(await importOriginal()),
+	CnDialog: box('CnDialog'),
+}))
 vi.mock('@nextcloud/vue/components/NcSelect', () => ({
 	default: field('NcSelect'),
 }))

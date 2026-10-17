@@ -31,7 +31,14 @@ const CaseLifecycleMenuDialog = (
 ).default
 
 const DIALOG_RENDERS_ITS_SLOT = {
+	CnChoiceCards: {
+		props: ['options', 'modelValue'],
+		template:
+			'<div><div v-for="option in options" :key="option.value"><slot name="option-actions" :option="option" :selected="option.value === modelValue" /></div></div>',
+	},
 	NcDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+	CnDialog: { template: '<div><slot /><slot name="actions" /></div>' },
+	CaseActFields: false,
 	NcButton: {
 		props: ['disabled'],
 		template:

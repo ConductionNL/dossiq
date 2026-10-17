@@ -128,7 +128,7 @@ describe('the case-page lifecycle menu', () => {
 // lifecycle-dialog-title-clears-the-close-button: the small dialog left the
 // title running under the close button.
 describe('the lifecycle menu dialog size', () => {
-	it('opens as a normal-size dialog, so its title clears the close button', async () => {
+	it('opens at the form width, so its title clears the close button', async () => {
 		axios.get.mockResolvedValue({ data: {} })
 		const wrapper = shallowMount(CaseLifecycleMenuDialog, {
 			props: { caseId: 'case-1' },
@@ -137,6 +137,6 @@ describe('the lifecycle menu dialog size', () => {
 
 		const dialog = wrapper.find('[data-testid="case-acts-dialog"]')
 		expect(dialog.exists()).toBe(true)
-		expect(dialog.attributes('size')).toBe('normal')
+		expect(dialog.attributes('width')).toBe('form')
 	})
 })

@@ -90,14 +90,14 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 36 entries: 13 main, 5 footer, 15 settings, 3 integrations', () => {
+	it('still counts 37 entries: 13 main, 5 footer, 16 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
-		expect(flat(menu)).toHaveLength(36)
+		expect(flat(menu)).toHaveLength(37)
 		expect(count('main')).toBe(13)
 		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(15)
+		expect(count('settings')).toBe(16)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -221,7 +221,7 @@ describe('the simple profile', () => {
 		// The profile asks the instance's theming for the name and the logo;
 		// the app only puts its own name there.
 		expect(simpleFile.nav.brand).toEqual({
-			name: 'dossiq',
+			name: 'Dossiq',
 			caption: '@theming.name',
 			logo: '@theming.emblem|@theming.logo',
 		})
@@ -252,13 +252,13 @@ describe('the simple profile', () => {
 			{ theming },
 		)
 		expect(withTheming.nav.brand).toEqual({
-			name: 'dossiq',
+			name: 'Dossiq',
 			caption: 'Gemeente Voorbeeld',
 			logo: '/core/img/logo.svg',
 		})
 		// An instance that answers nothing gets no caption and no logo: the
 		// profile invents no municipality.
-		expect(built.nav.brand).toEqual({ name: 'dossiq', caption: '', logo: '' })
+		expect(built.nav.brand).toEqual({ name: 'Dossiq', caption: '', logo: '' })
 		// The full profile declares no brand and gets none.
 		expect(build(fullFile).nav).toBeUndefined()
 		// main.js hands the theming capabilities over.
@@ -432,9 +432,10 @@ describe('the simple profile', () => {
 				.find((page) => page.id === 'MyWorkHome')
 				.config.viewLinks.map((link) => link.route),
 		).toEqual(['PersonalQueue', 'MyWork', 'EndOfDay'])
+		// DqDashboard: Close out your day leads, the primary New case ends the row.
 		expect(actionIds(built, 'Dashboard')).toEqual([
-			'new-case',
 			'open-end-of-day',
+			'new-case',
 		])
 		expect(actionIds(build(fullFile), 'MyWorkHome')).toEqual(['new-case'])
 		expect(actionIds(build(fullFile), 'Dashboard')).toEqual(['new-case'])
@@ -442,7 +443,8 @@ describe('the simple profile', () => {
 		// Each link names a page that exists and an icon the app registers.
 		const pageIds = new Set(built.pages.map((page) => page.id))
 		for (const overlay of simpleFile.pages) {
-			for (const action of overlay.configAppend?.headerActions ?? []) {
+			const links = (overlay.configAppend?.headerActions ?? []).filter((action) => action.type === 'open-page')
+			for (const action of links) {
 				expect(pageIds.has(action.target), action.id).toBe(true)
 				expect(iconsSource).toContain(`\n\t${action.icon},\n`)
 			}
@@ -452,10 +454,14 @@ describe('the simple profile', () => {
 	// 69 -> 67: tenancy step 5 retires the Tenants and TenantDetail pages.
 	// 67 -> 68: woo-delivered-set-is-a-record adds one page.
 	// 68 -> 67: the Workflow board page retires; `/workflow-board` redirects to the Cases board.
-	it('builds the same 67 pages as the full profile, so every route stays', () => {
+	// 67 -> 70: data subject requests, contracts and suppliers get their lists (DqPrivacy, DqContracten).
+	// 70 -> 71: the Postvak (board DqPostvak) adds one page.
+	// 71 -> 72: the catalogue gets a page (DqCatalogus).
+	// 72 -> 73: the field inspection view (DqInspectie).
+	it('builds the same 73 pages as the full profile, so every route stays', () => {
 		const ids = (source) => source.pages.map((page) => page.id)
 		expect(ids(built)).toEqual(ids(build(fullFile)))
-		expect(built.pages).toHaveLength(67)
+		expect(built.pages).toHaveLength(73)
 	})
 })
 

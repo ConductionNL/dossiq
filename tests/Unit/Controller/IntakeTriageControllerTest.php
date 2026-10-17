@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\IntakePolicy;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
+use OCA\Dossiq\Service\Intake\CaseMatchSuggestion;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
 use OCA\Dossiq\Service\Intake\DuplicatePolicy;
@@ -136,6 +137,11 @@ final class IntakeTriageControllerTest extends TestCase {
 	private AdmissibilityJudgement $admissibility;
 
 	/**
+	 * @var CaseMatchSuggestion&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseMatchSuggestion $suggestions;
+
+	/**
 	 * Build collaborators for a caller who holds the intake role.
 	 *
 	 * @return void
@@ -159,6 +165,11 @@ final class IntakeTriageControllerTest extends TestCase {
 		$this->fanOut = $this->createMock(IntakeFanOut::class);
 		$this->log = $this->createMock(IntakeLog::class);
 		$this->admissibility = $this->createMock(AdmissibilityJudgement::class);
+		$this->suggestions = $this->createMock(CaseMatchSuggestion::class);
+		$this->suggestions->method('annotate')->willReturnCallback(
+			static fn (array $items): array => array_map(static fn (array $item): array => $item + ['suggestion' => null], $items)
+		);
+		$this->suggestions->method('narrow')->willReturnArgument(0);
 	}//end setUp()
 
 	/**
@@ -221,6 +232,7 @@ final class IntakeTriageControllerTest extends TestCase {
 			caseAccessGuard: $guard,
 			userSession: $session,
 			logger: new NullLogger(),
+			suggestions: $this->suggestions,
 		);
 	}//end controller()
 
@@ -398,8 +410,9 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$body = $this->controller()->queue()->getData();
 
-		$this->assertSame(expected: [['id' => 'e-quarantined']], actual: $body['results']);
+		$this->assertSame(expected: [['id' => 'e-quarantined', 'suggestion' => null]], actual: $body['results']);
 		$this->assertSame(expected: 1, actual: $body['sleeping']);
+		$this->assertSame(expected: 1, actual: $body['total']);
 	}//end testTheQueueLeavesOutTheSleepingItems()
 
 	/**
