@@ -126,7 +126,7 @@ describe('N-3: field labels and the term tile read Dutch', () => {
 		// bar from the start date and the suspend act.
 		expect(tile.content).toMatchObject({
 			daysLabel: { one: '{count} day', other: '{count} days' },
-			caption: 'Decide by {date}',
+			caption: 'Beslissen uiterlijk {date}',
 			startField: 'startDate',
 			action: { type: 'open-modal', target: 'CaseLifecycleMenuDialog', props: { act: 'suspend' } },
 		})
