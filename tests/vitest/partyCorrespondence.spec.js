@@ -171,37 +171,36 @@ describe('the Files tab declares its columns', () => {
 	}
 
 	it('binds each column to a property something answers', () => {
-		const columns = filesTab().props.columns
+		const props = filesTab().props
 
 		// 🔴 The property, not the label. A column bound to a key nothing
-		// answers renders blank forever and raises nothing anywhere: the
-		// dossier listing carries senderName and recipientNames, and
-		// scan-verdict-on-the-row added scanVerdict, which the listing now
-		// carries per row, and vertrouwelijkheidaanduiding is the row's own
-		// confidentiality. In the DqDocumentenBeheer order: scan and
-		// visibility first.
+		// answers renders blank forever and raises nothing anywhere. The table
+		// shows the DqDocumentenBeheer columns: scanVerdict, which the dossier
+		// listing carries per row, and vertrouwelijkheidaanduiding, the row's
+		// own confidentiality.
 		expect(
-			columns
+			props.columns
 				.filter((column) => typeof column === 'object')
 				.map((column) => column.property),
-		).toEqual([
-			'scanVerdict',
-			'vertrouwelijkheidaanduiding',
-			'senderName',
-			'recipientNames',
-			// #3004: where a document sits in decidiq's approval route. Read
-			// from the approval leaf rather than the listing, same as
-			// scanVerdict above it.
-			'approvalMarker',
-		])
+		).toEqual(['scanVerdict', 'vertrouwelijkheidaanduiding'])
+
+		// The listing's senderName and recipientNames, and the approval marker
+		// (#3004, where a document sits in decidiq's route), moved into the
+		// selected file's Document details card rather than off the page.
+		const details = props.sideCards.find((card) => card.id === 'details')
+		expect(details.fields.map((field) => field.key)).toEqual(
+			expect.arrayContaining(['senderName', 'recipientNames', 'approvalMarker']),
+		)
 	})
 
 	it('labels them in sentence case with no em-dash', () => {
-		const labels = filesTab()
-			.props.columns.filter((column) => typeof column === 'object')
-			.map((column) => column.label)
+		const props = filesTab().props
+		const labels = [
+			...props.columns.filter((column) => typeof column === 'object').map((column) => column.label),
+			...props.sideCards.flatMap((card) => card.fields.map((field) => field.label)),
+		]
 
-		expect(labels).toEqual(['Scan', 'Visible to', 'Sender', 'Recipients', 'Approval'])
+		expect(labels).toEqual(expect.arrayContaining(['Scan', 'Visible to', 'Sender', 'Recipients', 'Approval']))
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}
