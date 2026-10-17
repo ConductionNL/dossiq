@@ -21,7 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\Documents\ScanVerdictReader;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
