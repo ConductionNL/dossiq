@@ -4,7 +4,7 @@
 		"spdx-copyright": "2026 Conduction B.V.",
 		"change": "screens-round12-field-inspection",
 		"board": "DqInspectie",
-		"why": "What an inspector sees on the phone, shown as three device frames over records the register already has: today's field inspections (fieldInspection), the checklist run in execution (inspectionChecklistRun) and the device's outbox (syncQueue). The frames are nextcloud-vue's device-frames widget (L32, nextcloud-vue #1733); until that release the page shows only its header, since the three lists are placed through the frames. The question-by-question checklist with a photo is a widget the library does not have yet, so the middle frame lists the run in execution."
+		"why": "What an inspector sees on the phone, shown as three device frames over records the register already has: today's field inspections (fieldInspection), the checklist run in execution (inspectionChecklistRun) and the device's outbox (syncQueue). The frames are nextcloud-vue's device-frames widget (L32, nextcloud-vue #1733); until that release the page shows only its header, since the three lists are placed through the frames. The middle frame is the checklist-run widget over the reader's run in execution, writing answers and photos into that run."
 	},
 	"pages": [
 		{
@@ -32,17 +32,24 @@
 								{
 									"key": "today",
 									"title": "Today",
-									"widgetIds": ["inspections-today", "inspections-offline-note"]
+									"widgetIds": [
+										"inspections-today",
+										"inspections-offline-note"
+									]
 								},
 								{
 									"key": "checklist",
 									"title": "Checklist",
-									"widgetIds": ["inspection-run-current"]
+									"widgetIds": [
+										"checklist-run"
+									]
 								},
 								{
 									"key": "sync",
 									"title": "Synchronise",
-									"widgetIds": ["inspection-sync-queue"]
+									"widgetIds": [
+										"inspection-sync-queue"
+									]
 								}
 							]
 						}
@@ -61,7 +68,9 @@
 									"lt": "@today+1d"
 								}
 							},
-							"extend": ["caseRef"],
+							"extend": [
+								"caseRef"
+							],
 							"sort": {
 								"field": "scheduledAt",
 								"dir": "asc"
@@ -86,28 +95,70 @@
 						}
 					},
 					{
-						"id": "inspection-run-current",
-						"type": "record-list",
+						"id": "checklist-run",
+						"type": "checklist-run",
 						"title": "Checklist",
+						"_note": "DqInspectie middle frame: the reader's checklist run in execution, question by question with photos, answers written into the run's responses (nextcloud-vue #1764/#1766).",
 						"content": {
-							"register": "dossiq",
-							"schema": "inspectionChecklistRun",
-							"filter": {
-								"inspector": "@me",
-								"status": "in_execution"
+							"record": {
+								"register": "dossiq",
+								"schema": "inspectionChecklistRun",
+								"filter": {
+									"inspector": "@me",
+									"status": "in_execution"
+								},
+								"sort": {
+									"field": "startedAt",
+									"dir": "desc"
+								}
 							},
-							"sort": {
-								"field": "startedAt",
-								"dir": "desc"
+							"emptyText": "No inspection is running now",
+							"questionsPath": "templateSnapshot.sections",
+							"itemsKey": "items",
+							"groupLabelField": "name",
+							"orderField": "order",
+							"fields": {
+								"id": "id",
+								"text": "label",
+								"type": "responseType",
+								"options": "choices",
+								"required": "required",
+								"help": "helpText",
+								"photoRequired": "photoRequired"
 							},
-							"limit": 3,
-							"presentation": "rows",
-							"title": "{templateSnapshot.name}",
-							"meta": "started {startedAt|datetime}",
-							"pill": {
-								"field": "syncState"
+							"typeMap": {
+								"yes_no_na": "yes_no_na",
+								"text": "text",
+								"getal": "number",
+								"meerkeuze": "choice",
+								"photo": "photo",
+								"meting": "number"
 							},
-							"emptyText": "No checklist in progress"
+							"choiceValues": {
+								"yes": "ja",
+								"no": "nee",
+								"na": "nvt"
+							},
+							"photoRequiredValues": {
+								"nooit": "never",
+								"altijd": "always",
+								"if_no": {
+									"whenAnswer": "nee"
+								}
+							},
+							"answersPath": "responses",
+							"answerKey": "itemId",
+							"answerFields": {
+								"value": "value",
+								"number": "numericValue",
+								"choice": "choice",
+								"note": "comment",
+								"photos": "photos",
+								"at": "respondedAt"
+							},
+							"recordPhotosField": "photos",
+							"pageSize": 2,
+							"caption": "{templateSnapshot.name} version {templateVersion}"
 						}
 					},
 					{
@@ -118,7 +169,11 @@
 							"register": "dossiq",
 							"schema": "syncQueue",
 							"filter": {
-								"status": ["pending", "conflict", "failed"]
+								"status": [
+									"pending",
+									"conflict",
+									"failed"
+								]
 							},
 							"sort": {
 								"field": "queuedAt",
