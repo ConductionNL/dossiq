@@ -389,9 +389,6 @@
     }
   },
   "src/views/settings/Settings.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 1
-    },
     "vue/multi-word-component-names": {
       "count": 1
     }
