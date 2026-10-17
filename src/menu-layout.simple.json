@@ -1296,6 +1296,7 @@
 							"tabs": [
 								{
 									"widgetIds": [
+										"case-objection-grounds",
 										"case-request",
 										"case-details",
 										"case-priority-card",
@@ -2407,6 +2408,53 @@
 								}
 							],
 							"emptyText": "No bids yet"
+						}
+					},
+					{
+						"id": "case-objection-grounds",
+						"type": "facts",
+						"title": "Grounds of the objection",
+						"visibleWhen": {
+							"field": "@context.caseType.category",
+							"op": "in",
+							"value": [
+								"Bezwaar en beroep"
+							]
+						},
+						"_note": "DqBezwaar Gronden van het bezwaar: the objection record of this case (objection.case), read through the objects endpoint so the card needs no id of its own. First card of the Overview stack, only for a case type in the objection category (a tab-stack child follows its own visibleWhen since nextcloud-vue 2.94.0, #1725).",
+						"content": {
+							"source": {
+								"url": "/apps/openregister/api/objects/dossiq/objection?case=@objectId&_limit=1"
+							},
+							"fields": [
+								{
+									"as": "text",
+									"path": "results.0.grounds"
+								},
+								{
+									"label": "Contested decision",
+									"path": "results.0.contestedDecision",
+									"resolve": {
+										"register": "dossiq",
+										"schema": "decision",
+										"labelField": "title"
+									}
+								},
+								{
+									"label": "Received",
+									"path": "results.0.receivedDate",
+									"format": "date-long"
+								},
+								{
+									"label": "Lodged in time",
+									"path": "results.0.isTimely",
+									"map": {
+										"true": "Yes",
+										"false": "No"
+									}
+								}
+							],
+							"emptyText": "No objection recorded on this case"
 						}
 					}
 				],

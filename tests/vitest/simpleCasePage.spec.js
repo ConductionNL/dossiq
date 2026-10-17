@@ -450,7 +450,7 @@ describe('the tabs', () => {
 		// The terms, flows and hours are cards of the Overview stack, titled as
 		// DqZaak titles them; the cards the simple page adds are its own.
 		const patched = ['case-panels', 'case-stages', 'case-tile-deadline', 'case-terms', 'case-flow-runs', 'case-kpis-hours']
-		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids']
+		const added = ['case-request', 'case-details', 'case-priority-card', 'case-locations-card', 'case-plan-card', 'case-publication', 'case-contact-moments-card', 'case-acknowledgement-card', 'case-conversations-card', 'case-customer-record-card', 'case-tasks-card', 'case-planned-actions-card', 'case-incidents-card', 'case-calendar-card', 'case-deck-card', 'case-objection-hearings', 'case-objection-advice', 'case-objection-decision', 'case-social-indications', 'case-social-meetings', 'case-tender-bids', 'case-objection-grounds']
 		const others = (config) =>
 			config.widgets.filter((widget) => !patched.includes(widget.id) && !added.includes(widget.id))
 		expect(others(simple)).toEqual(others(original))
@@ -651,6 +651,11 @@ describe('the header and the side column', () => {
 			'case-tender-bids',
 		])
 		expect(tabs[0].label).toBe('Overview')
+		// The objection's grounds open the Overview stack, gated by the card's own visibleWhen.
+		expect(tabs[0].widgetIds[0]).toBe('case-objection-grounds')
+		const grounds = find(simple, 'case-objection-grounds')
+		expect(JSON.stringify(grounds.visibleWhen)).toContain('Bezwaar en beroep')
+		expect(grounds.content.source.url).toContain('case=@objectId')
 		for (const tab of gated) {
 			const list = find(simple, tab.widgetId)
 			expect(list.type).toBe('object-list')
