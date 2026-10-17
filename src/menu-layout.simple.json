@@ -1955,8 +1955,8 @@
 					},
 					"cases-by-status": {
 						"content": {
-							"chartKind": "bar",
-							"horizontal": true,
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",
@@ -1982,8 +1982,8 @@
 					},
 					"cases-by-type": {
 						"content": {
-							"chartKind": "bar",
-							"horizontal": true,
+							"chartKind": "bar-list",
+							"footnote": "Click a bar to see the cases",
 							"dataSource": {
 								"register": "dossiq",
 								"schema": "case",

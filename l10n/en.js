@@ -1420,6 +1420,7 @@ OC.L10N.register(
         "Cleared": "Cleared",
         "Cleared when": "Cleared when",
         "Clerk": "Clerk",
+        "Click a bar to see the cases": "Click a bar to see the cases",
         "click a column header to sort": "click a column header to sort",
         "Click a node to select it, double-click a transition to edit.": "Click a node to select it, double-click a transition to edit.",
         "Click All cases in the menu": "Click All cases in the menu",
