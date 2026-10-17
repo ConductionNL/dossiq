@@ -222,6 +222,27 @@
 
 		<template #tab-integrations>
 			<CnSettingsSection
+				id="section-connections"
+				:name="t('dossiq', 'Integrations')"
+				:description="
+					t(
+						'dossiq',
+						'A connection stays off until you choose a source. Off means: not one request goes outside.',
+					)
+				">
+				<CnWidgetObjectTable
+					:hideWrapper="true"
+					:source="connectionsSource"
+					:columns="connectionColumns"
+					:emptyText="
+						t(
+							'dossiq',
+							'No connections reported yet. They appear once integriq has read dossiq\'s declaration.',
+						)
+					" />
+			</CnSettingsSection>
+
+			<CnSettingsSection
 				id="section-zgw"
 				:name="t('dossiq', 'ZGW API mapping')"
 				:description="
@@ -354,6 +375,22 @@
 				:loading="!storesReady">
 				<ChecklistsTab v-if="storesReady" />
 			</CnSettingsSection>
+
+			<CnSettingsSection
+				id="section-enforcement-strategy"
+				:name="t('dossiq', 'Enforcement strategy')"
+				:description="
+					t(
+						'dossiq',
+						'The matrix that recommends an intervention from the severity of a violation and the behaviour of the offender.',
+					)
+				">
+				<CnWidgetObjectTable
+					:hideWrapper="true"
+					:source="enforcementMatrixSource"
+					:columns="enforcementMatrixColumns"
+					:emptyText="t('dossiq', 'No enforcement matrix yet.')" />
+			</CnSettingsSection>
 		</template>
 
 		<template #tab-substitution>
@@ -373,7 +410,11 @@
 </template>
 
 <script>
-import { CnAdminSettingsShell, CnSettingsSection } from '@conduction/nextcloud-vue'
+import {
+	CnAdminSettingsShell,
+	CnSettingsSection,
+	CnWidgetObjectTable,
+} from '@conduction/nextcloud-vue'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton } from '@nextcloud/vue'
 import SubstitutionAdmin from '../admin/SubstitutionAdmin.vue'
@@ -414,6 +455,7 @@ export default {
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnSettingsSection,
+		CnWidgetObjectTable,
 		Settings,
 		CaseTypeAdmin,
 		ZgwMappingSettings,
@@ -539,6 +581,79 @@ export default {
 		 */
 		setupSteps() {
 			return manifest.setup?.steps ?? []
+		},
+
+		/**
+		 * dossiq's rows in integriq's connection registry.
+		 *
+		 * @return {object} The table source.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		connectionsSource() {
+			return {
+				register: 'integriq',
+				schema: 'app_connection',
+				filter: { app: 'dossiq' },
+				order: { order: 'asc' },
+				limit: 50,
+			}
+		},
+
+		/**
+		 * The connection table's columns, as the board draws them.
+		 *
+		 * @return {Array<object>} The columns.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		connectionColumns() {
+			return [
+				{
+					key: 'title',
+					label: this.t('dossiq', 'Connection'),
+					cellClass: 'cn-cell--strong',
+					secondary: '{description}',
+				},
+				{ key: 'statusMessage', label: this.t('dossiq', 'Source') },
+				{
+					key: 'status',
+					label: this.t('dossiq', 'Status'),
+					widget: 'badge',
+				},
+				{ key: '@self.updated', label: this.t('dossiq', 'Last contact') },
+			]
+		},
+
+		/**
+		 * The enforcement matrices dossiq's recommendation reads.
+		 *
+		 * @return {object} The table source.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		enforcementMatrixSource() {
+			return { register: 'dossiq', schema: 'lhsMatrix', limit: 10 }
+		},
+
+		/**
+		 * The enforcement matrix table's columns.
+		 *
+		 * @return {Array<object>} The columns.
+		 * @spec openspec/specs/admin-settings/spec.md
+		 */
+		enforcementMatrixColumns() {
+			return [
+				{
+					key: 'name',
+					label: this.t('dossiq', 'Matrix'),
+					cellClass: 'cn-cell--strong',
+				},
+				{ key: 'version', label: this.t('dossiq', 'Version') },
+				{
+					key: 'active',
+					label: this.t('dossiq', 'Active'),
+					widget: 'badge',
+				},
+				{ key: '@self.updated', label: this.t('dossiq', 'Last changed') },
+			]
 		},
 
 		/**
